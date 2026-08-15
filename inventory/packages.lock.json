@@ -129,7 +129,15 @@
       "mode": "trial",
       "owners": ["ui-theme"],
       "risk": ["theme-only"],
-      "notes": "ANSI-first theme; lowest-intrusion UI candidate."
+      "notes": "ANSI-first theme; lowest-intrusion UI candidate.",
+      "audit": {
+        "date": "2026-08-15",
+        "integrity": "sha512-lAqHu1vqiWggOcBrSp6w/c8H3E1cPUjc4VBb/4FzCk4a/E9QGh8UAMngtVqinrABd/58ervWxn36S5TK8AsEOA==",
+        "contents": ["themes/terminal.json", "themes/terminal-tinted.json"],
+        "dependencies": 0,
+        "lifecycleScripts": false,
+        "startupSmoke": "PASS: pi -e npm:pi-terminal-theme@0.2.0 --no-session --no-context-files --no-skills --help"
+      }
     },
     {
       "id": "firstpick-themes",
@@ -177,7 +185,15 @@
       "mode": "trial",
       "owners": ["review"],
       "risk": ["diff-edit", "test-execution"],
-      "notes": "Narrow diff review/simplification candidate; trial in a disposable worktree."
+      "notes": "Narrow diff review/simplification candidate; trial in a disposable worktree.",
+      "audit": {
+        "date": "2026-08-15",
+        "integrity": "sha512-9dxsXiGmO7DmjguC4Bk/lu7IYlYt0x1m2VneUpIGSQspx4BtshBgt+Vb8xvoxXc/Ugif7/sdwcbf7TgULqiSHg==",
+        "peerScope": "@earendil-works",
+        "directFileWrites": false,
+        "hostCommands": ["git diff"],
+        "startupSmoke": "PASS: pi -e npm:pi-simplify@0.2.3 --no-session --no-context-files --no-skills --help"
+      }
     }
   ]
 }
