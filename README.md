@@ -31,6 +31,8 @@ scripts/      Repository checks and package governance tooling
 
 ## Current research
 
+- [Harness product development plan and milestone gates](docs/plans/2026-08-16-only-my-pi-development-plan.md)
+- [End-to-end Goal Prompt](prompts/goal-develop-only-my-pi.md)
 - [Pi / DeepSeek Harness / open-source Harness ecosystem report](docs/research/2026-08-15-harness-ecosystem.md)
 - [Security and package review policy](SECURITY.md)
 - [Package governance decision](docs/decisions/ADR-0001-package-governance.md)
@@ -46,19 +48,56 @@ scripts/      Repository checks and package governance tooling
 - [Workspace checkpoint](docs/architecture/workspace-checkpoint.md)
 - [Current implementation status](docs/STATUS.md)
 
+## Product direction
+
+The next product milestone is not another Provider or protocol adapter. The
+roadmap targets a usable Pi-based Harness distribution. The following Harness
+features are planned; they are not claims about the current implementation:
+
+- a dry-run-first, idempotent `omp bootstrap` and rollback path;
+- load-time Profiles as capability ceilings;
+- runtime Modes that can only narrow those ceilings;
+- declarative Workflows, Agent roles, and AgentSwarm recipes;
+- a single `omp` / `/omp` control surface;
+- lightweight status and theme resources that do not replace Pi's runtime or
+  TUI.
+
+The planned AgentSwarm reuses the governed `pi-subagents` package through a
+narrow adapter. It will not register a competing subagent tool or child-agent
+runtime. DeepSeek conformance, ACP v1, and workspace checkpoint remain
+non-default Labs modules.
+
 ## Local development
 
 Install this checkout as a local Pi package while developing:
 
 ```bash
-pi install /Users/huangrui/Documents/ChatGPT/only-my-pi
+pi install .
 ```
 
 For a one-run test without changing Pi settings:
 
 ```bash
-pi -e /Users/huangrui/Documents/ChatGPT/only-my-pi
+pi -e .
 ```
+
+Run the full development Goal from the repository root:
+
+```text
+/goal-develop-only-my-pi all
+```
+
+If Pi was started outside this checkout, pass the validated repository path
+explicitly instead of relying on prompt-package discovery:
+
+```text
+/goal-develop-only-my-pi all repo=/absolute/path/to/only-my-pi
+```
+
+The Goal Prompt also accepts milestone ranges such as `M0-M3`, `M4`, `M5`,
+and `M6-M7`, plus `delivery=local` when the result must remain local. It does
+not grant permission to read credentials, mutate the real Pi home, call a live
+model Provider, publish a package, or push `main`.
 
 ## Safety boundary
 

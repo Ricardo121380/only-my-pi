@@ -18,11 +18,19 @@ constraints, lifecycle scripts, dependency tree, network/filesystem/process
 access, and rollback command. Run it first with `pi -e` in a disposable
 workspace and keep one-command disable/safe-mode recovery available.
 
-Pi Project Trust, approval prompts, plan mode, and permission extensions are
-not operating-system sandboxes. Untrusted repositories, unattended goals,
-browser-cookie automation, remote MCP, and plugins that can access secrets
-must run in a container, micro-VM, or OS sandbox with minimal mounts,
-credentials, and network access.
+Pi Project Trust, approval prompts, and plan mode are not operating-system
+sandboxes. Enforcement is surface-specific. The currently reviewed
+`pi-permission-modes` can conditionally sandbox eligible Bash subprocesses when
+its sandbox runtime is active; it does not thereby sandbox the Pi session,
+direct file tools, web or MCP traffic, Provider calls, or package/extension
+execution. It can degrade to prompts when the sandbox runtime is unavailable,
+explicitly disabled, or used from a Git worktree. Verify and report the actual
+`active`/`degraded` state for the relevant surface, never a whole-session
+sandbox claim. Untrusted repositories, unattended goals, browser-cookie
+automation, remote MCP, and plugins that can access secrets must run behind
+confirmed isolation that covers those surfaces, with minimal mounts,
+credentials, and network access; use a container or micro-VM when one
+surface-specific sandbox is insufficient.
 
 ## Reporting a problem
 

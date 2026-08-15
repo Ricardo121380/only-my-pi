@@ -84,8 +84,8 @@ LinuxDo、V2EX 等讨论里的高频组合大致分为：
 | `@narumitw/pi-plan-mode` | 0.49.3 | `/plan`、偏只读规划 | 保留；它是扩展层风险降低，不是 OS sandbox |
 | `pi-agent-extensions` | 0.5.2 | 一组扩展/主题/资源 | 保留过滤加载：sessions/context/review/notify |
 | `pi-web-access` | 0.20.0 | 搜索、抓取、GitHub/PDF/视频等 | 保留但网络边界大，浏览器 cookies 不默认打开 |
-| `pi-subagents` | 0.45.2 | child Pi sessions、并行/后台/链式委派 | 保留；writer 子代理先用 worktree/review gate |
-| `pi-permission-modes` | 2.2.0 | plan/build/YOLO 等权限工作流 | 保留；不把 YOLO 当默认 |
+| `pi-subagents` | 0.45.2 | child Pi sessions、并行/后台/链式委派 | 保留；shared cwd 的 writer 硬上限为 1，parallel writer 必须使用独立 managed worktree/review gate |
+| `pi-permission-modes` | 2.2.0 | plan/build/YOLO 等权限工作流 | 保留；不把 YOLO 当默认；条件式 OS sandbox 只覆盖符合条件的 Bash 子进程，必须报告 `active`/`degraded`，不得推导整个 session 或 file/web/MCP/provider/extension 已隔离 |
 | `@narumitw/pi-lsp` | 0.49.4 | LSP 诊断/语言服务 | 保留；按语言安装 server |
 | `@sreetej510/pi-usage` | 0.4.5 | 用量/成本观察 | 保留；当前没有 Provider 时先不据此作结论 |
 | `pi-memory` | 0.4.1 | 跨会话记忆 | 保留一个 memory 实现，暂不叠加其它 memory |
@@ -404,7 +404,7 @@ LinuxDo 的实战经验反复支持以下原则：
 1. Pi 的优势是可塑和轻量，不是装得越多越强；
 2. renderer/editor/footer 只能有一个“所有者”；
 3. memory/context-mode/DCP 不要叠加，必须做 token 和召回 A/B；
-4. 权限插件不是 sandbox；
+4. 权限提示、工具隐藏和 Project Trust 本身不是 sandbox；enforcement 必须按 surface 报告。例如当前审计的 `pi-permission-modes` 只能在 runtime 成功初始化时对符合条件的 Bash 子进程提供条件式 OS sandbox；必须报告该 surface 的 `active`/`degraded` 状态，不能把降级后的 prompts 当作隔离，也不能由此声称整个 Pi session、file tools、web/MCP、provider 或 extension 已受 sandbox 保护；
 5. 先 `pi -e` 临时试用，再项目级 pin，最后才考虑全局。
 
 ### 6.2 V2EX 的信号
@@ -706,7 +706,7 @@ pi-lens                           # 社区有明确负面警告
 9. 是否有 session/telemetry/日志会写入源代码或密钥；
 10. 是否能在 Docker/Gondolin/OpenShell/Seatbelt 中运行。
 
-必须始终记住：Pi Project Trust 只控制项目资源/包/扩展加载，不是 sandbox；Pi package security warning 也明确表示第三方包以当前用户权限运行。真正不信任的仓库、无人值守 goal、浏览器自动化和写入凭据的工作，应放到 OS/container/micro-VM 中，并最小化挂载路径、凭据和网络。
+必须始终记住：Pi Project Trust 只控制项目资源/包/扩展加载，不是 sandbox；Pi package security warning 也明确表示第三方包以当前用户权限运行。隔离状态必须按 surface 核验；即使 `pi-permission-modes` 对 Bash 子进程报告 `active`，也不能推导整个 session、直接 file tools、web/MCP、provider 或 extension 已隔离。真正不信任的仓库、无人值守 goal、浏览器自动化和写入凭据的工作，应放到覆盖所有相关 surface 的 OS/container/micro-VM 中，并最小化挂载路径、凭据和网络。
 
 ## 12. 研究来源索引
 
