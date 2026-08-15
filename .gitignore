@@ -1,0 +1,25 @@
+# Dependencies and generated state
+node_modules/
+.pi/
+dist/
+coverage/
+
+# Local credentials and secrets
+.env
+.env.*
+*.pem
+*.key
+auth.json
+models.json
+credentials.json
+
+# Pi runtime data
+sessions/
+cache/
+logs/
+tmp/
+
+# OS/editor files
+.DS_Store
+.idea/
+.vscode/
