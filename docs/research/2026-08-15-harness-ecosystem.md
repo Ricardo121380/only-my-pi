@@ -598,14 +598,14 @@ labs
 - session-ledger：append-only receipt，不替代 Pi 原始 session；
 - context-doctor：每轮报告 prompt sections、tool schema、memory 注入和 token 预算；
 - verification-receipt：测试/静态检查/真实 tool evidence 后才标记完成；
-- workspace checkpoint：先研究旧 scope `pi-workspace-history`，必要时自己实现 Pi 0.84 API 版本。
+- workspace checkpoint：已在本仓库实现一个 Pi 0.84 兼容、Git-backed、dry-run-first 的独立恢复 primitive；旧 scope `pi-workspace-history` 仍不直接安装。
 
 **Phase 2：能力 seam**
 
 - tool policy：action/resource/subject 三元组，deny-first；
 - MCP proxy：lazy metadata、directTools/include/exclude、危险工具 approval；
 - subagent budget：depth/fanout/time/token/cost，worktree 默认隔离；
-- ACP adapter：优先研究成熟的 `pi-acp`，只做协议桥，不绕过 Pi policy。
+- ACP adapter：已先实现本仓库自己的 runtime-neutral ACP v1 核心，只做协议桥、不绕过 Pi policy；成熟第三方 `pi-acp` 仍是可选外部参考。
 
 **Phase 3：主题和体验**
 
@@ -617,7 +617,7 @@ labs
 **Phase 4：评估和沙箱**
 
 - disposable repo smoke suite；
-- DeepSeek-specific cache/reasoning replay/compaction tests；
+- DeepSeek-specific cache/reasoning replay/compaction tests（本轮先完成离线 conformance fixtures；真实 endpoint smoke 另行授权）；
 - macOS Seatbelt/Gondolin/Docker/OpenShell provider；
 - network/cookie/credential boundary tests；
 - 每个包的 uninstall/rollback/recovery test。
@@ -634,6 +634,21 @@ labs
 - theme token schema 可以编译成 Pi/Kimi/OpenCode 各自的主题文件，但每个适配器必须 versioned。
 
 这样可以从 OpenCode、Kimi、DSH、OpenHands 学模块，又不会被任一项目的 beta 内部 API 或许可证/供应链绑定。
+
+### 9.5 本轮三项增量落地状态
+
+本轮没有新增第三方包，也没有把实验能力加入 Pi 的默认 `pi.extensions`
+清单；只把三个可审查的 first-party seam 放入 `packages/`，并接入统一
+verification suite：
+
+| 模块 | 当前交付 | 明确未做的事 |
+| --- | --- | --- |
+| `deepseek-conformance` | 16 个离线测试与 5 个 JSON fixtures，覆盖 reasoning/tool-call replay、SSE 并行 tool calls、原生 `Response.body`、cache usage、Retry-After、abort、边界限制 | 不调用 DeepSeek API，不读取 API key，不宣称某个真实模型/gateway 已兼容 |
+| `acp-v1` | 9 个测试；NDJSON/JSON-RPC、v1 协商、session lifecycle、update、permission callback、cancel、显式 capability matrix | 不启动 `pi --mode rpc`，不接 Pi event/tool/session，不提供 ACP v2 fallback |
+| `workspace-checkpoint` | Git 目录内 snapshot、相对路径与 symlink 检查、hash manifest、dry-run restore/undo、`--run/--force/--allow-delete` 门槛 | 不做原子多文件事务、不自动 hook 每一 turn、不替代 OS sandbox 或 Git commit |
+
+因此，报告中“本轮不执行”仍然适用于第三方包安装和真实 provider；它不再
+适用于上表三个 first-party 模块的离线实现与测试。
 
 ## 10. 推荐安装决策（本轮不执行）
 

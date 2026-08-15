@@ -1,0 +1,127 @@
+{
+  "events": [
+    {
+      "id": "fixture-stream-001",
+      "object": "chat.completion.chunk",
+      "created": 1700000001,
+      "model": "deepseek-v4-pro",
+      "choices": [
+        {
+          "index": 0,
+          "delta": {
+            "role": "assistant",
+            "reasoning_content": "I will check both cities. "
+          },
+          "finish_reason": null
+        }
+      ]
+    },
+    {
+      "id": "fixture-stream-001",
+      "object": "chat.completion.chunk",
+      "choices": []
+    },
+    {
+      "id": "fixture-stream-001",
+      "object": "chat.completion.chunk",
+      "choices": [
+        {
+          "index": 0,
+          "delta": {
+            "tool_calls": [
+              {
+                "index": 1,
+                "id": "call-weather-b",
+                "type": "function",
+                "function": {
+                  "name": "get_weather",
+                  "arguments": "{\"city\":\"Guang"
+                }
+              }
+            ]
+          },
+          "finish_reason": null
+        }
+      ]
+    },
+    {
+      "id": "fixture-stream-001",
+      "object": "chat.completion.chunk",
+      "choices": [
+        {
+          "index": 0,
+          "delta": {
+            "tool_calls": [
+              {
+                "index": 0,
+                "id": "call-weather-a",
+                "type": "function",
+                "function": {
+                  "name": "get_weather",
+                  "arguments": "{\"city\":\"Hang"
+                }
+              }
+            ]
+          },
+          "finish_reason": null
+        }
+      ]
+    },
+    {
+      "id": "fixture-stream-001",
+      "object": "chat.completion.chunk",
+      "choices": [
+        {
+          "index": 0,
+          "delta": {
+            "tool_calls": [
+              {
+                "index": 1,
+                "function": {
+                  "arguments": "zhou\"}"
+                }
+              }
+            ]
+          },
+          "finish_reason": null
+        }
+      ]
+    },
+    {
+      "id": "fixture-stream-001",
+      "object": "chat.completion.chunk",
+      "choices": [
+        {
+          "index": 0,
+          "delta": {
+            "tool_calls": [
+              {
+                "index": 0,
+                "function": {
+                  "arguments": "zhou\"}"
+                }
+              }
+            ]
+          },
+          "finish_reason": "tool_calls"
+        }
+      ]
+    },
+    {
+      "id": "fixture-stream-001",
+      "object": "chat.completion.chunk",
+      "choices": [],
+      "usage": {
+        "prompt_tokens": 64,
+        "prompt_tokens_details": {
+          "cached_tokens": 48
+        },
+        "completion_tokens": 22,
+        "total_tokens": 86,
+        "completion_tokens_details": {
+          "reasoning_tokens": 12
+        }
+      }
+    }
+  ]
+}

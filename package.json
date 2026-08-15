@@ -16,6 +16,10 @@
     "schema:check": "node scripts/schema-check.mjs",
     "mcp:doctor": "node scripts/mcp-doctor.mjs",
     "verify": "node scripts/verification-receipt.mjs",
+    "test:deepseek": "node packages/deepseek-conformance/test.mjs",
+    "test:acp": "node --test packages/acp-v1/acp-v1.test.mjs",
+    "test:checkpoint": "node packages/workspace-checkpoint/test.mjs",
+    "checkpoint": "node packages/workspace-checkpoint/cli.mjs",
     "test": "node --test"
   },
   "pi": {

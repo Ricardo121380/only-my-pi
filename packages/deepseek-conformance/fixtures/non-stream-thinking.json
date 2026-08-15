@@ -1,0 +1,37 @@
+{
+  "id": "fixture-nonstream-001",
+  "object": "chat.completion",
+  "created": 1700000000,
+  "model": "deepseek-v4-pro",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "I checked the forecast.",
+        "reasoning_content": "The user asked for a weather lookup.",
+        "tool_calls": [
+          {
+            "id": "call-weather-001",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\":\"Hangzhou\"}"
+            }
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 40,
+    "prompt_cache_hit_tokens": 32,
+    "prompt_cache_miss_tokens": 8,
+    "completion_tokens": 14,
+    "total_tokens": 54,
+    "completion_tokens_details": {
+      "reasoning_tokens": 9
+    }
+  }
+}

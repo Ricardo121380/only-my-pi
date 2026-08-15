@@ -1,0 +1,26 @@
+{
+  "baseUrl": "https://proxy.example.test/deepseek/v1",
+  "model": "deepseek-chat",
+  "response": {
+    "id": "fixture-custom-base-001",
+    "object": "chat.completion",
+    "model": "deepseek-chat",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "Custom route works."
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 4,
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 4,
+      "completion_tokens": 3,
+      "total_tokens": 7
+    }
+  }
+}

@@ -44,6 +44,21 @@ The rest of the repository tooling is explicit and side-effect bounded:
 - `mcp-doctor`: static MCP configuration audit, never starts a server;
 - local JSON Schemas for inventory/profile documents.
 
+The repository also contains three explicit, non-default integration seams:
+
+- `deepseek-conformance`: dependency-free, injected-transport fixtures for
+  DeepSeek-compatible Chat Completions requests, thinking/reasoning content,
+  streamed parallel tool calls, usage/cache fields, retry/abort behavior and
+  bounded error/output handling. It does not call a provider or read a key.
+- `acp-v1`: runtime-neutral ACP v1 JSON-RPC/NDJSON agent-side adapter with
+  `initialize`, session create/load/prompt/cancel, update notifications and
+  permission request/response handling. It does not start Pi, an ACP process,
+  an MCP server or a network transport.
+- `workspace-checkpoint`: Git-backed snapshots under the Git directory,
+  manifest hashes, symlink/path checks and a dry-run-first restore/undo CLI.
+  Applying a restore requires explicit `--run`, and changed workspaces also
+  require `--force`; file deletion additionally requires `--allow-delete`.
+
 ## Trial and block decisions
 
 Audited with exact npm tarballs and Pi startup smoke, but not promoted to the
@@ -69,6 +84,9 @@ Run locally:
 
 ```bash
 npm test
+npm run test:deepseek
+npm run test:acp
+npm run test:checkpoint
 npm run doctor
 npm run doctor:profiles
 npm run profile:check
@@ -84,16 +102,21 @@ Committed receipts:
 
 Both receipts record successful checks without raw command output.
 
+The three new module checks are part of the repository verification suite and
+will be recorded in the next receipt after the source commit is pushed.
+
 ## Next implementation boundary
 
-The next safe increments are deliberately not enabled yet:
+The three planned increments are now implemented and tested offline. They are
+still deliberately not enabled as live integrations. The next safe boundary
+is:
 
-1. DeepSeek provider-conformance fixtures against a local mock/recorded
-   protocol, without putting an API key in CI;
-2. ACP v1 capability adapter design (`initialize/newSession/load/prompt/cancel`
-   plus explicit permission callbacks), with no ACP-v2 dependency;
-3. A Pi-0.84-compatible workspace checkpoint implementation or an upstream
-   peer-repair experiment for `pi-workspace-history`.
+1. A separately authorized DeepSeek endpoint/model smoke using a secret
+   manager or local environment, with no credential in the repository or CI;
+2. Pi `--mode rpc` session/event/tool mapping behind the ACP v1 adapter,
+   including filesystem/terminal delegation and a reviewed permission policy;
+3. A Pi extension command/turn hook for checkpoint creation and review, plus
+   retention/locking and (if needed) a tested multi-file recovery strategy.
 
 Creator/self-modifying plugins, arbitrary JavaScript workflows, automatic
 marketplaces, remote UI/SSH/Cron, and un-sandboxed web fetch remain out of

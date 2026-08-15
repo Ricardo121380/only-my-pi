@@ -1,0 +1,73 @@
+{
+  "request": {
+    "model": "deepseek-v4-pro",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the weather in Hangzhou?"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_weather",
+          "description": "Return a deterministic fixture weather result.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "city": {
+                "type": "string"
+              }
+            },
+            "required": ["city"]
+          }
+        }
+      }
+    ],
+    "max_tokens": 128,
+    "stream": false
+  },
+  "assistant": {
+    "role": "assistant",
+    "content": "",
+    "reasoning_content": "I need the weather tool before answering.",
+    "tool_calls": [
+      {
+        "id": "call-weather-loop-001",
+        "type": "function",
+        "function": {
+          "name": "get_weather",
+          "arguments": "{\"city\":\"Hangzhou\"}"
+        }
+      }
+    ]
+  },
+  "tool": {
+    "role": "tool",
+    "tool_call_id": "call-weather-loop-001",
+    "content": "Sunny, 20C"
+  },
+  "final": {
+    "id": "fixture-loop-002",
+    "object": "chat.completion",
+    "model": "deepseek-v4-pro",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "It is sunny in Hangzhou."
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 60,
+      "prompt_cache_hit_tokens": 32,
+      "prompt_cache_miss_tokens": 28,
+      "completion_tokens": 8,
+      "total_tokens": 68
+    }
+  }
+}

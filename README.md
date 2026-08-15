@@ -25,6 +25,7 @@ themes/       Pi theme JSON files
 docs/         Research, design notes, and compatibility records
 inventory/    Version-pinned package inventory and risk metadata
 profiles/     Explicit package/policy profiles for different workflows
+packages/     First-party protocol/recovery seams and offline fixtures
 scripts/      Repository checks and package governance tooling
 ```
 
@@ -40,6 +41,9 @@ scripts/      Repository checks and package governance tooling
 - [Safe mode launcher](docs/architecture/safe-mode.md)
 - [Verification receipt design](docs/architecture/verification-receipt.md)
 - [MCP Doctor design](docs/architecture/mcp-doctor.md)
+- [DeepSeek Provider conformance](docs/architecture/deepseek-conformance.md)
+- [ACP v1 adapter](docs/architecture/acp-v1.md)
+- [Workspace checkpoint](docs/architecture/workspace-checkpoint.md)
 - [Current implementation status](docs/STATUS.md)
 
 ## Local development
@@ -72,6 +76,11 @@ npm run doctor:profiles
 npm run profile:check
 npm run schema:check
 npm test
+
+# The three protocol/recovery increments
+npm run test:deepseek
+npm run test:acp
+npm run test:checkpoint
 ```
 
 The experimental profile intentionally reports blocked candidates as warnings;

@@ -13,6 +13,27 @@
       "sensitiveOutput": false
     },
     {
+      "id": "deepseek-conformance",
+      "command": "node",
+      "args": ["packages/deepseek-conformance/test.mjs"],
+      "timeoutMs": 30000,
+      "sensitiveOutput": false
+    },
+    {
+      "id": "acp-v1",
+      "command": "node",
+      "args": ["--test", "packages/acp-v1/acp-v1.test.mjs"],
+      "timeoutMs": 30000,
+      "sensitiveOutput": false
+    },
+    {
+      "id": "workspace-checkpoint",
+      "command": "node",
+      "args": ["packages/workspace-checkpoint/test.mjs"],
+      "timeoutMs": 30000,
+      "sensitiveOutput": false
+    },
+    {
       "id": "package-doctor",
       "command": "npm",
       "args": ["run", "doctor"],
