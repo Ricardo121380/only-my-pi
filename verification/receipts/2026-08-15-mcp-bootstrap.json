@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "suite": "repository",
+  "suiteSha256": "429cfc26fe7afe6a4c6020e15d6f7007cd1544f54ccdce38fc9f23e39ffb8652",
+  "sourceCommit": "05261628ffb999821dfa13bdce5e7fe0ca7812f4",
+  "startedAt": "2026-08-15T09:14:38.540Z",
+  "completedAt": "2026-08-15T09:14:40.119Z",
+  "passed": true,
+  "checks": [
+    {
+      "id": "node-tests",
+      "command": "npm",
+      "args": [
+        "test"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 432,
+      "stdoutBytes": 1484,
+      "stderrBytes": 0,
+      "stdoutSha256": "2c45b952478fc6a17a6aeac1d437f1f2576dd45d891cbd48604c886f548da375",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "package-doctor",
+      "command": "npm",
+      "args": [
+        "run",
+        "doctor"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 177,
+      "stdoutBytes": 106,
+      "stderrBytes": 0,
+      "stdoutSha256": "d62e3950b97b98d07f19075907ce61b631a609fd924e7324d8a2b0a7efc57bcb",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "profile-doctor",
+      "command": "npm",
+      "args": [
+        "run",
+        "doctor:profiles"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 403,
+      "stdoutBytes": 771,
+      "stderrBytes": 0,
+      "stdoutSha256": "4c0427b05ccf7bd1b29292c33af5d26ff88041a415637d8ff6c5a7f565dced0e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "profile-resolution",
+      "command": "npm",
+      "args": [
+        "run",
+        "profile:check"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 173,
+      "stdoutBytes": 728,
+      "stderrBytes": 0,
+      "stdoutSha256": "5a019eec43de8e519b91a602f5b10c1f27fd265eced8e919ceeb08549a06a8cb",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "schema-links",
+      "command": "npm",
+      "args": [
+        "run",
+        "schema:check"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 172,
+      "stdoutBytes": 135,
+      "stderrBytes": 0,
+      "stdoutSha256": "15c699af49103bcda248536b30ebb2dff6c8a997d195838fb0da8d8fdc1c6b85",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "mcp-static-policy",
+      "command": "npm",
+      "args": [
+        "run",
+        "mcp:doctor",
+        "--",
+        "--file",
+        "verification/fixtures/mcp.safe.json",
+        "--strict"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 176,
+      "stdoutBytes": 344,
+      "stderrBytes": 0,
+      "stdoutSha256": "8f69904398da31e7508e7a1540cce65d8cf05fdc47e9b57df4480cb4ea704b8f",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "whitespace",
+      "command": "git",
+      "args": [
+        "diff",
+        "--check"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 11,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "clean-worktree",
+      "command": "git",
+      "args": [
+        "status",
+        "--porcelain"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 11,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "privacy": {
+    "rawOutputStored": false,
+    "outputFingerprintsMayLeakShortPredictableValues": true,
+    "intendedForSensitiveOutput": false
+  }
+}
