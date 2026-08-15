@@ -25,6 +25,11 @@ themes/       Pi theme JSON files
 docs/         Research, design notes, and compatibility records
 ```
 
+## Current research
+
+- [Pi / DeepSeek Harness / open-source Harness ecosystem report](docs/research/2026-08-15-harness-ecosystem.md)
+- [Security and package review policy](SECURITY.md)
+
 ## Local development
 
 Install this checkout as a local Pi package while developing:
@@ -44,4 +49,3 @@ pi -e /Users/huangrui/Documents/ChatGPT/only-my-pi
 Pi packages execute with the invoking user's permissions. New extensions and
 skills must be reviewed before enabling them globally. Keep secrets in Pi's
 local credential stores or a secret manager, never in this repository.
-
