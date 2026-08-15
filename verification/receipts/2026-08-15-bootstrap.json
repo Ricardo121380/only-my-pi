@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "suite": "repository",
+  "suiteSha256": "191e613075c5371140b8bf8de824225a45247fd90eaace40d7f203726853bd07",
+  "sourceCommit": "abf6163f077721cdb2e57212b3b47c6ec79a6959",
+  "startedAt": "2026-08-15T09:11:03.585Z",
+  "completedAt": "2026-08-15T09:11:05.036Z",
+  "passed": true,
+  "checks": [
+    {
+      "id": "node-tests",
+      "command": "npm",
+      "args": [
+        "test"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 459,
+      "stdoutBytes": 1251,
+      "stderrBytes": 0,
+      "stdoutSha256": "4e842d471429b2c68f91b446dadde0ff5f157d7ff352746b444e175acef0e98e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "package-doctor",
+      "command": "npm",
+      "args": [
+        "run",
+        "doctor"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 179,
+      "stdoutBytes": 106,
+      "stderrBytes": 0,
+      "stdoutSha256": "d62e3950b97b98d07f19075907ce61b631a609fd924e7324d8a2b0a7efc57bcb",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "profile-doctor",
+      "command": "npm",
+      "args": [
+        "run",
+        "doctor:profiles"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 411,
+      "stdoutBytes": 771,
+      "stderrBytes": 0,
+      "stdoutSha256": "4c0427b05ccf7bd1b29292c33af5d26ff88041a415637d8ff6c5a7f565dced0e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "profile-resolution",
+      "command": "npm",
+      "args": [
+        "run",
+        "profile:check"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 173,
+      "stdoutBytes": 728,
+      "stderrBytes": 0,
+      "stdoutSha256": "5a019eec43de8e519b91a602f5b10c1f27fd265eced8e919ceeb08549a06a8cb",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "schema-links",
+      "command": "npm",
+      "args": [
+        "run",
+        "schema:check"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 182,
+      "stdoutBytes": 135,
+      "stderrBytes": 0,
+      "stdoutSha256": "15c699af49103bcda248536b30ebb2dff6c8a997d195838fb0da8d8fdc1c6b85",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "whitespace",
+      "command": "git",
+      "args": [
+        "diff",
+        "--check"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 10,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "clean-worktree",
+      "command": "git",
+      "args": [
+        "status",
+        "--porcelain"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 13,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "privacy": {
+    "rawOutputStored": false,
+    "outputFingerprintsMayLeakShortPredictableValues": true,
+    "intendedForSensitiveOutput": false
+  }
+}
