@@ -12,6 +12,8 @@
     "doctor:profiles": "node scripts/package-doctor.mjs --profile profiles/minimal.json && node scripts/package-doctor.mjs --profile profiles/coding.json && node scripts/package-doctor.mjs --profile profiles/research.json && node scripts/package-doctor.mjs --profile profiles/ui-terminal.json && node scripts/package-doctor.mjs --profile profiles/experimental.json",
     "profile:check": "node scripts/profile-resolver.mjs --check-all",
     "profile:diff": "node scripts/profile-resolver.mjs profiles/coding.json --diff profiles/research.json",
+    "safe": "node scripts/safe-mode.mjs",
+    "schema:check": "node scripts/schema-check.mjs",
     "test": "node --test"
   },
   "pi": {

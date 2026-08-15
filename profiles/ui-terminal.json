@@ -1,5 +1,5 @@
 {
-  "$schema": "https://only-my-pi.invalid/schemas/profile-v1.json",
+  "$schema": "../schemas/profile-v1.schema.json",
   "formatVersion": 1,
   "id": "ui-terminal",
   "description": "Disposable UI trial profile; select one theme and at most one renderer/editor owner.",

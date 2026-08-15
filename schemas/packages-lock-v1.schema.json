@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/packages-lock-v1.schema.json",
+  "title": "only-my-pi package inventory v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "generatedAt", "runtime", "policy", "packages", "candidates"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "formatVersion": { "const": 1 },
+    "generatedAt": { "type": "string", "format": "date" },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pi", "node", "platform"],
+      "properties": {
+        "pi": { "type": "string" },
+        "node": { "type": "string" },
+        "platform": { "type": "string" }
+      }
+    },
+    "policy": { "type": "object", "minProperties": 1 },
+    "packages": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/package" }
+    },
+    "candidates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/candidate" }
+    }
+  },
+  "$defs": {
+    "base": {
+      "type": "object",
+      "required": ["id", "spec", "owners", "risk", "notes"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+        "spec": { "type": "string", "minLength": 1 },
+        "owners": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "risk": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "notes": { "type": "string", "minLength": 1 },
+        "resourceFilter": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "audit": { "type": "object" }
+      }
+    },
+    "package": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "required": ["scope", "installed", "review"],
+          "properties": {
+            "scope": { "enum": ["global", "project", "local"] },
+            "installed": { "const": true },
+            "review": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "candidate": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "required": ["mode"],
+          "properties": {
+            "mode": { "enum": ["trial", "project-only", "blocked"] }
+          }
+        }
+      ]
+    }
+  }
+}

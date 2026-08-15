@@ -37,6 +37,7 @@ scripts/      Repository checks and package governance tooling
 - [Profile resolver design](docs/architecture/profile-resolver.md)
 - [Session ledger design](docs/architecture/session-ledger.md)
 - [Context Doctor design](docs/architecture/context-doctor.md)
+- [Safe mode launcher](docs/architecture/safe-mode.md)
 
 ## Local development
 
@@ -66,6 +67,7 @@ Run the no-dependency package inventory check before changing a profile:
 npm run doctor
 npm run doctor:profiles
 npm run profile:check
+npm run schema:check
 npm test
 ```
 

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://only-my-pi.invalid/schemas/profile-v1.json",
+  "$schema": "../schemas/profile-v1.schema.json",
   "formatVersion": 1,
   "id": "experimental",
   "description": "Disposable lab profile for packages with compatibility or host-side effects.",
