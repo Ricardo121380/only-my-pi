@@ -35,6 +35,8 @@ scripts/      Repository checks and package governance tooling
 - [Package governance decision](docs/decisions/ADR-0001-package-governance.md)
 - [Pinned package inventory](inventory/packages.lock.json)
 - [Profile resolver design](docs/architecture/profile-resolver.md)
+- [Session ledger design](docs/architecture/session-ledger.md)
+- [Context Doctor design](docs/architecture/context-doctor.md)
 
 ## Local development
 
