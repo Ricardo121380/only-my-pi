@@ -1,0 +1,25 @@
+{
+  "$schema": "https://only-my-pi.invalid/schemas/profile-v1.json",
+  "formatVersion": 1,
+  "id": "ui-terminal",
+  "description": "Disposable UI trial profile; select one theme and at most one renderer/editor owner.",
+  "packageIds": [],
+  "candidatePackageIds": [
+    "terminal-theme",
+    "firstpick-themes",
+    "claude-code-tui"
+  ],
+  "policy": {
+    "projectTrust": "ask",
+    "approval": "ask",
+    "network": "deny",
+    "trialOnly": true,
+    "telemetry": "off-unless-explicit",
+    "uiOwners": {
+      "theme": 1,
+      "renderer": 1,
+      "footer": 1,
+      "editor": 1
+    }
+  }
+}

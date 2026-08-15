@@ -1,0 +1,183 @@
+{
+  "$schema": "https://only-my-pi.invalid/schemas/packages-lock-v1.json",
+  "formatVersion": 1,
+  "generatedAt": "2026-08-15",
+  "runtime": {
+    "pi": "0.84.1",
+    "node": "25.8.0",
+    "platform": "darwin-arm64"
+  },
+  "policy": {
+    "requireExactNpmVersion": true,
+    "allowOldMarioScope": false,
+    "allowUnreviewedPackages": false,
+    "oneOwnerPerGroup": {
+      "memory": true,
+      "mcp": true,
+      "subagents": true,
+      "ui": true,
+      "permission": true,
+      "renderer": true,
+      "footer": true,
+      "editor": true
+    },
+    "defaultNetwork": "deny-unless-profile",
+    "defaultCredentials": "never-from-repository"
+  },
+  "packages": [
+    {
+      "id": "plan-mode",
+      "spec": "npm:@narumitw/pi-plan-mode@0.49.3",
+      "scope": "global",
+      "installed": true,
+      "review": "baseline",
+      "owners": ["planning"],
+      "risk": ["extension-policy"],
+      "notes": "Extension-level risk reduction; not an OS sandbox."
+    },
+    {
+      "id": "agent-extensions",
+      "spec": "npm:pi-agent-extensions@0.5.2",
+      "scope": "global",
+      "installed": true,
+      "review": "baseline-filtered",
+      "owners": ["sessions", "context", "review", "notify"],
+      "resourceFilter": [
+        "extensions/sessions/index.ts",
+        "extensions/context/index.ts",
+        "extensions/review/index.ts",
+        "extensions/notify/index.ts"
+      ],
+      "risk": ["extension-code"],
+      "notes": "Other resources remain installed but are not auto-loaded."
+    },
+    {
+      "id": "web-access",
+      "spec": "npm:pi-web-access@0.20.0",
+      "scope": "global",
+      "installed": true,
+      "review": "baseline-opt-in-network",
+      "owners": ["web"],
+      "risk": ["network", "third-party-data", "browser-cookie-opt-in"],
+      "notes": "Use only in research profile; browser cookies stay disabled by default."
+    },
+    {
+      "id": "subagents",
+      "spec": "npm:pi-subagents@0.45.2",
+      "scope": "global",
+      "installed": true,
+      "review": "baseline-budgeted",
+      "owners": ["subagents"],
+      "risk": ["child-process", "filesystem-inheritance", "cost"],
+      "notes": "Start with scout/reviewer; writer children use worktrees and review gates."
+    },
+    {
+      "id": "permission-modes",
+      "spec": "npm:pi-permission-modes@2.2.0",
+      "scope": "global",
+      "installed": true,
+      "review": "baseline-conservative",
+      "owners": ["permission"],
+      "risk": ["policy-not-sandbox"],
+      "notes": "Never make YOLO the default."
+    },
+    {
+      "id": "lsp",
+      "spec": "npm:@narumitw/pi-lsp@0.49.4",
+      "scope": "global",
+      "installed": true,
+      "review": "baseline",
+      "owners": ["lsp"],
+      "risk": ["local-language-server"],
+      "notes": "Install language servers per project and language."
+    },
+    {
+      "id": "usage",
+      "spec": "npm:@sreetej510/pi-usage@0.4.5",
+      "scope": "global",
+      "installed": true,
+      "review": "baseline-observability",
+      "owners": ["usage"],
+      "risk": ["usage-data"],
+      "notes": "Validate after a real Provider/model call."
+    },
+    {
+      "id": "memory",
+      "spec": "npm:pi-memory@0.4.1",
+      "scope": "global",
+      "installed": true,
+      "review": "baseline-single-memory",
+      "owners": ["memory"],
+      "risk": ["persistent-context", "sensitive-data"],
+      "notes": "Do not stack with observational-memory or context-mode."
+    },
+    {
+      "id": "git-sync",
+      "spec": "npm:pi-git-sync@0.1.3",
+      "scope": "global",
+      "installed": true,
+      "review": "baseline-allowlisted-sync",
+      "owners": ["sync"],
+      "risk": ["configuration-exfiltration"],
+      "notes": "Sync only reviewed repository resources; never auth, sessions, caches, or secrets."
+    }
+  ],
+  "candidates": [
+    {
+      "id": "terminal-theme",
+      "spec": "npm:pi-terminal-theme@0.2.0",
+      "mode": "trial",
+      "owners": ["ui-theme"],
+      "risk": ["theme-only"],
+      "notes": "ANSI-first theme; lowest-intrusion UI candidate."
+    },
+    {
+      "id": "firstpick-themes",
+      "spec": "npm:@firstpick/pi-themes-bundle@0.1.6",
+      "mode": "trial",
+      "owners": ["ui-theme"],
+      "risk": ["theme-only"],
+      "notes": "Choose instead of another pure theme pack, not in addition to it."
+    },
+    {
+      "id": "claude-code-tui",
+      "spec": "npm:pi-claude-code-tui@0.1.13",
+      "mode": "trial",
+      "owners": ["ui", "editor"],
+      "risk": ["editor-header-override"],
+      "notes": "Keep Pi footer; test alone."
+    },
+    {
+      "id": "mcp-adapter",
+      "spec": "npm:pi-mcp-adapter@2.26.0",
+      "mode": "project-only",
+      "owners": ["mcp"],
+      "risk": ["network", "child-process", "credentials"],
+      "notes": "Install only with a concrete MCP server and tool allowlist."
+    },
+    {
+      "id": "workspace-history",
+      "spec": "npm:pi-workspace-history@0.2.2",
+      "mode": "blocked",
+      "owners": ["workspace-recovery"],
+      "risk": ["old-mario-scope-peer"],
+      "notes": "Peer metadata targets @mariozechner/pi-coding-agent; patch or reimplement before use."
+    },
+    {
+      "id": "tool-display",
+      "spec": "npm:pi-tool-display@0.5.0",
+      "mode": "blocked",
+      "owners": ["ui", "renderer"],
+      "risk": ["old-pi-peer", "renderer-conflict"],
+      "notes": "Peer range only declares Pi 0.80.x; do not enable on Pi 0.84 without adaptation."
+    },
+    {
+      "id": "simplify",
+      "spec": "npm:pi-simplify@0.2.3",
+      "mode": "trial",
+      "owners": ["review"],
+      "risk": ["diff-edit", "test-execution"],
+      "notes": "Narrow diff review/simplification candidate; trial in a disposable worktree."
+    }
+  ]
+}

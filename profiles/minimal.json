@@ -1,0 +1,15 @@
+{
+  "$schema": "https://only-my-pi.invalid/schemas/profile-v1.json",
+  "formatVersion": 1,
+  "id": "minimal",
+  "description": "Read-only inspection profile with no third-party package activation.",
+  "packageIds": [],
+  "policy": {
+    "projectTrust": "ask",
+    "approval": "ask",
+    "network": "deny",
+    "session": "no-session-by-default",
+    "contextFiles": "disabled-by-default",
+    "tools": ["read", "grep", "find", "ls"]
+  }
+}

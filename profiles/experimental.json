@@ -1,0 +1,23 @@
+{
+  "$schema": "https://only-my-pi.invalid/schemas/profile-v1.json",
+  "formatVersion": 1,
+  "id": "experimental",
+  "description": "Disposable lab profile for packages with compatibility or host-side effects.",
+  "packageIds": [],
+  "candidatePackageIds": [
+    "mcp-adapter",
+    "workspace-history",
+    "tool-display",
+    "simplify"
+  ],
+  "policy": {
+    "projectTrust": "never",
+    "approval": "never-auto-approve",
+    "network": "deny-unless-test-case",
+    "requiresDisposableWorkspace": true,
+    "requiresNoHostCredentials": true,
+    "requiresOsSandbox": true,
+    "telemetry": "disabled",
+    "autoApproval": false
+  }
+}
