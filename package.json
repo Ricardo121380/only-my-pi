@@ -8,7 +8,10 @@
   "license": "MIT",
   "scripts": {
     "doctor": "node scripts/package-doctor.mjs",
-    "doctor:profiles": "node scripts/package-doctor.mjs --profile profiles/minimal.json && node scripts/package-doctor.mjs --profile profiles/coding.json && node scripts/package-doctor.mjs --profile profiles/research.json && node scripts/package-doctor.mjs --profile profiles/ui-terminal.json && node scripts/package-doctor.mjs --profile profiles/experimental.json"
+    "doctor:profiles": "node scripts/package-doctor.mjs --profile profiles/minimal.json && node scripts/package-doctor.mjs --profile profiles/coding.json && node scripts/package-doctor.mjs --profile profiles/research.json && node scripts/package-doctor.mjs --profile profiles/ui-terminal.json && node scripts/package-doctor.mjs --profile profiles/experimental.json",
+    "profile:check": "node scripts/profile-resolver.mjs --check-all",
+    "profile:diff": "node scripts/profile-resolver.mjs profiles/coding.json --diff profiles/research.json",
+    "test": "node --test"
   },
   "pi": {
     "extensions": [

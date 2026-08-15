@@ -34,6 +34,7 @@ scripts/      Repository checks and package governance tooling
 - [Security and package review policy](SECURITY.md)
 - [Package governance decision](docs/decisions/ADR-0001-package-governance.md)
 - [Pinned package inventory](inventory/packages.lock.json)
+- [Profile resolver design](docs/architecture/profile-resolver.md)
 
 ## Local development
 
@@ -62,6 +63,8 @@ Run the no-dependency package inventory check before changing a profile:
 ```bash
 npm run doctor
 npm run doctor:profiles
+npm run profile:check
+npm test
 ```
 
 The experimental profile intentionally reports blocked candidates as warnings;
