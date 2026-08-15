@@ -699,8 +699,11 @@ export class AcpV1Adapter {
     const pending = this.#pendingPermissions.get(idKey(message.id));
     if (!pending) return;
     if (message.error !== undefined) {
+      const responseCode = Number.isInteger(message.error.code)
+        ? message.error.code
+        : JSON_RPC_ERROR_CODES.INTERNAL_ERROR;
       this.#settlePermission(idKey(message.id), undefined, new AcpProtocolError("permission request failed", {
-        code: message.error.code ?? JSON_RPC_ERROR_CODES.INTERNAL_ERROR,
+        code: responseCode,
         data: { code: "PERMISSION_RESPONSE_ERROR", error: cloneJson(message.error) },
       }));
       return;
@@ -793,11 +796,23 @@ export class AcpV1Adapter {
   }
 
   #transportError(error) {
-    if (this.#onTransportError) this.#onTransportError(error);
+    if (!this.#onTransportError) return;
+    try {
+      this.#onTransportError(error);
+    } catch {
+      // An observer must not alter protocol dispatch or hide the original
+      // transport failure.
+    }
   }
 
   #event(type, data) {
-    if (this.#onEvent) this.#onEvent({ type, data: cloneJson(data), at: this.#now() });
+    if (!this.#onEvent) return;
+    try {
+      this.#onEvent({ type, data: cloneJson(data), at: this.#now() });
+    } catch {
+      // Observability is intentionally best-effort and cannot change ACP
+      // responses or prompt cancellation semantics.
+    }
   }
 }
 
