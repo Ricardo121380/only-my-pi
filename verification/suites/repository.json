@@ -41,6 +41,13 @@
       "sensitiveOutput": false
     },
     {
+      "id": "mcp-static-policy",
+      "command": "npm",
+      "args": ["run", "mcp:doctor", "--", "--file", "verification/fixtures/mcp.safe.json", "--strict"],
+      "timeoutMs": 30000,
+      "sensitiveOutput": false
+    },
+    {
       "id": "whitespace",
       "command": "git",
       "args": ["diff", "--check"],

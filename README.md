@@ -39,6 +39,7 @@ scripts/      Repository checks and package governance tooling
 - [Context Doctor design](docs/architecture/context-doctor.md)
 - [Safe mode launcher](docs/architecture/safe-mode.md)
 - [Verification receipt design](docs/architecture/verification-receipt.md)
+- [MCP Doctor design](docs/architecture/mcp-doctor.md)
 
 ## Local development
 

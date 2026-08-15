@@ -1,0 +1,15 @@
+{
+  "settings": {
+    "hostConfigDiscovery": "off",
+    "outputGuard": true,
+    "approveTools": ["github_delete_*", "notion_update_*"]
+  },
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@1.0.0"],
+      "lifecycle": "lazy",
+      "directTools": ["resolve-library-id", "get-library-docs"]
+    }
+  }
+}
