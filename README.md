@@ -40,6 +40,7 @@ scripts/      Repository checks and package governance tooling
 - [Safe mode launcher](docs/architecture/safe-mode.md)
 - [Verification receipt design](docs/architecture/verification-receipt.md)
 - [MCP Doctor design](docs/architecture/mcp-doctor.md)
+- [Current implementation status](docs/STATUS.md)
 
 ## Local development
 
