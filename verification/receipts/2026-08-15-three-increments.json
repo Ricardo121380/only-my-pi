@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "suite": "repository",
+  "suiteSha256": "c7e4eb84a683940c7ae46e883bbc3594c413950ab211165f35cf023d4f589466",
+  "sourceCommit": "4ec9063554e11ee39f3f4c6f7060a193bea31bf6",
+  "startedAt": "2026-08-15T10:13:38.341Z",
+  "completedAt": "2026-08-15T10:13:42.473Z",
+  "passed": true,
+  "checks": [
+    {
+      "id": "node-tests",
+      "command": "npm",
+      "args": [
+        "test"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 1551,
+      "stdoutBytes": 3628,
+      "stderrBytes": 0,
+      "stdoutSha256": "51eed0f34fe6c1cc6862b7a3152b7c20f5fddba20587e3d084e5bfd0b453deca",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "deepseek-conformance",
+      "command": "node",
+      "args": [
+        "packages/deepseek-conformance/test.mjs"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 108,
+      "stdoutBytes": 1412,
+      "stderrBytes": 0,
+      "stdoutSha256": "4885b89dd6a1437c87578fdf36a272b8b5ac370cdbc8b4649b8a4ec07f255d9f",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "acp-v1",
+      "command": "node",
+      "args": [
+        "--test",
+        "packages/acp-v1/acp-v1.test.mjs"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 148,
+      "stdoutBytes": 869,
+      "stderrBytes": 0,
+      "stdoutSha256": "61a143e43a0ceb67b910f2c1d7414f9c7c9229f1e67b739092d3c70d9a49efc4",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "workspace-checkpoint",
+      "command": "node",
+      "args": [
+        "packages/workspace-checkpoint/test.mjs"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 1138,
+      "stdoutBytes": 30,
+      "stderrBytes": 0,
+      "stdoutSha256": "a81809bb0ce7994bf5ac51179d3c9652e4259037d08608ba673664fff4176dd9",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "package-doctor",
+      "command": "npm",
+      "args": [
+        "run",
+        "doctor"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 178,
+      "stdoutBytes": 106,
+      "stderrBytes": 0,
+      "stdoutSha256": "d62e3950b97b98d07f19075907ce61b631a609fd924e7324d8a2b0a7efc57bcb",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "profile-doctor",
+      "command": "npm",
+      "args": [
+        "run",
+        "doctor:profiles"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 445,
+      "stdoutBytes": 771,
+      "stderrBytes": 0,
+      "stdoutSha256": "4c0427b05ccf7bd1b29292c33af5d26ff88041a415637d8ff6c5a7f565dced0e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "profile-resolution",
+      "command": "npm",
+      "args": [
+        "run",
+        "profile:check"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 173,
+      "stdoutBytes": 728,
+      "stderrBytes": 0,
+      "stdoutSha256": "5a019eec43de8e519b91a602f5b10c1f27fd265eced8e919ceeb08549a06a8cb",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "schema-links",
+      "command": "npm",
+      "args": [
+        "run",
+        "schema:check"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 173,
+      "stdoutBytes": 135,
+      "stderrBytes": 0,
+      "stdoutSha256": "15c699af49103bcda248536b30ebb2dff6c8a997d195838fb0da8d8fdc1c6b85",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "mcp-static-policy",
+      "command": "npm",
+      "args": [
+        "run",
+        "mcp:doctor",
+        "--",
+        "--file",
+        "verification/fixtures/mcp.safe.json",
+        "--strict"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 174,
+      "stdoutBytes": 344,
+      "stderrBytes": 0,
+      "stdoutSha256": "8f69904398da31e7508e7a1540cce65d8cf05fdc47e9b57df4480cb4ea704b8f",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "whitespace",
+      "command": "git",
+      "args": [
+        "diff",
+        "--check"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 10,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "clean-worktree",
+      "command": "git",
+      "args": [
+        "status",
+        "--porcelain"
+      ],
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 12,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "privacy": {
+    "rawOutputStored": false,
+    "outputFingerprintsMayLeakShortPredictableValues": true,
+    "intendedForSensitiveOutput": false
+  }
+}

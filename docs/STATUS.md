@@ -99,11 +99,16 @@ Committed receipts:
 
 - [`2026-08-15-bootstrap.json`](../verification/receipts/2026-08-15-bootstrap.json)
 - [`2026-08-15-mcp-bootstrap.json`](../verification/receipts/2026-08-15-mcp-bootstrap.json)
+- [`2026-08-15-three-increments.json`](../verification/receipts/2026-08-15-three-increments.json)
 
-Both receipts record successful checks without raw command output.
+All three receipts record successful checks without raw command output. The
+latest receipt covers 11 checks, including the 43-test repository run, the
+16-test DeepSeek fixture suite, the 9-test ACP suite, and the workspace
+checkpoint smoke test.
 
-The three new module checks are part of the repository verification suite and
-will be recorded in the next receipt after the source commit is pushed.
+The latest receipt's `sourceCommit` is the source commit tested before the
+receipt file itself was created; the receipt is intentionally a separate
+metadata-only commit.
 
 ## Next implementation boundary
 
