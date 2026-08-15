@@ -1,0 +1,60 @@
+{
+  "formatVersion": 1,
+  "id": "repository",
+  "description": "No-network verification for the only-my-pi repository.",
+  "allowedCommands": ["node", "npm", "git"],
+  "maxOutputBytes": 2097152,
+  "checks": [
+    {
+      "id": "node-tests",
+      "command": "npm",
+      "args": ["test"],
+      "timeoutMs": 60000,
+      "sensitiveOutput": false
+    },
+    {
+      "id": "package-doctor",
+      "command": "npm",
+      "args": ["run", "doctor"],
+      "timeoutMs": 30000,
+      "sensitiveOutput": false
+    },
+    {
+      "id": "profile-doctor",
+      "command": "npm",
+      "args": ["run", "doctor:profiles"],
+      "timeoutMs": 30000,
+      "sensitiveOutput": false
+    },
+    {
+      "id": "profile-resolution",
+      "command": "npm",
+      "args": ["run", "profile:check"],
+      "timeoutMs": 30000,
+      "sensitiveOutput": false
+    },
+    {
+      "id": "schema-links",
+      "command": "npm",
+      "args": ["run", "schema:check"],
+      "timeoutMs": 30000,
+      "sensitiveOutput": false
+    },
+    {
+      "id": "whitespace",
+      "command": "git",
+      "args": ["diff", "--check"],
+      "timeoutMs": 10000,
+      "sensitiveOutput": false,
+      "expectStdout": "empty"
+    },
+    {
+      "id": "clean-worktree",
+      "command": "git",
+      "args": ["status", "--porcelain"],
+      "timeoutMs": 10000,
+      "sensitiveOutput": false,
+      "expectStdout": "empty"
+    }
+  ]
+}

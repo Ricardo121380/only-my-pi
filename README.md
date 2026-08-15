@@ -38,6 +38,7 @@ scripts/      Repository checks and package governance tooling
 - [Session ledger design](docs/architecture/session-ledger.md)
 - [Context Doctor design](docs/architecture/context-doctor.md)
 - [Safe mode launcher](docs/architecture/safe-mode.md)
+- [Verification receipt design](docs/architecture/verification-receipt.md)
 
 ## Local development
 
