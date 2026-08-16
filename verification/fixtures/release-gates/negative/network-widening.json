@@ -1,0 +1,7 @@
+{
+  "formatVersion": 1,
+  "operation": "set-policy-field",
+  "field": "network",
+  "value": "allow",
+  "expectedError": "policy.network must be deny"
+}

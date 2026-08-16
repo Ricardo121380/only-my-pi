@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../../schemas/workflow-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-only",
+  "id": "fixture-parallel-budget",
+  "version": "1.0.0",
+  "description": "DAG width cannot exceed maxParallel.",
+  "entryConditions": ["profile-resolved"],
+  "mutationScope": "none",
+  "budget": { "maxSteps": 3, "maxParallel": 1, "timeoutSeconds": 1200, "retry": 0, "maxOutputBytes": 65536 },
+  "fallback": { "when": ["unavailable-runner"], "workflow": null, "requiresApproval": false },
+  "steps": [
+    { "id": "inspect-a", "action": "agent", "agent": "scout", "needs": [], "policyRef": "inspect", "approval": "none" },
+    { "id": "inspect-b", "action": "agent", "agent": "scout", "needs": [], "policyRef": "inspect", "approval": "none" },
+    { "id": "verify", "action": "gate", "gate": "test-contract", "needs": ["inspect-a", "inspect-b"], "policyRef": "inspect", "approval": "none" }
+  ],
+  "terminal": { "step": "verify", "acceptedVerdicts": ["pass"], "rejectedVerdicts": ["fail"], "requiresVerifierGate": true },
+  "cancellation": { "stopAdmission": true, "waitForTerminalProof": true, "terminalVerdict": "cancelled" },
+  "failure": { "onStepFailure": "fail", "onGateFailure": "fail" },
+  "recovery": { "durableState": true, "verifySourceHash": true, "resumeFrom": "last-settled-step" }
+}

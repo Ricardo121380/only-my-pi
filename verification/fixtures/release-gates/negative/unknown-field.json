@@ -1,0 +1,7 @@
+{
+  "formatVersion": 1,
+  "operation": "add-top-level-field",
+  "field": "commandOverride",
+  "value": ["node", "arbitrary.mjs"],
+  "expectedError": "manifest contains unknown field commandOverride"
+}

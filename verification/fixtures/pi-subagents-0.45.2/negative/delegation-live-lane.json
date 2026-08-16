@@ -1,0 +1,8 @@
+{
+  "formatVersion": 1,
+  "target": "wire",
+  "operation": "set",
+  "path": ["liveLane"],
+  "value": "exported-delegation",
+  "expectedError": "extension-rpc-v1 is the only live lane"
+}

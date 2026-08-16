@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../../schemas/mode-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-only",
+  "id": "fixture-inspect",
+  "version": "1.0.0",
+  "displayName": "Fixture Inspect",
+  "description": "Read-only workspaces must reject edit tools.",
+  "category": "core",
+  "executionState": "ask",
+  "extends": [],
+  "requires": { "profileCapabilities": ["workspace-read"], "packages": [], "enforcementSurfaces": ["fileToolPolicy"] },
+  "prompt": { "file": "modes/prompts/inspect.md" },
+  "tools": { "allow": ["read", "edit"], "deny": ["write", "bash", "web"], "required": ["read"] },
+  "policy": { "workspace": "read-only", "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" }, "approval": "deny" },
+  "workflow": { "default": "single-agent-safe", "fallback": "single-agent-safe" },
+  "swarm": { "allowed": false, "defaultRecipe": null },
+  "completion": { "gates": ["structured-inspection"], "requiresStructuredVerdict": true },
+  "risk": "low"
+}

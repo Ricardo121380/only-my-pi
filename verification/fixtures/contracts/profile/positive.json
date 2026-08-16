@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../../schemas/profile-v1.schema.json",
+  "formatVersion": 1,
+  "id": "fixture-read-only",
+  "description": "Valid read-only fixture.",
+  "packageIds": [],
+  "capabilityIds": ["workspace-read"],
+  "policy": {
+    "projectTrust": "ask",
+    "approval": "ask",
+    "network": "deny",
+    "session": "no-session-by-default",
+    "contextFiles": "disabled-by-default",
+    "tools": ["read", "grep", "find", "ls"]
+  }
+}

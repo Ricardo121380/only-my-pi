@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../../schemas/owner-v1.schema.json",
+  "formatVersion": 1,
+  "owners": [
+    {
+      "id": "pi-core",
+      "description": "Upstream Pi core owner.",
+      "exclusive": true,
+      "capabilities": ["workspace-read"],
+      "surfaces": ["fileToolPolicy"],
+      "resourceIds": [],
+      "status": "upstream"
+    }
+  ]
+}

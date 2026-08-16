@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../../schemas/capability-v1.schema.json",
+  "formatVersion": 1,
+  "capabilities": [
+    {
+      "id": "workspace-read",
+      "description": "Unknown field must fail.",
+      "surfaces": ["fileToolPolicy"],
+      "risk": "low",
+      "providedBy": ["pi-core"],
+      "runtimeEvidenceRequired": true,
+      "autoEscalate": true
+    }
+  ]
+}

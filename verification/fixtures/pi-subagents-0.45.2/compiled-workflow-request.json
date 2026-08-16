@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "requestId": "omp-m1-workflow-fixture",
+  "method": "spawn",
+  "source": {
+    "extension": "only-my-pi",
+    "kind": "schema-validated-workflow-compiler",
+    "schemaValidated": true
+  },
+  "params": {
+    "workflowScript": "return runs.run('main', { agent: 'coder', task: 'fixture-only: do not dispatch' });",
+    "async": true
+  }
+}

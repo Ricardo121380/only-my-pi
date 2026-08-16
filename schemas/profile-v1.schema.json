@@ -1,28 +1,109 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/profile-v1.schema.json",
-  "title": "only-my-pi profile v1",
+  "title": "only-my-pi Profile v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["formatVersion", "id", "description", "packageIds", "policy"],
+  "required": ["$schema", "formatVersion", "id", "description", "packageIds", "capabilityIds", "policy"],
   "properties": {
-    "$schema": { "type": "string" },
+    "$schema": { "type": "string", "pattern": "profile-v1\\.schema\\.json$" },
     "formatVersion": { "const": 1 },
-    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-    "description": { "type": "string", "minLength": 1 },
-    "packageIds": {
+    "id": { "$ref": "#/$defs/id" },
+    "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "packageIds": { "$ref": "#/$defs/idSet" },
+    "candidatePackageIds": { "$ref": "#/$defs/idSet" },
+    "capabilityIds": { "$ref": "#/$defs/idSet" },
+    "policy": { "$ref": "#/$defs/policy" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+    "idSet": {
       "type": "array",
       "uniqueItems": true,
-      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" }
+      "items": { "$ref": "#/$defs/id" }
     },
-    "candidatePackageIds": {
-      "type": "array",
-      "uniqueItems": true,
-      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" }
+    "subagents": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "maxDepth", "maxConcurrency", "writerRequiresWorktree"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "maxDepth": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "maxConcurrency": { "type": "integer", "minimum": 0, "maximum": 16 },
+        "writerRequiresWorktree": { "const": true },
+        "defaultRole": { "$ref": "#/$defs/id" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "enabled": { "const": false } }, "required": ["enabled"] },
+          "then": {
+            "properties": {
+              "maxDepth": { "type": "integer", "maximum": 1 },
+              "maxConcurrency": { "type": "integer", "maximum": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "mcp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "hostConfigDiscovery"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "hostConfigDiscovery": { "enum": ["off", "reviewed-only"] }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "allowSecondMemory"],
+      "properties": {
+        "owner": { "$ref": "#/$defs/id" },
+        "allowSecondMemory": { "const": false }
+      }
+    },
+    "uiOwners": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["theme", "renderer", "footer", "editor"],
+      "properties": {
+        "theme": { "type": "integer", "minimum": 0, "maximum": 1 },
+        "renderer": { "type": "integer", "minimum": 0, "maximum": 1 },
+        "footer": { "type": "integer", "minimum": 0, "maximum": 1 },
+        "editor": { "type": "integer", "minimum": 0, "maximum": 1 }
+      }
     },
     "policy": {
       "type": "object",
-      "minProperties": 1
+      "additionalProperties": false,
+      "minProperties": 3,
+      "required": ["projectTrust", "approval", "network"],
+      "properties": {
+        "projectTrust": { "enum": ["ask", "never", "trusted-only"] },
+        "approval": { "enum": ["ask", "never-auto-approve", "deny"] },
+        "network": { "enum": ["deny", "deny-unless-explicit", "allow-listed-only", "deny-unless-test-case"] },
+        "browserCookies": { "const": false },
+        "session": { "enum": ["central-user-session-dir", "no-session-by-default", "isolated-session-dir"] },
+        "contextFiles": { "enum": ["review-before-trust", "disabled-by-default"] },
+        "tools": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["read", "grep", "find", "ls", "edit", "write", "bash", "web"] }
+        },
+        "subagents": { "$ref": "#/$defs/subagents" },
+        "mcp": { "$ref": "#/$defs/mcp" },
+        "memory": { "$ref": "#/$defs/memory" },
+        "requiresDisposableWorkspace": { "type": "boolean" },
+        "requiresNoHostCredentials": { "type": "boolean" },
+        "requiresOsSandbox": { "type": "boolean" },
+        "telemetry": { "enum": ["disabled", "off-unless-explicit"] },
+        "autoApproval": { "const": false },
+        "trialOnly": { "type": "boolean" },
+        "firstTheme": { "$ref": "#/$defs/id" },
+        "avoidTintedThemeUntilVisualCheck": { "type": "boolean" },
+        "uiOwners": { "$ref": "#/$defs/uiOwners" }
+      }
     }
   }
 }

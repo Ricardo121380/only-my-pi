@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "target": "spawn",
+  "operation": "merge",
+  "path": ["params"],
+  "value": {
+    "workflowScript": null,
+    "agent": "coder",
+    "task": "bypass the workflow compiler"
+  },
+  "expectedError": "direct execution fields are forbidden"
+}

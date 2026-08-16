@@ -30,6 +30,9 @@ function assertProfileShape(profile) {
   if (!Array.isArray(profile.packageIds)) {
     throw new Error(`Profile ${profile.id} must contain packageIds.`);
   }
+  if (!Array.isArray(profile.capabilityIds)) {
+    throw new Error(`Profile ${profile.id} must contain capabilityIds.`);
+  }
   if (profile.policy === null || typeof profile.policy !== "object" || Array.isArray(profile.policy)) {
     throw new Error(`Profile ${profile.id} must contain a policy object.`);
   }
@@ -85,10 +88,12 @@ export function resolveProfileData(inventory, profile) {
       id: profile.id,
       description: profile.description ?? "",
       sourceFormatVersion: profile.formatVersion,
+      capabilityIds: [...profile.capabilityIds],
     },
     runtime: clone(inventory.runtime ?? {}),
     policy: clone(profile.policy),
     packages: selectedPackages,
+    capabilities: profile.capabilityIds.map((id) => ({ id, state: "CONFIGURED_UNVERIFIED" })),
     candidates,
     piSettings: {
       packages: selectedPackages.map((entry) => clone(entry.setting)),
@@ -140,6 +145,13 @@ export function diffResolved(from, to) {
     .filter((id) => fromPackages.has(id) && stable(fromPackages.get(id)) !== stable(toPackages.get(id)))
     .sort();
 
+  const fromCapabilities = new Set(from.capabilities.map((entry) => entry.id));
+  const toCapabilities = new Set(to.capabilities.map((entry) => entry.id));
+  const capabilityChanges = {
+    added: [...toCapabilities].filter((id) => !fromCapabilities.has(id)).sort(),
+    removed: [...fromCapabilities].filter((id) => !toCapabilities.has(id)).sort(),
+  };
+
   const left = flatten(from.policy);
   const right = flatten(to.policy);
   const paths = new Set([...left.keys(), ...right.keys()]);
@@ -153,6 +165,7 @@ export function diffResolved(from, to) {
     from: from.profile.id,
     to: to.profile.id,
     packages: { added, removed, changed },
+    capabilities: capabilityChanges,
     policy,
   };
 }

@@ -1,0 +1,80 @@
+{
+  "$schema": "../../schemas/swarm-recipe-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-only",
+  "id": "research-synthesis",
+  "version": "1.0.0",
+  "description": "M1 read-only DAG contract seed using the only available scout role; distinct research roles and live dispatch arrive in M4-M5.",
+  "readOnly": true,
+  "budget": {
+    "maxDepth": 1,
+    "maxConcurrency": 3,
+    "maxChildren": 4,
+    "childTimeoutSeconds": 900,
+    "runTimeoutSeconds": 3600,
+    "retry": 0,
+    "nestedSwarm": false,
+    "childOutputBytes": 51200,
+    "parentSummaryBytes": 8192
+  },
+  "writerPolicy": {
+    "sharedCwdMaxWriters": 1,
+    "parallelWriters": "managed-worktree-only",
+    "onConflict": "reject"
+  },
+  "nodes": [
+    {
+      "id": "research-a",
+      "agent": "scout",
+      "taskTemplate": "research-source-a",
+      "needs": [],
+      "workspace": "shared-read-only",
+      "writer": false,
+      "timeoutSeconds": 900,
+      "retry": 0
+    },
+    {
+      "id": "research-b",
+      "agent": "scout",
+      "taskTemplate": "research-source-b",
+      "needs": [],
+      "workspace": "shared-read-only",
+      "writer": false,
+      "timeoutSeconds": 900,
+      "retry": 0
+    },
+    {
+      "id": "verify-sources",
+      "agent": "scout",
+      "taskTemplate": "verify-research-sources",
+      "needs": ["research-a", "research-b"],
+      "workspace": "shared-read-only",
+      "writer": false,
+      "timeoutSeconds": 900,
+      "retry": 0
+    },
+    {
+      "id": "synthesize",
+      "agent": "scout",
+      "taskTemplate": "synthesize-verified-research",
+      "needs": ["verify-sources"],
+      "workspace": "shared-read-only",
+      "writer": false,
+      "timeoutSeconds": 900,
+      "retry": 0
+    }
+  ],
+  "aggregation": {
+    "strategy": "verified-synthesis",
+    "order": "topological-then-node-id",
+    "includePartial": false,
+    "maxOutputBytes": 65536
+  },
+  "verifier": "verify-sources",
+  "cancellation": {
+    "stopAdmission": true,
+    "cancelRunning": true,
+    "disableRetry": true,
+    "waitForTerminalProof": true
+  }
+}

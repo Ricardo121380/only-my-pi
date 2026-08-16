@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/agent-v1.schema.json",
+  "title": "only-my-pi Agent role manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "id", "upstreamAgentId", "version", "description", "prompt", "tools", "allowedExecutionStates", "requiredCapabilities", "policyCeiling", "modelRole", "inputSchema", "outputSchema", "writer", "timeoutSeconds", "continuable", "resumable", "redaction", "gateIds"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "agent-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "enum": ["contract-only", "runtime-ready"] },
+    "id": { "$ref": "#/$defs/id" },
+    "upstreamAgentId": { "type": "string", "pattern": "^omp-[a-z0-9][a-z0-9-]{0,59}$" },
+    "version": { "$ref": "#/$defs/semver" },
+    "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "prompt": { "$ref": "#/$defs/prompt" },
+    "tools": { "$ref": "#/$defs/tools" },
+    "allowedExecutionStates": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["ask", "plan", "build", "review"] } },
+    "requiredCapabilities": { "$ref": "#/$defs/idSet" },
+    "policyCeiling": { "$ref": "#/$defs/policy" },
+    "modelRole": { "enum": ["fast", "balanced", "deep", "inherit"] },
+    "inputSchema": { "$ref": "#/$defs/ioSchema" },
+    "outputSchema": { "$ref": "#/$defs/ioSchema" },
+    "writer": { "type": "boolean" },
+    "timeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 3600 },
+    "continuable": { "type": "boolean" },
+    "resumable": { "type": "boolean" },
+    "redaction": { "$ref": "#/$defs/redaction" },
+    "gateIds": { "$ref": "#/$defs/idSet" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "idSet": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "path": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\u0000)[A-Za-z0-9._@/-]+$" },
+    "tool": { "enum": ["read", "grep", "find", "ls", "edit", "write", "bash", "web"] },
+    "prompt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file"],
+      "properties": { "file": { "$ref": "#/$defs/path" } }
+    },
+    "tools": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow", "deny"],
+      "properties": {
+        "allow": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/tool" } },
+        "deny": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/tool" } }
+      }
+    },
+    "egress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["web", "mcp", "provider", "extension"],
+      "properties": {
+        "web": { "enum": ["deny", "allow-listed", "inherit"] },
+        "mcp": { "enum": ["deny", "allow-listed", "inherit"] },
+        "network": { "enum": ["deny", "allow-listed", "inherit"] },
+        "provider": { "enum": ["deny", "inherit"] },
+        "extension": { "enum": ["deny", "allow-listed", "inherit"] }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workspace", "egress", "approval", "mutation"],
+      "properties": {
+        "workspace": { "enum": ["none", "read-only", "guarded-write", "worktree-write"] },
+        "egress": { "$ref": "#/$defs/egress" },
+        "approval": { "enum": ["deny", "ask", "inherit"] },
+        "mutation": { "enum": ["none", "workspace", "isolated-worktree"] }
+      }
+    },
+    "propertySchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["string", "number", "integer", "boolean", "object", "array"] },
+        "description": { "type": "string", "minLength": 1, "maxLength": 300 }
+      }
+    },
+    "ioSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "additionalProperties", "properties", "required"],
+      "properties": {
+        "type": { "const": "object" },
+        "additionalProperties": { "const": false },
+        "properties": { "type": "object", "additionalProperties": { "$ref": "#/$defs/propertySchema" } },
+        "required": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 80 } }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rawPrompts", "reasoning", "credentials", "maxOutputBytes"],
+      "properties": {
+        "rawPrompts": { "const": "omit" },
+        "reasoning": { "const": "omit" },
+        "credentials": { "const": "deny" },
+        "maxOutputBytes": { "type": "integer", "minimum": 1024, "maximum": 1048576 }
+      }
+    }
+  }
+}

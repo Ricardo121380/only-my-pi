@@ -1,0 +1,5 @@
+{
+  "$schema": "../../../../schemas/enforcement-surfaces-v1.schema.json",
+  "formatVersion": 2,
+  "surfaces": []
+}

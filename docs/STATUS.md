@@ -43,14 +43,37 @@ checkout is explicitly loaded:
 - `context-doctor`: aggregate context/tool-schema metrics and `/omp-context`,
   with no context mutation or persistence.
 
-The rest of the repository tooling is explicit and side-effect bounded:
+The rest of the repository tooling is explicit and side-effect bounded. M1
+replaced descriptive-only checks with strict, versioned governance:
 
-- `package-doctor`: inventory/profile compatibility gate;
-- `profile-resolver`: deterministic profile projection and diff, read-only;
+- `package-doctor`: exact source/SRI, dependency topology, Profile/capability,
+  owner, command, resource, and enforcement-surface consistency gate;
+- `profile-resolver`: deterministic Profile projection and diff, read-only;
 - `safe-mode`: dry-run-first read-only Pi launcher;
 - `verification-receipt`: allowlisted no-shell checks with metadata-only receipt;
 - `mcp-doctor`: static MCP configuration audit, never starts a server;
-- local JSON Schemas for inventory/profile documents.
+- Draft 2020-12 validation for 11 contract kinds, including semantic reference,
+  cycle, duplicate-owner, and capability-escalation checks;
+- a positive npm pack allowlist that excludes receipts, fixtures, research,
+  tests, the Codex Goal, and Labs implementations;
+- deterministic JSON-to-Markdown generation for package-owned
+  `pi-subagents` Agent resources;
+- a fixed `release-gates-v1` command/argv manifest and parser-injection
+  negatives; M7 will connect it to the final executable receipt/CI flow.
+
+Profiles now separate single-agent and orchestration use explicitly. `research`
+does not claim subagents; only `orchestration` selects the one governed
+`pi-subagents` runtime. Static resolution reports runtime-dependent capabilities
+as `CONFIGURED_UNVERIFIED`, never as live or sandboxed.
+
+Two version-locked compatibility spikes are also complete:
+
+- `pi-permission-modes@2.2.0` has no audited public cross-extension read or
+  hot-switch API, so hard execution-state changes return `RESTART_REQUIRED`;
+  its OS sandbox is conditional and limited to eligible Bash subprocesses.
+- `pi-subagents@0.45.2` remains the sole physical child runtime. The future
+  only-my-pi adapter must use its capability-gated extension RPC and compiled
+  `workflowScript`; exported delegation types are fixture/reference-only.
 
 The repository also contains three explicit, non-default integration seams:
 
@@ -94,7 +117,11 @@ automatic browser-cookie capability has been enabled.
 Run locally:
 
 ```bash
+npm ci --ignore-scripts
+npm run typecheck
 npm test
+npm run agents:check
+npm run pack:check
 npm run test:deepseek
 npm run test:acp
 npm run test:checkpoint
@@ -103,9 +130,23 @@ npm run doctor:profiles
 npm run profile:check
 npm run schema:check
 npm run mcp:doctor -- --file verification/fixtures/mcp.safe.json --strict
-npm run verify             # suite validation/dry-run only
-npm run verify -- --run    # clean source commit only; creates a receipt
+npm run verify  # M1 immutable manifest inspector; never executes gates
 ```
+
+The historical receipts below were produced by the pre-M1 legacy runner. That
+runner remains available internally as `npm run verify:legacy` for receipt
+validation tests, but it is not a release authority and must not be used to
+claim an M1 or M7 PASS. M7 will replace the inspector with an executor that can
+run only the fixed `release-gates-v1` tuples and create the final receipt.
+
+The M1 source gate set currently passes 134/134 Node tests, validates 16
+production documents against 11 schema kinds, typechecks against the exact Pi
+0.84.1 development dependency, and packs 46 allowlisted files. `doctor:live`
+without an injected non-sensitive runtime metadata seam intentionally returns
+`UNAVAILABLE`; that is a correct boundary, not a failed static configuration.
+Synthetic runtime metadata remains a library-level conformance seam only: the
+public CLI rejects arbitrary `--metadata` files, so self-asserted state cannot
+be promoted to live PASS evidence.
 
 Committed receipts:
 
@@ -132,21 +173,20 @@ through the Pi package's `prompts/` resources:
 - [`plans/2026-08-16-only-my-pi-development-plan.md`](plans/2026-08-16-only-my-pi-development-plan.md)
 - [`../codex/goals/develop-only-my-pi.md`](../codex/goals/develop-only-my-pi.md)
 
-The roadmap target is a usable Pi-based Harness distribution; it is not the
-current implementation state. The current governed baseline remains the
-package decisions, first-party modules, offline seams, and four verification
-receipts recorded above. Planned increments are:
+The roadmap target is a usable Pi-based Harness distribution. M0 established
+the product/Labs boundary and M1 established the strict configuration and
+compatibility foundation. The next implementation boundary is M2:
 
-1. harden schemas, package pins, capability ownership, and Profile/runtime
-   consistency so descriptive policy cannot produce a false green check;
-2. add a dry-run-first, idempotent, backup-and-rollback `omp bootstrap`;
-3. add a versioned Mode Registry and unified `omp` / `/omp` control surface;
-4. ship practical inspect/explore/plan/coding/debug/review/research/verify
+1. add a dry-run-first, idempotent, backup-and-rollback `omp bootstrap`, with
+   explicit config roots, durable journals, locks, staged resources, settings
+   published last, crash recovery, and no lifecycle scripts;
+2. add a versioned Mode Registry and unified `omp` / `/omp` control surface;
+3. ship practical inspect/explore/plan/coding/debug/review/research/verify
    Modes and declarative Workflows;
-5. build AgentSwarm on the existing `pi-subagents` public seam, with bounded
+4. build AgentSwarm on the existing `pi-subagents` public seam, with bounded
    scheduling, cancellation, deterministic aggregation, a hard maximum of one
    writer in a shared cwd, and isolated managed worktrees for parallel writers;
-6. finish lightweight themes/status, security negatives, CI, docs, and release
+5. finish lightweight themes/status, security negatives, CI, docs, and release
    readiness.
 
 DeepSeek endpoint work, ACP-to-Pi wiring, and automatic turn checkpoints are

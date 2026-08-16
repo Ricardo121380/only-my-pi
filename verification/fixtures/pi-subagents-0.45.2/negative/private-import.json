@@ -1,0 +1,8 @@
+{
+  "formatVersion": 1,
+  "target": "wire",
+  "operation": "append",
+  "path": ["runtimeImports"],
+  "value": "pi-subagents/src/extension/rpc.ts",
+  "expectedError": "private pi-subagents import is forbidden"
+}

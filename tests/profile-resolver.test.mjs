@@ -35,7 +35,15 @@ test("research diff adds web access and exposes policy changes", () => {
   assert.deepEqual(diff.packages.added, ["web-access"]);
   assert.deepEqual(diff.packages.removed, []);
   assert.ok(diff.policy.some((entry) => entry.path === "network" && entry.to === "allow-listed-only"));
-  assert.ok(diff.policy.some((entry) => entry.path === "subagents.enabled" && entry.to === true));
+  assert.equal(research.policy.subagents.enabled, false);
+  assert.ok(diff.capabilities.added.includes("web-access"));
+});
+
+test("orchestration explicitly selects the sole subagent runtime and stays unverified statically", () => {
+  const orchestration = resolveProfileData(inventory, profile("orchestration"));
+  assert.equal(orchestration.policy.subagents.enabled, true);
+  assert.ok(orchestration.packages.some((entry) => entry.id === "subagents"));
+  assert.ok(orchestration.capabilities.some((entry) => entry.id === "subagent-runtime" && entry.state === "CONFIGURED_UNVERIFIED"));
 });
 
 test("blocked package cannot be activated", () => {

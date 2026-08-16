@@ -1,0 +1,8 @@
+{
+  "formatVersion": 1,
+  "operation": "set",
+  "field": "wholeSessionIsolated",
+  "value": true,
+  "also": { "surfaceStates": { "bashSandbox": "active" } },
+  "expectedError": "Bash sandbox cannot prove whole-session isolation"
+}

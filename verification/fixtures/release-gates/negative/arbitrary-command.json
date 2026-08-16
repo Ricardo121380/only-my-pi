@@ -1,0 +1,8 @@
+{
+  "formatVersion": 1,
+  "operation": "set-gate-field",
+  "gateId": "lint",
+  "field": "command",
+  "value": "sh",
+  "expectedError": "command/argv differs from the fixed contract"
+}

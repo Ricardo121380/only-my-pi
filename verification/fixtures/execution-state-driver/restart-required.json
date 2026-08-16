@@ -1,0 +1,22 @@
+{
+  "formatVersion": 1,
+  "evidenceKind": "static-package-audit",
+  "package": "pi-permission-modes",
+  "version": "2.2.0",
+  "publicExports": [],
+  "runtimeImports": [],
+  "owners": ["pi-permission-modes"],
+  "canReadState": false,
+  "canSwitchAtRuntime": false,
+  "applyStatus": "RESTART_REQUIRED",
+  "wholeSessionIsolated": false,
+  "surfaceStates": {
+    "toolCallPolicy": "unknown",
+    "bashSandbox": "unknown",
+    "fileToolPolicy": "unknown",
+    "webEgress": "unknown",
+    "mcpEgress": "unknown",
+    "providerEgress": "unknown",
+    "extensionEgress": "unknown"
+  }
+}

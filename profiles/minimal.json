@@ -4,6 +4,11 @@
   "id": "minimal",
   "description": "Read-only inspection profile with no third-party package activation.",
   "packageIds": [],
+  "capabilityIds": [
+    "workspace-read",
+    "session-ledger-metadata",
+    "context-observability"
+  ],
   "policy": {
     "projectTrust": "ask",
     "approval": "ask",

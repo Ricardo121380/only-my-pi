@@ -1,0 +1,150 @@
+{
+  "$schema": "../schemas/capability-v1.schema.json",
+  "formatVersion": 1,
+  "capabilities": [
+    {
+      "id": "workspace-read",
+      "description": "Read-only workspace inspection through Pi host built-in tools, subject to the file-tool policy surface.",
+      "surfaces": ["fileToolPolicy"],
+      "risk": "low",
+      "providedBy": ["pi-host-runtime"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "planning",
+      "description": "Plan-oriented tool and prompt policy supplied by the governed plan-mode package.",
+      "surfaces": ["toolCallPolicy", "extensionEgress"],
+      "risk": "medium",
+      "providedBy": ["plan-mode"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "session-management",
+      "description": "Session navigation and lifecycle helpers from the filtered agent-extensions package.",
+      "surfaces": ["extensionEgress"],
+      "risk": "medium",
+      "providedBy": ["agent-extensions"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "context-management",
+      "description": "Context inspection and management behavior from the filtered agent-extensions package.",
+      "surfaces": ["extensionEgress"],
+      "risk": "medium",
+      "providedBy": ["agent-extensions"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "review-assistance",
+      "description": "Diff-oriented review assistance from the filtered agent-extensions package.",
+      "surfaces": ["fileToolPolicy", "extensionEgress"],
+      "risk": "medium",
+      "providedBy": ["agent-extensions"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "notifications",
+      "description": "Local completion notifications from the filtered agent-extensions package.",
+      "surfaces": ["extensionEgress"],
+      "risk": "low",
+      "providedBy": ["agent-extensions"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "web-access",
+      "description": "Explicitly enabled web retrieval with cookies disabled by profile policy.",
+      "surfaces": ["webEgress", "extensionEgress"],
+      "risk": "high",
+      "providedBy": ["web-access"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "subagent-runtime",
+      "description": "The single upstream physical child-agent runtime and scheduler ownership boundary.",
+      "surfaces": ["bashSandbox", "fileToolPolicy", "extensionEgress"],
+      "risk": "high",
+      "providedBy": ["subagents"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "subagent-rpc-v1",
+      "description": "Versioned extension-RPC capability seam for a future only-my-pi orchestration adapter.",
+      "surfaces": ["extensionEgress"],
+      "risk": "high",
+      "providedBy": ["subagents"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "permission-policy",
+      "description": "The unique upstream tool-call and execution-state policy owner selected by governed profiles.",
+      "surfaces": ["toolCallPolicy"],
+      "risk": "high",
+      "providedBy": ["permission-modes"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "bash-sandbox-conditional",
+      "description": "Conditional isolation of Bash subprocesses only; it is not whole-session isolation.",
+      "surfaces": ["bashSandbox"],
+      "risk": "high",
+      "providedBy": ["permission-modes"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "file-tool-policy",
+      "description": "Path policy for Pi file tools owned by the selected permission package.",
+      "surfaces": ["fileToolPolicy"],
+      "risk": "high",
+      "providedBy": ["permission-modes"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "lsp",
+      "description": "Project-local language server integration.",
+      "surfaces": ["extensionEgress"],
+      "risk": "medium",
+      "providedBy": ["lsp"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "usage-observability",
+      "description": "Low-sensitivity model usage observability whose values still require a real runtime event.",
+      "surfaces": ["extensionEgress"],
+      "risk": "low",
+      "providedBy": ["usage"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "memory",
+      "description": "The single selected persistent memory implementation.",
+      "surfaces": ["fileToolPolicy", "extensionEgress"],
+      "risk": "high",
+      "providedBy": ["memory"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "configuration-sync",
+      "description": "Allowlisted Git synchronization of reviewed configuration resources only.",
+      "surfaces": ["extensionEgress"],
+      "risk": "high",
+      "providedBy": ["git-sync"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "session-ledger-metadata",
+      "description": "Bounded, redacted first-party session lifecycle receipts.",
+      "surfaces": ["extensionEgress"],
+      "risk": "medium",
+      "providedBy": ["session-ledger"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "context-observability",
+      "description": "Low-sensitivity first-party context, prompt, and tool-schema budget metrics.",
+      "surfaces": ["extensionEgress"],
+      "risk": "low",
+      "providedBy": ["context-doctor"],
+      "runtimeEvidenceRequired": true
+    }
+  ]
+}

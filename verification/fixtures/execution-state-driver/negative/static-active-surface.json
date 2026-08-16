@@ -1,0 +1,7 @@
+{
+  "formatVersion": 1,
+  "operation": "set-surface",
+  "surface": "bashSandbox",
+  "value": "active",
+  "expectedError": "static evidence cannot claim an active runtime surface"
+}

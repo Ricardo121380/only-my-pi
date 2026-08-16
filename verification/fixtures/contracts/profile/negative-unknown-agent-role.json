@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../../schemas/profile-v1.schema.json",
+  "formatVersion": 1,
+  "id": "fixture-unknown-agent-role",
+  "description": "Invalid fixture whose default child role is not registered.",
+  "packageIds": ["subagents"],
+  "capabilityIds": ["workspace-read", "subagent-runtime", "subagent-rpc-v1"],
+  "policy": {
+    "projectTrust": "ask",
+    "approval": "ask",
+    "network": "deny",
+    "subagents": {
+      "enabled": true,
+      "maxDepth": 1,
+      "maxConcurrency": 1,
+      "writerRequiresWorktree": true,
+      "defaultRole": "missing-role"
+    }
+  }
+}

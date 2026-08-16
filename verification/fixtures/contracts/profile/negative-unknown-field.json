@@ -1,0 +1,10 @@
+{
+  "$schema": "../../../../schemas/profile-v1.schema.json",
+  "formatVersion": 1,
+  "id": "fixture-read-only",
+  "description": "Unknown field must fail.",
+  "packageIds": [],
+  "capabilityIds": ["workspace-read"],
+  "policy": { "projectTrust": "ask", "approval": "ask", "network": "deny" },
+  "secretMode": true
+}

@@ -1,0 +1,8 @@
+{
+  "formatVersion": 1,
+  "target": "ping",
+  "operation": "set",
+  "path": ["version"],
+  "value": 2,
+  "expectedError": "unsupported pi-subagents RPC version"
+}

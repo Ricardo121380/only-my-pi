@@ -1,0 +1,18 @@
+{
+  "$schema": "../../../../schemas/enforcement-surfaces-v1.schema.json",
+  "formatVersion": 1,
+  "surfaces": [
+    {
+      "id": "fileToolPolicy",
+      "owner": "permission",
+      "enforcementPoint": "Pi file tool dispatch",
+      "mechanism": "Resolved path containment and tool policy.",
+      "observableStates": ["active", "degraded", "unavailable", "unknown"],
+      "stateSource": "Injected non-sensitive runtime metadata.",
+      "degradedBehavior": "Report degraded and preserve deny.",
+      "failureBehavior": "Reject mutation when state is unavailable.",
+      "failClosed": true,
+      "contractTests": ["file-tool-policy-state"]
+    }
+  ]
+}

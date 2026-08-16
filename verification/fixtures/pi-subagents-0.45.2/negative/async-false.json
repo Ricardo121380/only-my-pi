@@ -1,0 +1,8 @@
+{
+  "formatVersion": 1,
+  "target": "spawn",
+  "operation": "set",
+  "path": ["params", "async"],
+  "value": false,
+  "expectedError": "RPC spawn must be detached async"
+}

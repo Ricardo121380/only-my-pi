@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/swarm-recipe-v1.schema.json",
+  "title": "only-my-pi AgentSwarm Recipe manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "id", "version", "description", "readOnly", "budget", "writerPolicy", "nodes", "aggregation", "verifier", "cancellation"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "swarm-recipe-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "enum": ["contract-only", "runtime-ready"] },
+    "id": { "$ref": "#/$defs/id" },
+    "version": { "$ref": "#/$defs/semver" },
+    "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "readOnly": { "type": "boolean" },
+    "budget": { "$ref": "#/$defs/budget" },
+    "writerPolicy": { "$ref": "#/$defs/writerPolicy" },
+    "nodes": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/node" } },
+    "aggregation": { "$ref": "#/$defs/aggregation" },
+    "verifier": { "$ref": "#/$defs/id" },
+    "cancellation": { "$ref": "#/$defs/cancellation" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "idSet": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxDepth", "maxConcurrency", "maxChildren", "childTimeoutSeconds", "runTimeoutSeconds", "retry", "nestedSwarm", "childOutputBytes", "parentSummaryBytes"],
+      "properties": {
+        "maxDepth": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "maxConcurrency": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "maxChildren": { "type": "integer", "minimum": 1, "maximum": 64 },
+        "childTimeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 3600 },
+        "runTimeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 21600 },
+        "retry": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "nestedSwarm": { "type": "boolean" },
+        "childOutputBytes": { "type": "integer", "minimum": 1024, "maximum": 1048576 },
+        "parentSummaryBytes": { "type": "integer", "minimum": 1024, "maximum": 262144 }
+      }
+    },
+    "writerPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sharedCwdMaxWriters", "parallelWriters", "onConflict"],
+      "properties": {
+        "sharedCwdMaxWriters": { "const": 1 },
+        "parallelWriters": { "const": "managed-worktree-only" },
+        "onConflict": { "enum": ["reject", "serialize"] }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "agent", "taskTemplate", "needs", "workspace", "writer", "timeoutSeconds", "retry"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "agent": { "$ref": "#/$defs/id" },
+        "taskTemplate": { "$ref": "#/$defs/id" },
+        "needs": { "$ref": "#/$defs/idSet" },
+        "workspace": { "enum": ["shared-read-only", "shared-guarded", "managed-worktree"] },
+        "writer": { "type": "boolean" },
+        "timeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 3600 },
+        "retry": { "type": "integer", "minimum": 0, "maximum": 3 }
+      }
+    },
+    "aggregation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategy", "order", "includePartial", "maxOutputBytes"],
+      "properties": {
+        "strategy": { "enum": ["stable-array", "verified-synthesis"] },
+        "order": { "const": "topological-then-node-id" },
+        "includePartial": { "type": "boolean" },
+        "maxOutputBytes": { "type": "integer", "minimum": 1024, "maximum": 1048576 }
+      }
+    },
+    "cancellation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stopAdmission", "cancelRunning", "disableRetry", "waitForTerminalProof"],
+      "properties": {
+        "stopAdmission": { "const": true },
+        "cancelRunning": { "const": true },
+        "disableRetry": { "const": true },
+        "waitForTerminalProof": { "const": true }
+      }
+    }
+  }
+}

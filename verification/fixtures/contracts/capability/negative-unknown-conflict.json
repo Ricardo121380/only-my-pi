@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../../schemas/capability-v1.schema.json",
+  "formatVersion": 1,
+  "capabilities": [
+    { "id": "known-capability", "description": "Unknown conflicts must fail closed.", "surfaces": ["fileToolPolicy"], "risk": "low", "providedBy": ["pi-core"], "requires": [], "conflictsWith": ["missing-capability"], "runtimeEvidenceRequired": true }
+  ]
+}

@@ -10,6 +10,11 @@
     "tool-display",
     "simplify"
   ],
+  "capabilityIds": [
+    "workspace-read",
+    "session-ledger-metadata",
+    "context-observability"
+  ],
   "policy": {
     "projectTrust": "never",
     "approval": "never-auto-approve",

@@ -3,7 +3,12 @@ import { createReceiptLedger, hashValue, sessionIdentity } from "./ledger.mjs";
 
 type Ledger = ReturnType<typeof createReceiptLedger>;
 
-function identity(ctx: ExtensionContext, ledger: Ledger) {
+type SessionIdentity = {
+	sessionId?: string;
+	sessionFileHash?: string;
+};
+
+function identity(ctx: ExtensionContext, ledger: Ledger): SessionIdentity {
 	try {
 		return sessionIdentity(ctx, (value) => value == null ? undefined : ledger.correlate(value));
 	} catch {
@@ -61,8 +66,14 @@ export default function sessionLedgerExtension(pi: ExtensionAPI): void {
 	pi.on("session_shutdown", (event, ctx) => record("session_shutdown", ctx, {
 		reason: event.reason, targetSessionFileHash: event.targetSessionFile ? ledger.correlate(event.targetSessionFile) : undefined,
 	}));
-	pi.on("tool_execution_start", (event, ctx) => safeCall(() => ledger.redactToolStart({ ...event, ...identity(ctx, ledger) })));
-	pi.on("tool_execution_end", (event, ctx) => safeCall(() => ledger.redactToolEnd({ ...event, ...identity(ctx, ledger) })));
+	pi.on("tool_execution_start", (event, ctx) => {
+		const scope = identity(ctx, ledger);
+		return safeCall(() => ledger.redactToolStart({ ...event, sessionId: scope.sessionId, sessionFileHash: scope.sessionFileHash }));
+	});
+	pi.on("tool_execution_end", (event, ctx) => {
+		const scope = identity(ctx, ledger);
+		return safeCall(() => ledger.redactToolEnd({ ...event, sessionId: scope.sessionId, sessionFileHash: scope.sessionFileHash }));
+	});
 	// Tool updates are deliberately not recorded: partial output is especially
 	// likely to contain secrets and is not needed for a receipt.
 }

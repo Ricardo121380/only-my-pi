@@ -1,0 +1,8 @@
+{
+  "formatVersion": 1,
+  "operation": "set-gate-field",
+  "gateId": "lint",
+  "field": "cwd",
+  "value": "../outside",
+  "expectedError": "cwd must be repository-root"
+}

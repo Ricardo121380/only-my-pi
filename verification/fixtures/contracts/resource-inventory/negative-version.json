@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../../schemas/resources-lock-v1.schema.json",
+  "formatVersion": 2,
+  "generatedAt": "2026-08-16",
+  "resources": []
+}

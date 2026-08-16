@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../schemas/profile-v1.schema.json",
+  "formatVersion": 2,
+  "id": "fixture-read-only",
+  "description": "Wrong version must fail.",
+  "packageIds": [],
+  "capabilityIds": ["workspace-read"],
+  "policy": { "projectTrust": "ask", "approval": "ask", "network": "deny" }
+}

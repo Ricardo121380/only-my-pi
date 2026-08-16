@@ -1,0 +1,182 @@
+{
+  "formatVersion": 1,
+  "id": "release-gates-v1",
+  "description": "Fixed, no-shell release gate contract for only-my-pi. M1 validates and inspects this manifest without executing it; M7 will connect it to the authoritative receipt runner.",
+  "policy": {
+    "cwd": "repository-root",
+    "network": "deny",
+    "shell": false,
+    "maxGateCount": 32,
+    "maxOutputBytes": 2097152
+  },
+  "gates": [
+    {
+      "id": "lint",
+      "description": "Static lint checks.",
+      "command": "npm",
+      "args": ["run", "lint"],
+      "cwd": "repository-root",
+      "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
+      "timeoutMs": 120000,
+      "maxOutputBytes": 2097152,
+      "sensitiveOutput": false,
+      "required": true
+    },
+    {
+      "id": "typecheck",
+      "description": "TypeScript type checking.",
+      "command": "npm",
+      "args": ["run", "typecheck"],
+      "cwd": "repository-root",
+      "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
+      "timeoutMs": 120000,
+      "maxOutputBytes": 2097152,
+      "sensitiveOutput": false,
+      "required": true
+    },
+    {
+      "id": "schema-check",
+      "description": "Draft 2020-12 and semantic contract checks.",
+      "command": "npm",
+      "args": ["run", "schema:check"],
+      "cwd": "repository-root",
+      "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
+      "timeoutMs": 60000,
+      "maxOutputBytes": 2097152,
+      "sensitiveOutput": false,
+      "required": true
+    },
+    {
+      "id": "doctor",
+      "description": "Static package governance doctor.",
+      "command": "npm",
+      "args": ["run", "doctor"],
+      "cwd": "repository-root",
+      "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
+      "timeoutMs": 60000,
+      "maxOutputBytes": 2097152,
+      "sensitiveOutput": false,
+      "required": true
+    },
+    {
+      "id": "doctor-profiles",
+      "description": "All Profile capability ceilings and package selections.",
+      "command": "npm",
+      "args": ["run", "doctor:profiles"],
+      "cwd": "repository-root",
+      "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
+      "timeoutMs": 60000,
+      "maxOutputBytes": 2097152,
+      "sensitiveOutput": false,
+      "required": true
+    },
+    {
+      "id": "doctor-modes",
+      "description": "All Mode contracts and runtime capability projections.",
+      "command": "npm",
+      "args": ["run", "doctor:modes"],
+      "cwd": "repository-root",
+      "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
+      "timeoutMs": 60000,
+      "maxOutputBytes": 2097152,
+      "sensitiveOutput": false,
+      "required": true
+    },
+    {
+      "id": "test-unit",
+      "description": "Unit tests.",
+      "command": "npm",
+      "args": ["run", "test:unit"],
+      "cwd": "repository-root",
+      "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
+      "timeoutMs": 300000,
+      "maxOutputBytes": 2097152,
+      "sensitiveOutput": false,
+      "required": true
+    },
+    {
+      "id": "test-contract",
+      "description": "Versioned schema and compatibility contract tests.",
+      "command": "npm",
+      "args": ["run", "test:contract"],
+      "cwd": "repository-root",
+      "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
+      "timeoutMs": 300000,
+      "maxOutputBytes": 2097152,
+      "sensitiveOutput": false,
+      "required": true
+    },
+    {
+      "id": "test-integration",
+      "description": "Integration tests.",
+      "command": "npm",
+      "args": ["run", "test:integration"],
+      "cwd": "repository-root",
+      "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
+      "timeoutMs": 300000,
+      "maxOutputBytes": 2097152,
+      "sensitiveOutput": false,
+      "required": true
+    },
+    {
+      "id": "test-e2e",
+      "description": "Isolated no-model and fresh-artifact end-to-end tests.",
+      "command": "npm",
+      "args": ["run", "test:e2e"],
+      "cwd": "repository-root",
+      "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
+      "timeoutMs": 300000,
+      "maxOutputBytes": 2097152,
+      "sensitiveOutput": false,
+      "required": true
+    },
+    {
+      "id": "full-tests",
+      "description": "Repository-wide regression suite.",
+      "command": "npm",
+      "args": ["test"],
+      "cwd": "repository-root",
+      "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
+      "timeoutMs": 300000,
+      "maxOutputBytes": 2097152,
+      "sensitiveOutput": false,
+      "required": true
+    },
+    {
+      "id": "pack-check",
+      "description": "Packed-tarball allowlist and fresh-root smoke.",
+      "command": "npm",
+      "args": ["run", "pack:check"],
+      "cwd": "repository-root",
+      "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
+      "timeoutMs": 300000,
+      "maxOutputBytes": 2097152,
+      "sensitiveOutput": false,
+      "required": true
+    },
+    {
+      "id": "secret-scan",
+      "description": "Repository and tarball secret-pattern scan.",
+      "command": "npm",
+      "args": ["run", "secret:scan"],
+      "cwd": "repository-root",
+      "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
+      "timeoutMs": 120000,
+      "maxOutputBytes": 2097152,
+      "sensitiveOutput": false,
+      "required": true
+    },
+    {
+      "id": "diff-check",
+      "description": "Whitespace and conflict-marker check for the exact source tree.",
+      "command": "git",
+      "args": ["diff", "--check"],
+      "cwd": "repository-root",
+      "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
+      "timeoutMs": 30000,
+      "maxOutputBytes": 262144,
+      "sensitiveOutput": false,
+      "required": true
+    }
+  ]
+}

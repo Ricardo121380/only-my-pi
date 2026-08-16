@@ -1,0 +1,8 @@
+{
+  "formatVersion": 1,
+  "operation": "set",
+  "field": "canSwitchAtRuntime",
+  "value": true,
+  "also": { "applyStatus": "applied" },
+  "expectedError": "runtime hot-switch claim contradicts the public surface"
+}

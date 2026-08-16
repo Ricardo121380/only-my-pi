@@ -1,0 +1,220 @@
+{
+  "$schema": "../schemas/owner-v1.schema.json",
+  "formatVersion": 1,
+  "owners": [
+    {
+      "id": "pi-host-runtime",
+      "description": "Pi remains the sole host for built-in workspace tools and the agent loop.",
+      "exclusive": true,
+      "capabilities": ["workspace-read"],
+      "surfaces": [],
+      "status": "upstream"
+    },
+    {
+      "id": "planning",
+      "description": "Upstream owner of planning behavior.",
+      "exclusive": true,
+      "capabilities": ["planning"],
+      "surfaces": [],
+      "status": "upstream"
+    },
+    {
+      "id": "sessions",
+      "description": "Upstream owner of session-management behavior.",
+      "exclusive": true,
+      "capabilities": ["session-management"],
+      "surfaces": [],
+      "status": "upstream"
+    },
+    {
+      "id": "context",
+      "description": "Owner of context-management and context-observability behavior.",
+      "exclusive": true,
+      "capabilities": ["context-management", "context-observability"],
+      "surfaces": [],
+      "resourceIds": ["context-doctor"],
+      "status": "active"
+    },
+    {
+      "id": "review",
+      "description": "Upstream owner of review-assistance behavior.",
+      "exclusive": true,
+      "capabilities": ["review-assistance"],
+      "surfaces": [],
+      "status": "upstream"
+    },
+    {
+      "id": "notify",
+      "description": "Upstream owner of local notification behavior.",
+      "exclusive": true,
+      "capabilities": ["notifications"],
+      "surfaces": [],
+      "status": "upstream"
+    },
+    {
+      "id": "web",
+      "description": "Upstream owner of explicitly enabled web retrieval and its egress boundary.",
+      "exclusive": true,
+      "capabilities": ["web-access"],
+      "surfaces": ["webEgress"],
+      "status": "upstream"
+    },
+    {
+      "id": "subagents",
+      "description": "Sole owner of the physical child runtime, scheduler, and public subagent tool.",
+      "exclusive": true,
+      "capabilities": ["subagent-runtime", "subagent-rpc-v1"],
+      "surfaces": [],
+      "status": "upstream"
+    },
+    {
+      "id": "permission",
+      "description": "Sole selected owner of tool-call, Bash-sandbox, and file-tool policy surfaces.",
+      "exclusive": true,
+      "capabilities": ["permission-policy", "bash-sandbox-conditional", "file-tool-policy"],
+      "surfaces": ["toolCallPolicy", "bashSandbox", "fileToolPolicy"],
+      "status": "upstream"
+    },
+    {
+      "id": "lsp",
+      "description": "Upstream owner of language-server integration.",
+      "exclusive": true,
+      "capabilities": ["lsp"],
+      "surfaces": [],
+      "status": "upstream"
+    },
+    {
+      "id": "usage",
+      "description": "Upstream owner of usage observability.",
+      "exclusive": true,
+      "capabilities": ["usage-observability"],
+      "surfaces": [],
+      "status": "upstream"
+    },
+    {
+      "id": "memory",
+      "description": "Sole selected owner of persistent memory.",
+      "exclusive": true,
+      "capabilities": ["memory"],
+      "surfaces": [],
+      "status": "upstream"
+    },
+    {
+      "id": "sync",
+      "description": "Upstream owner of allowlisted configuration synchronization.",
+      "exclusive": true,
+      "capabilities": ["configuration-sync"],
+      "surfaces": [],
+      "status": "upstream"
+    },
+    {
+      "id": "session-ledger",
+      "description": "First-party owner of bounded session ledger metadata.",
+      "exclusive": true,
+      "capabilities": ["session-ledger-metadata"],
+      "surfaces": [],
+      "resourceIds": ["session-ledger"],
+      "status": "active"
+    },
+    {
+      "id": "mcp",
+      "description": "Reserved sole MCP bridge and MCP egress owner.",
+      "exclusive": true,
+      "capabilities": [],
+      "surfaces": ["mcpEgress"],
+      "status": "upstream"
+    },
+    {
+      "id": "pi-provider-runtime",
+      "description": "Pi remains the only model Provider runtime and Provider egress owner.",
+      "exclusive": true,
+      "capabilities": [],
+      "surfaces": ["providerEgress"],
+      "status": "upstream"
+    },
+    {
+      "id": "pi-extension-runtime",
+      "description": "Pi remains the extension lifecycle runtime; only an outer boundary can isolate arbitrary extension egress.",
+      "exclusive": true,
+      "capabilities": [],
+      "surfaces": ["extensionEgress"],
+      "status": "upstream"
+    },
+    {
+      "id": "only-my-pi-control",
+      "description": "Reserved owner of the future omp CLI and single /omp Pi command.",
+      "exclusive": true,
+      "capabilities": [],
+      "surfaces": [],
+      "status": "planned"
+    },
+    {
+      "id": "only-my-pi-resource-registry",
+      "description": "Static owner of first-party discovery roots and non-default Labs inventory entries.",
+      "exclusive": true,
+      "capabilities": [],
+      "surfaces": [],
+      "resourceIds": [
+        "skills-root",
+        "prompts-root",
+        "themes-root",
+        "inspect-mode",
+        "scout-agent",
+        "single-agent-safe-workflow",
+        "research-synthesis-recipe",
+        "deepseek-conformance-lab",
+        "acp-v1-lab",
+        "workspace-checkpoint-lab"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "ui-theme",
+      "description": "Candidate theme owner; no candidate is promoted by this declaration.",
+      "exclusive": true,
+      "capabilities": [],
+      "surfaces": [],
+      "status": "upstream"
+    },
+    {
+      "id": "ui",
+      "description": "Candidate UI shell owner.",
+      "exclusive": true,
+      "capabilities": [],
+      "surfaces": [],
+      "status": "upstream"
+    },
+    {
+      "id": "editor",
+      "description": "Candidate editor owner.",
+      "exclusive": true,
+      "capabilities": [],
+      "surfaces": [],
+      "status": "upstream"
+    },
+    {
+      "id": "renderer",
+      "description": "Candidate renderer owner.",
+      "exclusive": true,
+      "capabilities": [],
+      "surfaces": [],
+      "status": "upstream"
+    },
+    {
+      "id": "footer",
+      "description": "Reserved single footer or status owner.",
+      "exclusive": true,
+      "capabilities": [],
+      "surfaces": [],
+      "status": "planned"
+    },
+    {
+      "id": "workspace-recovery",
+      "description": "Candidate workspace recovery owner; the existing checkpoint module remains a non-default Lab.",
+      "exclusive": true,
+      "capabilities": [],
+      "surfaces": [],
+      "status": "upstream"
+    }
+  ]
+}

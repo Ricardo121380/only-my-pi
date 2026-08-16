@@ -1,0 +1,6 @@
+{
+  "formatVersion": 1,
+  "operation": "remove-gate",
+  "gateId": "secret-scan",
+  "expectedError": "gate ID set mismatch"
+}

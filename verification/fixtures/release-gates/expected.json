@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "manifestId": "release-gates-v1",
+  "requiredGateIds": [
+    "lint",
+    "typecheck",
+    "schema-check",
+    "doctor",
+    "doctor-profiles",
+    "doctor-modes",
+    "test-unit",
+    "test-contract",
+    "test-integration",
+    "test-e2e",
+    "full-tests",
+    "pack-check",
+    "secret-scan",
+    "diff-check"
+  ],
+  "receiptRunnerIsGate": false
+}

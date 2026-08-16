@@ -1,0 +1,7 @@
+{
+  "formatVersion": 1,
+  "operation": "append",
+  "field": "runtimeImports",
+  "value": "pi-permission-modes/src/index.ts",
+  "expectedError": "private package import is forbidden"
+}

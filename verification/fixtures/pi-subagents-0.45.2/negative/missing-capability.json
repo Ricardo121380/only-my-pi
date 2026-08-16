@@ -1,0 +1,7 @@
+{
+  "formatVersion": 1,
+  "target": "ping",
+  "operation": "delete",
+  "path": ["data", "capabilities", "processTerminalProof"],
+  "expectedError": "RPC capability set mismatch"
+}

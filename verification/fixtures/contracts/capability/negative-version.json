@@ -1,0 +1,14 @@
+{
+  "$schema": "../../../../schemas/capability-v1.schema.json",
+  "formatVersion": 2,
+  "capabilities": [
+    {
+      "id": "workspace-read",
+      "description": "Wrong version must fail.",
+      "surfaces": ["fileToolPolicy"],
+      "risk": "low",
+      "providedBy": ["pi-core"],
+      "runtimeEvidenceRequired": true
+    }
+  ]
+}

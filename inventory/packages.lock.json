@@ -1,7 +1,7 @@
 {
   "$schema": "../schemas/packages-lock-v1.schema.json",
   "formatVersion": 1,
-  "generatedAt": "2026-08-15",
+  "generatedAt": "2026-08-16",
   "runtime": {
     "pi": "0.84.1",
     "node": "25.8.0",
@@ -33,7 +33,11 @@
       "review": "baseline",
       "owners": ["planning"],
       "risk": ["extension-policy"],
-      "notes": "Extension-level risk reduction; not an OS sandbox."
+      "notes": "Extension-level risk reduction; not an OS sandbox.",
+      "audit": {
+        "date": "2026-08-16",
+        "integrity": "sha512-6yJoJ2nXsvnXAaEzr1iQlpUMqOFnDX+rMYVRXE/uV6OVmeB1AxFr9jm0H8N+1jr7Q0WebjtVSNE6dTOwaBGurA=="
+      }
     },
     {
       "id": "agent-extensions",
@@ -49,7 +53,11 @@
         "extensions/notify/index.ts"
       ],
       "risk": ["extension-code"],
-      "notes": "Other resources remain installed but are not auto-loaded."
+      "notes": "Other resources remain installed but are not auto-loaded.",
+      "audit": {
+        "date": "2026-08-16",
+        "integrity": "sha512-1WLN9KTlOrOcPK26jctDkxjww6Msm4nNLinJTuRxEaVwWS1SsBMom2Zi2iBEYwdiSWc8kG57jmNuJ+1VcFZp/A=="
+      }
     },
     {
       "id": "web-access",
@@ -59,7 +67,11 @@
       "review": "baseline-opt-in-network",
       "owners": ["web"],
       "risk": ["network", "third-party-data", "browser-cookie-opt-in"],
-      "notes": "Use only in research profile; browser cookies stay disabled by default."
+      "notes": "Use only in research profile; browser cookies stay disabled by default.",
+      "audit": {
+        "date": "2026-08-16",
+        "integrity": "sha512-jMHiNe6hGQYmblSJsYBA2HdGuEe2sOM1GSVvVRMESwJoPvdfClaln6NlRD0/SOfBo1PiLCD1OUQhSrW4gMF3vQ=="
+      }
     },
     {
       "id": "subagents",
@@ -69,7 +81,11 @@
       "review": "baseline-budgeted",
       "owners": ["subagents"],
       "risk": ["child-process", "filesystem-inheritance", "cost"],
-      "notes": "Start with scout/reviewer; writer children use worktrees and review gates."
+      "notes": "Start with scout/reviewer; writer children use worktrees and review gates.",
+      "audit": {
+        "date": "2026-08-16",
+        "integrity": "sha512-VEvBF6vrpi+eLEjhgwqutSnaH/aw58+Um9vdJUc6Td1asH22bAKahrgD3AafaRNsROgiaukw4DRdmlRjEhBxQA=="
+      }
     },
     {
       "id": "permission-modes",
@@ -78,8 +94,12 @@
       "installed": true,
       "review": "baseline-conservative",
       "owners": ["permission"],
-      "risk": ["policy-not-sandbox"],
-      "notes": "Never make YOLO the default."
+      "risk": ["conditional-bash-sandbox", "degraded-prompt-fallback", "not-whole-session-isolation"],
+      "notes": "Provides a conditional OS Bash sandbox through @anthropic-ai/sandbox-runtime when available and an explicit degraded prompt fallback otherwise. Never make YOLO the default, and never infer file, Web, MCP, Provider, extension, or whole-session isolation from the Bash boundary.",
+      "audit": {
+        "date": "2026-08-16",
+        "integrity": "sha512-y4n110DiN99xl2tyLLU7ZyMadZUOYvxm9YKEpoZo2vFF4QJIgV7RKBAI6KztaRayAWPhA+95FdIBcV0He8vyfw=="
+      }
     },
     {
       "id": "lsp",
@@ -89,7 +109,11 @@
       "review": "baseline",
       "owners": ["lsp"],
       "risk": ["local-language-server"],
-      "notes": "Install language servers per project and language."
+      "notes": "Install language servers per project and language.",
+      "audit": {
+        "date": "2026-08-16",
+        "integrity": "sha512-RA0XAVAdck8W2gm2Do67C/IrCRUBJkKWPawZg1QqvlfEH9TMZbrGBYOgvGYcnGuRQ3FyxxFgJSq0fbdpMW8KAQ=="
+      }
     },
     {
       "id": "usage",
@@ -99,7 +123,11 @@
       "review": "baseline-observability",
       "owners": ["usage"],
       "risk": ["usage-data"],
-      "notes": "Validate after a real Provider/model call."
+      "notes": "Validate after a real Provider/model call.",
+      "audit": {
+        "date": "2026-08-16",
+        "integrity": "sha512-D/vmdkfIQeqKOuMEgZtcFQPDc2SZcLIwipByrQHHeGAVw5aOBGmfD9hMzYLAny+7eGuGpuXZxGtAgS3PrKuu/Q=="
+      }
     },
     {
       "id": "memory",
@@ -109,7 +137,11 @@
       "review": "baseline-single-memory",
       "owners": ["memory"],
       "risk": ["persistent-context", "sensitive-data"],
-      "notes": "Do not stack with observational-memory or context-mode."
+      "notes": "Do not stack with observational-memory or context-mode.",
+      "audit": {
+        "date": "2026-08-16",
+        "integrity": "sha512-p5h32q3LO9wy2g8DM7uQZl+0NnhZfaU+qyDQhEExD1fAYC9tf2tYZ5OQuh756tfaxEw3DONsT5zEHG9xB/Gg+g=="
+      }
     },
     {
       "id": "git-sync",
@@ -119,7 +151,11 @@
       "review": "baseline-allowlisted-sync",
       "owners": ["sync"],
       "risk": ["configuration-exfiltration"],
-      "notes": "Sync only reviewed repository resources; never auth, sessions, caches, or secrets."
+      "notes": "Sync only reviewed repository resources; never auth, sessions, caches, or secrets.",
+      "audit": {
+        "date": "2026-08-16",
+        "integrity": "sha512-/kc/ZyD/St2SP8C4c7RMHPRirbKI/Tm3lx3gjf1L5RfGkmHZ7ww+BZfM7gW8p04fnxK6JLpOQUXMtCgUWXAeAA=="
+      }
     }
   ],
   "candidates": [

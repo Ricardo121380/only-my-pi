@@ -1,0 +1,121 @@
+{
+  "formatVersion": 1,
+  "id": "pi-subagents-wire-v1",
+  "upstream": {
+    "package": "pi-subagents",
+    "version": "0.45.2",
+    "npmSpec": "npm:pi-subagents@0.45.2",
+    "repository": "https://github.com/nicobailon/pi-subagents",
+    "integrity": "sha512-VEvBF6vrpi+eLEjhgwqutSnaH/aw58+Um9vdJUc6Td1asH22bAKahrgD3AafaRNsROgiaukw4DRdmlRjEhBxQA==",
+    "tarballSha256": "fb247e0d45f130d0f3f53efb63a95c56e417d8579af5ba2ba2f211b322701374",
+    "packageJsonSha256": "5ef75c67e2384dc66ccc150ff590d5cea3a09824c40b23b13889e509a8d9bebb",
+    "rpcSourceSha256": "5c0b683c8e7a59fd5fa730e10039ff8b9e84b465af6202c52405ec5798179a93",
+    "delegationSourceSha256": "5abfc8b1a59fa86b9b29e133e2f17418b9b3a3ddb9fd7d9a8ee606d8622f461d"
+  },
+  "publicPackageExports": [
+    ".",
+    "./background-work",
+    "./external-runs",
+    "./delegation",
+    "./capability-ceiling",
+    "./preflight",
+    "./control-channel",
+    "./intercom-bridge",
+    "./pi-args",
+    "./shared-types"
+  ],
+  "topology": {
+    "physicalRuntimeOwner": "pi-subagents",
+    "liveLane": "extension-rpc-v1",
+    "liveDiscovery": "ping-capability-handshake",
+    "liveExecution": "spawn-with-compiled-workflowScript",
+    "runtimeImports": [],
+    "delegationReferenceLane": "exported-reference-only",
+    "delegationRuntimeActive": false,
+    "secondSubagentToolOwner": false,
+    "secondScheduler": false
+  },
+  "rpc": {
+    "protocolVersion": 1,
+    "events": {
+      "ready": "subagents:rpc:v1:ready",
+      "request": "subagents:rpc:v1:request",
+      "replyPrefix": "subagents:rpc:v1:reply:",
+      "asyncComplete": "subagent:async-complete",
+      "processTerminal": "subagent:process-terminal"
+    },
+    "methods": ["ping", "status", "spawn", "steer", "interrupt", "stop", "resume"],
+    "requestEnvelope": {
+      "required": ["version", "requestId", "method"],
+      "requestId": "non-empty-string-without-newlines",
+      "params": "method-specific-object",
+      "sourceExtension": "only-my-pi"
+    },
+    "replyEnvelope": {
+      "required": ["version", "requestId", "success"],
+      "correlationEvent": "replyPrefix + requestId",
+      "successPayload": "data",
+      "failurePayload": "error"
+    },
+    "ping": {
+      "requiredCapabilities": {
+        "status": true,
+        "fleetStatus": { "version": 1 },
+        "asyncSpawn": true,
+        "steer": true,
+        "nonRecoveringSteer": true,
+        "interrupt": true,
+        "stop": true,
+        "resume": true,
+        "launchResolvedExtensions": { "version": 1, "source": "launch-resolved" },
+        "runtimeAcknowledgedExtensions": {
+          "version": 1,
+          "source": "child-runtime",
+          "event": "subagent:acknowledge-extension"
+        },
+        "processTerminalProof": { "version": 1, "lifecycleArtifactVersion": 3 }
+      }
+    },
+    "spawn": {
+      "executionField": "workflowScript",
+      "workflowScript": "non-empty-compiler-output",
+      "sourceKind": "schema-validated-workflow-compiler",
+      "asyncOnly": true,
+      "normalizedAsync": true,
+      "managementActionAllowed": false,
+      "clarifyAllowed": false,
+      "directExecutionFields": ["agent", "task", "step"],
+      "legacyOrchestrationFields": ["tasks", "chain", "parallel", "concurrency", "chainDir"],
+      "rawUserWorkflowScriptAllowed": false
+    }
+  },
+  "exportedDelegationReference": {
+    "specifier": "pi-subagents/delegation",
+    "use": "contract-and-fixture-reference-only",
+    "activeRuntimeAdapter": false,
+    "events": {
+      "request": "prompt-template:subagent:request",
+      "started": "prompt-template:subagent:started",
+      "update": "prompt-template:subagent:update",
+      "response": "prompt-template:subagent:response",
+      "cancel": "prompt-template:subagent:cancel"
+    },
+    "requestRequired": ["requestId", "ownerRunId", "nodeId", "agent", "task", "context", "cwd", "result"],
+    "contexts": ["fresh", "fork"],
+    "resultKinds": ["text", "structured"]
+  },
+  "forbidden": {
+    "privateRuntimeImports": ["pi-subagents/src/**"],
+    "delegationExportAsLiveLane": true,
+    "secondExtensionRuntime": true,
+    "secondSubagentTool": true,
+    "secondScheduler": true,
+    "rawWorkflowScriptFromCli": true,
+    "childDispatchDuringM1": true
+  },
+  "verification": {
+    "staticContract": "PASS",
+    "liveRuntime": "NOT_RUN_BY_POLICY",
+    "liveRuntimeMilestone": "M5"
+  }
+}

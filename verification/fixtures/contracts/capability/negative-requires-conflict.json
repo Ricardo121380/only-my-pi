@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../schemas/capability-v1.schema.json",
+  "formatVersion": 1,
+  "capabilities": [
+    { "id": "conflict-a", "description": "Requires a conflicting capability.", "surfaces": ["fileToolPolicy"], "risk": "high", "providedBy": ["pi-core"], "requires": ["conflict-b"], "conflictsWith": ["conflict-b"], "runtimeEvidenceRequired": true },
+    { "id": "conflict-b", "description": "Conflicting dependency.", "surfaces": ["fileToolPolicy"], "risk": "low", "providedBy": ["pi-core"], "requires": [], "conflictsWith": [], "runtimeEvidenceRequired": true }
+  ]
+}

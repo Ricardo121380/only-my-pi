@@ -1,0 +1,8 @@
+{
+  "formatVersion": 1,
+  "target": "spawn",
+  "operation": "set",
+  "path": ["source", "kind"],
+  "value": "raw-user-input",
+  "expectedError": "workflowScript must come from the schema-validated compiler"
+}

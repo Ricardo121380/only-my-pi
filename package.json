@@ -2,25 +2,80 @@
   "name": "only-my-pi",
   "version": "0.1.0",
   "type": "module",
-  "description": "Personal Pi Agent extensions, skills, prompts, and themes",
+  "description": "Governed, reproducible Pi Harness distribution with Profiles, Modes, Workflows, and AgentSwarm",
   "keywords": [
     "pi-package"
   ],
   "license": "MIT",
+  "files": [
+    "README.md",
+    "SECURITY.md",
+    "LICENSE",
+    "bin/",
+    "extensions/context-doctor/index.ts",
+    "extensions/context-doctor/metrics.mjs",
+    "extensions/session-ledger/index.ts",
+    "extensions/session-ledger/ledger.mjs",
+    "extensions/omp-control/",
+    "skills/",
+    "prompts/",
+    "themes/",
+    "agents/",
+    "modes/",
+    "workflows/",
+    "swarm/",
+    "profiles/",
+    "policies/",
+    "inventory/",
+    "contracts/",
+    "schemas/",
+    "packages/config-runtime/",
+    "packages/bootstrap/",
+    "packages/control-service/",
+    "packages/mode-registry/",
+    "packages/agent-registry/",
+    "packages/workflow-core/",
+    "packages/gate-runner/",
+    "packages/skills-bridge/",
+    "packages/adapters/"
+  ],
   "scripts": {
     "doctor": "node scripts/package-doctor.mjs",
-    "doctor:profiles": "node scripts/package-doctor.mjs --profile profiles/minimal.json && node scripts/package-doctor.mjs --profile profiles/coding.json && node scripts/package-doctor.mjs --profile profiles/research.json && node scripts/package-doctor.mjs --profile profiles/ui-terminal.json && node scripts/package-doctor.mjs --profile profiles/experimental.json",
+    "doctor:static": "node scripts/package-doctor.mjs",
+    "doctor:live": "node scripts/runtime-doctor.mjs --live",
+    "doctor:profiles": "node scripts/package-doctor.mjs --profile profiles/minimal.json && node scripts/package-doctor.mjs --profile profiles/coding.json && node scripts/package-doctor.mjs --profile profiles/research.json && node scripts/package-doctor.mjs --profile profiles/orchestration.json && node scripts/package-doctor.mjs --profile profiles/ui-terminal.json && node scripts/package-doctor.mjs --profile profiles/experimental.json",
     "profile:check": "node scripts/profile-resolver.mjs --check-all",
     "profile:diff": "node scripts/profile-resolver.mjs profiles/coding.json --diff profiles/research.json",
     "safe": "node scripts/safe-mode.mjs",
     "schema:check": "node scripts/schema-check.mjs",
+    "typecheck": "tsc --noEmit",
+    "pack:check": "node scripts/pack-check.mjs",
+    "agents:generate": "node scripts/generate-subagent-resources.mjs --write",
+    "agents:check": "node scripts/generate-subagent-resources.mjs --check",
     "mcp:doctor": "node scripts/mcp-doctor.mjs",
-    "verify": "node scripts/verification-receipt.mjs",
+    "verify": "node scripts/release-gates.mjs --json",
+    "verify:legacy": "node scripts/verification-receipt.mjs",
     "test:deepseek": "node packages/deepseek-conformance/test.mjs",
     "test:acp": "node --test packages/acp-v1/acp-v1.test.mjs",
     "test:checkpoint": "node packages/workspace-checkpoint/test.mjs",
     "checkpoint": "node packages/workspace-checkpoint/cli.mjs",
     "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "semver": "7.8.5",
+    "ssri": "13.0.1"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "0.84.1",
+    "typescript": "5.9.3"
   },
   "pi": {
     "extensions": [
@@ -35,6 +90,11 @@
     ],
     "themes": [
       "./themes"
-    ]
+    ],
+    "subagents": {
+      "agents": [
+        "./agents/generated"
+      ]
+    }
   }
 }

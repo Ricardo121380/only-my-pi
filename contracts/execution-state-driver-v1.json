@@ -1,0 +1,102 @@
+{
+  "formatVersion": 1,
+  "id": "execution-state-driver-v1",
+  "upstream": {
+    "package": "pi-permission-modes",
+    "version": "2.2.0",
+    "npmSpec": "npm:pi-permission-modes@2.2.0",
+    "repository": "https://github.com/wynainfo/pi-permission-modes",
+    "integrity": "sha512-y4n110DiN99xl2tyLLU7ZyMadZUOYvxm9YKEpoZo2vFF4QJIgV7RKBAI6KztaRayAWPhA+95FdIBcV0He8vyfw==",
+    "tarballSha256": "e3104a36f6ca1b60a7bd965d6e1ae95181196d8f8fe4b60909625f037400c957",
+    "packageJsonSha256": "086f81da209daef0b0d0ce60371f47859b8a75b1c5705fc8c1fa15946609614c",
+    "entrypointSha256": "fd4462a3b7ba986af734c2e17ba8ea7178df56c933e87ed444ba90ba24c2fd5b"
+  },
+  "publicSurface": {
+    "packageExports": [],
+    "extensionEntrypoint": "src/index.ts",
+    "flags": ["perm", "no-sandbox"],
+    "commands": ["perm", "net", "sandbox"],
+    "environmentInputs": ["PI_PERMISSION_MODE"],
+    "sessionEntryTypes": ["perm-mode"],
+    "crossExtensionReadState": false,
+    "crossExtensionSwitchState": false,
+    "internalOnlySymbols": ["setMode"]
+  },
+  "driverDecision": {
+    "owner": "pi-permission-modes",
+    "canReadState": false,
+    "canSwitchAtRuntime": false,
+    "hardPolicyApplyStatus": "RESTART_REQUIRED",
+    "reasonCode": "NO_PUBLIC_CROSS_EXTENSION_STATE_API",
+    "initialBinding": {
+      "cliTemplate": ["--perm", "<audited-permission-mode>"],
+      "environment": "PI_PERMISSION_MODE"
+    },
+    "readFallback": "unknown",
+    "restoreStrategy": "restart-required",
+    "sameEnvelopeTaskModeSwitch": "prompt-workflow-only"
+  },
+  "enforcementSurfaces": [
+    {
+      "id": "toolCallPolicy",
+      "owner": "pi-permission-modes",
+      "mechanism": "tool-policy",
+      "observableState": "unknown",
+      "scope": "extension-owned tool_call allow/ask/deny only"
+    },
+    {
+      "id": "bashSandbox",
+      "owner": "pi-permission-modes",
+      "mechanism": "os-sandbox",
+      "observableState": "unknown",
+      "scope": "eligible replacement Bash subprocesses only; may degrade or be disabled"
+    },
+    {
+      "id": "fileToolPolicy",
+      "owner": "pi-permission-modes",
+      "mechanism": "tool-policy",
+      "observableState": "unknown",
+      "scope": "Pi file-tool policy and path checks; not OS containment"
+    },
+    {
+      "id": "webEgress",
+      "owner": "none",
+      "mechanism": "none",
+      "observableState": "unknown",
+      "scope": "full Web/extension egress is outside the package's Bash network sandbox"
+    },
+    {
+      "id": "mcpEgress",
+      "owner": "none",
+      "mechanism": "none",
+      "observableState": "unknown",
+      "scope": "MCP transport egress is not controlled"
+    },
+    {
+      "id": "providerEgress",
+      "owner": "none",
+      "mechanism": "none",
+      "observableState": "unknown",
+      "scope": "Provider/model transport is not controlled"
+    },
+    {
+      "id": "extensionEgress",
+      "owner": "none",
+      "mechanism": "none",
+      "observableState": "unknown",
+      "scope": "arbitrary extension lifecycle traffic is not controlled"
+    }
+  ],
+  "forbidden": {
+    "runtimeImports": ["pi-permission-modes/src/**"],
+    "commandSimulation": ["/perm", "alt+m"],
+    "competingOwners": true,
+    "setActiveToolsAsHardPolicy": true,
+    "wholeSessionSandboxClaim": true
+  },
+  "verification": {
+    "staticContract": "PASS",
+    "liveRuntime": "NOT_RUN_BY_POLICY",
+    "liveRuntimeMilestone": "M3"
+  }
+}

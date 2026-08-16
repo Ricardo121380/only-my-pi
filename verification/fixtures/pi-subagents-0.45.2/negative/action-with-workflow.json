@@ -1,0 +1,8 @@
+{
+  "formatVersion": 1,
+  "target": "spawn",
+  "operation": "set",
+  "path": ["params", "action"],
+  "value": "status",
+  "expectedError": "RPC spawn cannot contain a management action"
+}

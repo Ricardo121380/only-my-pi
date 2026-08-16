@@ -12,6 +12,23 @@
     "memory",
     "git-sync"
   ],
+  "capabilityIds": [
+    "workspace-read",
+    "planning",
+    "session-management",
+    "context-management",
+    "review-assistance",
+    "notifications",
+    "permission-policy",
+    "bash-sandbox-conditional",
+    "file-tool-policy",
+    "lsp",
+    "usage-observability",
+    "memory",
+    "configuration-sync",
+    "session-ledger-metadata",
+    "context-observability"
+  ],
   "policy": {
     "projectTrust": "ask",
     "approval": "ask",

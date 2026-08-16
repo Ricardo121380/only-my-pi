@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../schemas/profile-v1.schema.json",
+  "formatVersion": 1,
+  "id": "fixture-read-only",
+  "description": "Unknown capability reference must fail semantic validation.",
+  "packageIds": [],
+  "capabilityIds": ["capability-does-not-exist"],
+  "policy": { "projectTrust": "ask", "approval": "ask", "network": "deny" }
+}

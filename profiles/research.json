@@ -2,7 +2,7 @@
   "$schema": "../schemas/profile-v1.schema.json",
   "formatVersion": 1,
   "id": "research",
-  "description": "Opt-in research profile with web access and bounded read-oriented subagents.",
+  "description": "Opt-in single-agent research profile with web access; orchestration is a separate profile.",
   "packageIds": [
     "plan-mode",
     "agent-extensions",
@@ -13,6 +13,24 @@
     "git-sync",
     "web-access"
   ],
+  "capabilityIds": [
+    "workspace-read",
+    "planning",
+    "session-management",
+    "context-management",
+    "review-assistance",
+    "notifications",
+    "web-access",
+    "permission-policy",
+    "bash-sandbox-conditional",
+    "file-tool-policy",
+    "lsp",
+    "usage-observability",
+    "memory",
+    "configuration-sync",
+    "session-ledger-metadata",
+    "context-observability"
+  ],
   "policy": {
     "projectTrust": "ask",
     "approval": "ask",
@@ -21,11 +39,10 @@
     "session": "central-user-session-dir",
     "contextFiles": "review-before-trust",
     "subagents": {
-      "enabled": true,
+      "enabled": false,
       "maxDepth": 1,
-      "maxConcurrency": 2,
-      "writerRequiresWorktree": true,
-      "defaultRole": "scout-or-reviewer"
+      "maxConcurrency": 1,
+      "writerRequiresWorktree": true
     },
     "mcp": {
       "enabled": false,

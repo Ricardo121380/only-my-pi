@@ -1,0 +1,13 @@
+{
+  "formatVersion": 1,
+  "package": "pi-subagents",
+  "version": "0.45.2",
+  "physicalRuntimeOwner": "pi-subagents",
+  "liveLane": "extension-rpc-v1",
+  "runtimeImports": [],
+  "delegationReferenceLane": "exported-reference-only",
+  "delegationRuntimeActive": false,
+  "secondSubagentToolOwner": false,
+  "secondScheduler": false,
+  "childDispatch": false
+}

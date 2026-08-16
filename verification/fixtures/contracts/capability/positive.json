@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../../schemas/capability-v1.schema.json",
+  "formatVersion": 1,
+  "capabilities": [
+    {
+      "id": "workspace-read",
+      "description": "Read repository files within the resolved workspace.",
+      "surfaces": ["fileToolPolicy"],
+      "risk": "low",
+      "providedBy": ["pi-core"],
+      "requires": [],
+      "conflictsWith": [],
+      "runtimeEvidenceRequired": true
+    }
+  ]
+}

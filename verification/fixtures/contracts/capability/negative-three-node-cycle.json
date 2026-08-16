@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../schemas/capability-v1.schema.json",
+  "formatVersion": 1,
+  "capabilities": [
+    { "id": "cycle-a", "description": "Cycle A.", "surfaces": ["fileToolPolicy"], "risk": "low", "providedBy": ["pi-core"], "requires": ["cycle-b"], "conflictsWith": [], "runtimeEvidenceRequired": true },
+    { "id": "cycle-b", "description": "Cycle B.", "surfaces": ["fileToolPolicy"], "risk": "low", "providedBy": ["pi-core"], "requires": ["cycle-c"], "conflictsWith": [], "runtimeEvidenceRequired": true },
+    { "id": "cycle-c", "description": "Cycle C.", "surfaces": ["fileToolPolicy"], "risk": "low", "providedBy": ["pi-core"], "requires": ["cycle-a"], "conflictsWith": [], "runtimeEvidenceRequired": true }
+  ]
+}

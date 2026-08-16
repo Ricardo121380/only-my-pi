@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "requestId": "omp-m1-capability-probe",
+  "method": "ping",
+  "success": true,
+  "data": {
+    "version": 1,
+    "methods": ["ping", "status", "spawn", "steer", "interrupt", "stop", "resume"],
+    "capabilities": {
+      "status": true,
+      "fleetStatus": { "version": 1 },
+      "asyncSpawn": true,
+      "steer": true,
+      "nonRecoveringSteer": true,
+      "interrupt": true,
+      "stop": true,
+      "resume": true,
+      "launchResolvedExtensions": { "version": 1, "source": "launch-resolved" },
+      "runtimeAcknowledgedExtensions": {
+        "version": 1,
+        "source": "child-runtime",
+        "event": "subagent:acknowledge-extension"
+      },
+      "processTerminalProof": { "version": 1, "lifecycleArtifactVersion": 3 }
+    },
+    "events": {
+      "ready": "subagents:rpc:v1:ready",
+      "request": "subagents:rpc:v1:request",
+      "replyPrefix": "subagents:rpc:v1:reply:",
+      "asyncComplete": "subagent:async-complete",
+      "processTerminal": "subagent:process-terminal"
+    },
+    "session": {}
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "$schema": "../schemas/agent-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-only",
+  "id": "scout",
+  "upstreamAgentId": "omp-scout",
+  "version": "1.0.0",
+  "description": "M1 contract seed for a read-only evidence-gathering role; child dispatch is not implemented until M5.",
+  "prompt": {
+    "file": "agents/prompts/scout.md"
+  },
+  "tools": {
+    "allow": ["read", "grep", "find", "ls"],
+    "deny": ["edit", "write", "bash", "web"]
+  },
+  "allowedExecutionStates": ["ask", "plan", "review"],
+  "requiredCapabilities": ["workspace-read"],
+  "policyCeiling": {
+    "workspace": "read-only",
+    "egress": {
+      "web": "deny",
+      "mcp": "deny",
+      "provider": "inherit",
+      "extension": "deny"
+    },
+    "approval": "deny",
+    "mutation": "none"
+  },
+  "modelRole": "inherit",
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "task": { "type": "string", "description": "Bounded inspection question." },
+      "scope": { "type": "array", "description": "Repository-relative paths owned by the request." }
+    },
+    "required": ["task"]
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "summary": { "type": "string", "description": "Bounded evidence-based summary." },
+      "evidence": { "type": "array", "description": "Repository-relative evidence references." },
+      "risks": { "type": "array", "description": "Unresolved risks without speculative claims." }
+    },
+    "required": ["summary", "evidence", "risks"]
+  },
+  "writer": false,
+  "timeoutSeconds": 900,
+  "continuable": false,
+  "resumable": false,
+  "redaction": {
+    "rawPrompts": "omit",
+    "reasoning": "omit",
+    "credentials": "deny",
+    "maxOutputBytes": 51200
+  },
+  "gateIds": []
+}

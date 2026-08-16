@@ -1,0 +1,14 @@
+{
+  "formatVersion": 1,
+  "specifier": "pi-subagents/delegation",
+  "use": "contract-and-fixture-reference-only",
+  "activeRuntimeAdapter": false,
+  "events": {
+    "request": "prompt-template:subagent:request",
+    "started": "prompt-template:subagent:started",
+    "update": "prompt-template:subagent:update",
+    "response": "prompt-template:subagent:response",
+    "cancel": "prompt-template:subagent:cancel"
+  },
+  "requestRequired": ["requestId", "ownerRunId", "nodeId", "agent", "task", "context", "cwd", "result"]
+}

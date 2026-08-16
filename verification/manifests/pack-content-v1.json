@@ -1,0 +1,77 @@
+{
+  "formatVersion": 1,
+  "allowedExact": [
+    "package.json",
+    "README.md",
+    "SECURITY.md",
+    "LICENSE"
+  ],
+  "allowedPrefixes": [
+    "bin/",
+    "extensions/",
+    "skills/",
+    "prompts/",
+    "themes/",
+    "agents/",
+    "modes/",
+    "workflows/",
+    "swarm/",
+    "profiles/",
+    "policies/",
+    "inventory/",
+    "contracts/",
+    "schemas/",
+    "packages/config-runtime/",
+    "packages/bootstrap/",
+    "packages/control-service/",
+    "packages/mode-registry/",
+    "packages/agent-registry/",
+    "packages/workflow-core/",
+    "packages/gate-runner/",
+    "packages/skills-bridge/",
+    "packages/adapters/"
+  ],
+  "required": [
+    "package.json",
+    "README.md",
+    "agents/generated/omp-scout.md",
+    "agents/scout.json",
+    "contracts/schema-catalog.json",
+    "extensions/context-doctor/index.ts",
+    "extensions/session-ledger/index.ts",
+    "inventory/packages.lock.json",
+    "inventory/resources.lock.json",
+    "modes/inspect.json",
+    "policies/capabilities.v1.json",
+    "policies/command-owners.v1.json",
+    "policies/enforcement-surfaces.v1.json",
+    "policies/owners.v1.json",
+    "profiles/coding.json",
+    "schemas/packages-lock-v1.schema.json",
+    "schemas/profile-v1.schema.json",
+    "swarm/recipes/research-synthesis.json",
+    "workflows/single-agent-safe.json"
+  ],
+  "forbiddenPrefixes": [
+    "codex/",
+    "docs/",
+    "tests/",
+    "verification/",
+    "packages/acp-v1/",
+    "packages/deepseek-conformance/",
+    "packages/workspace-checkpoint/"
+  ],
+  "forbiddenSegments": [
+    "/fixtures/",
+    "/receipts/",
+    "/sessions/",
+    "/cache/",
+    "/node_modules/"
+  ],
+  "forbiddenBasenamePatterns": [
+    "(^|\\.)test\\.(mjs|cjs|js|ts|json)$",
+    "(^|\\.)spec\\.(mjs|cjs|js|ts|json)$",
+    "^\\.env($|\\.)",
+    "^(auth|credentials|session)(\\.|$)"
+  ]
+}

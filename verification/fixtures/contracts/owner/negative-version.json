@@ -1,0 +1,5 @@
+{
+  "$schema": "../../../../schemas/owner-v1.schema.json",
+  "formatVersion": 2,
+  "owners": [{ "id": "pi-core", "description": "Wrong version.", "exclusive": true, "capabilities": ["workspace-read"], "surfaces": ["fileToolPolicy"] }]
+}

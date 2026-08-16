@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../../schemas/swarm-recipe-v1.schema.json", "formatVersion": 1, "contractStatus": "contract-only", "id": "fixture-parallel-writers", "version": "1.0.0", "description": "Parallel writers must both use managed worktrees.", "readOnly": false,
+  "budget": { "maxDepth": 1, "maxConcurrency": 2, "maxChildren": 2, "childTimeoutSeconds": 900, "runTimeoutSeconds": 900, "retry": 0, "nestedSwarm": false, "childOutputBytes": 51200, "parentSummaryBytes": 8192 },
+  "writerPolicy": { "sharedCwdMaxWriters": 1, "parallelWriters": "managed-worktree-only", "onConflict": "reject" },
+  "nodes": [
+    { "id": "write-a", "agent": "scout", "taskTemplate": "write-a", "needs": [], "workspace": "shared-guarded", "writer": true, "timeoutSeconds": 900, "retry": 0 },
+    { "id": "verify", "agent": "scout", "taskTemplate": "verify-write", "needs": [], "workspace": "managed-worktree", "writer": true, "timeoutSeconds": 900, "retry": 0 }
+  ],
+  "aggregation": { "strategy": "stable-array", "order": "topological-then-node-id", "includePartial": false, "maxOutputBytes": 65536 }, "verifier": "verify",
+  "cancellation": { "stopAdmission": true, "cancelRunning": true, "disableRetry": true, "waitForTerminalProof": true }
+}

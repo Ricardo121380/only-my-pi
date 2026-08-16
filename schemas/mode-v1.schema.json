@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/mode-v1.schema.json",
+  "title": "only-my-pi Mode manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "id", "version", "displayName", "description", "category", "executionState", "extends", "requires", "prompt", "tools", "policy", "workflow", "swarm", "completion", "risk"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "mode-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "enum": ["contract-only", "runtime-ready"] },
+    "id": { "$ref": "#/$defs/id" },
+    "version": { "$ref": "#/$defs/semver" },
+    "displayName": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "category": { "enum": ["core", "core-plus", "labs"] },
+    "executionState": { "enum": ["ask", "plan", "build", "review"] },
+    "extends": { "$ref": "#/$defs/idSet" },
+    "requires": { "$ref": "#/$defs/requires" },
+    "prompt": { "$ref": "#/$defs/prompt" },
+    "tools": { "$ref": "#/$defs/tools" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "workflow": { "$ref": "#/$defs/workflow" },
+    "swarm": { "$ref": "#/$defs/swarm" },
+    "completion": { "$ref": "#/$defs/completion" },
+    "risk": { "enum": ["low", "medium", "high"] }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "idSet": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "surfaceId": { "type": "string", "pattern": "^[a-z][A-Za-z0-9-]{0,63}$" },
+    "surfaceSet": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/surfaceId" } },
+    "path": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\u0000)[A-Za-z0-9._@/-]+$" },
+    "tool": { "enum": ["read", "grep", "find", "ls", "edit", "write", "bash", "web"] },
+    "requires": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profileCapabilities", "packages", "enforcementSurfaces"],
+      "properties": {
+        "profileCapabilities": { "$ref": "#/$defs/idSet" },
+        "packages": { "$ref": "#/$defs/idSet" },
+        "enforcementSurfaces": { "$ref": "#/$defs/surfaceSet" }
+      }
+    },
+    "prompt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file"],
+      "properties": { "file": { "$ref": "#/$defs/path" } }
+    },
+    "tools": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow", "deny", "required"],
+      "properties": {
+        "allow": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/tool" } },
+        "deny": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/tool" } },
+        "required": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/tool" } }
+      }
+    },
+    "egress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["web", "mcp", "provider", "extension"],
+      "properties": {
+        "web": { "enum": ["deny", "allow-listed", "inherit"] },
+        "mcp": { "enum": ["deny", "allow-listed", "inherit"] },
+        "network": { "enum": ["deny", "allow-listed", "inherit"] },
+        "provider": { "enum": ["deny", "inherit"] },
+        "extension": { "enum": ["deny", "allow-listed", "inherit"] }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workspace", "egress", "approval"],
+      "properties": {
+        "workspace": { "enum": ["none", "read-only", "guarded-write", "worktree-write"] },
+        "egress": { "$ref": "#/$defs/egress" },
+        "approval": { "enum": ["deny", "ask", "inherit"] }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default", "fallback"],
+      "properties": {
+        "default": { "$ref": "#/$defs/id" },
+        "fallback": { "$ref": "#/$defs/id" }
+      }
+    },
+    "swarm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed", "defaultRecipe"],
+      "properties": {
+        "allowed": { "type": "boolean" },
+        "defaultRecipe": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] }
+      }
+    },
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gates", "requiresStructuredVerdict"],
+      "properties": {
+        "gates": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "requiresStructuredVerdict": { "const": true }
+      }
+    }
+  }
+}

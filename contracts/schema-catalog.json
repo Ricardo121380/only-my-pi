@@ -1,0 +1,72 @@
+{
+  "$schema": "../schemas/contract-catalog-v1.schema.json",
+  "formatVersion": 1,
+  "schemas": [
+    {
+      "kind": "inventory",
+      "schemaPath": "schemas/packages-lock-v1.schema.json",
+      "productionGlobs": ["inventory/packages.lock.json"],
+      "fixtureDir": "verification/fixtures/contracts/inventory"
+    },
+    {
+      "kind": "resourceInventory",
+      "schemaPath": "schemas/resources-lock-v1.schema.json",
+      "productionGlobs": ["inventory/resources.lock.json"],
+      "fixtureDir": "verification/fixtures/contracts/resource-inventory"
+    },
+    {
+      "kind": "profile",
+      "schemaPath": "schemas/profile-v1.schema.json",
+      "productionGlobs": ["profiles/*.json"],
+      "fixtureDir": "verification/fixtures/contracts/profile"
+    },
+    {
+      "kind": "capability",
+      "schemaPath": "schemas/capability-v1.schema.json",
+      "productionGlobs": ["policies/capabilities.v1.json"],
+      "fixtureDir": "verification/fixtures/contracts/capability"
+    },
+    {
+      "kind": "owner",
+      "schemaPath": "schemas/owner-v1.schema.json",
+      "productionGlobs": ["policies/owners.v1.json"],
+      "fixtureDir": "verification/fixtures/contracts/owner"
+    },
+    {
+      "kind": "commandOwner",
+      "schemaPath": "schemas/command-owner-v1.schema.json",
+      "productionGlobs": ["policies/command-owners.v1.json"],
+      "fixtureDir": "verification/fixtures/contracts/command-owner"
+    },
+    {
+      "kind": "enforcementSurface",
+      "schemaPath": "schemas/enforcement-surfaces-v1.schema.json",
+      "productionGlobs": ["policies/enforcement-surfaces.v1.json"],
+      "fixtureDir": "verification/fixtures/contracts/enforcement-surface"
+    },
+    {
+      "kind": "mode",
+      "schemaPath": "schemas/mode-v1.schema.json",
+      "productionGlobs": ["modes/*.json"],
+      "fixtureDir": "verification/fixtures/contracts/mode"
+    },
+    {
+      "kind": "agent",
+      "schemaPath": "schemas/agent-v1.schema.json",
+      "productionGlobs": ["agents/*.json"],
+      "fixtureDir": "verification/fixtures/contracts/agent"
+    },
+    {
+      "kind": "workflow",
+      "schemaPath": "schemas/workflow-v1.schema.json",
+      "productionGlobs": ["workflows/*.json"],
+      "fixtureDir": "verification/fixtures/contracts/workflow"
+    },
+    {
+      "kind": "swarmRecipe",
+      "schemaPath": "schemas/swarm-recipe-v1.schema.json",
+      "productionGlobs": ["swarm/recipes/*.json"],
+      "fixtureDir": "verification/fixtures/contracts/swarm-recipe"
+    }
+  ]
+}

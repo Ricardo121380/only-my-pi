@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/owner-v1.schema.json",
+  "title": "only-my-pi capability owner catalog v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "owners"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "owner-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "owners": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/owner" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+    "idSet": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "surfaceId": { "type": "string", "pattern": "^[a-z][A-Za-z0-9-]{0,63}$" },
+    "surfaceSet": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/surfaceId" } },
+    "owner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "description", "exclusive", "capabilities", "surfaces"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "exclusive": { "type": "boolean" },
+        "capabilities": { "$ref": "#/$defs/idSet" },
+        "surfaces": { "$ref": "#/$defs/surfaceSet" },
+        "resourceIds": { "$ref": "#/$defs/idSet" },
+        "status": { "enum": ["active", "planned", "upstream", "unavailable"] }
+      }
+    }
+  }
+}

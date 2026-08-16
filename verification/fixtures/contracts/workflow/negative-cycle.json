@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../../schemas/workflow-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-only",
+  "id": "fixture-single-agent-safe",
+  "version": "1.0.0",
+  "description": "Step dependency cycle must fail semantic validation.",
+  "entryConditions": ["profile-resolved"],
+  "mutationScope": "none",
+  "budget": { "maxSteps": 2, "timeoutSeconds": 1200, "maxOutputBytes": 65536 },
+  "fallback": { "when": ["unavailable-runner"], "workflow": null, "requiresApproval": false },
+  "steps": [
+    { "id": "inspect", "action": "agent", "agent": "scout", "needs": ["verify"], "policyRef": "inspect", "approval": "none" },
+    { "id": "verify", "action": "gate", "gate": "test-contract", "needs": ["inspect"], "policyRef": "inspect", "approval": "none" }
+  ],
+  "terminal": { "step": "verify", "acceptedVerdicts": ["pass"], "rejectedVerdicts": ["fail"], "requiresVerifierGate": true },
+  "cancellation": { "stopAdmission": true, "waitForTerminalProof": true, "terminalVerdict": "cancelled" },
+  "failure": { "onStepFailure": "fail", "onGateFailure": "fail" },
+  "recovery": { "durableState": true, "verifySourceHash": true, "resumeFrom": "last-settled-step" }
+}

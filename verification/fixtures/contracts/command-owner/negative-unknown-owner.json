@@ -1,0 +1,5 @@
+{
+  "$schema": "../../../../schemas/command-owner-v1.schema.json",
+  "formatVersion": 1,
+  "commands": [{ "id": "/omp", "surface": "pi-command", "owner": "not-registered", "aliases": [], "status": "reserved" }]
+}

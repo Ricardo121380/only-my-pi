@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../schemas/capability-v1.schema.json",
+  "formatVersion": 1,
+  "capabilities": [
+    { "id": "workspace-read", "description": "First.", "surfaces": ["fileToolPolicy"], "risk": "low", "providedBy": ["pi-core"], "runtimeEvidenceRequired": true },
+    { "id": "workspace-read", "description": "Duplicate.", "surfaces": ["fileToolPolicy"], "risk": "low", "providedBy": ["pi-core"], "runtimeEvidenceRequired": true }
+  ]
+}

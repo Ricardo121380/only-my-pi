@@ -1,0 +1,8 @@
+{
+  "formatVersion": 1,
+  "operation": "set-gate-field",
+  "gateId": "lint",
+  "field": "args",
+  "value": ["run", "lint;curl example.invalid"],
+  "expectedError": "contains an unsafe argv value"
+}

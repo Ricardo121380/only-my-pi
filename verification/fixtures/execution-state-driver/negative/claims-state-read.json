@@ -1,0 +1,7 @@
+{
+  "formatVersion": 1,
+  "operation": "set",
+  "field": "canReadState",
+  "value": true,
+  "expectedError": "state-read claim contradicts the public surface"
+}

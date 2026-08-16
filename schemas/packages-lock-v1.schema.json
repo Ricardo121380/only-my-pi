@@ -4,46 +4,112 @@
   "title": "only-my-pi package inventory v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["formatVersion", "generatedAt", "runtime", "policy", "packages", "candidates"],
+  "required": ["$schema", "formatVersion", "generatedAt", "runtime", "policy", "packages", "candidates"],
   "properties": {
-    "$schema": { "type": "string" },
+    "$schema": { "type": "string", "pattern": "packages-lock-v1\\.schema\\.json$" },
     "formatVersion": { "const": 1 },
-    "generatedAt": { "type": "string", "format": "date" },
+    "generatedAt": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "runtime": { "$ref": "#/$defs/runtime" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "packages": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/package" } },
+    "candidates": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/candidate" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+    "exactNpmSpec": {
+      "type": "string",
+      "pattern": "^npm:(?:@[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*|[a-z0-9][a-z0-9._-]*)@[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "exactGitSpec": {
+      "type": "string",
+      "pattern": "^git\\+(?:https://[A-Za-z0-9._~-]+(?::[0-9]+)?/[A-Za-z0-9._~/-]+|ssh://(?:git@)?[A-Za-z0-9._~-]+(?::[0-9]+)?/[A-Za-z0-9._~/-]+)#[a-f0-9]{40}$"
+    },
+    "sourceSpec": {
+      "oneOf": [
+        { "$ref": "#/$defs/exactNpmSpec" },
+        { "$ref": "#/$defs/exactGitSpec" }
+      ]
+    },
+    "stringSet": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 128 }
+    },
+    "safeRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\u0000)[A-Za-z0-9._@/-]+$"
+    },
     "runtime": {
       "type": "object",
       "additionalProperties": false,
       "required": ["pi", "node", "platform"],
       "properties": {
-        "pi": { "type": "string" },
-        "node": { "type": "string" },
-        "platform": { "type": "string" }
+        "pi": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+        "node": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+        "platform": { "type": "string", "pattern": "^[a-z0-9]+-[a-z0-9_]+$" }
       }
     },
-    "policy": { "type": "object", "minProperties": 1 },
-    "packages": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/package" }
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requireExactNpmVersion", "allowOldMarioScope", "allowUnreviewedPackages", "oneOwnerPerGroup", "defaultNetwork", "defaultCredentials"],
+      "properties": {
+        "requireExactNpmVersion": { "const": true },
+        "allowOldMarioScope": { "type": "boolean" },
+        "allowUnreviewedPackages": { "const": false },
+        "oneOwnerPerGroup": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "memory": { "type": "boolean" },
+            "mcp": { "type": "boolean" },
+            "subagents": { "type": "boolean" },
+            "ui": { "type": "boolean" },
+            "permission": { "type": "boolean" },
+            "renderer": { "type": "boolean" },
+            "footer": { "type": "boolean" },
+            "editor": { "type": "boolean" }
+          }
+        },
+        "defaultNetwork": { "enum": ["deny", "deny-unless-profile"] },
+        "defaultCredentials": { "const": "never-from-repository" }
+      }
     },
-    "candidates": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/candidate" }
-    }
-  },
-  "$defs": {
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        "integrity": { "type": "string", "pattern": "^sha512-[A-Za-z0-9+/]+={0,2}$" },
+        "contents": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/safeRelativePath" } },
+        "dependencies": { "type": "integer", "minimum": 0 },
+        "lifecycleScripts": { "type": "boolean" },
+        "startupSmoke": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "peerScope": { "type": "string", "pattern": "^@[a-z0-9][a-z0-9._-]*$" },
+        "directFileWrites": { "type": "boolean" },
+        "hostCommands": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 80 } }
+      }
+    },
     "base": {
       "type": "object",
       "required": ["id", "spec", "owners", "risk", "notes"],
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-        "spec": { "type": "string", "minLength": 1 },
-        "owners": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
-        "risk": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
-        "notes": { "type": "string", "minLength": 1 },
-        "resourceFilter": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
-        "audit": { "type": "object" }
+        "id": { "$ref": "#/$defs/id" },
+        "spec": { "$ref": "#/$defs/sourceSpec" },
+        "owners": { "$ref": "#/$defs/stringSet" },
+        "risk": { "$ref": "#/$defs/stringSet" },
+        "notes": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "resourceFilter": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/safeRelativePath" } },
+        "audit": { "$ref": "#/$defs/audit" }
       }
     },
     "package": {
+      "type": "object",
       "allOf": [
         { "$ref": "#/$defs/base" },
         {
@@ -52,22 +118,23 @@
           "properties": {
             "scope": { "enum": ["global", "project", "local"] },
             "installed": { "const": true },
-            "review": { "type": "string", "minLength": 1 }
+            "review": { "type": "string", "minLength": 1, "maxLength": 128 }
           }
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "candidate": {
+      "type": "object",
       "allOf": [
         { "$ref": "#/$defs/base" },
         {
           "type": "object",
           "required": ["mode"],
-          "properties": {
-            "mode": { "enum": ["trial", "project-only", "blocked"] }
-          }
+          "properties": { "mode": { "enum": ["trial", "project-only", "blocked"] } }
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     }
   }
 }

@@ -1,0 +1,90 @@
+{
+  "$schema": "../schemas/enforcement-surfaces-v1.schema.json",
+  "formatVersion": 1,
+  "surfaces": [
+    {
+      "id": "toolCallPolicy",
+      "owner": "permission",
+      "enforcementPoint": "The selected permission package's Pi tool_call policy hook.",
+      "mechanism": "tool policy; runtime state must be obtained from an audited ExecutionStateDriver",
+      "observableStates": ["active", "degraded", "unavailable", "unknown"],
+      "stateSource": "future live doctor probe; the M1 catalog itself reports no active runtime state",
+      "degradedBehavior": "Report the exact degraded state and refuse automatic mutation or policy widening.",
+      "failureBehavior": "Return unavailable or restart-required for modes that require a hard tool-call ceiling.",
+      "failClosed": true,
+      "contractTests": ["capability-consistency"]
+    },
+    {
+      "id": "bashSandbox",
+      "owner": "permission",
+      "enforcementPoint": "The replacement Bash subprocess launched by the selected permission package.",
+      "mechanism": "conditional OS sandbox for that Bash subprocess only",
+      "observableStates": ["active", "degraded", "unavailable", "unknown"],
+      "stateSource": "future permission runtime probe including platform, worktree, and no-sandbox conditions",
+      "degradedBehavior": "Show Bash isolation as degraded without implying file, Web, MCP, Provider, or extension isolation.",
+      "failureBehavior": "Reject operations whose declared safety requires an active Bash sandbox.",
+      "failClosed": true,
+      "contractTests": ["capability-consistency"]
+    },
+    {
+      "id": "fileToolPolicy",
+      "owner": "permission",
+      "enforcementPoint": "The selected permission package's file-tool path policy.",
+      "mechanism": "tool policy scoped to supported Pi file tools",
+      "observableStates": ["active", "degraded", "unavailable", "unknown"],
+      "stateSource": "future live doctor probe of the selected permission owner",
+      "degradedBehavior": "Report unsupported tools and paths and refuse workflows that require a complete file ceiling.",
+      "failureBehavior": "Do not infer file isolation from Bash sandbox or prompt instructions.",
+      "failClosed": true,
+      "contractTests": ["capability-consistency"]
+    },
+    {
+      "id": "webEgress",
+      "owner": "web",
+      "enforcementPoint": "The explicitly selected web package and its reviewed request policy.",
+      "mechanism": "allowlist configuration; M1 does not assert that a live allowlist is active",
+      "observableStates": ["active", "degraded", "unavailable", "unknown"],
+      "stateSource": "future live doctor package capability and allowlist probe",
+      "degradedBehavior": "Disable research Web capability when an independent allowlist cannot be demonstrated.",
+      "failureBehavior": "Deny Web-dependent modes; browser cookies remain disabled.",
+      "failClosed": true,
+      "contractTests": ["capability-consistency"]
+    },
+    {
+      "id": "mcpEgress",
+      "owner": "mcp",
+      "enforcementPoint": "The single selected MCP bridge and per-server tool allowlist.",
+      "mechanism": "reviewed server and tool allowlist; no MCP package is promoted by M1",
+      "observableStates": ["active", "degraded", "unavailable", "unknown"],
+      "stateSource": "future mcp doctor metadata probe without credential reads",
+      "degradedBehavior": "Keep MCP disabled when server identity or tool policy cannot be verified.",
+      "failureBehavior": "Deny MCP-dependent modes and do not discover host configuration automatically.",
+      "failClosed": true,
+      "contractTests": ["capability-consistency"]
+    },
+    {
+      "id": "providerEgress",
+      "owner": "pi-provider-runtime",
+      "enforcementPoint": "Pi's sole Provider runtime boundary.",
+      "mechanism": "unknown to only-my-pi at M1; no second Provider client is introduced",
+      "observableStates": ["active", "degraded", "unavailable", "unknown"],
+      "stateSource": "future non-secret Pi runtime metadata only",
+      "degradedBehavior": "Report unknown rather than deriving Provider isolation from another surface.",
+      "failureBehavior": "Reject profiles or modes that require a Provider egress guarantee not supplied by Pi or outer isolation.",
+      "failClosed": true,
+      "contractTests": ["capability-consistency"]
+    },
+    {
+      "id": "extensionEgress",
+      "owner": "pi-extension-runtime",
+      "enforcementPoint": "The Pi process or an outer container that hosts arbitrary extension code.",
+      "mechanism": "outer sandbox only; Project Trust and extension filtering are not process isolation",
+      "observableStates": ["active", "degraded", "unavailable", "unknown"],
+      "stateSource": "future outer-runtime probe; package selection alone is not enforcement evidence",
+      "degradedBehavior": "Report unknown or degraded per extension and do not summarize the whole session as isolated.",
+      "failureBehavior": "Reject untrusted extension workloads that require hard egress isolation when no outer boundary is active.",
+      "failClosed": true,
+      "contractTests": ["capability-consistency"]
+    }
+  ]
+}

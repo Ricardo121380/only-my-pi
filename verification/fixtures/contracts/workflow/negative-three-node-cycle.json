@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../../schemas/workflow-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-only",
+  "id": "fixture-three-cycle",
+  "version": "1.0.0",
+  "description": "A non-self three-node dependency cycle must fail.",
+  "entryConditions": ["profile-resolved"],
+  "mutationScope": "none",
+  "budget": { "maxSteps": 3, "maxParallel": 3, "timeoutSeconds": 1200, "retry": 0, "maxOutputBytes": 65536 },
+  "fallback": { "when": ["unavailable-runner"], "workflow": null, "requiresApproval": false },
+  "steps": [
+    { "id": "cycle-a", "action": "agent", "agent": "scout", "needs": ["cycle-c"], "policyRef": "inspect", "approval": "none" },
+    { "id": "cycle-b", "action": "agent", "agent": "scout", "needs": ["cycle-a"], "policyRef": "inspect", "approval": "none" },
+    { "id": "cycle-c", "action": "gate", "gate": "test-contract", "needs": ["cycle-b"], "policyRef": "inspect", "approval": "none" }
+  ],
+  "terminal": { "step": "cycle-c", "acceptedVerdicts": ["pass"], "rejectedVerdicts": ["fail"], "requiresVerifierGate": true },
+  "cancellation": { "stopAdmission": true, "waitForTerminalProof": true, "terminalVerdict": "cancelled" },
+  "failure": { "onStepFailure": "fail", "onGateFailure": "fail" },
+  "recovery": { "durableState": true, "verifySourceHash": true, "resumeFrom": "last-settled-step" }
+}

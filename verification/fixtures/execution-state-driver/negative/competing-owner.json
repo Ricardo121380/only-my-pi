@@ -1,0 +1,7 @@
+{
+  "formatVersion": 1,
+  "operation": "append",
+  "field": "owners",
+  "value": "only-my-pi",
+  "expectedError": "exactly one execution-state owner is required"
+}

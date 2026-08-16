@@ -1,6 +1,6 @@
 # only-my-pi
 
-Personal Pi Agent package and configuration companion.
+Governed, reproducible Pi Harness distribution and configuration companion.
 
 This repository is intended to hold the parts of a Pi workflow that are safe to
 version and share:
@@ -26,6 +26,12 @@ codex/        Codex-only development goals; never loaded as Pi package resources
 docs/         Research, design notes, and compatibility records
 inventory/    Version-pinned package inventory and risk metadata
 profiles/     Explicit package/policy profiles for different workflows
+policies/     Capability, owner, command, and enforcement-surface contracts
+contracts/    Versioned compatibility contracts and schema catalog
+agents/       Canonical Agent roles and generated pi-subagents resources
+modes/        Declarative Mode contracts
+workflows/    Declarative Workflow contracts
+swarm/        Declarative AgentSwarm recipe contracts
 packages/     First-party protocol/recovery seams and offline fixtures
 scripts/      Repository checks and package governance tooling
 ```
@@ -38,6 +44,7 @@ scripts/      Repository checks and package governance tooling
 - [Security and package review policy](SECURITY.md)
 - [Package governance decision](docs/decisions/ADR-0001-package-governance.md)
 - [Product boundary decision](docs/decisions/ADR-0002-product-boundary.md)
+- [Package topology and capability ownership decision](docs/decisions/ADR-0003-package-topology.md)
 - [Labs and graduation boundary](docs/LABS.md)
 - [Pinned package inventory](inventory/packages.lock.json)
 - [Profile resolver design](docs/architecture/profile-resolver.md)
@@ -54,11 +61,15 @@ scripts/      Repository checks and package governance tooling
 ## Product direction
 
 The next product milestone is not another Provider or protocol adapter. The
-roadmap targets a usable Pi-based Harness distribution. The following Harness
-features are planned; they are not claims about the current implementation:
+roadmap targets a usable Pi-based Harness distribution. M1 now supplies the
+strict package, Profile, capability, owner, command, enforcement, Mode, Agent,
+Workflow, and Swarm contracts needed to build that product without false-green
+configuration checks. Runtime delivery remains milestone-specific:
 
-- a dry-run-first, idempotent `omp bootstrap` and rollback path;
-- load-time Profiles as capability ceilings;
+- a dry-run-first, idempotent `omp bootstrap` and rollback path is the next
+  milestone;
+- load-time Profiles are validated capability ceilings, but are not yet applied
+  to user settings by this repository;
 - runtime Modes that can only narrow those ceilings;
 - declarative Workflows, Agent roles, and AgentSwarm recipes;
 - a single `omp` / `/omp` control surface;
@@ -119,13 +130,19 @@ local credential stores or a secret manager, never in this repository.
 
 ## Repository checks
 
-Run the no-dependency package inventory check before changing a profile:
+Run the reproducible governance and package checks before changing a Profile or
+promoting a package:
 
 ```bash
+npm ci --ignore-scripts
+npm run typecheck
 npm run doctor
 npm run doctor:profiles
 npm run profile:check
 npm run schema:check
+npm run agents:check
+npm run pack:check
+npm run verify
 npm test
 
 # The three protocol/recovery increments

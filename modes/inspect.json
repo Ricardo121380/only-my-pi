@@ -1,0 +1,48 @@
+{
+  "$schema": "../schemas/mode-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-only",
+  "id": "inspect",
+  "version": "1.0.0",
+  "displayName": "Inspect",
+  "description": "M1 contract seed for a read-only repository inspection mode; activation is not implemented until M3.",
+  "category": "core",
+  "executionState": "ask",
+  "extends": [],
+  "requires": {
+    "profileCapabilities": ["workspace-read"],
+    "packages": [],
+    "enforcementSurfaces": ["toolCallPolicy", "fileToolPolicy"]
+  },
+  "prompt": {
+    "file": "modes/prompts/inspect.md"
+  },
+  "tools": {
+    "allow": ["read", "grep", "find", "ls"],
+    "deny": ["edit", "write", "bash", "web"],
+    "required": ["read"]
+  },
+  "policy": {
+    "workspace": "read-only",
+    "egress": {
+      "web": "deny",
+      "mcp": "deny",
+      "provider": "inherit",
+      "extension": "deny"
+    },
+    "approval": "deny"
+  },
+  "workflow": {
+    "default": "single-agent-safe",
+    "fallback": "single-agent-safe"
+  },
+  "swarm": {
+    "allowed": false,
+    "defaultRecipe": null
+  },
+  "completion": {
+    "gates": ["structured-inspection"],
+    "requiresStructuredVerdict": true
+  },
+  "risk": "low"
+}

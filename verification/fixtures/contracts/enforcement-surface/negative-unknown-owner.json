@@ -1,0 +1,18 @@
+{
+  "$schema": "../../../../schemas/enforcement-surfaces-v1.schema.json",
+  "formatVersion": 1,
+  "surfaces": [
+    {
+      "id": "fileToolPolicy",
+      "owner": "not-registered",
+      "enforcementPoint": "Dispatch",
+      "mechanism": "Deny.",
+      "observableStates": ["unknown"],
+      "stateSource": "Runtime metadata.",
+      "degradedBehavior": "Deny.",
+      "failureBehavior": "Deny.",
+      "failClosed": true,
+      "contractTests": ["unknown-owner"]
+    }
+  ]
+}

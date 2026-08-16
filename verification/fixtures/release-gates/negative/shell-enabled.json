@@ -1,0 +1,7 @@
+{
+  "formatVersion": 1,
+  "operation": "set-policy-field",
+  "field": "shell",
+  "value": true,
+  "expectedError": "policy.shell must be false"
+}

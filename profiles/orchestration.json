@@ -1,0 +1,57 @@
+{
+  "$schema": "../schemas/profile-v1.schema.json",
+  "formatVersion": 1,
+  "id": "orchestration",
+  "description": "Bounded coding orchestration profile that explicitly selects the sole pi-subagents runtime owner.",
+  "packageIds": [
+    "plan-mode",
+    "agent-extensions",
+    "permission-modes",
+    "lsp",
+    "usage",
+    "memory",
+    "git-sync",
+    "subagents"
+  ],
+  "capabilityIds": [
+    "workspace-read",
+    "planning",
+    "session-management",
+    "context-management",
+    "review-assistance",
+    "notifications",
+    "subagent-runtime",
+    "subagent-rpc-v1",
+    "permission-policy",
+    "bash-sandbox-conditional",
+    "file-tool-policy",
+    "lsp",
+    "usage-observability",
+    "memory",
+    "configuration-sync",
+    "session-ledger-metadata",
+    "context-observability"
+  ],
+  "policy": {
+    "projectTrust": "ask",
+    "approval": "ask",
+    "network": "deny-unless-explicit",
+    "session": "central-user-session-dir",
+    "contextFiles": "review-before-trust",
+    "subagents": {
+      "enabled": true,
+      "maxDepth": 1,
+      "maxConcurrency": 2,
+      "writerRequiresWorktree": true,
+      "defaultRole": "scout"
+    },
+    "mcp": {
+      "enabled": false,
+      "hostConfigDiscovery": "off"
+    },
+    "memory": {
+      "owner": "memory",
+      "allowSecondMemory": false
+    }
+  }
+}

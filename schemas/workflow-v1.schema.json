@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/workflow-v1.schema.json",
+  "title": "only-my-pi Workflow manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "id", "version", "description", "entryConditions", "mutationScope", "budget", "fallback", "steps", "terminal", "cancellation", "failure", "recovery"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "workflow-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "enum": ["contract-only", "runtime-ready"] },
+    "id": { "$ref": "#/$defs/id" },
+    "version": { "$ref": "#/$defs/semver" },
+    "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "entryConditions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["profile-resolved", "mode-resolved", "session-idle", "project-trusted", "explicit-approval"] } },
+    "mutationScope": { "enum": ["none", "workspace", "isolated-worktree"] },
+    "budget": { "$ref": "#/$defs/budget" },
+    "fallback": { "$ref": "#/$defs/fallback" },
+    "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } },
+    "terminal": { "$ref": "#/$defs/terminal" },
+    "cancellation": { "$ref": "#/$defs/cancellation" },
+    "failure": { "$ref": "#/$defs/failure" },
+    "recovery": { "$ref": "#/$defs/recovery" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "idSet": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxSteps", "timeoutSeconds", "maxOutputBytes"],
+      "properties": {
+        "maxSteps": { "type": "integer", "minimum": 1, "maximum": 128 },
+        "maxParallel": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "timeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 21600 },
+        "retry": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "maxOutputBytes": { "type": "integer", "minimum": 1024, "maximum": 1048576 }
+      }
+    },
+    "fallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["when", "workflow", "requiresApproval"],
+      "properties": {
+        "when": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["missing-package", "missing-capability", "unavailable-runner"] } },
+        "workflow": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+        "requiresApproval": { "type": "boolean" }
+      }
+    },
+    "stepBase": {
+      "type": "object",
+      "required": ["id", "action", "needs", "policyRef", "approval"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "action": { "enum": ["agent", "gate", "swarm"] },
+        "needs": { "$ref": "#/$defs/idSet" },
+        "policyRef": { "$ref": "#/$defs/id" },
+        "approval": { "enum": ["none", "user"] },
+        "timeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 21600 },
+        "retry": { "type": "integer", "minimum": 0, "maximum": 3 }
+      }
+    },
+    "agentStep": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/stepBase" },
+        { "type": "object", "properties": { "action": { "const": "agent" }, "agent": { "$ref": "#/$defs/id" } }, "required": ["agent"] }
+      ],
+      "unevaluatedProperties": false
+    },
+    "gateStep": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/stepBase" },
+        { "type": "object", "properties": { "action": { "const": "gate" }, "gate": { "$ref": "#/$defs/id" } }, "required": ["gate"] }
+      ],
+      "unevaluatedProperties": false
+    },
+    "swarmStep": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/stepBase" },
+        { "type": "object", "properties": { "action": { "const": "swarm" }, "recipe": { "$ref": "#/$defs/id" } }, "required": ["recipe"] }
+      ],
+      "unevaluatedProperties": false
+    },
+    "step": { "oneOf": [{ "$ref": "#/$defs/agentStep" }, { "$ref": "#/$defs/gateStep" }, { "$ref": "#/$defs/swarmStep" }] },
+    "terminal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step", "acceptedVerdicts", "rejectedVerdicts", "requiresVerifierGate"],
+      "properties": {
+        "step": { "$ref": "#/$defs/id" },
+        "acceptedVerdicts": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["pass"] } },
+        "rejectedVerdicts": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["fail", "blocked", "cancelled"] } },
+        "requiresVerifierGate": { "const": true }
+      }
+    },
+    "cancellation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stopAdmission", "waitForTerminalProof", "terminalVerdict"],
+      "properties": {
+        "stopAdmission": { "const": true },
+        "waitForTerminalProof": { "const": true },
+        "terminalVerdict": { "const": "cancelled" }
+      }
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["onStepFailure", "onGateFailure"],
+      "properties": {
+        "onStepFailure": { "enum": ["fail", "fallback"] },
+        "onGateFailure": { "const": "fail" }
+      }
+    },
+    "recovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["durableState", "verifySourceHash", "resumeFrom"],
+      "properties": {
+        "durableState": { "const": true },
+        "verifySourceHash": { "const": true },
+        "resumeFrom": { "const": "last-settled-step" }
+      }
+    }
+  }
+}

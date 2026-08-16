@@ -9,6 +9,11 @@
     "firstpick-themes",
     "claude-code-tui"
   ],
+  "capabilityIds": [
+    "workspace-read",
+    "session-ledger-metadata",
+    "context-observability"
+  ],
   "policy": {
     "projectTrust": "ask",
     "approval": "ask",

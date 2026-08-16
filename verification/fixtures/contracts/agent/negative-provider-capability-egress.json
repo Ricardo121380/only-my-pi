@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../../schemas/agent-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-only",
+  "id": "fixture-scout",
+  "upstreamAgentId": "omp-fixture-scout",
+  "version": "1.0.0",
+  "description": "Denied Provider egress must reject Provider capabilities.",
+  "prompt": { "file": "agents/prompts/scout.md" },
+  "tools": { "allow": ["read"], "deny": ["edit", "write", "bash", "web"] },
+  "allowedExecutionStates": ["ask"],
+  "requiredCapabilities": ["workspace-read", "provider-runtime"],
+  "policyCeiling": { "workspace": "read-only", "egress": { "web": "deny", "mcp": "deny", "provider": "deny", "extension": "deny" }, "approval": "deny", "mutation": "none" },
+  "modelRole": "inherit",
+  "inputSchema": { "type": "object", "additionalProperties": false, "properties": {}, "required": [] },
+  "outputSchema": { "type": "object", "additionalProperties": false, "properties": {}, "required": [] },
+  "writer": false,
+  "timeoutSeconds": 900,
+  "continuable": false,
+  "resumable": false,
+  "redaction": { "rawPrompts": "omit", "reasoning": "omit", "credentials": "deny", "maxOutputBytes": 51200 },
+  "gateIds": []
+}

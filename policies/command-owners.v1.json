@@ -1,0 +1,42 @@
+{
+  "$schema": "../schemas/command-owner-v1.schema.json",
+  "formatVersion": 1,
+  "commands": [
+    {
+      "id": "omp",
+      "surface": "cli",
+      "owner": "only-my-pi-control",
+      "aliases": [],
+      "status": "reserved"
+    },
+    {
+      "id": "/omp",
+      "surface": "pi-command",
+      "owner": "only-my-pi-control",
+      "aliases": [],
+      "status": "reserved"
+    },
+    {
+      "id": "omp-context",
+      "surface": "pi-command",
+      "owner": "context",
+      "aliases": [],
+      "status": "implemented",
+      "implementedBy": "extensions/context-doctor/index.ts"
+    },
+    {
+      "id": "perm",
+      "surface": "pi-command",
+      "owner": "permission",
+      "aliases": [],
+      "status": "upstream"
+    },
+    {
+      "id": "subagent",
+      "surface": "pi-tool",
+      "owner": "subagents",
+      "aliases": [],
+      "status": "upstream"
+    }
+  ]
+}

@@ -1,12 +1,22 @@
 # Schemas
 
-These JSON Schema Draft 2020-12 documents describe the stable, versioned shape
-of the package inventory and profiles. Repository documents use relative
-`$schema` references so editors can resolve them offline.
+These strict JSON Schema Draft 2020-12 documents define the versioned M1
+contracts for package and first-party resource inventories, Profiles,
+capabilities, owners, command ownership, enforcement surfaces, Modes, Agent
+roles, Workflows, and Swarm Recipes.
 
-The project deliberately has no runtime dependency on a general JSON Schema
-engine. `npm run schema:check` verifies that every reference stays within this
-directory, resolves to valid JSON, declares Draft 2020-12, and has a stable
-`$id`. `package-doctor` and `profile-resolver` enforce the security-sensitive
-semantic rules such as exact pins, candidate promotion, blocked packages, and
-profile resolution.
+`contracts/schema-catalog.json` is the only schema registry. Every catalog
+entry names one schema, one or more non-fixture production documents, and a
+fixture directory. Schema `$ref` values are local fragments only; repository
+documents use relative `$schema` links so editors and validation work offline.
+
+`npm run schema:check` uses Ajv 2020 in strict mode, rejects vacuous kinds, and
+runs cross-document semantic validation for duplicate IDs, unknown references,
+cycles, capability escalation, ownership collisions, and read-only writer/tool
+violations. Positive and negative documents live under
+`verification/fixtures/contracts/`.
+
+The M1 Mode, Agent, Workflow, and Recipe seeds explicitly declare
+`contractStatus: "contract-only"`. Schema validity proves their contract shape;
+it does not claim the M3–M5 runtime is implemented or live Provider execution
+has been tested.

@@ -1,0 +1,8 @@
+{
+  "formatVersion": 1,
+  "operation": "set-gate-field",
+  "gateId": "lint",
+  "field": "args",
+  "value": ["run", "verify", "--", "--run"],
+  "expectedError": "recursively invokes the verification receipt runner"
+}

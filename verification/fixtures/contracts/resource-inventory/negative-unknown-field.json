@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../../schemas/resources-lock-v1.schema.json",
+  "formatVersion": 1,
+  "generatedAt": "2026-08-16",
+  "resources": [
+    {
+      "id": "session-ledger",
+      "type": "extension",
+      "path": "extensions/session-ledger/index.ts",
+      "version": "1.0.0",
+      "provides": ["session-ledger-metadata"],
+      "requires": [],
+      "owners": ["session-ledger"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": true,
+      "profileEligibility": ["minimal"],
+      "lifecycle": "stable",
+      "packaged": true,
+      "loadSecrets": true
+    }
+  ]
+}
