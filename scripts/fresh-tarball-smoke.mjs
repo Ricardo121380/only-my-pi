@@ -26,6 +26,20 @@ function sha512Integrity(bytes) {
   return `sha512-${crypto.createHash("sha512").update(bytes).digest("base64")}`;
 }
 
+function boundedStderrSummary(value) {
+  return String(value)
+    .replace(/\x1b\[[0-?]*[ -\/]*[@-~]/gu, "")
+    .replace(/(?:[A-Za-z]:)?[\\/](?:[^\s\\/]+[\\/])+[^\s]*/gu, "<path>")
+    .replace(/https?:\/\/[^\s]+/gu, "<url>")
+    .replace(/(?:bearer|token|api[-_]?key|secret)\s*[:=]\s*[^\s]+/giu, "$1=<redacted>")
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(-3)
+    .join(" | ")
+    .slice(0, 400);
+}
+
 function safeInheritedEnvironment() {
   const output = {};
   for (const key of ["PATH", "TMPDIR", "TMP", "TEMP", "LANG", "LC_ALL", "SYSTEMROOT", "COMSPEC", "PATHEXT"]) {
@@ -66,6 +80,7 @@ function runCommand(command, args, { cwd, env, label = command, allowExitCodes =
         error.signal = signal ?? null;
         error.stdoutDigest = sha256(out);
         error.stderrDigest = sha256(err);
+        error.stderrSummary = boundedStderrSummary(err);
         reject(error);
         return;
       }
@@ -293,6 +308,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     process.stderr.write(`fresh-tarball-smoke: ERROR ${error.code ?? "FAILED"} ${error.message}\n`);
     if (error.stdoutDigest) process.stderr.write(`stdoutDigest: ${error.stdoutDigest}\n`);
     if (error.stderrDigest) process.stderr.write(`stderrDigest: ${error.stderrDigest}\n`);
+    if (error.stderrSummary) process.stderr.write(`stderrSummary: ${error.stderrSummary}\n`);
     process.exitCode = 1;
   }
 }
