@@ -67,6 +67,30 @@
       "schemaPath": "schemas/swarm-recipe-v1.schema.json",
       "productionGlobs": ["swarm/recipes/*.json"],
       "fixtureDir": "verification/fixtures/contracts/swarm-recipe"
+    },
+    {
+      "kind": "bootstrapTransaction",
+      "schemaPath": "schemas/bootstrap-transaction-v1.schema.json",
+      "productionGlobs": ["contracts/bootstrap/transaction.example.json"],
+      "fixtureDir": "verification/fixtures/bootstrap/contracts/transaction"
+    },
+    {
+      "kind": "bootstrapState",
+      "schemaPath": "schemas/bootstrap-state-v1.schema.json",
+      "productionGlobs": ["contracts/bootstrap/state.example.json"],
+      "fixtureDir": "verification/fixtures/bootstrap/contracts/state"
+    },
+    {
+      "kind": "bootstrapGeneration",
+      "schemaPath": "schemas/bootstrap-generation-v1.schema.json",
+      "productionGlobs": ["contracts/bootstrap/generation.example.json"],
+      "fixtureDir": "verification/fixtures/bootstrap/contracts/generation"
+    },
+    {
+      "kind": "bootstrapSnapshot",
+      "schemaPath": "schemas/bootstrap-snapshot-v1.schema.json",
+      "productionGlobs": ["contracts/bootstrap/snapshot.example.json"],
+      "fixtureDir": "verification/fixtures/bootstrap/contracts/snapshot"
     }
   ]
 }

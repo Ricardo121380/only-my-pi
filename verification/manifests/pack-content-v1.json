@@ -4,7 +4,11 @@
     "package.json",
     "README.md",
     "SECURITY.md",
-    "LICENSE"
+    "LICENSE",
+    "scripts/package-doctor.mjs",
+    "scripts/lib/package-source.mjs",
+    "scripts/lib/profile-resolver.mjs",
+    "scripts/lib/runtime-doctor.mjs"
   ],
   "allowedPrefixes": [
     "bin/",
@@ -34,11 +38,18 @@
   "required": [
     "package.json",
     "README.md",
+    "bin/omp.mjs",
+    "scripts/package-doctor.mjs",
+    "scripts/lib/package-source.mjs",
+    "scripts/lib/profile-resolver.mjs",
+    "scripts/lib/runtime-doctor.mjs",
     "agents/generated/omp-scout.md",
     "agents/scout.json",
     "contracts/schema-catalog.json",
     "extensions/context-doctor/index.ts",
+    "extensions/context-doctor/metrics.mjs",
     "extensions/session-ledger/index.ts",
+    "extensions/session-ledger/ledger.mjs",
     "inventory/packages.lock.json",
     "inventory/resources.lock.json",
     "modes/inspect.json",

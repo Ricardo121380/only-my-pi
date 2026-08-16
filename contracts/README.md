@@ -9,3 +9,7 @@ allowed.
 The Mode, Agent, Workflow, and Swarm Recipe documents introduced in M1 carry
 `"contractStatus": "contract-only"`. They are non-vacuous production contract
 instances, not claims that the M3–M5 registries or runtime adapters exist.
+
+`contracts/bootstrap/*.example.json` are low-sensitive conformance examples
+for the durable M2 file formats. They are never loaded as live state and do not
+claim that a transaction, generation, Provider, or model was executed.

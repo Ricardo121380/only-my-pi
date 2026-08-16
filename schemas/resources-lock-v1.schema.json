@@ -23,7 +23,7 @@
       "required": ["id", "type", "path", "version", "provides", "requires", "owners", "commands", "egressSurfaces", "defaultLoaded", "profileEligibility", "lifecycle", "packaged"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
-        "type": { "enum": ["extension", "skill", "prompt", "theme", "mode", "agent", "workflow", "swarm-recipe", "lab"] },
+        "type": { "enum": ["extension", "library", "skill", "prompt", "theme", "mode", "agent", "workflow", "swarm-recipe", "lab"] },
         "path": { "$ref": "#/$defs/path" },
         "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
         "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },

@@ -44,6 +44,62 @@ function exactVersion(value) {
   return typeof value === "string" && semver.valid(value, { loose: false }) === value;
 }
 
+const lifecycleScriptNames = new Set([
+  "preinstall",
+  "install",
+  "postinstall",
+  "prepublish",
+  "preprepare",
+  "prepare",
+  "postprepare",
+  "prepack",
+  "postpack",
+]);
+
+function checkPromotedLifecycleAudit(findings, entry) {
+  const lifecycle = entry.audit?.lifecycle;
+  if (
+    lifecycle === null
+    || typeof lifecycle !== "object"
+    || Array.isArray(lifecycle)
+    || lifecycle.execution !== "disabled"
+    || !Array.isArray(lifecycle.scripts)
+  ) {
+    add(findings, "error", "missing-lifecycle-audit", `Promoted package ${entry.id} requires a disabled lifecycle audit.`, {
+      packageId: entry.id,
+    });
+    return;
+  }
+  if (entry.audit?.lifecycleScripts !== undefined) {
+    add(findings, "error", "ambiguous-lifecycle-audit", `Promoted package ${entry.id} must not use the legacy lifecycleScripts boolean.`, {
+      packageId: entry.id,
+    });
+  }
+  const names = new Set();
+  for (const script of lifecycle.scripts) {
+    if (
+      script === null
+      || typeof script !== "object"
+      || Array.isArray(script)
+      || !lifecycleScriptNames.has(script.name)
+      || !/^sha256:[a-f0-9]{64}$/.test(script.commandSha256 ?? "")
+      || !["not-required", "required"].includes(script.necessity)
+      || names.has(script.name)
+    ) {
+      add(findings, "error", "invalid-lifecycle-audit", `Promoted package ${entry.id} has an invalid or duplicate lifecycle script audit.`, {
+        packageId: entry.id,
+      });
+      continue;
+    }
+    names.add(script.name);
+    if (script.necessity === "required") {
+      add(findings, "error", "lifecycle-sandbox-unavailable", `Promoted package ${entry.id} requires lifecycle script ${script.name}, but no outer sandbox executor is configured.`, {
+        packageId: entry.id,
+      });
+    }
+  }
+}
+
 function profileRecord(file, document) {
   return { file, document };
 }
@@ -93,7 +149,7 @@ function contractTestExists(root, testId) {
   return candidates.some((candidate) => isInside(root, candidate) && fs.existsSync(candidate));
 }
 
-function checkPackageTopology(findings, root, manifest) {
+function checkPackageTopology(findings, root, manifest, { requireLockfile = true } = {}) {
   const hostPackage = "@earendil-works/pi-coding-agent";
   if (manifest?.peerDependencies?.[hostPackage] !== "*") {
     add(findings, "error", "host-peer-topology", `${hostPackage} must be a wildcard peer dependency.`);
@@ -132,7 +188,7 @@ function checkPackageTopology(findings, root, manifest) {
     }
   }
 
-  if (!fs.existsSync(path.join(root, "package-lock.json"))) {
+  if (requireLockfile && !fs.existsSync(path.join(root, "package-lock.json"))) {
     add(findings, "error", "missing-lockfile", "package-lock.json is required for reproducible installs.");
   }
 }
@@ -423,7 +479,7 @@ function auditProfile({
  * Audit static M1 declarations. This performs no install, network request,
  * credential read, Pi-home access, or live Provider/runtime probe.
  */
-export function auditPackageGovernance(governance, { strict = false, profileIds } = {}) {
+export function auditPackageGovernance(governance, { strict = false, profileIds, artifactLayout = false } = {}) {
   const root = path.resolve(governance.root ?? defaultRoot);
   const findings = [];
   const inventory = governance.inventory ?? {};
@@ -444,7 +500,7 @@ export function auditPackageGovernance(governance, { strict = false, profileIds 
   ]) {
     checkDocumentVersion(findings, name, document);
   }
-  checkPackageTopology(findings, root, manifest);
+  checkPackageTopology(findings, root, manifest, { requireLockfile: !artifactLayout });
 
   const promoted = asArray(inventory.packages);
   const candidates = asArray(inventory.candidates);
@@ -483,6 +539,7 @@ export function auditPackageGovernance(governance, { strict = false, profileIds 
           packageId: entry.id,
         });
       }
+      if (promotedEntry) checkPromotedLifecycleAudit(findings, entry);
       checkUniqueStrings(findings, entry.owners, `Package ${entry.id} owners`, { packageId: entry.id });
     }
   }
@@ -517,7 +574,16 @@ export function auditPackageGovernance(governance, { strict = false, profileIds 
     }
     resourceById.set(resource.id, resource);
     const absolute = path.resolve(root, resource.path ?? "");
-    if (!isInside(root, absolute) || !fs.existsSync(absolute)) {
+    const resourceInside = isInside(root, absolute);
+    const absentNonPackagedResource = artifactLayout
+      && resourceInside
+      && resource.packaged !== true
+      && !fs.existsSync(absolute);
+    if (absentNonPackagedResource) {
+      // Source-only Labs and verification helpers are intentionally excluded
+      // from the runtime tarball. Their declarations remain auditable without
+      // turning absence from an installed artifact into a false failure.
+    } else if (!resourceInside || !fs.existsSync(absolute)) {
       add(findings, "error", "invalid-resource-path", `Resource ${resource.id} path is missing or escapes the repository.`, {
         resourceId: resource.id,
       });
@@ -566,7 +632,7 @@ export function auditPackageGovernance(governance, { strict = false, profileIds 
     if (surface.failClosed !== true) {
       add(findings, "error", "surface-not-fail-closed", `Surface ${surface.id} must fail closed.`, { surfaceId: surface.id });
     }
-    for (const testId of asArray(surface.contractTests)) {
+    for (const testId of artifactLayout ? [] : asArray(surface.contractTests)) {
       if (!contractTestExists(root, testId)) {
         add(findings, "error", "missing-contract-test", `Surface ${surface.id} references missing contract test ${testId}.`, {
           surfaceId: surface.id,
@@ -871,7 +937,7 @@ export function auditPackageGovernance(governance, { strict = false, profileIds 
   const warnings = findings.filter((item) => item.severity === "warning").length;
   return {
     ok: errors === 0 && (!strict || warnings === 0),
-    scope: "static-declarations-only",
+    scope: artifactLayout ? "packaged-static-declarations-only" : "static-declarations-only",
     runtimeEvidence: "not-evaluated",
     errors,
     warnings,

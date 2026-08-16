@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/packages-lock-v1.schema.json",
+  "formatVersion": 1,
+  "generatedAt": "2026-08-16",
+  "runtime": { "pi": "0.84.1", "node": "25.8.0", "platform": "darwin-arm64" },
+  "policy": { "requireExactNpmVersion": true, "allowOldMarioScope": false, "allowUnreviewedPackages": false, "oneOwnerPerGroup": { "memory": true }, "defaultNetwork": "deny", "defaultCredentials": "never-from-repository" },
+  "packages": [
+    {
+      "id": "invalid-lifecycle-digest",
+      "spec": "npm:example-package@1.2.3",
+      "scope": "project",
+      "installed": true,
+      "review": "fixture",
+      "owners": ["planning"],
+      "risk": ["extension-code"],
+      "notes": "Lifecycle command digests must be canonical lowercase sha256 values.",
+      "audit": {
+        "date": "2026-08-16",
+        "integrity": "sha512-6yJoJ2nXsvnXAaEzr1iQlpUMqOFnDX+rMYVRXE/uV6OVmeB1AxFr9jm0H8N+1jr7Q0WebjtVSNE6dTOwaBGurA==",
+        "lifecycle": {
+          "execution": "disabled",
+          "scripts": [
+            { "name": "postinstall", "commandSha256": "sha256:not-a-digest", "necessity": "not-required" }
+          ]
+        }
+      }
+    }
+  ],
+  "candidates": []
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../../../schemas/bootstrap-snapshot-v1.schema.json",
+  "formatVersion": 1,
+  "snapshotId": "snapshot-1",
+  "createdAt": "2026-08-16T00:00:00.000Z",
+  "settingsRelativePath": "/tmp/settings.json",
+  "source": {
+    "exists": true,
+    "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "owned": {
+    "paths": ["/onlyMyPi"],
+    "present": [],
+    "values": {}
+  },
+  "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+}

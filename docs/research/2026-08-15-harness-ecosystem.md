@@ -11,7 +11,7 @@
 `only-my-pi` 已创建为独立 Git 仓库，并推送到 GitHub：
 
 - GitHub：<https://github.com/Ricardo121380/only-my-pi>
-- 本机路径：`/Users/huangrui/Documents/ChatGPT/only-my-pi`
+- 本机路径：`<repo-root>`（不把开发机绝对路径写入仓库）
 - 当前可见性：Private（先按安全默认创建；以后如果要开源，再单独评估哪些内容可以公开）
 - 初始提交：`c71add4`，`Initialize only-my-pi package`
 - 初始目录：`extensions/`、`skills/`、`prompts/`、`themes/`、`docs/`

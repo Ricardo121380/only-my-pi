@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/bootstrap-snapshot-v1.schema.json",
+  "title": "only-my-pi owned settings snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "snapshotId", "createdAt", "settingsRelativePath", "source", "owned", "digest"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "bootstrap-snapshot-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "snapshotId": { "$ref": "#/$defs/id" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "settingsRelativePath": { "const": "settings.json" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exists", "digest"],
+      "properties": {
+        "exists": { "type": "boolean" },
+        "digest": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "owned": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paths", "present", "values"],
+      "properties": {
+        "paths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/jsonPointer" }
+        },
+        "present": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/jsonPointer" }
+        },
+        "values": { "type": "object" }
+      }
+    },
+    "digest": { "$ref": "#/$defs/hash" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
+    "hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "jsonPointer": { "type": "string", "pattern": "^/(?:[^~/]|~0|~1)+(?:/(?:[^~/]|~0|~1)+)*$" }
+  }
+}

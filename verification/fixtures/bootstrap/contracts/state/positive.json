@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../../../schemas/bootstrap-state-v1.schema.json",
+  "formatVersion": 1,
+  "generationId": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "generationManifestRelativePath": "only-my-pi/generations/example/.only-my-pi-generation.json",
+  "generationManifestDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "settingsDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "snapshotId": "lkg-snapshot",
+  "transactionId": "123e4567-e89b-42d3-a456-426614174000",
+  "committedAt": "2026-08-16T00:00:00.000Z",
+  "metadata": {
+    "providerSelection": {
+      "providerId": "deepseek",
+      "modelId": "deepseek-v4-pro",
+      "status": "CONFIGURED_UNVERIFIED"
+    },
+    "initialMode": {
+      "id": "coding",
+      "status": "PENDING_M3_RESOLUTION"
+    }
+  },
+  "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+}

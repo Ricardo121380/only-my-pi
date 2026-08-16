@@ -121,6 +121,56 @@ test("production package inventory has exact sources and SRI for every promotion
   assert.equal(result.runtimeEvidence, "not-evaluated");
 });
 
+test("every promoted package has an exact disabled lifecycle audit", () => {
+  const packages = loadGovernance(root).inventory.packages;
+  const expectedScripts = new Map([
+    [
+      "permission-modes",
+      [{
+        name: "postinstall",
+        commandSha256: "sha256:2339ab6db8e67f0e2c8616f1fb3c57c972942ba15776090acd4fbefce4f33338",
+        necessity: "not-required",
+      }],
+    ],
+    [
+      "memory",
+      [{
+        name: "postinstall",
+        commandSha256: "sha256:9fb2978bb4dfeb2719e77a68d657788c06408485f81390b06d29dcb33176994f",
+        necessity: "not-required",
+      }],
+    ],
+  ]);
+
+  for (const entry of packages) {
+    assert.deepEqual(Object.keys(entry.audit.lifecycle).sort(), ["execution", "scripts"], entry.id);
+    assert.equal(entry.audit.lifecycle.execution, "disabled", entry.id);
+    assert.equal(entry.audit.lifecycleScripts, undefined, entry.id);
+    assert.deepEqual(entry.audit.lifecycle.scripts, expectedScripts.get(entry.id) ?? [], entry.id);
+    for (const script of entry.audit.lifecycle.scripts) {
+      assert.deepEqual(Object.keys(script).sort(), ["commandSha256", "name", "necessity"], `${entry.id}/${script.name}`);
+    }
+  }
+});
+
+test("required lifecycle scripts remain unavailable without an outer sandbox executor", () => {
+  const governance = structuredClone(loadGovernance(root));
+  governance.inventory.packages[0].audit.lifecycle.scripts = [{
+    name: "postinstall",
+    commandSha256: "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    necessity: "required",
+  }];
+
+  const result = auditPackageGovernance(governance);
+  const finding = result.findings.find((entry) => entry.code === "lifecycle-sandbox-unavailable");
+  assert.deepEqual(finding, {
+    severity: "error",
+    code: "lifecycle-sandbox-unavailable",
+    message: "Promoted package plan-mode requires lifecycle script postinstall, but no outer sandbox executor is configured.",
+    packageId: "plan-mode",
+  });
+});
+
 test("package topology keeps Pi as a peer and direct tooling dependencies exact", () => {
   const governance = loadGovernance(root);
   const manifest = governance.packageManifest;

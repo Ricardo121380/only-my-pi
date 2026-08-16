@@ -19,6 +19,21 @@
       "packaged": true
     },
     {
+      "id": "session-ledger-runtime",
+      "type": "library",
+      "path": "extensions/session-ledger/ledger.mjs",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": [],
+      "owners": ["session-ledger"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
       "id": "context-doctor",
       "type": "extension",
       "path": "extensions/context-doctor/index.ts",
@@ -29,6 +44,21 @@
       "commands": ["omp-context"],
       "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": true,
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "context-doctor-runtime",
+      "type": "library",
+      "path": "extensions/context-doctor/metrics.mjs",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": [],
+      "owners": ["context"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
       "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true

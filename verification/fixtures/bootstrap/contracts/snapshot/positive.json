@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../../../schemas/bootstrap-snapshot-v1.schema.json",
+  "formatVersion": 1,
+  "snapshotId": "snapshot-1",
+  "createdAt": "2026-08-16T00:00:00.000Z",
+  "settingsRelativePath": "settings.json",
+  "source": {
+    "exists": true,
+    "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "owned": {
+    "paths": ["/extensions", "/onlyMyPi", "/packages"],
+    "present": ["/onlyMyPi", "/packages"],
+    "values": {
+      "onlyMyPi": { "formatVersion": 1 },
+      "packages": ["./only-my-pi/generations/example"]
+    }
+  },
+  "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+}

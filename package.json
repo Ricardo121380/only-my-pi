@@ -7,6 +7,9 @@
     "pi-package"
   ],
   "license": "MIT",
+  "bin": {
+    "omp": "bin/omp.mjs"
+  },
   "files": [
     "README.md",
     "SECURITY.md",
@@ -29,6 +32,10 @@
     "inventory/",
     "contracts/",
     "schemas/",
+    "scripts/package-doctor.mjs",
+    "scripts/lib/package-source.mjs",
+    "scripts/lib/profile-resolver.mjs",
+    "scripts/lib/runtime-doctor.mjs",
     "packages/config-runtime/",
     "packages/bootstrap/",
     "packages/control-service/",

@@ -36,7 +36,8 @@
       "notes": "Extension-level risk reduction; not an OS sandbox.",
       "audit": {
         "date": "2026-08-16",
-        "integrity": "sha512-6yJoJ2nXsvnXAaEzr1iQlpUMqOFnDX+rMYVRXE/uV6OVmeB1AxFr9jm0H8N+1jr7Q0WebjtVSNE6dTOwaBGurA=="
+        "integrity": "sha512-6yJoJ2nXsvnXAaEzr1iQlpUMqOFnDX+rMYVRXE/uV6OVmeB1AxFr9jm0H8N+1jr7Q0WebjtVSNE6dTOwaBGurA==",
+        "lifecycle": { "execution": "disabled", "scripts": [] }
       }
     },
     {
@@ -56,7 +57,8 @@
       "notes": "Other resources remain installed but are not auto-loaded.",
       "audit": {
         "date": "2026-08-16",
-        "integrity": "sha512-1WLN9KTlOrOcPK26jctDkxjww6Msm4nNLinJTuRxEaVwWS1SsBMom2Zi2iBEYwdiSWc8kG57jmNuJ+1VcFZp/A=="
+        "integrity": "sha512-1WLN9KTlOrOcPK26jctDkxjww6Msm4nNLinJTuRxEaVwWS1SsBMom2Zi2iBEYwdiSWc8kG57jmNuJ+1VcFZp/A==",
+        "lifecycle": { "execution": "disabled", "scripts": [] }
       }
     },
     {
@@ -70,7 +72,8 @@
       "notes": "Use only in research profile; browser cookies stay disabled by default.",
       "audit": {
         "date": "2026-08-16",
-        "integrity": "sha512-jMHiNe6hGQYmblSJsYBA2HdGuEe2sOM1GSVvVRMESwJoPvdfClaln6NlRD0/SOfBo1PiLCD1OUQhSrW4gMF3vQ=="
+        "integrity": "sha512-jMHiNe6hGQYmblSJsYBA2HdGuEe2sOM1GSVvVRMESwJoPvdfClaln6NlRD0/SOfBo1PiLCD1OUQhSrW4gMF3vQ==",
+        "lifecycle": { "execution": "disabled", "scripts": [] }
       }
     },
     {
@@ -84,7 +87,8 @@
       "notes": "Start with scout/reviewer; writer children use worktrees and review gates.",
       "audit": {
         "date": "2026-08-16",
-        "integrity": "sha512-VEvBF6vrpi+eLEjhgwqutSnaH/aw58+Um9vdJUc6Td1asH22bAKahrgD3AafaRNsROgiaukw4DRdmlRjEhBxQA=="
+        "integrity": "sha512-VEvBF6vrpi+eLEjhgwqutSnaH/aw58+Um9vdJUc6Td1asH22bAKahrgD3AafaRNsROgiaukw4DRdmlRjEhBxQA==",
+        "lifecycle": { "execution": "disabled", "scripts": [] }
       }
     },
     {
@@ -98,7 +102,17 @@
       "notes": "Provides a conditional OS Bash sandbox through @anthropic-ai/sandbox-runtime when available and an explicit degraded prompt fallback otherwise. Never make YOLO the default, and never infer file, Web, MCP, Provider, extension, or whole-session isolation from the Bash boundary.",
       "audit": {
         "date": "2026-08-16",
-        "integrity": "sha512-y4n110DiN99xl2tyLLU7ZyMadZUOYvxm9YKEpoZo2vFF4QJIgV7RKBAI6KztaRayAWPhA+95FdIBcV0He8vyfw=="
+        "integrity": "sha512-y4n110DiN99xl2tyLLU7ZyMadZUOYvxm9YKEpoZo2vFF4QJIgV7RKBAI6KztaRayAWPhA+95FdIBcV0He8vyfw==",
+        "lifecycle": {
+          "execution": "disabled",
+          "scripts": [
+            {
+              "name": "postinstall",
+              "commandSha256": "sha256:2339ab6db8e67f0e2c8616f1fb3c57c972942ba15776090acd4fbefce4f33338",
+              "necessity": "not-required"
+            }
+          ]
+        }
       }
     },
     {
@@ -112,7 +126,8 @@
       "notes": "Install language servers per project and language.",
       "audit": {
         "date": "2026-08-16",
-        "integrity": "sha512-RA0XAVAdck8W2gm2Do67C/IrCRUBJkKWPawZg1QqvlfEH9TMZbrGBYOgvGYcnGuRQ3FyxxFgJSq0fbdpMW8KAQ=="
+        "integrity": "sha512-RA0XAVAdck8W2gm2Do67C/IrCRUBJkKWPawZg1QqvlfEH9TMZbrGBYOgvGYcnGuRQ3FyxxFgJSq0fbdpMW8KAQ==",
+        "lifecycle": { "execution": "disabled", "scripts": [] }
       }
     },
     {
@@ -126,7 +141,8 @@
       "notes": "Validate after a real Provider/model call.",
       "audit": {
         "date": "2026-08-16",
-        "integrity": "sha512-D/vmdkfIQeqKOuMEgZtcFQPDc2SZcLIwipByrQHHeGAVw5aOBGmfD9hMzYLAny+7eGuGpuXZxGtAgS3PrKuu/Q=="
+        "integrity": "sha512-D/vmdkfIQeqKOuMEgZtcFQPDc2SZcLIwipByrQHHeGAVw5aOBGmfD9hMzYLAny+7eGuGpuXZxGtAgS3PrKuu/Q==",
+        "lifecycle": { "execution": "disabled", "scripts": [] }
       }
     },
     {
@@ -140,7 +156,17 @@
       "notes": "Do not stack with observational-memory or context-mode.",
       "audit": {
         "date": "2026-08-16",
-        "integrity": "sha512-p5h32q3LO9wy2g8DM7uQZl+0NnhZfaU+qyDQhEExD1fAYC9tf2tYZ5OQuh756tfaxEw3DONsT5zEHG9xB/Gg+g=="
+        "integrity": "sha512-p5h32q3LO9wy2g8DM7uQZl+0NnhZfaU+qyDQhEExD1fAYC9tf2tYZ5OQuh756tfaxEw3DONsT5zEHG9xB/Gg+g==",
+        "lifecycle": {
+          "execution": "disabled",
+          "scripts": [
+            {
+              "name": "postinstall",
+              "commandSha256": "sha256:9fb2978bb4dfeb2719e77a68d657788c06408485f81390b06d29dcb33176994f",
+              "necessity": "not-required"
+            }
+          ]
+        }
       }
     },
     {
@@ -154,7 +180,8 @@
       "notes": "Sync only reviewed repository resources; never auth, sessions, caches, or secrets.",
       "audit": {
         "date": "2026-08-16",
-        "integrity": "sha512-/kc/ZyD/St2SP8C4c7RMHPRirbKI/Tm3lx3gjf1L5RfGkmHZ7ww+BZfM7gW8p04fnxK6JLpOQUXMtCgUWXAeAA=="
+        "integrity": "sha512-/kc/ZyD/St2SP8C4c7RMHPRirbKI/Tm3lx3gjf1L5RfGkmHZ7ww+BZfM7gW8p04fnxK6JLpOQUXMtCgUWXAeAA==",
+        "lifecycle": { "execution": "disabled", "scripts": [] }
       }
     }
   ],

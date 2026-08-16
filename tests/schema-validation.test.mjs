@@ -115,9 +115,22 @@ test("promoted npm and Git sources require package-doctor-compatible audit integ
   const registry = createSchemaRegistry({ rootDir: root });
   const positive = fixture("inventory", "positive.json");
   for (const entry of positive.document.packages) assert.doesNotThrow(() => validatePackageEntrySource(entry, { promoted: true }), entry.id);
-  for (const name of ["negative-promoted-npm-missing-integrity.json", "negative-promoted-git-missing-integrity.json", "negative-promoted-invalid-integrity.json"]) {
-    assertFixtureKeyword(registry, "inventory", name, "governance-integrity");
+  for (const name of ["negative-promoted-npm-missing-integrity.json", "negative-promoted-git-missing-integrity.json"]) {
+    assertFixtureKeyword(registry, "inventory", name, "required");
   }
+  assertFixtureKeyword(registry, "inventory", "negative-promoted-invalid-integrity.json", "pattern");
+});
+
+test("promoted lifecycle audits fail closed on missing, malformed, and legacy declarations", () => {
+  const registry = createSchemaRegistry({ rootDir: root });
+  assertFixtureKeyword(registry, "inventory", "negative-promoted-missing-lifecycle.json", "required");
+  assertFixtureKeyword(registry, "inventory", "negative-promoted-invalid-lifecycle-digest.json", "pattern");
+  assertFixtureKeyword(registry, "inventory", "negative-promoted-legacy-lifecycle-scripts.json", "false schema");
+
+  const required = fixture("inventory", "runtime-negative-required-lifecycle.json");
+  const result = registry.validate("inventory", required.document, { sourcePath: required.sourcePath });
+  assert.equal(result.valid, true, JSON.stringify(result.errors));
+  assert.equal(required.document.packages[0].audit.lifecycle.scripts[0].necessity, "required");
 });
 
 test("Mode and Agent policy ceilings reject mutation and denied egress escalation", () => {

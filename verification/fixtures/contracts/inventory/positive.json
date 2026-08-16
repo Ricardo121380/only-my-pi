@@ -23,7 +23,8 @@
       "notes": "Exact npm fixture.",
       "audit": {
         "date": "2026-08-16",
-        "integrity": "sha512-6yJoJ2nXsvnXAaEzr1iQlpUMqOFnDX+rMYVRXE/uV6OVmeB1AxFr9jm0H8N+1jr7Q0WebjtVSNE6dTOwaBGurA=="
+        "integrity": "sha512-6yJoJ2nXsvnXAaEzr1iQlpUMqOFnDX+rMYVRXE/uV6OVmeB1AxFr9jm0H8N+1jr7Q0WebjtVSNE6dTOwaBGurA==",
+        "lifecycle": { "execution": "disabled", "scripts": [] }
       }
     },
     {
@@ -37,7 +38,8 @@
       "notes": "Exact Git commit fixture.",
       "audit": {
         "date": "2026-08-16",
-        "integrity": "sha512-6yJoJ2nXsvnXAaEzr1iQlpUMqOFnDX+rMYVRXE/uV6OVmeB1AxFr9jm0H8N+1jr7Q0WebjtVSNE6dTOwaBGurA=="
+        "integrity": "sha512-6yJoJ2nXsvnXAaEzr1iQlpUMqOFnDX+rMYVRXE/uV6OVmeB1AxFr9jm0H8N+1jr7Q0WebjtVSNE6dTOwaBGurA==",
+        "lifecycle": { "execution": "disabled", "scripts": [] }
       }
     }
   ],

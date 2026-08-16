@@ -45,6 +45,7 @@ scripts/      Repository checks and package governance tooling
 - [Package governance decision](docs/decisions/ADR-0001-package-governance.md)
 - [Product boundary decision](docs/decisions/ADR-0002-product-boundary.md)
 - [Package topology and capability ownership decision](docs/decisions/ADR-0003-package-topology.md)
+- [Transactional bootstrap decision](docs/decisions/ADR-0004-transactional-bootstrap.md)
 - [Labs and graduation boundary](docs/LABS.md)
 - [Pinned package inventory](inventory/packages.lock.json)
 - [Profile resolver design](docs/architecture/profile-resolver.md)
@@ -56,25 +57,28 @@ scripts/      Repository checks and package governance tooling
 - [DeepSeek Provider conformance](docs/architecture/deepseek-conformance.md)
 - [ACP v1 adapter](docs/architecture/acp-v1.md)
 - [Workspace checkpoint](docs/architecture/workspace-checkpoint.md)
+- [Transactional bootstrap runtime](docs/architecture/bootstrap-runtime.md)
 - [Current implementation status](docs/STATUS.md)
 
 ## Product direction
 
-The next product milestone is not another Provider or protocol adapter. The
-roadmap targets a usable Pi-based Harness distribution. M1 now supplies the
+The product is not another Provider or protocol adapter. The roadmap targets a
+usable Pi-based Harness distribution. M1 supplies the
 strict package, Profile, capability, owner, command, enforcement, Mode, Agent,
 Workflow, and Swarm contracts needed to build that product without false-green
-configuration checks. Runtime delivery remains milestone-specific:
+configuration checks. M2 adds the transactional `omp` configuration runtime:
 
-- a dry-run-first, idempotent `omp bootstrap` and rollback path is the next
-  milestone;
-- load-time Profiles are validated capability ceilings, but are not yet applied
-  to user settings by this repository;
-- runtime Modes that can only narrow those ceilings;
-- declarative Workflows, Agent roles, and AgentSwarm recipes;
-- a single `omp` / `/omp` control surface;
-- lightweight status and theme resources that do not replace Pi's runtime or
-  TUI.
+- a dry-run-first, idempotent `omp bootstrap`, update, uninstall, and rollback
+  path with settings published only after immutable generation verification;
+- load-time Profiles are validated capability ceilings and can now be applied
+  to an explicitly selected Pi config root;
+- versioned runtime Modes that M3 will constrain to narrowing those ceilings;
+- declarative Workflows, Agent roles, and AgentSwarm recipes in the following
+  milestones;
+- one `omp` CLI now, followed by the single package-owned `/omp` Pi command in
+  M3;
+- lightweight status and theme resources in M6 that do not replace Pi's
+  runtime or TUI.
 
 The planned AgentSwarm reuses the governed `pi-subagents` package through a
 narrow adapter. It will not register a competing subagent tool or child-agent
@@ -83,6 +87,32 @@ non-default Labs modules with the explicit boundaries in the
 [Labs registry](docs/LABS.md).
 
 ## Local development
+
+Run a zero-write bootstrap plan against a disposable Pi configuration root:
+
+```bash
+export PI_CODING_AGENT_DIR="$(mktemp -d)"
+node bin/omp.mjs bootstrap --profile minimal --mode inspect
+```
+
+After reviewing the plan, apply it interactively or use `--yes` only for a
+directly authorized non-interactive run:
+
+```bash
+node bin/omp.mjs bootstrap --profile minimal --mode inspect --apply
+node bin/omp.mjs status
+node bin/omp.mjs doctor
+```
+
+The apply path may fetch the exact reviewed package tarballs. It disables
+lifecycle scripts, verifies direct tarball integrity, stages a complete
+generation, publishes only owned settings last, runs a static doctor and an
+isolated no-model Pi RPC startup, then records rollback state. Provider/model
+flags store non-sensitive identifiers as `CONFIGURED_UNVERIFIED`; they do not
+read a key or call a model. See the [bootstrap runtime guide](docs/architecture/bootstrap-runtime.md)
+before targeting an existing Pi directory. In M2, `--mode` records the bounded
+`PENDING_M3_RESOLUTION` selection seam; M3 will resolve and activate Mode
+manifests rather than treating that metadata as a live Mode.
 
 Install this checkout as a local Pi package while developing:
 

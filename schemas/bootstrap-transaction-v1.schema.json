@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/bootstrap-transaction-v1.schema.json",
+  "title": "only-my-pi bootstrap transaction journal v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "formatVersion",
+    "transactionId",
+    "operation",
+    "status",
+    "phase",
+    "phaseHistory",
+    "profileId",
+    "generationId",
+    "snapshotId",
+    "graphVerified",
+    "settingsPublished",
+    "createdAt",
+    "updatedAt"
+  ],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "bootstrap-transaction-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "transactionId": { "$ref": "#/$defs/transactionId" },
+    "operation": { "enum": ["bootstrap", "update", "uninstall", "rollback"] },
+    "status": { "enum": ["ACTIVE", "RECOVERING", "COMMITTED", "ROLLED_BACK", "FAILED"] },
+    "phase": { "$ref": "#/$defs/phase" },
+    "phaseHistory": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": { "$ref": "#/$defs/phase" }
+    },
+    "profileId": { "$ref": "#/$defs/id" },
+    "generationId": { "anyOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }] },
+    "snapshotId": { "$ref": "#/$defs/id" },
+    "graphVerified": { "type": "boolean" },
+    "settingsPublished": { "type": "boolean" },
+    "generationManifestDigest": { "anyOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }] },
+    "promotionCreated": { "type": "boolean" },
+    "intendedSettingsDigest": { "$ref": "#/$defs/hash" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "failureCode": { "type": ["string", "null"], "pattern": "^[A-Z][A-Z0-9_]{2,63}$" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "operation": { "enum": ["bootstrap", "update"] } }, "required": ["operation"] },
+      "then": { "properties": { "generationId": { "$ref": "#/$defs/hash" } } }
+    },
+    {
+      "if": { "properties": { "operation": { "const": "uninstall" } }, "required": ["operation"] },
+      "then": { "properties": { "generationId": { "type": "null" } } }
+    },
+    {
+      "if": { "properties": { "phase": { "enum": ["PREPARED", "BACKUP_DURABLE", "GRAPH_STAGING", "GRAPH_STAGED"] } }, "required": ["phase"] },
+      "then": {
+        "properties": { "graphVerified": { "const": false }, "settingsPublished": { "const": false } },
+        "not": {
+          "anyOf": [
+            { "properties": { "generationManifestDigest": {} }, "required": ["generationManifestDigest"] },
+            { "properties": { "promotionCreated": {} }, "required": ["promotionCreated"] },
+            { "properties": { "intendedSettingsDigest": {} }, "required": ["intendedSettingsDigest"] }
+          ]
+        }
+      },
+      "else": {
+        "required": ["generationManifestDigest"],
+        "properties": { "graphVerified": { "const": true } }
+      }
+    },
+    {
+      "if": { "properties": { "phase": { "const": "GRAPH_VERIFIED" } }, "required": ["phase"] },
+      "then": {
+        "properties": { "settingsPublished": { "const": false } },
+        "not": {
+          "anyOf": [
+            { "properties": { "promotionCreated": {} }, "required": ["promotionCreated"] },
+            { "properties": { "intendedSettingsDigest": {} }, "required": ["intendedSettingsDigest"] }
+          ]
+        }
+      }
+    },
+    {
+      "if": { "properties": { "phase": { "enum": ["GRAPH_PROMOTED", "SETTINGS_PUBLISHED", "STATIC_DOCTOR_PASSED", "SMOKE_PASSED", "COMMITTED"] } }, "required": ["phase"] },
+      "then": { "required": ["promotionCreated", "intendedSettingsDigest"] }
+    },
+    {
+      "if": { "properties": { "phase": { "const": "GRAPH_PROMOTED" } }, "required": ["phase"] },
+      "then": { "properties": { "settingsPublished": { "const": false } } }
+    },
+    {
+      "if": { "properties": { "phase": { "enum": ["SETTINGS_PUBLISHED", "STATIC_DOCTOR_PASSED", "SMOKE_PASSED", "COMMITTED"] } }, "required": ["phase"] },
+      "then": { "properties": { "settingsPublished": { "const": true } } }
+    },
+    {
+      "if": { "properties": { "generationId": { "type": "null" } }, "required": ["generationId"] },
+      "then": {
+        "properties": {
+          "generationManifestDigest": { "type": "null" },
+          "promotionCreated": { "const": false }
+        }
+      },
+      "else": { "properties": { "generationManifestDigest": { "$ref": "#/$defs/hash" } } }
+    },
+    {
+      "if": { "properties": { "status": { "const": "COMMITTED" } }, "required": ["status"] },
+      "then": { "properties": { "phase": { "const": "COMMITTED" } } }
+    },
+    {
+      "if": { "properties": { "phase": { "const": "COMMITTED" } }, "required": ["phase"] },
+      "then": { "properties": { "status": { "const": "COMMITTED" } } }
+    },
+    {
+      "if": { "properties": { "status": { "enum": ["ROLLED_BACK", "FAILED"] } }, "required": ["status"] },
+      "then": { "required": ["failureCode"], "properties": { "failureCode": { "type": "string" } } },
+      "else": { "not": { "properties": { "failureCode": { "type": "string" } }, "required": ["failureCode"] } }
+    }
+  ],
+  "oneOf": [
+    { "properties": { "phase": { "const": "PREPARED" }, "phaseHistory": { "const": ["PREPARED"] } } },
+    { "properties": { "phase": { "const": "BACKUP_DURABLE" }, "phaseHistory": { "const": ["PREPARED", "BACKUP_DURABLE"] } } },
+    { "properties": { "phase": { "const": "GRAPH_STAGING" }, "phaseHistory": { "const": ["PREPARED", "BACKUP_DURABLE", "GRAPH_STAGING"] } } },
+    { "properties": { "phase": { "const": "GRAPH_STAGED" }, "phaseHistory": { "const": ["PREPARED", "BACKUP_DURABLE", "GRAPH_STAGING", "GRAPH_STAGED"] } } },
+    { "properties": { "phase": { "const": "GRAPH_VERIFIED" }, "phaseHistory": { "const": ["PREPARED", "BACKUP_DURABLE", "GRAPH_STAGING", "GRAPH_STAGED", "GRAPH_VERIFIED"] } } },
+    { "properties": { "phase": { "const": "GRAPH_PROMOTED" }, "phaseHistory": { "const": ["PREPARED", "BACKUP_DURABLE", "GRAPH_STAGING", "GRAPH_STAGED", "GRAPH_VERIFIED", "GRAPH_PROMOTED"] } } },
+    { "properties": { "phase": { "const": "SETTINGS_PUBLISHED" }, "phaseHistory": { "const": ["PREPARED", "BACKUP_DURABLE", "GRAPH_STAGING", "GRAPH_STAGED", "GRAPH_VERIFIED", "GRAPH_PROMOTED", "SETTINGS_PUBLISHED"] } } },
+    { "properties": { "phase": { "const": "STATIC_DOCTOR_PASSED" }, "phaseHistory": { "const": ["PREPARED", "BACKUP_DURABLE", "GRAPH_STAGING", "GRAPH_STAGED", "GRAPH_VERIFIED", "GRAPH_PROMOTED", "SETTINGS_PUBLISHED", "STATIC_DOCTOR_PASSED"] } } },
+    { "properties": { "phase": { "const": "SMOKE_PASSED" }, "phaseHistory": { "const": ["PREPARED", "BACKUP_DURABLE", "GRAPH_STAGING", "GRAPH_STAGED", "GRAPH_VERIFIED", "GRAPH_PROMOTED", "SETTINGS_PUBLISHED", "STATIC_DOCTOR_PASSED", "SMOKE_PASSED"] } } },
+    { "properties": { "phase": { "const": "COMMITTED" }, "phaseHistory": { "const": ["PREPARED", "BACKUP_DURABLE", "GRAPH_STAGING", "GRAPH_STAGED", "GRAPH_VERIFIED", "GRAPH_PROMOTED", "SETTINGS_PUBLISHED", "STATIC_DOCTOR_PASSED", "SMOKE_PASSED", "COMMITTED"] } } }
+  ],
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
+    "transactionId": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" },
+    "hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "phase": { "enum": ["PREPARED", "BACKUP_DURABLE", "GRAPH_STAGING", "GRAPH_STAGED", "GRAPH_VERIFIED", "GRAPH_PROMOTED", "SETTINGS_PUBLISHED", "STATIC_DOCTOR_PASSED", "SMOKE_PASSED", "COMMITTED"] }
+  }
+}

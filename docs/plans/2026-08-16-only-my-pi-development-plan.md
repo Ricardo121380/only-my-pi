@@ -930,7 +930,10 @@ UI 的目标是可读和可诊断，不是重写 Pi TUI。
 - 写入中断/安装失败恢复原状态；
 - 任一 transaction phase 崩溃后可恢复，且从不暴露引用缺失 package 的 settings；
 - 恶意 lifecycle fixture 不产生 host side effect；需要 script 但无外层 sandbox 的 package fail closed；
-- uninstall 只移除 own fields/resources；
+- uninstall 只从 Pi 的活动 settings 中移除 only-my-pi 明确记录的
+  fields/resource references，绝不删除用户条目；不可变 generation 与 snapshot
+  作为可审查 rollback evidence 保留，未来若提供 purge 必须是独立、显式、
+  引用证明且可恢复的操作；
 - 测试未修改真实 Pi home；
 - 输出下一条安全启动命令。
 - `update --plan` 零写入，`update --apply` 的 failure injection 可回滚；

@@ -89,10 +89,35 @@
         "contents": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/safeRelativePath" } },
         "dependencies": { "type": "integer", "minimum": 0 },
         "lifecycleScripts": { "type": "boolean" },
+        "lifecycle": { "$ref": "#/$defs/lifecycleAudit" },
         "startupSmoke": { "type": "string", "minLength": 1, "maxLength": 500 },
         "peerScope": { "type": "string", "pattern": "^@[a-z0-9][a-z0-9._-]*$" },
         "directFileWrites": { "type": "boolean" },
         "hostCommands": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 80 } }
+      }
+    },
+    "lifecycleAudit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["execution", "scripts"],
+      "properties": {
+        "execution": { "const": "disabled" },
+        "scripts": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "commandSha256", "necessity"],
+            "properties": {
+              "name": {
+                "enum": ["preinstall", "install", "postinstall", "prepublish", "preprepare", "prepare", "postprepare", "prepack", "postpack"]
+              },
+              "commandSha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+              "necessity": { "enum": ["not-required", "required"] }
+            }
+          }
+        }
       }
     },
     "base": {
@@ -114,11 +139,26 @@
         { "$ref": "#/$defs/base" },
         {
           "type": "object",
-          "required": ["scope", "installed", "review"],
+          "required": ["scope", "installed", "review", "audit"],
           "properties": {
             "scope": { "enum": ["global", "project", "local"] },
             "installed": { "const": true },
-            "review": { "type": "string", "minLength": 1, "maxLength": 128 }
+            "review": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "audit": {
+              "allOf": [
+                { "$ref": "#/$defs/audit" },
+                {
+                  "type": "object",
+                  "required": ["date", "integrity", "lifecycle"],
+                  "properties": {
+                    "date": true,
+                    "integrity": true,
+                    "lifecycle": true,
+                    "lifecycleScripts": false
+                  }
+                }
+              ]
+            }
           }
         }
       ],

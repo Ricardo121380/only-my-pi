@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/bootstrap-generation-v1.schema.json",
+  "title": "only-my-pi immutable managed generation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "formatVersion",
+    "status",
+    "graphDigest",
+    "generationKey",
+    "profileId",
+    "npmTreeSha256",
+    "packages",
+    "resources",
+    "realizedDigest",
+    "manifestDigest"
+  ],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "bootstrap-generation-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "status": { "const": "VERIFIED" },
+    "graphDigest": { "$ref": "#/$defs/digest" },
+    "generationKey": { "$ref": "#/$defs/hexSha256" },
+    "profileId": { "$ref": "#/$defs/id" },
+    "npmTreeSha256": { "$ref": "#/$defs/hexSha256" },
+    "packages": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/package" }
+    },
+    "resources": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/resource" }
+    },
+    "realizedDigest": { "$ref": "#/$defs/digest" },
+    "manifestDigest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+    "hexSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "integrity": { "type": "string", "pattern": "^sha512-[A-Za-z0-9+/]+={0,2}$" },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[A-Za-z0-9._@+-]+(?:/[A-Za-z0-9._@+-]+)*$"
+    },
+    "source": {
+      "type": "string",
+      "anyOf": [
+        { "pattern": "^npm:(?:@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*@[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+        { "pattern": "^git\\+(?:https|ssh)://[^?#\\s]+#[a-f0-9]{40}$" }
+      ]
+    },
+    "packageName": {
+      "type": "string",
+      "pattern": "^(?:@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "lifecycleScript": {
+      "enum": [
+        "install",
+        "postinstall",
+        "postpack",
+        "postprepare",
+        "preinstall",
+        "prepack",
+        "preprepare",
+        "prepublish",
+        "prepare"
+      ]
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "spec",
+        "sourceType",
+        "name",
+        "version",
+        "integrity",
+        "tarballPath",
+        "installedPath",
+        "treeSha256",
+        "lifecycleScripts",
+        "lifecycleExecution"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "spec": { "$ref": "#/$defs/source" },
+        "sourceType": { "enum": ["npm", "git"] },
+        "name": { "$ref": "#/$defs/packageName" },
+        "version": { "$ref": "#/$defs/version" },
+        "integrity": { "$ref": "#/$defs/integrity" },
+        "tarballPath": { "$ref": "#/$defs/relativePath" },
+        "installedPath": { "$ref": "#/$defs/relativePath" },
+        "treeSha256": { "$ref": "#/$defs/hexSha256" },
+        "lifecycleScripts": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/lifecycleScript" }
+        },
+        "lifecycleExecution": { "const": "DISABLED" }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "sourcePath", "stagedPath", "sha256", "defaultLoaded"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "type": { "enum": ["extension", "skill", "prompt", "theme", "agent", "mode", "workflow", "swarm-recipe", "library"] },
+        "sourcePath": { "$ref": "#/$defs/relativePath" },
+        "stagedPath": { "$ref": "#/$defs/relativePath" },
+        "sha256": { "$ref": "#/$defs/hexSha256" },
+        "defaultLoaded": { "type": "boolean" }
+      }
+    }
+  }
+}

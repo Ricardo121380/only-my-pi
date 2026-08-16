@@ -5,7 +5,7 @@
   "runtime": { "pi": "0.84.1", "node": "25.8.0", "platform": "darwin-arm64" },
   "policy": { "requireExactNpmVersion": true, "allowOldMarioScope": false, "allowUnreviewedPackages": false, "oneOwnerPerGroup": { "memory": true }, "defaultNetwork": "deny", "defaultCredentials": "never-from-repository" },
   "packages": [
-    { "id": "missing-integrity", "spec": "npm:example-package@1.2.3", "scope": "project", "installed": true, "review": "fixture", "owners": ["planning"], "risk": ["extension-code"], "notes": "Promoted npm without audit integrity." }
+    { "id": "missing-integrity", "spec": "npm:example-package@1.2.3", "scope": "project", "installed": true, "review": "fixture", "owners": ["planning"], "risk": ["extension-code"], "notes": "Promoted npm without audit integrity.", "audit": { "date": "2026-08-16", "lifecycle": { "execution": "disabled", "scripts": [] } } }
   ],
   "candidates": []
 }

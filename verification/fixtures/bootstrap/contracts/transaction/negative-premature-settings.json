@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../../../schemas/bootstrap-transaction-v1.schema.json",
+  "formatVersion": 1,
+  "transactionId": "123e4567-e89b-42d3-a456-426614174000",
+  "operation": "bootstrap",
+  "status": "ACTIVE",
+  "phase": "GRAPH_STAGED",
+  "phaseHistory": ["PREPARED", "BACKUP_DURABLE", "GRAPH_STAGING", "GRAPH_STAGED"],
+  "profileId": "coding",
+  "generationId": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "snapshotId": "snapshot-1",
+  "graphVerified": false,
+  "settingsPublished": true,
+  "createdAt": "2026-08-16T00:00:00.000Z",
+  "updatedAt": "2026-08-16T00:00:01.000Z"
+}

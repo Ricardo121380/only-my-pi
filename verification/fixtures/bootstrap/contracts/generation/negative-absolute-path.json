@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../../../schemas/bootstrap-generation-v1.schema.json",
+  "formatVersion": 1,
+  "status": "VERIFIED",
+  "graphDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "generationKey": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "profileId": "coding",
+  "npmTreeSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "packages": [
+    {
+      "id": "plan-mode",
+      "spec": "npm:@narumitw/pi-plan-mode@0.49.3",
+      "sourceType": "npm",
+      "name": "@narumitw/pi-plan-mode",
+      "version": "0.49.3",
+      "integrity": "sha512-YWJjZA==",
+      "tarballPath": "tarballs/pi-plan-mode-0.49.3.tgz",
+      "installedPath": "/Users/private/node_modules/pi-plan-mode",
+      "treeSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "lifecycleScripts": [],
+      "lifecycleExecution": "DISABLED"
+    }
+  ],
+  "resources": [],
+  "realizedDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "manifestDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+}

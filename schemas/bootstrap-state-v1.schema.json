@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/bootstrap-state-v1.schema.json",
+  "title": "only-my-pi last-known-good state v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "formatVersion",
+    "generationId",
+    "generationManifestRelativePath",
+    "generationManifestDigest",
+    "settingsDigest",
+    "snapshotId",
+    "transactionId",
+    "committedAt",
+    "metadata",
+    "digest"
+  ],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "bootstrap-state-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "generationId": { "$ref": "#/$defs/hash" },
+    "generationManifestRelativePath": { "$ref": "#/$defs/relativePath" },
+    "generationManifestDigest": { "$ref": "#/$defs/hash" },
+    "settingsDigest": { "$ref": "#/$defs/hash" },
+    "snapshotId": { "$ref": "#/$defs/id" },
+    "transactionId": { "anyOf": [{ "$ref": "#/$defs/transactionId" }, { "type": "null" }] },
+    "committedAt": { "type": "string", "format": "date-time" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["providerSelection", "initialMode"],
+      "properties": {
+        "providerSelection": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["providerId", "modelId", "status"],
+              "properties": {
+                "providerId": { "$ref": "#/$defs/id" },
+                "modelId": { "type": ["string", "null"], "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/+-]*$" },
+                "status": { "const": "CONFIGURED_UNVERIFIED" }
+              }
+            }
+          ]
+        },
+        "initialMode": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "status"],
+              "properties": {
+                "id": { "$ref": "#/$defs/id" },
+                "status": { "const": "PENDING_M3_RESOLUTION" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "digest": { "$ref": "#/$defs/hash" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
+    "transactionId": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" },
+    "hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "relativePath": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[A-Za-z0-9._@+-]+(?:/[A-Za-z0-9._@+-]+)*$" }
+  }
+}

@@ -21,7 +21,7 @@
       "additionalProperties": false,
       "required": ["kind", "schemaPath", "productionGlobs", "fixtureDir"],
       "properties": {
-        "kind": { "enum": ["inventory", "resourceInventory", "profile", "capability", "owner", "commandOwner", "enforcementSurface", "mode", "agent", "workflow", "swarmRecipe"] },
+        "kind": { "enum": ["inventory", "resourceInventory", "profile", "capability", "owner", "commandOwner", "enforcementSurface", "mode", "agent", "workflow", "swarmRecipe", "bootstrapTransaction", "bootstrapState", "bootstrapGeneration", "bootstrapSnapshot"] },
         "schemaPath": { "$ref": "#/$defs/path" },
         "productionGlobs": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/path" } },
         "fixtureDir": { "$ref": "#/$defs/path" }

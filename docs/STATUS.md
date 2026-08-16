@@ -35,8 +35,8 @@ sessions, caches, or local npm installs.
 
 ## First-party modules now in the repository
 
-The package manifest exposes two non-invasive runtime extensions when this
-checkout is explicitly loaded:
+The package manifest still exposes only two non-invasive Pi runtime extensions
+when this checkout is explicitly loaded:
 
 - `session-ledger`: local append-only JSONL operational receipts with per-run
   HMAC correlation and no raw prompt/reasoning/tool payloads;
@@ -74,6 +74,36 @@ Two version-locked compatibility spikes are also complete:
 - `pi-subagents@0.45.2` remains the sole physical child runtime. The future
   only-my-pi adapter must use its capability-gated extension RPC and compiled
   `workflowScript`; exported delegation types are fixture/reference-only.
+
+M2 now turns those governed inputs into an installable, transactional
+configuration runtime:
+
+- `omp bootstrap`, `update`, and `uninstall` are zero-write plans unless the
+  caller explicitly supplies `--apply` and confirms the mutation;
+- package and first-party resource graphs are staged and verified in an
+  immutable generation before owned settings are published last;
+- exact direct tarballs are checked against their reviewed integrity metadata,
+  package lifecycle scripts are disabled, and the complete realized install
+  tree is content-hashed;
+- exclusive locks, durable phase journals, owned-field snapshots,
+  last-known-good state, compare-and-swap rollback, and phase-boundary recovery
+  cover first install, update, uninstall, rollback, and interrupted operations;
+- `status`, static `doctor`, `safe`, and rollback planning are available through
+  the same production control service and `omp` executable;
+- Provider/model flags persist only bounded identifiers with
+  `CONFIGURED_UNVERIFIED`; bootstrap never reads credentials or submits a
+  prompt;
+- the final smoke starts Pi in RPC mode against an isolated, empty credential
+  root, checks both runtime state and the expected first-party
+  `omp-context` command registration, and submits no model request. This is a
+  startup/configuration check, not a filesystem or network sandbox for
+  extension code.
+
+The repository audits the direct package tarballs before staging and then
+hashes the entire realized dependency tree. It does not yet carry an independently
+audited SRI closure for every transitive dependency; first transitive resolution
+therefore still relies on npm registry metadata inside the isolated staging
+runner.
 
 The repository also contains three explicit, non-default integration seams:
 
@@ -139,9 +169,18 @@ validation tests, but it is not a release authority and must not be used to
 claim an M1 or M7 PASS. M7 will replace the inspector with an executor that can
 run only the fixed `release-gates-v1` tuples and create the final receipt.
 
-The M1 source gate set currently passes 134/134 Node tests, validates 16
-production documents against 11 schema kinds, typechecks against the exact Pi
-0.84.1 development dependency, and packs 46 allowlisted files. `doctor:live`
+The M2 source gate set currently passes 278/278 Node tests, including 140/140
+focused configuration/bootstrap/control-plane tests. It validates 20 production
+documents against 15 schema kinds, typechecks against the exact Pi 0.84.1
+development dependency, passes both static and per-Profile doctors, and packs
+82 allowlisted files. Crash injection covers every durable transaction phase,
+including the settings rename window. A disposable source-artifact bootstrap
+commits once and returns `NO_CHANGES` on the second apply; its Pi RPC smoke
+proves the staged extension import closure and command registration. A separate
+scripts-disabled tarball install proves the npm `.bin/omp` entry, help output,
+zero-write plan, and absence of checkout-path dependence. No live Provider
+call, global install, or real Pi home mutation is part of the M2 evidence.
+`doctor:live`
 without an injected non-sensitive runtime metadata seam intentionally returns
 `UNAVAILABLE`; that is a correct boundary, not a failed static configuration.
 Synthetic runtime metadata remains a library-level conformance seam only: the
@@ -174,19 +213,24 @@ through the Pi package's `prompts/` resources:
 - [`../codex/goals/develop-only-my-pi.md`](../codex/goals/develop-only-my-pi.md)
 
 The roadmap target is a usable Pi-based Harness distribution. M0 established
-the product/Labs boundary and M1 established the strict configuration and
-compatibility foundation. The next implementation boundary is M2:
+the product/Labs boundary, M1 established the strict configuration and
+compatibility foundation, and M2 delivered the transactional `omp`
+configuration runtime. The next implementation boundary is M3:
 
-1. add a dry-run-first, idempotent, backup-and-rollback `omp bootstrap`, with
-   explicit config roots, durable journals, locks, staged resources, settings
-   published last, crash recovery, and no lifecycle scripts;
-2. add a versioned Mode Registry and unified `omp` / `/omp` control surface;
-3. ship practical inspect/explore/plan/coding/debug/review/research/verify
+1. add a versioned Mode Registry with discovery, deterministic resolution,
+   immutable snapshots, explain/diff, and fail-closed Profile narrowing;
+2. extend the `omp` CLI and add the one package-owned Pi `/omp` command for
+   status, doctor, mode, safe, and help without taking ownership of upstream
+   package commands;
+3. map mode activation onto the audited public Pi and permission-mode seams,
+   returning `RESTART_REQUIRED` whenever a hard execution-state change cannot
+   be applied safely in-process;
+4. then ship practical inspect/explore/plan/coding/debug/review/research/verify
    Modes and declarative Workflows;
-4. build AgentSwarm on the existing `pi-subagents` public seam, with bounded
+5. build AgentSwarm on the existing `pi-subagents` public seam, with bounded
    scheduling, cancellation, deterministic aggregation, a hard maximum of one
    writer in a shared cwd, and isolated managed worktrees for parallel writers;
-5. finish lightweight themes/status, security negatives, CI, docs, and release
+6. finish lightweight themes/status, security negatives, CI, docs, and release
    readiness.
 
 DeepSeek endpoint work, ACP-to-Pi wiring, and automatic turn checkpoints are

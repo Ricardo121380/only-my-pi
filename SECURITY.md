@@ -32,6 +32,42 @@ confirmed isolation that covers those surfaces, with minimal mounts,
 credentials, and network access; use a container or micro-VM when one
 surface-specific sandbox is insufficient.
 
+## Bootstrap boundary
+
+`omp bootstrap`, update, rollback, and uninstall use an explicit Pi agent
+directory, an exclusive lock, owned-only snapshots, a durable journal, and
+settings-last compare-and-swap publication. A concurrent settings change is
+preserved and forces a fresh plan. The npm runner uses contained, non-symlink
+runtime paths; fixed local HOME/cache/tmp/prefix/workspace paths; isolated
+user/global/project npm configuration; a scrubbed environment; and an exact
+allowlist of scripts-disabled pack/install argv. Install omits peer
+dependencies and rejects any realized nested copy of either the current or
+legacy Pi host package; extensions must bind to the caller's Pi host. Every
+promoted package records exact lifecycle command digests while execution stays
+disabled. An audited script marked `required` fails closed because bootstrap
+has no outer lifecycle sandbox executor. Direct tarball bytes and the realized
+installed tree are verified, but first-time
+transitive resolution still relies on npm registry metadata before the complete
+tree is hashed; do not describe this as a pre-audited transitive SRI closure.
+
+Rollback snapshots may contain selected package/extension/skill/prompt/theme
+array values, including local paths. They are private runtime state: do not
+commit or synchronize `<configRoot>/only-my-pi/`. Restore reconciles exact
+managed entries and preserves user entries added after the snapshot.
+
+The post-apply Pi smoke runs in a disposable agent directory with a scrubbed
+environment and sends only the RPC `get_state` and `get_commands` requests. The
+second request proves that the governed first-party extension import closure
+loaded and registered its expected command; neither request submits a prompt.
+Pi's normal config path points at an isolated empty auth/session/model root.
+Loaded extension code still runs as the current OS user and is not prevented
+from reading host files or using the network. The result is startup evidence,
+not proof of credential isolation, Provider inactivity or authentication,
+extension network isolation, or an OS sandbox. `--offline` disables Pi
+maintenance traffic only. For an untrusted package or unattended task, enforce
+filesystem, process, credential, and network isolation outside Pi as
+appropriate.
+
 ## Reporting a problem
 
 Do not publish secrets or exploit details in a public issue. For a local
