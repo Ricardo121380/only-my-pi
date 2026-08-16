@@ -387,6 +387,7 @@ test("promoted minimal generation closes the /omp mode runtime import graph", as
     "resources/extensions/omp-control/runtime.mjs",
     "resources/extensions/context-doctor/metrics.mjs",
     "resources/packages/control-service/mode-service.mjs",
+    "resources/packages/control-service/workflow-service.mjs",
     "resources/packages/mode-registry/index.mjs",
     "resources/schemas/mode-v1.schema.json",
     "resources/modes/inspect.json",
@@ -407,6 +408,13 @@ test("promoted minimal generation closes the /omp mode runtime import graph", as
   assert.equal(shown.ok, true, JSON.stringify(shown));
   assert.equal(shown.mode.modeId, "inspect");
   assert.equal(typeof shown.mode.promptPayloads?.[0]?.content, "string");
+  const workflows = await runtime.execute("workflow list");
+  assert.equal(workflows.ok, true, JSON.stringify(workflows));
+  assert.equal(workflows.status, "WORKFLOW_LIST");
+  // The minimal profile intentionally stages only the read-only fallback;
+  // richer Workflow resources are eligible for coding/research profiles and
+  // are covered by the source-level registry suite.
+  assert.ok(workflows.workflows.some((workflow) => workflow.id === "single-agent-safe"), JSON.stringify(workflows));
 });
 
 test("integrity mismatch fails before install and before generation promotion", async (t) => {

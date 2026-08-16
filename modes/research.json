@@ -1,0 +1,21 @@
+{
+  "$schema": "../schemas/mode-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "research",
+  "version": "1.0.0",
+  "displayName": "Research",
+  "description": "Allow-listed web research with cookies disabled and source-backed output.",
+  "category": "core-plus",
+  "executionState": "ask",
+  "extends": [],
+  "aliases": [],
+  "requires": { "profileCapabilities": ["workspace-read", "web-access"], "packages": ["web-access"], "enforcementSurfaces": ["fileToolPolicy", "webEgress"] },
+  "prompt": { "file": "modes/prompts/research.md" },
+  "tools": { "allow": ["read", "grep", "find", "ls", "web"], "deny": ["bash", "edit", "write"], "required": ["web"] },
+  "policy": { "workspace": "read-only", "egress": { "web": "allow-listed", "mcp": "deny", "provider": "inherit", "extension": "deny" }, "approval": "ask" },
+  "workflow": { "default": "research-report", "fallback": "single-agent-safe" },
+  "swarm": { "allowed": false, "defaultRecipe": null },
+  "completion": { "gates": ["diff-check"], "requiresStructuredVerdict": true },
+  "risk": "high"
+}

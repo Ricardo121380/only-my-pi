@@ -4,7 +4,7 @@
   "contractStatus": "contract-only",
   "id": "single-agent-safe",
   "version": "1.0.0",
-  "description": "M1 contract seed for a serial, read-only fallback; WorkflowCore execution is not implemented until M4.",
+  "description": "Serial, read-only fallback executed by the parent-session Workflow Core when richer capabilities are unavailable.",
   "entryConditions": ["profile-resolved", "mode-resolved", "session-idle"],
   "mutationScope": "none",
   "budget": {

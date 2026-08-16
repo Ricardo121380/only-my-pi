@@ -1,0 +1,46 @@
+{
+  "$schema": "../schemas/agent-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "verifier",
+  "upstreamAgentId": "omp-verifier",
+  "version": "1.0.0",
+  "description": "Read-only verifier that interprets deterministic gate receipts and emits a terminal verdict.",
+  "prompt": { "file": "agents/prompts/verifier.md" },
+  "tools": {
+    "allow": ["read", "grep", "find", "ls"],
+    "deny": ["bash", "edit", "write", "web"]
+  },
+  "allowedExecutionStates": ["plan", "build", "review"],
+  "requiredCapabilities": ["workspace-read"],
+  "policyCeiling": {
+    "workspace": "read-only",
+    "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" },
+    "approval": "deny",
+    "mutation": "none"
+  },
+  "modelRole": "fast",
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": { "receipts": { "type": "array", "description": "Gate receipts." }, "requiredGates": { "type": "array", "description": "Expected gate IDs." } },
+    "required": ["receipts", "requiredGates"]
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "verdict": { "type": "string", "description": "pass, fail, or blocked." },
+      "passedGates": { "type": "array", "description": "Gate IDs with PASS receipts." },
+      "failedGates": { "type": "array", "description": "Gate IDs without PASS receipts." },
+      "reason": { "type": "string", "description": "Bounded terminal rationale." }
+    },
+    "required": ["verdict", "passedGates", "failedGates", "reason"]
+  },
+  "writer": false,
+  "timeoutSeconds": 600,
+  "continuable": false,
+  "resumable": true,
+  "redaction": { "rawPrompts": "omit", "reasoning": "omit", "credentials": "deny", "maxOutputBytes": 65536 },
+  "gateIds": ["typecheck", "schema-check", "full-tests"]
+}

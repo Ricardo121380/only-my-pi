@@ -8,7 +8,9 @@
     "scripts/package-doctor.mjs",
     "scripts/lib/package-source.mjs",
     "scripts/lib/profile-resolver.mjs",
-    "scripts/lib/runtime-doctor.mjs"
+    "scripts/lib/runtime-doctor.mjs",
+    "scripts/lib/release-gates.mjs",
+    "scripts/mode-doctor.mjs"
   ],
   "allowedPrefixes": [
     "bin/",
@@ -33,6 +35,7 @@
     "packages/workflow-core/",
     "packages/gate-runner/",
     "packages/skills-bridge/",
+    "packages/repo-map/",
     "packages/adapters/"
   ],
   "required": [
@@ -54,10 +57,22 @@
     "extensions/omp-control/runtime.mjs",
     "packages/control-service/mode-service.mjs",
     "packages/mode-registry/index.mjs",
+    "packages/agent-registry/index.mjs",
+    "packages/gate-runner/index.mjs",
+    "packages/workflow-core/index.mjs",
+    "packages/skills-bridge/index.mjs",
+    "packages/repo-map/index.mjs",
     "inventory/packages.lock.json",
     "inventory/resources.lock.json",
     "modes/inspect.json",
     "modes/prompts/inspect.md",
+    "modes/explore.json",
+    "modes/plan.json",
+    "modes/coding.json",
+    "modes/debug.json",
+    "modes/review.json",
+    "modes/research.json",
+    "modes/verify.json",
     "policies/capabilities.v1.json",
     "policies/command-owners.v1.json",
     "policies/enforcement-surfaces.v1.json",
@@ -67,7 +82,11 @@
     "schemas/packages-lock-v1.schema.json",
     "schemas/profile-v1.schema.json",
     "swarm/recipes/research-synthesis.json",
-    "workflows/single-agent-safe.json"
+    "workflows/single-agent-safe.json",
+    "workflows/plan-build-review.json",
+    "workflows/research-report.json",
+    "workflows/review-findings.json",
+    "workflows/debug-fix-verify.json"
   ],
   "forbiddenPrefixes": [
     "codex/",

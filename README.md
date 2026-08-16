@@ -59,6 +59,7 @@ scripts/      Repository checks and package governance tooling
 - [Workspace checkpoint](docs/architecture/workspace-checkpoint.md)
 - [Transactional bootstrap runtime](docs/architecture/bootstrap-runtime.md)
 - [Mode Registry and unified control surface](docs/architecture/mode-registry.md)
+- [Agent and Workflow Core](docs/architecture/agent-workflow-core.md)
 - [Current implementation status](docs/STATUS.md)
 
 ## Product direction
@@ -78,8 +79,13 @@ surface:
 - versioned runtime Modes that can only narrow those ceilings, with
   discovery/hash/explain/diff and an explicit restart path for hard envelope
   changes;
-- declarative Workflows, Agent roles, and AgentSwarm recipes in the following
-  milestones;
+- eight practical Modes (`inspect`, `explore`, `plan`, `coding`, `debug`,
+  `review`, `research`, `verify`) with versioned prompts and output contracts;
+- a parent-session Workflow Core, deterministic Gate Runner, Agent Registry,
+  `.agents/skills` bridge, and bounded repo-map seam;
+- declarative Workflows and AgentSwarm recipes; M4 executes agent/gate steps and
+  falls back explicitly when Swarm is unavailable, while M5 will connect the
+  sole `pi-subagents` runtime;
 - one `omp` CLI and one package-owned `/omp` Pi command, including the sole
   `/omp-context` compatibility alias;
 - lightweight status and theme resources in M6 that do not replace Pi's

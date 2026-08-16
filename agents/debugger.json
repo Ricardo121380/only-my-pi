@@ -1,0 +1,46 @@
+{
+  "$schema": "../schemas/agent-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "debugger",
+  "upstreamAgentId": "omp-debugger",
+  "version": "1.0.0",
+  "description": "Evidence-first debugger that may apply a narrowly approved fix and must leave a verification trail.",
+  "prompt": { "file": "agents/prompts/debugger.md" },
+  "tools": {
+    "allow": ["read", "grep", "find", "ls", "edit", "write", "bash"],
+    "deny": ["web"]
+  },
+  "allowedExecutionStates": ["plan", "build", "review"],
+  "requiredCapabilities": ["workspace-read", "file-tool-policy", "bash-sandbox-conditional"],
+  "policyCeiling": {
+    "workspace": "guarded-write",
+    "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" },
+    "approval": "ask",
+    "mutation": "workspace"
+  },
+  "modelRole": "deep",
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": { "symptom": { "type": "string", "description": "Observed failure." }, "scope": { "type": "array", "description": "Allowed diagnostic paths." } },
+    "required": ["symptom"]
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "rootCause": { "type": "string", "description": "Evidence-backed root cause." },
+      "reproduction": { "type": "array", "description": "Deterministic reproduction steps." },
+      "changedPaths": { "type": "array", "description": "Paths changed, if any." },
+      "verification": { "type": "array", "description": "Gate receipts required or observed." }
+    },
+    "required": ["rootCause", "reproduction", "changedPaths", "verification"]
+  },
+  "writer": true,
+  "timeoutSeconds": 1800,
+  "continuable": true,
+  "resumable": true,
+  "redaction": { "rawPrompts": "omit", "reasoning": "omit", "credentials": "deny", "maxOutputBytes": 65536 },
+  "gateIds": ["test-contract", "full-tests"]
+}

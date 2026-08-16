@@ -38,11 +38,13 @@ const COMMANDS = new Set([
   "context",
   "verify",
   "mode",
+  "workflow",
   "help",
 ]);
 
 const MODE_COMMANDS = new Set(["list", "show", "use", "reset", "doctor", "diff", "scaffold"]);
 const PROFILE_COMMANDS = new Set(["list", "show", "diff"]);
+const WORKFLOW_COMMANDS = new Set(["list", "show", "run", "status", "cancel"]);
 const MODE_NAMESPACED_ID = /^(?:[a-z][a-z0-9-]{0,63}(?:\/[a-z][a-z0-9-]{0,63})?|(?:user|project|package):[a-z][a-z0-9-]{0,63})$/u;
 
 function fail(message, code = "INVALID_ARGUMENT") {
@@ -243,6 +245,33 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
         subcommand,
         modeId,
         resolved: options.resolved === true,
+        json: options.json === true,
+      },
+    };
+  }
+
+  if (command === "workflow") {
+    reject(options, ["provider", "model", "scope", "dryRun", "plan", "static", "live", "resolved"], command);
+    const subcommand = positionals[0] ?? "list";
+    if (!WORKFLOW_COMMANDS.has(subcommand)) fail(`unknown workflow subcommand: ${subcommand}`);
+    const workflowId = positionals[1] ?? null;
+    if (["show", "run", "status", "cancel"].includes(subcommand) && workflowId === null) fail(`workflow ${subcommand} requires an id`);
+    if (positionals.length > 2) fail(`workflow ${subcommand} accepts at most one id`);
+    if (workflowId !== null) assertIdentifier(workflowId, "workflow id");
+    const apply = options.apply === true;
+    if (options.yes && !apply) fail("--yes is only valid with --apply");
+    if (subcommand !== "run" && (apply || options.yes)) fail(`--apply/--yes are only valid for workflow run`);
+    return {
+      command,
+      mutation: subcommand === "run" && apply,
+      options: {
+        configRoot,
+        subcommand,
+        workflowId,
+        runId: ["status", "cancel"].includes(subcommand) ? workflowId : null,
+        profile: options.profile ?? null,
+        apply,
+        yes: options.yes === true,
         json: options.json === true,
       },
     };

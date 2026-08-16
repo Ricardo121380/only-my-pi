@@ -1,0 +1,46 @@
+{
+  "$schema": "../schemas/agent-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "explorer",
+  "upstreamAgentId": "omp-explorer",
+  "version": "1.0.0",
+  "description": "Read-only repository explorer that maps entry points and control flow.",
+  "prompt": { "file": "agents/prompts/explorer.md" },
+  "tools": {
+    "allow": ["read", "grep", "find", "ls"],
+    "deny": ["bash", "edit", "write", "web"]
+  },
+  "allowedExecutionStates": ["ask", "plan", "review"],
+  "requiredCapabilities": ["workspace-read"],
+  "policyCeiling": {
+    "workspace": "read-only",
+    "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" },
+    "approval": "deny",
+    "mutation": "none"
+  },
+  "modelRole": "fast",
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": { "task": { "type": "string", "description": "Bounded exploration question." } },
+    "required": ["task"]
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "summary": { "type": "string", "description": "Short evidence-backed summary." },
+      "entryPoints": { "type": "array", "description": "Repository-relative entry points." },
+      "evidence": { "type": "array", "description": "Path and line evidence." },
+      "unknowns": { "type": "array", "description": "Questions that remain unresolved." }
+    },
+    "required": ["summary", "entryPoints", "evidence", "unknowns"]
+  },
+  "writer": false,
+  "timeoutSeconds": 600,
+  "continuable": true,
+  "resumable": true,
+  "redaction": { "rawPrompts": "omit", "reasoning": "omit", "credentials": "deny", "maxOutputBytes": 65536 },
+  "gateIds": []
+}

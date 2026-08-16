@@ -1,0 +1,46 @@
+{
+  "$schema": "../schemas/agent-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "implementer",
+  "upstreamAgentId": "omp-implementer",
+  "version": "1.0.0",
+  "description": "Guarded workspace writer that implements an approved plan and reports exact changes.",
+  "prompt": { "file": "agents/prompts/implementer.md" },
+  "tools": {
+    "allow": ["read", "grep", "find", "ls", "edit", "write", "bash"],
+    "deny": ["web"]
+  },
+  "allowedExecutionStates": ["build"],
+  "requiredCapabilities": ["workspace-read", "file-tool-policy", "bash-sandbox-conditional"],
+  "policyCeiling": {
+    "workspace": "guarded-write",
+    "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" },
+    "approval": "ask",
+    "mutation": "workspace"
+  },
+  "modelRole": "balanced",
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": { "plan": { "type": "object", "description": "Approved structured plan." }, "scope": { "type": "array", "description": "Allowed repository-relative paths." } },
+    "required": ["plan", "scope"]
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "status": { "type": "string", "description": "Implementation status." },
+      "changedPaths": { "type": "array", "description": "Changed repository-relative paths." },
+      "summary": { "type": "string", "description": "Bounded change summary." },
+      "followUp": { "type": "array", "description": "Remaining verification work." }
+    },
+    "required": ["status", "changedPaths", "summary", "followUp"]
+  },
+  "writer": true,
+  "timeoutSeconds": 1800,
+  "continuable": true,
+  "resumable": true,
+  "redaction": { "rawPrompts": "omit", "reasoning": "omit", "credentials": "deny", "maxOutputBytes": 65536 },
+  "gateIds": ["diff-check"]
+}

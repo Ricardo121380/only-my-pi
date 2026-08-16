@@ -123,6 +123,25 @@ M3 now supplies the runtime behavior layer on top of that transactional graph:
   inventory data needed by relative imports. A fresh scripts-disabled tarball
   can list and resolve `inspect` without a checkout or package-level Ajv lookup.
 
+M4 now supplies the practical single-Agent harness layer:
+
+- eight runtime-ready Modes (`inspect`, `explore`, `plan`, `coding`, `debug`,
+  `review`, `research`, `verify`) have distinct prompts, tool ceilings,
+  egress declarations, workflows, and structured completion gates;
+- `packages/agent-registry` validates role manifests, prompt containment,
+  Profile ceilings, source hashes, and redacted receipts; canonical JSON roles
+  generate namespaced `omp-*` Pi-subagents resources;
+- `packages/workflow-core` provides deterministic DAG discovery, parent-session
+  `SingleAgentWorkflowRunner`, durable injected state, source-drift checks,
+  structured terminal verdicts, real AbortSignal cancellation, and explicit
+  unavailable/fallback behavior for M5 `swarm` steps;
+- `packages/gate-runner` is the only M4 verification executor and accepts only
+  fixed release-gate command tuples with `shell:false`, bounded output,
+  timeout, cancellation, and digest-only receipts;
+- five JSON Workflows, `.agents/skills` discovery/precedence, and an Aider-style
+  bounded repo-map adapter are packaged as opt-in resources; M1 contract seeds
+  remain contract-only where their upstream runtime is not yet connected.
+
 The repository audits the direct package tarballs before staging and then
 hashes the entire realized dependency tree. It does not yet carry an independently
 audited SRI closure for every transitive dependency; first transitive resolution
@@ -193,18 +212,20 @@ validation tests, but it is not a release authority and must not be used to
 claim an M1 or M7 PASS. M7 will replace the inspector with an executor that can
 run only the fixed `release-gates-v1` tuples and create the final receipt.
 
-The M3 source gate set currently passes 301/301 Node tests, including the M2
-transactional suite plus Mode Registry, unified control, staged-generation,
-and fresh-tarball closure tests. It validates 20 production
-documents against 15 schema kinds, typechecks against the exact Pi 0.84.1
-development dependency, passes both static and per-Profile doctors, and packs
-86 allowlisted files. Crash injection covers every durable transaction phase,
-including the settings rename window. A disposable source-artifact bootstrap
-commits once and returns `NO_CHANGES` on the second apply; its Pi RPC smoke
-proves the staged extension import closure and command registration. A separate
+The current M4 source gate set passes **319/319** Node tests, including the M2
+transactional suite, Mode Registry, unified control, staged-generation,
+Agent Registry, Workflow Core, Gate Runner, skills bridge, repo-map, and
+fresh-tarball closure tests. It validates 38 production documents against 15
+schema kinds, typechecks against the exact Pi 0.84.1 development dependency,
+passes both static and per-Profile doctors, and packs the current allowlisted
+runtime files (**133 files**). Crash injection covers every durable transaction phase,
+including the settings rename window. Injected Workflow tests cover
+deterministic stage order, structured gate receipts, source drift, explicit
+fallback, resume, and cancellation terminal proof. A disposable
 scripts-disabled tarball install proves the npm `.bin/omp` entry, help output,
 zero-write plan, and absence of checkout-path dependence. No live Provider
-call, global install, or real Pi home mutation is part of the M2 evidence.
+call, child dispatch, global install, or real Pi home mutation is part of this
+evidence.
 `doctor:live`
 without an injected non-sensitive runtime metadata seam intentionally returns
 `UNAVAILABLE`; that is a correct boundary, not a failed static configuration.
@@ -240,18 +261,20 @@ through the Pi package's `prompts/` resources:
 The roadmap target is a usable Pi-based Harness distribution. M0 established
 the product/Labs boundary, M1 established the strict configuration and
 compatibility foundation, M2 delivered the transactional `omp` configuration
-runtime, and M3 delivered the Mode Registry plus the unified `/omp` control
-surface. The next implementation boundary is M4:
+runtime, M3 delivered the Mode Registry plus the unified `/omp` control
+surface, and M4 delivered the practical single-Agent/Workflow layer. The next
+implementation boundary is M5:
 
-1. ship practical inspect/explore/plan/coding/debug/review/research/verify
-   Modes, their prompts/output contracts, and declarative Workflows;
-2. add the versioned Agent Registry, deterministic Gate Runner,
-   parent-session Workflow runner, skills bridge, and repo-map seam;
-3. then build AgentSwarm on the existing `pi-subagents` public seam, with bounded
-   scheduling, cancellation, deterministic aggregation, a hard maximum of one
-   writer in a shared cwd, and isolated managed worktrees for parallel writers;
-4. finish lightweight themes/status, security negatives, CI, docs, and release
-   readiness.
+1. compile validated Agent/Swarm recipes into the version-locked
+   `pi-subagents@0.45.2` extension-RPC wire;
+2. implement capability ping, admission/budget intersection, DAG-to-safe
+   `workflowScript` compilation, child policy projection, deterministic result
+   aggregation, cancellation propagation, and single-writer/worktree gates;
+3. run read-only research and guarded coding fake-runtime E2E before any live
+   child dispatch; no Provider, credentials, or real Pi home are needed for the
+   contract suite;
+4. then finish lightweight themes/status in M6 and CI/release/upgrade receipts
+   in M7.
 
 DeepSeek endpoint work, ACP-to-Pi wiring, and automatic turn checkpoints are
 not the next product boundary. Their existing offline modules stay under

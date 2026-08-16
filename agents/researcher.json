@@ -1,0 +1,46 @@
+{
+  "$schema": "../schemas/agent-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "researcher",
+  "upstreamAgentId": "omp-researcher",
+  "version": "1.0.0",
+  "description": "Bounded web researcher with explicit allow-listed egress and cookies disabled.",
+  "prompt": { "file": "agents/prompts/researcher.md" },
+  "tools": {
+    "allow": ["read", "grep", "find", "ls", "web"],
+    "deny": ["bash", "edit", "write"]
+  },
+  "allowedExecutionStates": ["ask", "plan", "review"],
+  "requiredCapabilities": ["workspace-read", "web-access"],
+  "policyCeiling": {
+    "workspace": "read-only",
+    "egress": { "web": "allow-listed", "mcp": "deny", "provider": "inherit", "extension": "deny" },
+    "approval": "ask",
+    "mutation": "none"
+  },
+  "modelRole": "deep",
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": { "question": { "type": "string", "description": "Research question." }, "domains": { "type": "array", "description": "Allow-listed domains." } },
+    "required": ["question", "domains"]
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "answer": { "type": "string", "description": "Concise synthesis." },
+      "sources": { "type": "array", "description": "URLs and publication metadata." },
+      "confidence": { "type": "string", "description": "High, medium, or low." },
+      "gaps": { "type": "array", "description": "Unresolved evidence gaps." }
+    },
+    "required": ["answer", "sources", "confidence", "gaps"]
+  },
+  "writer": false,
+  "timeoutSeconds": 1200,
+  "continuable": true,
+  "resumable": true,
+  "redaction": { "rawPrompts": "omit", "reasoning": "omit", "credentials": "deny", "maxOutputBytes": 65536 },
+  "gateIds": ["diff-check"]
+}

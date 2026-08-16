@@ -36,6 +36,8 @@
     "scripts/lib/package-source.mjs",
     "scripts/lib/profile-resolver.mjs",
     "scripts/lib/runtime-doctor.mjs",
+    "scripts/lib/release-gates.mjs",
+    "scripts/mode-doctor.mjs",
     "packages/config-runtime/",
     "packages/bootstrap/",
     "packages/control-service/",
@@ -44,6 +46,7 @@
     "packages/workflow-core/",
     "packages/gate-runner/",
     "packages/skills-bridge/",
+    "packages/repo-map/",
     "packages/adapters/"
   ],
   "scripts": {
@@ -51,6 +54,9 @@
     "doctor:static": "node scripts/package-doctor.mjs",
     "doctor:live": "node scripts/runtime-doctor.mjs --live",
     "doctor:profiles": "node scripts/package-doctor.mjs --profile profiles/minimal.json && node scripts/package-doctor.mjs --profile profiles/coding.json && node scripts/package-doctor.mjs --profile profiles/research.json && node scripts/package-doctor.mjs --profile profiles/orchestration.json && node scripts/package-doctor.mjs --profile profiles/ui-terminal.json && node scripts/package-doctor.mjs --profile profiles/experimental.json",
+    "doctor:modes": "node scripts/mode-doctor.mjs",
+    "doctor:agents": "node -e \"import('./packages/agent-registry/index.mjs').then(async ({createAgentRegistry})=>{const r=await createAgentRegistry({rootDir:process.cwd()}).doctor(); console.log(JSON.stringify(r,null,2)); if(!r.ok) process.exitCode=1})\"",
+    "doctor:workflows": "node -e \"import('./packages/workflow-core/index.mjs').then(async ({createWorkflowRegistry})=>{const r=await createWorkflowRegistry({rootDir:process.cwd()}).doctor(); console.log(JSON.stringify(r,null,2)); if(!r.ok) process.exitCode=1})\"",
     "profile:check": "node scripts/profile-resolver.mjs --check-all",
     "profile:diff": "node scripts/profile-resolver.mjs profiles/coding.json --diff profiles/research.json",
     "safe": "node scripts/safe-mode.mjs",

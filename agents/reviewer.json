@@ -1,0 +1,46 @@
+{
+  "$schema": "../schemas/agent-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "reviewer",
+  "upstreamAgentId": "omp-reviewer",
+  "version": "1.0.0",
+  "description": "Fresh-context, read-only reviewer that identifies correctness, security, and contract gaps.",
+  "prompt": { "file": "agents/prompts/reviewer.md" },
+  "tools": {
+    "allow": ["read", "grep", "find", "ls"],
+    "deny": ["bash", "edit", "write", "web"]
+  },
+  "allowedExecutionStates": ["review"],
+  "requiredCapabilities": ["workspace-read", "review-assistance"],
+  "policyCeiling": {
+    "workspace": "read-only",
+    "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" },
+    "approval": "deny",
+    "mutation": "none"
+  },
+  "modelRole": "deep",
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": { "diff": { "type": "string", "description": "Bounded diff or receipt reference." }, "scope": { "type": "array", "description": "Review paths." } },
+    "required": ["scope"]
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "verdict": { "type": "string", "description": "pass, fail, or blocked." },
+      "findings": { "type": "array", "description": "Severity-classified findings." },
+      "tested": { "type": "array", "description": "Checks actually run by the parent gate runner." },
+      "unverified": { "type": "array", "description": "Claims that remain unverified." }
+    },
+    "required": ["verdict", "findings", "tested", "unverified"]
+  },
+  "writer": false,
+  "timeoutSeconds": 1200,
+  "continuable": false,
+  "resumable": true,
+  "redaction": { "rawPrompts": "omit", "reasoning": "omit", "credentials": "deny", "maxOutputBytes": 65536 },
+  "gateIds": ["diff-check"]
+}

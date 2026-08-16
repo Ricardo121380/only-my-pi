@@ -11,6 +11,7 @@ import { createNpmCommandRunner } from "../packages/bootstrap/command-runner.mjs
 import { DoctorService } from "../packages/bootstrap/doctor-service.mjs";
 import { createNoModelSmokeRunner } from "../packages/bootstrap/smoke-runner.mjs";
 import { TransactionEngine } from "../packages/bootstrap/transaction-engine.mjs";
+import { createWorkflowControlService } from "../packages/control-service/workflow-service.mjs";
 import { parseOmpArgs } from "../packages/control-service/cli-parser.mjs";
 import { ControlService, OMP_USAGE } from "../packages/control-service/service.mjs";
 
@@ -40,6 +41,7 @@ const DEFAULT_DEPENDENCIES = Object.freeze({
   TransactionEngine,
   createNpmCommandRunner,
   createNoModelSmokeRunner,
+  createWorkflowControlService,
 });
 
 function fail(code, message) {
@@ -103,12 +105,14 @@ export function createProductionControlService({
     doctorService: doctor,
     transactionEngine,
   });
+  const workflows = wired.createWorkflowControlService({ rootDir: resolvedRoot });
   return new wired.ControlService({
     bootstrap,
     doctor,
     confirm,
     rootDir: resolvedRoot,
     configRoot: resolvedConfigRoot,
+    workflows,
   });
 }
 

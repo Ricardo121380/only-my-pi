@@ -1,0 +1,23 @@
+{
+  "$schema": "../schemas/workflow-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "plan-build-review",
+  "version": "1.0.0",
+  "description": "Plan, implement, review, and verify a guarded workspace change.",
+  "entryConditions": ["profile-resolved", "mode-resolved", "session-idle", "explicit-approval"],
+  "mutationScope": "workspace",
+  "budget": { "maxSteps": 5, "maxParallel": 1, "timeoutSeconds": 7200, "retry": 0, "maxOutputBytes": 65536 },
+  "fallback": { "when": ["missing-package", "missing-capability", "unavailable-runner"], "workflow": "single-agent-safe", "requiresApproval": true },
+  "steps": [
+    { "id": "plan", "action": "agent", "agent": "planner", "needs": [], "policyRef": "plan", "approval": "none", "timeoutSeconds": 900 },
+    { "id": "plan-gate", "action": "gate", "gate": "schema-check", "needs": ["plan"], "policyRef": "plan", "approval": "none", "timeoutSeconds": 300 },
+    { "id": "implement", "action": "agent", "agent": "implementer", "needs": ["plan-gate"], "policyRef": "coding", "approval": "user", "timeoutSeconds": 1800 },
+    { "id": "review", "action": "agent", "agent": "reviewer", "needs": ["implement"], "policyRef": "review", "approval": "none", "timeoutSeconds": 1200 },
+    { "id": "verify", "action": "gate", "gate": "full-tests", "needs": ["review"], "policyRef": "verify", "approval": "none", "timeoutSeconds": 300 }
+  ],
+  "terminal": { "step": "verify", "acceptedVerdicts": ["pass"], "rejectedVerdicts": ["fail", "blocked", "cancelled"], "requiresVerifierGate": true },
+  "cancellation": { "stopAdmission": true, "waitForTerminalProof": true, "terminalVerdict": "cancelled" },
+  "failure": { "onStepFailure": "fail", "onGateFailure": "fail" },
+  "recovery": { "durableState": true, "verifySourceHash": true, "resumeFrom": "last-settled-step" }
+}

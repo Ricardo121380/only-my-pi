@@ -1,0 +1,22 @@
+{
+  "$schema": "../schemas/workflow-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "debug-fix-verify",
+  "version": "1.0.0",
+  "description": "Reproduce a fault, apply a guarded fix, review it, and run verification gates.",
+  "entryConditions": ["profile-resolved", "mode-resolved", "session-idle", "explicit-approval"],
+  "mutationScope": "workspace",
+  "budget": { "maxSteps": 4, "maxParallel": 1, "timeoutSeconds": 7200, "retry": 0, "maxOutputBytes": 65536 },
+  "fallback": { "when": ["missing-package", "missing-capability", "unavailable-runner"], "workflow": "single-agent-safe", "requiresApproval": true },
+  "steps": [
+    { "id": "debug", "action": "agent", "agent": "debugger", "needs": [], "policyRef": "debug", "approval": "user", "timeoutSeconds": 1800 },
+    { "id": "tests", "action": "gate", "gate": "test-contract", "needs": ["debug"], "policyRef": "verify", "approval": "none", "timeoutSeconds": 300 },
+    { "id": "review", "action": "agent", "agent": "reviewer", "needs": ["tests"], "policyRef": "review", "approval": "none", "timeoutSeconds": 1200 },
+    { "id": "verify", "action": "gate", "gate": "full-tests", "needs": ["review"], "policyRef": "verify", "approval": "none", "timeoutSeconds": 300 }
+  ],
+  "terminal": { "step": "verify", "acceptedVerdicts": ["pass"], "rejectedVerdicts": ["fail", "blocked", "cancelled"], "requiresVerifierGate": true },
+  "cancellation": { "stopAdmission": true, "waitForTerminalProof": true, "terminalVerdict": "cancelled" },
+  "failure": { "onStepFailure": "fail", "onGateFailure": "fail" },
+  "recovery": { "durableState": true, "verifySourceHash": true, "resumeFrom": "last-settled-step" }
+}

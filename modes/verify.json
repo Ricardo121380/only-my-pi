@@ -1,0 +1,21 @@
+{
+  "$schema": "../schemas/mode-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "verify",
+  "version": "1.0.0",
+  "displayName": "Verify",
+  "description": "Read-only receipt interpretation and deterministic gate verification.",
+  "category": "core-plus",
+  "executionState": "review",
+  "extends": ["inspect"],
+  "aliases": [],
+  "requires": { "profileCapabilities": ["workspace-read"], "packages": [], "enforcementSurfaces": ["fileToolPolicy"] },
+  "prompt": { "file": "modes/prompts/verify.md" },
+  "tools": { "allow": ["read", "grep", "find", "ls"], "deny": ["bash", "edit", "write", "web"], "required": ["read"] },
+  "policy": { "workspace": "read-only", "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" }, "approval": "deny" },
+  "workflow": { "default": "single-agent-safe", "fallback": "single-agent-safe" },
+  "swarm": { "allowed": false, "defaultRecipe": null },
+  "completion": { "gates": ["full-tests"], "requiresStructuredVerdict": true },
+  "risk": "low"
+}

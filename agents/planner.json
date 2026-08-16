@@ -1,0 +1,46 @@
+{
+  "$schema": "../schemas/agent-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "planner",
+  "upstreamAgentId": "omp-planner",
+  "version": "1.0.0",
+  "description": "Read-only planner that converts evidence into an executable, bounded plan.",
+  "prompt": { "file": "agents/prompts/planner.md" },
+  "tools": {
+    "allow": ["read", "grep", "find", "ls"],
+    "deny": ["bash", "edit", "write", "web"]
+  },
+  "allowedExecutionStates": ["ask", "plan"],
+  "requiredCapabilities": ["workspace-read", "planning"],
+  "policyCeiling": {
+    "workspace": "read-only",
+    "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" },
+    "approval": "deny",
+    "mutation": "none"
+  },
+  "modelRole": "deep",
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": { "goal": { "type": "string", "description": "Desired outcome." }, "evidence": { "type": "array", "description": "Prior bounded evidence." } },
+    "required": ["goal"]
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "objective": { "type": "string", "description": "Restated objective." },
+      "steps": { "type": "array", "description": "Ordered implementation steps." },
+      "risks": { "type": "array", "description": "Risk and mitigation records." },
+      "gates": { "type": "array", "description": "Named verification gates." }
+    },
+    "required": ["objective", "steps", "risks", "gates"]
+  },
+  "writer": false,
+  "timeoutSeconds": 900,
+  "continuable": true,
+  "resumable": true,
+  "redaction": { "rawPrompts": "omit", "reasoning": "omit", "credentials": "deny", "maxOutputBytes": 65536 },
+  "gateIds": ["schema-check"]
+}

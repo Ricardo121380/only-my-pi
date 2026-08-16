@@ -1,0 +1,21 @@
+{
+  "$schema": "../schemas/mode-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "explore",
+  "version": "1.0.0",
+  "displayName": "Explore",
+  "description": "Fast read-only repository mapping with bounded evidence output.",
+  "category": "core",
+  "executionState": "ask",
+  "extends": ["inspect"],
+  "aliases": [],
+  "requires": { "profileCapabilities": ["workspace-read"], "packages": [], "enforcementSurfaces": ["fileToolPolicy"] },
+  "prompt": { "file": "modes/prompts/explore.md" },
+  "tools": { "allow": ["read", "grep", "find", "ls"], "deny": ["bash", "edit", "write", "web"], "required": ["read"] },
+  "policy": { "workspace": "read-only", "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" }, "approval": "deny" },
+  "workflow": { "default": "research-report", "fallback": "single-agent-safe" },
+  "swarm": { "allowed": false, "defaultRecipe": null },
+  "completion": { "gates": ["diff-check"], "requiresStructuredVerdict": true },
+  "risk": "low"
+}

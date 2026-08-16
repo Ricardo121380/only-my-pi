@@ -1,0 +1,21 @@
+{
+  "$schema": "../schemas/mode-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "debug",
+  "version": "1.0.0",
+  "displayName": "Debug",
+  "description": "Evidence-first diagnosis mode with narrow guarded fixes and mandatory verification.",
+  "category": "core-plus",
+  "executionState": "build",
+  "extends": [],
+  "aliases": [],
+  "requires": { "profileCapabilities": ["workspace-read", "file-tool-policy", "bash-sandbox-conditional"], "packages": ["permission-modes"], "enforcementSurfaces": ["toolCallPolicy", "fileToolPolicy", "bashSandbox"] },
+  "prompt": { "file": "modes/prompts/debug.md" },
+  "tools": { "allow": ["read", "grep", "find", "ls", "edit", "write", "bash"], "deny": ["web"], "required": ["read"] },
+  "policy": { "workspace": "guarded-write", "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" }, "approval": "ask" },
+  "workflow": { "default": "debug-fix-verify", "fallback": "single-agent-safe" },
+  "swarm": { "allowed": false, "defaultRecipe": null },
+  "completion": { "gates": ["full-tests"], "requiresStructuredVerdict": true },
+  "risk": "medium"
+}

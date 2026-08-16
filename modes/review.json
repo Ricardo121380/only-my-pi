@@ -1,0 +1,21 @@
+{
+  "$schema": "../schemas/mode-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "review",
+  "version": "1.0.0",
+  "displayName": "Review",
+  "description": "Fresh-context read-only review that cannot write source files.",
+  "category": "core-plus",
+  "executionState": "review",
+  "extends": ["inspect"],
+  "aliases": [],
+  "requires": { "profileCapabilities": ["workspace-read", "review-assistance"], "packages": ["agent-extensions"], "enforcementSurfaces": ["fileToolPolicy"] },
+  "prompt": { "file": "modes/prompts/review.md" },
+  "tools": { "allow": ["read", "grep", "find", "ls"], "deny": ["bash", "edit", "write", "web"], "required": ["read"] },
+  "policy": { "workspace": "read-only", "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" }, "approval": "deny" },
+  "workflow": { "default": "review-findings", "fallback": "single-agent-safe" },
+  "swarm": { "allowed": false, "defaultRecipe": null },
+  "completion": { "gates": ["diff-check"], "requiresStructuredVerdict": true },
+  "risk": "low"
+}

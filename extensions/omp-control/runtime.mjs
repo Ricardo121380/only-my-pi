@@ -7,7 +7,7 @@ import { validateModeReceipt } from "../../packages/mode-registry/index.mjs";
 import { buildContextSnapshot, formatSnapshot } from "../context-doctor/metrics.mjs";
 
 const TOKEN = /^[A-Za-z0-9:_./-]+$/u;
-const ROOT_COMMANDS = new Set(["", "help", "status", "doctor", "profile", "mode", "tools", "packages", "context", "verify", "safe", "swarm", "theme"]);
+const ROOT_COMMANDS = new Set(["", "help", "status", "doctor", "profile", "mode", "workflow", "tools", "packages", "context", "verify", "safe", "swarm", "theme"]);
 
 function fail(code, message) {
   const error = new Error(message);
@@ -135,13 +135,25 @@ export async function restoreModeReceipt({ registry, entries, profile } = {}) {
  * It never invokes a shell and treats missing live services as an explicit
  * unavailable state rather than guessing a permission or sandbox state.
  */
-export function createOmpRuntime({ rootDir, configRoot, registry, modeService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
+export function createOmpRuntime({ rootDir, configRoot, registry, modeService, workflowService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
   const derivedRoot = rootDir ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const derivedConfigRoot = configRoot ?? process.env.PI_CODING_AGENT_DIR ?? null;
   let modes = modeService;
+  let workflows = workflowService;
   const getModes = async () => {
     if (!modes) modes = createModeControlService({ rootDir: derivedRoot, configRoot: derivedConfigRoot, registry, sessionDriver });
     return modes;
+  };
+  const getWorkflows = async () => {
+    if (!workflows) {
+      // Keep the M3 packaged runtime dependency-closed: workflow support is an
+      // M4 surface and must not be imported during the minimal extension's
+      // startup path.  The dynamic import also makes a missing optional
+      // workflow bundle an explicit command-time UNAVAILABLE result.
+      const module = await import("../../packages/control-service/workflow-service.mjs");
+      workflows = module.createWorkflowControlService({ rootDir: derivedRoot });
+    }
+    return workflows;
   };
 
   const restoreSession = async (entries) => {
@@ -183,6 +195,13 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, s
           configRoot,
           resolved: args.includes("--resolved"),
         });
+        notify(ctx, result, result.ok === false ? "warning" : "info");
+        return result;
+      }
+      if (command === "workflow") {
+        const subcommand = args[0] ?? "list";
+        const workflowId = args[1] ?? null;
+        const result = await (await getWorkflows()).dispatch({ subcommand, workflowId, runId: workflowId, apply: args.includes("--apply") && args.includes("--yes"), input: {}, conditions: ["profile-resolved", "mode-resolved", "session-idle"] });
         notify(ctx, result, result.ok === false ? "warning" : "info");
         return result;
       }

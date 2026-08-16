@@ -1,0 +1,21 @@
+{
+  "$schema": "../schemas/mode-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "coding",
+  "version": "1.0.0",
+  "displayName": "Coding",
+  "description": "Guarded workspace implementation mode with explicit test, review, and verification gates.",
+  "category": "core",
+  "executionState": "build",
+  "extends": [],
+  "aliases": [],
+  "requires": { "profileCapabilities": ["workspace-read", "file-tool-policy", "bash-sandbox-conditional"], "packages": ["permission-modes", "lsp"], "enforcementSurfaces": ["toolCallPolicy", "fileToolPolicy", "bashSandbox"] },
+  "prompt": { "file": "modes/prompts/coding.md" },
+  "tools": { "allow": ["read", "grep", "find", "ls", "edit", "write", "bash"], "deny": ["web"], "required": ["read", "edit"] },
+  "policy": { "workspace": "guarded-write", "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" }, "approval": "ask" },
+  "workflow": { "default": "plan-build-review", "fallback": "single-agent-safe" },
+  "swarm": { "allowed": false, "defaultRecipe": null },
+  "completion": { "gates": ["full-tests"], "requiresStructuredVerdict": true },
+  "risk": "medium"
+}
