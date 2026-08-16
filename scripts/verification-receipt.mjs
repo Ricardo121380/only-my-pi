@@ -104,6 +104,7 @@ function extractFreshEvidence(stdout) {
     && value.install?.offline === true
     && value.install?.global === false
     && value.install?.checkoutRuntime === false
+    && value.install?.dependencySeed === "repository-lockfile"
     && value.bootstrap?.dryRun === "PLAN_READY_ZERO_WRITE"
     && value.bootstrap?.firstApply === "COMMITTED"
     && ["NO_CHANGES", "REPAIRED_NO_CHANGES"].includes(value.bootstrap?.secondApply)

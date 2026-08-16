@@ -162,17 +162,34 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT } = {}) {
     const integrity = sha512Integrity(tarballBytes);
     if (packed.integrity !== integrity) fail("FRESH_PACK_INTEGRITY_MISMATCH", "npm pack integrity does not match tarball bytes");
 
+    // Seed the disposable prefix from the repository lockfile first. This keeps
+    // the smoke genuinely offline: the subsequent local tarball install only
+    // needs the already-resolved Pi dependency tree and never asks the registry
+    // for a transitive packument that may not be present in a CI cache.
+    await Promise.all([
+      fs.copyFile(path.join(root, "package.json"), path.join(prefix, "package.json")),
+      fs.copyFile(path.join(root, "package-lock.json"), path.join(prefix, "package-lock.json")),
+    ]);
+    await runCommand(npmCommand, [
+      "ci",
+      "--ignore-scripts",
+      "--offline",
+      "--no-audit",
+      "--no-fund",
+      "--prefix",
+      prefix,
+    ], { cwd: prefix, env, label: "seed locked dependency tree" });
     await runCommand(npmCommand, [
       "install",
       "--ignore-scripts",
       "--offline",
       "--no-audit",
       "--no-fund",
+      "--no-save",
       "--package-lock=false",
       "--omit=peer",
       "--prefix",
       prefix,
-      `@earendil-works/pi-coding-agent@${PI_VERSION}`,
       tarballPath,
     ], { cwd: workspace, env, label: "fresh scripts-disabled install" });
 
@@ -237,7 +254,13 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT } = {}) {
         integrity,
         files: Array.isArray(packed.files) ? packed.files.length : null,
       }),
-      install: Object.freeze({ scripts: "disabled", offline: true, global: false, checkoutRuntime: false }),
+      install: Object.freeze({
+        scripts: "disabled",
+        offline: true,
+        global: false,
+        checkoutRuntime: false,
+        dependencySeed: "repository-lockfile",
+      }),
       bootstrap: Object.freeze({
         dryRun: "PLAN_READY_ZERO_WRITE",
         firstApply: first.status,
