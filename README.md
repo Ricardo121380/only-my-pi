@@ -20,8 +20,9 @@ local npm installs, or private source code copied from another project.
 ```text
 extensions/   Pi extensions developed for this project
 skills/       Agent Skills (`SKILL.md` directories)
-prompts/      Prompt templates
+prompts/      Product-facing Pi prompt templates
 themes/       Pi theme JSON files
+codex/        Codex-only development goals; never loaded as Pi package resources
 docs/         Research, design notes, and compatibility records
 inventory/    Version-pinned package inventory and risk metadata
 profiles/     Explicit package/policy profiles for different workflows
@@ -32,7 +33,7 @@ scripts/      Repository checks and package governance tooling
 ## Current research
 
 - [Harness product development plan and milestone gates](docs/plans/2026-08-16-only-my-pi-development-plan.md)
-- [End-to-end Goal Prompt](prompts/goal-develop-only-my-pi.md)
+- [Codex end-to-end development Goal](codex/goals/develop-only-my-pi.md)
 - [Pi / DeepSeek Harness / open-source Harness ecosystem report](docs/research/2026-08-15-harness-ecosystem.md)
 - [Security and package review policy](SECURITY.md)
 - [Package governance decision](docs/decisions/ADR-0001-package-governance.md)
@@ -81,23 +82,31 @@ For a one-run test without changing Pi settings:
 pi -e .
 ```
 
-Run the full development Goal from the repository root:
+## Run the Harness development Goal with Codex
+
+The repository development Goal is for Codex, not for Pi or the future
+only-my-pi Agent. It is deliberately stored outside `prompts/`, so installing
+this repository as a Pi package cannot expose it as a Pi slash prompt.
+
+Open this repository as the Codex workspace, then start the complete run with:
 
 ```text
-/goal-develop-only-my-pi all
+/goal Read codex/goals/develop-only-my-pi.md and execute it with TARGET=all, REPO=/absolute/path/to/only-my-pi, DELIVERY=push. Continue until the specified Definition of Done and verification gates are satisfied.
 ```
 
-If Pi was started outside this checkout, pass the validated repository path
-explicitly instead of relying on prompt-package discovery:
+For the safer first delivery slice:
 
 ```text
-/goal-develop-only-my-pi all repo=/absolute/path/to/only-my-pi
+/goal Read codex/goals/develop-only-my-pi.md and execute it with TARGET=M0-M3, REPO=/absolute/path/to/only-my-pi, DELIVERY=push. Continue until that target and all required dependencies are complete.
 ```
 
-The Goal Prompt also accepts milestone ranges such as `M0-M3`, `M4`, `M5`,
-and `M6-M7`, plus `delivery=local` when the result must remain local. It does
-not grant permission to read credentials, mutate the real Pi home, call a live
-model Provider, publish a package, or push `main`.
+This follows Codex's durable `/goal` workflow: one objective, explicit source
+files, checkpoints, validation commands, and a verifiable stopping condition.
+See the [official OpenAI Goal guide](https://learn.chatgpt.com/use-cases/follow-goals).
+The execution contract also supports `M4`, `M5`, and `M6-M7`, plus
+`DELIVERY=local` when the result must remain local. It does not grant permission
+to read credentials, mutate the real Pi home, call a live product Provider,
+publish a package, or push `main`.
 
 ## Safety boundary
 

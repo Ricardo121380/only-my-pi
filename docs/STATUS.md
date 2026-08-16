@@ -117,11 +117,12 @@ metadata-only commit.
 
 ## Next implementation boundary
 
-The repository now has a complete product roadmap and an executable Goal
-Prompt:
+The repository now has a complete product roadmap and a Codex execution Goal.
+The Goal is an external development-orchestrator contract and is not exposed
+through the Pi package's `prompts/` resources:
 
 - [`plans/2026-08-16-only-my-pi-development-plan.md`](plans/2026-08-16-only-my-pi-development-plan.md)
-- [`../prompts/goal-develop-only-my-pi.md`](../prompts/goal-develop-only-my-pi.md)
+- [`../codex/goals/develop-only-my-pi.md`](../codex/goals/develop-only-my-pi.md)
 
 The roadmap target is a usable Pi-based Harness distribution; it is not the
 current implementation state. The current governed baseline remains the

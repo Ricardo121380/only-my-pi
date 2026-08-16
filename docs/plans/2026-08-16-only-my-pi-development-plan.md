@@ -47,6 +47,22 @@
 
 现有 `packages/deepseek-conformance`、`packages/acp-v1` 和 `packages/workspace-checkpoint` 保留，但统一归入 Labs/Experimental。它们可以继续独立演进，不得阻塞 Harness MVP，也不得默认加载。
 
+### 1.3 开发编排器与产品 Agent 必须分开
+
+本计划由 **Codex** 作为外部开发 Agent 执行；Pi/only-my-pi 是被开发、测试和
+打包的目标产品。两者不能互换：
+
+- Codex `/goal` 负责跨回合目标、计划状态、代码修改、测试、独立开发子代理、Git
+  提交与经授权的 feature-branch push；
+- only-my-pi 在交付后负责用户任务的 Profile、Mode、Workflow、Agent Role 和
+  AgentSwarm；
+- `pi-subagents` 只属于产品 M5 运行时，不能被当成执行本开发计划的 Codex
+  子代理框架；
+- Codex Goal contract 放在 `codex/goals/`，不得放入 `prompts/`、不得写入
+  `package.json#pi.prompts`，也不得要求先启动 Pi 才能开始开发；
+- 对 Pi 的 no-model startup、扩展注册和 AgentSwarm 测试只是 Codex 执行的产品
+  验证步骤，不是 Goal 自身的宿主。
+
 ## 2. 当前仓库基线与真实差距
 
 截至本计划编写时，仓库已经具备：
@@ -845,7 +861,7 @@ UI 的目标是可读和可诊断，不是重写 Pi TUI。
 - 新增产品边界 ADR；
 - 更新 README/STATUS，让 bootstrap、Mode、Workflow、AgentSwarm 成为主路线；
 - 新增 Labs 页面，收纳 ACP、DeepSeek conformance、checkpoint；
-- 建立本计划与 Goal Prompt；
+- 建立本计划与外部 Codex Goal execution contract；该文件不得进入 Pi `prompts/` resource；
 - 保留现有测试基线。
 
 验收：
@@ -1345,23 +1361,27 @@ flowchart LR
 
 其余情况应持续执行到当前 Goal 的 Definition of Done，而不是只交付计划或停在 TODO。
 
-## 18. 配套 Goal Prompt
+## 18. 配套 Codex Goal
 
-用于跑完整开发流程的主 Prompt 位于：
+用于让 Codex 持续执行完整开发流程的 Goal contract 位于：
 
-- [`../../prompts/goal-develop-only-my-pi.md`](../../prompts/goal-develop-only-my-pi.md)
+- [`../../codex/goals/develop-only-my-pi.md`](../../codex/goals/develop-only-my-pi.md)
+
+它是 Codex 的外部开发编排契约，不是 Pi/only-my-pi 的产品 Prompt，不使用
+Pi package prompt frontmatter、Pi 参数占位符或 Pi slash command，也不会被
+`package.json#pi.prompts` 发现。产品中的 `pi-subagents` 是 M5 要实现和验证的
+运行时依赖；执行本开发计划时使用的是 Codex 自己的 Goal 和开发子代理能力。
 
 推荐调用：
 
 ```text
-/goal-develop-only-my-pi all
-/goal-develop-only-my-pi M0-M3
-/goal-develop-only-my-pi M5 repo=/absolute/path/to/only-my-pi
-/goal-develop-only-my-pi M6-M7 delivery=local
+/goal Read codex/goals/develop-only-my-pi.md and execute it with TARGET=all, REPO=/absolute/path/to/only-my-pi, DELIVERY=push. Continue until its stopping condition is satisfied.
+/goal Read codex/goals/develop-only-my-pi.md and execute it with TARGET=M0-M3, REPO=/absolute/path/to/only-my-pi, DELIVERY=push.
+/goal Read codex/goals/develop-only-my-pi.md and execute it with TARGET=M5, REPO=/absolute/path/to/only-my-pi, DELIVERY=push.
+/goal Read codex/goals/develop-only-my-pi.md and execute it with TARGET=M6-M7, REPO=/absolute/path/to/only-my-pi, DELIVERY=local.
 ```
 
-前两条要求 Pi 的当前工作目录已经位于通过 identity 校验的 `only-my-pi`
-Git root；否则必须显式传 `repo=<absolute-path>`。Prompt package/resource 的
-安装位置不能作为目标仓库定位依据。
+Codex workspace 已经是通过 identity 校验的 `only-my-pi` Git root 时可以省略
+`REPO`；否则必须传绝对路径。不得用 Pi package/resource 的安装位置推断开发仓库。
 
 无论调用范围为何，执行者都必须先读取本计划、检查当前仓库和已完成提交，只做缺失部分，不从头重复已完成工作。

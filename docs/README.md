@@ -11,7 +11,8 @@ Recommended records:
 - `../inventory/` — the current machine's redacted, exact-version package inventory
 - `../profiles/` — profile contracts that select packages and policy boundaries
 - `../scripts/package-doctor.mjs` — no-dependency validation of the inventory and profiles
-- `../prompts/` — reusable Pi prompts, including the end-to-end development Goal
+- `../prompts/` — product-facing reusable Pi prompts only
+- `../codex/goals/` — Codex-only development execution contracts; never Pi package resources
 
 Keep copied third-party code out of this directory; link to upstream sources
 and record the version or commit that was reviewed.
