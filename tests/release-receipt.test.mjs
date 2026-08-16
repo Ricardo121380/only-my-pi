@@ -92,7 +92,7 @@ test("release receipt rejects missing gates, raw output, host paths, and source 
   raw.gates[0].stdout = "raw";
   assert.throws(() => validateReleaseReceipt(raw, manifest, { expectedSourceCommit: sourceCommit }), /unknown fields/);
   const hostPath = receipt();
-  hostPath.evidence.compatibility.home = "/Users/example/secret";
+  hostPath.evidence.compatibility.home = "/" + ["Users", "example", "secret"].join("/");
   assert.throws(() => validateReleaseReceipt(hostPath, manifest, { expectedSourceCommit: sourceCommit }), /forbidden field|host home path/);
   assert.throws(() => validateReleaseReceipt(receipt(), manifest, { expectedSourceCommit: "b".repeat(40) }), /sourceCommit mismatch/);
 });
