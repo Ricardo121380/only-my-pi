@@ -58,6 +58,13 @@ scripts/      Repository checks and package governance tooling
 - [ACP v1 adapter](docs/architecture/acp-v1.md)
 - [Workspace checkpoint](docs/architecture/workspace-checkpoint.md)
 - [Theme and status layer](docs/architecture/theme-status.md)
+- [Quickstart](docs/quickstart.md)
+- [Modes](docs/modes.md)
+- [AgentSwarm](docs/agent-swarm.md)
+- [Migration, rollback, and uninstall](docs/migration-uninstall.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Threat model](docs/threat-model.md)
+- [Node/Pi compatibility matrix](docs/compatibility/node-pi-matrix.md)
 - [Transactional bootstrap runtime](docs/architecture/bootstrap-runtime.md)
 - [Mode Registry and unified control surface](docs/architecture/mode-registry.md)
 - [Agent and Workflow Core](docs/architecture/agent-workflow-core.md)
@@ -201,11 +208,22 @@ npm run pack:check
 npm run verify
 npm test
 
+# M7 executable release receipt (clean source commit only)
+npm run verify -- --run --output verification/receipts/2026-08-16-harness-mvp.json
+npm run receipt:check -- --receipt verification/receipts/2026-08-16-harness-mvp.json
+
 # The three protocol/recovery increments
 npm run test:deepseek
 npm run test:acp
 npm run test:checkpoint
 ```
+
+The local and CI release gates both read `verification/release-gates-v1.json`.
+The final receipt is metadata-only and must be the sole file in its receipt
+commit. A tracked source change after that commit invalidates the receipt and
+requires a new source/gate/receipt sequence. Publishing, tagging, releasing,
+and opening a pull request remain separately unauthorized by the development
+Goal.
 
 The experimental profile intentionally reports blocked candidates as warnings;
 it does not activate them. Package versions are updated only after a source

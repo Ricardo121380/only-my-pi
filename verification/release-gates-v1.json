@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "id": "release-gates-v1",
-  "description": "Fixed, no-shell release gate contract for only-my-pi. M1 validates and inspects this manifest without executing it; M7 will connect it to the authoritative receipt runner.",
+  "description": "Fixed, no-shell release gate contract for only-my-pi. Local verification and CI both execute this exact manifest; the receipt runner is not itself a gate.",
   "policy": {
     "cwd": "repository-root",
     "network": "deny",

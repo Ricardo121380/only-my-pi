@@ -9,6 +9,12 @@ Recommended records:
 - `decisions/` — compatibility, security, and architecture decisions
 - `LABS.md` — non-default offline experiments and their graduation requirements
 - `compatibility/` — Pi/core and package version matrices
+- `quickstart.md` — disposable install, bootstrap, and packed-artifact smoke
+- `modes.md` — built-in Mode behavior and extension contract
+- `agent-swarm.md` — recipe, budget, and child-policy boundaries
+- `migration-uninstall.md` — update, rollback, and uninstall procedures
+- `troubleshooting.md` — bounded statuses and recovery paths
+- `threat-model.md` — trust boundaries and residual risks
 - `../inventory/` — the current machine's redacted, exact-version package inventory
 - `../profiles/` — profile contracts that select packages and policy boundaries
 - `../policies/` — capability, ownership, command, and enforcement-surface contracts

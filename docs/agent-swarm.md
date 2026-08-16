@@ -1,0 +1,42 @@
+# AgentSwarm
+
+AgentSwarm is an optional orchestration layer, not a second Pi runtime. The
+physical scheduler belongs to the reviewed `pi-subagents@0.45.2` extension-RPC
+v1 lane. only-my-pi owns admission, policy projection, bounded workflow-script
+compilation, cancellation, and result aggregation.
+
+## Recipes
+
+- `research-synthesis` — read-only scouts and synthesis;
+- `coding-guarded` — one managed-worktree writer plus deterministic gates;
+- `review-matrix` — independent read-only reviewers;
+- `debug-hypotheses` — bounded hypotheses followed by a verifier gate.
+
+Inspect and validate recipes offline:
+
+```bash
+node bin/omp.mjs swarm list
+node bin/omp.mjs swarm validate research-synthesis
+node bin/omp.mjs swarm plan research-synthesis --input-file /absolute/task.json
+```
+
+`swarm run` requires an injected Pi session and explicit approval. Without one,
+it returns `LIVE_SWARM_REQUIRES_PI_SESSION`; that is an honest unavailable
+state, not a fake live success. Research/review/debug children do not receive
+`bash`, `edit`, or `write`. Test and verifier evidence comes from the fixed
+Gate Runner, not an arbitrary child shell.
+
+## Safety invariants
+
+- depth, fanout, child count, wall time, token/cost, and retry budgets are
+  intersected with the parent Profile and Mode ceilings;
+- recursive Swarm and shared-cwd parallel writers are rejected;
+- a writer requires a negotiated managed-worktree capability;
+- cancellation closes admission before stop/abort and requires terminal proof;
+- child results are ordered by recipe declaration, and verifier failure cannot
+  become an overall success;
+- Codex development subagents are not product AgentSwarm children.
+
+Live child dispatch and Provider calls remain `NOT_RUN_BY_POLICY` in the
+repository's offline evidence. A real deployment must add OS/container
+isolation for any untrusted code; a worktree alone is not a sandbox.

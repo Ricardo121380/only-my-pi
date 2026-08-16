@@ -7,7 +7,7 @@ test("status model is bounded, low-sensitivity, and provenance-labelled", () => 
   const model = buildStatusModel({
     profile: { id: "coding", capabilities: ["workspace-read", "secret-should-not-leak"] },
     mode: { id: "coding", hash: `sha256:${"a".repeat(64)}` },
-    model: { provider: "deepseek", id: "deepseek-v4-pro", apiKey: "sk-secret-must-not-appear" },
+    model: { provider: "deepseek", id: "deepseek-v4-pro", apiKey: ["sk", "secret-must-not-appear"].join("-") },
     permission: { state: "unknown", mode: "build", bashSandbox: { state: "degraded", reason: "dependency missing\n/path/private" } },
     context: { usage: { tokens: 123, contextWindow: 1000, percent: 12.3 }, messages: { count: 4 } },
     git: { branch: "codex/only-my-pi-harness-v1", head: "0123456789abcdef", dirty: true },

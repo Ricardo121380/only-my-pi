@@ -58,9 +58,9 @@ test("release-gates-v1 fixes the required gate IDs and exact command tuples", ()
 test("the public verify script is the non-executing v1 inspector", () => {
   const manifest = loadReleaseGatesManifest(manifestPath);
   assert.equal(packageManifest.scripts.verify, "node scripts/release-gates.mjs --json");
-  assert.equal(packageManifest.scripts["verify:legacy"], "node scripts/verification-receipt.mjs");
-  assert.match(manifest.description, /M1 validates and inspects/);
-  assert.match(manifest.description, /M7 will connect/);
+  assert.equal(packageManifest.scripts["receipt:check"], "node scripts/release-receipt-check.mjs");
+  assert.match(manifest.description, /Local verification and CI both execute/);
+  assert.match(manifest.description, /not itself a gate/);
 });
 
 test("resolved gates are immutable and expose no argv override", () => {
@@ -97,7 +97,15 @@ test("release gate negative fixtures fail closed", async (t) => {
 
 test("release gate CLI parser rejects overrides and path escape", () => {
   assert.throws(() => parseReleaseGateArgs(["--gate", "lint", "--gate", "typecheck"]), /duplicate --gate/);
-  assert.throws(() => parseReleaseGateArgs(["--run"]), /unknown argument/);
+  assert.deepEqual(parseReleaseGateArgs(["--run"]), {
+    manifest: manifestPath,
+    gate: null,
+    json: false,
+    help: false,
+    run: true,
+    output: null,
+  });
+  assert.throws(() => parseReleaseGateArgs(["--output", "verification/receipts/x.json"]), /requires --run/);
   assert.throws(() => parseReleaseGateArgs(["--manifest"]), /requires a path/);
   assert.throws(
     () => inspectReleaseGates(["--manifest", "package.json"]),

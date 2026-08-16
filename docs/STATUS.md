@@ -254,23 +254,31 @@ npm run doctor:profiles
 npm run profile:check
 npm run schema:check
 npm run mcp:doctor -- --file verification/fixtures/mcp.safe.json --strict
-npm run verify  # M1 immutable manifest inspector; never executes gates
+npm run verify  # inspect release-gates-v1; never executes gates
+npm run lint
+npm run secret:scan
+npm run test:e2e
 ```
 
-The historical receipts below were produced by the pre-M1 legacy runner. That
-runner remains available internally as `npm run verify:legacy` for receipt
-validation tests, but it is not a release authority and must not be used to
-claim an M1 or M7 PASS. M7 will replace the inspector with an executor that can
-run only the fixed `release-gates-v1` tuples and create the final receipt.
+The historical receipts below were produced before the executable
+`release-gates-v1` runner existed. They remain historical evidence only and
+must not be used to claim the Harness MVP release gate. The M7 runner executes
+only the fixed manifest, requires a clean source commit, and writes a new
+metadata-only receipt with exclusive-create semantics:
 
-The current M6 source gate set passes **346/346** Node tests, including the M2
+```bash
+npm run verify -- --run --output verification/receipts/2026-08-16-harness-mvp.json
+npm run receipt:check -- --receipt verification/receipts/2026-08-16-harness-mvp.json
+```
+
+The current M7 source gate set passes **350/350** Node tests, including the M2
 transactional suite, Mode Registry, unified control, staged-generation,
 Agent Registry, Workflow Core, Gate Runner, skills bridge, repo-map, Swarm
 Core, PiSubagentsAdapter, theme/status services, and fresh-tarball closure
 tests. It validates 47 production documents against 16 schema kinds,
 typechecks against the exact Pi 0.84.1 development dependency,
 passes static, per-Profile, Agent, Workflow, and Swarm doctors, and packs the
-current allowlisted runtime files (**160 files**). Crash injection covers every durable transaction phase,
+current allowlisted runtime files (164 files in the current source tree). Crash injection covers every durable transaction phase,
 including the settings rename window. Injected Workflow tests cover
 deterministic stage order, structured gate receipts, source drift, explicit
 fallback, resume, and cancellation terminal proof. A disposable
@@ -316,15 +324,12 @@ compatibility foundation, M2 delivered the transactional `omp` configuration
 runtime, M3 delivered the Mode Registry plus the unified `/omp` control
 surface, M4 delivered the practical single-Agent/Workflow layer, and M5
 delivered the governed AgentSwarm compiler plus the sole `pi-subagents` RPC
-adapter, and M6 delivered the semantic theme/status layer. The next
-implementation boundary is M7:
-
-1. connect the fixed release-gates-v1 manifest to the executable verification
-   receipt and CI;
-2. run a fresh scripts-disabled tarball end-to-end test from the promoted
-   artifact, including theme/status resources;
-3. refresh documentation, source/receipt commits, and the final push/CI
-   handoff without claiming live Provider or child-runtime evidence.
+adapter, and M6 delivered the semantic theme/status layer. M7 now connects the
+fixed release-gates-v1 manifest to the executable verification receipt and CI,
+adds the fresh scripts-disabled tarball end-to-end smoke, and closes the
+documentation/threat-model/package metadata loop. The final receipt remains
+pending until the clean source commit has passed every gate and the feature
+branch has terminal remote CI evidence.
 
 DeepSeek endpoint work, ACP-to-Pi wiring, and automatic turn checkpoints are
 not the next product boundary. Their existing offline modules stay under
