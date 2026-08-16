@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "goalRunId": "9be08fe9-7f4d-4e9d-95c5-6078837f2de9",
+  "markerHash": "sha256:3720a7beb0f83af508d88773262d19a98d991915a62043354bbeb45df0fdb789",
+  "requestedTarget": "all",
+  "effectiveTarget": [
+    "M0",
+    "M1",
+    "M2",
+    "M3",
+    "M4",
+    "M5",
+    "M6",
+    "M7"
+  ],
+  "deliveryMode": "push",
+  "milestone": "M0",
+  "sourceCommit": "396b29815ddc9209b76fe9eabf3f745ebb6dd9c1",
+  "suite": {
+    "id": "m0-focused",
+    "version": 1,
+    "gates": [
+      "unit-tests",
+      "package-doctor",
+      "profile-doctors",
+      "profile-resolver",
+      "schema-links-baseline",
+      "mcp-static-doctor",
+      "git-diff-check",
+      "documentation-links"
+    ],
+    "digest": "sha256:83d5f03bda12810487c5190f0a3aa8d228fb1aecda1189e724046f5c5246c866"
+  },
+  "gates": [
+    {
+      "id": "unit-tests",
+      "status": "PASS"
+    },
+    {
+      "id": "package-doctor",
+      "status": "PASS"
+    },
+    {
+      "id": "profile-doctors",
+      "status": "PASS"
+    },
+    {
+      "id": "profile-resolver",
+      "status": "PASS"
+    },
+    {
+      "id": "schema-links-baseline",
+      "status": "PASS"
+    },
+    {
+      "id": "mcp-static-doctor",
+      "status": "PASS"
+    },
+    {
+      "id": "git-diff-check",
+      "status": "PASS"
+    },
+    {
+      "id": "documentation-links",
+      "status": "PASS"
+    }
+  ],
+  "summary": {
+    "tests": "43/43",
+    "doctorErrors": 0,
+    "experimentalWarnings": 2,
+    "documentationLinks": "PASS",
+    "labsStatus": "EXPERIMENTAL_OFFLINE"
+  },
+  "completedAt": "2026-08-16T02:21:51.569Z",
+  "nextMilestone": "M1",
+  "stateHash": "sha256:0a0a519814734af60ace246acaa2b9b94652eb57e96a94f75c68ec5cecdbf988"
+}
