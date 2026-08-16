@@ -28,7 +28,7 @@ function evidence() {
       integrity: "sha512-" + Buffer.from("fixture").toString("base64"),
       files: 164,
     },
-    install: { scripts: "disabled", offline: true, global: false, checkoutRuntime: false, dependencySeed: "repository-lockfile" },
+    install: { scripts: "disabled", offline: true, global: false, checkoutRuntime: false, dependencySeed: "repository-lockfile-local-tarball" },
     bootstrap: {
       dryRun: "PLAN_READY_ZERO_WRITE",
       firstApply: "COMMITTED",

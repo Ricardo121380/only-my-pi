@@ -181,13 +181,41 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT } = {}) {
     const integrity = sha512Integrity(tarballBytes);
     if (packed.integrity !== integrity) fail("FRESH_PACK_INTEGRITY_MISMATCH", "npm pack integrity does not match tarball bytes");
 
-    // Seed the disposable prefix from the repository lockfile first. This keeps
-    // the smoke genuinely offline: the subsequent local tarball install only
-    // needs the already-resolved Pi dependency tree and never asks the registry
-    // for a transitive packument that may not be present in a CI cache.
+    // Build a disposable lockfile that includes the freshly packed artifact as
+    // a local file dependency. npm ci can then reify the complete tree from
+    // exact lock entries and the local tarball, without asking the registry for
+    // any packument that may be absent from a CI cache.
+    const sourcePackage = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
+    const installPackage = {
+      ...sourcePackage,
+      name: "only-my-pi-fresh-root",
+      version: "0.0.0",
+      dependencies: { ...(sourcePackage.dependencies ?? {}), "only-my-pi": `file:${tarballPath}` },
+    };
+    delete installPackage.peerDependencies;
+    const installLock = JSON.parse(await fs.readFile(path.join(root, "package-lock.json"), "utf8"));
+    installLock.name = installPackage.name;
+    installLock.version = installPackage.version;
+    installLock.packages[""] = {
+      ...installLock.packages[""],
+      name: installPackage.name,
+      version: installPackage.version,
+      dependencies: installPackage.dependencies,
+    };
+    delete installLock.packages[""].peerDependencies;
+    installLock.packages["node_modules/only-my-pi"] = {
+      version: sourcePackage.version,
+      resolved: `file:${tarballPath}`,
+      integrity,
+      license: sourcePackage.license,
+      dependencies: sourcePackage.dependencies,
+      peerDependencies: sourcePackage.peerDependencies,
+      bin: sourcePackage.bin,
+      engines: sourcePackage.engines,
+    };
     await Promise.all([
-      fs.copyFile(path.join(root, "package.json"), path.join(prefix, "package.json")),
-      fs.copyFile(path.join(root, "package-lock.json"), path.join(prefix, "package-lock.json")),
+      fs.writeFile(path.join(prefix, "package.json"), `${JSON.stringify(installPackage, null, 2)}\n`),
+      fs.writeFile(path.join(prefix, "package-lock.json"), `${JSON.stringify(installLock, null, 2)}\n`),
     ]);
     await runCommand(npmCommand, [
       "ci",
@@ -195,23 +223,11 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT } = {}) {
       "--offline",
       "--no-audit",
       "--no-fund",
-      "--prefix",
-      prefix,
-    ], { cwd: prefix, env, label: "seed locked dependency tree" });
-    await runCommand(npmCommand, [
-      "install",
-      "--ignore-scripts",
-      "--offline",
-      "--no-audit",
-      "--no-fund",
-      "--no-save",
-      "--package-lock=false",
       "--omit=peer",
       "--legacy-peer-deps",
       "--prefix",
       prefix,
-      tarballPath,
-    ], { cwd: workspace, env, label: "fresh scripts-disabled install" });
+    ], { cwd: prefix, env, label: "fresh scripts-disabled locked install" });
 
     const packageRoot = await fs.realpath(path.join(prefix, "node_modules", "only-my-pi"));
     const relativeToSource = path.relative(root, packageRoot);
@@ -279,7 +295,7 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT } = {}) {
         offline: true,
         global: false,
         checkoutRuntime: false,
-        dependencySeed: "repository-lockfile",
+        dependencySeed: "repository-lockfile-local-tarball",
       }),
       bootstrap: Object.freeze({
         dryRun: "PLAN_READY_ZERO_WRITE",

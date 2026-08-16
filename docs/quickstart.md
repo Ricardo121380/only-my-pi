@@ -81,9 +81,10 @@ and installs into a temporary prefix with scripts disabled and npm offline:
 npm run test:e2e
 ```
 
-Before installing the local artifact it seeds the disposable prefix with the
-repository's exact `package-lock.json` using `npm ci --offline`; the artifact
-install therefore does not depend on a registry packument being present in the
-CI cache. It validates the tarball integrity, executable `.bin/omp` and `.bin/pi`,
+Before installing the local artifact it builds a disposable lockfile that points
+at the freshly packed tarball, then runs `npm ci --offline` against the
+repository's exact dependency entries; the artifact install therefore does not
+depend on a registry packument being present in the CI cache. It validates the
+tarball integrity, executable `.bin/omp` and `.bin/pi`,
 checkout independence, dry-run/apply/no-op/doctor/safe/rollback, and the
 no-model startup contract. It never uses the real Pi home or a live Provider.
