@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "goalRunId": "9be08fe9-7f4d-4e9d-95c5-6078837f2de9",
+  "repository": {
+    "name": "only-my-pi",
+    "packageName": "only-my-pi",
+    "origin": "https://github.com/Ricardo121380/only-my-pi.git"
+  },
+  "goalApiId": "019fe9fa-e1e2-7051-8064-1a1ce789136d",
+  "objectiveFamilyDigest": "sha256:59dfcfd1373dbae52f11a8f3cebbd006a6d0f891958d4fa3534428245a0e7182",
+  "initialRequestedTarget": "all",
+  "initialDependencyClosure": [
+    "M0",
+    "M1",
+    "M2",
+    "M3",
+    "M4",
+    "M5",
+    "M6",
+    "M7"
+  ],
+  "initialDeliveryMode": "push",
+  "branch": "codex/only-my-pi-harness-v1",
+  "baseBranch": "main",
+  "baseCommit": "54ad66639b977973470ccf06c941a695c4655c77",
+  "createdAt": "2026-08-16T02:18:40.200Z",
+  "markerHash": "sha256:3720a7beb0f83af508d88773262d19a98d991915a62043354bbeb45df0fdb789"
+}
