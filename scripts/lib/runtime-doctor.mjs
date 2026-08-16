@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HASH_PATTERN = /^sha256:[a-f0-9]{64}$/;
-const ID_PATTERN = /^[a-z][A-Za-z0-9]*(?:[._:/-][A-Za-z0-9]+)*$/;
+const ID_PATTERN = /^\/?[a-z][A-Za-z0-9]*(?:[._:/-][A-Za-z0-9]+)*$/;
 const FORBIDDEN_KEY = /(auth|authorization|cookie|credential|key|prompt|reasoning|secret|session(?:data|content|transcript)?|token|tool(?:input|output|payload))/i;
 const SURFACE_STATES = new Set(["ACTIVE", "DEGRADED", "RESTART_REQUIRED", "UNSUPPORTED", "UNAVAILABLE", "UNKNOWN"]);
 const DEFAULT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");

@@ -35,13 +35,17 @@ sessions, caches, or local npm installs.
 
 ## First-party modules now in the repository
 
-The package manifest still exposes only two non-invasive Pi runtime extensions
-when this checkout is explicitly loaded:
+The package manifest exposes three bounded first-party Pi runtime extensions
+when this checkout or a verified generation is explicitly loaded:
 
 - `session-ledger`: local append-only JSONL operational receipts with per-run
   HMAC correlation and no raw prompt/reasoning/tool payloads;
-- `context-doctor`: aggregate context/tool-schema metrics and `/omp-context`,
-  with no context mutation or persistence.
+- `context-doctor`: aggregate context/tool-schema metrics, with no command
+  ownership, context mutation, or persistence;
+- `omp-control`: the sole `/omp` and compatibility `/omp-context` command
+  owner. It exposes status/profile/mode/tool/package/context/verify/safe views,
+  while hard policy changes fail closed to `RESTART_REQUIRED` when no audited
+  public execution-state driver is available.
 
 The rest of the repository tooling is explicit and side-effect bounded. M1
 replaced descriptive-only checks with strict, versioned governance:
@@ -95,9 +99,29 @@ configuration runtime:
   prompt;
 - the final smoke starts Pi in RPC mode against an isolated, empty credential
   root, checks both runtime state and the expected first-party
-  `omp-context` command registration, and submits no model request. This is a
+  `omp`/`omp-context` command registration, and submits no model request. This is a
   startup/configuration check, not a filesystem or network sandbox for
   extension code.
+
+M3 now supplies the runtime behavior layer on top of that transactional graph:
+
+- a versioned Mode Registry with deterministic discovery, namespaces,
+  inheritance, immutable hashes, explain/diff, Profile-ceiling intersection,
+  path/symlink/cycle/collision checks, and read-only scaffolding;
+- built-in, user, explicitly trusted project, and reviewed-package source
+  roots without implicit selection when names collide;
+- `omp mode list|show|diff|doctor|scaffold|use|reset` and the equivalent
+  `/omp mode` surface through the same resolver;
+- bootstrap resolves an initial Mode as read-only evidence, while session
+  activation uses only public Pi prompt/status/append seams and never creates
+  a competing permission owner;
+- mode activation appends a bounded `only-my-pi-mode` receipt; on session
+  restore the extension re-resolves the current registry and restores the next
+  prompt only when mode and source hashes match, otherwise it reports
+  `STALE_MODE_SNAPSHOT` or ignores malformed evidence;
+- staged generations include the Mode schema, prompt, Profile, policy, and
+  inventory data needed by relative imports. A fresh scripts-disabled tarball
+  can list and resolve `inspect` without a checkout or package-level Ajv lookup.
 
 The repository audits the direct package tarballs before staging and then
 hashes the entire realized dependency tree. It does not yet carry an independently
@@ -169,11 +193,12 @@ validation tests, but it is not a release authority and must not be used to
 claim an M1 or M7 PASS. M7 will replace the inspector with an executor that can
 run only the fixed `release-gates-v1` tuples and create the final receipt.
 
-The M2 source gate set currently passes 278/278 Node tests, including 140/140
-focused configuration/bootstrap/control-plane tests. It validates 20 production
+The M3 source gate set currently passes 301/301 Node tests, including the M2
+transactional suite plus Mode Registry, unified control, staged-generation,
+and fresh-tarball closure tests. It validates 20 production
 documents against 15 schema kinds, typechecks against the exact Pi 0.84.1
 development dependency, passes both static and per-Profile doctors, and packs
-82 allowlisted files. Crash injection covers every durable transaction phase,
+86 allowlisted files. Crash injection covers every durable transaction phase,
 including the settings rename window. A disposable source-artifact bootstrap
 commits once and returns `NO_CHANGES` on the second apply; its Pi RPC smoke
 proves the staged extension import closure and command registration. A separate
@@ -214,23 +239,18 @@ through the Pi package's `prompts/` resources:
 
 The roadmap target is a usable Pi-based Harness distribution. M0 established
 the product/Labs boundary, M1 established the strict configuration and
-compatibility foundation, and M2 delivered the transactional `omp`
-configuration runtime. The next implementation boundary is M3:
+compatibility foundation, M2 delivered the transactional `omp` configuration
+runtime, and M3 delivered the Mode Registry plus the unified `/omp` control
+surface. The next implementation boundary is M4:
 
-1. add a versioned Mode Registry with discovery, deterministic resolution,
-   immutable snapshots, explain/diff, and fail-closed Profile narrowing;
-2. extend the `omp` CLI and add the one package-owned Pi `/omp` command for
-   status, doctor, mode, safe, and help without taking ownership of upstream
-   package commands;
-3. map mode activation onto the audited public Pi and permission-mode seams,
-   returning `RESTART_REQUIRED` whenever a hard execution-state change cannot
-   be applied safely in-process;
-4. then ship practical inspect/explore/plan/coding/debug/review/research/verify
-   Modes and declarative Workflows;
-5. build AgentSwarm on the existing `pi-subagents` public seam, with bounded
+1. ship practical inspect/explore/plan/coding/debug/review/research/verify
+   Modes, their prompts/output contracts, and declarative Workflows;
+2. add the versioned Agent Registry, deterministic Gate Runner,
+   parent-session Workflow runner, skills bridge, and repo-map seam;
+3. then build AgentSwarm on the existing `pi-subagents` public seam, with bounded
    scheduling, cancellation, deterministic aggregation, a hard maximum of one
    writer in a shared cwd, and isolated managed worktrees for parallel writers;
-6. finish lightweight themes/status, security negatives, CI, docs, and release
+4. finish lightweight themes/status, security negatives, CI, docs, and release
    readiness.
 
 DeepSeek endpoint work, ACP-to-Pi wiring, and automatic turn checkpoints are

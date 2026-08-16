@@ -8,5 +8,6 @@ return unresolved questions instead of guessing.
 
 Completion requires a structured inspection result with: scope, relevant
 entry points, data/control flow, concrete risks, and the evidence supporting
-each claim. This M1 resource defines the contract only; runtime activation is
-unavailable until the Mode Registry is delivered in M3.
+each claim. The Mode Registry resolves this prompt from the packaged runtime;
+switching a hard execution envelope still reports RESTART_REQUIRED when Pi
+does not expose a public runtime driver.

@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { pathToFileURL } from "node:url";
 
 import Ajv2020 from "ajv/dist/2020.js";
 
@@ -369,6 +370,43 @@ test("scripts-disabled staging verifies tarballs/resources before atomic promoti
   ]);
   assert.deepEqual(compiled.ownedSettings.skills, []);
   assert.equal(JSON.stringify(compiled).includes(configRoot), false);
+});
+
+test("promoted minimal generation closes the /omp mode runtime import graph", async (t) => {
+  const configRoot = await temporaryDirectory(t);
+  const plan = await buildGenerationPlan({ rootDir: repoRoot, profileId: "minimal" });
+  const generation = await stageAndPromoteGeneration({
+    plan,
+    configRoot,
+    transactionId: "m3-runtime-closure",
+    artifactRoot: repoRoot,
+    runCommand: createFakeRunner({ requests: [] }),
+  });
+  const root = generation.layout.generationRoot;
+  for (const relative of [
+    "resources/extensions/omp-control/runtime.mjs",
+    "resources/extensions/context-doctor/metrics.mjs",
+    "resources/packages/control-service/mode-service.mjs",
+    "resources/packages/mode-registry/index.mjs",
+    "resources/schemas/mode-v1.schema.json",
+    "resources/modes/inspect.json",
+    "resources/modes/prompts/inspect.md",
+    "resources/policies/capabilities.v1.json",
+    "resources/inventory/packages.lock.json",
+    "resources/profiles/minimal.json",
+  ]) {
+    await fs.access(path.join(root, relative));
+  }
+
+  const runtimeModule = await import(`${pathToFileURL(path.join(root, "resources/extensions/omp-control/runtime.mjs"))}?m3=${Date.now()}`);
+  const runtime = runtimeModule.createOmpRuntime();
+  const listed = await runtime.execute("mode list");
+  assert.equal(listed.ok, true, JSON.stringify(listed));
+  assert.ok(listed.modes.some((mode) => mode.id === "inspect"), JSON.stringify(listed));
+  const shown = await runtime.execute("mode show inspect");
+  assert.equal(shown.ok, true, JSON.stringify(shown));
+  assert.equal(shown.mode.modeId, "inspect");
+  assert.equal(typeof shown.mode.promptPayloads?.[0]?.content, "string");
 });
 
 test("integrity mismatch fails before install and before generation promotion", async (t) => {

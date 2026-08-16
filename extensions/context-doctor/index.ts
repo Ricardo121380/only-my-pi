@@ -45,14 +45,4 @@ export default function contextDoctor(pi: ExtensionAPI): void {
     if (ctx.mode === "tui") ctx.ui.setStatus("only-my-pi-context", undefined);
   });
 
-  pi.registerCommand("omp-context", {
-    description: "Show low-sensitivity context, prompt, and tool-schema budget metrics",
-    handler: async (_args, ctx) => {
-      if (!lastSnapshot) {
-        ctx.ui.notify("Context Doctor has no completed context snapshot yet.", "info");
-        return;
-      }
-      ctx.ui.notify(formatSnapshot(lastSnapshot), "info");
-    },
-  });
 }

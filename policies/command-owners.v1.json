@@ -7,22 +7,24 @@
       "surface": "cli",
       "owner": "only-my-pi-control",
       "aliases": [],
-      "status": "reserved"
+      "status": "implemented",
+      "implementedBy": "bin/omp.mjs"
     },
     {
       "id": "/omp",
       "surface": "pi-command",
       "owner": "only-my-pi-control",
       "aliases": [],
-      "status": "reserved"
+      "status": "implemented",
+      "implementedBy": "extensions/omp-control/index.ts"
     },
     {
       "id": "omp-context",
       "surface": "pi-command",
-      "owner": "context",
+      "owner": "only-my-pi-control",
       "aliases": [],
       "status": "implemented",
-      "implementedBy": "extensions/context-doctor/index.ts"
+      "implementedBy": "extensions/omp-control/index.ts"
     },
     {
       "id": "perm",

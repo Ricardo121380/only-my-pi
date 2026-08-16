@@ -87,7 +87,8 @@
   "pi": {
     "extensions": [
       "./extensions/session-ledger/index.ts",
-      "./extensions/context-doctor/index.ts"
+      "./extensions/context-doctor/index.ts",
+      "./extensions/omp-control/index.ts"
     ],
     "skills": [
       "./skills"

@@ -201,7 +201,10 @@ test("first-party inventory covers manifest resources, contract seeds, and non-d
   ]) {
     assert.ok(byId.has(id), id);
   }
-  for (const id of ["inspect-mode", "scout-agent", "single-agent-safe-workflow", "research-synthesis-recipe"]) {
+  assert.equal(byId.get("inspect-mode").lifecycle, "stable");
+  assert.equal(byId.get("inspect-mode").defaultLoaded, false);
+  assert.equal(byId.get("inspect-mode").packaged, true);
+  for (const id of ["scout-agent", "single-agent-safe-workflow", "research-synthesis-recipe"]) {
     assert.equal(byId.get(id).lifecycle, "planned");
     assert.equal(byId.get(id).defaultLoaded, false);
     assert.equal(byId.get(id).packaged, true);

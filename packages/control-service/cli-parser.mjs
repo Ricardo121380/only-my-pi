@@ -21,6 +21,7 @@ const BOOLEAN_OPTIONS = new Map([
   ["--json", "json"],
   ["--static", "static"],
   ["--live", "live"],
+  ["--resolved", "resolved"],
 ]);
 
 const COMMANDS = new Set([
@@ -31,8 +32,18 @@ const COMMANDS = new Set([
   "rollback",
   "uninstall",
   "safe",
+  "profile",
+  "tools",
+  "packages",
+  "context",
+  "verify",
+  "mode",
   "help",
 ]);
+
+const MODE_COMMANDS = new Set(["list", "show", "use", "reset", "doctor", "diff", "scaffold"]);
+const PROFILE_COMMANDS = new Set(["list", "show", "diff"]);
+const MODE_NAMESPACED_ID = /^(?:[a-z][a-z0-9-]{0,63}(?:\/[a-z][a-z0-9-]{0,63})?|(?:user|project|package):[a-z][a-z0-9-]{0,63})$/u;
 
 function fail(message, code = "INVALID_ARGUMENT") {
   const error = new Error(message);
@@ -42,6 +53,10 @@ function fail(message, code = "INVALID_ARGUMENT") {
 
 function assertIdentifier(value, label) {
   if (!ID.test(value)) fail(`${label} must be a canonical lowercase identifier`);
+}
+
+function assertModeIdentifier(value, label = "mode") {
+  if (!MODE_NAMESPACED_ID.test(value)) fail(`${label} must be a canonical mode identifier`);
 }
 
 function takeValue(argv, index, option) {
@@ -103,7 +118,10 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   const configRoot = resolveConfigRoot(options.configRoot, env, homedir);
 
   if (options.profile !== undefined) assertIdentifier(options.profile, "profile");
-  if (options.mode !== undefined) assertIdentifier(options.mode, "mode");
+  if (options.mode !== undefined) {
+    if (command === "bootstrap") assertModeIdentifier(options.mode, "mode");
+    else assertIdentifier(options.mode, "mode");
+  }
   if (options.provider !== undefined) assertIdentifier(options.provider, "provider");
   if (options.scope !== undefined && !SCOPES.has(options.scope)) fail("scope must be global or project");
   if (options.model !== undefined && !/^[A-Za-z0-9][A-Za-z0-9._:/+-]{0,127}$/.test(options.model)) {
@@ -117,7 +135,7 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
 
   if (command === "bootstrap") {
     if (positionals.length) fail("bootstrap accepts no positional arguments");
-    reject(options, ["plan", "static", "live"], command);
+    reject(options, ["plan", "static", "live", "resolved"], command);
     if (options.apply && options.dryRun) fail("--apply and --dry-run are mutually exclusive");
     const apply = options.apply === true;
     if (options.yes && !apply) fail("--yes is only valid with --apply");
@@ -141,20 +159,20 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
 
   if (command === "doctor") {
     if (positionals.length) fail("doctor accepts no positional arguments");
-    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes"], command);
+    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "resolved"], command);
     if (options.static && options.live) fail("--static and --live are mutually exclusive");
     return { command, mutation: false, options: { configRoot, live: options.live === true, json: options.json === true } };
   }
 
   if (command === "status") {
     if (positionals.length) fail("status accepts no positional arguments");
-    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live"], command);
+    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live", "resolved"], command);
     return { command, mutation: false, options: { configRoot, json: options.json === true } };
   }
 
   if (command === "update" || command === "uninstall") {
     if (positionals.length) fail(`${command} accepts no positional arguments`);
-    reject(options, ["profile", "mode", "provider", "model", "scope", "dryRun", "static", "live"], command);
+    reject(options, ["profile", "mode", "provider", "model", "scope", "dryRun", "static", "live", "resolved"], command);
     if (options.apply && options.plan) fail("--apply and --plan are mutually exclusive");
     const apply = options.apply === true;
     if (options.yes && !apply) fail("--yes is only valid with --apply");
@@ -162,7 +180,7 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   }
 
   if (command === "rollback") {
-    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "static", "live"], command);
+    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "static", "live", "resolved"], command);
     if (positionals.length > 1) fail("rollback accepts at most one snapshot id");
     const snapshotId = positionals[0] ?? null;
     if (snapshotId !== null && !SNAPSHOT_ID.test(snapshotId)) fail("invalid snapshot id");
@@ -171,8 +189,63 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
 
   if (command === "safe") {
     if (positionals.length) fail("safe accepts no positional arguments");
-    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live"], command);
+    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live", "resolved"], command);
     return { command, mutation: false, options: { configRoot, json: options.json === true } };
+  }
+
+  if (command === "profile") {
+    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live", "resolved"], command);
+    const subcommand = positionals[0] ?? "list";
+    if (!PROFILE_COMMANDS.has(subcommand)) fail(`unknown profile subcommand: ${subcommand}`);
+    if (subcommand === "list" && positionals.length !== 1) fail("profile list accepts no profile id");
+    if (subcommand === "show" && positionals.length !== 2) fail("profile show requires a profile id");
+    if (subcommand === "diff" && positionals.length !== 3) fail("profile diff requires from and to profile ids");
+    const ids = positionals.slice(1);
+    for (const id of ids) assertIdentifier(id, "profile id");
+    return {
+      command,
+      mutation: false,
+      options: {
+        configRoot,
+        subcommand,
+        profileId: ids[0] ?? null,
+        toProfileId: ids[1] ?? null,
+        json: options.json === true,
+      },
+    };
+  }
+
+  if (["tools", "packages", "context", "verify"].includes(command)) {
+    reject(options, ["mode", "profile", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live", "resolved"], command);
+    if (positionals.length) fail(`${command} accepts no positional arguments`);
+    return { command, mutation: false, options: { configRoot, json: options.json === true } };
+  }
+
+  if (command === "mode") {
+    reject(options, ["provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live"], command);
+    if (options.mode !== undefined) fail("mode subcommand takes its mode id as a positional argument");
+    const subcommand = positionals[0] ?? "list";
+    if (!MODE_COMMANDS.has(subcommand)) fail(`unknown mode subcommand: ${subcommand}`);
+    const modeId = positionals[1] ?? null;
+    if (positionals.length > 2) fail(`mode ${subcommand} accepts at most one mode id`);
+    if (["show", "use", "diff", "scaffold"].includes(subcommand) && modeId === null) {
+      fail(`mode ${subcommand} requires a mode id`);
+    }
+    if (modeId !== null) assertModeIdentifier(modeId, "mode id");
+    if (subcommand === "list" && modeId !== null) fail("mode list accepts no mode id");
+    if (subcommand === "doctor" && modeId !== null) fail("mode doctor accepts no mode id");
+    return {
+      command,
+      mutation: false,
+      options: {
+        configRoot,
+        profile: options.profile ?? null,
+        subcommand,
+        modeId,
+        resolved: options.resolved === true,
+        json: options.json === true,
+      },
+    };
   }
 
   fail(`unsupported command: ${command}`);

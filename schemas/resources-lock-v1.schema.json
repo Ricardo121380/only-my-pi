@@ -14,6 +14,8 @@
   "$defs": {
     "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
     "idSet": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "commandId": { "type": "string", "pattern": "^/?[a-z][a-z0-9:-]{0,63}$" },
+    "commandSet": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/commandId" } },
     "surfaceId": { "type": "string", "pattern": "^[a-z][A-Za-z0-9-]{0,63}$" },
     "surfaceSet": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/surfaceId" } },
     "path": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\u0000)[A-Za-z0-9._@/-]+$" },
@@ -30,7 +32,7 @@
         "provides": { "$ref": "#/$defs/idSet" },
         "requires": { "$ref": "#/$defs/idSet" },
         "owners": { "$ref": "#/$defs/idSet" },
-        "commands": { "$ref": "#/$defs/idSet" },
+        "commands": { "$ref": "#/$defs/commandSet" },
         "egressSurfaces": { "$ref": "#/$defs/surfaceSet" },
         "defaultLoaded": { "type": "boolean" },
         "profileEligibility": { "$ref": "#/$defs/idSet" },

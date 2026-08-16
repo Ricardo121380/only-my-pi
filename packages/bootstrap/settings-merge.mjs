@@ -4,6 +4,7 @@ export const MANAGED_SETTING_FIELDS = Object.freeze(["packages", "extensions", "
 export const OWNED_METADATA_KEY = "onlyMyPi";
 
 const ID = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u;
+const MODE_ID = /^(?:[a-z][a-z0-9-]{0,63}|(?:user|project|package):[a-z][a-z0-9-]{0,63}|[a-z][a-z0-9-]{0,63}\/[a-z][a-z0-9-]{0,63})$/u;
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:/+-]{0,127}$/u;
 const SHA256 = /^sha256:[a-f0-9]{64}$/u;
 const METADATA_KEYS = Object.freeze([
@@ -66,7 +67,7 @@ function isProviderSelection(value) {
 function isInitialMode(value) {
   return value === null || (
     exactKeys(value, ["id", "status"])
-    && ID.test(value.id)
+    && MODE_ID.test(value.id)
     && value.status === "PENDING_M3_RESOLUTION"
   );
 }

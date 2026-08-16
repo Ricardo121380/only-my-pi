@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../../schemas/mode-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "fixture-inspect",
+  "version": "1.0.0",
+  "displayName": "Fixture Inspect",
+  "description": "Deterministic read-only Mode Registry fixture.",
+  "category": "core",
+  "executionState": "ask",
+  "extends": [],
+  "aliases": ["fixture-safe"],
+  "requires": {
+    "profileCapabilities": ["workspace-read"],
+    "packages": [],
+    "enforcementSurfaces": ["fileToolPolicy"]
+  },
+  "prompt": { "file": "prompts/inspect.md" },
+  "tools": {
+    "allow": ["find", "grep", "ls", "read"],
+    "deny": ["bash", "edit", "web", "write"],
+    "required": ["read"]
+  },
+  "policy": {
+    "workspace": "read-only",
+    "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" },
+    "approval": "deny"
+  },
+  "workflow": { "default": "single-agent-safe", "fallback": "single-agent-safe" },
+  "swarm": { "allowed": false, "defaultRecipe": null },
+  "completion": { "gates": ["review"], "requiresStructuredVerdict": true },
+  "risk": "low"
+}

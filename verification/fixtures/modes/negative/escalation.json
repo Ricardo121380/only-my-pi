@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../../schemas/mode-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-only",
+  "id": "fixture-escalation",
+  "version": "1.0.0",
+  "displayName": "Escalating Mode",
+  "description": "A child workspace policy must not widen its parent ceiling.",
+  "category": "labs",
+  "executionState": "build",
+  "extends": ["fixture-inspect"],
+  "requires": { "profileCapabilities": [], "packages": [], "enforcementSurfaces": [] },
+  "prompt": { "file": "prompt.md" },
+  "tools": { "allow": ["read"], "deny": ["bash", "edit", "web", "write"], "required": ["read"] },
+  "policy": { "workspace": "guarded-write", "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" }, "approval": "ask" },
+  "workflow": { "default": "single-agent-safe", "fallback": "single-agent-safe" },
+  "swarm": { "allowed": false, "defaultRecipe": null },
+  "completion": { "gates": ["review"], "requiresStructuredVerdict": true },
+  "risk": "medium"
+}

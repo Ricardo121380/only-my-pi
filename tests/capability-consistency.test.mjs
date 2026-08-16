@@ -50,10 +50,13 @@ test("workspace-read is an explicit Pi-host capability in every profile", () => 
     assert.ok(record.document.capabilityIds.includes("workspace-read"), record.document.id);
   }
 });
-test("M1 catalogs do not claim runtime delivery", () => {
+test("M3 mode catalog distinguishes the runtime-ready inspect mode from planned Labs", () => {
   const governance = loadGovernance(root);
   assert.ok(governance.capabilities.capabilities.every((capability) => capability.runtimeEvidenceRequired === true));
-  for (const resourceId of ["inspect-mode", "scout-agent", "single-agent-safe-workflow", "research-synthesis-recipe"]) {
+  const inspect = governance.resources.resources.find((entry) => entry.id === "inspect-mode");
+  assert.equal(inspect.lifecycle, "stable");
+  assert.equal(inspect.defaultLoaded, false);
+  for (const resourceId of ["scout-agent", "single-agent-safe-workflow", "research-synthesis-recipe"]) {
     const resource = governance.resources.resources.find((entry) => entry.id === resourceId);
     assert.equal(resource.lifecycle, "planned");
     assert.equal(resource.defaultLoaded, false);
@@ -121,11 +124,11 @@ test("public command ownership is unique and implementation status is truthful",
   const commands = new Map(governance.commandOwners.commands.map((command) => [command.id, command]));
   assert.deepEqual(
     { owner: commands.get("omp").owner, status: commands.get("omp").status },
-    { owner: "only-my-pi-control", status: "reserved" },
+    { owner: "only-my-pi-control", status: "implemented" },
   );
   assert.deepEqual(
     { owner: commands.get("/omp").owner, status: commands.get("/omp").status },
-    { owner: "only-my-pi-control", status: "reserved" },
+    { owner: "only-my-pi-control", status: "implemented" },
   );
   assert.deepEqual(
     { owner: commands.get("subagent").owner, status: commands.get("subagent").status },

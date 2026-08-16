@@ -22,9 +22,11 @@ import {
   compileUninstalledSettings,
   extractManagedMetadata,
 } from "./settings-merge.mjs";
+import { resolveBootstrapMode } from "../control-service/mode-service.mjs";
 
 const PLAN_FORMAT_VERSION = 1;
 const ID = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u;
+const MODE_ID = /^(?:[a-z][a-z0-9-]{0,63}|(?:user|project|package):[a-z][a-z0-9-]{0,63}|[a-z][a-z0-9-]{0,63}\/[a-z][a-z0-9-]{0,63})$/u;
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:/+-]{0,127}$/u;
 const ZERO_WRITE = Object.freeze({ writes: 0, subprocesses: 0, providerRequests: 0 });
 
@@ -66,7 +68,7 @@ function validateMetadataSelection({ provider, model }) {
 
 function validateInitialMode(mode) {
   if (mode === null) return null;
-  if (!ID.test(mode)) fail("INVALID_MODE_ID", "initial mode must be a canonical id");
+  if (!MODE_ID.test(mode)) fail("INVALID_MODE_ID", "initial mode must be a canonical id or namespaced mode");
   return Object.freeze({ id: mode, status: "PENDING_M3_RESOLUTION" });
 }
 
@@ -175,6 +177,9 @@ export class BootstrapService {
     const initialMode = options.initialMode === null || options.initialMode === undefined
       ? currentMetadata?.initialMode ?? null
       : validateInitialMode(options.initialMode);
+    const initialModeResolution = initialMode
+      ? await resolveBootstrapMode({ rootDir: this.rootDir, profileId, modeId: initialMode.id })
+      : null;
     const metadata = desiredMetadata({ profileId, graphPlan, providerSelection, initialMode });
     const probe = await probeInstalledGeneration({
       configRoot,
@@ -195,7 +200,7 @@ export class BootstrapService {
       profileId,
       sourceSettings: Object.freeze({ exists: current.exists, digest: current.digest }),
       current: Object.freeze({ metadata: currentMetadata }),
-      desired: Object.freeze({ metadata, ...graphSummary(graphPlan) }),
+      desired: Object.freeze({ metadata, initialModeResolution, ...graphSummary(graphPlan) }),
       graphPlan,
       generationProbe: Object.freeze({
         status: probe.status,
@@ -338,6 +343,23 @@ export class BootstrapService {
     ]);
     const metadata = extractManagedMetadata(settings.settings);
     const incomplete = journals.filter((entry) => entry.invalid || !["COMMITTED", "ROLLED_BACK", "FAILED"].includes(entry.status));
+    let modeResolution = null;
+    if (metadata?.initialMode) {
+      try {
+        modeResolution = await resolveBootstrapMode({
+          rootDir: this.rootDir,
+          profileId: metadata.profileId,
+          modeId: metadata.initialMode.id,
+        });
+      } catch (error) {
+        modeResolution = {
+          status: "UNAVAILABLE",
+          id: metadata.initialMode.id,
+          code: error?.code ?? "MODE_RESOLUTION_FAILED",
+          message: error?.message ?? String(error),
+        };
+      }
+    }
     return {
       ok: incomplete.length === 0,
       status: metadata ? (incomplete.length === 0 ? "INSTALLED" : "RECOVERY_REQUIRED") : "NOT_INSTALLED",
@@ -347,6 +369,7 @@ export class BootstrapService {
       generationId: metadata?.generationId ?? null,
       providerSelection: metadata?.providerSelection ?? null,
       initialMode: metadata?.initialMode ?? null,
+      modeResolution,
       lastKnownGood: lastKnownGood
         ? { generationId: lastKnownGood.generationId, committedAt: lastKnownGood.committedAt }
         : null,

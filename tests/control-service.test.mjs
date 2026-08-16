@@ -68,3 +68,21 @@ test("live doctor remains separate from repository static doctor", async () => {
   assert.equal((await service.dispatch({ command: "doctor", options: { live: true } })).status, "UNAVAILABLE");
   assert.deepEqual(calls.map((entry) => entry.method), ["doctor"]);
 });
+
+test("M3 read-only profile and control surfaces stay bounded", async () => {
+  const bootstrap = {
+    profiles: {
+      list: () => [{ id: "coding", packages: 1, capabilities: 2 }],
+      resolve: (id) => ({ profile: { id }, packages: [], capabilities: [] }),
+      diff: (from, to) => ({ formatVersion: 1, from, to, packages: { added: [], removed: [], changed: [] } }),
+    },
+    status: async () => ({ ok: true, status: "NOT_INSTALLED", mutation: false }),
+    safe: async () => ({ ok: true, status: "SAFE_START_GUIDANCE", mutation: false }),
+  };
+  const service = createControlService({ bootstrap, doctor: { live: async () => ({ status: "UNAVAILABLE" }) }, rootDir: process.cwd() });
+  assert.equal((await service.dispatch({ command: "profile", options: { subcommand: "list" } })).status, "PROFILE_LIST");
+  assert.equal((await service.dispatch({ command: "profile", options: { subcommand: "show", profileId: "coding" } })).status, "PROFILE_SHOW");
+  assert.equal((await service.dispatch({ command: "tools", options: {} })).status, "TOOLS");
+  assert.equal((await service.dispatch({ command: "context", options: {} })).status, "CONTEXT_UNAVAILABLE");
+  assert.equal((await service.dispatch({ command: "verify", options: {} })).executable, false);
+});

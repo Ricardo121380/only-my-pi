@@ -55,7 +55,7 @@
               "additionalProperties": false,
               "required": ["id", "status"],
               "properties": {
-                "id": { "$ref": "#/$defs/id" },
+                "id": { "$ref": "#/$defs/modeId" },
                 "status": { "const": "PENDING_M3_RESOLUTION" }
               }
             }
@@ -67,6 +67,7 @@
   },
   "$defs": {
     "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
+    "modeId": { "type": "string", "pattern": "^(?:[a-z][a-z0-9-]{0,63}|(?:user|project|package):[a-z][a-z0-9-]{0,63}|[a-z][a-z0-9-]{0,63}/[a-z][a-z0-9-]{0,63})$" },
     "transactionId": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" },
     "hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
     "relativePath": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[A-Za-z0-9._@+-]+(?:/[A-Za-z0-9._@+-]+)*$" }

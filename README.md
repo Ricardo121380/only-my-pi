@@ -58,6 +58,7 @@ scripts/      Repository checks and package governance tooling
 - [ACP v1 adapter](docs/architecture/acp-v1.md)
 - [Workspace checkpoint](docs/architecture/workspace-checkpoint.md)
 - [Transactional bootstrap runtime](docs/architecture/bootstrap-runtime.md)
+- [Mode Registry and unified control surface](docs/architecture/mode-registry.md)
 - [Current implementation status](docs/STATUS.md)
 
 ## Product direction
@@ -66,17 +67,21 @@ The product is not another Provider or protocol adapter. The roadmap targets a
 usable Pi-based Harness distribution. M1 supplies the
 strict package, Profile, capability, owner, command, enforcement, Mode, Agent,
 Workflow, and Swarm contracts needed to build that product without false-green
-configuration checks. M2 adds the transactional `omp` configuration runtime:
+configuration checks. M2 adds the transactional `omp` configuration runtime,
+and M3 adds the dependency-closed Mode Registry and unified `/omp` control
+surface:
 
 - a dry-run-first, idempotent `omp bootstrap`, update, uninstall, and rollback
   path with settings published only after immutable generation verification;
 - load-time Profiles are validated capability ceilings and can now be applied
   to an explicitly selected Pi config root;
-- versioned runtime Modes that M3 will constrain to narrowing those ceilings;
+- versioned runtime Modes that can only narrow those ceilings, with
+  discovery/hash/explain/diff and an explicit restart path for hard envelope
+  changes;
 - declarative Workflows, Agent roles, and AgentSwarm recipes in the following
   milestones;
-- one `omp` CLI now, followed by the single package-owned `/omp` Pi command in
-  M3;
+- one `omp` CLI and one package-owned `/omp` Pi command, including the sole
+  `/omp-context` compatibility alias;
 - lightweight status and theme resources in M6 that do not replace Pi's
   runtime or TUI.
 
@@ -110,9 +115,17 @@ generation, publishes only owned settings last, runs a static doctor and an
 isolated no-model Pi RPC startup, then records rollback state. Provider/model
 flags store non-sensitive identifiers as `CONFIGURED_UNVERIFIED`; they do not
 read a key or call a model. See the [bootstrap runtime guide](docs/architecture/bootstrap-runtime.md)
-before targeting an existing Pi directory. In M2, `--mode` records the bounded
-`PENDING_M3_RESOLUTION` selection seam; M3 will resolve and activate Mode
-manifests rather than treating that metadata as a live Mode.
+before targeting an existing Pi directory. `--mode` is now resolved against the
+same Mode Registry used by `omp mode` and `/omp mode`; persisted metadata remains
+bounded evidence rather than a claim that every enforcement surface is live.
+
+Inspect the available Modes without changing settings:
+
+```bash
+node bin/omp.mjs mode list
+node bin/omp.mjs mode show inspect --resolved
+node bin/omp.mjs mode diff inspect
+```
 
 Install this checkout as a local Pi package while developing:
 

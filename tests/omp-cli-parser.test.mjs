@@ -71,3 +71,20 @@ test("PI_CODING_AGENT_DIR is the only environment config-root override", () => {
   const parsed = parseOmpArgs(["status"], { env: { PI_CODING_AGENT_DIR: "/tmp/isolated-pi" }, homedir: () => "/real-home" });
   assert.equal(parsed.options.configRoot, "/tmp/isolated-pi");
 });
+
+test("M3 read-only control command matrix has strict positional contracts", () => {
+  assert.deepEqual(parseOmpArgs(["profile", "list", "--json"], context).options, {
+    configRoot: "/tmp/omp-home/.pi/agent",
+    subcommand: "list",
+    profileId: null,
+    toProfileId: null,
+    json: true,
+  });
+  assert.equal(parseOmpArgs(["profile", "diff", "coding", "research"], context).options.toProfileId, "research");
+  for (const command of ["tools", "packages", "context", "verify"]) {
+    assert.equal(parseOmpArgs([command, "--json"], context).command, command);
+    assert.throws(() => parseOmpArgs([command, "unexpected"], context), /accepts no positional/);
+  }
+  assert.throws(() => parseOmpArgs(["profile", "show"], context), /requires a profile id/);
+  assert.throws(() => parseOmpArgs(["profile", "diff", "coding"], context), /requires from and to/);
+});

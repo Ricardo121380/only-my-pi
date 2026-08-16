@@ -116,6 +116,11 @@ function expectedManagedCommands(settings) {
     if (typeof entry !== "string") continue;
     const normalized = entry.replaceAll("\\", "/").replace(/\/$/u, "");
     if (/\/(?:resources\/)?extensions\/context-doctor(?:\/index\.(?:ts|js))?$/u.test(normalized)) {
+      // The compatibility alias is owned by omp-control, not context-doctor.
+      expected.add("omp-context");
+    }
+    if (/\/(?:resources\/)?extensions\/omp-control(?:\/index\.(?:ts|js))?$/u.test(normalized)) {
+      expected.add("omp");
       expected.add("omp-context");
     }
   }

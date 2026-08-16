@@ -1,11 +1,11 @@
 {
   "$schema": "../schemas/mode-v1.schema.json",
   "formatVersion": 1,
-  "contractStatus": "contract-only",
+  "contractStatus": "runtime-ready",
   "id": "inspect",
   "version": "1.0.0",
   "displayName": "Inspect",
-  "description": "M1 contract seed for a read-only repository inspection mode; activation is not implemented until M3.",
+  "description": "Read-only repository inspection mode backed by the packaged Mode Registry; hard execution changes still require an audited public driver or restart.",
   "category": "core",
   "executionState": "ask",
   "extends": [],

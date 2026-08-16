@@ -103,7 +103,13 @@ export function createProductionControlService({
     doctorService: doctor,
     transactionEngine,
   });
-  return new wired.ControlService({ bootstrap, doctor, confirm });
+  return new wired.ControlService({
+    bootstrap,
+    doctor,
+    confirm,
+    rootDir: resolvedRoot,
+    configRoot: resolvedConfigRoot,
+  });
 }
 
 /**

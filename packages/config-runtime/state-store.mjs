@@ -30,6 +30,7 @@ export const LAST_KNOWN_GOOD_SCHEMA =
 const SHA256_DIGEST = /^sha256:[a-f0-9]{64}$/u;
 const TRANSACTION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const SCHEMA_ID = /^[a-z0-9][a-z0-9._-]{0,127}$/u;
+const MODE_ID = /^(?:[a-z][a-z0-9-]{0,63}|(?:user|project|package):[a-z][a-z0-9-]{0,63}|[a-z][a-z0-9-]{0,63}\/[a-z][a-z0-9-]{0,63})$/u;
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:/+-]{0,127}$/u;
 
 function nowIso(now) {
@@ -87,7 +88,7 @@ function normalizeMetadata(metadata = {}, options = {}) {
   const initialMode = metadata.initialMode ?? null;
   if (initialMode !== null) {
     assertExactKeys(initialMode, ["id", "status"], "initialMode");
-    if (!SCHEMA_ID.test(initialMode.id) || initialMode.status !== "PENDING_M3_RESOLUTION") {
+    if (!MODE_ID.test(initialMode.id) || initialMode.status !== "PENDING_M3_RESOLUTION") {
       throw new LastKnownGoodError("initialMode is invalid", "INVALID_LAST_KN_GOOD");
     }
   }

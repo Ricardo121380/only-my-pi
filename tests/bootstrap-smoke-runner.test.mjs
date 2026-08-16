@@ -145,6 +145,45 @@ test("smoke fails when a managed first-party extension does not register its exp
   );
 });
 
+test("smoke verifies the unified omp owner registers both /omp and its context alias", async (t) => {
+  const configRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-smoke-omp-control-"));
+  t.after(() => fs.rm(configRoot, { recursive: true, force: true }));
+  const spawnImpl = () => fakeChild((request, child) => {
+    const response = request.type === "get_state"
+      ? {
+          id: NO_MODEL_SMOKE_REQUEST_ID,
+          type: "response",
+          command: "get_state",
+          success: true,
+          data: { model: null, messageCount: 0 },
+        }
+      : {
+          id: NO_MODEL_SMOKE_COMMANDS_REQUEST_ID,
+          type: "response",
+          command: "get_commands",
+          success: true,
+          data: { commands: [{ name: "omp" }, { name: "omp-context" }] },
+        };
+    queueMicrotask(() => child.stdout.emit("data", `${JSON.stringify(response)}\n`));
+  });
+  const result = await createNoModelSmokeRunner({ spawnImpl, timeoutMs: 1_000 })({
+    configRoot,
+    settings: {
+      onlyMyPi: {
+        managedSettings: {
+          packages: [],
+          extensions: ["./only-my-pi/generations/sha256-a/resources/extensions/omp-control/index.ts"],
+          skills: [],
+          prompts: [],
+          themes: [],
+        },
+      },
+    },
+  });
+  assert.equal(result.extensionRegistrationVerified, true);
+  assert.equal(result.verifiedCommandCount, 2);
+});
+
 test("smoke fails closed on RPC failure and does not expose raw output", async (t) => {
   const configRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-smoke-fail-"));
   t.after(() => fs.rm(configRoot, { recursive: true, force: true }));

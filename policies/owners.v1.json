@@ -146,7 +146,18 @@
       "exclusive": true,
       "capabilities": [],
       "surfaces": [],
-      "status": "planned"
+      "resourceIds": [
+        "omp-control",
+        "omp-control-runtime",
+        "omp-mode-service",
+        "omp-mode-registry-runtime",
+        "omp-mode-schema-runtime",
+        "omp-mode-prompts-runtime",
+        "omp-mode-policies-runtime",
+        "omp-mode-inventory-runtime",
+        "omp-mode-profiles-runtime"
+      ],
+      "status": "active"
     },
     {
       "id": "only-my-pi-resource-registry",

@@ -10,6 +10,7 @@
     "formatVersion": { "const": 1 },
     "contractStatus": { "enum": ["contract-only", "runtime-ready"] },
     "id": { "$ref": "#/$defs/id" },
+    "aliases": { "$ref": "#/$defs/idSet" },
     "version": { "$ref": "#/$defs/semver" },
     "displayName": { "type": "string", "minLength": 1, "maxLength": 80 },
     "description": { "type": "string", "minLength": 1, "maxLength": 500 },
