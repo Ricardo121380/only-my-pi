@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "goalRunId": "9be08fe9-7f4d-4e9d-95c5-6078837f2de9",
+  "markerHash": "sha256:3720a7beb0f83af508d88773262d19a98d991915a62043354bbeb45df0fdb789",
+  "requestedTarget": "all",
+  "effectiveTarget": [
+    "M0",
+    "M1",
+    "M2",
+    "M3",
+    "M4",
+    "M5",
+    "M6",
+    "M7"
+  ],
+  "deliveryMode": "push",
+  "milestone": "M1",
+  "sourceCommit": "0109d83237715f2c53e758ca294f010247aca742",
+  "suite": {
+    "id": "m1-governance",
+    "version": 1,
+    "gates": [
+      "npm-ci-ignore-scripts",
+      "typecheck",
+      "schema-contracts",
+      "package-doctor",
+      "profile-doctors",
+      "profile-resolver",
+      "agent-resource-check",
+      "pack-allowlist",
+      "release-manifest-inspector",
+      "runtime-doctor-unavailable-boundary",
+      "mcp-static-doctor",
+      "unit-and-contract-tests",
+      "git-diff-check",
+      "secret-pattern-scan",
+      "independent-review"
+    ],
+    "digest": "sha256:cd16bfea16aab0dfc3d7bd67dab3f1b2618ebe8edb3afcd513e4705a8d21522e"
+  },
+  "gates": [
+    {
+      "id": "npm-ci-ignore-scripts",
+      "status": "PASS"
+    },
+    {
+      "id": "typecheck",
+      "status": "PASS"
+    },
+    {
+      "id": "schema-contracts",
+      "status": "PASS"
+    },
+    {
+      "id": "package-doctor",
+      "status": "PASS"
+    },
+    {
+      "id": "profile-doctors",
+      "status": "PASS"
+    },
+    {
+      "id": "profile-resolver",
+      "status": "PASS"
+    },
+    {
+      "id": "agent-resource-check",
+      "status": "PASS"
+    },
+    {
+      "id": "pack-allowlist",
+      "status": "PASS"
+    },
+    {
+      "id": "release-manifest-inspector",
+      "status": "PASS"
+    },
+    {
+      "id": "runtime-doctor-unavailable-boundary",
+      "status": "PASS"
+    },
+    {
+      "id": "mcp-static-doctor",
+      "status": "PASS"
+    },
+    {
+      "id": "unit-and-contract-tests",
+      "status": "PASS"
+    },
+    {
+      "id": "git-diff-check",
+      "status": "PASS"
+    },
+    {
+      "id": "secret-pattern-scan",
+      "status": "PASS"
+    },
+    {
+      "id": "independent-review",
+      "status": "PASS"
+    }
+  ],
+  "summary": {
+    "tests": "134/134",
+    "doctorErrors": 0,
+    "experimentalWarnings": 2,
+    "schemas": 11,
+    "documents": 16,
+    "packFiles": 46,
+    "releaseGateCount": 14,
+    "releaseManifestDigest": "sha256:5fb9e74255745feda34e5f981a8fab66449921845bf0b0647d41788ea8ea3ca9",
+    "liveDoctor": "UNAVAILABLE",
+    "review": "PASS"
+  },
+  "completedAt": "2026-08-16T03:34:13.500Z",
+  "nextMilestone": "M2",
+  "stateHash": "sha256:a45e59c66cbf58d364b309cdc4d99fb21f27f8c206f2b1cdc66d5e8430dedb6d"
+}
