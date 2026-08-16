@@ -1,0 +1,23 @@
+{
+  "$schema": "../schemas/agent-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "synthesizer",
+  "upstreamAgentId": "omp-synthesizer",
+  "version": "1.0.0",
+  "description": "Read-only result synthesizer that preserves provenance and does not invent evidence.",
+  "prompt": { "file": "agents/prompts/synthesizer.md" },
+  "tools": { "allow": ["read", "grep", "find", "ls"], "deny": ["bash", "edit", "write", "web"] },
+  "allowedExecutionStates": ["plan", "review"],
+  "requiredCapabilities": ["workspace-read"],
+  "policyCeiling": { "workspace": "read-only", "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" }, "approval": "deny", "mutation": "none" },
+  "modelRole": "deep",
+  "inputSchema": { "type": "object", "additionalProperties": false, "properties": { "items": { "type": "array", "description": "Verified child outputs." } }, "required": ["items"] },
+  "outputSchema": { "type": "object", "additionalProperties": false, "properties": { "summary": { "type": "string", "description": "Bounded synthesis." }, "citations": { "type": "array", "description": "Source references." }, "verdict": { "type": "string", "description": "Synthesis verdict." } }, "required": ["summary", "citations", "verdict"] },
+  "writer": false,
+  "timeoutSeconds": 1200,
+  "continuable": false,
+  "resumable": true,
+  "redaction": { "rawPrompts": "omit", "reasoning": "omit", "credentials": "deny", "maxOutputBytes": 65536 },
+  "gateIds": ["diff-check"]
+}

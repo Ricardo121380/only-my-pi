@@ -15,6 +15,7 @@ Usage:
   omp tools|packages|context|verify [--config-root <absolute>] [--json]
   omp mode [list|show|use|reset|doctor|diff|scaffold] [mode-id] [--profile <id>] [--resolved] [--config-root <absolute>] [--json]
   omp workflow [list|show|run|status|cancel] [workflow-or-run-id] [--apply --yes] [--config-root <absolute>] [--json]
+  omp swarm [list|show|validate|plan|run|status|cancel] [recipe-or-run-id] [--input-file <absolute>] [--yes] [--config-root <absolute>] [--json]
 
 Mutation is never implicit. bootstrap, update, and uninstall default to a zero-write plan.
 Provider/model flags save metadata only and remain CONFIGURED_UNVERIFIED.`;
@@ -36,13 +37,14 @@ async function approve(request, plan, confirm) {
 }
 
 export class ControlService {
-  constructor({ bootstrap, doctor, confirm, modes, workflows, rootDir, configRoot } = {}) {
+  constructor({ bootstrap, doctor, confirm, modes, workflows, swarms, rootDir, configRoot } = {}) {
     if (!bootstrap || !doctor) throw new TypeError("bootstrap and doctor services are required");
     this.bootstrap = bootstrap;
     this.doctor = doctor;
     this.confirm = confirm;
     this.modes = modes;
     this.workflows = workflows;
+    this.swarms = swarms;
     this.rootDir = rootDir;
     this.configRoot = configRoot;
   }
@@ -164,6 +166,12 @@ export class ControlService {
           return { ok: false, status: "WORKFLOW_REGISTRY_UNAVAILABLE", mutation: false, code: "WORKFLOW_REGISTRY_UNAVAILABLE", next: "run omp doctor:modes and reinstall the promoted generation" };
         }
         return this.workflows.dispatch(request.options);
+      }
+      case "swarm": {
+        if (!this.swarms || typeof this.swarms.dispatch !== "function") {
+          return { ok: false, status: "SWARM_SERVICE_UNAVAILABLE", mutation: false, code: "SWARM_SERVICE_UNAVAILABLE", next: "run omp doctor and reinstall the promoted generation" };
+        }
+        return this.swarms.dispatch(request.options);
       }
       default:
         throw Object.assign(new Error(`unsupported control command: ${request.command}`), { code: "UNSUPPORTED_COMMAND" });

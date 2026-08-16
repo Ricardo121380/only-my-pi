@@ -56,11 +56,14 @@ test("M3 mode catalog distinguishes the runtime-ready inspect mode from planned 
   const inspect = governance.resources.resources.find((entry) => entry.id === "inspect-mode");
   assert.equal(inspect.lifecycle, "stable");
   assert.equal(inspect.defaultLoaded, false);
-  for (const resourceId of ["scout-agent", "single-agent-safe-workflow", "research-synthesis-recipe"]) {
+  for (const resourceId of ["scout-agent", "single-agent-safe-workflow"]) {
     const resource = governance.resources.resources.find((entry) => entry.id === resourceId);
     assert.equal(resource.lifecycle, "planned");
     assert.equal(resource.defaultLoaded, false);
   }
+  const synthesis = governance.resources.resources.find((entry) => entry.id === "research-synthesis-recipe");
+  assert.equal(synthesis.lifecycle, "stable");
+  assert.equal(synthesis.defaultLoaded, false);
   const result = auditPackageGovernance(governance);
   assert.equal(result.runtimeEvidence, "not-evaluated");
 });

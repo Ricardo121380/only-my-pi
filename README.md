@@ -84,16 +84,18 @@ surface:
 - a parent-session Workflow Core, deterministic Gate Runner, Agent Registry,
   `.agents/skills` bridge, and bounded repo-map seam;
 - declarative Workflows and AgentSwarm recipes; M4 executes agent/gate steps and
-  falls back explicitly when Swarm is unavailable, while M5 will connect the
-  sole `pi-subagents` runtime;
+  M5 compiles the governed Swarm DAG into the sole `pi-subagents` extension-RPC
+  lane (live child dispatch still requires an injected Pi session);
 - one `omp` CLI and one package-owned `/omp` Pi command, including the sole
   `/omp-context` compatibility alias;
 - lightweight status and theme resources in M6 that do not replace Pi's
   runtime or TUI.
 
-The planned AgentSwarm reuses the governed `pi-subagents` package through a
-narrow adapter. It will not register a competing subagent tool or child-agent
-runtime. DeepSeek conformance, ACP v1, and workspace checkpoint remain
+AgentSwarm reuses the governed `pi-subagents` package through a narrow adapter.
+It does not register a competing subagent tool or child-agent runtime. The
+adapter performs capability negotiation before any spawn, compiles a
+JSON-safe `workflowScript`, and keeps run/child budgets and cancellation
+receipts bounded. DeepSeek conformance, ACP v1, and workspace checkpoint remain
 non-default Labs modules with the explicit boundaries in the
 [Labs registry](docs/LABS.md).
 

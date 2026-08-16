@@ -47,6 +47,8 @@
     "packages/gate-runner/",
     "packages/skills-bridge/",
     "packages/repo-map/",
+    "packages/swarm-core/",
+    "packages/pi-subagents-adapter/",
     "packages/adapters/"
   ],
   "scripts": {
@@ -57,6 +59,7 @@
     "doctor:modes": "node scripts/mode-doctor.mjs",
     "doctor:agents": "node -e \"import('./packages/agent-registry/index.mjs').then(async ({createAgentRegistry})=>{const r=await createAgentRegistry({rootDir:process.cwd()}).doctor(); console.log(JSON.stringify(r,null,2)); if(!r.ok) process.exitCode=1})\"",
     "doctor:workflows": "node -e \"import('./packages/workflow-core/index.mjs').then(async ({createWorkflowRegistry})=>{const r=await createWorkflowRegistry({rootDir:process.cwd()}).doctor(); console.log(JSON.stringify(r,null,2)); if(!r.ok) process.exitCode=1})\"",
+    "doctor:swarms": "node -e \"import('./packages/swarm-core/index.mjs').then(async ({createSwarmRecipeRegistry})=>{const r=await createSwarmRecipeRegistry({rootDir:process.cwd()}).doctor(); console.log(JSON.stringify(r,null,2)); if(!r.ok) process.exitCode=1})\"",
     "profile:check": "node scripts/profile-resolver.mjs --check-all",
     "profile:diff": "node scripts/profile-resolver.mjs profiles/coding.json --diff profiles/research.json",
     "safe": "node scripts/safe-mode.mjs",
@@ -71,6 +74,7 @@
     "test:deepseek": "node packages/deepseek-conformance/test.mjs",
     "test:acp": "node --test packages/acp-v1/acp-v1.test.mjs",
     "test:checkpoint": "node packages/workspace-checkpoint/test.mjs",
+    "test:swarm": "node --test tests/swarm-core.test.mjs tests/pi-subagents-adapter.test.mjs tests/swarm-control.test.mjs",
     "checkpoint": "node packages/workspace-checkpoint/cli.mjs",
     "test": "node --test"
   },

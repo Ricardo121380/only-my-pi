@@ -1,0 +1,22 @@
+{
+  "$schema": "../../schemas/swarm-recipe-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "coding-guarded",
+  "version": "1.0.0",
+  "description": "Guarded coding DAG with one managed-worktree writer, deterministic checks, fresh review, and verifier.",
+  "readOnly": false,
+  "budget": { "maxDepth": 1, "maxConcurrency": 2, "maxChildren": 6, "childTimeoutSeconds": 1800, "runTimeoutSeconds": 5400, "retry": 0, "nestedSwarm": false, "childOutputBytes": 51200, "parentSummaryBytes": 8192 },
+  "writerPolicy": { "sharedCwdMaxWriters": 1, "parallelWriters": "managed-worktree-only", "onConflict": "reject" },
+  "nodes": [
+    { "id": "scout", "agent": "scout", "taskTemplate": "map-scope", "needs": [], "workspace": "shared-read-only", "writer": false, "timeoutSeconds": 600, "retry": 0 },
+    { "id": "plan", "agent": "planner", "taskTemplate": "write-plan", "needs": ["scout"], "workspace": "shared-read-only", "writer": false, "timeoutSeconds": 900, "retry": 0 },
+    { "id": "implement", "agent": "implementer", "taskTemplate": "apply-approved-plan", "needs": ["plan"], "workspace": "managed-worktree", "writer": true, "timeoutSeconds": 1800, "retry": 0 },
+    { "id": "test", "agent": "tester", "taskTemplate": "consume-test-receipts", "needs": ["implement"], "workspace": "shared-read-only", "writer": false, "timeoutSeconds": 900, "retry": 0 },
+    { "id": "review", "agent": "reviewer", "taskTemplate": "fresh-review", "needs": ["implement"], "workspace": "shared-read-only", "writer": false, "timeoutSeconds": 1200, "retry": 0 },
+    { "id": "verify", "agent": "verifier", "taskTemplate": "verify-dod", "needs": ["test", "review"], "workspace": "shared-read-only", "writer": false, "timeoutSeconds": 600, "retry": 0 }
+  ],
+  "aggregation": { "strategy": "verified-synthesis", "order": "topological-then-node-id", "includePartial": true, "maxOutputBytes": 65536 },
+  "verifier": "verify",
+  "cancellation": { "stopAdmission": true, "cancelRunning": true, "disableRetry": true, "waitForTerminalProof": true }
+}

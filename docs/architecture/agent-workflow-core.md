@@ -2,7 +2,9 @@
 
 M4 把 only-my-pi 从“有 Mode 契约和控制入口”推进到可执行的单 Agent
 Workflow 层。它仍然是 Pi 的发行层，不替换 Pi 的 agent loop、Provider、session
-或 built-in tools；M5 才会把物理 child dispatch 接到 `pi-subagents`。
+或 built-in tools；M5 已把物理 child dispatch 的唯一候选接到受治理的
+`pi-subagents` extension-RPC 适配器，但本页的 parent-session runner 仍是
+单 Agent fallback。
 
 ## 组成
 
@@ -14,10 +16,12 @@ Profile capability/policy ceiling 做二次收窄。每个解析结果带有 man
 source hash；`createAgentReceipt()` 只输出 role、工具、policy 和 gate 摘要，不保留
 原始 prompt、reasoning、凭据或主机绝对路径。
 
-M4 内置角色：
+M4/M5 内置角色：
 
 `scout`（M1 contract-only）、`explorer`、`planner`、`implementer`、`debugger`、
-`reviewer`、`researcher`、`verifier`。JSON 是 canonical source；
+`reviewer`、`researcher`、`verifier`，以及 M5 的 `source-verifier`、
+`synthesizer`、`tester`、`security-reviewer`、`test-analyst`。JSON 是
+canonical source；
 `scripts/generate-subagent-resources.mjs` 生成带 `omp-` namespace 的
 Pi-subagents Markdown 资源，生成结果必须通过 hash 对账，bootstrap 不在用户目录
 中改写它们。
@@ -81,8 +85,9 @@ Gate Runner 的 `network: "deny-by-contract"` 是 runner 合同和 npm/CI 环境
   其 M1 seed 仍保留 `contract-only` 生命周期。
 
 所有 Workflow 都声明 entry conditions、mutation scope、budget、failure、cancel 和
-resume 语义。M4 的 `swarm` action 只产生明确 unavailable/fallback，不启动第二个
-调度器。
+resume 语义。M5 的 `swarm` action 由 `packages/swarm-core` 编译并交给
+`packages/pi-subagents-adapter`；only-my-pi 不启动第二个调度器，也不导入
+私有 delegation API。
 
 ## Skills 与 repo-map seam
 
@@ -97,7 +102,10 @@ adapter 进行确定性排序、token/byte bound 和 digest。M4 不绑定 tree-
 ## 验证边界
 
 M4 的 injected-runner 测试覆盖拓扑顺序、结构化 gate receipt、source drift、
-unavailable fallback、取消和恢复。Pi no-model smoke 只证明打包资源可发现、扩展
-命令可注册、控制面映射不重复；它不调用 Provider、不读取 auth、不证明第三方扩展
-或整个 session 已被 sandbox。真实模型、真实 child dispatch 和 `pi-subagents` RPC
-执行留到 M5，并以独立 capability handshake/permission matrix 验证。
+unavailable fallback、取消和恢复；M5 另外覆盖 capability handshake、permission
+projection、fake runtime、cancel/partial-failure 和 workflowScript injection。
+Pi no-model smoke 只证明打包资源可发现、扩展命令可注册、控制面映射不重复；它
+不调用 Provider、不读取 auth、不证明第三方扩展或整个 session 已被 sandbox。没有
+注入 Pi RPC transport 时，Swarm `run` 明确返回
+`LIVE_SWARM_REQUIRES_PI_SESSION`。真实 child dispatch 需要用户另行授权并提供
+Pi session。

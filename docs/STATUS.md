@@ -142,6 +142,34 @@ M4 now supplies the practical single-Agent harness layer:
   bounded repo-map adapter are packaged as opt-in resources; M1 contract seeds
   remain contract-only where their upstream runtime is not yet connected.
 
+M5 now supplies the governed AgentSwarm layer without introducing a second
+child scheduler or subagent owner:
+
+- `packages/swarm-core` discovers and validates four versioned recipes, applies
+  Profile/Mode/role budget intersections, rejects recursive or unsafe writer
+  topologies, compiles a JSON-safe `workflowScript`, and aggregates child
+  results in stable recipe order;
+- `packages/pi-subagents-adapter` is the only live child seam. It pins the
+  audited `pi-subagents@0.45.2` extension-RPC v1 wire, performs capability ping
+  negotiation before spawn, maps stop/interrupt/status events, and refuses
+  private imports or the exported delegation surface as a runtime lane;
+- read-only research, review, and debug recipes never receive `bash`, `edit`,
+  or `write`; tester/verifier evidence is supplied by the fixed Gate Runner;
+  coding writers require a negotiated managed-worktree capability and shared
+  cwd writer concurrency is one;
+- `omp swarm list|show|validate|plan|run|status|cancel` and `/omp swarm` share
+  the same bounded control service. Planning is offline and read-only; `run`
+  returns `LIVE_SWARM_REQUIRES_PI_SESSION` without an injected Pi RPC session;
+- five additional role manifests are generated into namespaced `omp-*`
+  resources, and `research-synthesis` is the first promoted read-only recipe.
+  The other contract seeds remain explicit and non-default.
+
+M5 verification is intentionally fake/injected-runtime evidence: no live child
+dispatch, Provider call, credential read, global install, or real Pi home
+mutation was performed. A worktree capability is negotiated at admission, but
+the adapter does not claim that the upstream child runtime itself is an OS
+sandbox; any degraded Bash state must remain visible to the caller.
+
 The repository audits the direct package tarballs before staging and then
 hashes the entire realized dependency tree. It does not yet carry an independently
 audited SRI closure for every transitive dependency; first transitive resolution
@@ -212,13 +240,14 @@ validation tests, but it is not a release authority and must not be used to
 claim an M1 or M7 PASS. M7 will replace the inspector with an executor that can
 run only the fixed `release-gates-v1` tuples and create the final receipt.
 
-The current M4 source gate set passes **319/319** Node tests, including the M2
+The current M5 source gate set passes **336/336** Node tests, including the M2
 transactional suite, Mode Registry, unified control, staged-generation,
-Agent Registry, Workflow Core, Gate Runner, skills bridge, repo-map, and
-fresh-tarball closure tests. It validates 38 production documents against 15
+Agent Registry, Workflow Core, Gate Runner, skills bridge, repo-map, Swarm
+Core, PiSubagentsAdapter, and fresh-tarball closure tests. It validates 46
+production documents against 15
 schema kinds, typechecks against the exact Pi 0.84.1 development dependency,
-passes both static and per-Profile doctors, and packs the current allowlisted
-runtime files (**133 files**). Crash injection covers every durable transaction phase,
+passes static, per-Profile, Agent, Workflow, and Swarm doctors, and packs the
+current allowlisted runtime files (**155 files**). Crash injection covers every durable transaction phase,
 including the settings rename window. Injected Workflow tests cover
 deterministic stage order, structured gate receipts, source drift, explicit
 fallback, resume, and cancellation terminal proof. A disposable
@@ -262,19 +291,15 @@ The roadmap target is a usable Pi-based Harness distribution. M0 established
 the product/Labs boundary, M1 established the strict configuration and
 compatibility foundation, M2 delivered the transactional `omp` configuration
 runtime, M3 delivered the Mode Registry plus the unified `/omp` control
-surface, and M4 delivered the practical single-Agent/Workflow layer. The next
-implementation boundary is M5:
+surface, M4 delivered the practical single-Agent/Workflow layer, and M5
+delivered the governed AgentSwarm compiler plus the sole `pi-subagents` RPC
+adapter. The next implementation boundary is M6:
 
-1. compile validated Agent/Swarm recipes into the version-locked
-   `pi-subagents@0.45.2` extension-RPC wire;
-2. implement capability ping, admission/budget intersection, DAG-to-safe
-   `workflowScript` compilation, child policy projection, deterministic result
-   aggregation, cancellation propagation, and single-writer/worktree gates;
-3. run read-only research and guarded coding fake-runtime E2E before any live
-   child dispatch; no Provider, credentials, or real Pi home are needed for the
-   contract suite;
-4. then finish lightweight themes/status in M6 and CI/release/upgrade receipts
-   in M7.
+1. add a semantic theme schema and one low-intrusion dark theme;
+2. expose `/omp theme list|preview|use` and a bounded status model without
+   taking ownership of Pi's private editor/renderer APIs;
+3. keep headless/safe-disable paths independent of TUI loading, then finish
+   CI, final executable release gates, tarball E2E, and receipt closure in M7.
 
 DeepSeek endpoint work, ACP-to-Pi wiring, and automatic turn checkpoints are
 not the next product boundary. Their existing offline modules stay under

@@ -135,11 +135,12 @@ export async function restoreModeReceipt({ registry, entries, profile } = {}) {
  * It never invokes a shell and treats missing live services as an explicit
  * unavailable state rather than guessing a permission or sandbox state.
  */
-export function createOmpRuntime({ rootDir, configRoot, registry, modeService, workflowService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
+export function createOmpRuntime({ rootDir, configRoot, registry, modeService, workflowService, swarmService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
   const derivedRoot = rootDir ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const derivedConfigRoot = configRoot ?? process.env.PI_CODING_AGENT_DIR ?? null;
   let modes = modeService;
   let workflows = workflowService;
+  let swarms = swarmService;
   const getModes = async () => {
     if (!modes) modes = createModeControlService({ rootDir: derivedRoot, configRoot: derivedConfigRoot, registry, sessionDriver });
     return modes;
@@ -154,6 +155,15 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
       workflows = module.createWorkflowControlService({ rootDir: derivedRoot });
     }
     return workflows;
+  };
+  const getSwarms = async () => {
+    if (!swarms) {
+      // Swarm is an optional M5 surface.  Keep it out of minimal startup and
+      // only load the adapter/control bundle when the user invokes /omp swarm.
+      const module = await import("../../packages/control-service/swarm-service.mjs");
+      swarms = module.createSwarmControlService({ rootDir: derivedRoot });
+    }
+    return swarms;
   };
 
   const restoreSession = async (entries) => {
@@ -202,6 +212,22 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
         const subcommand = args[0] ?? "list";
         const workflowId = args[1] ?? null;
         const result = await (await getWorkflows()).dispatch({ subcommand, workflowId, runId: workflowId, apply: args.includes("--apply") && args.includes("--yes"), input: {}, conditions: ["profile-resolved", "mode-resolved", "session-idle"] });
+        notify(ctx, result, result.ok === false ? "warning" : "info");
+        return result;
+      }
+      if (command === "swarm") {
+        const subcommand = args[0] ?? "list";
+        const identifier = args[1] ?? null;
+        const inputFileIndex = args.indexOf("--input-file");
+        const inputFile = inputFileIndex >= 0 ? args[inputFileIndex + 1] : null;
+        const result = await (await getSwarms()).dispatch({
+          subcommand,
+          recipeId: ["status", "cancel"].includes(subcommand) ? null : identifier,
+          runId: ["status", "cancel"].includes(subcommand) ? identifier : null,
+          inputFile,
+          yes: args.includes("--yes"),
+          input: {},
+        });
         notify(ctx, result, result.ok === false ? "warning" : "info");
         return result;
       }

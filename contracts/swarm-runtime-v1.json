@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "formatVersion": 1,
+  "id": "swarm-runtime-v1",
+  "status": "runtime-ready",
+  "owner": "only-my-pi",
+  "architecture": {
+    "compiler": "only-my-pi",
+    "physicalScheduler": "pi-subagents",
+    "liveLane": "extension-rpc-v1",
+    "negotiation": "ping-capability-handshake",
+    "execution": "spawn-with-compiled-workflowScript",
+    "secondScheduler": false,
+    "secondSubagentTool": false,
+    "delegationExportRuntimeActive": false
+  },
+  "budgets": {
+    "maxDepth": 1,
+    "maxConcurrency": 3,
+    "maxChildren": 8,
+    "childTimeoutSeconds": 900,
+    "runTimeoutSeconds": 3600,
+    "retry": 0,
+    "childOutputBytes": 51200,
+    "parentSummaryBytes": 8192
+  },
+  "states": {
+    "run": ["planned", "admitted", "running", "stopping", "completed", "failed", "cancelled", "timed_out", "budget_exhausted", "interrupted"],
+    "item": ["queued", "running", "completed", "failed", "timed_out", "cancelled", "skipped_dependency_failed", "skipped_run_cancelled", "budget_exhausted"]
+  },
+  "safety": {
+    "readOnlyRolesRemove": ["bash", "edit", "write"],
+    "testerVerifierExecution": "allowlisted-gate-runner",
+    "writer": "managed-worktree-only",
+    "sharedCwdWriterLimit": 1,
+    "cancel": "close-admission-wait-for-terminal-proof",
+    "provenance": "bounded-ledger-vocabulary"
+  },
+  "verification": {
+    "staticContract": "PASS",
+    "liveRuntime": "NOT_RUN_BY_POLICY",
+    "realProvider": "NOT_RUN_BY_POLICY",
+    "realPiHome": "UNTOUCHED"
+  }
+}

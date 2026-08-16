@@ -1,0 +1,23 @@
+{
+  "$schema": "../schemas/agent-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "test-analyst",
+  "upstreamAgentId": "omp-test-analyst",
+  "version": "1.0.0",
+  "description": "Read-only test and regression reviewer with no shell access.",
+  "prompt": { "file": "agents/prompts/test-analyst.md" },
+  "tools": { "allow": ["read", "grep", "find", "ls"], "deny": ["bash", "edit", "write", "web"] },
+  "allowedExecutionStates": ["review"],
+  "requiredCapabilities": ["workspace-read", "review-assistance"],
+  "policyCeiling": { "workspace": "read-only", "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" }, "approval": "deny", "mutation": "none" },
+  "modelRole": "balanced",
+  "inputSchema": { "type": "object", "additionalProperties": false, "properties": { "scope": { "type": "string", "description": "Test scope." } }, "required": ["scope"] },
+  "outputSchema": { "type": "object", "additionalProperties": false, "properties": { "findings": { "type": "array", "description": "Regression findings." }, "verdict": { "type": "string", "description": "pass or fail." } }, "required": ["findings", "verdict"] },
+  "writer": false,
+  "timeoutSeconds": 900,
+  "continuable": false,
+  "resumable": true,
+  "redaction": { "rawPrompts": "omit", "reasoning": "omit", "credentials": "deny", "maxOutputBytes": 65536 },
+  "gateIds": ["full-tests"]
+}

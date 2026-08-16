@@ -207,9 +207,10 @@ test("semantic graph rejects unknown references, cycles, duplicate owners, and e
   }
 });
 
-test("M3 promotes only the packaged inspect mode; remaining seeds stay contracts", () => {
+test("M5 promotes the inspect mode and research synthesis recipe; remaining seeds stay contracts", () => {
   assert.equal(read("modes/inspect.json").contractStatus, "runtime-ready");
-  for (const relativePath of ["agents/scout.json", "workflows/single-agent-safe.json", "swarm/recipes/research-synthesis.json"]) {
+  assert.equal(read("swarm/recipes/research-synthesis.json").contractStatus, "runtime-ready");
+  for (const relativePath of ["agents/scout.json", "workflows/single-agent-safe.json"]) {
     assert.equal(read(relativePath).contractStatus, "contract-only", relativePath);
   }
 });

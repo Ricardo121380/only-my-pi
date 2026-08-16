@@ -1,10 +1,10 @@
 {
   "$schema": "../../schemas/swarm-recipe-v1.schema.json",
   "formatVersion": 1,
-  "contractStatus": "contract-only",
+  "contractStatus": "runtime-ready",
   "id": "research-synthesis",
   "version": "1.0.0",
-  "description": "M1 read-only DAG contract seed using the only available scout role; distinct research roles and live dispatch arrive in M4-M5.",
+  "description": "Read-only parallel research, source verification, and provenance-preserving synthesis.",
   "readOnly": true,
   "budget": {
     "maxDepth": 1,
@@ -25,7 +25,7 @@
   "nodes": [
     {
       "id": "research-a",
-      "agent": "scout",
+      "agent": "researcher",
       "taskTemplate": "research-source-a",
       "needs": [],
       "workspace": "shared-read-only",
@@ -35,7 +35,7 @@
     },
     {
       "id": "research-b",
-      "agent": "scout",
+      "agent": "researcher",
       "taskTemplate": "research-source-b",
       "needs": [],
       "workspace": "shared-read-only",
@@ -45,7 +45,7 @@
     },
     {
       "id": "verify-sources",
-      "agent": "scout",
+      "agent": "source-verifier",
       "taskTemplate": "verify-research-sources",
       "needs": ["research-a", "research-b"],
       "workspace": "shared-read-only",
@@ -55,7 +55,7 @@
     },
     {
       "id": "synthesize",
-      "agent": "scout",
+      "agent": "synthesizer",
       "taskTemplate": "synthesize-verified-research",
       "needs": ["verify-sources"],
       "workspace": "shared-read-only",

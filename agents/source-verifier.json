@@ -1,0 +1,23 @@
+{
+  "$schema": "../schemas/agent-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "source-verifier",
+  "upstreamAgentId": "omp-source-verifier",
+  "version": "1.0.0",
+  "description": "Read-only source verifier that checks evidence provenance and freshness.",
+  "prompt": { "file": "agents/prompts/source-verifier.md" },
+  "tools": { "allow": ["read", "grep", "find", "ls", "web"], "deny": ["bash", "edit", "write"] },
+  "allowedExecutionStates": ["ask", "plan", "review"],
+  "requiredCapabilities": ["workspace-read", "web-access"],
+  "policyCeiling": { "workspace": "read-only", "egress": { "web": "allow-listed", "mcp": "deny", "provider": "inherit", "extension": "deny" }, "approval": "ask", "mutation": "none" },
+  "modelRole": "deep",
+  "inputSchema": { "type": "object", "additionalProperties": false, "properties": { "claims": { "type": "array", "description": "Claims and sources to verify." } }, "required": ["claims"] },
+  "outputSchema": { "type": "object", "additionalProperties": false, "properties": { "verdict": { "type": "string", "description": "pass or fail." }, "evidence": { "type": "array", "description": "Bounded evidence records." }, "gaps": { "type": "array", "description": "Unresolved gaps." } }, "required": ["verdict", "evidence", "gaps"] },
+  "writer": false,
+  "timeoutSeconds": 1200,
+  "continuable": true,
+  "resumable": true,
+  "redaction": { "rawPrompts": "omit", "reasoning": "omit", "credentials": "deny", "maxOutputBytes": 65536 },
+  "gateIds": ["diff-check"]
+}

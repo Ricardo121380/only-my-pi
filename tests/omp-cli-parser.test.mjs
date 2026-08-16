@@ -88,3 +88,15 @@ test("M3 read-only control command matrix has strict positional contracts", () =
   assert.throws(() => parseOmpArgs(["profile", "show"], context), /requires a profile id/);
   assert.throws(() => parseOmpArgs(["profile", "diff", "coding"], context), /requires from and to/);
 });
+
+test("M5 swarm parser keeps planning offline and requires explicit yes only for run", () => {
+  const plan = parseOmpArgs(["swarm", "plan", "research-synthesis", "--input-file", "/tmp/question.json", "--json"], context);
+  assert.equal(plan.command, "swarm");
+  assert.equal(plan.mutation, false);
+  assert.equal(plan.options.recipeId, "research-synthesis");
+  assert.equal(plan.options.inputFile, "/tmp/question.json");
+  assert.throws(() => parseOmpArgs(["swarm", "plan", "research-synthesis", "--yes"], context), /only valid for swarm run/);
+  assert.equal(parseOmpArgs(["swarm", "run", "research-synthesis", "--yes"], context).mutation, true);
+  assert.throws(() => parseOmpArgs(["swarm", "run", "research-synthesis", "--apply"], context), /not valid for swarm/);
+  assert.throws(() => parseOmpArgs(["swarm", "status"], context), /requires a run id/);
+});

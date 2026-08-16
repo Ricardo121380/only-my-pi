@@ -11,7 +11,8 @@
     "usage",
     "memory",
     "git-sync",
-    "subagents"
+    "subagents",
+    "web-access"
   ],
   "capabilityIds": [
     "workspace-read",
@@ -22,6 +23,7 @@
     "notifications",
     "subagent-runtime",
     "subagent-rpc-v1",
+    "web-access",
     "permission-policy",
     "bash-sandbox-conditional",
     "file-tool-policy",
@@ -35,7 +37,7 @@
   "policy": {
     "projectTrust": "ask",
     "approval": "ask",
-    "network": "deny-unless-explicit",
+    "network": "allow-listed-only",
     "session": "central-user-session-dir",
     "contextFiles": "review-before-trust",
     "subagents": {

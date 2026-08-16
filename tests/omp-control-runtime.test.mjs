@@ -112,3 +112,14 @@ test("runtime restore callback prepares the next-turn prompt but never trusts re
   assert.equal(result.status, "MODE_RESTORED");
   assert.equal(restoredTarget, target);
 });
+
+test("/omp swarm routes through the injected control service without starting a child", async () => {
+  const calls = [];
+  const runtime = createOmpRuntime({
+    rootDir: "/tmp/only-my-pi",
+    swarmService: { async dispatch(options) { calls.push(options); return { ok: true, status: "SWARM_PLAN", mutation: false }; } },
+  });
+  const result = await runtime.execute("swarm plan research-synthesis", { ui: { notify() {} } });
+  assert.equal(result.status, "SWARM_PLAN");
+  assert.deepEqual(calls, [{ subcommand: "plan", recipeId: "research-synthesis", runId: null, inputFile: null, yes: false, input: {} }]);
+});

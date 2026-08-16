@@ -12,6 +12,7 @@ import { DoctorService } from "../packages/bootstrap/doctor-service.mjs";
 import { createNoModelSmokeRunner } from "../packages/bootstrap/smoke-runner.mjs";
 import { TransactionEngine } from "../packages/bootstrap/transaction-engine.mjs";
 import { createWorkflowControlService } from "../packages/control-service/workflow-service.mjs";
+import { createSwarmControlService } from "../packages/control-service/swarm-service.mjs";
 import { parseOmpArgs } from "../packages/control-service/cli-parser.mjs";
 import { ControlService, OMP_USAGE } from "../packages/control-service/service.mjs";
 
@@ -106,6 +107,7 @@ export function createProductionControlService({
     transactionEngine,
   });
   const workflows = wired.createWorkflowControlService({ rootDir: resolvedRoot });
+  const swarms = createSwarmControlService({ rootDir: resolvedRoot });
   return new wired.ControlService({
     bootstrap,
     doctor,
@@ -113,6 +115,7 @@ export function createProductionControlService({
     rootDir: resolvedRoot,
     configRoot: resolvedConfigRoot,
     workflows,
+    swarms,
   });
 }
 

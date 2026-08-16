@@ -11,7 +11,21 @@ const root = path.resolve(new URL("..", import.meta.url).pathname);
 test("agent registry discovers all runtime-ready roles and produces redacted receipts", async () => {
   const registry = createAgentRegistry({ rootDir: root });
   const agents = await registry.list();
-  assert.deepEqual(agents.map((entry) => entry.rawId), ["debugger", "explorer", "implementer", "planner", "researcher", "reviewer", "scout", "verifier"]);
+  assert.deepEqual(agents.map((entry) => entry.rawId), [
+    "debugger",
+    "explorer",
+    "implementer",
+    "planner",
+    "researcher",
+    "reviewer",
+    "scout",
+    "security-reviewer",
+    "source-verifier",
+    "synthesizer",
+    "test-analyst",
+    "tester",
+    "verifier",
+  ]);
   const reviewer = await registry.resolve("reviewer");
   assert.equal(reviewer.manifest.writer, false);
   assert.equal(reviewer.receipt.agentId, "reviewer");

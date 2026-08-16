@@ -11,6 +11,7 @@ const VALUE_OPTIONS = new Map([
   ["--model", "model"],
   ["--scope", "scope"],
   ["--config-root", "configRoot"],
+  ["--input-file", "inputFile"],
 ]);
 
 const BOOLEAN_OPTIONS = new Map([
@@ -39,12 +40,14 @@ const COMMANDS = new Set([
   "verify",
   "mode",
   "workflow",
+  "swarm",
   "help",
 ]);
 
 const MODE_COMMANDS = new Set(["list", "show", "use", "reset", "doctor", "diff", "scaffold"]);
 const PROFILE_COMMANDS = new Set(["list", "show", "diff"]);
 const WORKFLOW_COMMANDS = new Set(["list", "show", "run", "status", "cancel"]);
+const SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel"]);
 const MODE_NAMESPACED_ID = /^(?:[a-z][a-z0-9-]{0,63}(?:\/[a-z][a-z0-9-]{0,63})?|(?:user|project|package):[a-z][a-z0-9-]{0,63})$/u;
 
 function fail(message, code = "INVALID_ARGUMENT") {
@@ -118,6 +121,8 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   if (!COMMANDS.has(command)) fail(`unknown command: ${command}`);
   const { options, positionals } = parseOptions(argv.slice(1));
   const configRoot = resolveConfigRoot(options.configRoot, env, homedir);
+
+  if (command !== "swarm" && options.inputFile !== undefined) fail("--input-file is only valid for swarm commands");
 
   if (options.profile !== undefined) assertIdentifier(options.profile, "profile");
   if (options.mode !== undefined) {
@@ -271,6 +276,32 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
         runId: ["status", "cancel"].includes(subcommand) ? workflowId : null,
         profile: options.profile ?? null,
         apply,
+        yes: options.yes === true,
+        json: options.json === true,
+      },
+    };
+  }
+
+  if (command === "swarm") {
+    reject(options, ["mode", "provider", "model", "scope", "apply", "dryRun", "plan", "static", "live", "resolved"], command);
+    const subcommand = positionals[0] ?? "list";
+    if (!SWARM_COMMANDS.has(subcommand)) fail(`unknown swarm subcommand: ${subcommand}`);
+    const recipeId = positionals[1] ?? null;
+    if (["show", "validate", "plan", "run"].includes(subcommand) && recipeId === null) fail(`swarm ${subcommand} requires a recipe id`);
+    if (["status", "cancel"].includes(subcommand) && recipeId === null) fail(`swarm ${subcommand} requires a run id`);
+    if (positionals.length > 2) fail(`swarm ${subcommand} accepts at most one id`);
+    if (recipeId !== null) assertIdentifier(recipeId, subcommand === "status" || subcommand === "cancel" ? "run id" : "recipe id");
+    if (options.inputFile !== undefined && !path.isAbsolute(options.inputFile)) fail("--input-file must be an absolute path");
+    if (options.yes && subcommand !== "run") fail("--yes is only valid for swarm run");
+    return {
+      command,
+      mutation: subcommand === "run",
+      options: {
+        configRoot,
+        subcommand,
+        recipeId: ["status", "cancel"].includes(subcommand) ? null : recipeId,
+        runId: ["status", "cancel"].includes(subcommand) ? recipeId : null,
+        inputFile: options.inputFile ?? null,
         yes: options.yes === true,
         json: options.json === true,
       },

@@ -204,11 +204,14 @@ test("first-party inventory covers manifest resources, contract seeds, and non-d
   assert.equal(byId.get("inspect-mode").lifecycle, "stable");
   assert.equal(byId.get("inspect-mode").defaultLoaded, false);
   assert.equal(byId.get("inspect-mode").packaged, true);
-  for (const id of ["scout-agent", "single-agent-safe-workflow", "research-synthesis-recipe"]) {
+  for (const id of ["scout-agent", "single-agent-safe-workflow"]) {
     assert.equal(byId.get(id).lifecycle, "planned");
     assert.equal(byId.get(id).defaultLoaded, false);
     assert.equal(byId.get(id).packaged, true);
   }
+  assert.equal(byId.get("research-synthesis-recipe").lifecycle, "stable");
+  assert.equal(byId.get("research-synthesis-recipe").defaultLoaded, false);
+  assert.equal(byId.get("research-synthesis-recipe").packaged, true);
   assert.equal(resources.filter((resource) => resource.id === "scout-agent").length, 1);
   assert.ok(fs.existsSync(path.join(root, "agents", "scout.json")));
   assert.ok(fs.existsSync(path.join(root, "agents", "generated", "omp-scout.md")));
