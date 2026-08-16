@@ -34,6 +34,18 @@ function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
 }
 
+function boundedFailureDiagnostic(stderr) {
+  const line = String(stderr).split(/\r?\n/u).find((entry) => entry.startsWith("fresh-tarball-smoke: ERROR "));
+  if (!line) return undefined;
+  const match = /^fresh-tarball-smoke: ERROR ([A-Z0-9_]+) (.+)$/u.exec(line);
+  if (!match) return "fresh-tarball-smoke:ERROR";
+  const message = match[2]
+    .replace(/(?:[A-Za-z]:)?[\\/](?:[^\s\\/]+[\\/])+[^\s]*/gu, "<path>")
+    .replace(/https?:\/\/[^\s]+/gu, "<url>")
+    .slice(0, 180);
+  return `${match[1]}:${message}`;
+}
+
 function exactKeys(value, allowed, label) {
   if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error(`${label} must be an object`);
   const unknown = Object.keys(value).filter((key) => !allowed.has(key));
@@ -144,6 +156,7 @@ export function runCheck(check, {
       const out = Buffer.concat(stdout);
       const err = Buffer.concat(stderr);
       const freshEvidence = check.id === "test-e2e" ? extractFreshEvidence(out.toString("utf8")) : undefined;
+      const diagnostic = check.id === "test-e2e" ? boundedFailureDiagnostic(err.toString("utf8")) : undefined;
       const emptyOutputPassed = check.expectStdout === "empty" ? out.toString("utf8").trim().length === 0 : true;
       const expectationPassed = emptyOutputPassed && (check.id !== "test-e2e" || freshEvidence !== null);
       const passed = code === 0 && !spawnError && !timedOut && !outputLimitExceeded && expectationPassed;
@@ -162,6 +175,7 @@ export function runCheck(check, {
         stdoutSha256: sha256(out),
         stderrSha256: sha256(err),
         ...(freshEvidence === undefined ? {} : { evidence: freshEvidence }),
+        ...(diagnostic === undefined ? {} : { diagnostic }),
       }));
     };
 

@@ -117,7 +117,10 @@ export async function main(argv = process.argv.slice(2)) {
       manifest,
       rootDir: repositoryRoot,
       output: args.output,
-      onGate: (gate) => process.stderr.write(`${gate.status} ${gate.id} (${gate.durationMs} ms)\n`),
+      onGate: (gate) => {
+        process.stderr.write(`${gate.status} ${gate.id} (${gate.durationMs} ms)\n`);
+        if (gate.diagnostic) process.stderr.write(`diagnostic ${gate.id}: ${gate.diagnostic}\n`);
+      },
     });
     const summary = {
       status: result.receipt.status,
