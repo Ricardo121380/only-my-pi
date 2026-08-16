@@ -13,6 +13,8 @@ import { createNoModelSmokeRunner } from "../packages/bootstrap/smoke-runner.mjs
 import { TransactionEngine } from "../packages/bootstrap/transaction-engine.mjs";
 import { createWorkflowControlService } from "../packages/control-service/workflow-service.mjs";
 import { createSwarmControlService } from "../packages/control-service/swarm-service.mjs";
+import { createThemeControlService } from "../packages/control-service/theme-service.mjs";
+import { createStatusService } from "../packages/control-service/status-service.mjs";
 import { parseOmpArgs } from "../packages/control-service/cli-parser.mjs";
 import { ControlService, OMP_USAGE } from "../packages/control-service/service.mjs";
 
@@ -108,6 +110,8 @@ export function createProductionControlService({
   });
   const workflows = wired.createWorkflowControlService({ rootDir: resolvedRoot });
   const swarms = createSwarmControlService({ rootDir: resolvedRoot });
+  const themes = createThemeControlService({ rootDir: resolvedRoot });
+  const statusService = createStatusService();
   return new wired.ControlService({
     bootstrap,
     doctor,
@@ -116,6 +120,8 @@ export function createProductionControlService({
     configRoot: resolvedConfigRoot,
     workflows,
     swarms,
+    themes,
+    statusService,
   });
 }
 
@@ -212,6 +218,10 @@ export function formatOmpHuman(result) {
   addField(lines, "planDigest", details.planDigest);
   addField(lines, "settingsDigest", details.settingsDigest);
   addField(lines, "generationProbe", details.generationProbe?.status);
+  addField(lines, "themeId", details.themeId ?? details.theme?.id);
+  addField(lines, "piThemeName", details.piThemeName ?? details.theme?.piThemeName);
+  addField(lines, "harnessStatus", details.harnessStatus ? details.harnessStatus.status : undefined);
+  if (details.harnessStatus?.provenance) addField(lines, "provenance", details.harnessStatus.provenance);
 
   const providerSelection = details.providerSelection ?? details.desired?.metadata?.providerSelection;
   if (providerSelection) {

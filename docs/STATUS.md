@@ -46,6 +46,11 @@ when this checkout or a verified generation is explicitly loaded:
   owner. It exposes status/profile/mode/tool/package/context/verify/safe views,
   while hard policy changes fail closed to `RESTART_REQUIRED` when no audited
   public execution-state driver is available.
+- `theme-service` and `status-service`: first-party, low-intrusion control
+  services. The former validates a semantic contract and delegates mutations
+  only to Pi's public `setTheme`; the latter emits a bounded,
+  `injected-observations-only` status projection without secrets or a
+  whole-session sandbox claim.
 
 The rest of the repository tooling is explicit and side-effect bounded. M1
 replaced descriptive-only checks with strict, versioned governance:
@@ -56,8 +61,9 @@ replaced descriptive-only checks with strict, versioned governance:
 - `safe-mode`: dry-run-first read-only Pi launcher;
 - `verification-receipt`: allowlisted no-shell checks with metadata-only receipt;
 - `mcp-doctor`: static MCP configuration audit, never starts a server;
-- Draft 2020-12 validation for 11 contract kinds, including semantic reference,
-  cycle, duplicate-owner, and capability-escalation checks;
+- Draft 2020-12 validation for 16 catalogued schema kinds (including the
+  semantic theme contract and four transactional bootstrap wires), with
+  semantic reference, cycle, duplicate-owner, and capability-escalation checks;
 - a positive npm pack allowlist that excludes receipts, fixtures, research,
   tests, the Codex Goal, and Labs implementations;
 - deterministic JSON-to-Markdown generation for package-owned
@@ -170,6 +176,23 @@ mutation was performed. A worktree capability is negotiated at admission, but
 the adapter does not claim that the upstream child runtime itself is an OS
 sandbox; any degraded Bash state must remain visible to the caller.
 
+M6 now supplies the presentation layer without taking ownership of Pi's TUI:
+
+- `schemas/theme-v1.schema.json` and `contracts/themes/only-my-pi-dark.json`
+  bind a Pi-native theme file to semantic tokens, dark-mode metadata, and
+  recomputed contrast receipts. The semantic contract is kept outside
+  `themes/` so Pi's own theme loader never sees it;
+- `omp theme list|show|preview|doctor|use|reset` and `/omp theme` share the
+  same bounded service. Listing, inspection, preview, and doctor are
+  read-only; use/reset are plan-first and require explicit approval;
+- theme application is available only through the public Pi UI `setTheme`
+  driver. Headless CLI apply returns `THEME_APPLY_UNAVAILABLE`, and reset
+  restores Pi's built-in `dark` theme as the safe-disable path;
+- `StatusService` is shared by CLI and Pi runtime. It reports low-sensitivity
+  profile/mode/model/context/Git/permission/Swarm/theme observations, marks
+  provenance explicitly, and keeps Bash sandbox state separate from any
+  whole-session isolation claim.
+
 The repository audits the direct package tarballs before staging and then
 hashes the entire realized dependency tree. It does not yet carry an independently
 audited SRI closure for every transitive dependency; first transitive resolution
@@ -240,14 +263,14 @@ validation tests, but it is not a release authority and must not be used to
 claim an M1 or M7 PASS. M7 will replace the inspector with an executor that can
 run only the fixed `release-gates-v1` tuples and create the final receipt.
 
-The current M5 source gate set passes **336/336** Node tests, including the M2
+The current M6 source gate set passes **346/346** Node tests, including the M2
 transactional suite, Mode Registry, unified control, staged-generation,
 Agent Registry, Workflow Core, Gate Runner, skills bridge, repo-map, Swarm
-Core, PiSubagentsAdapter, and fresh-tarball closure tests. It validates 46
-production documents against 15
-schema kinds, typechecks against the exact Pi 0.84.1 development dependency,
+Core, PiSubagentsAdapter, theme/status services, and fresh-tarball closure
+tests. It validates 47 production documents against 16 schema kinds,
+typechecks against the exact Pi 0.84.1 development dependency,
 passes static, per-Profile, Agent, Workflow, and Swarm doctors, and packs the
-current allowlisted runtime files (**155 files**). Crash injection covers every durable transaction phase,
+current allowlisted runtime files (**160 files**). Crash injection covers every durable transaction phase,
 including the settings rename window. Injected Workflow tests cover
 deterministic stage order, structured gate receipts, source drift, explicit
 fallback, resume, and cancellation terminal proof. A disposable
@@ -293,13 +316,15 @@ compatibility foundation, M2 delivered the transactional `omp` configuration
 runtime, M3 delivered the Mode Registry plus the unified `/omp` control
 surface, M4 delivered the practical single-Agent/Workflow layer, and M5
 delivered the governed AgentSwarm compiler plus the sole `pi-subagents` RPC
-adapter. The next implementation boundary is M6:
+adapter, and M6 delivered the semantic theme/status layer. The next
+implementation boundary is M7:
 
-1. add a semantic theme schema and one low-intrusion dark theme;
-2. expose `/omp theme list|preview|use` and a bounded status model without
-   taking ownership of Pi's private editor/renderer APIs;
-3. keep headless/safe-disable paths independent of TUI loading, then finish
-   CI, final executable release gates, tarball E2E, and receipt closure in M7.
+1. connect the fixed release-gates-v1 manifest to the executable verification
+   receipt and CI;
+2. run a fresh scripts-disabled tarball end-to-end test from the promoted
+   artifact, including theme/status resources;
+3. refresh documentation, source/receipt commits, and the final push/CI
+   handoff without claiming live Provider or child-runtime evidence.
 
 DeepSeek endpoint work, ACP-to-Pi wiring, and automatic turn checkpoints are
 not the next product boundary. Their existing offline modules stay under

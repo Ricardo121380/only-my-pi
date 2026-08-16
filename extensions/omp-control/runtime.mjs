@@ -38,11 +38,16 @@ function asText(result) {
   if (result.code) lines.push(`code: ${bounded(result.code)}`);
   if (result.message) lines.push(`message: ${bounded(result.message)}`);
   if (result.modeId) lines.push(`mode: ${bounded(result.modeId)}`);
+  if (result.themeId) lines.push(`theme: ${bounded(result.themeId)}`);
+  if (result.piThemeName) lines.push(`piTheme: ${bounded(result.piThemeName)}`);
   if (result.count !== undefined) lines.push(`count: ${bounded(result.count)}`);
   if (result.next) lines.push(`next: ${bounded(result.next)}`);
   if (result.reason) lines.push(`reason: ${bounded(result.reason)}`);
   if (Array.isArray(result.modes)) lines.push(`modes: ${result.modes.map((entry) => bounded(entry.id ?? entry)).join(", ") || "none"}`);
   if (result.executionState) lines.push(`executionState: ${bounded(result.executionState)}`);
+  if (result.harnessStatus?.status) lines.push(`harnessStatus: ${bounded(result.harnessStatus.status)}`);
+  if (result.harnessStatus?.provenance) lines.push(`provenance: ${bounded(result.harnessStatus.provenance)}`);
+  if (result.preview?.ansi) lines.push(`preview: ${bounded(result.preview.ansi, 512)}`);
   return lines.join("\n");
 }
 
@@ -135,12 +140,14 @@ export async function restoreModeReceipt({ registry, entries, profile } = {}) {
  * It never invokes a shell and treats missing live services as an explicit
  * unavailable state rather than guessing a permission or sandbox state.
  */
-export function createOmpRuntime({ rootDir, configRoot, registry, modeService, workflowService, swarmService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
+export function createOmpRuntime({ rootDir, configRoot, registry, modeService, workflowService, swarmService, themeService, statusService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
   const derivedRoot = rootDir ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const derivedConfigRoot = configRoot ?? process.env.PI_CODING_AGENT_DIR ?? null;
   let modes = modeService;
   let workflows = workflowService;
   let swarms = swarmService;
+  let themes = themeService;
+  let statuses = statusService;
   const getModes = async () => {
     if (!modes) modes = createModeControlService({ rootDir: derivedRoot, configRoot: derivedConfigRoot, registry, sessionDriver });
     return modes;
@@ -164,6 +171,20 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
       swarms = module.createSwarmControlService({ rootDir: derivedRoot });
     }
     return swarms;
+  };
+  const getThemes = async () => {
+    if (!themes) {
+      const module = await import("../../packages/control-service/theme-service.mjs");
+      themes = module.createThemeControlService({ rootDir: derivedRoot });
+    }
+    return themes;
+  };
+  const getStatuses = async () => {
+    if (!statuses) {
+      const module = await import("../../packages/control-service/status-service.mjs");
+      statuses = module.createStatusService();
+    }
+    return statuses;
   };
 
   const restoreSession = async (entries) => {
@@ -193,7 +214,7 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
         return {
           ok: true,
           status: "HELP",
-          text: "/omp status|doctor|profile|mode|tools|packages|context|verify|safe|help",
+          text: "/omp status|doctor|profile|mode|workflow|swarm|theme|tools|packages|context|verify|safe|help",
         };
       }
       if (command === "mode") {
@@ -228,6 +249,18 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
           yes: args.includes("--yes"),
           input: {},
         });
+        notify(ctx, result, result.ok === false ? "warning" : "info");
+        return result;
+      }
+      if (command === "theme") {
+        const subcommand = args[0] ?? "list";
+        const themeId = args[1] && !args[1].startsWith("--") ? args[1] : null;
+        const apply = ["use", "reset"].includes(subcommand) && args.includes("--apply") && args.includes("--yes");
+        const driver = {
+          getAllThemes: () => (typeof ctx?.ui?.getAllThemes === "function" ? ctx.ui.getAllThemes() : []),
+          setTheme: (name) => (typeof ctx?.ui?.setTheme === "function" ? ctx.ui.setTheme(name) : undefined),
+        };
+        const result = await (await getThemes()).dispatch({ subcommand, themeId, apply, themeDriver: driver });
         notify(ctx, result, result.ok === false ? "warning" : "info");
         return result;
       }
@@ -332,7 +365,7 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
       }
       if (command === "status") {
         const currentMode = typeof sessionDriver?.readMode === "function" ? await sessionDriver.readMode() : null;
-        const result = {
+        const base = {
           ok: true,
           status: "STATUS",
           mode: currentMode ? { modeId: currentMode.modeId ?? null, hash: currentMode.hash ?? null, sourceHash: currentMode.sourceHash ?? null } : null,
@@ -343,6 +376,17 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
           activeTools: typeof ctx?.pi?.getActiveTools === "function" ? [...ctx.pi.getActiveTools()].sort() : [],
           restartRequired: false,
         };
+        const harnessStatus = await (await getStatuses()).snapshot({
+          headless: ctx?.mode !== "tui",
+          mode: currentMode,
+          profile: profile ?? null,
+          model: ctx?.model ?? null,
+          context: typeof snapshotProvider === "function" ? snapshotProvider() : null,
+          permission: { mode: typeof ctx?.pi?.getFlag === "function" ? ctx.pi.getFlag("perm") : null, state: "unknown" },
+          theme: { id: ctx?.ui?.theme?.name ?? null },
+          swarm: null,
+        });
+        const result = { ...base, harnessStatus };
         notify(ctx, result);
         return result;
       }

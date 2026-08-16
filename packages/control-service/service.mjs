@@ -16,6 +16,7 @@ Usage:
   omp mode [list|show|use|reset|doctor|diff|scaffold] [mode-id] [--profile <id>] [--resolved] [--config-root <absolute>] [--json]
   omp workflow [list|show|run|status|cancel] [workflow-or-run-id] [--apply --yes] [--config-root <absolute>] [--json]
   omp swarm [list|show|validate|plan|run|status|cancel] [recipe-or-run-id] [--input-file <absolute>] [--yes] [--config-root <absolute>] [--json]
+  omp theme [list|show|preview|use|reset|doctor] [theme-id] [--apply --yes] [--config-root <absolute>] [--json]
 
 Mutation is never implicit. bootstrap, update, and uninstall default to a zero-write plan.
 Provider/model flags save metadata only and remain CONFIGURED_UNVERIFIED.`;
@@ -37,7 +38,7 @@ async function approve(request, plan, confirm) {
 }
 
 export class ControlService {
-  constructor({ bootstrap, doctor, confirm, modes, workflows, swarms, rootDir, configRoot } = {}) {
+  constructor({ bootstrap, doctor, confirm, modes, workflows, swarms, themes, statusService, rootDir, configRoot } = {}) {
     if (!bootstrap || !doctor) throw new TypeError("bootstrap and doctor services are required");
     this.bootstrap = bootstrap;
     this.doctor = doctor;
@@ -45,6 +46,8 @@ export class ControlService {
     this.modes = modes;
     this.workflows = workflows;
     this.swarms = swarms;
+    this.themes = themes;
+    this.statusService = statusService;
     this.rootDir = rootDir;
     this.configRoot = configRoot;
   }
@@ -78,8 +81,22 @@ export class ControlService {
       }
       case "doctor":
         return request.options.live ? this.doctor.live(request.options) : this.bootstrap.doctor(request.options);
-      case "status":
-        return this.bootstrap.status(request.options);
+      case "status": {
+        const base = await this.bootstrap.status(request.options);
+        if (!this.statusService || typeof this.statusService.snapshot !== "function") return base;
+        const harnessStatus = await this.statusService.snapshot({
+          headless: true,
+          profile: base?.profile ?? base?.profileId ?? null,
+          mode: base?.mode ?? null,
+          model: base?.model ?? base?.providerSelection ?? null,
+          context: base?.context ?? null,
+          git: base?.git ?? null,
+          permission: base?.permission ?? null,
+          swarm: base?.swarm ?? null,
+          theme: base?.theme ?? null,
+        });
+        return { ...base, harnessStatus };
+      }
       case "safe":
         return this.bootstrap.safe(request.options);
       case "profile": {
@@ -172,6 +189,23 @@ export class ControlService {
           return { ok: false, status: "SWARM_SERVICE_UNAVAILABLE", mutation: false, code: "SWARM_SERVICE_UNAVAILABLE", next: "run omp doctor and reinstall the promoted generation" };
         }
         return this.swarms.dispatch(request.options);
+      }
+      case "theme": {
+        if (!this.themes || typeof this.themes.dispatch !== "function") {
+          return {
+            ok: false,
+            status: "THEME_SERVICE_UNAVAILABLE",
+            mutation: false,
+            code: "THEME_SERVICE_UNAVAILABLE",
+            next: "run omp doctor and reinstall the promoted generation",
+          };
+        }
+        const options = request.options ?? {};
+        if (!options.apply) return this.themes.dispatch(options);
+        const plan = await this.themes.dispatch({ ...options, apply: false });
+        if (plan?.ok === false) return plan;
+        if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
+        return this.themes.dispatch({ ...options, apply: true });
       }
       default:
         throw Object.assign(new Error(`unsupported control command: ${request.command}`), { code: "UNSUPPORTED_COMMAND" });

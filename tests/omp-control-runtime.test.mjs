@@ -26,7 +26,7 @@ test("omp runtime exposes safe status/context and explicit unavailable commands"
   assert.equal((await runtime.execute("status", ctx)).status, "STATUS");
   assert.equal((await runtime.execute("context", ctx)).status, "CONTEXT");
   assert.equal((await runtime.execute("mode list", ctx)).status, "MODE_LIST");
-  assert.equal((await runtime.execute("theme list", ctx)).status, "UNAVAILABLE");
+  assert.equal((await runtime.execute("theme list", ctx)).status, "THEME_SERVICE_UNAVAILABLE");
   assert.ok(notices.length >= 4);
 });
 
@@ -122,4 +122,35 @@ test("/omp swarm routes through the injected control service without starting a 
   const result = await runtime.execute("swarm plan research-synthesis", { ui: { notify() {} } });
   assert.equal(result.status, "SWARM_PLAN");
   assert.deepEqual(calls, [{ subcommand: "plan", recipeId: "research-synthesis", runId: null, inputFile: null, yes: false, input: {} }]);
+});
+
+test("/omp theme routes public Pi UI theme methods and keeps apply explicit", async () => {
+  const applied = [];
+  const runtime = createOmpRuntime({
+    rootDir: process.cwd(),
+    themeService: {
+      async dispatch(options) {
+        if (options.apply) {
+          applied.push(options.themeDriver.setTheme(options.subcommand === "reset" ? "dark" : options.themeId));
+          return { ok: true, status: options.subcommand === "reset" ? "THEME_DISABLED" : "THEME_APPLIED", mutation: true };
+        }
+        return { ok: true, status: "THEME_PLAN", mutation: false, themeId: options.themeId };
+      },
+    },
+  });
+  const ui = { notify() {}, setTheme(name) { return { success: true, name }; }, getAllThemes() { return ["dark", "only-my-pi-dark"]; } };
+  assert.equal((await runtime.execute("theme use only-my-pi-dark", { ui })).status, "THEME_PLAN");
+  assert.equal((await runtime.execute("theme use only-my-pi-dark --apply --yes", { ui })).status, "THEME_APPLIED");
+  assert.deepEqual(applied, [{ success: true, name: "only-my-pi-dark" }]);
+});
+
+test("/omp status retains legacy STATUS while adding the redacted harness projection", async () => {
+  const runtime = createOmpRuntime({
+    rootDir: process.cwd(),
+    statusService: { async snapshot(input) { return { status: "HARNESS_STATUS", provenance: "injected-observations-only", theme: input.theme }; } },
+  });
+  const result = await runtime.execute("status", { mode: "tui", ui: { notify() {}, theme: { name: "only-my-pi-dark" } } });
+  assert.equal(result.status, "STATUS");
+  assert.equal(result.harnessStatus.status, "HARNESS_STATUS");
+  assert.equal(result.harnessStatus.theme.id, "only-my-pi-dark");
 });

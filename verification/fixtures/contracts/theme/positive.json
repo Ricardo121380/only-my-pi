@@ -1,0 +1,34 @@
+{
+  "$schema": "../../../../schemas/theme-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "fixture-dark",
+  "displayName": "Fixture Dark",
+  "themePath": "themes/fixture-dark.json",
+  "piThemeName": "fixture-dark",
+  "mode": "dark",
+  "tokens": {
+    "primary": "#ffffff",
+    "accent": "#ffffff",
+    "text": "#ffffff",
+    "background": "#000000",
+    "surface": "#111111",
+    "border": "#888888",
+    "success": "#00ff00",
+    "warning": "#ffff00",
+    "error": "#ff0000",
+    "diffAdded": "#00ff00",
+    "diffRemoved": "#ff0000",
+    "roleUser": "#ffffff",
+    "shellMode": "#ffffff"
+  },
+  "contrast": {
+    "minTextRatio": 4.5,
+    "minUiRatio": 3,
+    "checks": [
+      {"name": "text-background", "foreground": "#ffffff", "background": "#000000", "ratio": 21, "pass": true},
+      {"name": "accent-background", "foreground": "#ffffff", "background": "#000000", "ratio": 21, "pass": true}
+    ]
+  },
+  "safeDisable": "headless-noop"
+}

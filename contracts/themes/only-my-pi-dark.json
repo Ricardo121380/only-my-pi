@@ -1,0 +1,38 @@
+{
+  "$schema": "../../schemas/theme-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "only-my-pi-dark",
+  "displayName": "Only My Pi Dark",
+  "themePath": "themes/only-my-pi-dark.json",
+  "piThemeName": "only-my-pi-dark",
+  "mode": "dark",
+  "version": "1.0.0",
+  "description": "Semantic dark palette for the only-my-pi control/status layer.",
+  "tokens": {
+    "primary": "#7dd3fc",
+    "accent": "#c4b5fd",
+    "text": "#e6edf3",
+    "background": "#10131a",
+    "surface": "#171c26",
+    "border": "#475569",
+    "success": "#86efac",
+    "warning": "#facc15",
+    "error": "#fca5a5",
+    "diffAdded": "#86efac",
+    "diffRemoved": "#fca5a5",
+    "roleUser": "#93c5fd",
+    "shellMode": "#f0abfc"
+  },
+  "contrast": {
+    "minTextRatio": 4.5,
+    "minUiRatio": 3,
+    "checks": [
+      {"name": "text-background", "foreground": "#e6edf3", "background": "#10131a", "ratio": 15.73, "pass": true},
+      {"name": "accent-background", "foreground": "#c4b5fd", "background": "#10131a", "ratio": 10.07, "pass": true},
+      {"name": "warning-background", "foreground": "#facc15", "background": "#10131a", "ratio": 12.13, "pass": true},
+      {"name": "role-user-surface", "foreground": "#93c5fd", "background": "#171c26", "ratio": 9.46, "pass": true}
+    ]
+  },
+  "safeDisable": "restore-default"
+}

@@ -57,6 +57,7 @@ scripts/      Repository checks and package governance tooling
 - [DeepSeek Provider conformance](docs/architecture/deepseek-conformance.md)
 - [ACP v1 adapter](docs/architecture/acp-v1.md)
 - [Workspace checkpoint](docs/architecture/workspace-checkpoint.md)
+- [Theme and status layer](docs/architecture/theme-status.md)
 - [Transactional bootstrap runtime](docs/architecture/bootstrap-runtime.md)
 - [Mode Registry and unified control surface](docs/architecture/mode-registry.md)
 - [Agent and Workflow Core](docs/architecture/agent-workflow-core.md)
@@ -88,8 +89,9 @@ surface:
   lane (live child dispatch still requires an injected Pi session);
 - one `omp` CLI and one package-owned `/omp` Pi command, including the sole
   `/omp-context` compatibility alias;
-- lightweight status and theme resources in M6 that do not replace Pi's
-  runtime or TUI.
+- a semantic, contrast-checked theme contract plus bounded status projection in
+  M6. Theme application uses only Pi's public UI driver, and neither surface
+  replaces Pi's runtime, renderer, editor, footer, or permission owner.
 
 AgentSwarm reuses the governed `pi-subagents` package through a narrow adapter.
 It does not register a competing subagent tool or child-agent runtime. The
@@ -133,6 +135,9 @@ Inspect the available Modes without changing settings:
 node bin/omp.mjs mode list
 node bin/omp.mjs mode show inspect --resolved
 node bin/omp.mjs mode diff inspect
+node bin/omp.mjs theme list
+node bin/omp.mjs theme preview only-my-pi-dark
+node bin/omp.mjs status --json
 ```
 
 Install this checkout as a local Pi package while developing:

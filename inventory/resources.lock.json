@@ -109,6 +109,36 @@
       "packaged": true
     },
     {
+      "id": "omp-theme-service",
+      "type": "library",
+      "path": "packages/control-service/theme-service.mjs",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "omp-status-service",
+      "type": "library",
+      "path": "packages/control-service/status-service.mjs",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": [],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
       "id": "omp-workflow-service",
       "type": "library",
       "path": "packages/control-service/workflow-service.mjs",
@@ -256,6 +286,21 @@
       "defaultLoaded": true,
       "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
       "lifecycle": "planned",
+      "packaged": true
+    },
+    {
+      "id": "only-my-pi-dark-theme-contract",
+      "type": "theme",
+      "path": "contracts/themes/only-my-pi-dark.json",
+      "version": "1.0.0",
+      "provides": [],
+      "requires": [],
+      "owners": ["only-my-pi-resource-registry"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "lifecycle": "stable",
       "packaged": true
     },
     {

@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../../schemas/theme-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "fixture-missing-token",
+  "displayName": "Bad",
+  "themePath": "themes/bad.json",
+  "piThemeName": "bad",
+  "mode": "dark",
+  "tokens": {"primary": "#ffffff"},
+  "contrast": {"minTextRatio": 4.5, "minUiRatio": 3, "checks": []},
+  "safeDisable": "headless-noop"
+}

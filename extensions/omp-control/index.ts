@@ -132,7 +132,7 @@ export default function ompControl(pi: ExtensionAPI): void {
   };
 
   pi.registerCommand("omp", {
-    description: "only-my-pi control plane (status, doctor, mode, context, and safe guidance)",
+    description: "only-my-pi control plane (status, doctor, mode, theme, context, and safe guidance)",
     handler,
   });
 

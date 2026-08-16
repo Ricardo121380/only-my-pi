@@ -41,6 +41,7 @@ const COMMANDS = new Set([
   "mode",
   "workflow",
   "swarm",
+  "theme",
   "help",
 ]);
 
@@ -48,6 +49,7 @@ const MODE_COMMANDS = new Set(["list", "show", "use", "reset", "doctor", "diff",
 const PROFILE_COMMANDS = new Set(["list", "show", "diff"]);
 const WORKFLOW_COMMANDS = new Set(["list", "show", "run", "status", "cancel"]);
 const SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel"]);
+const THEME_COMMANDS = new Set(["list", "show", "preview", "use", "reset", "doctor"]);
 const MODE_NAMESPACED_ID = /^(?:[a-z][a-z0-9-]{0,63}(?:\/[a-z][a-z0-9-]{0,63})?|(?:user|project|package):[a-z][a-z0-9-]{0,63})$/u;
 
 function fail(message, code = "INVALID_ARGUMENT") {
@@ -302,6 +304,32 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
         recipeId: ["status", "cancel"].includes(subcommand) ? null : recipeId,
         runId: ["status", "cancel"].includes(subcommand) ? recipeId : null,
         inputFile: options.inputFile ?? null,
+        yes: options.yes === true,
+        json: options.json === true,
+      },
+    };
+  }
+
+  if (command === "theme") {
+    reject(options, ["profile", "mode", "provider", "model", "scope", "dryRun", "static", "live", "resolved", "plan"], command);
+    const subcommand = positionals[0] ?? "list";
+    if (!THEME_COMMANDS.has(subcommand)) fail(`unknown theme subcommand: ${subcommand}`);
+    const themeId = positionals[1] ?? null;
+    if (positionals.length > 2) fail(`theme ${subcommand} accepts at most one theme id`);
+    if (["show", "preview", "use"].includes(subcommand) && themeId === null) fail(`theme ${subcommand} requires a theme id`);
+    if (["list", "doctor", "reset"].includes(subcommand) && themeId !== null) fail(`theme ${subcommand} accepts no theme id`);
+    if (themeId !== null) assertIdentifier(themeId, "theme id");
+    const apply = options.apply === true;
+    if (options.yes && !apply) fail("--yes is only valid with --apply");
+    if (!["use", "reset"].includes(subcommand) && (apply || options.yes)) fail(`--apply/--yes are only valid for theme use or reset`);
+    return {
+      command,
+      mutation: ["use", "reset"].includes(subcommand) && apply,
+      options: {
+        configRoot,
+        subcommand,
+        themeId,
+        apply,
         yes: options.yes === true,
         json: options.json === true,
       },

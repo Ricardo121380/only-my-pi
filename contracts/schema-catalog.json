@@ -69,6 +69,12 @@
       "fixtureDir": "verification/fixtures/contracts/swarm-recipe"
     },
     {
+      "kind": "theme",
+      "schemaPath": "schemas/theme-v1.schema.json",
+      "productionGlobs": ["contracts/themes/*.json"],
+      "fixtureDir": "verification/fixtures/contracts/theme"
+    },
+    {
       "kind": "bootstrapTransaction",
       "schemaPath": "schemas/bootstrap-transaction-v1.schema.json",
       "productionGlobs": ["contracts/bootstrap/transaction.example.json"],

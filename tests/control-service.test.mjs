@@ -86,3 +86,31 @@ test("M3 read-only profile and control surfaces stay bounded", async () => {
   assert.equal((await service.dispatch({ command: "context", options: {} })).status, "CONTEXT_UNAVAILABLE");
   assert.equal((await service.dispatch({ command: "verify", options: {} })).executable, false);
 });
+
+test("M6 theme mutations use the same plan-confirm-apply boundary", async () => {
+  const calls = [];
+  const themes = {
+    async dispatch(options) {
+      calls.push(options);
+      return options.apply
+        ? { ok: true, status: "THEME_APPLIED", mutation: true }
+        : { ok: true, status: "THEME_PLAN", mutation: false, themeId: options.themeId };
+    },
+  };
+  const service = createControlService({
+    bootstrap: { status: async () => ({ ok: true, status: "STATUS" }) },
+    doctor: { live: async () => ({ ok: false, status: "UNAVAILABLE" }) },
+    themes,
+  });
+  assert.equal((await service.dispatch({ command: "theme", options: { subcommand: "use", themeId: "only-my-pi-dark", apply: false } })).status, "THEME_PLAN");
+  const denied = await service.dispatch({ command: "theme", options: { subcommand: "use", themeId: "only-my-pi-dark", apply: true, yes: false } });
+  assert.equal(denied.status, "CONFIRMATION_REQUIRED");
+  assert.equal(calls.length, 2);
+  const approved = createControlService({
+    bootstrap: { status: async () => ({ ok: true, status: "STATUS" }) },
+    doctor: { live: async () => ({ ok: false, status: "UNAVAILABLE" }) },
+    themes,
+    confirm: async () => true,
+  });
+  assert.equal((await approved.dispatch({ command: "theme", options: { subcommand: "use", themeId: "only-my-pi-dark", apply: true } })).status, "THEME_APPLIED");
+});

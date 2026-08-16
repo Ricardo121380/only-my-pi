@@ -48,7 +48,7 @@ function assertFixtureKeyword(registry, kind, name, keyword) {
 test("catalog exposes every M1 contract kind exactly once", () => {
   const kinds = catalog.schemas.map((entry) => entry.kind);
   assert.equal(new Set(kinds).size, kinds.length);
-  for (const required of ["inventory", "profile", "capability", "owner", "mode", "agent", "workflow", "swarmRecipe"]) {
+  for (const required of ["inventory", "profile", "capability", "owner", "mode", "agent", "workflow", "swarmRecipe", "theme"]) {
     assert.ok(kinds.includes(required), `missing core kind ${required}`);
   }
   for (const governance of ["resourceInventory", "commandOwner", "enforcementSurface"]) {

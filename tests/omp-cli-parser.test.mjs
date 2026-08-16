@@ -100,3 +100,25 @@ test("M5 swarm parser keeps planning offline and requires explicit yes only for 
   assert.throws(() => parseOmpArgs(["swarm", "run", "research-synthesis", "--apply"], context), /not valid for swarm/);
   assert.throws(() => parseOmpArgs(["swarm", "status"], context), /requires a run id/);
 });
+
+test("M6 theme parser separates read-only inspection from explicit apply", () => {
+  const list = parseOmpArgs(["theme", "list", "--json"], context);
+  assert.equal(list.mutation, false);
+  assert.equal(list.options.themeId, null);
+  const preview = parseOmpArgs(["theme", "preview", "only-my-pi-dark"], context);
+  assert.equal(preview.options.subcommand, "preview");
+  const plan = parseOmpArgs(["theme", "use", "only-my-pi-dark"], context);
+  assert.equal(plan.mutation, false);
+  assert.equal(plan.options.apply, false);
+  const apply = parseOmpArgs(["theme", "use", "only-my-pi-dark", "--apply", "--yes"], context);
+  assert.equal(apply.mutation, true);
+  assert.equal(apply.options.yes, true);
+  assert.equal(parseOmpArgs(["theme", "reset", "--apply", "--yes"], context).mutation, true);
+  for (const argv of [
+    ["theme", "show"],
+    ["theme", "list", "only-my-pi-dark"],
+    ["theme", "use", "only-my-pi-dark", "--yes"],
+    ["theme", "doctor", "--apply"],
+    ["theme", "use", "only-my-pi-dark", "--profile", "coding"],
+  ]) assert.throws(() => parseOmpArgs(argv, context), Error, argv.join(" "));
+});
