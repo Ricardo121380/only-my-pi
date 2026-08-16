@@ -204,6 +204,7 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT } = {}) {
       "--no-save",
       "--package-lock=false",
       "--omit=peer",
+      "--legacy-peer-deps",
       "--prefix",
       prefix,
       tarballPath,
