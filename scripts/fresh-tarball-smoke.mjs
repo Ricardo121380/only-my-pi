@@ -27,7 +27,9 @@ function sha512Integrity(bytes) {
 }
 
 function boundedOutputSummary(value) {
-  return String(value)
+  const raw = String(value);
+  const registryRequest = /https?:\/\/registry\.npmjs\.org\/([^\s]+)/u.exec(raw)?.[1];
+  const summary = raw
     .replace(/\x1b\[[0-?]*[ -\/]*[@-~]/gu, "")
     .replace(/(?:[A-Za-z]:)?[\\/](?:[^\s\\/]+[\\/])+[^\s]*/gu, "<path>")
     .replace(/https?:\/\/[^\s]+/gu, "<url>")
@@ -38,6 +40,7 @@ function boundedOutputSummary(value) {
     .slice(-3)
     .join(" | ")
     .slice(0, 400);
+  return registryRequest ? `${summary} | registryPackage=${registryRequest.slice(0, 160)}`.slice(0, 400) : summary;
 }
 
 function safeInheritedEnvironment() {
