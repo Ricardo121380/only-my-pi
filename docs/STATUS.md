@@ -3,6 +3,11 @@
 Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-16** · Pi
 **0.84.1** · Node **25.8.0** · macOS `darwin-arm64`
 
+The installed Pi runtime was rechecked on **2026-08-16**. npm advertised
+`@earendil-works/pi-coding-agent@0.84.2`, but this Goal intentionally leaves the
+validated local `0.84.1` runtime unchanged; registry availability is not local
+installation or compatibility evidence.
+
 This page is a checked-in handoff record. Exact package metadata and risk tags
 live in [`inventory/packages.lock.json`](../inventory/packages.lock.json); this
 summary intentionally contains no credentials, sessions, or host paths.
@@ -61,6 +66,9 @@ The repository also contains three explicit, non-default integration seams:
   manifest hashes, symlink/path checks and a dry-run-first restore/undo CLI.
   Applying a restore requires explicit `--run`, and changed workspaces also
   require `--force`; file deletion additionally requires `--allow-delete`.
+
+Their shared status is `EXPERIMENTAL_OFFLINE`. The canonical non-default and
+graduation boundary is documented in [`LABS.md`](LABS.md).
 
 ## Trial and block decisions
 

@@ -37,6 +37,8 @@ scripts/      Repository checks and package governance tooling
 - [Pi / DeepSeek Harness / open-source Harness ecosystem report](docs/research/2026-08-15-harness-ecosystem.md)
 - [Security and package review policy](SECURITY.md)
 - [Package governance decision](docs/decisions/ADR-0001-package-governance.md)
+- [Product boundary decision](docs/decisions/ADR-0002-product-boundary.md)
+- [Labs and graduation boundary](docs/LABS.md)
 - [Pinned package inventory](inventory/packages.lock.json)
 - [Profile resolver design](docs/architecture/profile-resolver.md)
 - [Session ledger design](docs/architecture/session-ledger.md)
@@ -66,7 +68,8 @@ features are planned; they are not claims about the current implementation:
 The planned AgentSwarm reuses the governed `pi-subagents` package through a
 narrow adapter. It will not register a competing subagent tool or child-agent
 runtime. DeepSeek conformance, ACP v1, and workspace checkpoint remain
-non-default Labs modules.
+non-default Labs modules with the explicit boundaries in the
+[Labs registry](docs/LABS.md).
 
 ## Local development
 

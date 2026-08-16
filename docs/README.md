@@ -7,6 +7,7 @@ Recommended records:
 - `research/` — package and harness research with source dates
 - `plans/` — executable product roadmaps, milestone gates, and definitions of done
 - `decisions/` — compatibility, security, and architecture decisions
+- `LABS.md` — non-default offline experiments and their graduation requirements
 - `compatibility/` — Pi/core and package version matrices
 - `../inventory/` — the current machine's redacted, exact-version package inventory
 - `../profiles/` — profile contracts that select packages and policy boundaries
