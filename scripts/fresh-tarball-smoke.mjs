@@ -26,7 +26,7 @@ function sha512Integrity(bytes) {
   return `sha512-${crypto.createHash("sha512").update(bytes).digest("base64")}`;
 }
 
-function boundedStderrSummary(value) {
+function boundedOutputSummary(value) {
   return String(value)
     .replace(/\x1b\[[0-?]*[ -\/]*[@-~]/gu, "")
     .replace(/(?:[A-Za-z]:)?[\\/](?:[^\s\\/]+[\\/])+[^\s]*/gu, "<path>")
@@ -80,7 +80,8 @@ function runCommand(command, args, { cwd, env, label = command, allowExitCodes =
         error.signal = signal ?? null;
         error.stdoutDigest = sha256(out);
         error.stderrDigest = sha256(err);
-        error.stderrSummary = boundedStderrSummary(err);
+        error.stdoutSummary = boundedOutputSummary(out);
+        error.stderrSummary = boundedOutputSummary(err);
         reject(error);
         return;
       }
@@ -305,10 +306,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   try {
     process.exitCode = await main();
   } catch (error) {
-    process.stderr.write(`fresh-tarball-smoke: ERROR ${error.code ?? "FAILED"} ${error.message}\n`);
+    const outputSummary = error.stderrSummary || error.stdoutSummary;
+    const summarySuffix = outputSummary ? ` | ${outputSummary}` : "";
+    process.stderr.write(`fresh-tarball-smoke: ERROR ${error.code ?? "FAILED"} ${error.message}${summarySuffix}\n`);
     if (error.stdoutDigest) process.stderr.write(`stdoutDigest: ${error.stdoutDigest}\n`);
     if (error.stderrDigest) process.stderr.write(`stderrDigest: ${error.stderrDigest}\n`);
-    if (error.stderrSummary) process.stderr.write(`stderrSummary: ${error.stderrSummary}\n`);
     process.exitCode = 1;
   }
 }
