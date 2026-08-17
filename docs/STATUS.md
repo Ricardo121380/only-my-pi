@@ -1,7 +1,15 @@
 # only-my-pi status
 
-Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-16** · Pi
-**0.84.1** · Node **25.8.0** · macOS `darwin-arm64`
+Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-16** · Merged
+to `main`: **2026-08-17** · Pi **0.84.1** · Node **25.8.0** · macOS
+`darwin-arm64`
+
+The Harness MVP was fast-forwarded to private repository `main` at
+`12b24b59980386683a90af8250a4de4ff738d67c`. The post-merge `main` workflow
+completed successfully on Node 22.19.0 and Node 24.x. GitHub Actions now pins
+`actions/checkout@v7.0.1` and `actions/setup-node@v7.0.0` by full commit SHA;
+both actions use the Node 24 action runtime rather than the deprecated Node 20
+runtime.
 
 The installed Pi runtime was rechecked on **2026-08-16**. npm advertised
 `@earendil-works/pi-coding-agent@0.84.2`, but this Goal intentionally leaves the
@@ -19,7 +27,9 @@ are recorded as global baseline capabilities:
 
 - `@narumitw/pi-plan-mode@0.49.3`
 - `pi-agent-extensions@0.5.2` (sessions/context/review/notify only)
-- `pi-web-access@0.20.0` (research profile only)
+- `pi-web-access@0.20.0` (enabled by the current `research` and
+  `orchestration` presets; `coding` may opt in after the planned orthogonal
+  capability-overlay refinement)
 - `pi-subagents@0.45.2` (budgeted; shared-cwd writers have a hard maximum of
   one, and parallel writers require isolated managed worktrees)
 - `pi-permission-modes@2.2.0` (policy owner; conditional OS sandboxing applies
@@ -69,12 +79,18 @@ replaced descriptive-only checks with strict, versioned governance:
 - deterministic JSON-to-Markdown generation for package-owned
   `pi-subagents` Agent resources;
 - a fixed `release-gates-v1` command/argv manifest and parser-injection
-  negatives; M7 will connect it to the final executable receipt/CI flow.
+  negatives, connected by M7 to the executable receipt and CI flow.
 
 Profiles now separate single-agent and orchestration use explicitly. `research`
 does not claim subagents; only `orchestration` selects the one governed
 `pi-subagents` runtime. Static resolution reports runtime-dependent capabilities
 as `CONFIGURED_UNVERIFIED`, never as live or sandboxed.
+
+Profiles are defaults, not permanent feature silos. The next Profile refinement
+will separate base workload (`coding`, `research`, `orchestration`) from
+orthogonal capability overlays such as Web, LSP, memory, UI, and subagents. In
+particular, Web search must be available to a coding session when explicitly
+selected without forcing that session to adopt the full research preset.
 
 Two version-locked compatibility spikes are also complete:
 
@@ -260,10 +276,13 @@ npm run secret:scan
 npm run test:e2e
 ```
 
-The historical receipts below were produced before the executable
+The four 2026-08-15 receipts were produced before the executable
 `release-gates-v1` runner existed. They remain historical evidence only and
-must not be used to claim the Harness MVP release gate. The M7 runner executes
-only the fixed manifest, requires a clean source commit, and writes a new
+must not be used to claim the Harness MVP release gate. The canonical M7
+receipt is `2026-08-16-harness-mvp.json`; it binds source commit
+`6941761b3948d96a77596e1302d3205efb5169f1`, is the only file in its receipt
+commit, and was revalidated after fast-forwarding to `main`. The M7 runner
+executes only the fixed manifest, requires a clean source commit, and writes a
 metadata-only receipt with exclusive-create semantics:
 
 ```bash
@@ -299,15 +318,19 @@ Committed receipts:
 - [`2026-08-15-mcp-bootstrap.json`](../verification/receipts/2026-08-15-mcp-bootstrap.json)
 - [`2026-08-15-status.json`](../verification/receipts/2026-08-15-status.json)
 - [`2026-08-15-three-increments.json`](../verification/receipts/2026-08-15-three-increments.json)
+- [`2026-08-16-harness-mvp.json`](../verification/receipts/2026-08-16-harness-mvp.json)
 
-All four receipts record successful checks without raw command output. The
-latest receipt covers 11 checks, including the 43-test repository run, the
-16-test DeepSeek fixture suite, the 9-test ACP suite, and the workspace
-checkpoint smoke test.
+The four historical receipts record successful bounded checks without raw
+command output. The canonical Harness MVP receipt records all 14
+`release-gates-v1` gates, including the 350-test repository run and fresh
+tarball end-to-end evidence. Its source commit and receipt-only parent relation
+are verified independently by `receipt:check`.
 
-The latest receipt's `sourceCommit` is the source commit tested before the
-receipt file itself was created; the receipt is intentionally a separate
-metadata-only commit.
+The post-merge status and Action-runtime maintenance in this source snapshot is
+bound by a second receipt-only child commit at
+`verification/receipts/2026-08-17-post-merge-maintenance.json`. Keeping that
+receipt out of the source commit preserves the same parent-verification
+invariant as the Harness MVP receipt.
 
 ## Next implementation boundary
 
@@ -327,9 +350,10 @@ delivered the governed AgentSwarm compiler plus the sole `pi-subagents` RPC
 adapter, and M6 delivered the semantic theme/status layer. M7 now connects the
 fixed release-gates-v1 manifest to the executable verification receipt and CI,
 adds the fresh scripts-disabled tarball end-to-end smoke, and closes the
-documentation/threat-model/package metadata loop. The final receipt remains
-pending until the clean source commit has passed every gate and the feature
-branch has terminal remote CI evidence.
+documentation/threat-model/package metadata loop. The Harness MVP receipt is
+complete, its feature-branch CI passed, the feature branch was fast-forwarded
+to `main`, and post-merge `main` CI run `32029765621` passed both Node matrix
+jobs.
 
 DeepSeek endpoint work, ACP-to-Pi wiring, and automatic turn checkpoints are
 not the next product boundary. Their existing offline modules stay under

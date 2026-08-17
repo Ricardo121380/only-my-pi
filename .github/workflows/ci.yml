@@ -29,13 +29,13 @@ jobs:
       NPM_CONFIG_UPDATE_NOTIFIER: "false"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
           persist-credentials: false
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -43,9 +43,13 @@ jobs:
       - name: Install dependencies without lifecycle scripts
         run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Validate committed release receipt when present
+      - name: Validate the merged Harness MVP receipt
         if: hashFiles('verification/receipts/2026-08-16-harness-mvp.json') != ''
-        run: npm run receipt:check -- --receipt verification/receipts/2026-08-16-harness-mvp.json --expect-parent
+        run: npm run receipt:check -- --receipt verification/receipts/2026-08-16-harness-mvp.json --source-commit 6941761b3948d96a77596e1302d3205efb5169f1
+
+      - name: Validate the post-merge maintenance receipt when present
+        if: hashFiles('verification/receipts/2026-08-17-post-merge-maintenance.json') != ''
+        run: npm run receipt:check -- --receipt verification/receipts/2026-08-17-post-merge-maintenance.json --expect-parent
 
       - name: Execute the versioned release-gates-v1 manifest
         run: npm run verify -- --run --output verification/receipts/ci-${{ matrix.node-version }}.json
