@@ -1,0 +1,18 @@
+{
+  "$schema": "swarm-goal-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "kind": "swarm-goal",
+  "id": "review-release-goal",
+  "version": "1.0.0",
+  "objective": { "ref": "objectives/review.md", "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111" },
+  "authority": {
+    "allowedAgentTemplates": ["reviewer"],
+    "budgetRef": "preview-read-only",
+    "maxPlanRevisions": 4,
+    "mutation": "none",
+    "egress": "deny"
+  },
+  "convergence": { "coverageTarget": 0.9, "noProgressWindow": 2, "freshVerifierRequired": true },
+  "outputSchemaRef": "review-result"
+}

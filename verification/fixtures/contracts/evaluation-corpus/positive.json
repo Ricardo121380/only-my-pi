@@ -1,0 +1,63 @@
+{
+  "$schema": "evaluation-corpus-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "id": "subagents-preview",
+  "version": "1.0.0",
+  "generator": {
+    "id": "offline-simulator",
+    "version": "1.0.0",
+    "sourceDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "seed": 20260818,
+  "repetitions": 3,
+  "environment": {
+    "mode": "offline-deterministic-simulator",
+    "network": "DISABLED",
+    "modelCalls": "DISABLED",
+    "pi": "0.84.1-contract-only",
+    "node": "22.19.0-contract-only",
+    "backend": "pi-subagents-0.45.2-contract-only",
+    "provider": "UNAVAILABLE",
+    "model": "UNAVAILABLE",
+    "observedAt": "UNAVAILABLE"
+  },
+  "baselines": [
+    { "id": "single", "kind": "single-agent", "implementation": "single-agent-reference", "measurement": "offline-contract-fixture", "metrics": { "success-rate": 0.5 } },
+    { "id": "legacy", "kind": "v1", "implementation": "legacy-v1-reference", "measurement": "offline-contract-fixture", "metrics": { "success-rate": 0.6 } },
+    { "id": "current", "kind": "current-release", "implementation": "current-release", "measurement": "offline-contract-fixture", "metrics": { "success-rate": 1.0 } }
+  ],
+  "metrics": [
+    {
+      "id": "success-rate",
+      "unit": "ratio",
+      "direction": "maximize",
+      "definition": "Ratio of deterministic contract cases reaching the expected terminal verdict.",
+      "acceptanceThreshold": { "operator": ">=", "value": 0.9 }
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "agent-contract",
+      "category": "agent",
+      "description": "Accepts a bounded read-only Agent and rejects an authority escalation.",
+      "cases": [
+        {
+          "id": "agent-positive",
+          "polarity": "positive",
+          "fixturePath": "verification/evaluation/subagents-v1/fixtures/agent-valid.json",
+          "fixtureDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "expectedVerdict": "ACCEPTED"
+        },
+        {
+          "id": "agent-adversarial",
+          "polarity": "adversarial",
+          "fixturePath": "verification/evaluation/subagents-v1/fixtures/agent-escalation.json",
+          "fixtureDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+          "expectedVerdict": "REJECTED"
+        }
+      ]
+    }
+  ],
+  "contentDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+}

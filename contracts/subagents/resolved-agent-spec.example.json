@@ -1,0 +1,46 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/resolved-agent-spec-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "kind": "resolved-agent-spec",
+  "id": "reviewer-resolved",
+  "templateId": "reviewer",
+  "templateHash": "sha256:6b7ff5adef565ebf017c71c6253530d726f34b80f64c9e5b8fef9297d3d6e82b",
+  "backendAgentId": "omp-reviewer",
+  "sourceHash": "sha256:0d394be1dde925157ad633bbd12772ec2cdbdb265aadd516489658b63848ce0f",
+  "tools": {
+    "allow": ["grep", "read"],
+    "deny": ["bash", "edit", "write"]
+  },
+  "requiredCapabilities": ["workspace-read"],
+  "effectivePolicy": {
+    "workspace": "shared-read-only",
+    "mutation": "none",
+    "approval": "deny",
+    "egress": {
+      "web": "deny",
+      "mcp": "deny",
+      "provider": "allow-listed",
+      "extension": "deny"
+    }
+  },
+  "effectivePolicyHash": "sha256:2674bfef0384ecdabf5455cf5f290b1dd216c0cda49fecf1952575348e62f139",
+  "model": { "role": "review" },
+  "inputSchema": null,
+  "outputSchema": {
+    "value": {
+      "type": "object",
+      "properties": { "verdict": { "type": "string" } },
+      "required": ["verdict"]
+    },
+    "hash": "sha256:49ea0bdb3df599272a62e340820afcba562adfe5ab84f305efb133c5525fea75"
+  },
+  "writer": false,
+  "continuable": true,
+  "resumable": true,
+  "timeoutMs": 60000,
+  "runtimeMode": "REGISTERED_ROLES_ONLY",
+  "overlayRequirements": { "tools": false, "model": false },
+  "specialization": null,
+  "specHash": "sha256:67c34f39722da8532f44baef50538dda372ffd2f228c71df2fe00c6d9705548b"
+}

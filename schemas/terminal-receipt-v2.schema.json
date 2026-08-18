@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/terminal-receipt-v2.schema.json",
+  "title": "only-my-pi Agent TerminalReceipt v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "kind", "handleId", "runId", "nodeId", "attemptId", "assignmentId", "assignmentHash", "agentSpecHash", "backendId", "bindingId", "backendRunId", "outcome", "authoritative", "startedAt", "settledAt", "completion", "processTerminal", "result", "error", "receiptId"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "terminal-receipt-v2\\.schema\\.json$" },
+    "formatVersion": { "const": 2 },
+    "contractStatus": { "const": "contract-preview" },
+    "kind": { "const": "agent-terminal-receipt" },
+    "handleId": { "$ref": "#/$defs/sha256" },
+    "runId": { "$ref": "#/$defs/id" },
+    "nodeId": { "$ref": "#/$defs/id" },
+    "attemptId": { "$ref": "#/$defs/id" },
+    "assignmentId": { "$ref": "#/$defs/id" },
+    "assignmentHash": { "$ref": "#/$defs/sha256" },
+    "agentSpecHash": { "$ref": "#/$defs/sha256" },
+    "backendId": { "$ref": "#/$defs/id" },
+    "bindingId": { "$ref": "#/$defs/sha256" },
+    "backendRunId": { "type": "string", "minLength": 1, "maxLength": 512 },
+    "outcome": { "enum": ["completed", "failed", "cancelled", "interrupted", "orphaned", "timed-out", "budget-exhausted", "unavailable"] },
+    "authoritative": { "type": "boolean" },
+    "startedAt": { "oneOf": [{ "type": "null" }, { "type": "integer", "minimum": 0 }] },
+    "settledAt": { "type": "integer", "minimum": 0 },
+    "completion": { "$ref": "#/$defs/nullableProjection" },
+    "processTerminal": { "$ref": "#/$defs/nullableProjection" },
+    "result": { "$ref": "#/$defs/nullableProjection" },
+    "error": { "$ref": "#/$defs/nullableProjection" },
+    "receiptId": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "projection": { "oneOf": [{ "type": "object" }, { "type": "array" }, { "type": "string" }, { "type": "number" }, { "type": "boolean" }] },
+    "nullableProjection": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/projection" }] }
+  }
+}

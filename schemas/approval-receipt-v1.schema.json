@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/approval-receipt-v1.schema.json",
+  "title": "only-my-pi digest-bound ApprovalReceipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "kind", "planDigest", "parentRevisionDigest", "repo", "effectivePolicyHash", "capabilityEnvelopeHash", "budgetEnvelopeHash", "scope", "origin", "approvedAt", "approvedPlanRevision", "replanEnvelopeDigest", "receiptId"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "approval-receipt-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "const": "contract-preview" },
+    "kind": { "const": "approval-receipt" },
+    "planDigest": { "$ref": "#/$defs/sha256" },
+    "parentRevisionDigest": { "$ref": "#/$defs/nullableSha256" },
+    "repo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "baseCommit", "allowedPaths", "writerClaims"],
+      "properties": {
+        "identity": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "baseCommit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "allowedPaths": { "$ref": "#/$defs/pathSet" },
+        "writerClaims": { "$ref": "#/$defs/pathSet" }
+      }
+    },
+    "effectivePolicyHash": { "$ref": "#/$defs/sha256" },
+    "capabilityEnvelopeHash": { "$ref": "#/$defs/sha256" },
+    "budgetEnvelopeHash": { "$ref": "#/$defs/sha256" },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mutation", "integration", "delivery", "maxAssignments", "maxActiveChildren"],
+      "properties": {
+        "mutation": { "enum": ["none", "guarded"] },
+        "integration": { "enum": ["none", "serial"] },
+        "delivery": { "enum": ["local", "commit", "push"] },
+        "maxAssignments": { "type": "integer", "minimum": 0 },
+        "maxActiveChildren": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "origin": { "enum": ["interactive-user", "explicit-cli-yes"] },
+    "approvedAt": { "type": "string", "format": "date-time" },
+    "approvedPlanRevision": { "type": "integer", "minimum": 0 },
+    "replanEnvelopeDigest": { "$ref": "#/$defs/nullableSha256" },
+    "receiptId": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "nullableSha256": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/sha256" }] },
+    "path": { "type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^(?!/)(?![A-Za-z]:/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[^\\u0000]+$" },
+    "pathSet": { "type": "array", "maxItems": 256, "uniqueItems": true, "items": { "$ref": "#/$defs/path" } }
+  }
+}

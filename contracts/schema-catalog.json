@@ -63,6 +63,96 @@
       "fixtureDir": "verification/fixtures/contracts/workflow"
     },
     {
+      "kind": "agentTemplate",
+      "schemaPath": "schemas/agent-template-v2.schema.json",
+      "productionGlobs": ["contracts/subagents/agent-template.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/agent-template-v2"
+    },
+    {
+      "kind": "resolvedAgentSpec",
+      "schemaPath": "schemas/resolved-agent-spec-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/resolved-agent-spec.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/resolved-agent-spec"
+    },
+    {
+      "kind": "taskAssignment",
+      "schemaPath": "schemas/task-assignment-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/task-assignment.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/task-assignment"
+    },
+    {
+      "kind": "batchSwarm",
+      "schemaPath": "schemas/batch-swarm-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/batch-swarm.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/batch-swarm"
+    },
+    {
+      "kind": "workflowDefinitionV2",
+      "schemaPath": "schemas/workflow-definition-v2.schema.json",
+      "productionGlobs": ["contracts/subagents/workflow-definition.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/workflow-definition-v2"
+    },
+    {
+      "kind": "workflowPlan",
+      "schemaPath": "schemas/workflow-plan-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/workflow-plan.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/workflow-plan"
+    },
+    {
+      "kind": "workflowEvent",
+      "schemaPath": "schemas/workflow-event-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/workflow-event.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/workflow-event"
+    },
+    {
+      "kind": "artifactRef",
+      "schemaPath": "schemas/artifact-ref-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/artifact-ref.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/artifact-ref"
+    },
+    {
+      "kind": "budgetEnvelope",
+      "schemaPath": "schemas/budget-envelope-v2.schema.json",
+      "productionGlobs": ["contracts/subagents/budget-envelope.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/budget-envelope"
+    },
+    {
+      "kind": "approvalReceipt",
+      "schemaPath": "schemas/approval-receipt-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/approval-receipt.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/approval-receipt"
+    },
+    {
+      "kind": "swarmGoal",
+      "schemaPath": "schemas/swarm-goal-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/swarm-goal.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/swarm-goal"
+    },
+    {
+      "kind": "ultraRun",
+      "schemaPath": "schemas/ultra-run-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/ultra-run.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/ultra-run"
+    },
+    {
+      "kind": "backendCapability",
+      "schemaPath": "schemas/backend-capability-v2.schema.json",
+      "productionGlobs": ["contracts/subagents/backend-capability.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/backend-capability"
+    },
+    {
+      "kind": "terminalReceipt",
+      "schemaPath": "schemas/terminal-receipt-v2.schema.json",
+      "productionGlobs": ["contracts/subagents/terminal-receipt.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/terminal-receipt"
+    },
+    {
+      "kind": "evaluationCorpus",
+      "schemaPath": "schemas/evaluation-corpus-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/evaluation-corpus.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/evaluation-corpus"
+    },
+    {
       "kind": "swarmRecipe",
       "schemaPath": "schemas/swarm-recipe-v1.schema.json",
       "productionGlobs": ["swarm/recipes/*.json"],

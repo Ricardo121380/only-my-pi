@@ -1,0 +1,32 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/terminal-receipt-v2.schema.json",
+  "formatVersion": 2,
+  "contractStatus": "contract-preview",
+  "kind": "agent-terminal-receipt",
+  "handleId": "sha256:eff90c86770423a13a1a0a28498c02f013060d4308ef764e0b5971a03ef8d549",
+  "runId": "run-01",
+  "nodeId": "review",
+  "attemptId": "attempt-01",
+  "assignmentId": "review-01",
+  "assignmentHash": "sha256:4ea941d8c9d97fa65b16a0035b4a0c355a7a611e15d669586b73967767b7ae38",
+  "agentSpecHash": "sha256:67c34f39722da8532f44baef50538dda372ffd2f228c71df2fe00c6d9705548b",
+  "backendId": "pi-subagents-rpc-v1",
+  "bindingId": "sha256:56f990bfc577ba425d52db768895519dbac0fe2f81948ecd219d14af4748605c",
+  "backendRunId": "backend-run-01",
+  "outcome": "completed",
+  "authoritative": true,
+  "startedAt": 1,
+  "settledAt": 2,
+  "completion": { "runId": "backend-run-01", "state": "completed" },
+  "processTerminal": {
+    "version": 1,
+    "state": "observed",
+    "runId": "backend-run-01",
+    "runnerProcessInstanceId": "runner-01",
+    "observedAt": 2,
+    "instances": [{ "processInstanceId": "runner-01", "exitCode": 0 }]
+  },
+  "result": { "verdict": "pass" },
+  "error": null,
+  "receiptId": "sha256:e0174f4718b08c9b7d98f7a34809bb5f399437162cc7a94cdbbf7efd7fdc5528"
+}

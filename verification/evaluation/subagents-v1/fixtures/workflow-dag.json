@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "id": "workflow-dag",
+  "kind": "workflow",
+  "input": {
+    "nodes": [
+      { "id": "inspect-a", "needs": [] },
+      { "id": "inspect-b", "needs": [] },
+      { "id": "verify", "needs": ["inspect-a", "inspect-b"] }
+    ]
+  }
+}

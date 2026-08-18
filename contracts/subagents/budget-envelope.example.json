@@ -1,0 +1,52 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/budget-envelope-v2.schema.json",
+  "formatVersion": 2,
+  "contractStatus": "contract-preview",
+  "kind": "budget-envelope",
+  "id": "preview-read-only",
+  "hard": {
+    "maxWorkflowRuns": 4,
+    "maxPhases": 8,
+    "maxPlanRevisions": 4,
+    "maxActiveChildren": 4,
+    "maxQueuedAssignments": 32,
+    "maxTotalAssignments": 64,
+    "maxPlanExpansionDepth": 4,
+    "maxIterations": 8,
+    "noProgressWindow": 3,
+    "maxRetries": 2,
+    "maxElapsedMs": 1800000,
+    "maxTurns": 256,
+    "maxToolCalls": 1024,
+    "maxTokens": null,
+    "maxCost": null,
+    "maxRawOutputBytes": 4194304,
+    "maxArtifactBytes": 16777216,
+    "maxWriterWorktrees": 0
+  },
+  "soft": {
+    "maxWorkflowRuns": 2,
+    "maxPhases": 6,
+    "maxPlanRevisions": 2,
+    "maxActiveChildren": 2,
+    "maxQueuedAssignments": 16,
+    "maxTotalAssignments": 32,
+    "maxPlanExpansionDepth": 3,
+    "maxIterations": 4,
+    "noProgressWindow": 2,
+    "maxRetries": 1,
+    "maxElapsedMs": 900000,
+    "maxTurns": 128,
+    "maxToolCalls": 512,
+    "maxTokens": null,
+    "maxCost": null,
+    "maxRawOutputBytes": 2097152,
+    "maxArtifactBytes": 8388608,
+    "maxWriterWorktrees": 0
+  },
+  "metering": {
+    "tokens": "UNAVAILABLE",
+    "cost": "UNAVAILABLE"
+  },
+  "budgetHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+}

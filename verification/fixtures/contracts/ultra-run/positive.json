@@ -1,0 +1,14 @@
+{
+  "$schema": "ultra-run-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "kind": "ultra-run",
+  "id": "review-and-verify",
+  "version": "1.0.0",
+  "effort": "deep",
+  "routePolicy": { "singleAgentMaxComplexity": 20, "batchMinItems": 8, "dynamicGoalRequiresExplicitApproval": true },
+  "workflowLibrary": ["source-review-v2"],
+  "quality": { "freshVerifier": true, "testGate": "test-contract", "integrationGate": "test-integration" },
+  "budgetRef": "preview-read-only",
+  "approvalPolicy": "exact-mutating-revision"
+}

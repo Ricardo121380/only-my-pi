@@ -1,0 +1,25 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/swarm-goal-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "kind": "swarm-goal",
+  "id": "review-release-goal",
+  "version": "1.0.0",
+  "objective": {
+    "ref": "objectives/review-release.md",
+    "digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888"
+  },
+  "authority": {
+    "allowedAgentTemplates": ["reviewer"],
+    "budgetRef": "preview-read-only",
+    "maxPlanRevisions": 4,
+    "mutation": "none",
+    "egress": "deny"
+  },
+  "convergence": {
+    "coverageTarget": 0.9,
+    "noProgressWindow": 2,
+    "freshVerifierRequired": true
+  },
+  "outputSchemaRef": "review-result"
+}

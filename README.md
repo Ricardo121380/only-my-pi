@@ -38,7 +38,7 @@ scripts/      Repository checks and package governance tooling
 
 ## Current research
 
-- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5, approved but not implemented)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
+- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; S0–S2 implementation underway)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
 - [Codex successor development Goal for S0–S5](codex/goals/develop-only-my-pi-subagents-ultrarun.md)
 - [Historical Harness MVP development plan (M0–M7, complete)](docs/plans/2026-08-16-only-my-pi-development-plan.md)
 - [Historical Codex Harness MVP Goal](codex/goals/develop-only-my-pi.md)
@@ -70,6 +70,8 @@ scripts/      Repository checks and package governance tooling
 - [Transactional bootstrap runtime](docs/architecture/bootstrap-runtime.md)
 - [Mode Registry and unified control surface](docs/architecture/mode-registry.md)
 - [Agent and Workflow Core](docs/architecture/agent-workflow-core.md)
+- [Unified Subagents v2 runtime foundation](docs/architecture/subagents-v2.md)
+- [Subagents v1 offline evaluation baseline](docs/evaluation/subagents-v1.md)
 - [Current implementation status](docs/STATUS.md)
 
 ## Product direction
@@ -109,6 +111,15 @@ JSON-safe `workflowScript`, and keeps run/child budgets and cancellation
 receipts bounded. DeepSeek conformance, ACP v1, and workspace checkpoint remain
 non-default Labs modules with the explicit boundaries in the
 [Labs registry](docs/LABS.md).
+
+The S0–S2 successor branch is now implementing a unified
+`packages/subagents/` facade. It provides typed AgentTemplate v2,
+ResolvedAgentSpec, TaskAssignment and terminal receipts; an exact
+`pi-subagents` RPC v1 backend; immutable WorkflowPlan compilation; a single
+RunCoordinator; a fenced append-only journal; crash-recoverable parent budget
+reservations; and dual-read migration from the v1 Workflow/Swarm resources.
+This is Contract Preview source evidence only. BatchSwarm execution,
+SwarmGoal, UltraRun, CLI/TUI migration, and live child evidence remain S3–S5.
 
 ## Local development
 
@@ -220,6 +231,8 @@ npm run receipt:check -- --receipt verification/receipts/2026-08-16-harness-mvp.
 npm run test:deepseek
 npm run test:acp
 npm run test:checkpoint
+npm run test:subagents
+npm run eval:subagents
 ```
 
 The local and CI release gates both read `verification/release-gates-v1.json`.

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/backend-capability-v2.schema.json",
+  "formatVersion": 2,
+  "contractStatus": "contract-preview",
+  "kind": "backend-capability-matrix",
+  "backendId": "pi-subagents-rpc-v1",
+  "backendVersion": "0.45.2",
+  "protocol": { "name": "extension-rpc", "version": 1 },
+  "observedAt": 0,
+  "capabilities": {
+    "foreground": { "state": "DEGRADED", "reasonCode": "async-wait", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": { "implementation": "background-plus-wait" } },
+    "background": { "state": "SUPPORTED", "reasonCode": "rpc-spawn", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": {} },
+    "continuableResume": { "state": "SUPPORTED", "reasonCode": "rpc-resume", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": {} },
+    "status": { "state": "DEGRADED", "reasonCode": "structured-summary", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": { "perItem": false } },
+    "steer": { "state": "SUPPORTED", "reasonCode": "rpc-steer", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": {} },
+    "interrupt": { "state": "SUPPORTED", "reasonCode": "rpc-interrupt", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": {} },
+    "stop": { "state": "SUPPORTED", "reasonCode": "rpc-stop", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": {} },
+    "resume": { "state": "SUPPORTED", "reasonCode": "rpc-resume", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": {} },
+    "dispose": { "state": "SUPPORTED", "reasonCode": "local-cleanup", "evidence": ["contract:only-my-pi-adapter"], "constraints": { "stopsChildren": false } },
+    "terminalEvents": { "state": "SUPPORTED", "reasonCode": "async-complete", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": {} },
+    "processTerminalProof": { "state": "SUPPORTED", "reasonCode": "runner-proof", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": {} },
+    "worktree": { "state": "DEGRADED", "reasonCode": "workflow-script-only", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": { "requiresNegotiation": true } },
+    "perItemResult": { "state": "DEGRADED", "reasonCode": "result-normalization", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": { "nativeBatch": false } },
+    "usageMeter": { "state": "UNAVAILABLE", "reasonCode": "not-advertised", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": {} },
+    "rateLimitSignal": { "state": "UNAVAILABLE", "reasonCode": "not-advertised", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": {} },
+    "dynamicConcurrency": { "state": "UNAVAILABLE", "reasonCode": "not-advertised", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": {} },
+    "modelOverlay": { "state": "DEGRADED", "reasonCode": "registered-role-only", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": { "dynamic": false } },
+    "toolOverlay": { "state": "DEGRADED", "reasonCode": "registered-role-only", "evidence": ["contract:pi-subagents-rpc-v1"], "constraints": { "dynamic": false } },
+    "structuredOutput": { "state": "DEGRADED", "reasonCode": "post-validated", "evidence": ["contract:only-my-pi-adapter"], "constraints": { "native": false } }
+  },
+  "capabilityHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999"
+}

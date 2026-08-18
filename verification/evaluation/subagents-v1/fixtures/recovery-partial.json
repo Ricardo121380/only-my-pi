@@ -1,0 +1,10 @@
+{
+  "formatVersion": 1,
+  "id": "recovery-partial",
+  "kind": "recovery",
+  "input": {
+    "events": [
+      { "eventId": "event-a", "prevEventId": "GENESIS", "inputDigest": "sha256:a", "effectId": "effect-a", "observation": "partial", "recordState": "partial" }
+    ]
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "$schema": "../../../schemas/evaluation-corpus-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "id": "subagents-v1-offline",
+  "version": "1.0.0",
+  "generator": {
+    "id": "only-my-pi-subagents-offline-simulator",
+    "version": "1.0.0",
+    "sourceDigest": "sha256:6d5fba46d555e27e514ed73cfb9032679351129a6103eddbfeadd09e55fbefb6"
+  },
+  "seed": 20260818,
+  "repetitions": 3,
+  "environment": {
+    "mode": "offline-deterministic-simulator",
+    "network": "DISABLED",
+    "modelCalls": "DISABLED",
+    "pi": "NOT_INVOKED",
+    "node": ">=22.19.0",
+    "backend": "INJECTED_SIMULATOR_ONLY",
+    "provider": "NOT_CONFIGURED",
+    "model": "NOT_CONFIGURED",
+    "observedAt": "UNAVAILABLE"
+  },
+  "baselines": [
+    {
+      "id": "single-agent-reference",
+      "kind": "single-agent",
+      "implementation": "single-agent-reference",
+      "measurement": "offline-contract-fixture",
+      "metrics": {
+        "verified-success-rate": 0.13333333333333333,
+        "deterministic-replay-rate": 1,
+        "provenance-completeness-rate": 1,
+        "unsafe-admission-rate": 0,
+        "stable-order-violation-rate": 0,
+        "budget-overshoot-rate": 0,
+        "duplicate-effect-rate": 0,
+        "unproven-cancellation-success-rate": 0
+      }
+    },
+    {
+      "id": "legacy-v1-reference",
+      "kind": "v1",
+      "implementation": "legacy-v1-reference",
+      "measurement": "offline-contract-fixture",
+      "metrics": {
+        "verified-success-rate": 0.6,
+        "deterministic-replay-rate": 1,
+        "provenance-completeness-rate": 1,
+        "unsafe-admission-rate": 0.13333333333333333,
+        "stable-order-violation-rate": 0,
+        "budget-overshoot-rate": 0.06666666666666667,
+        "duplicate-effect-rate": 0.06666666666666667,
+        "unproven-cancellation-success-rate": 0.06666666666666667
+      }
+    },
+    {
+      "id": "current-release",
+      "kind": "current-release",
+      "implementation": "current-release",
+      "measurement": "offline-contract-fixture",
+      "metrics": {
+        "verified-success-rate": 1,
+        "deterministic-replay-rate": 1,
+        "provenance-completeness-rate": 1,
+        "unsafe-admission-rate": 0,
+        "stable-order-violation-rate": 0,
+        "budget-overshoot-rate": 0,
+        "duplicate-effect-rate": 0,
+        "unproven-cancellation-success-rate": 0
+      }
+    }
+  ],
+  "metrics": [
+    { "id": "verified-success-rate", "unit": "ratio", "direction": "maximize", "definition": "Fraction of fixtures whose bounded contract verdict exactly matches the reviewed expectation.", "acceptanceThreshold": { "operator": ">=", "value": 1 } },
+    { "id": "deterministic-replay-rate", "unit": "ratio", "direction": "maximize", "definition": "Fraction of repeated fixed-seed simulations that emit byte-equivalent canonical result objects.", "acceptanceThreshold": { "operator": ">=", "value": 1 } },
+    { "id": "provenance-completeness-rate", "unit": "ratio", "direction": "maximize", "definition": "Fraction of results carrying generator, fixture, seed, repetition, and result digest provenance.", "acceptanceThreshold": { "operator": ">=", "value": 1 } },
+    { "id": "unsafe-admission-rate", "unit": "ratio", "direction": "minimize", "definition": "Fraction of fixtures where a request beyond the declared policy or capability ceiling is admitted.", "acceptanceThreshold": { "operator": "<=", "value": 0 } },
+    { "id": "stable-order-violation-rate", "unit": "ratio", "direction": "minimize", "definition": "Fraction of collection fixtures whose projected output order differs from stable input order.", "acceptanceThreshold": { "operator": "<=", "value": 0 } },
+    { "id": "budget-overshoot-rate", "unit": "ratio", "direction": "minimize", "definition": "Fraction of budget fixtures whose committed consumption exceeds the hard parent envelope.", "acceptanceThreshold": { "operator": "<=", "value": 0 } },
+    { "id": "duplicate-effect-rate", "unit": "ratio", "direction": "minimize", "definition": "Fraction of recovery fixtures where replay applies the same modeled side effect more than once.", "acceptanceThreshold": { "operator": "<=", "value": 0 } },
+    { "id": "unproven-cancellation-success-rate", "unit": "ratio", "direction": "minimize", "definition": "Fraction of cancellation fixtures reported cancelled without terminal proof for every active attempt.", "acceptanceThreshold": { "operator": "<=", "value": 0 } }
+  ],
+  "scenarios": [
+    {
+      "id": "agent-correlation",
+      "category": "agent",
+      "description": "Terminal settlement must bind exact root run, node, attempt, and child identities.",
+      "cases": [
+        { "id": "agent-correlated", "polarity": "positive", "fixturePath": "fixtures/agent-correlated.json", "fixtureDigest": "sha256:fd422bfeaa1dd146ff948233487b010d6ac1b67209eb6a1a39343989f110f143", "expectedVerdict": "ACCEPTED" },
+        { "id": "agent-spoofed", "polarity": "adversarial", "fixturePath": "fixtures/agent-spoofed.json", "fixtureDigest": "sha256:46d171b4d1bb8783555a1f63dd0873177db01f6e6da5a2d39633b3d50f592e23", "expectedVerdict": "REJECTED" }
+      ]
+    },
+    {
+      "id": "batch-homogeneity",
+      "category": "batch-swarm",
+      "description": "BatchSwarm accepts one immutable AgentSpec and preserves original item order.",
+      "cases": [
+        { "id": "batch-homogeneous", "polarity": "positive", "fixturePath": "fixtures/batch-homogeneous.json", "fixtureDigest": "sha256:9bc1d3340665abc9be11439e48301c0e43dab26ca9e45ce5076b240b39ef42da", "expectedVerdict": "ACCEPTED" },
+        { "id": "batch-heterogeneous", "polarity": "adversarial", "fixturePath": "fixtures/batch-heterogeneous.json", "fixtureDigest": "sha256:13301ce8810b752c9875a37b30c1c1f6df19fb1f3177cbdd27f77df0e0658229", "expectedVerdict": "REJECTED" }
+      ]
+    },
+    {
+      "id": "workflow-graph",
+      "category": "workflow",
+      "description": "Workflow scheduling accepts a closed acyclic graph and rejects dependency cycles.",
+      "cases": [
+        { "id": "workflow-dag", "polarity": "positive", "fixturePath": "fixtures/workflow-dag.json", "fixtureDigest": "sha256:a2a86ad5219ea3e3efc055a70e9e8e5a6d00b81a5f0a50b71dffff75fdc3481d", "expectedVerdict": "ACCEPTED" },
+        { "id": "workflow-cycle", "polarity": "adversarial", "fixturePath": "fixtures/workflow-cycle.json", "fixtureDigest": "sha256:d51cd07ff848b51d1068449cb54deb654d7c786fad003f935b7b2da7d1a1d9fb", "expectedVerdict": "REJECTED" }
+      ]
+    },
+    {
+      "id": "dynamic-goal-authority",
+      "category": "swarm-goal",
+      "description": "Dynamic planning remains a proposal and cannot widen templates, revisions, or mutation.",
+      "cases": [
+        { "id": "swarm-goal-bounded", "polarity": "positive", "fixturePath": "fixtures/swarm-goal-bounded.json", "fixtureDigest": "sha256:46a2fab1db6876cf7d0c5b76d17cb7ba8304768713dd4f00a4c0ad4578637783", "expectedVerdict": "PROPOSED" },
+        { "id": "swarm-goal-escalation", "polarity": "adversarial", "fixturePath": "fixtures/swarm-goal-escalation.json", "fixtureDigest": "sha256:499a486f0c06af4e262555f4fb93f928d7052644ef16d733d0daf647fb3a3c92", "expectedVerdict": "DENIED" }
+      ]
+    },
+    {
+      "id": "recovery-idempotency",
+      "category": "recovery",
+      "description": "Recovery verifies event continuity and does not replay a duplicate effect or partial record.",
+      "cases": [
+        { "id": "recovery-chain", "polarity": "positive", "fixturePath": "fixtures/recovery-chain.json", "fixtureDigest": "sha256:d38b6c0cf118d5490fdbed607e1f2a7dbe4f3c569fb4e7ffb934aef1b1d44358", "expectedVerdict": "RECOVERED" },
+        { "id": "recovery-duplicate", "polarity": "adversarial", "fixturePath": "fixtures/recovery-duplicate.json", "fixtureDigest": "sha256:ebd3a5707582b697545b5b0d74e3d14107fde947b5d6d689ce42c9cdd85f27c2", "expectedVerdict": "RECOVERED" },
+        { "id": "recovery-partial", "polarity": "adversarial", "fixturePath": "fixtures/recovery-partial.json", "fixtureDigest": "sha256:5f81499f14851ec9ae2261a293e3118415baa8916fb993ef4b8f195612e63e08", "expectedVerdict": "REJECTED" }
+      ]
+    },
+    {
+      "id": "parent-budget",
+      "category": "budget",
+      "description": "Every admission is checked against a shared hard parent reservation envelope.",
+      "cases": [
+        { "id": "budget-bounded", "polarity": "positive", "fixturePath": "fixtures/budget-bounded.json", "fixtureDigest": "sha256:4a23e8dffd695a802d4b3f8efcd71ccb7c138dd80da4cc51a0932551d57a407b", "expectedVerdict": "ADMITTED" },
+        { "id": "budget-overshoot", "polarity": "adversarial", "fixturePath": "fixtures/budget-overshoot.json", "fixtureDigest": "sha256:0eb2da44a8fe63b88c0df7ffbb1b17e0b8cd15ed8ce13fa86bcbd4fcbf30b45d", "expectedVerdict": "DENIED" }
+      ]
+    },
+    {
+      "id": "cancel-terminal-proof",
+      "category": "cancel",
+      "description": "Root cancellation succeeds only after every active attempt has correlated terminal proof.",
+      "cases": [
+        { "id": "cancel-proven", "polarity": "positive", "fixturePath": "fixtures/cancel-proven.json", "fixtureDigest": "sha256:1ef15df9d7b77b0b5c4452ee55283998a1fd2a1c7d0d9b011b46e7cc9ef78441", "expectedVerdict": "CANCELLED" },
+        { "id": "cancel-unproven", "polarity": "adversarial", "fixturePath": "fixtures/cancel-unproven.json", "fixtureDigest": "sha256:a944f84e3f6fdead4e0ad8a9a72abbb7f5772dabbe1ccd958e8ea0df28690a3e", "expectedVerdict": "ORPHANED" }
+      ]
+    }
+  ],
+  "contentDigest": "sha256:a87d6e5ab7fc1e031c1df35960feae94c8fe0f51b60fd563f35982857eb68295"
+}

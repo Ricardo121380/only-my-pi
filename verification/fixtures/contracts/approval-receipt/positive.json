@@ -1,0 +1,23 @@
+{
+  "$schema": "approval-receipt-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "kind": "approval-receipt",
+  "planDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "parentRevisionDigest": null,
+  "repo": {
+    "identity": "github.com/example/repo",
+    "baseCommit": "0123456789abcdef0123456789abcdef01234567",
+    "allowedPaths": ["packages/subagents"],
+    "writerClaims": []
+  },
+  "effectivePolicyHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "capabilityEnvelopeHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "budgetEnvelopeHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "scope": { "mutation": "none", "integration": "none", "delivery": "local", "maxAssignments": 64, "maxActiveChildren": 4 },
+  "origin": "interactive-user",
+  "approvedAt": "2026-08-18T00:00:00.000Z",
+  "approvedPlanRevision": 0,
+  "replanEnvelopeDigest": null,
+  "receiptId": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+}

@@ -1,0 +1,9 @@
+{
+  "formatVersion": 1,
+  "id": "budget-overshoot",
+  "kind": "budget",
+  "input": {
+    "envelope": { "assignments": 1, "elapsedMs": 1000 },
+    "requests": [{ "assignments": 1, "elapsedMs": 800 }, { "assignments": 1, "elapsedMs": 800 }]
+  }
+}

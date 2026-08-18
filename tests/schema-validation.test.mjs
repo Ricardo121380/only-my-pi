@@ -186,6 +186,16 @@ test("Swarm DAG, agent and writer policies, and every budget envelope fail close
   ]) assertFixtureKeyword(registry, "swarmRecipe", name, keyword);
 });
 
+test("subagents v2 contracts reject authority, budget, reference, and terminal-proof drift", () => {
+  const registry = createSchemaRegistry({ rootDir: root });
+  for (const [kind, name, keyword] of [
+    ["agentTemplate", "negative-readonly-write.json", "capability-escalation"],
+    ["batchSwarm", "negative-concurrency-envelope.json", "budget-envelope"],
+    ["ultraRun", "negative-unknown-workflow.json", "unknown-reference"],
+    ["terminalReceipt", "negative-authoritative-without-proof.json", "terminal-proof"],
+  ]) assertFixtureKeyword(registry, kind, name, keyword);
+});
+
 test("semantic graph rejects unknown references, cycles, duplicate owners, and escalation", () => {
   const registry = createSchemaRegistry({ rootDir: root });
   const cases = [

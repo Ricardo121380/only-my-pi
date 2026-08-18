@@ -61,6 +61,7 @@
     "packages/repo-map/",
     "packages/swarm-core/",
     "packages/pi-subagents-adapter/",
+    "packages/subagents/",
     "packages/adapters/"
   ],
   "scripts": {
@@ -93,6 +94,8 @@
     "test:acp": "node --test packages/acp-v1/acp-v1.test.mjs",
     "test:checkpoint": "node packages/workspace-checkpoint/test.mjs",
     "test:swarm": "node --test tests/swarm-core.test.mjs tests/pi-subagents-adapter.test.mjs tests/swarm-control.test.mjs",
+    "test:subagents": "node --test tests/subagents-*.test.mjs",
+    "eval:subagents": "node --test tests/subagents-evaluation.test.mjs",
     "checkpoint": "node packages/workspace-checkpoint/cli.mjs",
     "test": "node --test"
   },

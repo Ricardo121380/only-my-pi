@@ -1,0 +1,22 @@
+{
+  "$schema": "../../../../schemas/workflow-definition-v2.schema.json",
+  "formatVersion": 2,
+  "contractStatus": "contract-preview",
+  "id": "fixture-workflow-v2",
+  "version": "2.0.0",
+  "description": "Unknown executable source must fail.",
+  "policy": { "workspace": "shared-read-only", "mutation": "none" },
+  "budget": {
+    "maxNodes": 2,
+    "maxParallel": 1,
+    "maxDepth": 2,
+    "maxAttemptsPerNode": 1,
+    "maxWallTimeMs": 1000,
+    "maxOutputBytes": 4096,
+    "maxAssignments": 1,
+    "maxTokens": null,
+    "maxCostUsd": null
+  },
+  "flow": { "kind": "gate", "id": "verify", "gateId": "test-contract" },
+  "script": "arbitrary()"
+}

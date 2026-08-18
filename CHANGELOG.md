@@ -29,6 +29,25 @@ session. Third-party packages and Labs remain opt-in and require review.
 
 ## Unreleased
 
-No unreleased changes are recorded. Any tracked change after the final release
-receipt invalidates that receipt and must go through the source/gate/receipt
-sequence again.
+### Added
+
+- a single `packages/subagents/` orchestration facade with typed Agent,
+  Assignment, backend capability, terminal receipt, immutable WorkflowPlan,
+  event journal, budget ledger, and RunCoordinator contracts;
+- an exact `pi-subagents@0.45.2` extension-RPC v1 backend that emits only
+  statement-body workflow code and correlates every lifecycle action to an
+  explicit backend run ID;
+- dual-read migration of legacy Workflow and heterogeneous Swarm resources to
+  WorkflowPlan v2, without relabelling them as homogeneous BatchSwarm;
+- 15 orchestration schemas/evaluation contracts in the strict catalog, plus a
+  deterministic offline corpus with fixed seed, baselines, thresholds, and
+  content digests.
+
+### Security boundary
+
+These unreleased changes remain Contract Preview source evidence. They have no
+promotion receipt and do not prove live child execution, Provider quality,
+managed worktrees, adaptive rate limiting, SwarmGoal, UltraRun, or production
+BatchSwarm. Any tracked change after the final 0.1.0 receipt invalidates that
+historical receipt for the new source tree and must follow a new
+source/gate/receipt sequence before release promotion.

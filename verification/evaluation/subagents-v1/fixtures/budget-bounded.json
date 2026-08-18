@@ -1,0 +1,9 @@
+{
+  "formatVersion": 1,
+  "id": "budget-bounded",
+  "kind": "budget",
+  "input": {
+    "envelope": { "assignments": 2, "elapsedMs": 2000 },
+    "requests": [{ "assignments": 1, "elapsedMs": 500 }, { "assignments": 1, "elapsedMs": 500 }]
+  }
+}

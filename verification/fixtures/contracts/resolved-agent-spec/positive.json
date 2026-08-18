@@ -1,0 +1,31 @@
+{
+  "$schema": "resolved-agent-spec-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "kind": "resolved-agent-spec",
+  "id": "reviewer-resolved",
+  "templateId": "reviewer",
+  "templateHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "backendAgentId": "omp-reviewer",
+  "sourceHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "tools": { "allow": ["read"], "deny": ["bash", "edit", "write"] },
+  "requiredCapabilities": ["workspace-read"],
+  "effectivePolicy": {
+    "workspace": "shared-read-only",
+    "mutation": "none",
+    "approval": "deny",
+    "egress": { "web": "deny", "mcp": "deny", "provider": "allow-listed", "extension": "deny" }
+  },
+  "effectivePolicyHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "model": { "role": "review" },
+  "inputSchema": null,
+  "outputSchema": null,
+  "writer": false,
+  "continuable": true,
+  "resumable": true,
+  "timeoutMs": 60000,
+  "runtimeMode": "REGISTERED_ROLES_ONLY",
+  "overlayRequirements": { "tools": false, "model": false },
+  "specialization": null,
+  "specHash": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+}

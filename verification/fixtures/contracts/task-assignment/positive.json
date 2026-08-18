@@ -1,0 +1,17 @@
+{
+  "$schema": "task-assignment-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "kind": "task-assignment",
+  "assignmentId": "review-01",
+  "agentSpecId": "reviewer-resolved",
+  "agentSpecHash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+  "task": { "text": "Review the artifact.", "digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666" },
+  "dependencies": [],
+  "ownership": { "writer": false, "workspace": "shared-read-only", "allowedPaths": ["src/index.mjs"], "fileClaims": [] },
+  "idempotency": { "class": "read-only" },
+  "context": { "mode": "fresh", "artifactRefs": [] },
+  "budget": { "maxTurns": 4, "maxElapsedMs": 60000 },
+  "output": null,
+  "assignmentHash": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+}

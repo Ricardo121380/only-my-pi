@@ -1,0 +1,28 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/batch-swarm-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "kind": "batch-swarm",
+  "id": "review-files",
+  "agentSpecRef": "reviewer-resolved",
+  "agentSpecHash": "sha256:67c34f39722da8532f44baef50538dda372ffd2f228c71df2fe00c6d9705548b",
+  "policyHash": "sha256:2674bfef0384ecdabf5455cf5f290b1dd216c0cda49fecf1952575348e62f139",
+  "promptTemplateRef": "review-file",
+  "promptTemplateHash": "sha256:413e167b0dc40a30465a833a708c98b80839133c5e9dcbcaa93454f6cc252cd5",
+  "itemsFrom": "artifact://changed-files",
+  "concurrency": {
+    "initial": 2,
+    "max": 4,
+    "rampEveryMs": 700,
+    "adaptiveRateLimit": false
+  },
+  "failurePolicy": { "kind": "all-required" },
+  "retryPolicy": {
+    "maxAttempts": 2,
+    "maxDelayMs": 1000,
+    "deadlineMs": 60000
+  },
+  "outputSchemaRef": "review-result",
+  "outputSchemaHash": "sha256:49ea0bdb3df599272a62e340820afcba562adfe5ab84f305efb133c5525fea75",
+  "budgetRef": "preview-read-only"
+}

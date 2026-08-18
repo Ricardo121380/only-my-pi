@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/evaluation-corpus-v1.schema.json",
+  "title": "only-my-pi deterministic orchestration evaluation corpus v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "id", "version", "generator", "seed", "repetitions", "environment", "baselines", "metrics", "scenarios", "contentDigest"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "evaluation-corpus-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "const": "contract-preview" },
+    "id": { "$ref": "#/$defs/id" },
+    "version": { "$ref": "#/$defs/semver" },
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "sourceDigest"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "version": { "$ref": "#/$defs/semver" },
+        "sourceDigest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "seed": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+    "repetitions": { "type": "integer", "minimum": 2, "maximum": 100 },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "network", "modelCalls", "pi", "node", "backend", "provider", "model", "observedAt"],
+      "properties": {
+        "mode": { "const": "offline-deterministic-simulator" },
+        "network": { "const": "DISABLED" },
+        "modelCalls": { "const": "DISABLED" },
+        "pi": { "$ref": "#/$defs/environmentValue" },
+        "node": { "$ref": "#/$defs/environmentValue" },
+        "backend": { "$ref": "#/$defs/environmentValue" },
+        "provider": { "$ref": "#/$defs/environmentValue" },
+        "model": { "$ref": "#/$defs/environmentValue" },
+        "observedAt": { "const": "UNAVAILABLE" }
+      }
+    },
+    "baselines": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 8,
+      "items": { "$ref": "#/$defs/baseline" },
+      "allOf": [
+        { "contains": { "type": "object", "properties": { "kind": { "const": "single-agent" } }, "required": ["kind"] }, "minContains": 1 },
+        { "contains": { "type": "object", "properties": { "kind": { "const": "v1" } }, "required": ["kind"] }, "minContains": 1 },
+        { "contains": { "type": "object", "properties": { "kind": { "const": "current-release" } }, "required": ["kind"] }, "minContains": 1 }
+      ]
+    },
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": { "$ref": "#/$defs/metric" }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": { "$ref": "#/$defs/scenario" }
+    },
+    "contentDigest": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "path": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[A-Za-z0-9._/-]+$" },
+    "environmentValue": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "ratioMap": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "implementation", "measurement", "metrics"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["single-agent", "v1", "current-release"] },
+        "implementation": { "enum": ["single-agent-reference", "legacy-v1-reference", "current-release"] },
+        "measurement": { "const": "offline-contract-fixture" },
+        "metrics": { "$ref": "#/$defs/ratioMap" }
+      }
+    },
+    "threshold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operator", "value"],
+      "properties": {
+        "operator": { "enum": [">=", "<=", "=="] },
+        "value": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "unit", "direction", "definition", "acceptanceThreshold"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "unit": { "const": "ratio" },
+        "direction": { "enum": ["maximize", "minimize", "exact"] },
+        "definition": { "type": "string", "minLength": 20, "maxLength": 500 },
+        "acceptanceThreshold": { "$ref": "#/$defs/threshold" }
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "polarity", "fixturePath", "fixtureDigest", "expectedVerdict"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "polarity": { "enum": ["positive", "adversarial"] },
+        "fixturePath": { "$ref": "#/$defs/path" },
+        "fixtureDigest": { "$ref": "#/$defs/sha256" },
+        "expectedVerdict": { "enum": ["ACCEPTED", "REJECTED", "PROPOSED", "DENIED", "RECOVERED", "ADMITTED", "CANCELLED", "ORPHANED"] }
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "category", "description", "cases"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "category": { "enum": ["agent", "batch-swarm", "workflow", "swarm-goal", "recovery", "budget", "cancel"] },
+        "description": { "type": "string", "minLength": 20, "maxLength": 500 },
+        "cases": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 32,
+          "items": { "$ref": "#/$defs/case" },
+          "allOf": [
+            { "contains": { "type": "object", "properties": { "polarity": { "const": "positive" } }, "required": ["polarity"] }, "minContains": 1 },
+            { "contains": { "type": "object", "properties": { "polarity": { "const": "adversarial" } }, "required": ["polarity"] }, "minContains": 1 }
+          ]
+        }
+      }
+    }
+  }
+}

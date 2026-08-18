@@ -20,10 +20,11 @@ This page is a checked-in handoff record. Exact package metadata and risk tags
 live in [`inventory/packages.lock.json`](../inventory/packages.lock.json); this
 summary intentionally contains no credentials, sessions, or host paths.
 
-## Approved successor roadmap — not yet implemented
+## Successor roadmap — S0–S2 implementation underway
 
-The M0–M7 Harness MVP described below remains the current implementation. A
-new S0–S5 successor baseline is approved for the next development cycle:
+The M0–M7 Harness MVP described below remains the current released baseline.
+Development of its S0–S5 successor has started on the isolated
+`codex/subagents-ultrarun-v2` branch:
 
 - [`plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md`](plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
 - [`../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../codex/goals/develop-only-my-pi-subagents-ultrarun.md)
@@ -43,9 +44,44 @@ The approved semantic split is:
 - `UltraRun`: an upper-layer strategy that routes and chains multiple workflows,
   with no separate scheduler or permission owner.
 
-S0–S5 have no implementation receipt yet. Existing Workflow/Swarm v1 code,
-fake/injected runtime evidence, and historical M5 receipts must not be described
-as live successor capability.
+The first S0–S2 source slice now contains:
+
+- source dossiers, two ownership/state ADRs, and a dedicated 35-item subagents
+  threat model;
+- typed AgentTemplate v2, ResolvedAgentSpec, TaskAssignment, stable handle,
+  BackendCapabilityV2, and TerminalReceipt v2 contracts;
+- an exact `pi-subagents@0.45.2` extension-RPC backend using statement-body
+  compilation, explicit backend-ID mapping, and correlated terminal proof;
+- WorkflowDefinition v2 to immutable WorkflowPlan compilation, a single
+  RunCoordinator, writer lease/fencing, hash-chained events, atomic snapshots,
+  parent budget reservations, and fail-closed mutation recovery;
+- deterministic dual-read migration of all four heterogeneous legacy Swarm
+  recipes into WorkflowPlan rather than BatchSwarm;
+- a 15-case, fixed-seed, three-baseline offline evaluation corpus.
+
+This source slice has no S0–S2 promotion receipt yet. Its tests use injected
+transports and temporary roots; no live child dispatch, Provider/model call,
+credential read, global install, or real Pi home mutation was performed.
+All 14 planned orchestration contracts plus the evaluation-corpus contract are
+now registered in the strict catalog. The catalog validates 31 kinds and 62
+non-vacuous production documents, with positive, unknown-field/version, and
+targeted semantic negatives. Migration of the old Workflow/Swarm control
+surfaces to compatibility facades remains S2 closure work. BatchSwarm
+execution, SwarmGoal, UltraRun, and promotion-specific live evidence remain
+S3–S5. Historical M5 receipts must not be described as successor evidence.
+
+Current branch evidence for this Contract Preview slice:
+
+- `npm test`: **406/406** pass;
+- `npm run test:subagents`: **55/55** pass;
+- `npm run schema:check`: **62 production documents / 31 schema kinds / 0 findings**;
+- `npm run pack:check`: **218 allowlisted files**, with no tests, receipts, or
+  Codex Goal in the tarball;
+- `npm run typecheck`, `npm run lint`, and `npm run secret:scan`: pass.
+
+These are source-tree gates only. A promotion receipt intentionally does not
+exist until the remaining S2 compatibility/topology work and the requested
+promotion closure are complete.
 
 ## Current external Pi baseline
 
@@ -392,9 +428,9 @@ plugins, arbitrary JavaScript workflows, automatic marketplaces, remote
 UI/SSH/Cron, and un-sandboxed web fetch also remain outside the default
 profiles.
 
-The next implementation step is S0: freeze the v2 terms, source/provenance
-record, owner topology, schemas, compatibility fixtures, threat model, and eval
-baseline before changing the existing Workflow or Swarm runtime. S1–S5 then
-converge both v1 controllers on one RunCoordinator, add a true homogeneous
-BatchSwarm, introduce dynamic SwarmGoal plan revisions, and finally add the
-UltraRun workflow router and promotion-specific live evidence.
+The next successor closure step is to route the old Workflow/Swarm control
+surfaces through the v2 facade and remove their independent controller/state
+ownership. After the S2 facade migration and bounded no-model Pi topology
+probe, S3 adds a true homogeneous BatchSwarm, S4 introduces dynamic SwarmGoal
+plan revisions and UltraRun routing, and S5 adds promotion-specific live,
+fault, security, and compatibility evidence.

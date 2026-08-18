@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/workflow-plan-v1.schema.json",
+  "title": "only-my-pi immutable WorkflowPlan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "id", "definitionVersion", "definitionDigest", "revision", "policy", "policyDigest", "budget", "nodes", "entryNodeIds", "terminalNodeId", "planDigest"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "workflow-plan-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "enum": ["contract-preview", "runtime-ready"] },
+    "id": { "$ref": "#/$defs/id" },
+    "definitionVersion": { "$ref": "#/$defs/semver" },
+    "definitionDigest": { "$ref": "#/$defs/sha256" },
+    "revision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number", "parentPlanDigest", "reason", "activationPolicy"],
+      "properties": {
+        "number": { "type": "integer", "minimum": 0 },
+        "parentPlanDigest": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "activationPolicy": { "enum": ["drain", "stop"] }
+      }
+    },
+    "policy": { "$ref": "#/$defs/policy" },
+    "policyDigest": { "$ref": "#/$defs/sha256" },
+    "budget": { "$ref": "#/$defs/planBudget" },
+    "nodes": { "type": "array", "minItems": 1, "maxItems": 1000, "items": { "$ref": "#/$defs/node" } },
+    "entryNodeIds": { "$ref": "#/$defs/idSet" },
+    "terminalNodeId": { "$ref": "#/$defs/id" },
+    "planDigest": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "idSet": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "nullablePositiveNumber": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workspace", "mutation", "egress", "tools"],
+      "properties": {
+        "workspace": { "enum": ["shared-read-only", "shared-guarded", "managed-worktree"] },
+        "mutation": { "enum": ["none", "guarded"] },
+        "egress": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["web", "mcp", "provider"],
+          "properties": {
+            "web": { "enum": ["allow", "deny", "ask"] },
+            "mcp": { "enum": ["allow", "deny", "ask"] },
+            "provider": { "enum": ["allow", "deny", "ask"] }
+          }
+        },
+        "tools": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["allow", "deny"],
+          "properties": { "allow": { "$ref": "#/$defs/idSet" }, "deny": { "$ref": "#/$defs/idSet" } }
+        }
+      }
+    },
+    "planBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxNodes", "maxParallel", "maxDepth", "maxAttemptsPerNode", "maxWallTimeMs", "maxOutputBytes", "maxAssignments", "maxTokens", "maxCostUsd"],
+      "properties": {
+        "maxNodes": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "maxParallel": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "maxDepth": { "type": "integer", "minimum": 1, "maximum": 128 },
+        "maxAttemptsPerNode": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "maxWallTimeMs": { "type": "integer", "minimum": 1, "maximum": 86400000 },
+        "maxOutputBytes": { "type": "integer", "minimum": 1, "maximum": 1073741824 },
+        "maxAssignments": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "maxTokens": { "$ref": "#/$defs/nullablePositiveNumber" },
+        "maxCostUsd": { "$ref": "#/$defs/nullablePositiveNumber" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "needs", "policy", "budget", "cache", "idempotency"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["agent", "batch-swarm", "gate", "checkpoint", "approval", "loop-controller"] },
+        "needs": { "$ref": "#/$defs/idSet" },
+        "policy": { "$ref": "#/$defs/policy" },
+        "budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["maxAttempts", "timeoutMs", "maxOutputBytes", "maxTokens", "maxCostUsd"],
+          "properties": {
+            "maxAttempts": { "type": "integer", "minimum": 1, "maximum": 8 },
+            "timeoutMs": { "type": "integer", "minimum": 1, "maximum": 86400000 },
+            "maxOutputBytes": { "type": "integer", "minimum": 1, "maximum": 1073741824 },
+            "maxTokens": { "$ref": "#/$defs/nullablePositiveNumber" },
+            "maxCostUsd": { "$ref": "#/$defs/nullablePositiveNumber" }
+          }
+        },
+        "cache": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "keyInputs"],
+          "properties": {
+            "mode": { "enum": ["never", "content-addressed"] },
+            "keyInputs": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 200 } }
+          }
+        },
+        "idempotency": { "enum": ["none", "receipt", "content-addressed"] },
+        "agentTemplateRef": { "$ref": "#/$defs/id" },
+        "assignment": { "type": "object" },
+        "outputSchemaRef": { "type": ["string", "null"], "minLength": 1, "maxLength": 200 },
+        "batchRef": { "$ref": "#/$defs/id" },
+        "gateId": { "$ref": "#/$defs/id" },
+        "checkpoint": { "type": "object" },
+        "approval": { "type": "object" },
+        "loop": { "type": "object" }
+      },
+      "allOf": [
+        { "if": { "properties": { "kind": { "const": "agent" } } }, "then": { "required": ["agentTemplateRef", "assignment", "outputSchemaRef"] } },
+        { "if": { "properties": { "kind": { "const": "batch-swarm" } } }, "then": { "required": ["batchRef"] } },
+        { "if": { "properties": { "kind": { "const": "gate" } } }, "then": { "required": ["gateId"] } },
+        { "if": { "properties": { "kind": { "const": "checkpoint" } } }, "then": { "required": ["checkpoint"] } },
+        { "if": { "properties": { "kind": { "const": "approval" } } }, "then": { "required": ["approval"] } },
+        { "if": { "properties": { "kind": { "const": "loop-controller" } } }, "then": { "required": ["loop"] } }
+      ]
+    }
+  }
+}

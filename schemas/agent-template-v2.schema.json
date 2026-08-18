@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/agent-template-v2.schema.json",
+  "title": "only-my-pi AgentTemplate v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "kind", "id", "version", "backendAgentId", "sourceHash", "promptHash", "tools", "requiredCapabilities", "policyCeiling", "modelRole", "inputSchema", "outputSchema", "writer", "continuable", "resumable", "timeoutMs", "redaction", "templateHash"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "agent-template-v2\\.schema\\.json$" },
+    "formatVersion": { "const": 2 },
+    "contractStatus": { "enum": ["contract-preview", "runtime-ready"] },
+    "kind": { "const": "agent-template" },
+    "id": { "$ref": "#/$defs/id" },
+    "version": { "$ref": "#/$defs/semver" },
+    "backendAgentId": { "$ref": "#/$defs/id" },
+    "sourceHash": { "$ref": "#/$defs/sha256" },
+    "promptHash": { "$ref": "#/$defs/sha256" },
+    "tools": { "$ref": "#/$defs/tools" },
+    "requiredCapabilities": { "$ref": "#/$defs/idSet" },
+    "policyCeiling": { "$ref": "#/$defs/policy" },
+    "modelRole": { "$ref": "#/$defs/id" },
+    "inputSchema": { "$ref": "#/$defs/nullableSchemaBinding" },
+    "outputSchema": { "$ref": "#/$defs/nullableSchemaBinding" },
+    "writer": { "type": "boolean" },
+    "continuable": { "type": "boolean" },
+    "resumable": { "type": "boolean" },
+    "timeoutMs": { "type": "integer", "minimum": 1, "maximum": 86400000 },
+    "redaction": { "$ref": "#/$defs/redaction" },
+    "templateHash": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "idSet": { "type": "array", "maxItems": 256, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "tools": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow", "deny"],
+      "properties": { "allow": { "$ref": "#/$defs/idSet" }, "deny": { "$ref": "#/$defs/idSet" } }
+    },
+    "egress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["web", "mcp", "provider", "extension"],
+      "properties": {
+        "web": { "enum": ["deny", "allow-listed", "inherit"] },
+        "mcp": { "enum": ["deny", "allow-listed", "inherit"] },
+        "provider": { "enum": ["deny", "allow-listed", "inherit"] },
+        "extension": { "enum": ["deny", "allow-listed", "inherit"] }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workspace", "mutation", "approval", "egress"],
+      "properties": {
+        "workspace": { "enum": ["none", "shared-read-only", "shared-guarded", "managed-worktree"] },
+        "mutation": { "enum": ["none", "guarded"] },
+        "approval": { "enum": ["deny", "ask", "inherit"] },
+        "egress": { "$ref": "#/$defs/egress" }
+      }
+    },
+    "schemaBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hash"],
+      "properties": {
+        "ref": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "value": {},
+        "hash": { "$ref": "#/$defs/sha256" }
+      },
+      "oneOf": [
+        { "properties": { "ref": {} }, "required": ["ref"], "not": { "properties": { "value": {} }, "required": ["value"] } },
+        { "properties": { "value": {} }, "required": ["value"], "not": { "properties": { "ref": {} }, "required": ["ref"] } }
+      ]
+    },
+    "nullableSchemaBinding": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/schemaBinding" }] },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rawPrompts": { "enum": ["omit", "digest-only", "bounded"] },
+        "reasoning": { "enum": ["omit", "digest-only"] },
+        "secrets": { "const": "omit" }
+      }
+    }
+  }
+}
