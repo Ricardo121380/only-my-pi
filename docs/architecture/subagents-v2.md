@@ -51,6 +51,13 @@ structured per-item results, and worktree proof. Higher layers must consume
 that matrix and fail closed; they may not implement a second physical
 scheduler to compensate.
 
+`npm run doctor:subagents-topology` is the static ownership gate. It reads the
+pinned package/wire contract plus the owner, command, and resource catalogs
+and requires exactly one physical/RPC owner (`pi-subagents`) and a separate
+first-party logical owner. It intentionally reports
+`liveRuntime: NOT_RUN_BY_POLICY`; only an explicitly authorized disposable Pi
+RPC probe can promote that field to live evidence.
+
 ## Workflow and recovery
 
 WorkflowDefinition v2 compiles to a primitive-only immutable WorkflowPlan v1.

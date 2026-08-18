@@ -131,6 +131,7 @@ export function createSubagentsFacade({
 export * from "./domain/index.mjs";
 export * from "./adapters/pi-subagents-rpc-v1/index.mjs";
 export * from "./state/index.mjs";
+export * from "./topology.mjs";
 export * from "./policy/budget-ledger.mjs";
 export * from "./policy/approval-receipt.mjs";
 export * from "./workflow/plan-compiler/index.mjs";

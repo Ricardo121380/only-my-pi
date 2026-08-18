@@ -118,6 +118,9 @@ ResolvedAgentSpec, TaskAssignment and terminal receipts; an exact
 `pi-subagents` RPC v1 backend; immutable WorkflowPlan compilation; a single
 RunCoordinator; a fenced append-only journal; crash-recoverable parent budget
 reservations; and dual-read migration from the v1 Workflow/Swarm resources.
+The static single-owner check is available as `npm run
+doctor:subagents-topology`; it reads only the pinned package/wire contract and
+repository ownership catalogs, and does not start Pi or dispatch a child.
 The existing `omp workflow`, `omp swarm`, and `/omp` compatibility routes now
 compile those resources to WorkflowPlan and can execute only through an
 explicitly injected unified RunCoordinator; they never instantiate the v1

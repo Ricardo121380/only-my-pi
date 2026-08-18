@@ -2,6 +2,13 @@
 
 Status: **STATIC PASS; no live child was dispatched.**
 
+The repository-level ownership probe is `npm run doctor:subagents-topology`.
+It independently verifies one exact physical package/owner, one public
+subagent command owner, a separate first-party logical resource owner, and the
+RPC single-lane flags. Its result is static evidence with
+`liveRuntime: NOT_RUN_BY_POLICY`; it does not inspect the user's Pi home or
+pretend that a no-model startup proves child-runtime capability.
+
 only-my-pi delegates physical subagent execution to one installed
 `pi-subagents` extension. It does not register a competing subagent tool,
 scheduler, or child-process runtime. The one planned live integration lane is

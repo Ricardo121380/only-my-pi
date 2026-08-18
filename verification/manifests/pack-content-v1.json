@@ -13,7 +13,8 @@
     "scripts/lib/release-gates.mjs",
     "scripts/release-gates.mjs",
     "scripts/verification-receipt.mjs",
-    "scripts/mode-doctor.mjs"
+    "scripts/mode-doctor.mjs",
+    "scripts/subagents-topology-doctor.mjs"
   ],
   "allowedPrefixes": [
     "bin/",
@@ -56,6 +57,7 @@
     "scripts/lib/runtime-doctor.mjs",
     "scripts/release-gates.mjs",
     "scripts/verification-receipt.mjs",
+    "scripts/subagents-topology-doctor.mjs",
     "agents/generated/omp-scout.md",
     "agents/scout.json",
     "contracts/schema-catalog.json",
@@ -110,6 +112,7 @@
     "packages/subagents/state/codec.mjs",
     "packages/subagents/state/event-journal.mjs",
     "packages/subagents/state/plan-store.mjs",
+    "packages/subagents/topology.mjs",
     "packages/subagents/policy/budget-ledger.mjs",
     "packages/subagents/policy/approval-receipt.mjs",
     "packages/subagents/workflow/plan-compiler/index.mjs",

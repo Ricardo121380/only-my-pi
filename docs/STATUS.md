@@ -90,20 +90,22 @@ writer seam remains unavailable rather than being inferred from a worktree.
 The immutable Plan Store now persists the exact run-ID-to-WorkflowPlan binding;
 fresh coordinators can re-project status, publish cross-process cancel intent,
 and resume read-only/recoverable runs after restart without persisting raw
-input. The bounded no-model Pi topology probe remains S2 closure work.
+input. The static single-owner topology probe and its packaged-artifact
+inclusion now pass; its live field remains `NOT_RUN_BY_POLICY` until an
+explicitly authorized Pi RPC capability probe.
 BatchSwarm execution,
 SwarmGoal, UltraRun, and promotion-specific live evidence remain S3–S5.
 Historical M5 receipts must not be described as successor evidence.
 
 Current branch evidence for this Contract Preview slice:
 
-- `npm test`: **459/459** pass;
-- `npm run test:subagents`: **101/101** pass;
+- `npm test`: **464/464** pass;
+- `npm run test:subagents`: **106/106** pass;
 - `npm run schema:check`: **64 production documents / 33 schema kinds / 0 findings**;
-- `npm run pack:check`: **224 allowlisted files**, with no tests, receipts, or
+- `npm run pack:check`: **226 allowlisted files**, with no tests, receipts, or
   Codex Goal in the tarball;
 - `npm run lint`: **599 files / 0 findings**;
-- `npm run secret:scan`: **599 tracked files + 224 packed files / 0 findings**;
+- `npm run secret:scan`: **599 tracked files + 226 packed files / 0 findings**;
 - `npm run doctor`, all six Profile doctors, Mode/Agent/Workflow/Swarm doctors,
   `npm run typecheck`, and the deterministic agent/profile generators: pass.
   Static doctor retains only the two explicit inactive-candidate warnings.
@@ -462,8 +464,9 @@ plugins, arbitrary JavaScript workflows, automatic marketplaces, remote
 UI/SSH/Cron, and un-sandboxed web fetch also remain outside the default
 profiles.
 
-The next successor closure step is the bounded no-model Pi topology probe and
-its packaged-artifact evidence. The durable Plan Store, restart-safe
+The static single-owner topology probe and its packaged-artifact inclusion now
+pass; its live field remains `NOT_RUN_BY_POLICY` until an explicitly authorized
+Pi RPC capability probe. The durable Plan Store, restart-safe
 status/resume and cross-process cancel intent are complete; cancel/stop remains
 non-authoritative without correlated backend terminal proof. The legacy direct
 imports remain one-release compatibility shims but no longer own public
