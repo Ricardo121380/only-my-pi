@@ -1,6 +1,6 @@
 # only-my-pi status
 
-Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-16** · Merged
+Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-18** · Merged
 to `main`: **2026-08-17** · Pi **0.84.1** · Node **25.8.0** · macOS
 `darwin-arm64`
 
@@ -19,6 +19,33 @@ installation or compatibility evidence.
 This page is a checked-in handoff record. Exact package metadata and risk tags
 live in [`inventory/packages.lock.json`](../inventory/packages.lock.json); this
 summary intentionally contains no credentials, sessions, or host paths.
+
+## Approved successor roadmap — not yet implemented
+
+The M0–M7 Harness MVP described below remains the current implementation. A
+new S0–S5 successor baseline is approved for the next development cycle:
+
+- [`plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md`](plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
+- [`../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../codex/goals/develop-only-my-pi-subagents-ultrarun.md)
+
+The successor does **not** connect Pi to the Kimi runtime. It builds one Pi-native
+`@only-my-pi/subagents` facade while retaining `pi-subagents@0.45.2` as the sole
+physical child/session/worktree backend. Kimi Code and hosted Kimi Agent Swarm
+contribute audited source patterns and product concepts; Claude Code Dynamic
+Workflows contributes the UltraRun staging model.
+
+The approved semantic split is:
+
+- `Agent`: one bounded child assignment;
+- `BatchSwarm`: one resolved AgentSpec mapped over many homogeneous items;
+- `WorkflowPlan`: the only durable heterogeneous DAG and resume representation;
+- `SwarmGoal`: a dynamic planner that emits immutable WorkflowPlan revisions;
+- `UltraRun`: an upper-layer strategy that routes and chains multiple workflows,
+  with no separate scheduler or permission owner.
+
+S0–S5 have no implementation receipt yet. Existing Workflow/Swarm v1 code,
+fake/injected runtime evidence, and historical M5 receipts must not be described
+as live successor capability.
 
 ## Current external Pi baseline
 
@@ -334,12 +361,15 @@ invariant as the Harness MVP receipt.
 
 ## Next implementation boundary
 
-The repository now has a complete product roadmap and a Codex execution Goal.
-The Goal is an external development-orchestrator contract and is not exposed
-through the Pi package's `prompts/` resources:
+The completed M0–M7 roadmap remains the historical Harness MVP baseline. The
+approved S0–S5 plan and its Codex Goal now define the next implementation
+boundary. Both Goals are external development-orchestrator contracts and are
+not exposed through the Pi package's `prompts/` resources:
 
-- [`plans/2026-08-16-only-my-pi-development-plan.md`](plans/2026-08-16-only-my-pi-development-plan.md)
-- [`../codex/goals/develop-only-my-pi.md`](../codex/goals/develop-only-my-pi.md)
+- [`plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md`](plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md) — successor plan
+- [`../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../codex/goals/develop-only-my-pi-subagents-ultrarun.md) — successor Codex Goal
+- [`plans/2026-08-16-only-my-pi-development-plan.md`](plans/2026-08-16-only-my-pi-development-plan.md) — historical M0–M7 plan
+- [`../codex/goals/develop-only-my-pi.md`](../codex/goals/develop-only-my-pi.md) — historical M0–M7 Goal
 
 The roadmap target is a usable Pi-based Harness distribution. M0 established
 the product/Labs boundary, M1 established the strict configuration and
@@ -361,3 +391,10 @@ Labs/Experimental and remain disabled by default. Creator/self-modifying
 plugins, arbitrary JavaScript workflows, automatic marketplaces, remote
 UI/SSH/Cron, and un-sandboxed web fetch also remain outside the default
 profiles.
+
+The next implementation step is S0: freeze the v2 terms, source/provenance
+record, owner topology, schemas, compatibility fixtures, threat model, and eval
+baseline before changing the existing Workflow or Swarm runtime. S1–S5 then
+converge both v1 controllers on one RunCoordinator, add a true homogeneous
+BatchSwarm, introduce dynamic SwarmGoal plan revisions, and finally add the
+UltraRun workflow router and promotion-specific live evidence.

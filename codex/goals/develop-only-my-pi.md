@@ -2,6 +2,8 @@
 
 > 本文件是给 **Codex 开发代理** 使用的持久 Goal 执行契约。它要求 Codex 直接修改、测试和交付 `only-my-pi` 仓库；它不是 Pi Slash Prompt，不使用 Pi prompt frontmatter、参数占位符或 Pi 的 prompt loader，也不得安装到 Pi 的 prompts/skills/themes/resources 中。
 
+> **历史边界：** 本 Goal 对应已经完成的 M0–M7 Harness MVP。后续统一 Subagent/Workflow、Kimi-style SwarmGoal 与 Claude-style UltraRun 开发，请使用 [`develop-only-my-pi-subagents-ultrarun.md`](develop-only-my-pi-subagents-ultrarun.md)；不要复用本 Goal 的旧 marker、state 或 receipt 冒充 S0–S5 证据。
+
 ## 0. 直接启动
 
 ### 0.1 可复制到 Codex 的 `/goal` launcher

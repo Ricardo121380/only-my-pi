@@ -38,8 +38,10 @@ scripts/      Repository checks and package governance tooling
 
 ## Current research
 
-- [Harness product development plan and milestone gates](docs/plans/2026-08-16-only-my-pi-development-plan.md)
-- [Codex end-to-end development Goal](codex/goals/develop-only-my-pi.md)
+- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5, approved but not implemented)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
+- [Codex successor development Goal for S0–S5](codex/goals/develop-only-my-pi-subagents-ultrarun.md)
+- [Historical Harness MVP development plan (M0–M7, complete)](docs/plans/2026-08-16-only-my-pi-development-plan.md)
+- [Historical Codex Harness MVP Goal](codex/goals/develop-only-my-pi.md)
 - [Pi / DeepSeek Harness / open-source Harness ecosystem report](docs/research/2026-08-15-harness-ecosystem.md)
 - [Security and package review policy](SECURITY.md)
 - [Package governance decision](docs/decisions/ADR-0001-package-governance.md)
@@ -159,31 +161,33 @@ For a one-run test without changing Pi settings:
 pi -e .
 ```
 
-## Run the Harness development Goal with Codex
+## Run the successor development Goal with Codex
 
 The repository development Goal is for Codex, not for Pi or the future
 only-my-pi Agent. It is deliberately stored outside `prompts/`, so installing
 this repository as a Pi package cannot expose it as a Pi slash prompt.
 
-Open this repository as the Codex workspace, then start the complete run with:
+M0–M7 are already complete. Open this repository as the Codex workspace, then
+start the S0–S5 successor run with:
 
 ```text
-/goal Read codex/goals/develop-only-my-pi.md and execute it with TARGET=all, REPO=/absolute/path/to/only-my-pi, DELIVERY=push. Continue until the specified Definition of Done and verification gates are satisfied.
+/goal Read codex/goals/develop-only-my-pi-subagents-ultrarun.md and execute it with TARGET=all, REPO=/absolute/path/to/only-my-pi, DELIVERY=local, PROMOTION=preview. Continue until the stopping condition is satisfied.
 ```
 
-For the safer first delivery slice:
+For the architecture and runtime-foundation slice:
 
 ```text
-/goal Read codex/goals/develop-only-my-pi.md and execute it with TARGET=M0-M3, REPO=/absolute/path/to/only-my-pi, DELIVERY=push. Continue until that target and all required dependencies are complete.
+/goal Read codex/goals/develop-only-my-pi-subagents-ultrarun.md and execute it with TARGET=S0-S2, REPO=/absolute/path/to/only-my-pi, DELIVERY=local, PROMOTION=preview. Continue until that target and all required dependencies are complete.
 ```
 
 This follows Codex's durable `/goal` workflow: one objective, explicit source
 files, checkpoints, validation commands, and a verifiable stopping condition.
 See the [official OpenAI Goal guide](https://learn.chatgpt.com/use-cases/follow-goals).
-The execution contract also supports `M4`, `M5`, and `M6-M7`, plus
-`DELIVERY=local` when the result must remain local. It does not grant permission
-to read credentials, mutate the real Pi home, call a live product Provider,
-publish a package, or push `main`.
+The successor contract supports `S0` through `S5`, promotion-specific live
+gates, and `DELIVERY=local|push`. It does not grant permission to read
+credentials, mutate the real Pi home, call a live product Provider, publish a
+package, or push `main`. The historical M0–M7 Goal remains available for audit,
+but must not be rerun to manufacture successor evidence.
 
 ## Safety boundary
 
