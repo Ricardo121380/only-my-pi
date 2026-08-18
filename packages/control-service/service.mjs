@@ -182,13 +182,41 @@ export class ControlService {
         if (!this.workflows || typeof this.workflows.dispatch !== "function") {
           return { ok: false, status: "WORKFLOW_REGISTRY_UNAVAILABLE", mutation: false, code: "WORKFLOW_REGISTRY_UNAVAILABLE", next: "run omp doctor:modes and reinstall the promoted generation" };
         }
-        return this.workflows.dispatch(request.options);
+        const options = request.options ?? {};
+        if (options.subcommand !== "run" || options.apply !== true) return this.workflows.dispatch(options);
+        const plan = await this.workflows.dispatch({ ...options, apply: false, yes: false });
+        if (plan?.ok === false) return plan;
+        if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
+        return this.workflows.dispatch({
+          ...options,
+          apply: true,
+          yes: true,
+          runId: plan.runId ?? options.runId,
+          input: plan.input,
+          conditions: plan.executionEnvelope?.conditions ?? options.conditions,
+          expectedPlanDigest: plan.plan?.planDigest ?? null,
+          expectedExecutionDigest: plan.executionEnvelope?.executionEnvelopeDigest ?? null,
+        });
       }
       case "swarm": {
         if (!this.swarms || typeof this.swarms.dispatch !== "function") {
           return { ok: false, status: "SWARM_SERVICE_UNAVAILABLE", mutation: false, code: "SWARM_SERVICE_UNAVAILABLE", next: "run omp doctor and reinstall the promoted generation" };
         }
-        return this.swarms.dispatch(request.options);
+        const options = request.options ?? {};
+        if (options.subcommand !== "run") return this.swarms.dispatch(options);
+        const plan = await this.swarms.dispatch({ ...options, subcommand: "plan", yes: false });
+        if (plan?.ok === false) return plan;
+        if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
+        return this.swarms.dispatch({
+          ...options,
+          subcommand: "run",
+          yes: true,
+          runId: plan.runId ?? options.runId,
+          input: plan.input,
+          conditions: plan.executionEnvelope?.conditions ?? options.conditions,
+          expectedPlanDigest: plan.plan?.planDigest ?? null,
+          expectedExecutionDigest: plan.executionEnvelope?.executionEnvelopeDigest ?? null,
+        });
       }
       case "theme": {
         if (!this.themes || typeof this.themes.dispatch !== "function") {

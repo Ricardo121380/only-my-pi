@@ -42,6 +42,7 @@ export function createSubagentsFacade({
   budgetLedger = null,
   nodeExecutor = null,
   approvalVerifier = null,
+  approvalEvidenceProvider = null,
   coordinatorOptions = {},
 } = {}) {
   if (backend !== null) {
@@ -109,6 +110,9 @@ export function createSubagentsFacade({
       budgetLedger: ledger,
       nodeExecutor: executor,
       approvalVerifier: overrides.approvalVerifier ?? approvalVerifier ?? coordinatorOptions.approvalVerifier,
+      approvalEvidenceProvider: overrides.approvalEvidenceProvider
+        ?? approvalEvidenceProvider
+        ?? coordinatorOptions.approvalEvidenceProvider,
     });
   }
 
@@ -125,6 +129,7 @@ export * from "./domain/index.mjs";
 export * from "./adapters/pi-subagents-rpc-v1/index.mjs";
 export * from "./state/index.mjs";
 export * from "./policy/budget-ledger.mjs";
+export * from "./policy/approval-receipt.mjs";
 export * from "./workflow/plan-compiler/index.mjs";
 export * from "./workflow/migration/index.mjs";
 export * from "./workflow/run-coordinator/index.mjs";

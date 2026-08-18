@@ -3,7 +3,9 @@ import test from "node:test";
 
 import {
   compileWorkflowDefinition,
+  digestWorkflowPolicyEnvelope,
   diffWorkflowPlans,
+  effectiveWorkflowPolicyEnvelope,
   validateWorkflowPlan,
   WORKFLOW_PLAN_PRIMITIVES,
 } from "../packages/subagents/workflow/plan-compiler/index.mjs";
@@ -102,6 +104,67 @@ test("cycles, unknown nodes, escalation, unsafe replay, and graph budget widenin
     () => compileWorkflowDefinition(definition({ kind: "parallel", branches: [agent("a"), agent("b")] }, { budget: { ...definition({}).budget, maxParallel: 1 } })),
     /maxParallel/,
   );
+});
+
+test("every node policy must remain inside the root workspace, mutation, tool, and egress ceiling", () => {
+  const expectRootEscalation = (source, surface) => assert.throws(
+    () => compileWorkflowDefinition(source),
+    (error) => error.code === "ROOT_POLICY_ESCALATION" && error.surface === surface,
+  );
+  expectRootEscalation(definition({
+    ...agent("workspace-wide"),
+    policy: { workspace: "managed-worktree", mutation: "none", tools: { allow: ["read"] } },
+  }), "workspace");
+  expectRootEscalation(definition({
+    ...agent("mutation-wide"),
+    policy: { workspace: "managed-worktree", mutation: "guarded", tools: { allow: ["read"] } },
+  }, {
+    policy: { workspace: "managed-worktree", mutation: "none", tools: { allow: ["read"] } },
+  }), "mutation");
+  expectRootEscalation(definition({
+    ...agent("tool-wide"),
+    policy: { workspace: "managed-worktree", mutation: "guarded", tools: { allow: ["edit"] } },
+  }, {
+    policy: { workspace: "managed-worktree", mutation: "guarded", tools: { allow: ["read"] } },
+  }), "tools.allow");
+  expectRootEscalation(definition({
+    ...agent("egress-wide"),
+    policy: { workspace: "shared-read-only", mutation: "none", egress: { web: "ask" }, tools: { allow: ["read"] } },
+  }), "egress.web");
+});
+
+test("effective policy digest binds the root plus every deny-wins node envelope", () => {
+  const rootPolicy = {
+    workspace: "managed-worktree",
+    mutation: "guarded",
+    egress: { web: "ask", mcp: "deny", provider: "allow" },
+    tools: { allow: ["edit", "read", "write"], deny: [] },
+  };
+  const source = definition({
+    ...agent("inspect"),
+    policy: {
+      workspace: "shared-read-only",
+      mutation: "none",
+      egress: { web: "deny", mcp: "deny", provider: "allow" },
+      tools: { allow: ["read"], deny: ["edit", "write"] },
+    },
+  }, { policy: rootPolicy });
+  const plan = compileWorkflowDefinition(source);
+  const envelope = effectiveWorkflowPolicyEnvelope(plan);
+  assert.equal(envelope.root.workspace, "managed-worktree");
+  assert.deepEqual(envelope.nodes[0].policy, {
+    egress: { mcp: "deny", provider: "allow", web: "deny" },
+    mutation: "none",
+    tools: { allow: ["read"], deny: ["edit", "write"] },
+    workspace: "shared-read-only",
+  });
+  assert.match(digestWorkflowPolicyEnvelope(plan), /^sha256:[a-f0-9]{64}$/u);
+
+  const changed = compileWorkflowDefinition(definition({
+    ...source.flow,
+    policy: { ...source.flow.policy, egress: { ...source.flow.policy.egress, web: "ask" } },
+  }, { policy: rootPolicy }));
+  assert.notEqual(digestWorkflowPolicyEnvelope(plan), digestWorkflowPolicyEnvelope(changed));
 });
 
 test("bounded loop-controller is accepted and unbounded loop is rejected", () => {

@@ -5,6 +5,7 @@ import {
   BACKEND_CAPABILITY_KEYS,
   SubagentsError,
   activeBackendBinding,
+  assignmentPathClaimCovered,
   bindBackendRun,
   createAgentRunHandle,
   createAgentTemplate,
@@ -63,6 +64,30 @@ function resolvedSpec(template = readOnlyTemplate(), overrides = {}) {
     specialization: { prompt: "Check only the supplied source artifact." },
     ...overrides,
   });
+}
+
+function writerSpec() {
+  const template = createAgentTemplate({
+    id: "implementer",
+    version: "1.0.0",
+    backendAgentId: "omp-implementer",
+    sourceHash: SHA_A,
+    promptHash: SHA_B,
+    tools: { allow: ["read", "edit", "write"], deny: [] },
+    requiredCapabilities: ["workspace-write"],
+    policyCeiling: {
+      workspace: "managed-worktree",
+      mutation: "guarded",
+      approval: "ask",
+      egress: { web: "deny", mcp: "deny", provider: "inherit", extension: "deny" },
+    },
+    modelRole: "build",
+    writer: true,
+    continuable: true,
+    resumable: true,
+    timeoutSeconds: 60,
+  });
+  return createResolvedAgentSpec({ template, id: "implementer-run" });
 }
 
 function assignment(spec = resolvedSpec(), overrides = {}) {
@@ -142,6 +167,50 @@ test("TaskAssignment binds exact task/spec digests without using raw task in its
     () => assignment(spec, { ownership: { writer: false, workspace: "worktree-write" } }),
     (error) => error instanceof SubagentsError && error.code === "ASSIGNMENT_WORKSPACE_ESCALATION",
   );
+});
+
+test("TaskAssignment ownership binds every file claim and requires complete writer evidence", () => {
+  const spec = resolvedSpec();
+  assert.equal(assignmentPathClaimCovered("src/index.mjs", ["src"]), true);
+  assert.equal(assignmentPathClaimCovered("src-other/index.mjs", ["src"]), false);
+  const claimed = assignment(spec, {
+    ownership: { writer: false, workspace: "read-only", allowedPaths: ["docs"], fileClaims: ["docs/source-a.md"] },
+  });
+  assert.deepEqual(claimed.ownership.fileClaims, ["docs/source-a.md"]);
+  assert.throws(
+    () => assignment(spec, { ownership: { writer: false, workspace: "read-only", allowedPaths: ["docs"], fileClaims: ["secrets/private"] } }),
+    (error) => error instanceof SubagentsError && error.code === "ASSIGNMENT_FILE_CLAIM_OUTSIDE_PATHS",
+  );
+
+  const writer = writerSpec();
+  const writerInput = {
+    assignmentId: "implement-safe-01",
+    agentSpec: writer,
+    task: "Apply the approved patch.",
+    ownership: { writer: true, workspace: "managed-worktree", allowedPaths: ["src"] },
+  };
+  assert.throws(
+    () => createTaskAssignment(writerInput),
+    (error) => error instanceof SubagentsError && error.code === "ASSIGNMENT_WRITER_CLAIMS_REQUIRED",
+  );
+  assert.throws(
+    () => createTaskAssignment({ ...writerInput, ownership: { ...writerInput.ownership, fileClaims: ["src/index.mjs"] } }),
+    (error) => error instanceof SubagentsError && error.code === "ASSIGNMENT_WRITER_BASE_COMMIT_REQUIRED",
+  );
+  assert.throws(
+    () => createTaskAssignment({ ...writerInput, ownership: { ...writerInput.ownership, fileClaims: ["src/index.mjs"], baseCommit: "main" } }),
+    (error) => error instanceof SubagentsError && error.code === "ASSIGNMENT_BASE_COMMIT_INVALID",
+  );
+  const valid = createTaskAssignment({
+    ...writerInput,
+    ownership: {
+      ...writerInput.ownership,
+      fileClaims: ["src/index.mjs"],
+      baseCommit: "0123456789abcdef0123456789abcdef01234567",
+    },
+  });
+  assert.equal(valid.ownership.writer, true);
+  assert.deepEqual(valid.ownership.fileClaims, ["src/index.mjs"]);
 });
 
 test("stable AgentRunHandle retains local identity across explicit backend resume mappings", () => {

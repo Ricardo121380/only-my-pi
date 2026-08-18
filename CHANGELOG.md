@@ -39,6 +39,22 @@ session. Third-party packages and Labs remain opt-in and require review.
   explicit backend run ID;
 - dual-read migration of legacy Workflow and heterogeneous Swarm resources to
   WorkflowPlan v2, without relabelling them as homogeneous BatchSwarm;
+- Workflow/Swarm public control routes that use the legacy registries only as
+  readers, require exact plan confirmation, and delegate execution solely to
+  an injected unified RunCoordinator;
+- canonical run-input binding and a stable, run-specific execution envelope
+  covering plan/source/input/target/conditions, with an ApprovalReceipt verifier
+  for exact revision/policy/capability/budget/repository/delivery scope;
+- fail-closed live approval-evidence checks at initial admission, resume, and
+  every mutating-node admission; cross-run receipt replay is rejected;
+- deterministic recovery that may requeue unfinished content-addressed
+  read-only attempts but never silently replays an unfinished mutation;
+- renewable single-writer leases, crash-safe worst-case budget charging,
+  deadline/output/token/cost overrun enforcement, and bounded child-result
+  projection before cloning or serialization;
+- fail-closed writer admission that requires live approval revalidation and an
+  explicitly audited path-enforcement capability; local timeout without
+  correlated process proof settles as a non-authoritative orphan;
 - 15 orchestration schemas/evaluation contracts in the strict catalog, plus a
   deterministic offline corpus with fixed seed, baselines, thresholds, and
   content digests.

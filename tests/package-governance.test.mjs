@@ -199,8 +199,10 @@ test("first-party inventory covers manifest resources, contract seeds, and non-d
     "omp-status-service",
     "inspect-mode",
     "scout-agent",
+    "omp-agent-prompts-runtime",
     "single-agent-safe-workflow",
     "research-synthesis-recipe",
+    "omp-subagents-v2-runtime",
   ]) {
     assert.ok(byId.has(id), id);
   }
@@ -215,6 +217,13 @@ test("first-party inventory covers manifest resources, contract seeds, and non-d
   assert.equal(byId.get("research-synthesis-recipe").lifecycle, "stable");
   assert.equal(byId.get("research-synthesis-recipe").defaultLoaded, false);
   assert.equal(byId.get("research-synthesis-recipe").packaged, true);
+  assert.equal(byId.get("omp-subagents-v2-runtime").lifecycle, "experimental");
+  assert.deepEqual(byId.get("omp-agent-prompts-runtime").profileEligibility, ["minimal", "coding", "research", "orchestration"]);
+  assert.ok(byId.get("researcher-agent").profileEligibility.includes("orchestration"));
+  assert.deepEqual(byId.get("omp-subagents-v2-runtime").owners, ["only-my-pi-subagent-orchestration"]);
+  for (const id of ["omp-workflow-core-runtime", "omp-swarm-core-runtime", "omp-pi-subagents-adapter-runtime"]) {
+    assert.equal(byId.get(id).lifecycle, "experimental", id);
+  }
   assert.equal(resources.filter((resource) => resource.id === "scout-agent").length, 1);
   assert.ok(fs.existsSync(path.join(root, "agents", "scout.json")));
   assert.ok(fs.existsSync(path.join(root, "agents", "generated", "omp-scout.md")));

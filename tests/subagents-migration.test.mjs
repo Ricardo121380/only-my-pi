@@ -23,7 +23,16 @@ test("all four legacy swarm recipes migrate to heterogeneous WorkflowPlans, neve
     assert.equal(migrated.definition.description.includes("not a BatchSwarm"), true);
     assert.equal(migrated.plan.nodes.some((node) => node.kind === "batch-swarm"), false);
     assert.equal(migrated.plan.nodes.length, recipe.nodes.length);
+    assert.equal(
+      migrated.plan.budget.maxOutputBytes,
+      migrated.plan.nodes.reduce((total, node) => total + (node.budget.maxOutputBytes * node.budget.maxAttempts), 0),
+    );
     assert.equal(validateWorkflowPlan(migrated.plan).valid, true);
+    if (recipe.nodes.some((node) => node.writer)) {
+      assert.equal(migrated.plan.policy.workspace, "managed-worktree");
+      assert.equal(migrated.plan.policy.mutation, "guarded");
+      assert.deepEqual(migrated.plan.policy.tools.allow, ["edit", "read", "write"]);
+    }
     for (const legacy of recipe.nodes) {
       const node = migrated.plan.nodes.find((candidate) => candidate.id === legacy.id);
       assert.ok(node, `${recipe.id}/${legacy.id}`);
@@ -42,7 +51,22 @@ test("legacy workflow approval becomes an explicit approval node", () => {
   assert.deepEqual(implement.needs, ["implement-approval"]);
   assert.equal(implement.policy.workspace, "managed-worktree");
   assert.equal(implement.idempotency, "receipt");
+  assert.equal(migrated.plan.policy.workspace, "managed-worktree");
+  assert.equal(migrated.plan.policy.mutation, "guarded");
+  assert.deepEqual(migrated.plan.policy.tools.allow, ["edit", "read", "write"]);
   assert.equal(validateWorkflowPlan(migrated.plan).valid, true);
+  assert.equal(
+    migrated.plan.budget.maxOutputBytes,
+    migrated.plan.nodes.reduce((total, node) => total + (node.budget.maxOutputBytes * node.budget.maxAttempts), 0),
+  );
+});
+
+test("legacy read-only resources cannot smuggle a writer into migration", () => {
+  const recipe = read("swarm/recipes/coding-guarded.json");
+  assert.throws(
+    () => translateLegacySwarmRecipe({ ...recipe, readOnly: true }),
+    (error) => error.code === "LEGACY_POLICY_CONFLICT",
+  );
 });
 
 test("legacy swarm action flattens into namespaced Agent nodes plus a barrier", () => {

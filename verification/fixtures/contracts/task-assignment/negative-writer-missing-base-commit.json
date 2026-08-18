@@ -1,0 +1,17 @@
+{
+  "$schema": "task-assignment-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "kind": "task-assignment",
+  "assignmentId": "writer-missing-base",
+  "agentSpecId": "implementer-resolved",
+  "agentSpecHash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+  "task": { "text": "Apply the patch.", "digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666" },
+  "dependencies": [],
+  "ownership": { "writer": true, "workspace": "managed-worktree", "allowedPaths": ["src"], "fileClaims": ["src/index.mjs"] },
+  "idempotency": { "class": "side-effect" },
+  "context": { "mode": "fresh", "artifactRefs": [] },
+  "budget": {},
+  "output": null,
+  "assignmentHash": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+}

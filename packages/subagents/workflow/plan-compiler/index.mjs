@@ -5,6 +5,8 @@ const SHA256 = /^sha256:[a-f0-9]{64}$/u;
 const COMPOSITES = new Set(["sequence", "pipeline", "parallel", "workflow"]);
 const PRIMITIVES = new Set(["agent", "batch-swarm", "gate", "checkpoint", "approval", "loop-controller"]);
 const MUTATING_TOOLS = new Set(["bash", "edit", "write"]);
+const WORKSPACE_RANK = Object.freeze({ "shared-read-only": 0, "shared-guarded": 1, "managed-worktree": 2 });
+const EGRESS_RANK = Object.freeze({ deny: 0, ask: 1, allow: 2 });
 
 export class WorkflowPlanError extends Error {
   constructor(message, code = "WORKFLOW_PLAN_ERROR", details = {}) {
@@ -84,6 +86,7 @@ function normalizeBudget(input = {}) {
 }
 
 function normalizePolicy(input = {}) {
+  if (!object(input)) fail("policy must be an object", "INVALID_POLICY");
   const policy = {
     workspace: input.workspace ?? "shared-read-only",
     mutation: input.mutation ?? "none",
@@ -112,6 +115,65 @@ function normalizePolicy(input = {}) {
     if (mutating) fail(`read-only policy allows mutating tool: ${mutating}`, "POLICY_ESCALATION");
   }
   return policy;
+}
+
+function completePolicy(input, label) {
+  const normalized = normalizePolicy(input);
+  if (JSON.stringify(canonical(input)) !== JSON.stringify(canonical(normalized))) {
+    fail(`${label} must be a complete normalized policy`, "INVALID_POLICY");
+  }
+  return normalized;
+}
+
+function assertPolicyCovered(root, candidate, nodeId) {
+  if (WORKSPACE_RANK[candidate.workspace] > WORKSPACE_RANK[root.workspace]) {
+    fail(`node ${nodeId} widens the root workspace policy`, "ROOT_POLICY_ESCALATION", { nodeId, surface: "workspace" });
+  }
+  if (root.mutation === "none" && candidate.mutation !== "none") {
+    fail(`node ${nodeId} widens the root mutation policy`, "ROOT_POLICY_ESCALATION", { nodeId, surface: "mutation" });
+  }
+  for (const surface of ["web", "mcp", "provider"]) {
+    if (EGRESS_RANK[candidate.egress[surface]] > EGRESS_RANK[root.egress[surface]]) {
+      fail(`node ${nodeId} widens the root ${surface} egress policy`, "ROOT_POLICY_ESCALATION", { nodeId, surface: `egress.${surface}` });
+    }
+  }
+  const rootAllowed = new Set(root.tools.allow);
+  for (const tool of candidate.tools.allow) {
+    if (!rootAllowed.has(tool)) {
+      fail(`node ${nodeId} widens the root tool policy with ${tool}`, "ROOT_POLICY_ESCALATION", { nodeId, surface: "tools.allow", tool });
+    }
+  }
+}
+
+function effectiveNodePolicy(root, candidate) {
+  const denied = new Set([...root.tools.deny, ...candidate.tools.deny]);
+  return canonical({
+    workspace: WORKSPACE_RANK[root.workspace] <= WORKSPACE_RANK[candidate.workspace] ? root.workspace : candidate.workspace,
+    mutation: root.mutation === "none" || candidate.mutation === "none" ? "none" : "guarded",
+    egress: Object.fromEntries(["web", "mcp", "provider"].map((surface) => [
+      surface,
+      EGRESS_RANK[root.egress[surface]] <= EGRESS_RANK[candidate.egress[surface]] ? root.egress[surface] : candidate.egress[surface],
+    ])),
+    tools: {
+      allow: candidate.tools.allow.filter((tool) => root.tools.allow.includes(tool) && !denied.has(tool)).sort(),
+      deny: [...denied].sort(),
+    },
+  });
+}
+
+export function effectiveWorkflowPolicyEnvelope(plan) {
+  if (!object(plan) || !Array.isArray(plan.nodes)) fail("WorkflowPlan is required for its effective policy envelope", "INVALID_PLAN");
+  const root = completePolicy(plan.policy, "root policy");
+  const nodes = plan.nodes.map((node) => {
+    const policy = completePolicy(node.policy, `node ${node.id} policy`);
+    assertPolicyCovered(root, policy, node.id);
+    return { id: node.id, policy: effectiveNodePolicy(root, policy) };
+  }).sort((left, right) => left.id.localeCompare(right.id));
+  return deepFreeze(canonical({ root, nodes }));
+}
+
+export function digestWorkflowPolicyEnvelope(plan) {
+  return digest(effectiveWorkflowPolicyEnvelope(plan));
 }
 
 function graphFacts(nodes) {
@@ -271,6 +333,7 @@ export function validateWorkflowPlan(plan) {
     if (plan.revision.number === 0 && plan.revision.parentPlanDigest !== null) fail("revision zero cannot have a parent", "INVALID_REVISION");
     if (plan.revision.number > 0 && !SHA256.test(plan.revision.parentPlanDigest ?? "")) fail("revised plan requires parent digest", "INVALID_REVISION");
     const facts = graphFacts(plan.nodes);
+    effectiveWorkflowPolicyEnvelope(plan);
     if (!facts.byId.has(plan.terminalNodeId)) fail("terminal node is missing", "UNKNOWN_TERMINAL");
     if (facts.order.length > plan.budget.maxNodes || facts.width > plan.budget.maxParallel || facts.depth > plan.budget.maxDepth) fail("plan exceeds its graph budget", "BUDGET_EXCEEDED");
     for (const node of plan.nodes) {
@@ -317,6 +380,7 @@ export function compileWorkflowDefinition(definition, options = {}) {
     planBudget: budget,
   });
   const facts = graphFacts(nodes);
+  for (const node of nodes) assertPolicyCovered(policy, node.policy, node.id);
   if (nodes.length > budget.maxNodes) fail("definition exceeds maxNodes", "BUDGET_EXCEEDED");
   if (facts.width > budget.maxParallel) fail("definition exceeds maxParallel", "BUDGET_EXCEEDED");
   if (facts.depth > budget.maxDepth) fail("definition exceeds maxDepth", "BUDGET_EXCEEDED");

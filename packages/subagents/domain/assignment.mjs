@@ -21,6 +21,15 @@ const WORKSPACE_CANONICAL = Object.freeze({
   "managed-worktree": "managed-worktree",
 });
 const WORKSPACE_RANK = Object.freeze({ none: 0, "shared-read-only": 1, "shared-guarded": 2, "managed-worktree": 3 });
+const GIT_COMMIT = /^[a-f0-9]{40}$/u;
+
+export function assignmentPathClaimCovered(claim, allowedPaths = []) {
+  const normalizedClaim = typeof claim === "string" ? claim.replace(/\/$/u, "") : claim;
+  return allowedPaths.some((allowed) => {
+    const prefix = typeof allowed === "string" ? allowed.replace(/\/$/u, "") : allowed;
+    return normalizedClaim === prefix || normalizedClaim.startsWith(`${prefix}/`);
+  });
+}
 
 function normalizeTask(value) {
   const input = typeof value === "string" ? { text: value } : assertRecord(value, "TaskAssignment.task");
@@ -53,12 +62,32 @@ function normalizeOwnership(value, agentSpec) {
   if (new Set(allowedPaths).size !== allowedPaths.length) throw new TypeError("TaskAssignment.ownership.allowedPaths must not contain duplicates");
   const fileClaims = (input.fileClaims ?? []).map((entry, index) => assertRelativePath(entry, `TaskAssignment.ownership.fileClaims[${index}]`));
   if (new Set(fileClaims).size !== fileClaims.length) throw new TypeError("TaskAssignment.ownership.fileClaims must not contain duplicates");
+  for (const claim of fileClaims) {
+    if (!assignmentPathClaimCovered(claim, allowedPaths)) {
+      fail("TaskAssignment file claim is outside allowed paths", "ASSIGNMENT_FILE_CLAIM_OUTSIDE_PATHS", {
+        category: "policy",
+        details: { claim },
+      });
+    }
+  }
+  const baseCommit = input.baseCommit === undefined
+    ? undefined
+    : assertString(input.baseCommit, "TaskAssignment.ownership.baseCommit", { maximum: 128 });
+  if (baseCommit !== undefined && !GIT_COMMIT.test(baseCommit)) {
+    fail("TaskAssignment baseCommit must be a full lowercase Git commit", "ASSIGNMENT_BASE_COMMIT_INVALID", { category: "validation" });
+  }
+  if (writer && fileClaims.length === 0) {
+    fail("writer TaskAssignment requires at least one file claim", "ASSIGNMENT_WRITER_CLAIMS_REQUIRED", { category: "policy" });
+  }
+  if (writer && baseCommit === undefined) {
+    fail("writer TaskAssignment requires a baseCommit", "ASSIGNMENT_WRITER_BASE_COMMIT_REQUIRED", { category: "policy" });
+  }
   return {
     writer,
     workspace,
     allowedPaths: allowedPaths.sort(),
     fileClaims: fileClaims.sort(),
-    ...(input.baseCommit === undefined ? {} : { baseCommit: assertString(input.baseCommit, "TaskAssignment.ownership.baseCommit", { maximum: 128 }) }),
+    ...(baseCommit === undefined ? {} : { baseCommit }),
   };
 }
 

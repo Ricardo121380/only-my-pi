@@ -4,9 +4,14 @@
   "title": "only-my-pi digest-bound ApprovalReceipt v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["$schema", "formatVersion", "contractStatus", "kind", "planDigest", "parentRevisionDigest", "repo", "effectivePolicyHash", "capabilityEnvelopeHash", "budgetEnvelopeHash", "scope", "origin", "approvedAt", "approvedPlanRevision", "replanEnvelopeDigest", "receiptId"],
+  "required": ["$schema", "formatVersion", "contractStatus", "kind", "planDigest", "parentRevisionDigest", "repo", "effectivePolicyHash", "capabilityEnvelopeHash", "executionEnvelopeDigest", "budgetEnvelopeHash", "scope", "origin", "approvedAt", "approvedPlanRevision", "replanEnvelopeDigest", "receiptId"],
   "properties": {
-    "$schema": { "type": "string", "pattern": "approval-receipt-v1\\.schema\\.json$" },
+    "$schema": {
+      "enum": [
+        "https://github.com/Ricardo121380/only-my-pi/schemas/approval-receipt-v1.schema.json",
+        "approval-receipt-v1.schema.json"
+      ]
+    },
     "formatVersion": { "const": 1 },
     "contractStatus": { "const": "contract-preview" },
     "kind": { "const": "approval-receipt" },
@@ -25,6 +30,7 @@
     },
     "effectivePolicyHash": { "$ref": "#/$defs/sha256" },
     "capabilityEnvelopeHash": { "$ref": "#/$defs/sha256" },
+    "executionEnvelopeDigest": { "$ref": "#/$defs/sha256" },
     "budgetEnvelopeHash": { "$ref": "#/$defs/sha256" },
     "scope": {
       "type": "object",
@@ -34,8 +40,8 @@
         "mutation": { "enum": ["none", "guarded"] },
         "integration": { "enum": ["none", "serial"] },
         "delivery": { "enum": ["local", "commit", "push"] },
-        "maxAssignments": { "type": "integer", "minimum": 0 },
-        "maxActiveChildren": { "type": "integer", "minimum": 0 }
+        "maxAssignments": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "maxActiveChildren": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
       }
     },
     "origin": { "enum": ["interactive-user", "explicit-cli-yes"] },
@@ -44,6 +50,31 @@
     "replanEnvelopeDigest": { "$ref": "#/$defs/nullableSha256" },
     "receiptId": { "$ref": "#/$defs/sha256" }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "scope": {
+            "type": "object",
+            "properties": { "mutation": { "const": "guarded" } },
+            "required": ["mutation"]
+          }
+        },
+        "required": ["scope"]
+      },
+      "then": {
+        "properties": {
+          "repo": {
+            "type": "object",
+            "properties": {
+              "allowedPaths": { "type": "array", "minItems": 1 },
+              "writerClaims": { "type": "array", "minItems": 1 }
+            }
+          }
+        }
+      }
+    }
+  ],
   "$defs": {
     "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
     "nullableSha256": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/sha256" }] },

@@ -54,9 +54,17 @@ The first S0–S2 source slice now contains:
   compilation, explicit backend-ID mapping, and correlated terminal proof;
 - WorkflowDefinition v2 to immutable WorkflowPlan compilation, a single
   RunCoordinator, writer lease/fencing, hash-chained events, atomic snapshots,
-  parent budget reservations, and fail-closed mutation recovery;
+  parent budget reservations, canonical run-input binding, a stable per-run
+  execution envelope, run-bound ApprovalReceipt validation, and fail-closed
+  mutation recovery. Long-running nodes renew the single writer lease, and
+  crash recovery charges any child that may have started against its full
+  reservation rather than refunding unknown work;
 - deterministic dual-read migration of all four heterogeneous legacy Swarm
   recipes into WorkflowPlan rather than BatchSwarm;
+- public Workflow/Swarm compatibility facades that use the legacy catalogs as
+  readers, assign one stable run ID while planning, require the confirmed plan
+  and execution-envelope digests on execution, reuse the exact input snapshot,
+  and delegate all live lifecycle work to the one injected RunCoordinator;
 - a 15-case, fixed-seed, three-baseline offline evaluation corpus.
 
 This source slice has no S0–S2 promotion receipt yet. Its tests use injected
@@ -65,19 +73,37 @@ credential read, global install, or real Pi home mutation was performed.
 All 14 planned orchestration contracts plus the evaluation-corpus contract are
 now registered in the strict catalog. The catalog validates 31 kinds and 62
 non-vacuous production documents, with positive, unknown-field/version, and
-targeted semantic negatives. Migration of the old Workflow/Swarm control
-surfaces to compatibility facades remains S2 closure work. BatchSwarm
-execution, SwarmGoal, UltraRun, and promotion-specific live evidence remain
-S3–S5. Historical M5 receipts must not be described as successor evidence.
+targeted semantic negatives. Public Workflow/Swarm routing now converges on
+the v2 facade. Approval fails closed without a live evidence provider,
+revalidates repository/capability scope on resume and before every mutating
+node admission, and cannot be replayed for a second run. Unfinished
+content-addressed read-only attempts can be deterministically requeued, while
+unfinished mutation is settled as interrupted and is never silently replayed.
+Every node deadline and reported token/cost/output overrun is enforced against
+the reserved envelope. A local deadline without correlated process-terminal
+proof is non-authoritative and makes the run `orphaned`, never a forged
+`timed-out` terminal claim. Child output is depth/node/byte bounded before
+cloning or serialization. Mutating admission additionally requires an executor
+that explicitly advertises audited path enforcement; the current
+`pi-subagents` v1 wire does not itself prove a per-path allowlist, so this live
+writer seam remains unavailable rather than being inferred from a worktree.
+Restart-safe plan lookup, durable status/cancel recovery, and the bounded
+no-model Pi topology probe remain S2 closure work. BatchSwarm execution,
+SwarmGoal, UltraRun, and promotion-specific live evidence remain S3–S5.
+Historical M5 receipts must not be described as successor evidence.
 
 Current branch evidence for this Contract Preview slice:
 
-- `npm test`: **406/406** pass;
-- `npm run test:subagents`: **55/55** pass;
+- `npm test`: **448/448** pass;
+- `npm run test:subagents`: **92/92** pass;
 - `npm run schema:check`: **62 production documents / 31 schema kinds / 0 findings**;
-- `npm run pack:check`: **218 allowlisted files**, with no tests, receipts, or
+- `npm run pack:check`: **219 allowlisted files**, with no tests, receipts, or
   Codex Goal in the tarball;
-- `npm run typecheck`, `npm run lint`, and `npm run secret:scan`: pass.
+- `npm run lint`: **580 files / 0 findings**;
+- `npm run secret:scan`: **580 tracked files + 219 packed files / 0 findings**;
+- `npm run doctor`, all six Profile doctors, Mode/Agent/Workflow/Swarm doctors,
+  `npm run typecheck`, and the deterministic agent/profile generators: pass.
+  Static doctor retains only the two explicit inactive-candidate warnings.
 
 These are source-tree gates only. A promotion receipt intentionally does not
 exist until the remaining S2 compatibility/topology work and the requested
@@ -229,6 +255,11 @@ M4 now supplies the practical single-Agent harness layer:
 
 M5 now supplies the governed AgentSwarm layer without introducing a second
 child scheduler or subagent owner:
+
+> Successor note（2026-08-18）：下列 M5 controller/compiler 仍作为 direct-import
+> 兼容实现保留；公共 `omp workflow`、`omp swarm` 与 `/omp` 路由已经不再创建它们，
+> 而是把旧资源迁移为 WorkflowPlan 并交给 `packages/subagents/` 的统一
+> RunCoordinator。历史 M5 evidence 不能充当 successor live evidence。
 
 - `packages/swarm-core` discovers and validates four versioned recipes, applies
   Profile/Mode/role budget intersections, rejects recursive or unsafe writer
@@ -428,9 +459,10 @@ plugins, arbitrary JavaScript workflows, automatic marketplaces, remote
 UI/SSH/Cron, and un-sandboxed web fetch also remain outside the default
 profiles.
 
-The next successor closure step is to route the old Workflow/Swarm control
-surfaces through the v2 facade and remove their independent controller/state
-ownership. After the S2 facade migration and bounded no-model Pi topology
-probe, S3 adds a true homogeneous BatchSwarm, S4 introduces dynamic SwarmGoal
-plan revisions and UltraRun routing, and S5 adds promotion-specific live,
-fault, security, and compatibility evidence.
+The next successor closure step is to persist and resolve the exact
+run-ID-to-WorkflowPlan binding across restart, finish durable status/cancel
+recovery, and run the bounded no-model Pi topology probe. The legacy direct
+imports remain one-release compatibility shims but no longer own public
+execution. After that S2 closure, S3 adds a true homogeneous BatchSwarm, S4
+introduces dynamic SwarmGoal plan revisions and UltraRun routing, and S5 adds
+promotion-specific live, fault, security, and compatibility evidence.

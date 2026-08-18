@@ -244,7 +244,13 @@ test("compiler rejects unenforceable tool narrowing and unproven writer worktree
     assignmentId: "implement-01",
     agentSpec: writerSpec,
     task: "Apply the approved patch.",
-    ownership: { writer: true, workspace: "managed-worktree", allowedPaths: ["src/index.mjs"] },
+    ownership: {
+      writer: true,
+      workspace: "managed-worktree",
+      allowedPaths: ["src/index.mjs"],
+      fileClaims: ["src/index.mjs"],
+      baseCommit: "0123456789abcdef0123456789abcdef01234567",
+    },
   });
   assert.throws(
     () => compileAgentAssignmentToPiSpawnRequest({

@@ -140,7 +140,7 @@ export async function restoreModeReceipt({ registry, entries, profile } = {}) {
  * It never invokes a shell and treats missing live services as an explicit
  * unavailable state rather than guessing a permission or sandbox state.
  */
-export function createOmpRuntime({ rootDir, configRoot, registry, modeService, workflowService, swarmService, themeService, statusService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
+export function createOmpRuntime({ rootDir, configRoot, registry, modeService, workflowService, swarmService, subagentsOrchestration, themeService, statusService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
   const derivedRoot = rootDir ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const derivedConfigRoot = configRoot ?? process.env.PI_CODING_AGENT_DIR ?? null;
   let modes = modeService;
@@ -159,7 +159,7 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
       // startup path.  The dynamic import also makes a missing optional
       // workflow bundle an explicit command-time UNAVAILABLE result.
       const module = await import("../../packages/control-service/workflow-service.mjs");
-      workflows = module.createWorkflowControlService({ rootDir: derivedRoot });
+      workflows = module.createWorkflowControlService({ rootDir: derivedRoot, orchestration: subagentsOrchestration });
     }
     return workflows;
   };
@@ -168,7 +168,7 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
       // Swarm is an optional M5 surface.  Keep it out of minimal startup and
       // only load the adapter/control bundle when the user invokes /omp swarm.
       const module = await import("../../packages/control-service/swarm-service.mjs");
-      swarms = module.createSwarmControlService({ rootDir: derivedRoot });
+      swarms = module.createSwarmControlService({ rootDir: derivedRoot, orchestration: subagentsOrchestration });
     }
     return swarms;
   };
@@ -231,8 +231,34 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
       }
       if (command === "workflow") {
         const subcommand = args[0] ?? "list";
-        const workflowId = args[1] ?? null;
-        const result = await (await getWorkflows()).dispatch({ subcommand, workflowId, runId: workflowId, apply: args.includes("--apply") && args.includes("--yes"), input: {}, conditions: ["profile-resolved", "mode-resolved", "session-idle"] });
+        const identifier = args[1] ?? null;
+        const approved = args.includes("--apply") && args.includes("--yes");
+        const service = await getWorkflows();
+        const request = {
+          subcommand,
+          workflowId: ["status", "cancel"].includes(subcommand) ? null : identifier,
+          runId: ["status", "cancel"].includes(subcommand) ? identifier : null,
+          input: {},
+          conditions: ["profile-resolved", "mode-resolved", "session-idle"],
+        };
+        let result;
+        if (subcommand === "run" && approved) {
+          const plan = await service.dispatch({ ...request, apply: false, yes: false });
+          result = plan?.ok === false
+            ? plan
+            : await service.dispatch({
+              ...request,
+              apply: true,
+              yes: true,
+              runId: plan.runId ?? request.runId,
+              input: plan.input,
+              conditions: plan.executionEnvelope?.conditions ?? request.conditions,
+              expectedPlanDigest: plan.plan?.planDigest ?? null,
+              expectedExecutionDigest: plan.executionEnvelope?.executionEnvelopeDigest ?? null,
+            });
+        } else {
+          result = await service.dispatch({ ...request, apply: false, yes: false });
+        }
         notify(ctx, result, result.ok === false ? "warning" : "info");
         return result;
       }
@@ -241,14 +267,33 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
         const identifier = args[1] ?? null;
         const inputFileIndex = args.indexOf("--input-file");
         const inputFile = inputFileIndex >= 0 ? args[inputFileIndex + 1] : null;
-        const result = await (await getSwarms()).dispatch({
+        const service = await getSwarms();
+        const request = {
           subcommand,
           recipeId: ["status", "cancel"].includes(subcommand) ? null : identifier,
           runId: ["status", "cancel"].includes(subcommand) ? identifier : null,
           inputFile,
-          yes: args.includes("--yes"),
-          input: {},
-        });
+          ...(inputFile ? {} : { input: {} }),
+        };
+        const approved = args.includes("--yes");
+        let result;
+        if (subcommand === "run" && approved) {
+          const plan = await service.dispatch({ ...request, subcommand: "plan", yes: false });
+          result = plan?.ok === false
+            ? plan
+            : await service.dispatch({
+              ...request,
+              subcommand: "run",
+              yes: true,
+              runId: plan.runId ?? request.runId,
+              input: plan.input,
+              conditions: plan.executionEnvelope?.conditions,
+              expectedPlanDigest: plan.plan?.planDigest ?? null,
+              expectedExecutionDigest: plan.executionEnvelope?.executionEnvelopeDigest ?? null,
+            });
+        } else {
+          result = await service.dispatch({ ...request, yes: false });
+        }
         notify(ctx, result, result.ok === false ? "warning" : "info");
         return result;
       }

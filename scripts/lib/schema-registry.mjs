@@ -10,6 +10,11 @@ import {
   compileWorkflowDefinition,
   validateWorkflowPlan,
 } from "../../packages/subagents/workflow/plan-compiler/index.mjs";
+import {
+  approvalReceiptId,
+  approvalReceiptSemanticFindings,
+} from "../../packages/subagents/policy/approval-receipt.mjs";
+import { assignmentPathClaimCovered } from "../../packages/subagents/domain/assignment.mjs";
 
 const DEFAULT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const DEFAULT_CATALOG = "contracts/schema-catalog.json";
@@ -313,10 +318,6 @@ function overlapErrors(value, instancePath = "") {
   return errors;
 }
 
-function pathClaimCovered(claim, allowedPaths = []) {
-  return allowedPaths.some((allowed) => claim === allowed || claim.startsWith(`${allowed.replace(/\/$/, "")}/`));
-}
-
 function budgetEnvelopeErrors(document) {
   const errors = [];
   const hard = document.hard ?? {};
@@ -567,7 +568,7 @@ function semanticErrors(kind, document, { sourcePath, rootDir, index, documentsB
       errors.push(error("/idempotency/class", "writer-policy", "writer assignment cannot be classified read-only"));
     }
     for (const [position, claim] of (ownership.fileClaims ?? []).entries()) {
-      if (!pathClaimCovered(claim, ownership.allowedPaths ?? [])) errors.push(error(`/ownership/fileClaims/${position}`, "path-claim", `file claim is outside allowed paths: ${claim}`, { claim }));
+      if (!assignmentPathClaimCovered(claim, ownership.allowedPaths ?? [])) errors.push(error(`/ownership/fileClaims/${position}`, "path-claim", `file claim is outside allowed paths: ${claim}`, { claim }));
     }
   } else if (kind === "batchSwarm") {
     errors.push(...unknownRefs([document.agentSpecRef], index.resolvedAgentSpecs, "/agentSpecRef", "ResolvedAgentSpec"));
@@ -584,12 +585,12 @@ function semanticErrors(kind, document, { sourcePath, rootDir, index, documentsB
   } else if (kind === "budgetEnvelope") {
     errors.push(...budgetEnvelopeErrors(document));
   } else if (kind === "approvalReceipt") {
-    if (document.scope?.maxActiveChildren > document.scope?.maxAssignments) errors.push(error("/scope/maxActiveChildren", "budget-envelope", "approved active children exceed approved total assignments"));
-    for (const [position, claim] of (document.repo?.writerClaims ?? []).entries()) {
-      if (!pathClaimCovered(claim, document.repo?.allowedPaths ?? [])) errors.push(error(`/repo/writerClaims/${position}`, "path-claim", `writer claim is outside approved paths: ${claim}`, { claim }));
+    for (const finding of approvalReceiptSemanticFindings(document)) {
+      errors.push(error(finding.instancePath, finding.keyword, finding.message, finding.params));
     }
-    if (document.scope?.mutation === "none" && (document.repo?.writerClaims?.length ?? 0) > 0) errors.push(error("/repo/writerClaims", "approval-scope", "mutation:none approval cannot contain writer claims"));
-    if (document.scope?.mutation === "none" && document.scope?.delivery !== "local") errors.push(error("/scope/delivery", "approval-scope", "mutation:none approval cannot authorize commit or push delivery"));
+    if (document.receiptId !== approvalReceiptId(document)) {
+      errors.push(error("/receiptId", "receipt-digest", "approval receipt digest does not match its content"));
+    }
   } else if (kind === "swarmGoal") {
     errors.push(...unknownRefs(document.authority?.allowedAgentTemplates, index.agentTemplates, "/authority/allowedAgentTemplates", "AgentTemplate"));
     errors.push(...unknownRefs([document.authority?.budgetRef], index.budgetEnvelopes, "/authority/budgetRef", "BudgetEnvelope"));

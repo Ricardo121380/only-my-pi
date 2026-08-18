@@ -196,6 +196,13 @@ test("subagents v2 contracts reject authority, budget, reference, and terminal-p
   ]) assertFixtureKeyword(registry, kind, name, keyword);
 });
 
+test("TaskAssignment ownership fixtures reject unbound claims and incomplete writer evidence", () => {
+  const registry = createSchemaRegistry({ rootDir: root });
+  assertFixtureKeyword(registry, "taskAssignment", "negative-file-claim-outside-paths.json", "path-claim");
+  assertFixtureKeyword(registry, "taskAssignment", "negative-writer-empty-claims.json", "minItems");
+  assertFixtureKeyword(registry, "taskAssignment", "negative-writer-missing-base-commit.json", "required");
+});
+
 test("semantic graph rejects unknown references, cycles, duplicate owners, and escalation", () => {
   const registry = createSchemaRegistry({ rootDir: root });
   const cases = [

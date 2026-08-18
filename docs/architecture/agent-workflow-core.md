@@ -6,6 +6,13 @@ Workflow 层。它仍然是 Pi 的发行层，不替换 Pi 的 agent loop、Prov
 `pi-subagents` extension-RPC 适配器，但本页的 parent-session runner 仍是
 单 Agent fallback。
 
+> Successor note（2026-08-18）：本页描述的 v1 runner/controller 现为直接导入
+> 兼容层。`omp workflow`、`omp swarm` 与 `/omp` 公共入口已将 v1 资源翻译成
+> WorkflowPlan，并且只把 live execution 交给 `packages/subagents/` 的统一
+> RunCoordinator；plan 阶段分配稳定 run ID，并把输入快照和目标绑定到执行包络，
+> run 阶段必须原样复用。缺少统一 runtime 或实时审批证据注入时 fail closed。v1
+> 模块尚未删除，不能把这一阶段描述成完整的 restart-safe S2 promotion。
+
 ## 组成
 
 ### Agent Registry

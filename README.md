@@ -112,14 +112,31 @@ receipts bounded. DeepSeek conformance, ACP v1, and workspace checkpoint remain
 non-default Labs modules with the explicit boundaries in the
 [Labs registry](docs/LABS.md).
 
-The S0–S2 successor branch is now implementing a unified
+The S0–S2 successor branch now contains a unified
 `packages/subagents/` facade. It provides typed AgentTemplate v2,
 ResolvedAgentSpec, TaskAssignment and terminal receipts; an exact
 `pi-subagents` RPC v1 backend; immutable WorkflowPlan compilation; a single
 RunCoordinator; a fenced append-only journal; crash-recoverable parent budget
 reservations; and dual-read migration from the v1 Workflow/Swarm resources.
-This is Contract Preview source evidence only. BatchSwarm execution,
-SwarmGoal, UltraRun, CLI/TUI migration, and live child evidence remain S3–S5.
+The existing `omp workflow`, `omp swarm`, and `/omp` compatibility routes now
+compile those resources to WorkflowPlan and can execute only through an
+explicitly injected unified RunCoordinator; they never instantiate the v1
+controllers. Execution repeats the previously shown plan digest; canonical run
+input, the stable run ID, target, conditions, and mutating ApprovalReceipt are
+bound into one execution-envelope digest and fail closed on drift. Approval
+requires a live repository/capability evidence provider on initial admission,
+resume, and every mutating-node admission; a receipt for one run cannot approve
+another. Unfinished read-only content-addressed attempts may be requeued with a
+fresh attempt, while unfinished mutation is never silently replayed. Writer
+leases renew during long nodes; work that may already have started consumes its
+worst-case reservation after recovery. Deadlines and reported output/token/cost
+overruns fail closed. Without correlated process-terminal proof, a local timeout
+is non-authoritative and leaves the run orphaned. Mutating dispatch also requires
+an executor that advertises audited path enforcement; a worktree alone is not
+treated as a path allowlist. This is Contract Preview source evidence only.
+Restart-safe plan lookup,
+pause/resume/restart-node, BatchSwarm execution, SwarmGoal, UltraRun, and live
+child evidence remain S2–S5.
 
 ## Local development
 

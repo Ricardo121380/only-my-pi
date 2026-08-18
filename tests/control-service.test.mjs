@@ -114,3 +114,23 @@ test("M6 theme mutations use the same plan-confirm-apply boundary", async () => 
   });
   assert.equal((await approved.dispatch({ command: "theme", options: { subcommand: "use", themeId: "only-my-pi-dark", apply: true } })).status, "THEME_APPLIED");
 });
+
+test("Workflow and Swarm mutations use the shared plan-confirm-run boundary", async () => {
+  const workflowCalls = [];
+  const swarmCalls = [];
+  const workflows = { async dispatch(options) { workflowCalls.push(options); return options.apply ? { ok: true, status: "WORKFLOW_COMPLETED", mutation: true } : { ok: true, status: "WORKFLOW_PLAN", mutation: false, plan: { planDigest: "sha256:workflow" } }; } };
+  const swarms = { async dispatch(options) { swarmCalls.push(options); return options.subcommand === "run" ? { ok: true, status: "SWARM_COMPLETED", mutation: true } : { ok: true, status: "SWARM_PLAN", mutation: false, plan: { planDigest: "sha256:swarm" } }; } };
+  const bootstrap = { status: async () => ({ ok: true, status: "STATUS" }) };
+
+  const denied = createControlService({ bootstrap, doctor: { live: async () => ({ status: "UNAVAILABLE" }) }, workflows, swarms });
+  assert.equal((await denied.dispatch({ command: "workflow", options: { subcommand: "run", workflowId: "safe", apply: true, yes: false } })).status, "CONFIRMATION_REQUIRED");
+  assert.equal((await denied.dispatch({ command: "swarm", options: { subcommand: "run", recipeId: "research", yes: false } })).status, "CONFIRMATION_REQUIRED");
+
+  const approved = createControlService({ bootstrap, doctor: { live: async () => ({ status: "UNAVAILABLE" }) }, workflows, swarms, confirm: async () => true });
+  assert.equal((await approved.dispatch({ command: "workflow", options: { subcommand: "run", workflowId: "safe", apply: true, yes: false } })).status, "WORKFLOW_COMPLETED");
+  assert.equal((await approved.dispatch({ command: "swarm", options: { subcommand: "run", recipeId: "research", yes: false } })).status, "SWARM_COMPLETED");
+  assert.equal(workflowCalls.at(-1).yes, true);
+  assert.equal(workflowCalls.at(-1).expectedPlanDigest, "sha256:workflow");
+  assert.equal(swarmCalls.at(-1).yes, true);
+  assert.equal(swarmCalls.at(-1).expectedPlanDigest, "sha256:swarm");
+});

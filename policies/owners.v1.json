@@ -68,6 +68,15 @@
       "status": "upstream"
     },
     {
+      "id": "only-my-pi-subagent-orchestration",
+      "description": "Sole first-party owner of typed Agent orchestration, WorkflowPlan coordination, journal, budget, and migration semantics; it never owns a second physical child runtime or public subagent tool.",
+      "exclusive": true,
+      "capabilities": [],
+      "surfaces": [],
+      "resourceIds": ["omp-subagents-v2-runtime"],
+      "status": "active"
+    },
+    {
       "id": "permission",
       "description": "Sole selected owner of tool-call, Bash-sandbox, and file-tool policy surfaces.",
       "exclusive": true,

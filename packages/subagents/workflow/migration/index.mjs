@@ -36,13 +36,13 @@ function id(value, label) {
   return value;
 }
 
-function planPolicy({ writer = false, workspace = "shared-read-only", readOnly = true } = {}) {
+function planPolicy({ writer = false, workspace = "shared-read-only", readOnly = true, root = false } = {}) {
   return writer
     ? {
         workspace: "managed-worktree",
         mutation: "guarded",
-        egress: { web: "deny", mcp: "deny", provider: "allow" },
-        tools: { allow: ["edit", "write"], deny: [] },
+        egress: { web: readOnly ? "deny" : "ask", mcp: "deny", provider: "allow" },
+        tools: { allow: root ? ["edit", "read", "write"] : ["edit", "write"], deny: [] },
       }
     : {
         workspace: workspace === "managed-worktree" ? "shared-read-only" : workspace,
@@ -62,13 +62,17 @@ function nodeBudget(timeoutSeconds, retry, outputBytes) {
   };
 }
 
+function totalNodeOutputBudget(nodes) {
+  return nodes.reduce((total, node) => total + (node.budget.maxOutputBytes * node.budget.maxAttempts), 0);
+}
+
 function approvalNode(step, needs, prefix = "") {
   const approvalId = `${prefix}${step.id}-approval`;
   return {
     kind: "approval",
     id: approvalId,
     needs,
-    policy: planPolicy({ readOnly: false }),
+    policy: planPolicy({ readOnly: true }),
     budget: nodeBudget(60, 0, 4096),
     cache: { mode: "never", keyInputs: [] },
     idempotency: "receipt",
@@ -119,7 +123,13 @@ function assertLegacyRecipe(recipe) {
 
 export function translateLegacySwarmRecipe(recipe) {
   assertLegacyRecipe(recipe);
+  const hasWriter = recipe.nodes.some((node) => node.writer === true);
+  if (recipe.readOnly === true && hasWriter) fail(`legacy read-only recipe ${recipe.id} contains a writer`, "LEGACY_POLICY_CONFLICT");
   const maxAttempts = Math.max(1, ...recipe.nodes.map((node) => (node.retry ?? 0) + 1));
+  const nodes = recipe.nodes.map((node) => legacyAgentNode(node, {
+    readOnly: recipe.readOnly,
+    childOutputBytes: recipe.budget.childOutputBytes,
+  }));
   const definition = {
     $schema: "https://github.com/Ricardo121380/only-my-pi/schemas/workflow-definition-v2.schema.json",
     formatVersion: 2,
@@ -127,24 +137,21 @@ export function translateLegacySwarmRecipe(recipe) {
     id: `${recipe.id}-workflow-v2`,
     version: "2.0.0",
     description: `Migrated heterogeneous Workflow from legacy swarm-recipe-v1 ${recipe.id}; this is not a BatchSwarm.`,
-    policy: planPolicy({ readOnly: recipe.readOnly }),
+    policy: planPolicy({ writer: hasWriter, readOnly: recipe.readOnly, root: true }),
     budget: {
       maxNodes: recipe.nodes.length,
       maxParallel: recipe.budget.maxConcurrency,
       maxDepth: Math.max(1, recipe.nodes.length),
       maxAttemptsPerNode: maxAttempts,
       maxWallTimeMs: recipe.budget.runTimeoutSeconds * 1000,
-      maxOutputBytes: recipe.aggregation.maxOutputBytes,
+      maxOutputBytes: Math.max(recipe.aggregation.maxOutputBytes, totalNodeOutputBudget(nodes)),
       maxAssignments: recipe.nodes.length,
       maxTokens: null,
       maxCostUsd: null,
     },
     flow: {
       kind: "parallel",
-      branches: recipe.nodes.map((node) => legacyAgentNode(node, {
-        readOnly: recipe.readOnly,
-        childOutputBytes: recipe.budget.childOutputBytes,
-      })),
+      branches: nodes,
     },
     terminalNodeId: recipe.verifier,
     migration: {
@@ -249,6 +256,9 @@ function translateLegacyStep(step, workflow, resolveRecipe) {
 export function translateLegacyWorkflow(workflow, { resolveRecipe } = {}) {
   assertLegacyWorkflow(workflow);
   const branches = workflow.steps.flatMap((step) => translateLegacyStep(step, workflow, resolveRecipe));
+  const hasWriter = branches.some((node) => node.policy?.mutation === "guarded");
+  const declaredMutation = workflow.mutationScope !== "none";
+  if (hasWriter && !declaredMutation) fail(`legacy read-only workflow ${workflow.id} contains a writer`, "LEGACY_POLICY_CONFLICT");
   const maxAttempts = Math.max(1, ...branches.map((node) => node.budget.maxAttempts));
   const definition = {
     $schema: "https://github.com/Ricardo121380/only-my-pi/schemas/workflow-definition-v2.schema.json",
@@ -257,14 +267,14 @@ export function translateLegacyWorkflow(workflow, { resolveRecipe } = {}) {
     id: `${workflow.id}-v2`,
     version: "2.0.0",
     description: `Migrated WorkflowDefinition from workflow-v1 ${workflow.id}.`,
-    policy: planPolicy({ readOnly: workflow.mutationScope === "none" }),
+    policy: planPolicy({ writer: hasWriter || declaredMutation, readOnly: !declaredMutation, root: true }),
     budget: {
       maxNodes: Math.max(branches.length, workflow.budget.maxSteps),
       maxParallel: workflow.budget.maxParallel ?? 1,
       maxDepth: Math.max(branches.length, 1),
       maxAttemptsPerNode: maxAttempts,
       maxWallTimeMs: workflow.budget.timeoutSeconds * 1000,
-      maxOutputBytes: workflow.budget.maxOutputBytes,
+      maxOutputBytes: totalNodeOutputBudget(branches),
       maxAssignments: Math.max(1, branches.filter((node) => node.kind === "agent" || node.kind === "batch-swarm").length),
       maxTokens: null,
       maxCostUsd: null,

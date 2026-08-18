@@ -124,6 +124,24 @@ test("/omp swarm routes through the injected control service without starting a 
   assert.deepEqual(calls, [{ subcommand: "plan", recipeId: "research-synthesis", runId: null, inputFile: null, yes: false, input: {} }]);
 });
 
+test("/omp lazy Workflow and Swarm services share one injected unified coordinator", async () => {
+  const calls = [];
+  const subagentsOrchestration = {
+    async execute(plan, options) {
+      calls.push({ plan, options });
+      return { runId: options.runId ?? "generated-run", status: "completed", terminal: { status: "completed" } };
+    },
+    async inspect() { return { projection: { status: "completed" } }; },
+    async cancel(runId) { return { status: "RUN_NOT_ACTIVE", runId }; },
+  };
+  const runtime = createOmpRuntime({ rootDir: process.cwd(), subagentsOrchestration });
+  const ctx = { ui: { notify() {} } };
+  assert.equal((await runtime.execute("workflow run single-agent-safe --apply --yes", ctx)).status, "WORKFLOW_COMPLETED");
+  assert.equal((await runtime.execute("swarm run research-synthesis --yes", ctx)).status, "SWARM_COMPLETED");
+  assert.equal(calls.length, 2);
+  assert.equal(calls.every((entry) => Object.isFrozen(entry.plan)), true);
+});
+
 test("/omp theme routes public Pi UI theme methods and keeps apply explicit", async () => {
   const applied = [];
   const runtime = createOmpRuntime({

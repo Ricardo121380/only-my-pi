@@ -1,7 +1,7 @@
 {
   "$schema": "../schemas/resources-lock-v1.schema.json",
   "formatVersion": 1,
-  "generatedAt": "2026-08-16",
+  "generatedAt": "2026-08-18",
   "resources": [
     {
       "id": "session-ledger",
@@ -420,7 +420,22 @@
       "egressSurfaces": [],
       "defaultLoaded": false,
       "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
-      "lifecycle": "stable",
+      "lifecycle": "experimental",
+      "packaged": true
+    },
+    {
+      "id": "omp-subagents-v2-runtime",
+      "type": "library",
+      "path": "packages/subagents",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": ["workspace-read", "subagent-rpc-v1"],
+      "owners": ["only-my-pi-subagent-orchestration"],
+      "commands": [],
+      "egressSurfaces": ["extensionEgress"],
+      "defaultLoaded": false,
+      "profileEligibility": ["orchestration"],
+      "lifecycle": "experimental",
       "packaged": true
     },
     {
@@ -559,6 +574,21 @@
       "packaged": true
     },
     {
+      "id": "omp-agent-prompts-runtime",
+      "type": "library",
+      "path": "agents/prompts",
+      "version": "1.0.0",
+      "provides": [],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["minimal", "coding", "research", "orchestration"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
       "id": "explorer-agent",
       "type": "agent",
       "path": "agents/explorer.json",
@@ -644,7 +674,7 @@
       "commands": [],
       "egressSurfaces": ["webEgress"],
       "defaultLoaded": false,
-      "profileEligibility": ["research"],
+      "profileEligibility": ["research", "orchestration"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -735,7 +765,7 @@
       "egressSurfaces": [],
       "defaultLoaded": false,
       "profileEligibility": ["orchestration"],
-      "lifecycle": "stable",
+      "lifecycle": "experimental",
       "packaged": true
     },
     {
@@ -750,7 +780,7 @@
       "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
       "profileEligibility": ["orchestration"],
-      "lifecycle": "stable",
+      "lifecycle": "experimental",
       "packaged": true
     },
     {

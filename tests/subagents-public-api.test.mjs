@@ -15,6 +15,8 @@ test("the unified facade exposes typed Agent and Workflow APIs without a raw wor
     "createRunCoordinator",
     "createEventJournal",
     "createBudgetLedger",
+    "createApprovalReceipt",
+    "createApprovalVerifier",
   ]) assert.equal(typeof subagents[name], "function", `${name} must be exported`);
 
   assert.equal(Object.hasOwn(subagents, "createPiSubagentsAdapter"), false);
@@ -59,4 +61,19 @@ test("facade forwards only domain-correlated lifecycle operations to its injecte
   assert.deepEqual(calls.map(([name]) => name), [
     "ensureReady", "launch", "status", "steer", "interrupt", "stop", "resume", "dispose",
   ]);
+});
+
+test("facade forwards the live approval evidence provider into its unified coordinator", () => {
+  const approvalEvidenceProvider = async () => ({
+    repo: null,
+    capabilityEnvelopeHash: null,
+  });
+  const facade = subagents.createSubagentsFacade({
+    eventJournal: { async append() {} },
+    budgetLedger: { async reserve() {} },
+    nodeExecutor: {},
+    approvalEvidenceProvider,
+  });
+  const coordinator = facade.workflow();
+  assert.equal(coordinator.approvalEvidenceProvider, approvalEvidenceProvider);
 });
