@@ -1,4 +1,7 @@
 import crypto from "node:crypto";
+import { constants as fsConstants } from "node:fs";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 import { createAgentRegistry } from "../agent-registry/index.mjs";
 import { createGateRunner } from "../gate-runner/index.mjs";
@@ -43,6 +46,27 @@ function prepareInput(value, preparedInputs) {
   if (bytes > 256 * 1024) throw unavailable("workflow run input exceeds 256 KiB", "RUN_INPUT_TOO_LARGE");
   preparedInputs.add(normalized);
   return normalized;
+}
+
+async function readInputFile(inputFile) {
+  if (typeof inputFile !== "string" || !path.isAbsolute(inputFile)) throw unavailable("workflow input file must be an absolute path", "INVALID_INPUT_FILE");
+  const target = path.resolve(inputFile);
+  let handle;
+  try {
+    handle = await fs.open(target, fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW);
+    const stat = await handle.stat();
+    if (!stat.isFile()) throw unavailable("workflow input file must be a regular non-symlink file", "INVALID_INPUT_FILE");
+    if (stat.size > 256 * 1024) throw unavailable("workflow input file exceeds 256 KiB", "RUN_INPUT_TOO_LARGE");
+    const contents = await handle.readFile();
+    if (contents.byteLength > 256 * 1024) throw unavailable("workflow input file exceeds 256 KiB", "RUN_INPUT_TOO_LARGE");
+    return JSON.parse(contents.toString("utf8"));
+  } catch (cause) {
+    if (["ELOOP", "EMLINK"].includes(cause?.code)) throw unavailable("workflow input file must be a regular non-symlink file", "INVALID_INPUT_FILE");
+    if (cause instanceof SyntaxError) throw unavailable("workflow input file must contain valid JSON", "INVALID_RUN_INPUT");
+    throw cause;
+  } finally {
+    await handle?.close().catch(() => {});
+  }
 }
 
 function normalizeConditions(value) {
@@ -165,14 +189,37 @@ export class WorkflowControlService {
     if (subcommand === "status") {
       if (!options.runId) return { ok: false, status: "WORKFLOW_STATUS_UNAVAILABLE", mutation: false, code: "RUN_ID_REQUIRED" };
       const plan = this.runPlans.get(options.runId);
-      if (!this.orchestration || !plan) return { ok: false, status: "WORKFLOW_STATUS_UNAVAILABLE", mutation: false, code: "LIVE_RUNTIME_UNAVAILABLE" };
-      const state = await this.orchestration.inspect(options.runId, plan);
+      if (!this.orchestration) return { ok: false, status: "WORKFLOW_STATUS_UNAVAILABLE", mutation: false, code: "LIVE_RUNTIME_UNAVAILABLE" };
+      let state;
+      try {
+        state = await this.orchestration.inspect(options.runId);
+      } catch (cause) {
+        if (!plan) return { ok: false, status: "WORKFLOW_STATUS_UNAVAILABLE", mutation: false, code: cause?.code ?? "LIVE_RUNTIME_UNAVAILABLE" };
+        state = await this.orchestration.inspect(options.runId, plan);
+      }
       return { ok: true, status: "WORKFLOW_STATUS", mutation: false, state };
     }
     if (subcommand === "cancel") {
       if (!options.runId) return { ok: false, status: "WORKFLOW_CANCEL_UNAVAILABLE", mutation: false, code: "RUN_ID_REQUIRED" };
       if (!this.orchestration) return { ok: false, status: "WORKFLOW_CANCEL_UNAVAILABLE", mutation: false, code: "LIVE_RUNTIME_UNAVAILABLE" };
-      return { ok: true, status: "WORKFLOW_CANCEL", mutation: false, result: await this.orchestration.cancel(options.runId) };
+      return { ok: true, status: "WORKFLOW_CANCEL", mutation: true, result: await this.orchestration.cancel(options.runId) };
+    }
+    if (subcommand === "resume") {
+      if (!options.runId) return { ok: false, status: "WORKFLOW_RESUME_UNAVAILABLE", mutation: true, code: "RUN_ID_REQUIRED" };
+      if (!this.orchestration || typeof this.orchestration.resume !== "function") {
+        return { ok: false, status: "WORKFLOW_RESUME_UNAVAILABLE", mutation: true, code: "PLAN_STORE_UNAVAILABLE" };
+      }
+      try {
+        const input = this.#input(options.inputFile ? await readInputFile(options.inputFile) : options.input);
+        const state = await this.orchestration.resume(options.runId, {
+          input,
+          approval: options.approval,
+          signal: options.signal,
+        });
+        return { ok: state.status === "completed", status: workflowResultStatus(state.status), mutation: true, state };
+      } catch (cause) {
+        return { ok: false, status: "WORKFLOW_RESUME_UNAVAILABLE", mutation: true, code: cause?.code ?? "WORKFLOW_RESUME_FAILED", message: cause?.message };
+      }
     }
     if (subcommand === "run") {
       let workflow;
@@ -194,7 +241,7 @@ export class WorkflowControlService {
       let input;
       let envelope;
       try {
-        input = this.#input(options.input);
+        input = this.#input(options.inputFile ? await readInputFile(options.inputFile) : options.input);
         envelope = executionEnvelope(migration.plan, {
           runId,
           sourceHash: workflow.sourceHash,

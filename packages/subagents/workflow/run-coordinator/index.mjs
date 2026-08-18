@@ -499,6 +499,11 @@ export class RunCoordinator {
     if (!options.budgetLedger || typeof options.budgetLedger.reserve !== "function") throw new TypeError("RunCoordinator requires createBudgetLedger() manager");
     this.eventJournal = options.eventJournal;
     this.budgetLedger = options.budgetLedger;
+    this.planStore = options.planStore ?? null;
+    if (this.planStore !== null
+      && (typeof this.planStore.put !== "function" || typeof this.planStore.get !== "function")) {
+      throw new TypeError("RunCoordinator planStore must implement put() and get()");
+    }
     this.nodeExecutor = options.nodeExecutor ?? {};
     this.gateRunner = options.gateRunner ?? null;
     this.approvalVerifier = options.approvalVerifier ?? createApprovalVerifier();
@@ -679,10 +684,55 @@ export class RunCoordinator {
     return Promise.race([Promise.resolve(operation), active.leaseFailurePromise]);
   }
 
+  async #stopActiveHandles(active, signal) {
+    if (active.stopPromise) return active.stopPromise;
+    active.stopPromise = (async () => {
+      const stopResults = [];
+      for (const [nodeId, handle] of active.handles) {
+        try {
+          const result = await this.nodeExecutor.stop?.(handle, { runId: active.runId, nodeId, signal });
+          stopResults.push({ nodeId, status: "STOP_SENT", receiptId: result?.terminal?.receiptId ?? result?.receiptId ?? null });
+        } catch (cause) {
+          stopResults.push({ nodeId, status: "STOP_FAILED", code: cause?.code ?? "STOP_FAILED" });
+        }
+      }
+      return stopResults;
+    })();
+    return active.stopPromise;
+  }
+
+  async #pollCancel(active) {
+    if (!this.planStore?.getCancelRequest || active.cancelRequested) return;
+    try {
+      const request = await this.planStore.getCancelRequest(active.runId);
+      if (!request) return;
+      active.cancelRequested = true;
+      active.cancelReason = request.reason;
+      active.cancelRequest = request;
+      active.controller.abort(new RunCoordinatorError("durable cancel request observed", "CANCEL_REQUEST_OBSERVED"));
+      // A backend stop call is advisory and may never resolve.  Heartbeat
+      // renewal must not be held behind it: the coordinator has already
+      // closed admission and will settle orphaned unless a correlated
+      // terminal proof arrives.  Keep the stop promise observable for the
+      // explicit cancel() API without making the journal writer stale.
+      void this.#stopActiveHandles(active, active.controller.signal).catch((cause) => {
+        active.stopError = cause;
+      });
+    } catch (cause) {
+      // A malformed control request must never be silently ignored. Abort the
+      // active run and let the normal non-authoritative/orphan path settle it.
+      active.cancelRequested = true;
+      active.cancelReason = "cancel-request-invalid";
+      active.cancelError = cause;
+      active.controller.abort(cause);
+    }
+  }
+
   #startLeaseHeartbeat(active) {
     let stopped = false;
     const tick = async () => {
       if (stopped || active.leaseFailure) return;
+      await this.#pollCancel(active);
       const renewal = this.#renewLease(active);
       active.leaseRenewal = renewal;
       try {
@@ -782,6 +832,18 @@ export class RunCoordinator {
     const { projection } = await this.#project(active);
     await this.#snapshot(active, projection);
     return projection;
+  }
+
+  async #settleCancellation(active, projection) {
+    if (projection.status !== "stopping") {
+      await this.#append(active, this.#event(active, "RunStopping", {
+        eventId: `run-stopping:${active.plan.revision.number}`,
+        payload: { reason: active.cancelReason ?? "cancel-requested" },
+      }));
+    }
+    return this.#settleRoot(active, "orphaned", {
+      reason: active.cancelReason ?? "terminal-proof-unavailable-after-cancel",
+    });
   }
 
   #nodeDeadline(active, node) {
@@ -1062,6 +1124,16 @@ export class RunCoordinator {
       runInputDigest: inputDigest,
     });
     if (this.active.has(runId)) fail(`run is already active: ${runId}`, "RUN_ALREADY_ACTIVE");
+    if (this.planStore) {
+      await this.planStore.put({
+        runId,
+        plan,
+        inputDigest,
+        sourceHash: executionEnvelope.sourceHash,
+        executionEnvelope,
+        executionEnvelopeDigest: executionEnvelope.executionEnvelopeDigest,
+      });
+    }
     const lease = await this.#lease(runId);
     let resolveDone;
     let rejectLeaseFailure;
@@ -1092,6 +1164,7 @@ export class RunCoordinator {
     options.signal?.addEventListener?.("abort", onAbort, { once: true });
     try {
       let { recovered, projection } = await this.#project(active);
+      await this.#pollCancel(active);
       if (recovered.events.length === 0) {
         await this.#append(active, this.#event(active, "RunPlanned", {
           eventId: `run-planned:${plan.revision.number}`,
@@ -1113,6 +1186,7 @@ export class RunCoordinator {
         if (projection.executionEnvelopeDigest !== executionEnvelope.executionEnvelopeDigest) fail("requested execution envelope differs from the durable run envelope", "EXECUTION_ENVELOPE_DRIFT");
       }
       if (TERMINAL_RUN_STATES.has(projection.status)) return projection;
+      if (active.cancelRequested) return await this.#settleCancellation(active, projection);
 
       const admittedAttemptIds = new Set(recovered.events
         .filter((event) => event.type === "NodeAdmitted")
@@ -1206,6 +1280,12 @@ export class RunCoordinator {
         }));
       }
 
+      await this.#pollCancel(active);
+      if (active.cancelRequested) {
+        ({ projection } = await this.#project(active));
+        return await this.#settleCancellation(active, projection);
+      }
+
       if (planNeedsApproval(plan)) {
         const verdict = await this.#verifyApproval(active, options.approval ?? null, null, "resume");
         if (!verdict?.ok) return await this.#requestApproval(active, verdict, { stage: "resume" });
@@ -1223,6 +1303,8 @@ export class RunCoordinator {
         }
       }
       ({ recovered, projection } = await this.#project(active));
+      await this.#pollCancel(active);
+      if (active.cancelRequested) return await this.#settleCancellation(active, projection);
       const hadStarted = recovered.events.some((event) => event.type === "RunStarted");
       if (projection.status === "paused" || hadStarted) {
         await this.#append(active, this.#event(active, "RunResumed", { eventId: this.idFactory("run-resumed", { runId: active.runId }), payload: { planDigest: plan.planDigest, executionEnvelopeDigest: executionEnvelope.executionEnvelopeDigest } }));
@@ -1233,10 +1315,8 @@ export class RunCoordinator {
 
       while (true) {
         ({ projection } = await this.#project(active));
-        if (active.cancelRequested) {
-          await this.#append(active, this.#event(active, "RunStopping", { eventId: `run-stopping:${plan.revision.number}`, payload: { reason: "cancel-requested" } }));
-          return await this.#settleRoot(active, "orphaned", { reason: "terminal-proof-unavailable-after-cancel" });
-        }
+        await this.#pollCancel(active);
+        if (active.cancelRequested) return await this.#settleCancellation(active, projection);
         if (active.pauseRequested) {
           await this.#append(active, this.#event(active, "RunPaused", { eventId: `run-paused:${plan.revision.number}`, payload: { reason: "pause-requested" } }));
           ({ projection } = await this.#project(active));
@@ -1279,29 +1359,90 @@ export class RunCoordinator {
   async cancel(runId, options = {}) {
     canonicalRunId(runId);
     const active = this.active.get(runId);
-    if (!active) return immutable({ status: "RUN_NOT_ACTIVE", runId });
-    active.cancelRequested = true;
-    active.controller.abort();
-    const stopResults = [];
-    for (const [nodeId, handle] of active.handles) {
-      try {
-        const result = await this.nodeExecutor.stop?.(handle, { runId, nodeId, signal: options.signal });
-        stopResults.push({ nodeId, status: "STOP_SENT", receiptId: result?.terminal?.receiptId ?? result?.receiptId ?? null });
-      } catch (cause) {
-        stopResults.push({ nodeId, status: "STOP_FAILED", code: cause.code ?? "STOP_FAILED" });
+    if (!active) {
+      if (!this.planStore?.requestCancel) return immutable({ status: "RUN_NOT_ACTIVE", runId });
+      const existing = await this.planStore.get?.(runId);
+      if (!existing) return immutable({ status: "RUN_NOT_FOUND", runId });
+      const current = await this.inspect(runId, existing.plan);
+      if (TERMINAL_RUN_STATES.has(current.projection.status)) {
+        return immutable({ status: "RUN_ALREADY_TERMINAL", durable: false, runId, runStatus: current.projection.status });
       }
+      const request = await this.planStore.requestCancel(runId, {
+        reason: options.reason ?? "cancel-requested",
+        requestId: options.requestId,
+      });
+      return immutable({ status: "CANCEL_REQUESTED", durable: true, runId, request: request.request });
+    }
+    active.cancelRequested = true;
+    active.cancelReason = options.reason ?? "cancel-requested";
+    active.controller.abort(new RunCoordinatorError("cancel requested", "CANCEL_REQUESTED"));
+    let request = null;
+    if (this.planStore?.requestCancel) {
+      request = (await this.planStore.requestCancel(runId, {
+        reason: active.cancelReason,
+        requestId: options.requestId,
+      })).request;
     }
     const graceMs = options.graceMs ?? 1000;
-    await Promise.race([active.done, new Promise((resolve) => setTimeout(resolve, graceMs))]);
-    return immutable({ status: "CANCEL_REQUESTED", runId, stopResults });
+    if (!Number.isSafeInteger(graceMs) || graceMs < 0) fail("cancel graceMs must be a non-negative safe integer", "INVALID_CANCEL_GRACE");
+    const stopPromise = this.#stopActiveHandles(active, options.signal);
+    let stopResults = null;
+    let stopTimer;
+    try {
+      const stopOutcome = await Promise.race([
+        stopPromise.then((value) => ({ completed: true, value })),
+        new Promise((resolve) => {
+          stopTimer = setTimeout(() => resolve({ completed: false }), graceMs);
+        }),
+      ]);
+      stopResults = stopOutcome.completed
+        ? stopOutcome.value
+        : [...active.handles.keys()].map((nodeId) => ({ nodeId, status: "STOP_PENDING" }));
+    } finally {
+      if (stopTimer !== undefined) clearTimeout(stopTimer);
+    }
+    let doneTimer;
+    try {
+      await Promise.race([
+        active.done,
+        new Promise((resolve) => { doneTimer = setTimeout(resolve, graceMs); }),
+      ]);
+    } finally {
+      if (doneTimer !== undefined) clearTimeout(doneTimer);
+    }
+    return immutable({ status: "CANCEL_REQUESTED", durable: Boolean(request), runId, stopResults, request });
   }
 
-  async inspect(runId, plan) {
+  async inspect(runId, plan = undefined) {
     canonicalRunId(runId);
+    if (plan === undefined) {
+      if (!this.planStore?.get) fail("a durable plan store is required for restart-safe inspection", "PLAN_STORE_UNAVAILABLE");
+      const record = await this.planStore.get(runId);
+      if (record === null) fail("no durable plan is bound to this run", "PLAN_NOT_FOUND", { runId });
+      plan = record.plan;
+    }
     const checked = validateWorkflowPlan(plan);
     if (!checked.valid) fail(checked.errors[0].message, checked.errors[0].code);
     const recovered = await this.eventJournal.read(runId);
     return immutable({ recovered, projection: projectWorkflowRun(recovered.events, plan, runId) });
+  }
+
+  async resume(runId, options = {}) {
+    canonicalRunId(runId);
+    if (!this.planStore?.get) fail("a durable plan store is required for resume", "PLAN_STORE_UNAVAILABLE");
+    if (!Object.prototype.hasOwnProperty.call(options, "input")) {
+      fail("resume requires the original input to be supplied again", "RUN_INPUT_REQUIRED_FOR_RESUME");
+    }
+    const record = await this.planStore.get(runId);
+    if (record === null) fail("no durable plan is bound to this run", "PLAN_NOT_FOUND", { runId });
+    const envelope = options.executionEnvelope ?? record.executionEnvelope;
+    if (envelope.executionEnvelopeDigest !== record.executionEnvelopeDigest) fail("resume execution envelope differs from durable plan", "EXECUTION_ENVELOPE_DRIFT");
+    return this.execute(record.plan, {
+      ...options,
+      runId,
+      input: options.input,
+      executionEnvelope: envelope,
+    });
   }
 }
 

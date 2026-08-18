@@ -70,8 +70,8 @@ The first S0–S2 source slice now contains:
 This source slice has no S0–S2 promotion receipt yet. Its tests use injected
 transports and temporary roots; no live child dispatch, Provider/model call,
 credential read, global install, or real Pi home mutation was performed.
-All 14 planned orchestration contracts plus the evaluation-corpus contract are
-now registered in the strict catalog. The catalog validates 31 kinds and 62
+All planned orchestration contracts plus the evaluation-corpus and durable
+run-control contracts are now registered in the strict catalog. The catalog validates 33 kinds and 64
 non-vacuous production documents, with positive, unknown-field/version, and
 targeted semantic negatives. Public Workflow/Swarm routing now converges on
 the v2 facade. Approval fails closed without a live evidence provider,
@@ -87,20 +87,23 @@ cloning or serialization. Mutating admission additionally requires an executor
 that explicitly advertises audited path enforcement; the current
 `pi-subagents` v1 wire does not itself prove a per-path allowlist, so this live
 writer seam remains unavailable rather than being inferred from a worktree.
-Restart-safe plan lookup, durable status/cancel recovery, and the bounded
-no-model Pi topology probe remain S2 closure work. BatchSwarm execution,
+The immutable Plan Store now persists the exact run-ID-to-WorkflowPlan binding;
+fresh coordinators can re-project status, publish cross-process cancel intent,
+and resume read-only/recoverable runs after restart without persisting raw
+input. The bounded no-model Pi topology probe remains S2 closure work.
+BatchSwarm execution,
 SwarmGoal, UltraRun, and promotion-specific live evidence remain S3–S5.
 Historical M5 receipts must not be described as successor evidence.
 
 Current branch evidence for this Contract Preview slice:
 
-- `npm test`: **448/448** pass;
-- `npm run test:subagents`: **92/92** pass;
-- `npm run schema:check`: **62 production documents / 31 schema kinds / 0 findings**;
-- `npm run pack:check`: **219 allowlisted files**, with no tests, receipts, or
+- `npm test`: **459/459** pass;
+- `npm run test:subagents`: **101/101** pass;
+- `npm run schema:check`: **64 production documents / 33 schema kinds / 0 findings**;
+- `npm run pack:check`: **224 allowlisted files**, with no tests, receipts, or
   Codex Goal in the tarball;
 - `npm run lint`: **587 files / 0 findings**;
-- `npm run secret:scan`: **587 tracked files + 219 packed files / 0 findings**;
+- `npm run secret:scan`: **587 tracked files + 224 packed files / 0 findings**;
 - `npm run doctor`, all six Profile doctors, Mode/Agent/Workflow/Swarm doctors,
   `npm run typecheck`, and the deterministic agent/profile generators: pass.
   Static doctor retains only the two explicit inactive-candidate warnings.
@@ -459,9 +462,10 @@ plugins, arbitrary JavaScript workflows, automatic marketplaces, remote
 UI/SSH/Cron, and un-sandboxed web fetch also remain outside the default
 profiles.
 
-The next successor closure step is to persist and resolve the exact
-run-ID-to-WorkflowPlan binding across restart, finish durable status/cancel
-recovery, and run the bounded no-model Pi topology probe. The legacy direct
+The next successor closure step is the bounded no-model Pi topology probe and
+its packaged-artifact evidence. The durable Plan Store, restart-safe
+status/resume and cross-process cancel intent are complete; cancel/stop remains
+non-authoritative without correlated backend terminal proof. The legacy direct
 imports remain one-release compatibility shims but no longer own public
 execution. After that S2 closure, S3 adds a true homogeneous BatchSwarm, S4
 introduces dynamic SwarmGoal plan revisions and UltraRun routing, and S5 adds

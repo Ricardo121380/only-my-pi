@@ -99,6 +99,18 @@
       "fixtureDir": "verification/fixtures/contracts/workflow-plan"
     },
     {
+      "kind": "workflowRunPlan",
+      "schemaPath": "schemas/workflow-run-plan-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/workflow-run-plan.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/workflow-run-plan"
+    },
+    {
+      "kind": "workflowCancelRequest",
+      "schemaPath": "schemas/workflow-cancel-request-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/workflow-cancel-request.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/workflow-cancel-request"
+    },
+    {
       "kind": "workflowEvent",
       "schemaPath": "schemas/workflow-event-v1.schema.json",
       "productionGlobs": ["contracts/subagents/workflow-event.example.json"],

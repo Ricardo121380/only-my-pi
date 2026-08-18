@@ -231,3 +231,20 @@ test("M5 promotes the inspect mode and research synthesis recipe; remaining seed
     assert.equal(read(relativePath).contractStatus, "contract-only", relativePath);
   }
 });
+
+test("durable run-plan and cancel contracts share runtime digest bindings", () => {
+  const registry = createSchemaRegistry({ rootDir: root });
+  const planFixture = fixture("workflowRunPlan", "positive.json");
+  const tamperedPlan = structuredClone(planFixture.document);
+  tamperedPlan.executionEnvelope.sourceHash = `sha256:${"a".repeat(64)}`;
+  const planResult = registry.validate("workflowRunPlan", tamperedPlan, { sourcePath: planFixture.sourcePath });
+  assert.equal(planResult.valid, false);
+  assert.ok(planResult.errors.some((entry) => ["digest-binding", "digest-authenticity"].includes(entry.keyword)), JSON.stringify(planResult.errors));
+
+  const cancelFixture = fixture("workflowCancelRequest", "positive.json");
+  const tamperedCancel = structuredClone(cancelFixture.document);
+  tamperedCancel.reason = "different operator intent";
+  const cancelResult = registry.validate("workflowCancelRequest", tamperedCancel, { sourcePath: cancelFixture.sourcePath });
+  assert.equal(cancelResult.valid, false);
+  assert.ok(cancelResult.errors.some((entry) => entry.keyword === "digest-authenticity"), JSON.stringify(cancelResult.errors));
+});

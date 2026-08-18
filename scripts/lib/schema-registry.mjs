@@ -8,6 +8,7 @@ import addFormats from "ajv-formats";
 import { parsePackageSpec, validatePackageEntrySource } from "./package-source.mjs";
 import {
   compileWorkflowDefinition,
+  digestWorkflowValue,
   validateWorkflowPlan,
 } from "../../packages/subagents/workflow/plan-compiler/index.mjs";
 import {
@@ -15,6 +16,7 @@ import {
   approvalReceiptSemanticFindings,
 } from "../../packages/subagents/policy/approval-receipt.mjs";
 import { assignmentPathClaimCovered } from "../../packages/subagents/domain/assignment.mjs";
+import { sha256 as stateSha256, withoutKey } from "../../packages/subagents/state/codec.mjs";
 
 const DEFAULT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const DEFAULT_CATALOG = "contracts/schema-catalog.json";
@@ -394,6 +396,57 @@ function promptPathErrors(document, sourcePath, rootDir) {
   }
 }
 
+function durableWorkflowRecordErrors(document) {
+  const errors = [];
+  let checkedPlan;
+  try {
+    checkedPlan = validateWorkflowPlan(document.plan);
+  } catch (cause) {
+    errors.push(error("/plan", "runtime-parity", `durable plan cannot be validated: ${cause.message}`, { code: cause.code ?? "INVALID_PLAN" }));
+  }
+  if (checkedPlan && !checkedPlan.valid) {
+    for (const finding of checkedPlan.errors) {
+      errors.push(error("/plan", finding.code.toLowerCase().replaceAll("_", "-"), finding.message));
+    }
+  }
+  if (document.plan?.planDigest !== document.planDigest) {
+    errors.push(error("/planDigest", "digest-binding", "durable planDigest must equal plan.planDigest"));
+  }
+  const envelope = document.executionEnvelope;
+  if (envelope?.executionEnvelopeDigest !== document.executionEnvelopeDigest) {
+    errors.push(error("/executionEnvelopeDigest", "digest-binding", "top-level executionEnvelopeDigest must equal the embedded envelope digest"));
+  }
+  if (envelope) {
+    const sortedConditions = [...(envelope.conditions ?? [])].sort();
+    if (JSON.stringify(sortedConditions) !== JSON.stringify(envelope.conditions ?? [])
+      || (envelope.conditions ?? []).some((condition) => /[\0\r\n]/u.test(condition))) {
+      errors.push(error("/executionEnvelope/conditions", "canonical-order", "execution conditions must be sorted and contain no control-line characters"));
+    }
+    const expectedEnvelopeDigest = digestWorkflowValue(withoutKey(envelope, "executionEnvelopeDigest"));
+    if (envelope.executionEnvelopeDigest !== expectedEnvelopeDigest) {
+      errors.push(error("/executionEnvelope/executionEnvelopeDigest", "digest-authenticity", "execution envelope digest does not match its canonical payload"));
+    }
+    for (const [field, expected, pathName] of [
+      ["runId", document.runId, "/executionEnvelope/runId"],
+      ["planDigest", document.planDigest, "/executionEnvelope/planDigest"],
+      ["runInputDigest", document.inputDigest, "/executionEnvelope/runInputDigest"],
+      ["sourceHash", document.sourceHash, "/executionEnvelope/sourceHash"],
+    ]) {
+      if (envelope[field] !== expected) errors.push(error(pathName, "digest-binding", `execution envelope ${field} is not bound to the durable record`));
+    }
+  }
+  if (document.digest !== stateSha256(withoutKey(document, "digest"))) {
+    errors.push(error("/digest", "digest-authenticity", "durable workflow plan digest does not match its canonical record"));
+  }
+  return errors;
+}
+
+function durableCancelRecordErrors(document) {
+  return document.digest === stateSha256(withoutKey(document, "digest"))
+    ? []
+    : [error("/digest", "digest-authenticity", "cancel request digest does not match its canonical record")];
+}
+
 function semanticErrors(kind, document, { sourcePath, rootDir, index, documentsByKind }) {
   const errors = overlapErrors(document);
   const arrays = {
@@ -543,6 +596,10 @@ function semanticErrors(kind, document, { sourcePath, rootDir, index, documentsB
     for (const finding of result.errors) {
       errors.push(error("", finding.code.toLowerCase().replaceAll("_", "-"), finding.message));
     }
+  } else if (kind === "workflowRunPlan") {
+    errors.push(...durableWorkflowRecordErrors(document));
+  } else if (kind === "workflowCancelRequest") {
+    errors.push(...durableCancelRecordErrors(document));
   } else if (kind === "agentTemplate") {
     errors.push(...policyBoundaryErrors({
       tools: document.tools,

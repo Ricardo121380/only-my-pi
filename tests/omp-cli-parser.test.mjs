@@ -97,8 +97,23 @@ test("M5 swarm parser keeps planning offline and requires explicit yes only for 
   assert.equal(plan.options.inputFile, "/tmp/question.json");
   assert.throws(() => parseOmpArgs(["swarm", "plan", "research-synthesis", "--yes"], context), /only valid for swarm run/);
   assert.equal(parseOmpArgs(["swarm", "run", "research-synthesis", "--yes"], context).mutation, true);
+  assert.equal(parseOmpArgs(["swarm", "resume", "swarm-run-1"], context).mutation, true);
+  assert.equal(parseOmpArgs(["swarm", "resume", "swarm-run-1"], context).options.runId, "swarm-run-1");
+  assert.equal(parseOmpArgs(["swarm", "cancel", "swarm-run-1"], context).mutation, true);
   assert.throws(() => parseOmpArgs(["swarm", "run", "research-synthesis", "--apply"], context), /not valid for swarm/);
   assert.throws(() => parseOmpArgs(["swarm", "status"], context), /requires a run id/);
+});
+
+test("workflow resume is classified as a mutation and binds the run id", () => {
+  const parsed = parseOmpArgs(["workflow", "resume", "workflow-run-1", "--input-file", "/tmp/workflow-input.json"], context);
+  assert.equal(parsed.mutation, true);
+  assert.equal(parsed.options.runId, "workflow-run-1");
+  assert.equal(parsed.options.workflowId, "workflow-run-1");
+  assert.equal(parsed.options.inputFile, "/tmp/workflow-input.json");
+  assert.equal(parseOmpArgs(["workflow", "cancel", "workflow-run-1"], context).mutation, true);
+  assert.equal(parseOmpArgs(["workflow", "run", "single-agent-safe", "--input-file", "/tmp/input.json"], context).options.inputFile, "/tmp/input.json");
+  assert.throws(() => parseOmpArgs(["workflow", "status", "workflow-run-1", "--input-file", "/tmp/input.json"], context), /only valid for workflow run or resume/);
+  assert.throws(() => parseOmpArgs(["workflow", "resume", "workflow-run-1", "--input-file", "relative.json"], context), /absolute path/);
 });
 
 test("M6 theme parser separates read-only inspection from explicit apply", () => {

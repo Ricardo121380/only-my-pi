@@ -37,9 +37,11 @@ The backend emits only compiler-owned statement bodies and performs the exact
   `run` must repeat that run ID, the displayed `planDigest`, and the derived
   execution-envelope digest. Missing or changed evidence fails before
   dispatch, and the same approval cannot authorize another run.
-- Status is available only while the current compatibility service can
-  correlate the run ID to its immutable plan; restart-safe plan lookup remains
-  S2 work and fails closed today.
+- Status is resolved from the versioned Plan Store sidecar after restart; the
+  compatibility service's in-memory map is only a fallback for old injected
+  fakes. Resume requires the caller to provide the original input again, and
+  cross-process cancel publishes an intent that the coordinator records in the
+  authoritative event journal.
 
 ## Recipes
 

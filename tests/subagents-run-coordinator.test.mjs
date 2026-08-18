@@ -7,6 +7,7 @@ import test from "node:test";
 import { createBudgetLedger } from "../packages/subagents/policy/budget-ledger.mjs";
 import { createApprovalReceipt } from "../packages/subagents/policy/approval-receipt.mjs";
 import { createEventJournal } from "../packages/subagents/state/index.mjs";
+import { createPlanStore } from "../packages/subagents/state/plan-store.mjs";
 import { compileWorkflowDefinition, digestWorkflowValue } from "../packages/subagents/workflow/plan-compiler/index.mjs";
 import { createExecutionEnvelope, createRunCoordinator } from "../packages/subagents/workflow/run-coordinator/index.mjs";
 
@@ -112,6 +113,7 @@ async function harness(t, plan, options = {}) {
   const clock = () => new Date(instant += 5);
   const idFactory = (prefix) => `${prefix}-${++sequence}`;
   const eventJournal = createEventJournal({ rootDir: root, filesystem: fs, clock, idFactory });
+  const planStore = options.planStore ?? createPlanStore({ rootDir: root, filesystem: fs, clock, idFactory });
   const budgetLedger = createBudgetLedger({
     eventJournal,
     envelope: () => plan.budget,
@@ -123,6 +125,7 @@ async function harness(t, plan, options = {}) {
   const coordinator = createRunCoordinator({
     eventJournal: coordinatorJournal,
     budgetLedger,
+    planStore,
     clock: () => instant,
     idFactory,
     nodeExecutor: options.nodeExecutor,
@@ -134,8 +137,59 @@ async function harness(t, plan, options = {}) {
     leaseRenewalIntervalMs: options.leaseRenewalIntervalMs,
     scheduler: options.scheduler,
   });
-  return { root, eventJournal, budgetLedger, coordinator, clock, idFactory, advance: (ms) => { instant += ms; } };
+  return { root, eventJournal, budgetLedger, planStore, coordinator, clock, idFactory, advance: (ms) => { instant += ms; } };
 }
+
+test("durable Plan Store lets a fresh coordinator inspect, cancel, and resume a paused run", async (t) => {
+  const workflowPlan = compileWorkflowDefinition(definition({ kind: "sequence", steps: [agent("inspect")] }));
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-plan-restart-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  let now = Date.UTC(2026, 7, 19);
+  let sequence = 0;
+  const clock = () => new Date(now += 5);
+  const idFactory = (prefix) => `${prefix}-${++sequence}`;
+  const eventJournal = createEventJournal({ rootDir: root, filesystem: fs, clock, idFactory });
+  const planStore = createPlanStore({ rootDir: root, filesystem: fs, clock, idFactory });
+  const budgetLedger = createBudgetLedger({ eventJournal, envelope: () => workflowPlan.budget, metering: () => ({ tokens: false, cost: false }) });
+  let entered;
+  const enteredPromise = new Promise((resolve) => { entered = resolve; });
+  const first = createRunCoordinator({
+    eventJournal,
+    budgetLedger,
+    planStore,
+    clock: () => now,
+    idFactory,
+    nodeExecutor: {
+      async runAgent() {
+        entered();
+        return { outcome: "completed", authoritative: true, result: { paused: true } };
+      },
+    },
+  });
+  const running = first.execute(workflowPlan, { runId: "restartable-run", input: { goal: "resume me" } });
+  await enteredPromise;
+  await first.pause("restartable-run");
+  const paused = await running;
+  assert.equal(paused.status, "paused");
+
+  const fresh = createRunCoordinator({
+    eventJournal,
+    budgetLedger,
+    planStore,
+    clock: () => now,
+    idFactory,
+    nodeExecutor: { async runAgent() { return { outcome: "completed", authoritative: true, result: { resumed: true } }; } },
+  });
+  const status = await fresh.inspect("restartable-run");
+  assert.equal(status.projection.status, "paused");
+  assert.equal(status.projection.planDigest, workflowPlan.planDigest);
+  const cancelled = await fresh.cancel("restartable-run", { reason: "operator-stop" });
+  assert.equal(cancelled.status, "CANCEL_REQUESTED");
+  assert.equal(cancelled.durable, true);
+  const afterCancel = await fresh.resume("restartable-run", { input: { goal: "resume me" } });
+  assert.equal(afterCancel.status, "orphaned");
+  assert.equal((await planStore.getCancelRequest("restartable-run")).reason, "operator-stop");
+});
 
 test("RunCoordinator admits ready nodes, preserves parallel logical admission, and closes one hash-chained run", async (t) => {
   const plan = compileWorkflowDefinition(definition({
@@ -708,9 +762,63 @@ test("cancel without correlated terminal proof becomes orphaned, never cancelled
   assert.notEqual(result.status, "cancelled");
 });
 
+test("cancel does not block on a backend stop call that never resolves", async (t) => {
+  const plan = compileWorkflowDefinition(definition({ kind: "sequence", steps: [agent("inspect")] }));
+  let entered;
+  const enteredPromise = new Promise((resolve) => { entered = resolve; });
+  const { coordinator } = await harness(t, plan, {
+    nodeExecutor: {
+      async startAgent(_node, context) {
+        // Let RunCoordinator install the returned handle before the test
+        // requests cancellation; this models a backend that publishes its
+        // handle immediately after the spawn boundary.
+        setTimeout(entered, 0);
+        const terminal = new Promise((_, reject) => {
+          context.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted without terminal proof"), { code: "ABORT_ERR" })), { once: true });
+        });
+        return { handle: { backendId: "never-stops" }, terminal };
+      },
+      async stop() {
+        return new Promise(() => {});
+      },
+    },
+  });
+  const running = coordinator.execute(plan, { runId: "cancel-stop-hangs" });
+  await enteredPromise;
+  const started = Date.now();
+  const cancellation = await coordinator.cancel("cancel-stop-hangs", { graceMs: 20 });
+  assert.ok(Date.now() - started < 500, "cancel must be bounded by its grace window");
+  assert.equal(cancellation.stopResults[0].status, "STOP_PENDING");
+  const result = await running;
+  assert.equal(result.status, "orphaned");
+});
+
+test("a durable cancel published before admission prevents child dispatch", async (t) => {
+  const plan = compileWorkflowDefinition(definition({ kind: "sequence", steps: [agent("inspect")] }));
+  let calls = 0;
+  const { coordinator, planStore, eventJournal } = await harness(t, plan, {
+    nodeExecutor: {
+      async runAgent() {
+        calls += 1;
+        return { outcome: "completed", authoritative: true };
+      },
+    },
+  });
+  const envelope = createExecutionEnvelope(plan, { runId: "cancel-before-admission", input: {} });
+  await planStore.put({ runId: "cancel-before-admission", plan, executionEnvelope: envelope });
+  await planStore.requestCancel("cancel-before-admission", { reason: "operator cancelled before admission" });
+  const result = await coordinator.execute(plan, { runId: "cancel-before-admission", input: {}, executionEnvelope: envelope });
+  assert.equal(result.status, "orphaned");
+  assert.equal(calls, 0);
+  const events = (await eventJournal.read("cancel-before-admission")).events;
+  assert.equal(events.some((event) => event.type === "RunStarted"), false);
+  assert.equal(events.some((event) => event.type === "ApprovalRequested"), false);
+  assert.deepEqual(events.slice(-2).map((event) => event.type), ["RunStopping", "RunOrphaned"]);
+});
+
 test("durable runs bind canonical input and reject invalid, oversized, or drifted resume input", async (t) => {
   const plan = compileWorkflowDefinition(definition({ kind: "sequence", steps: [agent("inspect")] }));
-  const { coordinator } = await harness(t, plan, {
+  const { coordinator, planStore } = await harness(t, plan, {
     nodeExecutor: {
       async runAgent(node, context) {
         return { runId: context.runId, nodeId: node.id, attemptId: context.attemptId, outcome: "completed", authoritative: true, result: { ok: true } };
@@ -723,9 +831,12 @@ test("durable runs bind canonical input and reject invalid, oversized, or drifte
   assert.equal(completed.runInputDigest, digestWorkflowValue(input));
   assert.equal(completed.executionEnvelopeDigest, envelope.executionEnvelopeDigest);
   assert.deepEqual(completed.executionEnvelope.target, { kind: "workflow", id: "stable-target" });
-  await assert.rejects(coordinator.execute(plan, { runId: "input-bound-run", input: { goal: "changed" } }), (error) => error?.code === "RUN_INPUT_DRIFT");
+  const terminalCancel = await coordinator.cancel("input-bound-run");
+  assert.equal(terminalCancel.status, "RUN_ALREADY_TERMINAL");
+  assert.equal(await planStore.getCancelRequest("input-bound-run"), null);
+  await assert.rejects(coordinator.execute(plan, { runId: "input-bound-run", input: { goal: "changed" } }), (error) => ["RUN_INPUT_DRIFT", "PLAN_STORE_CONFLICT"].includes(error?.code));
   const driftedConditions = createExecutionEnvelope(plan, { runId: "input-bound-run", input, sourceHash: `sha256:${"e".repeat(64)}`, target: { kind: "workflow", id: "stable-target" }, conditions: ["session-idle"] });
-  await assert.rejects(coordinator.execute(plan, { runId: "input-bound-run", input, executionEnvelope: driftedConditions }), (error) => error?.code === "EXECUTION_ENVELOPE_DRIFT");
+  await assert.rejects(coordinator.execute(plan, { runId: "input-bound-run", input, executionEnvelope: driftedConditions }), (error) => ["EXECUTION_ENVELOPE_DRIFT", "PLAN_STORE_CONFLICT"].includes(error?.code));
   await assert.rejects(coordinator.execute(plan, { runId: "invalid-input-run", input: { bad: undefined } }), (error) => error?.code === "INVALID_RUN_INPUT");
   await assert.rejects(coordinator.execute(plan, { runId: "oversized-input-run", input: { text: "x".repeat(256 * 1024) } }), (error) => error?.code === "RUN_INPUT_TOO_LARGE");
 });

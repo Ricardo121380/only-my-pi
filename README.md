@@ -134,9 +134,15 @@ overruns fail closed. Without correlated process-terminal proof, a local timeout
 is non-authoritative and leaves the run orphaned. Mutating dispatch also requires
 an executor that advertises audited path enforcement; a worktree alone is not
 treated as a path allowlist. This is Contract Preview source evidence only.
-Restart-safe plan lookup,
-pause/resume/restart-node, BatchSwarm execution, SwarmGoal, UltraRun, and live
+Restart-safe plan lookup and durable status/cancel/resume are now implemented
+through the versioned Plan Store sidecar; pause/resume/restart-node beyond the
+bounded run resume path, BatchSwarm execution, SwarmGoal, UltraRun, and live
 child evidence remain S2–S5.
+
+`omp workflow|swarm run` and `resume` accept an optional bounded absolute JSON
+`--input-file`; it is read with `O_NOFOLLOW`, hashed into the execution
+envelope, and never copied into the durable Plan Store. A resume without the
+original input (or with a changed file) fails closed before child admission.
 
 ## Local development
 

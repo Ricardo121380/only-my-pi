@@ -92,3 +92,9 @@ export function createEventJournal(options = {}) {
 
 export { createAppendOnlyEventJournal, GENESIS_EVENT_DIGEST, RunStateError } from "./event-journal.mjs";
 export { assertPlainJson, canonicalJson, jsonClone, sha256 } from "./codec.mjs";
+export {
+  createPlanStore,
+  PlanStoreError,
+  WORKFLOW_RUN_PLAN_SCHEMA,
+  WORKFLOW_CANCEL_REQUEST_SCHEMA,
+} from "./plan-store.mjs";

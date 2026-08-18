@@ -29,6 +29,10 @@ function fakeOrchestration() {
       calls.push({ method: "cancel", runId });
       return { status: "RUN_NOT_ACTIVE", runId };
     },
+    async resume(runId, options) {
+      calls.push({ method: "resume", runId, options });
+      return { runId, status: "completed" };
+    },
   };
 }
 
@@ -85,6 +89,8 @@ test("injected unified orchestration receives immutable WorkflowPlans and owns l
   assert.deepEqual(workflowRuntime.calls[0].options.executionEnvelope.target, { kind: "workflow", id: "single-agent-safe" });
   assert.equal((await workflow.dispatch({ subcommand: "status", runId: workflowPreview.runId })).status, "WORKFLOW_STATUS");
   assert.equal((await workflow.dispatch({ subcommand: "cancel", runId: workflowPreview.runId })).status, "WORKFLOW_CANCEL");
+  assert.equal((await workflow.dispatch({ subcommand: "resume", runId: workflowPreview.runId, input: workflowPreview.input })).status, "WORKFLOW_COMPLETED");
+  assert.equal((await workflow.dispatch({ subcommand: "cancel", runId: workflowPreview.runId })).mutation, true);
 
   const swarmRuntime = fakeOrchestration();
   const swarm = createSwarmControlService({ rootDir: root, orchestration: swarmRuntime });
@@ -98,6 +104,8 @@ test("injected unified orchestration receives immutable WorkflowPlans and owns l
   assert.deepEqual(swarmRuntime.calls[0].options.executionEnvelope.target, { kind: "swarm", id: "research-synthesis" });
   assert.equal((await swarm.dispatch({ subcommand: "status", runId: swarmPreview.runId })).status, "SWARM_STATUS");
   assert.equal((await swarm.dispatch({ subcommand: "cancel", runId: swarmPreview.runId })).status, "SWARM_CANCEL");
+  assert.equal((await swarm.dispatch({ subcommand: "resume", runId: swarmPreview.runId, input: swarmPreview.input })).status, "SWARM_COMPLETED");
+  assert.equal((await swarm.dispatch({ subcommand: "cancel", runId: swarmPreview.runId })).mutation, true);
 });
 
 test("public control services have no static import of either legacy controller", () => {
@@ -114,6 +122,28 @@ test("public control services reject fake coordinators that do not match the Run
   const legacyShape = { async run() {}, async inspect() {}, async cancel() {} };
   assert.throws(() => createWorkflowControlService({ rootDir: root, orchestration: legacyShape }), /must implement execute/);
   assert.throws(() => createSwarmControlService({ rootDir: root, orchestration: legacyShape }), /must implement execute/);
+});
+
+test("Workflow and Swarm resume re-read only an explicit bounded non-symlink input snapshot", async (t) => {
+  const directory = await fsp.mkdtemp(path.join(os.tmpdir(), "omp-resume-input-"));
+  t.after(() => fsp.rm(directory, { recursive: true, force: true }));
+  const inputFile = path.join(directory, "input.json");
+  await fsp.writeFile(inputFile, JSON.stringify({ goal: "resume safely" }));
+
+  const workflowRuntime = fakeOrchestration();
+  const workflow = createWorkflowControlService({ rootDir: root, orchestration: workflowRuntime });
+  assert.equal((await workflow.dispatch({ subcommand: "resume", runId: "workflow-resume-input", inputFile })).status, "WORKFLOW_COMPLETED");
+  assert.deepEqual(workflowRuntime.calls.at(-1).options.input, { goal: "resume safely" });
+
+  const swarmRuntime = fakeOrchestration();
+  const swarm = createSwarmControlService({ rootDir: root, orchestration: swarmRuntime });
+  assert.equal((await swarm.dispatch({ subcommand: "resume", runId: "swarm-resume-input", inputFile })).status, "SWARM_COMPLETED");
+  assert.deepEqual(swarmRuntime.calls.at(-1).options.input, { goal: "resume safely" });
+
+  const symlink = path.join(directory, "linked.json");
+  await fsp.symlink(inputFile, symlink);
+  assert.equal((await workflow.dispatch({ subcommand: "resume", runId: "workflow-symlink-input", inputFile: symlink })).code, "INVALID_INPUT_FILE");
+  assert.equal((await swarm.dispatch({ subcommand: "resume", runId: "swarm-symlink-input", inputFile: symlink })).code, "INVALID_INPUT_FILE");
 });
 
 test("public execution rejects a missing or stale confirmed plan digest before coordinator dispatch", async () => {

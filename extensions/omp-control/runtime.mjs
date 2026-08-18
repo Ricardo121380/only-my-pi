@@ -232,13 +232,16 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
       if (command === "workflow") {
         const subcommand = args[0] ?? "list";
         const identifier = args[1] ?? null;
+        const inputFileIndex = args.indexOf("--input-file");
+        const inputFile = inputFileIndex >= 0 ? args[inputFileIndex + 1] : null;
         const approved = args.includes("--apply") && args.includes("--yes");
         const service = await getWorkflows();
         const request = {
           subcommand,
-          workflowId: ["status", "cancel"].includes(subcommand) ? null : identifier,
-          runId: ["status", "cancel"].includes(subcommand) ? identifier : null,
-          input: {},
+          workflowId: ["status", "cancel", "resume"].includes(subcommand) ? null : identifier,
+          runId: ["status", "cancel", "resume"].includes(subcommand) ? identifier : null,
+          inputFile,
+          ...(inputFile ? {} : { input: {} }),
           conditions: ["profile-resolved", "mode-resolved", "session-idle"],
         };
         let result;
@@ -270,8 +273,8 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
         const service = await getSwarms();
         const request = {
           subcommand,
-          recipeId: ["status", "cancel"].includes(subcommand) ? null : identifier,
-          runId: ["status", "cancel"].includes(subcommand) ? identifier : null,
+          recipeId: ["status", "cancel", "resume"].includes(subcommand) ? null : identifier,
+          runId: ["status", "cancel", "resume"].includes(subcommand) ? identifier : null,
           inputFile,
           ...(inputFile ? {} : { input: {} }),
         };

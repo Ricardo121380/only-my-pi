@@ -218,6 +218,27 @@ Each event type has a versioned payload schema and legal predecessor states.
 The generic envelope accepting a string type does not authorize an unknown
 semantic transition.
 
+### 7. Durable plan resolver and cross-process control
+
+The event ledger is authoritative, but an event stream intentionally stores
+digests rather than the complete immutable plan. Each run therefore has one
+atomic `plan.json` sidecar owned by `createPlanStore`:
+
+- first-writer-wins publication binds `runId`, `planDigest`, source/input
+  digests, execution-envelope digest, and the full validated WorkflowPlan;
+- the record has its own SHA-256 digest, exact schema, symlink-safe path
+  checks, and no raw input or secret-bearing payload;
+- a conflicting second binding is rejected rather than overwritten;
+- status/reprojection after process restart resolves this record and then
+  replays the event ledger, never a process-local map.
+
+Cross-process cancellation is an intent sidecar (`cancel-request.json`), not a
+second state owner. The active coordinator observes it during lease heartbeat,
+then appends the canonical `RunStopping` transition under the journal writer
+lease. A restarted coordinator consumes the same intent before resume. Missing,
+malformed, or symlink-escaped sidecars fail closed. Resume requires the caller
+to re-provide the original input; only its digest is persisted.
+
 ### 7. Exactly-once state effects and idempotency
 
 The system promises exactly-once **reducer effects**, not exactly-once external

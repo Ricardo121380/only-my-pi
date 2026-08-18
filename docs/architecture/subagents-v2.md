@@ -24,6 +24,7 @@ import {
   createPiSubagentsRpcV1Backend,
   compileWorkflowDefinition,
   createEventJournal,
+  createPlanStore,
   createBudgetLedger,
 } from "only-my-pi/packages/subagents/index.mjs";
 ```
@@ -124,11 +125,33 @@ field, so a worktree is not treated as proof of this capability. Until an
 audited bridge verifies the produced diff against the approved base/path claims
 and prevents automatic integration, live writer dispatch remains unavailable.
 
-This is a control-facade convergence, not full S2 completion. The legacy module
-exports remain packaged for direct-import compatibility tests, and the current
-service instance keeps the run-id to WorkflowPlan correlation in memory. A
-restart therefore cannot inspect a run until a durable plan store/resolver is
-wired; status fails closed instead of guessing a plan from a digest.
+### Durable plan binding and restart control
+
+`createPlanStore({ rootDir, filesystem, clock })` is now the durable resolver
+for the immutable `runId -> WorkflowPlan` binding. It publishes a strict,
+content-addressed `plan.json` beside that run's event journal using an
+exclusive first-writer-wins create. The record contains the full validated
+plan, source/input/envelope digests, and the execution target, but never the
+raw input, prompt, transcript, credential, or tool output. A fresh coordinator
+can therefore call `inspect(runId)` without an in-memory plan map and project
+status from the journal after validating both the plan record and event chain.
+
+`resume(runId, { input })` loads that immutable record and requires the caller
+to provide the original canonical input again (the CLI and `/omp` surfaces may
+provide a bounded, absolute, O_NOFOLLOW JSON input file); a digest mismatch is
+rejected before any admission. `cancel(runId)` works across process boundaries by
+publishing a bounded, symlink-safe `cancel-request.json`. The active
+coordinator observes the request during its lease heartbeat, aborts/asks the
+backend to stop, and records `RunStopping` before settling only a
+non-authoritative `orphaned` result when terminal process proof is absent.
+The request file is an intent, not a second event ledger; the hash-chained
+journal remains the sole state authority. Corrupt or escaped plan/control
+files fail closed.
+
+The legacy module exports remain packaged for direct-import compatibility tests,
+and the compatibility services retain their in-memory map only as a fallback
+for pre-v2 injected fakes. Production v2 status/resume paths use the Plan Store
+resolver and never infer a plan from a digest.
 
 ## Evidence and limits
 
@@ -144,6 +167,9 @@ The evaluation corpus is deterministic, offline, and explicitly labelled
 live child, called a Provider, read credentials, mutated the real Pi home, or
 proved managed-worktree execution. It is not an Alpha/Beta/Stable receipt.
 The first CLI and `/omp` compatibility routes now pass through the unified
-control facade. Durable restart/status control, pause/resume/restart-node,
+control facade. Durable plan lookup/status/cancel/resume is covered by the
+Plan Store slice; both cancel and resume are classified as mutations by the
+control grammar, and an unresponsive backend stop call is bounded without
+blocking writer-lease renewal. Pause/restart-node beyond the bounded resume path,
 BatchSwarm execution, dynamic SwarmGoal planning, UltraRun workflow libraries,
 and promotion-specific live evidence remain in S2–S5.

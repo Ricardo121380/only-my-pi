@@ -111,6 +111,7 @@ export class SwarmControlService {
   async #input(options) {
     if (options.input !== undefined) return prepareInput(options.input, this.preparedInputs);
     if (!options.inputFile) return prepareInput({}, this.preparedInputs);
+    if (typeof options.inputFile !== "string" || !path.isAbsolute(options.inputFile)) throw controlError("swarm input file must be an absolute path", "INVALID_INPUT_FILE");
     const target = path.resolve(options.inputFile);
     let handle;
     try {
@@ -221,14 +222,37 @@ export class SwarmControlService {
     if (subcommand === "status") {
       if (!options.runId) return { ok: false, status: "SWARM_STATUS_UNAVAILABLE", mutation: false, code: "RUN_ID_REQUIRED" };
       const plan = this.runPlans.get(options.runId);
-      if (!this.orchestration || !plan) return { ok: false, status: "SWARM_STATUS_UNAVAILABLE", mutation: false, code: "LIVE_RUNTIME_UNAVAILABLE" };
-      const state = await this.orchestration.inspect(options.runId, plan);
+      if (!this.orchestration) return { ok: false, status: "SWARM_STATUS_UNAVAILABLE", mutation: false, code: "LIVE_RUNTIME_UNAVAILABLE" };
+      let state;
+      try {
+        state = await this.orchestration.inspect(options.runId);
+      } catch (cause) {
+        if (!plan) return { ok: false, status: "SWARM_STATUS_UNAVAILABLE", mutation: false, code: cause?.code ?? "LIVE_RUNTIME_UNAVAILABLE" };
+        state = await this.orchestration.inspect(options.runId, plan);
+      }
       return { ok: true, status: "SWARM_STATUS", mutation: false, kind: "legacy-workflow", state };
     }
     if (subcommand === "cancel") {
       if (!options.runId) return { ok: false, status: "SWARM_CANCEL_UNAVAILABLE", mutation: false, code: "RUN_ID_REQUIRED" };
       if (!this.orchestration) return { ok: false, status: "SWARM_CANCEL_UNAVAILABLE", mutation: false, code: "LIVE_RUNTIME_UNAVAILABLE" };
-      return { ok: true, status: "SWARM_CANCEL", mutation: false, result: await this.orchestration.cancel(options.runId) };
+      return { ok: true, status: "SWARM_CANCEL", mutation: true, result: await this.orchestration.cancel(options.runId) };
+    }
+    if (subcommand === "resume") {
+      if (!options.runId) return { ok: false, status: "SWARM_RESUME_UNAVAILABLE", mutation: true, code: "RUN_ID_REQUIRED" };
+      if (!this.orchestration || typeof this.orchestration.resume !== "function") {
+        return { ok: false, status: "SWARM_RESUME_UNAVAILABLE", mutation: true, code: "PLAN_STORE_UNAVAILABLE" };
+      }
+      try {
+        const input = await this.#input(options);
+        const state = await this.orchestration.resume(options.runId, {
+          input,
+          approval: options.approval,
+          signal: options.signal,
+        });
+        return { ok: state.status === "completed", status: swarmResultStatus(state.status), mutation: true, kind: "legacy-workflow", state };
+      } catch (cause) {
+        return { ok: false, status: "SWARM_RESUME_UNAVAILABLE", mutation: true, code: cause?.code ?? "SWARM_RESUME_FAILED", message: cause?.message };
+      }
     }
     return { ok: false, status: "SWARM_COMMAND_INVALID", mutation: false, code: "INVALID_SWARM_COMMAND" };
   }

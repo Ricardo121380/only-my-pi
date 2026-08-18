@@ -14,8 +14,8 @@ Usage:
   omp profile [list|show <id>|diff <from> <to>] [--config-root <absolute>] [--json]
   omp tools|packages|context|verify [--config-root <absolute>] [--json]
   omp mode [list|show|use|reset|doctor|diff|scaffold] [mode-id] [--profile <id>] [--resolved] [--config-root <absolute>] [--json]
-  omp workflow [list|show|run|status|cancel] [workflow-or-run-id] [--apply --yes] [--config-root <absolute>] [--json]
-  omp swarm [list|show|validate|plan|run|status|cancel] [recipe-or-run-id] [--input-file <absolute>] [--yes] [--config-root <absolute>] [--json]
+  omp workflow [list|show|run|status|cancel|resume] [workflow-or-run-id] [--input-file <absolute>] [--apply --yes] [--config-root <absolute>] [--json]
+  omp swarm [list|show|validate|plan|run|status|cancel|resume] [recipe-or-run-id] [--input-file <absolute>] [--yes] [--config-root <absolute>] [--json]
   omp theme [list|show|preview|use|reset|doctor] [theme-id] [--apply --yes] [--config-root <absolute>] [--json]
 
 Mutation is never implicit. bootstrap, update, and uninstall default to a zero-write plan.
@@ -183,6 +183,7 @@ export class ControlService {
           return { ok: false, status: "WORKFLOW_REGISTRY_UNAVAILABLE", mutation: false, code: "WORKFLOW_REGISTRY_UNAVAILABLE", next: "run omp doctor:modes and reinstall the promoted generation" };
         }
         const options = request.options ?? {};
+        if (options.subcommand === "resume") return this.workflows.dispatch(options);
         if (options.subcommand !== "run" || options.apply !== true) return this.workflows.dispatch(options);
         const plan = await this.workflows.dispatch({ ...options, apply: false, yes: false });
         if (plan?.ok === false) return plan;
@@ -203,6 +204,7 @@ export class ControlService {
           return { ok: false, status: "SWARM_SERVICE_UNAVAILABLE", mutation: false, code: "SWARM_SERVICE_UNAVAILABLE", next: "run omp doctor and reinstall the promoted generation" };
         }
         const options = request.options ?? {};
+        if (options.subcommand === "resume") return this.swarms.dispatch(options);
         if (options.subcommand !== "run") return this.swarms.dispatch(options);
         const plan = await this.swarms.dispatch({ ...options, subcommand: "plan", yes: false });
         if (plan?.ok === false) return plan;

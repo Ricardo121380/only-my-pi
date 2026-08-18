@@ -14,6 +14,7 @@ test("the unified facade exposes typed Agent and Workflow APIs without a raw wor
     "compileWorkflowDefinition",
     "createRunCoordinator",
     "createEventJournal",
+    "createPlanStore",
     "createBudgetLedger",
     "createApprovalReceipt",
     "createApprovalVerifier",

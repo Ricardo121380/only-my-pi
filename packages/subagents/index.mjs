@@ -40,6 +40,7 @@ export function createSubagentsFacade({
   backend = null,
   eventJournal = null,
   budgetLedger = null,
+  planStore = null,
   nodeExecutor = null,
   approvalVerifier = null,
   approvalEvidenceProvider = null,
@@ -96,6 +97,7 @@ export function createSubagentsFacade({
   function workflow(overrides = {}) {
     const journal = overrides.eventJournal ?? eventJournal;
     const ledger = overrides.budgetLedger ?? budgetLedger;
+    const durablePlans = overrides.planStore ?? planStore;
     const executor = overrides.nodeExecutor ?? nodeExecutor;
     if (!journal || !ledger || !executor) {
       const error = new Error("workflow execution requires eventJournal, budgetLedger, and nodeExecutor");
@@ -108,6 +110,7 @@ export function createSubagentsFacade({
       ...overrides,
       eventJournal: journal,
       budgetLedger: ledger,
+      planStore: durablePlans,
       nodeExecutor: executor,
       approvalVerifier: overrides.approvalVerifier ?? approvalVerifier ?? coordinatorOptions.approvalVerifier,
       approvalEvidenceProvider: overrides.approvalEvidenceProvider
