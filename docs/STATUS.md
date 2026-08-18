@@ -99,8 +99,8 @@ Current branch evidence for this Contract Preview slice:
 - `npm run schema:check`: **62 production documents / 31 schema kinds / 0 findings**;
 - `npm run pack:check`: **219 allowlisted files**, with no tests, receipts, or
   Codex Goal in the tarball;
-- `npm run lint`: **580 files / 0 findings**;
-- `npm run secret:scan`: **580 tracked files + 219 packed files / 0 findings**;
+- `npm run lint`: **587 files / 0 findings**;
+- `npm run secret:scan`: **587 tracked files + 219 packed files / 0 findings**;
 - `npm run doctor`, all six Profile doctors, Mode/Agent/Workflow/Swarm doctors,
   `npm run typecheck`, and the deterministic agent/profile generators: pass.
   Static doctor retains only the two explicit inactive-candidate warnings.
