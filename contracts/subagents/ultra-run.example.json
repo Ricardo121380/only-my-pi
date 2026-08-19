@@ -1,7 +1,7 @@
 {
   "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/ultra-run-v1.schema.json",
   "formatVersion": 1,
-  "contractStatus": "contract-preview",
+  "contractStatus": "runtime-ready",
   "kind": "ultra-run",
   "id": "review-and-verify",
   "version": "1.0.0",
@@ -12,6 +12,8 @@
     "dynamicGoalRequiresExplicitApproval": true
   },
   "workflowLibrary": ["source-review-v2"],
+  "batchLibrary": ["review-items"],
+  "goalLibrary": ["research-release-goal"],
   "quality": {
     "freshVerifier": true,
     "testGate": "test-contract",

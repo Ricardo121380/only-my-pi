@@ -206,6 +206,19 @@ test("TaskAssignment ownership fixtures reject unbound claims and incomplete wri
   assertFixtureKeyword(registry, "taskAssignment", "negative-writer-missing-base-commit.json", "required");
 });
 
+test("S4 dynamic goal and UltraRun references fail closed at the contract catalog", () => {
+  const registry = createSchemaRegistry({ rootDir: root });
+  for (const [kind, name, keyword] of [
+    ["swarmGoal", "negative-role-conflict.json", "role-conflict"],
+    ["swarmGoal", "negative-agent-envelope.json", "budget-envelope"],
+    ["ultraRun", "negative-unknown-workflow.json", "unknown-reference"],
+    ["ultraRun", "negative-unknown-batch.json", "unknown-reference"],
+    ["ultraRun", "negative-unknown-goal.json", "unknown-reference"],
+  ]) {
+    assertFixtureKeyword(registry, kind, name, keyword);
+  }
+});
+
 test("semantic graph rejects unknown references, cycles, duplicate owners, and escalation", () => {
   const registry = createSchemaRegistry({ rootDir: root });
   const cases = [

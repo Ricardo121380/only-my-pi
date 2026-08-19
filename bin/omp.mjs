@@ -15,6 +15,7 @@ import { createWorkflowControlService } from "../packages/control-service/workfl
 import { createSwarmControlService } from "../packages/control-service/swarm-service.mjs";
 import { createThemeControlService } from "../packages/control-service/theme-service.mjs";
 import { createStatusService } from "../packages/control-service/status-service.mjs";
+import { createUltraRunControlService } from "../packages/control-service/ultra-run-service.mjs";
 import { parseOmpArgs } from "../packages/control-service/cli-parser.mjs";
 import { ControlService, OMP_USAGE } from "../packages/control-service/service.mjs";
 
@@ -110,6 +111,7 @@ export function createProductionControlService({
   });
   const workflows = wired.createWorkflowControlService({ rootDir: resolvedRoot });
   const swarms = createSwarmControlService({ rootDir: resolvedRoot });
+  const ultras = createUltraRunControlService({ rootDir: resolvedRoot });
   const themes = createThemeControlService({ rootDir: resolvedRoot });
   const statusService = createStatusService();
   return new wired.ControlService({
@@ -120,6 +122,7 @@ export function createProductionControlService({
     configRoot: resolvedConfigRoot,
     workflows,
     swarms,
+    ultras,
     themes,
     statusService,
   });

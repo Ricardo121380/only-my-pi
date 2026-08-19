@@ -140,12 +140,13 @@ export async function restoreModeReceipt({ registry, entries, profile } = {}) {
  * It never invokes a shell and treats missing live services as an explicit
  * unavailable state rather than guessing a permission or sandbox state.
  */
-export function createOmpRuntime({ rootDir, configRoot, registry, modeService, workflowService, swarmService, subagentsOrchestration, themeService, statusService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
+export function createOmpRuntime({ rootDir, configRoot, registry, modeService, workflowService, swarmService, ultraService, subagentsOrchestration, themeService, statusService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
   const derivedRoot = rootDir ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const derivedConfigRoot = configRoot ?? process.env.PI_CODING_AGENT_DIR ?? null;
   let modes = modeService;
   let workflows = workflowService;
   let swarms = swarmService;
+  let ultras = ultraService;
   let themes = themeService;
   let statuses = statusService;
   const getModes = async () => {
@@ -171,6 +172,13 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
       swarms = module.createSwarmControlService({ rootDir: derivedRoot, orchestration: subagentsOrchestration });
     }
     return swarms;
+  };
+  const getUltras = async () => {
+    if (!ultras) {
+      const module = await import("../../packages/control-service/ultra-run-service.mjs");
+      ultras = module.createUltraRunControlService({ rootDir: derivedRoot });
+    }
+    return ultras;
   };
   const getThemes = async () => {
     if (!themes) {
@@ -214,7 +222,7 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
         return {
           ok: true,
           status: "HELP",
-          text: "/omp status|doctor|profile|mode|workflow|swarm|theme|tools|packages|context|verify|safe|help",
+          text: "/omp status|doctor|profile|mode|workflow|swarm|ultra|theme|tools|packages|context|verify|safe|help",
         };
       }
       if (command === "mode") {
@@ -253,6 +261,7 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
               ...request,
               apply: true,
               yes: true,
+              inputFile: null,
               runId: plan.runId ?? request.runId,
               input: plan.input,
               conditions: plan.executionEnvelope?.conditions ?? request.conditions,
@@ -268,16 +277,19 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
       if (command === "swarm") {
         const subcommand = args[0] ?? "list";
         const batch = subcommand === "batch";
-        const operation = batch ? (args[1] ?? "list") : subcommand;
-        const identifier = batch ? (args[2] ?? null) : (args[1] ?? null);
+        const goal = subcommand === "goal";
+        const operation = batch || goal ? (args[1] ?? "list") : subcommand;
+        const identifier = batch || goal ? (args[2] ?? null) : (args[1] ?? null);
         const inputFileIndex = args.indexOf("--input-file");
         const inputFile = inputFileIndex >= 0 ? args[inputFileIndex + 1] : null;
         const service = await getSwarms();
         const request = {
-          subcommand: batch ? "batch" : subcommand,
+          subcommand: batch ? "batch" : goal ? "goal" : subcommand,
           ...(batch ? { batchSubcommand: operation } : {}),
-          recipeId: batch || ["status", "cancel", "resume"].includes(operation) ? null : identifier,
+          ...(goal ? { goalSubcommand: operation } : {}),
+          recipeId: batch || goal || ["status", "cancel", "resume"].includes(operation) ? null : identifier,
           ...(batch ? { batchId: !["status", "cancel", "resume"].includes(operation) ? identifier : null } : {}),
+          ...(goal ? { goalId: operation === "status" ? null : identifier } : {}),
           runId: ["status", "cancel", "resume"].includes(operation) ? identifier : null,
           inputFile,
           ...(inputFile ? {} : { input: {} }),
@@ -287,22 +299,49 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
         if (operation === "run" && approved) {
           const plan = await service.dispatch(batch
             ? { ...request, batchSubcommand: "plan", yes: false }
-            : { ...request, subcommand: "plan", yes: false });
+            : goal
+              ? { ...request, goalSubcommand: "plan", yes: false }
+              : { ...request, subcommand: "plan", yes: false });
           result = plan?.ok === false
             ? plan
             : await service.dispatch({
               ...request,
-              ...(batch ? { batchSubcommand: "run" } : { subcommand: "run" }),
+              ...(batch ? { batchSubcommand: "run" } : goal ? { goalSubcommand: "run" } : { subcommand: "run" }),
               yes: true,
+              inputFile: null,
               runId: plan.runId ?? request.runId,
               input: plan.input,
               conditions: plan.executionEnvelope?.conditions,
               expectedPlanDigest: plan.plan?.planDigest ?? null,
               expectedExecutionDigest: plan.executionEnvelope?.executionEnvelopeDigest ?? null,
+              expectedAuthorizationDigest: plan.authorization?.authorizationDigest ?? null,
             });
         } else {
           result = await service.dispatch({ ...request, yes: false });
         }
+        notify(ctx, result, result.ok === false ? "warning" : "info");
+        return result;
+      }
+      if (command === "ultra") {
+        const subcommand = args[0] ?? "list";
+        const strategyId = args[1] && !args[1].startsWith("--") ? args[1] : null;
+        const inputFileIndex = args.indexOf("--input-file");
+        const inputFile = inputFileIndex >= 0 ? args[inputFileIndex + 1] : null;
+        const service = await getUltras();
+        const request = { subcommand, strategyId, inputFile, ...(inputFile ? {} : { input: {} }) };
+        let result;
+        if (subcommand === "run" && args.includes("--yes")) {
+          const plan = await service.dispatch({ ...request, subcommand: "plan", yes: false });
+          result = plan?.ok === false ? plan : await service.dispatch({
+            ...request,
+            subcommand: "run",
+            yes: true,
+            inputFile: null,
+            input: plan.request,
+            expectedPlanDigest: plan.plan?.planDigest ?? null,
+            expectedAuthorizationDigest: plan.authorization?.authorizationDigest ?? null,
+          });
+        } else result = await service.dispatch({ ...request, yes: false });
         notify(ctx, result, result.ok === false ? "warning" : "info");
         return result;
       }

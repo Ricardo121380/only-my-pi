@@ -110,6 +110,33 @@ Provider nor proves extension isolation, real model quality, real 429 signals,
 or large-scale host capacity. Until a separately authorized protected run is
 performed, live read-only BatchSwarm evidence is `NOT_RUN_BY_POLICY`.
 
+## SwarmGoal, UltraRun, and writer boundary
+
+SwarmGoal and UltraRun are logical policy layers over the same RunCoordinator
+and sole pinned `pi-subagents` backend. They do not load Kimi Code, copy its
+private scheduler, create another child pool, or authorize arbitrary JavaScript
+workflows. Dynamic goal admission requires a human-origin authorization bound
+to the exact goal, objective, input, and nonce. Every proposed revision is
+journalled before execution, bounded by the parent BudgetLedger, compiled to an
+immutable WorkflowPlan, and independently verified with fresh context.
+
+Planner/child output is untrusted data. It cannot introduce an unregistered
+AgentTemplate, widen mutation or egress, reuse unproved work, exceed a reserved
+budget, or turn a failed/blocked verifier into root success. Artifact bytes are
+content-addressed, size-bounded, scoped to the producing run, written without
+following symlinks, and verified on read.
+
+Writer support in S4 is a handoff contract, not automatic integration. A writer
+requires managed-worktree ownership, a full base commit, non-empty and
+non-overlapping path claims, parent-side diff enforcement, correlated terminal
+proof, and passing fixed gates. The pinned v1 backend cannot prove per-path
+enforcement; that live seam therefore remains `UNAVAILABLE`. A worktree is not
+an OS sandbox or path allowlist.
+
+The checked-in S4 evidence uses injected planners/executors and temporary roots.
+No live SwarmGoal, UltraRun child, Provider request, or writer mutation has been
+run. Those gates remain `NOT_RUN_BY_POLICY` until S5 and separate authorization.
+
 ## Reporting a problem
 
 Do not publish secrets or exploit details in a public issue. For a local

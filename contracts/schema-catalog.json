@@ -137,13 +137,13 @@
     {
       "kind": "swarmGoal",
       "schemaPath": "schemas/swarm-goal-v1.schema.json",
-      "productionGlobs": ["contracts/subagents/swarm-goal.example.json"],
+      "productionGlobs": ["contracts/subagents/swarm-goal.example.json", "swarm/goals/*.json"],
       "fixtureDir": "verification/fixtures/contracts/swarm-goal"
     },
     {
       "kind": "ultraRun",
       "schemaPath": "schemas/ultra-run-v1.schema.json",
-      "productionGlobs": ["contracts/subagents/ultra-run.example.json"],
+      "productionGlobs": ["contracts/subagents/ultra-run.example.json", "ultra/strategies/*.json"],
       "fixtureDir": "verification/fixtures/contracts/ultra-run"
     },
     {

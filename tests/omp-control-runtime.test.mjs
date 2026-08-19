@@ -162,6 +162,32 @@ test("/omp lazy Workflow and Swarm services share one injected unified coordinat
   assert.equal(calls.every((entry) => Object.isFrozen(entry.plan)), true);
 });
 
+test("/omp plan-confirm-run passes the reviewed input snapshot instead of reopening inputFile", async () => {
+  const calls = [];
+  const workflowService = {
+    async dispatch(options) {
+      calls.push(options);
+      if (!options.apply) {
+        return {
+          ok: true,
+          status: "WORKFLOW_PLAN",
+          runId: "reviewed-run",
+          input: { reviewed: true },
+          plan: { planDigest: "sha256:reviewed" },
+          executionEnvelope: { executionEnvelopeDigest: "sha256:reviewed-envelope", conditions: [] },
+        };
+      }
+      return { ok: true, status: "WORKFLOW_COMPLETED" };
+    },
+  };
+  const runtime = createOmpRuntime({ rootDir: process.cwd(), workflowService });
+  const result = await runtime.execute("workflow run single-agent-safe --input-file /tmp/reviewed.json --apply --yes", { ui: { notify() {} } });
+  assert.equal(result.status, "WORKFLOW_COMPLETED");
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].inputFile, null);
+  assert.deepEqual(calls[1].input, { reviewed: true });
+});
+
 test("/omp theme routes public Pi UI theme methods and keeps apply explicit", async () => {
   const applied = [];
   const runtime = createOmpRuntime({

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/swarm-goal-v1.schema.json",
+  "$schema": "../../schemas/swarm-goal-v1.schema.json",
   "formatVersion": 1,
   "contractStatus": "runtime-ready",
   "kind": "swarm-goal",
@@ -15,7 +15,7 @@
     "maxPlanRevisions": 4,
     "maxAgentSpecs": 8,
     "mutation": "none",
-    "egress": "deny"
+    "egress": "allow-listed"
   },
   "roles": {
     "synthesizerTemplate": "synthesizer",

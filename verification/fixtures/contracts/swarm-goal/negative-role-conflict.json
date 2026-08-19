@@ -14,7 +14,7 @@
     "mutation": "none",
     "egress": "deny"
   },
-  "roles": { "synthesizerTemplate": "synthesizer", "verifierTemplate": "verifier", "minimumDistinctAgentSpecs": 3 },
+  "roles": { "synthesizerTemplate": "synthesizer", "verifierTemplate": "synthesizer", "minimumDistinctAgentSpecs": 3 },
   "convergence": { "coverageTarget": 0.9, "noProgressWindow": 2, "freshVerifierRequired": true },
   "outputSchemaRef": "research-result"
 }

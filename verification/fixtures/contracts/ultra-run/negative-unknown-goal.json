@@ -9,7 +9,7 @@
   "routePolicy": { "singleAgentMaxComplexity": 20, "batchMinItems": 8, "dynamicGoalRequiresExplicitApproval": true },
   "workflowLibrary": ["source-review-v2"],
   "batchLibrary": ["review-items"],
-  "goalLibrary": ["research-release-goal"],
+  "goalLibrary": ["does-not-exist"],
   "quality": { "freshVerifier": true, "testGate": "test-contract", "integrationGate": "test-integration" },
   "budgetRef": "preview-read-only",
   "approvalPolicy": "exact-mutating-revision"

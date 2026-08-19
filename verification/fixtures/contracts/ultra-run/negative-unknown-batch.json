@@ -8,7 +8,7 @@
   "effort": "deep",
   "routePolicy": { "singleAgentMaxComplexity": 20, "batchMinItems": 8, "dynamicGoalRequiresExplicitApproval": true },
   "workflowLibrary": ["source-review-v2"],
-  "batchLibrary": ["review-items"],
+  "batchLibrary": ["does-not-exist"],
   "goalLibrary": ["research-release-goal"],
   "quality": { "freshVerifier": true, "testGate": "test-contract", "integrationGate": "test-integration" },
   "budgetRef": "preview-read-only",

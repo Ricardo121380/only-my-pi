@@ -1,16 +1,24 @@
 {
-  "$schema": "ultra-run-v1.schema.json",
+  "$schema": "../../schemas/ultra-run-v1.schema.json",
   "formatVersion": 1,
   "contractStatus": "runtime-ready",
   "kind": "ultra-run",
-  "id": "review-and-verify",
+  "id": "ultra-deep",
   "version": "1.0.0",
   "effort": "deep",
-  "routePolicy": { "singleAgentMaxComplexity": 20, "batchMinItems": 8, "dynamicGoalRequiresExplicitApproval": true },
+  "routePolicy": {
+    "singleAgentMaxComplexity": 20,
+    "batchMinItems": 8,
+    "dynamicGoalRequiresExplicitApproval": true
+  },
   "workflowLibrary": ["source-review-v2"],
   "batchLibrary": ["review-items"],
   "goalLibrary": ["research-release-goal"],
-  "quality": { "freshVerifier": true, "testGate": "test-contract", "integrationGate": "test-integration" },
+  "quality": {
+    "freshVerifier": true,
+    "testGate": "test-contract",
+    "integrationGate": "test-integration"
+  },
   "budgetRef": "preview-read-only",
   "approvalPolicy": "exact-mutating-revision"
 }

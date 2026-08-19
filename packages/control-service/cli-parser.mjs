@@ -41,6 +41,7 @@ const COMMANDS = new Set([
   "mode",
   "workflow",
   "swarm",
+  "ultra",
   "theme",
   "help",
 ]);
@@ -48,8 +49,10 @@ const COMMANDS = new Set([
 const MODE_COMMANDS = new Set(["list", "show", "use", "reset", "doctor", "diff", "scaffold"]);
 const PROFILE_COMMANDS = new Set(["list", "show", "diff"]);
 const WORKFLOW_COMMANDS = new Set(["list", "show", "run", "status", "cancel", "resume"]);
-const SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume", "batch"]);
+const SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume", "batch", "goal"]);
 const BATCH_SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume"]);
+const GOAL_SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status"]);
+const ULTRA_COMMANDS = new Set(["list", "show", "validate", "plan", "run"]);
 const THEME_COMMANDS = new Set(["list", "show", "preview", "use", "reset", "doctor"]);
 const MODE_NAMESPACED_ID = /^(?:[a-z][a-z0-9-]{0,63}(?:\/[a-z][a-z0-9-]{0,63})?|(?:user|project|package):[a-z][a-z0-9-]{0,63})$/u;
 
@@ -125,7 +128,7 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   const { options, positionals } = parseOptions(argv.slice(1));
   const configRoot = resolveConfigRoot(options.configRoot, env, homedir);
 
-  if (!new Set(["swarm", "workflow"]).has(command) && options.inputFile !== undefined) fail("--input-file is only valid for workflow or swarm commands");
+  if (!new Set(["swarm", "workflow", "ultra"]).has(command) && options.inputFile !== undefined) fail("--input-file is only valid for workflow, swarm, or ultra commands");
 
   if (options.profile !== undefined) assertIdentifier(options.profile, "profile");
   if (options.mode !== undefined) {
@@ -326,6 +329,34 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
         },
       };
     }
+    if (subcommand === "goal") {
+      const goalSubcommand = positionals[1] ?? "list";
+      if (!GOAL_SWARM_COMMANDS.has(goalSubcommand)) fail(`unknown swarm goal subcommand: ${goalSubcommand}`);
+      const identifier = positionals[2] ?? null;
+      if (["show", "validate", "plan", "run"].includes(goalSubcommand) && identifier === null) fail(`swarm goal ${goalSubcommand} requires a goal id`);
+      if (goalSubcommand === "status" && identifier === null) fail("swarm goal status requires a run id");
+      if (positionals.length > 3) fail(`swarm goal ${goalSubcommand} accepts at most one id`);
+      if (identifier !== null) assertIdentifier(identifier, goalSubcommand === "status" ? "run id" : "goal id");
+      if (options.inputFile !== undefined) {
+        if (!["plan", "run"].includes(goalSubcommand)) fail("--input-file is only valid for swarm goal plan or run");
+        if (!path.isAbsolute(options.inputFile)) fail("--input-file must be an absolute path");
+      }
+      if (options.yes && goalSubcommand !== "run") fail("--yes is only valid for swarm goal run");
+      return {
+        command,
+        mutation: goalSubcommand === "run",
+        options: {
+          configRoot,
+          subcommand: "goal",
+          goalSubcommand,
+          goalId: goalSubcommand === "status" ? null : identifier,
+          runId: goalSubcommand === "status" ? identifier : null,
+          inputFile: options.inputFile ?? null,
+          yes: options.yes === true,
+          json: options.json === true,
+        },
+      };
+    }
     const recipeId = positionals[1] ?? null;
     if (["show", "validate", "plan", "run"].includes(subcommand) && recipeId === null) fail(`swarm ${subcommand} requires a recipe id`);
     if (["status", "cancel", "resume"].includes(subcommand) && recipeId === null) fail(`swarm ${subcommand} requires a run id`);
@@ -348,6 +379,22 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
         json: options.json === true,
       },
     };
+  }
+
+  if (command === "ultra") {
+    reject(options, ["mode", "profile", "provider", "model", "scope", "apply", "dryRun", "plan", "static", "live", "resolved"], command);
+    const subcommand = positionals[0] ?? "list";
+    if (!ULTRA_COMMANDS.has(subcommand)) fail(`unknown ultra subcommand: ${subcommand}`);
+    const strategyId = positionals[1] ?? null;
+    if (["show", "validate", "plan", "run"].includes(subcommand) && strategyId === null) fail(`ultra ${subcommand} requires a strategy id`);
+    if (positionals.length > 2) fail(`ultra ${subcommand} accepts at most one strategy id`);
+    if (strategyId !== null) assertIdentifier(strategyId, "UltraRun strategy id");
+    if (options.inputFile !== undefined) {
+      if (!["plan", "run"].includes(subcommand)) fail("--input-file is only valid for ultra plan or run");
+      if (!path.isAbsolute(options.inputFile)) fail("--input-file must be an absolute path");
+    }
+    if (options.yes && subcommand !== "run") fail("--yes is only valid for ultra run");
+    return { command, mutation: subcommand === "run", options: { configRoot, subcommand, strategyId, inputFile: options.inputFile ?? null, yes: options.yes === true, json: options.json === true } };
   }
 
   if (command === "theme") {

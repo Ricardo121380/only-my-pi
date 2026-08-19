@@ -4,11 +4,11 @@
   "title": "only-my-pi bounded dynamic SwarmGoal v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["$schema", "formatVersion", "contractStatus", "kind", "id", "version", "objective", "authority", "convergence", "outputSchemaRef"],
+  "required": ["$schema", "formatVersion", "contractStatus", "kind", "id", "version", "objective", "authority", "roles", "convergence", "outputSchemaRef"],
   "properties": {
     "$schema": { "type": "string", "pattern": "swarm-goal-v1\\.schema\\.json$" },
     "formatVersion": { "const": 1 },
-    "contractStatus": { "const": "contract-preview" },
+    "contractStatus": { "enum": ["contract-preview", "runtime-ready"] },
     "kind": { "const": "swarm-goal" },
     "id": { "$ref": "#/$defs/id" },
     "version": { "$ref": "#/$defs/semver" },
@@ -24,13 +24,24 @@
     "authority": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["allowedAgentTemplates", "budgetRef", "maxPlanRevisions", "mutation", "egress"],
+      "required": ["allowedAgentTemplates", "budgetRef", "maxPlanRevisions", "maxAgentSpecs", "mutation", "egress"],
       "properties": {
-        "allowedAgentTemplates": { "type": "array", "minItems": 1, "maxItems": 64, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "allowedAgentTemplates": { "type": "array", "minItems": 3, "maxItems": 64, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
         "budgetRef": { "$ref": "#/$defs/id" },
         "maxPlanRevisions": { "type": "integer", "minimum": 1, "maximum": 64 },
+        "maxAgentSpecs": { "type": "integer", "minimum": 3, "maximum": 64 },
         "mutation": { "enum": ["none", "guarded"] },
         "egress": { "enum": ["deny", "allow-listed"] }
+      }
+    },
+    "roles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["synthesizerTemplate", "verifierTemplate", "minimumDistinctAgentSpecs"],
+      "properties": {
+        "synthesizerTemplate": { "$ref": "#/$defs/id" },
+        "verifierTemplate": { "$ref": "#/$defs/id" },
+        "minimumDistinctAgentSpecs": { "type": "integer", "minimum": 3, "maximum": 64 }
       }
     },
     "convergence": {

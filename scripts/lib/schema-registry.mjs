@@ -374,12 +374,13 @@ function buildIndex(documentsByKind, rootDir) {
     workflows: collect("workflow", "id"),
     workflowDefinitionsV2: collect("workflowDefinitionV2", "id"),
     swarms: collect("swarmRecipe", "id"),
-    agentTemplates: collect("agentTemplate", "id"),
+    agentTemplates: new Set([...collect("agentTemplate", "id"), ...collect("agent", "id")]),
     resolvedAgentSpecs: collect("resolvedAgentSpec", "id"),
     resolvedAgentSpecDefinitions: definitions("resolvedAgentSpec"),
     batchSwarms: collect("batchSwarm", "id"),
     batchSwarmDefinitions: definitions("batchSwarm"),
     budgetEnvelopes: collect("budgetEnvelope", "id"),
+    swarmGoals: collect("swarmGoal", "id"),
     releaseGates,
   };
 }
@@ -678,9 +679,14 @@ function semanticErrors(kind, document, { sourcePath, rootDir, index, documentsB
   } else if (kind === "swarmGoal") {
     errors.push(...unknownRefs(document.authority?.allowedAgentTemplates, index.agentTemplates, "/authority/allowedAgentTemplates", "AgentTemplate"));
     errors.push(...unknownRefs([document.authority?.budgetRef], index.budgetEnvelopes, "/authority/budgetRef", "BudgetEnvelope"));
+    errors.push(...unknownRefs([document.roles?.synthesizerTemplate, document.roles?.verifierTemplate], index.agentTemplates, "/roles", "AgentTemplate"));
+    if (document.roles?.synthesizerTemplate === document.roles?.verifierTemplate) errors.push(error("/roles", "role-conflict", "synthesizer and verifier templates must differ"));
+    if (document.roles?.minimumDistinctAgentSpecs > document.authority?.maxAgentSpecs) errors.push(error("/roles/minimumDistinctAgentSpecs", "budget-envelope", "minimum distinct AgentSpecs exceeds maxAgentSpecs"));
     if (document.convergence?.noProgressWindow > document.authority?.maxPlanRevisions) errors.push(error("/convergence/noProgressWindow", "budget-envelope", "no-progress window exceeds maximum plan revisions"));
   } else if (kind === "ultraRun") {
     errors.push(...unknownRefs(document.workflowLibrary, index.workflowDefinitionsV2, "/workflowLibrary", "WorkflowDefinitionV2"));
+    errors.push(...unknownRefs(document.batchLibrary, index.batchSwarms, "/batchLibrary", "BatchSwarm"));
+    errors.push(...unknownRefs(document.goalLibrary, index.swarmGoals, "/goalLibrary", "SwarmGoal"));
     errors.push(...unknownRefs([document.quality?.testGate, document.quality?.integrationGate], index.releaseGates, "/quality", "release gate"));
     errors.push(...unknownRefs([document.budgetRef], index.budgetEnvelopes, "/budgetRef", "BudgetEnvelope"));
   } else if (kind === "terminalReceipt") {

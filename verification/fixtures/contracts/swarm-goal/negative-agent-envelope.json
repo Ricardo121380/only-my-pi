@@ -10,11 +10,11 @@
     "allowedAgentTemplates": ["researcher", "source-verifier", "synthesizer", "verifier"],
     "budgetRef": "preview-read-only",
     "maxPlanRevisions": 4,
-    "maxAgentSpecs": 8,
+    "maxAgentSpecs": 3,
     "mutation": "none",
     "egress": "deny"
   },
-  "roles": { "synthesizerTemplate": "synthesizer", "verifierTemplate": "verifier", "minimumDistinctAgentSpecs": 3 },
+  "roles": { "synthesizerTemplate": "synthesizer", "verifierTemplate": "verifier", "minimumDistinctAgentSpecs": 4 },
   "convergence": { "coverageTarget": 0.9, "noProgressWindow": 2, "freshVerifierRequired": true },
   "outputSchemaRef": "research-result"
 }

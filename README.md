@@ -32,13 +32,14 @@ agents/       Canonical Agent roles and generated pi-subagents resources
 modes/        Declarative Mode contracts
 workflows/    Declarative Workflow contracts
 swarm/        Declarative AgentSwarm recipe contracts
+ultra/        UltraRun strategy contracts
 packages/     First-party protocol/recovery seams and offline fixtures
 scripts/      Repository checks and package governance tooling
 ```
 
 ## Current research
 
-- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; S0–S3 Preview source implemented)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
+- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; S0–S4 Preview source implemented)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
 - [Codex successor development Goal for S0–S5](codex/goals/develop-only-my-pi-subagents-ultrarun.md)
 - [Historical Harness MVP development plan (M0–M7, complete)](docs/plans/2026-08-16-only-my-pi-development-plan.md)
 - [Historical Codex Harness MVP Goal](codex/goals/develop-only-my-pi.md)
@@ -71,6 +72,7 @@ scripts/      Repository checks and package governance tooling
 - [Mode Registry and unified control surface](docs/architecture/mode-registry.md)
 - [Agent and Workflow Core](docs/architecture/agent-workflow-core.md)
 - [Unified Subagents v2 runtime foundation](docs/architecture/subagents-v2.md)
+- [S4 SwarmGoal, UltraRun, and writer handoff](docs/architecture/subagents-s4-goal-ultra.md)
 - [Subagents v1 offline evaluation baseline](docs/evaluation/subagents-v1.md)
 - [Current implementation status](docs/STATUS.md)
 
@@ -112,7 +114,7 @@ receipts bounded. DeepSeek conformance, ACP v1, and workspace checkpoint remain
 non-default Labs modules with the explicit boundaries in the
 [Labs registry](docs/LABS.md).
 
-The S0–S3 Preview source implementation now contains a unified
+The S0–S4 Preview source implementation now contains a unified
 `packages/subagents/` facade. It provides typed AgentTemplate v2,
 ResolvedAgentSpec, TaskAssignment and terminal receipts; an exact
 `pi-subagents` RPC v1 backend; immutable WorkflowPlan compilation; a single
@@ -152,9 +154,12 @@ Restart-safe plan lookup and durable status/cancel/resume are now implemented
 through the versioned Plan Store sidecar. S3 BatchSwarm also reuses the same
 event chain and parent reservation across crash recovery: proven completed
 items are not replayed, while a started item without terminal proof interrupts
-the run. SwarmGoal, UltraRun, guarded writer integration, and promotion-specific
-live/fault evidence remain S4–S5. The protected real-child BatchSwarm check was
-not authorized and remains `NOT_RUN_BY_POLICY`.
+the run. S4 now adds a Pi-native SwarmGoal controller, UltraRun router,
+immutable artifact store, and writer handoff contract. These are logical layers
+over the same RunCoordinator and sole `pi-subagents` backend; they do not
+connect Pi to Kimi Code or add a second scheduler. The protected real-child
+BatchSwarm check, dynamic-goal live execution, and guarded writer integration
+were not authorized and remain `NOT_RUN_BY_POLICY`/`UNAVAILABLE`.
 
 `omp workflow|swarm run` and `resume` accept an optional bounded absolute JSON
 `--input-file`; it is read with `O_NOFOLLOW`, hashed into the execution

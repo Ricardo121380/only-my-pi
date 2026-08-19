@@ -7,6 +7,7 @@ import { createAgentRegistry } from "../agent-registry/index.mjs";
 import { createSwarmRecipeRegistry } from "../swarm-core/index.mjs";
 import { translateLegacySwarmRecipe } from "../subagents/workflow/migration/index.mjs";
 import { createBatchSwarmControlService } from "./batch-swarm-service.mjs";
+import { createSwarmGoalControlService } from "./swarm-goal-service.mjs";
 
 const SHA256 = /^sha256:[a-f0-9]{64}$/u;
 const RUN_ID = /^[a-z0-9][a-z0-9._:-]{0,127}$/u;
@@ -98,7 +99,7 @@ function swarmResultStatus(status) {
  * Pi extension-RPC transport; the default service deliberately has none.
  */
 export class SwarmControlService {
-  constructor({ rootDir, registry, agentRegistry, orchestration, batchService, batchRegistry, batchCapabilityMatrix } = {}) {
+  constructor({ rootDir, registry, agentRegistry, orchestration, batchService, batchRegistry, batchCapabilityMatrix, goalService, goalRegistry, goalController } = {}) {
     this.rootDir = rootDir;
     this.agentRegistry = agentRegistry ?? createAgentRegistry({ rootDir });
     this.registry = registry ?? createSwarmRecipeRegistry({ rootDir, agentRegistry: this.agentRegistry });
@@ -111,6 +112,7 @@ export class SwarmControlService {
       orchestration: this.orchestration,
       capabilityMatrix: batchCapabilityMatrix,
     });
+    this.goalService = goalService ?? createSwarmGoalControlService({ rootDir, registry: goalRegistry, controller: goalController });
     this.runPlans = new Map();
     this.preparedInputs = new WeakSet();
   }
@@ -144,6 +146,12 @@ export class SwarmControlService {
       return this.batchService.dispatch({
         ...options,
         subcommand: options.batchSubcommand ?? "list",
+      });
+    }
+    if (subcommand === "goal") {
+      return this.goalService.dispatch({
+        ...options,
+        subcommand: options.goalSubcommand ?? "list",
       });
     }
     if (subcommand === "list") {
