@@ -365,6 +365,41 @@ test("the production bootstrap plan is read-only and never invokes the injected 
   assert.deepEqual(await fs.readdir(isolatedRoot), []);
 });
 
+test("the production BatchSwarm CLI expands offline without Pi, Provider, or config writes", async (t) => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "omp-cli-batch-plan-"));
+  t.after(() => fs.rm(temporary, { recursive: true, force: true }));
+  const isolatedConfig = path.join(temporary, "pi-agent");
+  const inputFile = path.join(temporary, "items.json");
+  await fs.mkdir(isolatedConfig);
+  await fs.writeFile(inputFile, JSON.stringify({ artifacts: { items: [{ itemId: "one", path: "src/one.mjs" }, { itemId: "two", path: "src/two.mjs" }] } }));
+  let spawned = false;
+  const result = await invoke([
+    "swarm",
+    "batch",
+    "plan",
+    "review-items",
+    "--input-file",
+    inputFile,
+    "--config-root",
+    isolatedConfig,
+    "--json",
+  ], {
+    rootDir: repoRoot,
+    spawnImpl() {
+      spawned = true;
+      throw new Error("offline BatchSwarm plan must not spawn Pi");
+    },
+  });
+  assert.equal(result.code, OMP_EXIT_CODES.SUCCESS, result.stderr);
+  const plan = JSON.parse(result.stdout);
+  assert.equal(plan.status, "BATCH_SWARM_PLAN");
+  assert.equal(plan.liveDispatch, "NOT_RUN_BY_POLICY");
+  assert.equal(plan.expansion.itemCount, 2);
+  assert.equal(plan.expansion.maximumAssignments, 4);
+  assert.equal(spawned, false);
+  assert.deepEqual(await fs.readdir(isolatedConfig), []);
+});
+
 test("runOmpCli passes parsed configRoot, spawn, and confirmation into its service factory", async () => {
   const fakeSpawn = () => {};
   const confirm = async () => false;

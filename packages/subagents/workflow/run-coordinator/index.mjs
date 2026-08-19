@@ -267,6 +267,7 @@ function normalizeTerminal(value, { runId, nodeId, attemptId, fallbackOutcome = 
   const observed = {
     rawOutputBytes: output.rawOutputBytes,
     elapsedMs: receipt?.usage?.elapsedMs ?? value?.usage?.elapsedMs ?? 0,
+    assignments: receipt?.usage?.assignments ?? value?.usage?.assignments ?? 1,
     tokens: receipt?.usage?.tokens ?? value?.usage?.tokens ?? 0,
     cost: receipt?.usage?.costUsd ?? receipt?.usage?.cost ?? value?.usage?.costUsd ?? value?.usage?.cost ?? 0,
   };
@@ -326,6 +327,7 @@ function emptyProjection(runId, plan) {
       attempts: [],
       resultDigest: null,
       outcome: null,
+      batch: null,
     }])),
     terminal: null,
   };
@@ -401,6 +403,89 @@ export function projectWorkflowRun(events, plan, runId) {
         attempt.terminal = clone(event.payload);
         break;
       }
+      case "BatchStarted":
+        if (node.kind !== "batch-swarm") fail("BatchStarted references a non-batch node", "BATCH_EVENT_CORRELATION_MISMATCH");
+        if (node.batch === null) {
+          node.batch = {
+            batchId: event.payload.batchId,
+            batchDigest: event.payload.batchDigest,
+            itemCount: event.payload.itemCount,
+            preparationDigest: event.payload.preparationDigest,
+            status: "running",
+            items: [],
+            terminal: null,
+            capacityChanges: [],
+          };
+        } else {
+          if (node.batch.batchId !== event.payload.batchId
+            || node.batch.batchDigest !== event.payload.batchDigest
+            || node.batch.itemCount !== event.payload.itemCount
+            || node.batch.preparationDigest !== event.payload.preparationDigest) {
+            fail("BatchStarted identity drifted across execution attempts", "BATCH_EVENT_CORRELATION_MISMATCH");
+          }
+          // A recovered controller attempt must not erase authoritative item
+          // terminals that were already persisted by the prior attempt.
+          node.batch.status = "running";
+          node.batch.terminal = null;
+        }
+        break;
+      case "BatchCapacityChanged":
+        if (node.kind !== "batch-swarm" || !node.batch) fail("BatchCapacityChanged has no correlated BatchStarted", "BATCH_EVENT_CORRELATION_MISMATCH");
+        node.batch.capacityChanges.push(clone(event.payload));
+        break;
+      case "BatchItemQueued":
+      case "BatchItemStarted":
+      case "BatchItemTerminal": {
+        if (node.kind !== "batch-swarm" || !node.batch) fail(`${event.type} has no correlated BatchStarted`, "BATCH_EVENT_CORRELATION_MISMATCH");
+        const index = event.payload.index;
+        if (!Number.isSafeInteger(index) || index < 0 || index >= node.batch.itemCount) fail(`${event.type} has an invalid item index`, "BATCH_EVENT_CORRELATION_MISMATCH");
+        let item = node.batch.items.find((candidate) => candidate.index === index);
+        if (!item) {
+          item = {
+            index,
+            itemId: event.payload.itemId,
+            itemDigest: event.payload.itemDigest,
+            status: "queued",
+            attempts: 0,
+            assignmentId: null,
+            assignmentHash: null,
+            handleId: null,
+            receiptId: null,
+            authoritative: null,
+            result: null,
+            error: null,
+            usage: null,
+          };
+          node.batch.items.push(item);
+          node.batch.items.sort((left, right) => left.index - right.index);
+        }
+        if (item.itemId !== event.payload.itemId || item.itemDigest !== event.payload.itemDigest) fail(`${event.type} item identity drifted`, "BATCH_EVENT_CORRELATION_MISMATCH");
+        item.attempts = Math.max(item.attempts, event.payload.itemAttempt ?? 0);
+        if (event.type === "BatchItemQueued") item.status = "queued";
+        if (event.type === "BatchItemStarted") {
+          item.status = "running";
+          item.assignmentId = event.payload.assignmentId;
+          item.assignmentHash = event.payload.assignmentHash;
+          item.handleId = event.payload.handleId ?? null;
+        }
+        if (event.type === "BatchItemTerminal") {
+          item.status = event.payload.status;
+          item.assignmentId = event.payload.assignmentId ?? item.assignmentId;
+          item.assignmentHash = event.payload.assignmentHash ?? item.assignmentHash;
+          item.handleId = event.payload.handleId ?? item.handleId;
+          item.receiptId = event.payload.receiptId ?? null;
+          item.authoritative = event.payload.authoritative === true;
+          item.result = clone(event.payload.result ?? null);
+          item.error = clone(event.payload.error ?? null);
+          item.usage = clone(event.payload.usage ?? null);
+        }
+        break;
+      }
+      case "BatchSettled":
+        if (node.kind !== "batch-swarm" || !node.batch) fail("BatchSettled has no correlated BatchStarted", "BATCH_EVENT_CORRELATION_MISMATCH");
+        node.batch.status = event.payload.status;
+        node.batch.terminal = clone(event.payload);
+        break;
       case "GateEvaluated": node.status = event.payload.outcome === "completed" ? "running" : "failed"; break;
       case "NodeSettled":
         if (event.payload.recovery === true) {
@@ -431,7 +516,8 @@ export function projectWorkflowRun(events, plan, runId) {
 
 function usageVector(node, terminal) {
   const vector = {};
-  if (["agent", "batch-swarm"].includes(node.kind)) vector.assignments = 1;
+  if (node.kind === "agent") vector.assignments = 1;
+  if (node.kind === "batch-swarm") vector.assignments = terminal.observed.assignments;
   vector.rawOutputBytes = terminal.observed.rawOutputBytes;
   vector.elapsedMs = terminal.observed.elapsedMs;
   if (node.budget.maxTokens !== null) vector.tokens = terminal.observed.tokens;
@@ -479,7 +565,7 @@ function asBudgetOverrunTerminal(terminal, node, { outcome = "budget-exhausted",
   });
 }
 
-function reservationVector(node) {
+function reservationVector(node, preparation = null) {
   const vector = {
     // Admission is per attempt. A retry must obtain a new durable reservation
     // before its next child spawn, so reserving the full retry envelope again
@@ -487,7 +573,13 @@ function reservationVector(node) {
     elapsedMs: node.budget.timeoutMs,
     rawOutputBytes: node.budget.maxOutputBytes,
   };
-  if (["agent", "batch-swarm"].includes(node.kind)) vector.assignments = 1;
+  if (node.kind === "agent") vector.assignments = 1;
+  if (node.kind === "batch-swarm") {
+    const preparedAssignments = preparation?.reservation?.assignments;
+    vector.assignments = Number.isSafeInteger(preparedAssignments) && preparedAssignments >= 0
+      ? preparedAssignments
+      : node.batchMaxItems * node.batchMaxAttempts;
+  }
   if (node.budget.maxTokens !== null) vector.tokens = node.budget.maxTokens;
   if (node.budget.maxCostUsd !== null) vector.cost = node.budget.maxCostUsd;
   return vector;
@@ -942,8 +1034,34 @@ export class RunCoordinator {
         childId: `${node.id}:${attemptId}`,
         payload: { localOnly: true, batch: true },
       }));
-      active.physicalAttempts.set(node.id, (active.physicalAttempts.get(node.id) ?? 0) + 1);
-      return normalize(await wait(this.nodeExecutor.runBatch(node, { runId: active.runId, revision: active.plan.revision.number, attemptId, input: active.input, inputDigest: active.inputDigest, signal, authorization, ...leaseContext })));
+      const recordBatchEvent = async (event) => {
+        if (!object(event)
+          || !["BatchStarted", "BatchCapacityChanged", "BatchItemQueued", "BatchItemStarted", "BatchItemTerminal", "BatchSettled"].includes(event.type)
+          || typeof event.eventId !== "string") {
+          fail("batch executor emitted an invalid event", "INVALID_BATCH_EVENT");
+        }
+        return this.#append(active, this.#event(active, event.type, {
+          eventId: event.eventId,
+          nodeId: node.id,
+          attemptId,
+          swarmRunId: event.swarmRunId ?? execution.prepared?.batchRunId ?? null,
+          childId: event.childId ?? null,
+          payload: event.payload ?? {},
+        }));
+      };
+      return normalize(await wait(this.nodeExecutor.runBatch(node, {
+        runId: active.runId,
+        revision: active.plan.revision.number,
+        attemptId,
+        input: active.input,
+        inputDigest: active.inputDigest,
+        signal,
+        authorization,
+        prepared: execution.prepared ?? null,
+        priorBatchEvents: execution.priorBatchEvents ?? [],
+        recordBatchEvent,
+        ...leaseContext,
+      })));
     }
     if (node.kind === "gate") {
       if (!this.gateRunner?.run) return normalize({ status: "FAIL", error: { code: "GATE_RUNNER_UNAVAILABLE" } });
@@ -1005,27 +1123,74 @@ export class RunCoordinator {
         authorization = verdict.authorization;
       }
       const attemptId = `${node.id}:attempt-${attemptNumber}:${this.idFactory("attempt").slice(-12)}`;
-      const reservationId = `${node.id}:reservation-${attemptNumber}:${attemptId.slice(-12)}`;
-      try {
-        await this.#ensureLeaseForWrite(active);
-        await this.budgetLedger.reserve(active.runId, {
-          reservationId,
-          ownerId: node.id,
-          nodeId: node.id,
-          attemptId,
-          worstCase: reservationVector(node),
-        }, { lease: active.lease, revision: active.plan.revision.number });
-      } catch (cause) {
-        if (["BUDGET_EXHAUSTED", "METERING_UNAVAILABLE"].includes(cause?.code)) {
-          const outcome = cause.code === "BUDGET_EXHAUSTED" ? "budget-exhausted" : "unavailable";
+      const reusableReservation = active.reusableReservations.get(node.id) ?? null;
+      const reservationId = reusableReservation?.reservationId
+        ?? `${node.id}:reservation-${attemptNumber}:${attemptId.slice(-12)}`;
+      let batchPreparation = null;
+      let priorBatchEvents = [];
+      if (node.kind === "batch-swarm" && typeof this.nodeExecutor.prepareBatch === "function") {
+        try {
+          const recovered = await this.eventJournal.read(active.runId, { repairTrailingPartial: true, lease: active.lease });
+          priorBatchEvents = recovered.events.filter((event) => event.nodeId === node.id && event.type.startsWith("Batch"));
+          batchPreparation = await this.nodeExecutor.prepareBatch(node, {
+            runId: active.runId,
+            revision: active.plan.revision.number,
+            attemptId,
+            input: active.input,
+            inputDigest: active.inputDigest,
+            signal: active.controller.signal,
+            authorization,
+            priorBatchEvents,
+            renewLease: () => this.#renewLease(active),
+          });
+        } catch (cause) {
+          if (reusableReservation) {
+            await this.#ensureLeaseForWrite(active);
+            await this.budgetLedger.settle(active.runId, reusableReservation.reservationId, {
+              consumed: reusableReservation.worstCase,
+              revision: active.plan.revision.number,
+              nodeId: node.id,
+              attemptId,
+            }, { lease: active.lease });
+            active.reusableReservations.delete(node.id);
+          }
+          const errorCode = cause?.code ?? "BATCH_PREPARATION_FAILED";
+          const terminal = normalizeTerminal({
+            outcome: "unavailable",
+            authoritative: true,
+            error: { code: errorCode },
+          }, { runId: active.runId, nodeId: node.id, attemptId, maxOutputBytes: node.budget.maxOutputBytes });
           await this.#append(active, this.#event(active, "NodeSettled", {
             eventId: `node-settled:${active.plan.revision.number}:${node.id}`,
             nodeId: node.id,
-            payload: { outcome, resultDigest: null, errorCode: cause.code },
+            payload: { outcome: "unavailable", authoritative: true, resultDigest: null, errorCode },
           }));
-          return { outcome, terminal: null };
+          return { outcome: "unavailable", terminal };
         }
-        throw cause;
+      }
+      const reservationWorstCase = reusableReservation?.worstCase ?? reservationVector(node, batchPreparation);
+      if (!reusableReservation) {
+        try {
+          await this.#ensureLeaseForWrite(active);
+          await this.budgetLedger.reserve(active.runId, {
+            reservationId,
+            ownerId: node.id,
+            nodeId: node.id,
+            attemptId,
+            worstCase: reservationWorstCase,
+          }, { lease: active.lease, revision: active.plan.revision.number });
+        } catch (cause) {
+          if (["BUDGET_EXHAUSTED", "METERING_UNAVAILABLE"].includes(cause?.code)) {
+            const outcome = cause.code === "BUDGET_EXHAUSTED" ? "budget-exhausted" : "unavailable";
+            await this.#append(active, this.#event(active, "NodeSettled", {
+              eventId: `node-settled:${active.plan.revision.number}:${node.id}`,
+              nodeId: node.id,
+              payload: { outcome, resultDigest: null, errorCode: cause.code },
+            }));
+            return { outcome, terminal: null };
+          }
+          throw cause;
+        }
       }
       await this.#append(active, this.#event(active, "NodeAdmitted", {
         eventId: `node-admitted:${attemptId}`,
@@ -1036,7 +1201,20 @@ export class RunCoordinator {
       let terminal;
       const deadline = this.#nodeDeadline(active, node);
       try {
-        terminal = await deadline.wait(this.#runPrimitive(active, node, attemptId, approvalReceipt, deadline, authorization));
+        const cooperativeBatchWait = (operation) => this.#awaitWithLease(active, operation);
+        const primitive = this.#runPrimitive(active, node, attemptId, approvalReceipt, {
+          ...deadline,
+          ...(node.kind === "batch-swarm" ? { wait: cooperativeBatchWait } : {}),
+          prepared: batchPreparation,
+          priorBatchEvents,
+        }, authorization);
+        // The first-party BatchSwarm observes deadline.signal and persists its
+        // own item terminals before returning. Do not race it a second time at
+        // this layer: doing so could release the writer lease while those
+        // durable terminal events are still being appended.
+        terminal = node.kind === "batch-swarm"
+          ? await this.#awaitWithLease(active, primitive)
+          : await deadline.wait(primitive);
       } catch (cause) {
         const timedOut = cause?.code === "NODE_TIMEOUT";
         terminal = normalizeTerminal({
@@ -1080,11 +1258,12 @@ export class RunCoordinator {
       }
       await this.#ensureLeaseForWrite(active);
       await this.budgetLedger.settle(active.runId, reservationId, {
-        consumed: terminal.budgetOverrun ? reservationVector(node) : usageVector(node, terminal),
+        consumed: terminal.budgetOverrun ? reservationWorstCase : usageVector(node, terminal),
         revision: active.plan.revision.number,
         nodeId: node.id,
         attemptId,
       }, { lease: active.lease });
+      active.reusableReservations.delete(node.id);
       const retryable = !SUCCESS_NODE_OUTCOMES.has(terminal.outcome)
         && settledOutcome === "failed"
         && attemptNumber < node.budget.maxAttempts
@@ -1150,6 +1329,7 @@ export class RunCoordinator {
       controller: new AbortController(),
       handles: new Map(),
       physicalAttempts: new Map(),
+      reusableReservations: new Map(),
       cancelRequested: false,
       pauseRequested: false,
       writeTail: Promise.resolve(),
@@ -1197,7 +1377,7 @@ export class RunCoordinator {
       const outstandingReservations = new Map(recovered.events
         .filter((event) => event.type === "BudgetReserved" && !settledReservationIds.has(event.payload.reservationId))
         .map((event) => [event.payload.reservationId, event]));
-      for (const event of recovered.events.filter((candidate) => candidate.type === "ChildStarted")) {
+      for (const event of recovered.events.filter((candidate) => candidate.type === "ChildStarted" && candidate.payload?.batch !== true)) {
         active.physicalAttempts.set(event.nodeId, (active.physicalAttempts.get(event.nodeId) ?? 0) + 1);
       }
 
@@ -1223,6 +1403,40 @@ export class RunCoordinator {
           || (attempt.reservationId && outstandingReservations.has(attempt.reservationId)));
         for (const attempt of unfinishedAttempts) {
           const childStarted = attempt.childId !== null;
+          const reservation = attempt.reservationId ? outstandingReservations.get(attempt.reservationId) : null;
+          if (childStarted && node.kind === "batch-swarm") {
+            const batchEvents = recovered.events.filter((event) => event.nodeId === node.id
+              && event.attemptId === attempt.attemptId
+              && event.type.startsWith("Batch"));
+            const startedItems = new Set(batchEvents
+              .filter((event) => event.type === "BatchItemStarted")
+              .map((event) => `${event.payload.itemId}:${event.payload.itemAttempt}`));
+            const authoritativeTerminals = new Set(batchEvents
+              .filter((event) => event.type === "BatchItemTerminal" && event.payload.authoritative === true)
+              .map((event) => `${event.payload.itemId}:${event.payload.itemAttempt}`));
+            const safeToResume = [...startedItems].every((identity) => authoritativeTerminals.has(identity));
+            if (safeToResume) {
+              await this.#append(active, this.#event(active, "ChildTerminal", {
+                eventId: `recovery-terminal:${attempt.attemptId}`,
+                nodeId: node.id,
+                attemptId: attempt.attemptId,
+                childId: attempt.childId,
+                payload: { outcome: "interrupted", authoritative: false, receiptId: null, resultDigest: null, reason: "batch-controller-recovery" },
+              }));
+              if (reservation) {
+                active.reusableReservations.set(node.id, {
+                  reservationId: attempt.reservationId,
+                  worstCase: clone(reservation.payload.worstCase),
+                });
+                outstandingReservations.delete(attempt.reservationId);
+              }
+              continue;
+            }
+            // A BatchItemStarted without a correlated authoritative terminal
+            // may still be running in the backend. Never replay that logical
+            // item merely because the local controller restarted.
+            active.physicalAttempts.set(node.id, node.budget.maxAttempts);
+          }
           if (childStarted && attempt.status !== "interrupted") {
             await this.#append(active, this.#event(active, "ChildTerminal", {
               eventId: `recovery-terminal:${attempt.attemptId}`,
@@ -1232,7 +1446,6 @@ export class RunCoordinator {
               payload: { outcome: "interrupted", authoritative: false, receiptId: null, resultDigest: null, reason: "coordinator-recovery" },
             }));
           }
-          const reservation = attempt.reservationId ? outstandingReservations.get(attempt.reservationId) : null;
           if (reservation) {
             await this.#ensureLeaseForWrite(active);
             if (childStarted) {
@@ -1257,7 +1470,8 @@ export class RunCoordinator {
           }
         }
         const replayable = node.idempotency === "content-addressed" && !nodeMutates(node);
-        const attemptsExhausted = (active.physicalAttempts.get(node.id) ?? 0) >= node.budget.maxAttempts;
+        const attemptsExhausted = !active.reusableReservations.has(node.id)
+          && (active.physicalAttempts.get(node.id) ?? 0) >= node.budget.maxAttempts;
         if (!replayable || attemptsExhausted) {
           const reason = !replayable ? "side-effect-replay-forbidden" : "max-attempts-exhausted-after-recovery";
           await this.#append(active, this.#event(active, "NodeSettled", {

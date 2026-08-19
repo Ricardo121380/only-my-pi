@@ -124,6 +124,26 @@ test("/omp swarm routes through the injected control service without starting a 
   assert.deepEqual(calls, [{ subcommand: "plan", recipeId: "research-synthesis", runId: null, inputFile: null, yes: false, input: {} }]);
 });
 
+test("/omp swarm batch keeps the homogeneous namespace and offline planning boundary", async () => {
+  const calls = [];
+  const runtime = createOmpRuntime({
+    rootDir: "/tmp/only-my-pi",
+    swarmService: { async dispatch(options) { calls.push(options); return { ok: true, status: "BATCH_SWARM_PLAN", mutation: false }; } },
+  });
+  const result = await runtime.execute("swarm batch plan review-items", { ui: { notify() {} } });
+  assert.equal(result.status, "BATCH_SWARM_PLAN");
+  assert.deepEqual(calls, [{
+    subcommand: "batch",
+    batchSubcommand: "plan",
+    recipeId: null,
+    batchId: "review-items",
+    runId: null,
+    inputFile: null,
+    input: {},
+    yes: false,
+  }]);
+});
+
 test("/omp lazy Workflow and Swarm services share one injected unified coordinator", async () => {
   const calls = [];
   const subagentsOrchestration = {

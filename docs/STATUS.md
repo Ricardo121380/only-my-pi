@@ -20,7 +20,7 @@ This page is a checked-in handoff record. Exact package metadata and risk tags
 live in [`inventory/packages.lock.json`](../inventory/packages.lock.json); this
 summary intentionally contains no credentials, sessions, or host paths.
 
-## Successor roadmap — S0–S2 Contract Preview implemented; S3 next
+## Successor roadmap — S0–S3 Preview source implementation; S4 next
 
 The M0–M7 Harness MVP described below remains the current released baseline.
 Development of its S0–S5 successor has started on the isolated
@@ -44,7 +44,7 @@ The approved semantic split is:
 - `UltraRun`: an upper-layer strategy that routes and chains multiple workflows,
   with no separate scheduler or permission owner.
 
-The first S0–S2 source slice now contains:
+The S0–S3 source slice now contains:
 
 - source dossiers, two ownership/state ADRs, and a dedicated 35-item subagents
   threat model;
@@ -61,20 +61,37 @@ The first S0–S2 source slice now contains:
   reservation rather than refunding unknown work;
 - deterministic dual-read migration of all four heterogeneous legacy Swarm
   recipes into WorkflowPlan rather than BatchSwarm;
+- a true homogeneous BatchSwarm runtime: one hash-bound ResolvedAgentSpec and
+  prompt template mapped over 0–300 stable item slots, with static progressive
+  ramp, capability-gated adaptive 429 backoff, finite retry, explicit failure
+  policies, bounded per-item output, deterministic input-order aggregation,
+  and item-level provenance;
+- a structured `pi-subagents` item adapter that creates an AgentRunHandle and
+  TaskAssignment for every admitted item. It never accepts caller-supplied
+  workflow source and requires correlated terminal/process proof from the sole
+  physical backend;
+- durable Batch events inside the same RunCoordinator journal and parent
+  reservation. Crash recovery reuses that reservation and skips an item only
+  after an authoritative terminal; a started item without terminal proof is
+  charged at worst case and is never replayed;
+- a strict registry plus `omp swarm batch` and `/omp swarm batch`
+  list/show/validate/plan/run/status/cancel/resume surfaces. Planning is offline
+  and reports `NOT_RUN_BY_POLICY`; live run still requires the explicitly
+  injected trusted Pi session runtime;
 - public Workflow/Swarm compatibility facades that use the legacy catalogs as
   readers, assign one stable run ID while planning, require the confirmed plan
   and execution-envelope digests on execution, reuse the exact input snapshot,
   and delegate all live lifecycle work to the one injected RunCoordinator;
 - a 15-case, fixed-seed, three-baseline offline evaluation corpus.
 
-This source slice has no S0–S2 promotion receipt yet. Its deterministic tests
+This source slice has no S0–S3 promotion receipt yet. Its deterministic tests
 use injected transports and temporary roots. A separate disposable-root,
 no-model Pi probe now proves the public `pi-subagents@0.45.2` `ready`/correlated
 `ping` handshake and single physical tool ownership. It submitted no prompt,
 made no Provider/model request, dispatched no child, read no credential, made
 no global install, and did not read or mutate the real Pi home.
 All planned orchestration contracts plus the evaluation-corpus and durable
-run-control contracts are now registered in the strict catalog. The catalog validates 33 kinds and 64
+run-control contracts are now registered in the strict catalog. The catalog validates 33 kinds and 66
 non-vacuous production documents, with positive, unknown-field/version, and
 targeted semantic negatives. Public Workflow/Swarm routing now converges on
 the v2 facade. Approval fails closed without a live evidence provider,
@@ -97,30 +114,33 @@ input. The static single-owner topology probe, packaged-artifact inclusion, and
 the separately authorized live no-model capability/visibility probe now pass.
 The digest-bound receipt is
 [`../contracts/subagents/pi-subagents-live-no-model-evidence.json`](../contracts/subagents/pi-subagents-live-no-model-evidence.json).
-It proves startup, public RPC compatibility, and tool ownership only; child
-terminal/cancellation, metering, managed worktrees, and Provider behavior are
-still deliberately untested. BatchSwarm execution,
-SwarmGoal, UltraRun, and promotion-specific live evidence remain S3–S5.
+It proves startup, public RPC compatibility, and tool ownership only; live child
+terminal/cancellation, live BatchSwarm dispatch, metering, managed worktrees,
+and Provider behavior are still deliberately untested. SwarmGoal, UltraRun,
+writer integration, and promotion-specific live evidence remain S4–S5.
 Historical M5 receipts must not be described as successor evidence.
 
-Current branch evidence for this Contract Preview slice:
+Current branch evidence for this Preview source slice:
 
-- `npm test`: **471/471** pass;
-- `npm run test:subagents`: **112/112** pass;
-- `npm run schema:check`: **64 production documents / 33 schema kinds / 0 findings**;
-- `npm run pack:check`: **230 allowlisted files**, with no tests, receipts, or
+- `npm test`: **500/500** pass;
+- `npm run test:subagents`: **131/131** pass;
+- `npm run schema:check`: **66 production documents / 33 schema kinds / 0 findings**;
+- `npm run pack:check`: **238 allowlisted files**, with no tests, receipts, or
   Codex Goal in the tarball;
-- `npm run lint`: **602 files / 0 findings**;
-- `npm run secret:scan`: **602 tracked files + 230 packed files / 0 findings**;
+- `npm run lint`: **607 files / 0 findings**;
+- `npm run secret:scan`: **607 tracked files + 238 packed files / 0 findings**;
 - `npm run test:e2e`: fresh scripts-disabled tarball install, bootstrap,
   rollback, and installed-package topology doctor pass;
 - `npm run doctor`, all six Profile doctors, Mode/Agent/Workflow/Swarm doctors,
-  `npm run typecheck`, and the deterministic agent/profile generators: pass.
+  BatchSwarm doctor, `npm run typecheck`, and the deterministic agent/profile
+  generators: pass.
   Static doctor retains only the two explicit inactive-candidate warnings.
 
 These are source-tree plus bounded no-model compatibility gates. A promotion
-receipt intentionally does not exist for this Contract Preview; S3 must add the
-homogeneous BatchSwarm implementation and its own requested promotion closure.
+receipt intentionally does not exist for this Preview tranche. The canonical
+S3 live read-only batch is independently authorization-gated and is recorded
+as `NOT_RUN_BY_POLICY`, not as PASS. S4 is the next implementation boundary;
+promotion closure remains S5 work.
 
 ## Current external Pi baseline
 
@@ -375,6 +395,7 @@ npm run test:checkpoint
 npm run doctor
 npm run doctor:profiles
 npm run doctor:subagents-topology
+npm run doctor:batches
 npm run profile:check
 npm run schema:check
 npm run mcp:doctor -- --file verification/fixtures/mcp.safe.json --strict
@@ -480,6 +501,11 @@ and dispatched no child. The durable Plan Store, restart-safe
 status/resume and cross-process cancel intent are complete; cancel/stop remains
 non-authoritative without correlated backend terminal proof. The legacy direct
 imports remain one-release compatibility shims but no longer own public
-execution. With that bounded S2 gate closed, S3 adds a true homogeneous BatchSwarm, S4
-introduces dynamic SwarmGoal plan revisions and UltraRun routing, and S5 adds
-promotion-specific live, fault, security, and compatibility evidence.
+execution. S3 now supplies the true homogeneous BatchSwarm implementation,
+stable item ledger, bounded ramp/retry/failure semantics, exact AgentSpec and
+template binding, WorkflowPlan node, parent-budget recovery, and CLI/TUI
+control. The 1/8/20/64/300 logical simulations and injected adapter tests pass;
+the protected live read-only batch is `NOT_RUN_BY_POLICY`. S4 next introduces
+dynamic SwarmGoal plan revisions, UltraRun routing, quality policy, and guarded
+writer integration; S5 adds promotion-specific live, fault, security, and
+compatibility evidence.

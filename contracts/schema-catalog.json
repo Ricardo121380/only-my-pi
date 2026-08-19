@@ -71,7 +71,7 @@
     {
       "kind": "resolvedAgentSpec",
       "schemaPath": "schemas/resolved-agent-spec-v1.schema.json",
-      "productionGlobs": ["contracts/subagents/resolved-agent-spec.example.json"],
+      "productionGlobs": ["contracts/subagents/resolved-agent-spec.example.json", "swarm/agent-specs/*.json"],
       "fixtureDir": "verification/fixtures/contracts/resolved-agent-spec"
     },
     {
@@ -83,7 +83,7 @@
     {
       "kind": "batchSwarm",
       "schemaPath": "schemas/batch-swarm-v1.schema.json",
-      "productionGlobs": ["contracts/subagents/batch-swarm.example.json"],
+      "productionGlobs": ["contracts/subagents/batch-swarm.example.json", "swarm/batches/*.json"],
       "fixtureDir": "verification/fixtures/contracts/batch-swarm"
     },
     {

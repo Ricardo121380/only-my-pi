@@ -129,6 +129,10 @@ export function createSubagentsFacade({
 }
 
 export * from "./domain/index.mjs";
+export * from "./batch-swarm/index.mjs";
+export * from "./batch-swarm/registry.mjs";
+export * from "./batch-swarm/pi-item-executor.mjs";
+export * from "./batch-swarm/runtime.mjs";
 export * from "./adapters/pi-subagents-rpc-v1/index.mjs";
 export * from "./state/index.mjs";
 export * from "./topology.mjs";

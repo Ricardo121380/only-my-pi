@@ -38,7 +38,7 @@ scripts/      Repository checks and package governance tooling
 
 ## Current research
 
-- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; S0–S2 Contract Preview implemented)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
+- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; S0–S3 Preview source implemented)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
 - [Codex successor development Goal for S0–S5](codex/goals/develop-only-my-pi-subagents-ultrarun.md)
 - [Historical Harness MVP development plan (M0–M7, complete)](docs/plans/2026-08-16-only-my-pi-development-plan.md)
 - [Historical Codex Harness MVP Goal](codex/goals/develop-only-my-pi.md)
@@ -112,12 +112,17 @@ receipts bounded. DeepSeek conformance, ACP v1, and workspace checkpoint remain
 non-default Labs modules with the explicit boundaries in the
 [Labs registry](docs/LABS.md).
 
-The S0–S2 Contract Preview now contains a unified
+The S0–S3 Preview source implementation now contains a unified
 `packages/subagents/` facade. It provides typed AgentTemplate v2,
 ResolvedAgentSpec, TaskAssignment and terminal receipts; an exact
 `pi-subagents` RPC v1 backend; immutable WorkflowPlan compilation; a single
 RunCoordinator; a fenced append-only journal; crash-recoverable parent budget
-reservations; and dual-read migration from the v1 Workflow/Swarm resources.
+reservations; dual-read migration from the v1 Workflow/Swarm resources; and a
+true homogeneous BatchSwarm with stable item slots, bounded ramp/retry/failure
+semantics, item-level provenance, and one structured bridge to the same
+physical backend. Batch retry has one owner: a Workflow batch node gets one root
+attempt, while `maxItems × item maxAttempts` is capped at 1000 physical
+assignments.
 The static single-owner check is available as `npm run
 doctor:subagents-topology`; it reads only the pinned package/wire contract and
 repository ownership catalogs plus the digest-bound low-sensitivity evidence,
@@ -144,15 +149,34 @@ is non-authoritative and leaves the run orphaned. Mutating dispatch also require
 an executor that advertises audited path enforcement; a worktree alone is not
 treated as a path allowlist. This is Contract Preview source evidence only.
 Restart-safe plan lookup and durable status/cancel/resume are now implemented
-through the versioned Plan Store sidecar. S0–S2 therefore has source-level
-Contract Preview closure; BatchSwarm execution is the next S3 implementation,
-while SwarmGoal, UltraRun, and promotion-specific child/fault/writer evidence
-remain S4–S5.
+through the versioned Plan Store sidecar. S3 BatchSwarm also reuses the same
+event chain and parent reservation across crash recovery: proven completed
+items are not replayed, while a started item without terminal proof interrupts
+the run. SwarmGoal, UltraRun, guarded writer integration, and promotion-specific
+live/fault evidence remain S4–S5. The protected real-child BatchSwarm check was
+not authorized and remains `NOT_RUN_BY_POLICY`.
 
 `omp workflow|swarm run` and `resume` accept an optional bounded absolute JSON
 `--input-file`; it is read with `O_NOFOLLOW`, hashed into the execution
 envelope, and never copied into the durable Plan Store. A resume without the
 original input (or with a changed file) fails closed before child admission.
+
+Inspect and plan the first reviewed homogeneous batch without dispatching a
+child:
+
+```bash
+node bin/omp.mjs swarm batch list
+node bin/omp.mjs swarm batch show review-items
+node bin/omp.mjs swarm batch plan review-items \
+  --input-file /absolute/path/batch-input.json --json
+```
+
+`batch-input.json` must be a bounded JSON object such as
+`{"artifacts":{"items":[{"path":"src/a.ts"},{"path":"src/b.ts"}]}}`.
+Planning returns the stable run ID, exact plan/execution digests, logical item
+expansion, and `liveDispatch: NOT_RUN_BY_POLICY`. A live `run` additionally
+requires the trusted Pi-session RunCoordinator and the exact confirmed
+digests; the standalone CLI does not fabricate that runtime.
 
 ## Local development
 
@@ -247,7 +271,7 @@ start the S0–S5 successor run with:
 For the architecture and runtime-foundation slice:
 
 ```text
-/goal Read codex/goals/develop-only-my-pi-subagents-ultrarun.md and execute it with TARGET=S0-S2, REPO=/absolute/path/to/only-my-pi, DELIVERY=local, PROMOTION=preview. Continue until that target and all required dependencies are complete.
+/goal Read codex/goals/develop-only-my-pi-subagents-ultrarun.md and execute it with TARGET=S4, REPO=/absolute/path/to/only-my-pi, DELIVERY=local, PROMOTION=preview. Continue until that target and all required dependencies are complete.
 ```
 
 This follows Codex's durable `/goal` workflow: one objective, explicit source
@@ -292,6 +316,7 @@ npm run test:acp
 npm run test:checkpoint
 npm run test:subagents
 npm run eval:subagents
+npm run doctor:batches
 ```
 
 The local and CI release gates both read `verification/release-gates-v1.json`.

@@ -1,7 +1,7 @@
 {
   "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/batch-swarm-v1.schema.json",
   "formatVersion": 1,
-  "contractStatus": "contract-preview",
+  "contractStatus": "runtime-ready",
   "kind": "batch-swarm",
   "id": "review-files",
   "agentSpecRef": "reviewer-resolved",
@@ -10,6 +10,7 @@
   "promptTemplateRef": "review-file",
   "promptTemplateHash": "sha256:413e167b0dc40a30465a833a708c98b80839133c5e9dcbcaa93454f6cc252cd5",
   "itemsFrom": "artifact://changed-files",
+  "maxItems": 300,
   "concurrency": {
     "initial": 2,
     "max": 4,

@@ -6,6 +6,7 @@ import path from "node:path";
 import { createAgentRegistry } from "../agent-registry/index.mjs";
 import { createSwarmRecipeRegistry } from "../swarm-core/index.mjs";
 import { translateLegacySwarmRecipe } from "../subagents/workflow/migration/index.mjs";
+import { createBatchSwarmControlService } from "./batch-swarm-service.mjs";
 
 const SHA256 = /^sha256:[a-f0-9]{64}$/u;
 const RUN_ID = /^[a-z0-9][a-z0-9._:-]{0,127}$/u;
@@ -97,13 +98,19 @@ function swarmResultStatus(status) {
  * Pi extension-RPC transport; the default service deliberately has none.
  */
 export class SwarmControlService {
-  constructor({ rootDir, registry, agentRegistry, orchestration } = {}) {
+  constructor({ rootDir, registry, agentRegistry, orchestration, batchService, batchRegistry, batchCapabilityMatrix } = {}) {
     this.rootDir = rootDir;
     this.agentRegistry = agentRegistry ?? createAgentRegistry({ rootDir });
     this.registry = registry ?? createSwarmRecipeRegistry({ rootDir, agentRegistry: this.agentRegistry });
     // Live execution is injected from the single @only-my-pi/subagents
     // facade. This service never constructs the legacy SwarmRunController.
     this.orchestration = assertOrchestration(orchestration);
+    this.batchService = batchService ?? createBatchSwarmControlService({
+      rootDir,
+      registry: batchRegistry,
+      orchestration: this.orchestration,
+      capabilityMatrix: batchCapabilityMatrix,
+    });
     this.runPlans = new Map();
     this.preparedInputs = new WeakSet();
   }
@@ -133,6 +140,12 @@ export class SwarmControlService {
 
   async dispatch(options = {}) {
     const subcommand = options.subcommand ?? "list";
+    if (subcommand === "batch") {
+      return this.batchService.dispatch({
+        ...options,
+        subcommand: options.batchSubcommand ?? "list",
+      });
+    }
     if (subcommand === "list") {
       const recipes = await this.registry.list();
       return { ok: true, status: "SWARM_RECIPE_LIST", mutation: false, recipes: recipes.map((entry) => ({ id: entry.id, version: entry.manifest.version, description: entry.manifest.description, readOnly: entry.manifest.readOnly, nodes: entry.graph.order.length, sourceHash: entry.sourceHash, contractStatus: entry.manifest.contractStatus })) };

@@ -134,3 +134,41 @@ test("Workflow and Swarm mutations use the shared plan-confirm-run boundary", as
   assert.equal(swarmCalls.at(-1).yes, true);
   assert.equal(swarmCalls.at(-1).expectedPlanDigest, "sha256:swarm");
 });
+
+test("BatchSwarm mutations use the shared plan-confirm-run boundary without becoming a legacy recipe", async () => {
+  const calls = [];
+  const swarms = {
+    async dispatch(options) {
+      calls.push(options);
+      return options.batchSubcommand === "run"
+        ? { ok: true, status: "BATCH_SWARM_COMPLETED", mutation: true }
+        : {
+          ok: true,
+          status: "BATCH_SWARM_PLAN",
+          mutation: false,
+          runId: "batch-run-1",
+          input: { artifacts: { items: [] } },
+          plan: { planDigest: "sha256:batch" },
+          executionEnvelope: { executionEnvelopeDigest: "sha256:envelope", conditions: [] },
+        };
+    },
+  };
+  const service = createControlService({
+    bootstrap: { status: async () => ({ ok: true, status: "STATUS" }) },
+    doctor: { live: async () => ({ status: "UNAVAILABLE" }) },
+    swarms,
+    confirm: async () => true,
+  });
+  const result = await service.dispatch({
+    command: "swarm",
+    options: { subcommand: "batch", batchSubcommand: "run", batchId: "review-items", yes: false },
+  });
+  assert.equal(result.status, "BATCH_SWARM_COMPLETED");
+  assert.equal(calls[0].subcommand, "batch");
+  assert.equal(calls[0].batchSubcommand, "plan");
+  assert.equal(calls[1].subcommand, "batch");
+  assert.equal(calls[1].batchSubcommand, "run");
+  assert.equal(calls[1].runId, "batch-run-1");
+  assert.equal(calls[1].expectedPlanDigest, "sha256:batch");
+  assert.equal(calls[1].expectedExecutionDigest, "sha256:envelope");
+});

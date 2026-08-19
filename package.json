@@ -77,6 +77,7 @@
     "doctor:agents": "node -e \"import('./packages/agent-registry/index.mjs').then(async ({createAgentRegistry})=>{const r=await createAgentRegistry({rootDir:process.cwd()}).doctor(); console.log(JSON.stringify(r,null,2)); if(!r.ok) process.exitCode=1})\"",
     "doctor:workflows": "node -e \"import('./packages/workflow-core/index.mjs').then(async ({createWorkflowRegistry})=>{const r=await createWorkflowRegistry({rootDir:process.cwd()}).doctor(); console.log(JSON.stringify(r,null,2)); if(!r.ok) process.exitCode=1})\"",
     "doctor:swarms": "node -e \"import('./packages/swarm-core/index.mjs').then(async ({createSwarmRecipeRegistry})=>{const r=await createSwarmRecipeRegistry({rootDir:process.cwd()}).doctor(); console.log(JSON.stringify(r,null,2)); if(!r.ok) process.exitCode=1})\"",
+    "doctor:batches": "node -e \"import('./packages/subagents/batch-swarm/registry.mjs').then(async ({createBatchSwarmRegistry})=>{const r=await createBatchSwarmRegistry({rootDir:process.cwd()}).doctor(); console.log(JSON.stringify(r,null,2)); if(!r.ok) process.exitCode=1})\"",
     "profile:check": "node scripts/profile-resolver.mjs --check-all",
     "profile:diff": "node scripts/profile-resolver.mjs profiles/coding.json --diff profiles/research.json",
     "safe": "node scripts/safe-mode.mjs",

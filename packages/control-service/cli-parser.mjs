@@ -48,7 +48,8 @@ const COMMANDS = new Set([
 const MODE_COMMANDS = new Set(["list", "show", "use", "reset", "doctor", "diff", "scaffold"]);
 const PROFILE_COMMANDS = new Set(["list", "show", "diff"]);
 const WORKFLOW_COMMANDS = new Set(["list", "show", "run", "status", "cancel", "resume"]);
-const SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume"]);
+const SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume", "batch"]);
+const BATCH_SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume"]);
 const THEME_COMMANDS = new Set(["list", "show", "preview", "use", "reset", "doctor"]);
 const MODE_NAMESPACED_ID = /^(?:[a-z][a-z0-9-]{0,63}(?:\/[a-z][a-z0-9-]{0,63})?|(?:user|project|package):[a-z][a-z0-9-]{0,63})$/u;
 
@@ -297,6 +298,34 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
     reject(options, ["mode", "provider", "model", "scope", "apply", "dryRun", "plan", "static", "live", "resolved"], command);
     const subcommand = positionals[0] ?? "list";
     if (!SWARM_COMMANDS.has(subcommand)) fail(`unknown swarm subcommand: ${subcommand}`);
+    if (subcommand === "batch") {
+      const batchSubcommand = positionals[1] ?? "list";
+      if (!BATCH_SWARM_COMMANDS.has(batchSubcommand)) fail(`unknown swarm batch subcommand: ${batchSubcommand}`);
+      const identifier = positionals[2] ?? null;
+      if (["show", "validate", "plan", "run"].includes(batchSubcommand) && identifier === null) fail(`swarm batch ${batchSubcommand} requires a batch id`);
+      if (["status", "cancel", "resume"].includes(batchSubcommand) && identifier === null) fail(`swarm batch ${batchSubcommand} requires a run id`);
+      if (positionals.length > 3) fail(`swarm batch ${batchSubcommand} accepts at most one id`);
+      if (identifier !== null) assertIdentifier(identifier, ["status", "cancel", "resume"].includes(batchSubcommand) ? "run id" : "batch id");
+      if (options.inputFile !== undefined) {
+        if (!["plan", "run", "resume"].includes(batchSubcommand)) fail("--input-file is only valid for swarm batch plan, run, or resume");
+        if (!path.isAbsolute(options.inputFile)) fail("--input-file must be an absolute path");
+      }
+      if (options.yes && batchSubcommand !== "run") fail("--yes is only valid for swarm batch run");
+      return {
+        command,
+        mutation: ["run", "cancel", "resume"].includes(batchSubcommand),
+        options: {
+          configRoot,
+          subcommand: "batch",
+          batchSubcommand,
+          batchId: ["status", "cancel", "resume"].includes(batchSubcommand) ? null : identifier,
+          runId: ["status", "cancel", "resume"].includes(batchSubcommand) ? identifier : null,
+          inputFile: options.inputFile ?? null,
+          yes: options.yes === true,
+          json: options.json === true,
+        },
+      };
+    }
     const recipeId = positionals[1] ?? null;
     if (["show", "validate", "plan", "run"].includes(subcommand) && recipeId === null) fail(`swarm ${subcommand} requires a recipe id`);
     if (["status", "cancel", "resume"].includes(subcommand) && recipeId === null) fail(`swarm ${subcommand} requires a run id`);

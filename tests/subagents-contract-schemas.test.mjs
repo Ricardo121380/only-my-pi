@@ -162,6 +162,7 @@ test("persisted event records and homogeneous BatchSwarm documents have strict s
     promptTemplateRef: "review-file",
     promptTemplateHash: digestValue("prompt-template"),
     itemsFrom: "artifact://changed-files",
+    maxItems: 300,
     concurrency: { initial: 2, max: 4, rampEveryMs: 700, adaptiveRateLimit: false },
     failurePolicy: { kind: "all-required" },
     retryPolicy: { maxAttempts: 2, maxDelayMs: 1000, deadlineMs: 60_000 },

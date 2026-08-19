@@ -64,12 +64,28 @@ session. Third-party packages and Labs remain opt-in and require review.
   while only-my-pi registers no competing model tool.
 - a packaged no-model evidence contract and fresh-tarball topology smoke, so an
   installed artifact must retain the same digest-bound ownership evidence.
+- a strict homogeneous BatchSwarm definition/registry with one reviewed
+  AgentSpec and prompt template, 0–300 stable item slots, progressive static
+  ramp, capability-gated adaptive 429 behavior, finite retry/failure policies,
+  bounded per-item output, one root retry owner, a 1000-assignment envelope,
+  and deterministic input-order aggregation;
+- a real WorkflowPlan batch node and durable Batch event projection sharing the
+  single RunCoordinator journal and parent BudgetLedger, including reservation
+  reuse after a safe crash and fail-closed handling of unproven child terminals;
+- a structured `PiSubagentsBatchItemExecutor` that delegates each item through
+  the sole exact RPC backend without exposing raw workflow source;
+- `omp swarm batch` and `/omp swarm batch` offline planning/control surfaces,
+  a reviewed `review-items` resource, registry doctor, schema semantics, and
+  logical 1/8/20/64/300 simulations.
 
 ### Security boundary
 
-These unreleased changes remain Contract Preview evidence. They have no
-promotion receipt and do not prove live child execution, Provider quality,
-managed worktrees, adaptive rate limiting, SwarmGoal, UltraRun, or production
-BatchSwarm. Any tracked change after the final 0.1.0 receipt invalidates that
+These unreleased changes remain Preview source evidence. They have no promotion
+receipt and do not prove live child execution, Provider quality, managed
+worktrees, live adaptive rate limiting, SwarmGoal, UltraRun, or a production
+BatchSwarm deployment. The BatchSwarm implementation itself is covered by
+offline, injected-backend, crash-recovery, and bounded-scale tests; its protected
+live read-only dispatch remains `NOT_RUN_BY_POLICY`. Any tracked change after
+the final 0.1.0 receipt invalidates that
 historical receipt for the new source tree and must follow a new
 source/gate/receipt sequence before release promotion.

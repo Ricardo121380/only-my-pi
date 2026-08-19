@@ -191,6 +191,9 @@ test("subagents v2 contracts reject authority, budget, reference, and terminal-p
   for (const [kind, name, keyword] of [
     ["agentTemplate", "negative-readonly-write.json", "capability-escalation"],
     ["batchSwarm", "negative-concurrency-envelope.json", "budget-envelope"],
+    ["batchSwarm", "negative-agent-binding.json", "correlation-digest"],
+    ["batchSwarm", "negative-max-items.json", "maximum"],
+    ["batchSwarm", "negative-assignment-envelope.json", "budget-envelope"],
     ["ultraRun", "negative-unknown-workflow.json", "unknown-reference"],
     ["terminalReceipt", "negative-authoritative-without-proof.json", "terminal-proof"],
   ]) assertFixtureKeyword(registry, kind, name, keyword);

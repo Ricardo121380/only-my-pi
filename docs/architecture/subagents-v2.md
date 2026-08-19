@@ -1,7 +1,7 @@
 # Unified Subagents v2 runtime foundation
 
 `packages/subagents/index.mjs` is the single first-party orchestration facade
-for the S0–S2 Contract Preview. It deliberately separates logical
+for the S0–S3 Preview source implementation. It deliberately separates logical
 orchestration from physical child execution:
 
 - only-my-pi owns typed Agent/Assignment contracts, immutable WorkflowPlan
@@ -22,6 +22,9 @@ import {
   createTaskAssignment,
   createAgentRunHandle,
   createPiSubagentsRpcV1Backend,
+  createBatchSwarmNodeExecutor,
+  createBatchSwarmRegistry,
+  createPiSubagentsBatchItemExecutor,
   compileWorkflowDefinition,
   createEventJournal,
   createPlanStore,
@@ -142,6 +145,76 @@ field, so a worktree is not treated as proof of this capability. Until an
 audited bridge verifies the produced diff against the approved base/path claims
 and prevents automatic integration, live writer dispatch remains unavailable.
 
+## Homogeneous BatchSwarm
+
+S3 adds a Kimi-inspired, Pi-native BatchSwarm without importing or connecting
+the Kimi runtime. A BatchSwarm is deliberately narrower than a Workflow: one
+exact ResolvedAgentSpec, effective-policy hash, output-schema hash, and prompt
+template are mapped over a bounded array of homogeneous items. Per-item Agent,
+model, tool, policy, workspace, or output overrides are rejected. A
+heterogeneous graph remains a WorkflowPlan.
+
+The versioned registry binds each definition under `swarm/batches/` to its
+reviewed prompt under `swarm/templates/`, its runtime-ready resolved AgentSpec
+under `swarm/agent-specs/`, and the canonical Agent Registry source. Any source,
+prompt, spec, policy, or output-contract drift fails before item dispatch. The
+checked-in `review-items` definition permits at most 300 items and uses the
+read-only reviewer role.
+
+`BatchSwarmNodeExecutor` owns only logical item expansion and projection:
+
+- stable item IDs/digests and stable input-order result slots;
+- progressive static ramp under exact `initial`/`max` ceilings;
+- optional adaptive capacity only when the backend proves both rate-limit
+  signals and dynamic-concurrency support; otherwise adaptive admission returns
+  `ADAPTIVE_CAPACITY_UNAVAILABLE` before spawn;
+- finite item retries, explicit all-required/continue/fail-fast/quorum policies,
+  bounded prompt and result projection, and no hidden model reducer;
+- one retry owner: a batch Workflow node has exactly one root attempt, while
+  item retry stays inside the batch controller. `maxItems × maxAttempts` is
+  capped at 1000 physical assignments even though logical item count may reach
+  300;
+- journal-first admission: `BatchItemQueued` must be durable before the
+  physical assignment begins;
+- durable resume by item identity. An authoritative successful item is never
+  replayed, while an item with `BatchItemStarted` but no authoritative terminal
+  makes recovery fail closed. A retryable but non-authoritative terminal is
+  likewise never relaunched;
+- cancellation is bounded even when an injected item executor ignores its
+  `AbortSignal`; such an item is recorded non-authoritatively and cannot open a
+  retry or new-admission path.
+
+Batch events share the RunCoordinator event chain and parent BudgetLedger. The
+batch controller is not counted as a physical child assignment; individual
+item starts are. If the coordinator crashes after proven item terminals, the
+next attempt reuses the existing parent reservation and dispatches only the
+remaining slots. If any started physical child lacks terminal proof, recovery
+charges the original worst-case reservation and interrupts the run instead of
+guessing that the child stopped.
+
+`PiSubagentsBatchItemExecutor` is the sole physical bridge. It converts each
+slot into a correlated TaskAssignment and AgentRunHandle, then delegates to the
+exact `pi-subagents@0.45.2` RPC backend. It accepts no raw workflow script; the
+backend's reviewed statement-body compiler remains the only code-generation
+path. Cancellation asks that same backend to interrupt the recorded handle and
+requires its correlated terminal proof.
+
+The bounded offline control surface is:
+
+```sh
+omp swarm batch list
+omp swarm batch show review-items
+omp swarm batch validate review-items
+omp swarm batch plan review-items --input-file /absolute/path/input.json --json
+```
+
+The input document is canonical JSON shaped as
+`{"artifacts":{"items":[...]}}`, opened once with `O_NOFOLLOW`, and hashed into
+the execution envelope. `run/status/cancel/resume` require an explicitly
+injected trusted RunCoordinator/Pi session. The current source tests do not
+dispatch a real child or call a Provider; live read-only BatchSwarm evidence is
+`NOT_RUN_BY_POLICY` until separately authorized.
+
 ### Durable plan binding and restart control
 
 `createPlanStore({ rootDir, filesystem, clock })` is now the durable resolver
@@ -178,6 +251,7 @@ Run the contract slice with:
 npm run test:subagents
 npm run eval:subagents
 npm run doctor:subagents-topology
+npm run doctor:batches
 ```
 
 The evaluation corpus is deterministic, offline, and explicitly labelled
@@ -192,5 +266,7 @@ control facade. Durable plan lookup/status/cancel/resume is covered by the
 Plan Store slice; both cancel and resume are classified as mutations by the
 control grammar, and an unresponsive backend stop call is bounded without
 blocking writer-lease renewal. Pause/restart-node beyond the bounded resume path,
-BatchSwarm execution, dynamic SwarmGoal planning, UltraRun workflow libraries,
-and promotion-specific child/fault/writer evidence remain in S3–S5.
+dynamic SwarmGoal planning, UltraRun workflow libraries, guarded writer
+integration, and promotion-specific live/fault evidence remain in S4–S5.
+Homogeneous BatchSwarm is implemented and offline/fault tested; its protected
+live child proof remains `NOT_RUN_BY_POLICY`.

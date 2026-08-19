@@ -113,6 +113,9 @@
         "assignment": { "type": "object" },
         "outputSchemaRef": { "type": ["string", "null"], "minLength": 1, "maxLength": 200 },
         "batchRef": { "$ref": "#/$defs/id" },
+        "batchDigest": { "$ref": "#/$defs/sha256" },
+        "batchMaxItems": { "type": "integer", "minimum": 1, "maximum": 300 },
+        "batchMaxAttempts": { "type": "integer", "minimum": 1, "maximum": 8 },
         "gateId": { "$ref": "#/$defs/id" },
         "checkpoint": { "type": "object" },
         "approval": { "type": "object" },
@@ -120,7 +123,7 @@
       },
       "allOf": [
         { "if": { "properties": { "kind": { "const": "agent" } } }, "then": { "required": ["agentTemplateRef", "assignment", "outputSchemaRef"] } },
-        { "if": { "properties": { "kind": { "const": "batch-swarm" } } }, "then": { "required": ["batchRef"] } },
+        { "if": { "properties": { "kind": { "const": "batch-swarm" } } }, "then": { "required": ["batchRef", "batchDigest", "batchMaxItems", "batchMaxAttempts"] } },
         { "if": { "properties": { "kind": { "const": "gate" } } }, "then": { "required": ["gateId"] } },
         { "if": { "properties": { "kind": { "const": "checkpoint" } } }, "then": { "required": ["checkpoint"] } },
         { "if": { "properties": { "kind": { "const": "approval" } } }, "then": { "required": ["approval"] } },

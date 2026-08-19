@@ -16,6 +16,7 @@ Usage:
   omp mode [list|show|use|reset|doctor|diff|scaffold] [mode-id] [--profile <id>] [--resolved] [--config-root <absolute>] [--json]
   omp workflow [list|show|run|status|cancel|resume] [workflow-or-run-id] [--input-file <absolute>] [--apply --yes] [--config-root <absolute>] [--json]
   omp swarm [list|show|validate|plan|run|status|cancel|resume] [recipe-or-run-id] [--input-file <absolute>] [--yes] [--config-root <absolute>] [--json]
+  omp swarm batch [list|show|validate|plan|run|status|cancel|resume] [batch-or-run-id] [--input-file <absolute>] [--yes] [--config-root <absolute>] [--json]
   omp theme [list|show|preview|use|reset|doctor] [theme-id] [--apply --yes] [--config-root <absolute>] [--json]
 
 Mutation is never implicit. bootstrap, update, and uninstall default to a zero-write plan.
@@ -204,14 +205,17 @@ export class ControlService {
           return { ok: false, status: "SWARM_SERVICE_UNAVAILABLE", mutation: false, code: "SWARM_SERVICE_UNAVAILABLE", next: "run omp doctor and reinstall the promoted generation" };
         }
         const options = request.options ?? {};
-        if (options.subcommand === "resume") return this.swarms.dispatch(options);
-        if (options.subcommand !== "run") return this.swarms.dispatch(options);
-        const plan = await this.swarms.dispatch({ ...options, subcommand: "plan", yes: false });
+        const operation = options.subcommand === "batch" ? options.batchSubcommand : options.subcommand;
+        if (operation === "resume") return this.swarms.dispatch(options);
+        if (operation !== "run") return this.swarms.dispatch(options);
+        const plan = await this.swarms.dispatch(options.subcommand === "batch"
+          ? { ...options, batchSubcommand: "plan", yes: false }
+          : { ...options, subcommand: "plan", yes: false });
         if (plan?.ok === false) return plan;
         if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
         return this.swarms.dispatch({
           ...options,
-          subcommand: "run",
+          ...(options.subcommand === "batch" ? { batchSubcommand: "run" } : { subcommand: "run" }),
           yes: true,
           runId: plan.runId ?? options.runId,
           input: plan.input,

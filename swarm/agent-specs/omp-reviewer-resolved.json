@@ -1,0 +1,63 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/resolved-agent-spec-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "kind": "resolved-agent-spec",
+  "id": "omp-reviewer-resolved",
+  "templateId": "reviewer",
+  "templateHash": "sha256:9727925f1859741eb45417986c58d70d793580b2ac843ec161a323ac014ec770",
+  "backendAgentId": "omp-reviewer",
+  "sourceHash": "sha256:7121f2ccb52bd493620537420be00d07d65314b54a24c15ecc930fc1c457fa3b",
+  "tools": {
+    "allow": ["find", "grep", "ls", "read"],
+    "deny": ["bash", "edit", "web", "write"]
+  },
+  "requiredCapabilities": ["review-assistance", "workspace-read"],
+  "effectivePolicy": {
+    "workspace": "shared-read-only",
+    "mutation": "none",
+    "approval": "deny",
+    "egress": {
+      "web": "deny",
+      "mcp": "deny",
+      "provider": "inherit",
+      "extension": "deny"
+    }
+  },
+  "effectivePolicyHash": "sha256:af94383dbc069851de6cd711b2a19ada67eb95235e98cb5d897e0a9b639fab2e",
+  "model": { "role": "deep" },
+  "inputSchema": {
+    "value": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "diff": { "type": "string", "description": "Bounded diff or receipt reference." },
+        "scope": { "type": "array", "description": "Review paths." }
+      },
+      "required": ["scope"]
+    },
+    "hash": "sha256:0532b873c6bdeb45164f678ba62b46843006ea8d92b291d849281910954fbccb"
+  },
+  "outputSchema": {
+    "value": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "verdict": { "type": "string", "description": "pass, fail, or blocked." },
+        "findings": { "type": "array", "description": "Severity-classified findings." },
+        "tested": { "type": "array", "description": "Checks actually run by the parent gate runner." },
+        "unverified": { "type": "array", "description": "Claims that remain unverified." }
+      },
+      "required": ["verdict", "findings", "tested", "unverified"]
+    },
+    "hash": "sha256:37bac661fe628b314891b37ec8dae16c72a2b3d81f2b140ee48690694e3a8cbb"
+  },
+  "writer": false,
+  "continuable": false,
+  "resumable": true,
+  "timeoutMs": 1200000,
+  "runtimeMode": "REGISTERED_ROLES_ONLY",
+  "overlayRequirements": { "tools": false, "model": false },
+  "specialization": null,
+  "specHash": "sha256:439d0e5f0f873477eda31627a40412abeaa0a4e9dc77af36216d7eb4f3bb4d6b"
+}

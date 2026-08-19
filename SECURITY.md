@@ -78,6 +78,38 @@ RPC compatibility and single model-tool ownership, not child execution or
 extension isolation; loaded extension code still has the caller's OS and
 network authority.
 
+## BatchSwarm boundary
+
+BatchSwarm is logical orchestration, not a second child runtime or sandbox. It
+may expand one reviewed AgentSpec over as many as 300 items, but every physical
+item still executes through the sole pinned `pi-subagents` RPC backend with that
+backend's process, filesystem, Provider, and network authority. A concurrency
+ceiling limits admission; it does not isolate the admitted children.
+
+Definitions, prompt templates, resolved AgentSpec/policy/output hashes, item
+digests, and the input snapshot are bound before dispatch. Per-item Agent,
+model, tool, policy, workspace, and output overrides are rejected. Adaptive
+429 capacity is unavailable unless the backend explicitly proves both a
+rate-limit signal and dynamic-concurrency control; only-my-pi must not infer
+those features or create a competing physical scheduler.
+
+The parent BudgetLedger reserves the full item-attempt envelope before fan-out.
+The envelope is capped at 1000 physical assignments, and the Workflow batch
+node is forced to one root attempt so that item retry has a single owner.
+Item admission is journal-first. Crash recovery may reuse the same reservation
+only when every durable `BatchItemStarted` has a correlated authoritative
+terminal; otherwise it charges worst case and interrupts instead of replaying a
+possibly live child. A retryable but non-authoritative terminal never triggers
+a second launch. Local cancellation similarly does not prove process
+termination—the backend's correlated process-terminal evidence remains
+authoritative, and an executor that ignores cancellation is detached from
+admission without being misreported as stopped.
+
+The checked-in S3 evidence is offline/injected only. It neither calls a live
+Provider nor proves extension isolation, real model quality, real 429 signals,
+or large-scale host capacity. Until a separately authorized protected run is
+performed, live read-only BatchSwarm evidence is `NOT_RUN_BY_POLICY`.
+
 ## Reporting a problem
 
 Do not publish secrets or exploit details in a public issue. For a local

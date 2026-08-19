@@ -376,6 +376,9 @@ function buildIndex(documentsByKind, rootDir) {
     swarms: collect("swarmRecipe", "id"),
     agentTemplates: collect("agentTemplate", "id"),
     resolvedAgentSpecs: collect("resolvedAgentSpec", "id"),
+    resolvedAgentSpecDefinitions: definitions("resolvedAgentSpec"),
+    batchSwarms: collect("batchSwarm", "id"),
+    batchSwarmDefinitions: definitions("batchSwarm"),
     budgetEnvelopes: collect("budgetEnvelope", "id"),
     releaseGates,
   };
@@ -587,7 +590,9 @@ function semanticErrors(kind, document, { sourcePath, rootDir, index, documentsB
     if (document.fallback?.workflow === document.id) errors.push(error("/fallback/workflow", "cycle", "workflow fallback cannot reference itself", { id: document.id }));
   } else if (kind === "workflowDefinitionV2") {
     try {
-      compileWorkflowDefinition(document);
+      compileWorkflowDefinition(document, {
+        resolveBatch: (id) => index.batchSwarmDefinitions.get(id),
+      });
     } catch (cause) {
       errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "workflow-definition", cause.message));
     }
@@ -630,10 +635,32 @@ function semanticErrors(kind, document, { sourcePath, rootDir, index, documentsB
   } else if (kind === "batchSwarm") {
     errors.push(...unknownRefs([document.agentSpecRef], index.resolvedAgentSpecs, "/agentSpecRef", "ResolvedAgentSpec"));
     errors.push(...unknownRefs([document.budgetRef], index.budgetEnvelopes, "/budgetRef", "BudgetEnvelope"));
+    const resolvedAgentSpec = index.resolvedAgentSpecDefinitions.get(document.agentSpecRef);
+    if (resolvedAgentSpec) {
+      for (const [field, expected] of [
+        ["agentSpecHash", resolvedAgentSpec.specHash],
+        ["policyHash", resolvedAgentSpec.effectivePolicyHash],
+        ["outputSchemaHash", resolvedAgentSpec.outputSchema?.hash],
+      ]) {
+        if (document[field] !== expected) {
+          errors.push(error(`/${field}`, "correlation-digest", `${field} does not match ResolvedAgentSpec ${document.agentSpecRef}`, {
+            expected,
+            actual: document[field],
+            agentSpecRef: document.agentSpecRef,
+          }));
+        }
+      }
+    }
     if (document.concurrency?.initial > document.concurrency?.max) errors.push(error("/concurrency/initial", "budget-envelope", "initial concurrency exceeds maximum concurrency"));
     const thresholdKind = ["quorum", "minimum-success"].includes(document.failurePolicy?.kind);
     if (!thresholdKind && document.failurePolicy?.threshold !== undefined) errors.push(error("/failurePolicy/threshold", "failure-policy", "threshold is only valid for quorum or minimum-success"));
+    if (thresholdKind && document.failurePolicy?.threshold > document.maxItems) errors.push(error("/failurePolicy/threshold", "budget-envelope", "success threshold exceeds maxItems"));
     if (document.retryPolicy?.maxDelayMs > document.retryPolicy?.deadlineMs) errors.push(error("/retryPolicy/maxDelayMs", "budget-envelope", "retry delay exceeds the batch deadline"));
+    if (Number.isSafeInteger(document.maxItems)
+      && Number.isSafeInteger(document.retryPolicy?.maxAttempts)
+      && document.maxItems * document.retryPolicy.maxAttempts > 1000) {
+      errors.push(error("/retryPolicy/maxAttempts", "budget-envelope", "batch physical assignment envelope exceeds 1000"));
+    }
   } else if (kind === "artifactRef") {
     const expectedPrefix = `runs/${document.producer?.runId}/`;
     if (typeof document.storage?.relativePath === "string" && !document.storage.relativePath.startsWith(expectedPrefix)) {

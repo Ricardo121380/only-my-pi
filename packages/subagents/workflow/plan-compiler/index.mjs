@@ -1,5 +1,10 @@
 import crypto from "node:crypto";
 
+import {
+  assertBatchSwarmDefinition,
+  digestBatchSwarmDefinition,
+} from "../../batch-swarm/index.mjs";
+
 const ID = /^[a-z0-9][a-z0-9-]{0,63}$/u;
 const SHA256 = /^sha256:[a-f0-9]{64}$/u;
 const COMPOSITES = new Set(["sequence", "pipeline", "parallel", "workflow"]);
@@ -222,7 +227,7 @@ function worstCaseCriticalPathMs(facts) {
   return Math.max(0, ...cost.values());
 }
 
-function normalizePrimitive(source, id, inheritedNeeds, planBudget) {
+function normalizePrimitive(source, id, inheritedNeeds, planBudget, resolveBatch) {
   const kind = source.kind;
   if (!PRIMITIVES.has(kind)) fail(`unsupported primitive kind: ${kind}`, "UNKNOWN_NODE_KIND", { kind });
   const node = {
@@ -256,7 +261,14 @@ function normalizePrimitive(source, id, inheritedNeeds, planBudget) {
     node.outputSchemaRef = source.outputSchemaRef ?? null;
   } else if (kind === "batch-swarm") {
     canonicalId(source.batchRef, `node ${id} batchRef`);
+    if (node.budget.maxAttempts !== 1) fail(`batch node ${id} must use exactly one root attempt`, "BATCH_ROOT_RETRY_FORBIDDEN", { nodeId: id });
+    if (typeof resolveBatch !== "function") fail(`batch node ${id} requires a BatchSwarm resolver`, "BATCH_RESOLVER_REQUIRED", { nodeId: id });
+    const batch = assertBatchSwarmDefinition(resolveBatch(source.batchRef));
+    if (batch.id !== source.batchRef) fail(`batch node ${id} resolved a different BatchSwarm id`, "BATCH_REFERENCE_DRIFT", { nodeId: id });
     node.batchRef = source.batchRef;
+    node.batchDigest = digestBatchSwarmDefinition(batch);
+    node.batchMaxItems = batch.maxItems;
+    node.batchMaxAttempts = batch.retryPolicy.maxAttempts;
   } else if (kind === "gate") {
     canonicalId(source.gateId, `node ${id} gateId`);
     node.gateId = source.gateId;
@@ -287,7 +299,7 @@ function compileTree(source, context) {
   if (PRIMITIVES.has(kind)) {
     const rawId = canonicalId(source.id, "node id");
     const id = namespace(context.prefix, rawId);
-    const node = normalizePrimitive(source, id, context.inheritedNeeds, context.planBudget);
+    const node = normalizePrimitive(source, id, context.inheritedNeeds, context.planBudget, context.resolveBatch);
     context.nodes.push(node);
     return { entries: [id], exits: [id] };
   }
@@ -340,8 +352,22 @@ export function validateWorkflowPlan(plan) {
       if (!PRIMITIVES.has(node.kind)) fail(`unknown plan primitive ${node.kind}`, "UNKNOWN_NODE_KIND");
       if (node.budget.maxAttempts > plan.budget.maxAttemptsPerNode) fail(`node ${node.id} attempts exceed plan budget`, "BUDGET_EXCEEDED");
       if (node.budget.timeoutMs > plan.budget.maxWallTimeMs) fail(`node ${node.id} timeout exceeds plan wall budget`, "BUDGET_EXCEEDED");
+      if (node.kind === "batch-swarm") {
+        if (!SHA256.test(node.batchDigest ?? "")
+          || !Number.isSafeInteger(node.batchMaxItems) || node.batchMaxItems < 1 || node.batchMaxItems > 300
+          || !Number.isSafeInteger(node.batchMaxAttempts) || node.batchMaxAttempts < 1 || node.batchMaxAttempts > 8) {
+          fail(`batch node ${node.id} has an invalid immutable contract envelope`, "INVALID_BATCH_NODE", { nodeId: node.id });
+        }
+        if (node.budget.maxAttempts !== 1) fail(`batch node ${node.id} must use exactly one root attempt`, "BATCH_ROOT_RETRY_FORBIDDEN", { nodeId: node.id });
+      }
       for (const dependency of node.needs) if (!facts.byId.has(dependency)) fail(`unknown dependency ${dependency}`, "UNKNOWN_NODE");
     }
+    const assignmentEnvelope = plan.nodes.reduce((sum, node) => sum + (node.kind === "agent"
+      ? 1
+      : node.kind === "batch-swarm"
+        ? node.batchMaxItems * node.batchMaxAttempts * node.budget.maxAttempts
+        : 0), 0);
+    if (assignmentEnvelope > plan.budget.maxAssignments) fail("plan batch assignment envelope exceeds maxAssignments", "BUDGET_EXCEEDED");
     if (worstCaseCriticalPathMs(facts) > plan.budget.maxWallTimeMs) fail("plan critical path exceeds maxWallTimeMs", "BUDGET_EXCEEDED");
     const withoutDigest = clone(plan);
     delete withoutDigest.planDigest;
@@ -377,6 +403,7 @@ export function compileWorkflowDefinition(definition, options = {}) {
     nodes,
     stack: [definition.id],
     resolveWorkflow: options.resolveWorkflow,
+    resolveBatch: options.resolveBatch,
     planBudget: budget,
   });
   const facts = graphFacts(nodes);
@@ -387,7 +414,12 @@ export function compileWorkflowDefinition(definition, options = {}) {
   if (nodes.some((node) => node.budget.maxAttempts > budget.maxAttemptsPerNode)) fail("node retry envelope exceeds plan budget", "BUDGET_EXCEEDED");
   if (nodes.some((node) => node.budget.timeoutMs > budget.maxWallTimeMs)) fail("node timeout exceeds plan wall budget", "BUDGET_EXCEEDED");
   if (worstCaseCriticalPathMs(facts) > budget.maxWallTimeMs) fail("definition critical path exceeds maxWallTimeMs", "BUDGET_EXCEEDED");
-  if (nodes.filter((node) => node.kind === "agent" || node.kind === "batch-swarm").length > budget.maxAssignments) fail("definition exceeds maxAssignments", "BUDGET_EXCEEDED");
+  const assignmentEnvelope = nodes.reduce((sum, node) => sum + (node.kind === "agent"
+    ? 1
+    : node.kind === "batch-swarm"
+      ? node.batchMaxItems * node.batchMaxAttempts * node.budget.maxAttempts
+      : 0), 0);
+  if (assignmentEnvelope > budget.maxAssignments) fail("definition exceeds maxAssignments", "BUDGET_EXCEEDED");
 
   const terminalNodeId = definition.terminalNodeId ? namespace("", definition.terminalNodeId) : compiled.exits.at(-1);
   if (!facts.byId.has(terminalNodeId)) fail(`unknown terminal node ${terminalNodeId}`, "UNKNOWN_TERMINAL");

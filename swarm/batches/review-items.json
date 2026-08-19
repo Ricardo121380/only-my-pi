@@ -1,0 +1,29 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/batch-swarm-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "kind": "batch-swarm",
+  "id": "review-items",
+  "agentSpecRef": "omp-reviewer-resolved",
+  "agentSpecHash": "sha256:439d0e5f0f873477eda31627a40412abeaa0a4e9dc77af36216d7eb4f3bb4d6b",
+  "policyHash": "sha256:af94383dbc069851de6cd711b2a19ada67eb95235e98cb5d897e0a9b639fab2e",
+  "promptTemplateRef": "review-item",
+  "promptTemplateHash": "sha256:ecb29c70c453d19db00d079ed032b87b1dbb56744ebd4d2c4779822c88975acd",
+  "itemsFrom": "artifact://items",
+  "maxItems": 300,
+  "concurrency": {
+    "initial": 2,
+    "max": 4,
+    "rampEveryMs": 700,
+    "adaptiveRateLimit": false
+  },
+  "failurePolicy": { "kind": "all-required" },
+  "retryPolicy": {
+    "maxAttempts": 2,
+    "maxDelayMs": 1000,
+    "deadlineMs": 1200000
+  },
+  "outputSchemaRef": "reviewer-output-v1",
+  "outputSchemaHash": "sha256:37bac661fe628b314891b37ec8dae16c72a2b3d81f2b140ee48690694e3a8cbb",
+  "budgetRef": "preview-read-only"
+}

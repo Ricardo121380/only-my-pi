@@ -4,7 +4,7 @@
   "title": "only-my-pi homogeneous BatchSwarm v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["$schema", "formatVersion", "contractStatus", "kind", "id", "agentSpecRef", "agentSpecHash", "policyHash", "promptTemplateRef", "promptTemplateHash", "itemsFrom", "concurrency", "failurePolicy", "retryPolicy", "outputSchemaRef", "outputSchemaHash", "budgetRef"],
+  "required": ["$schema", "formatVersion", "contractStatus", "kind", "id", "agentSpecRef", "agentSpecHash", "policyHash", "promptTemplateRef", "promptTemplateHash", "itemsFrom", "maxItems", "concurrency", "failurePolicy", "retryPolicy", "outputSchemaRef", "outputSchemaHash", "budgetRef"],
   "properties": {
     "$schema": { "type": "string", "pattern": "batch-swarm-v1\\.schema\\.json$" },
     "formatVersion": { "const": 1 },
@@ -17,6 +17,7 @@
     "promptTemplateRef": { "$ref": "#/$defs/id" },
     "promptTemplateHash": { "$ref": "#/$defs/sha256" },
     "itemsFrom": { "type": "string", "pattern": "^artifact://[a-z0-9][a-z0-9._:/-]{0,511}$" },
+    "maxItems": { "type": "integer", "minimum": 1, "maximum": 300 },
     "concurrency": {
       "type": "object",
       "additionalProperties": false,

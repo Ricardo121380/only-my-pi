@@ -267,26 +267,32 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
       }
       if (command === "swarm") {
         const subcommand = args[0] ?? "list";
-        const identifier = args[1] ?? null;
+        const batch = subcommand === "batch";
+        const operation = batch ? (args[1] ?? "list") : subcommand;
+        const identifier = batch ? (args[2] ?? null) : (args[1] ?? null);
         const inputFileIndex = args.indexOf("--input-file");
         const inputFile = inputFileIndex >= 0 ? args[inputFileIndex + 1] : null;
         const service = await getSwarms();
         const request = {
-          subcommand,
-          recipeId: ["status", "cancel", "resume"].includes(subcommand) ? null : identifier,
-          runId: ["status", "cancel", "resume"].includes(subcommand) ? identifier : null,
+          subcommand: batch ? "batch" : subcommand,
+          ...(batch ? { batchSubcommand: operation } : {}),
+          recipeId: batch || ["status", "cancel", "resume"].includes(operation) ? null : identifier,
+          ...(batch ? { batchId: !["status", "cancel", "resume"].includes(operation) ? identifier : null } : {}),
+          runId: ["status", "cancel", "resume"].includes(operation) ? identifier : null,
           inputFile,
           ...(inputFile ? {} : { input: {} }),
         };
         const approved = args.includes("--yes");
         let result;
-        if (subcommand === "run" && approved) {
-          const plan = await service.dispatch({ ...request, subcommand: "plan", yes: false });
+        if (operation === "run" && approved) {
+          const plan = await service.dispatch(batch
+            ? { ...request, batchSubcommand: "plan", yes: false }
+            : { ...request, subcommand: "plan", yes: false });
           result = plan?.ok === false
             ? plan
             : await service.dispatch({
               ...request,
-              subcommand: "run",
+              ...(batch ? { batchSubcommand: "run" } : { subcommand: "run" }),
               yes: true,
               runId: plan.runId ?? request.runId,
               input: plan.input,

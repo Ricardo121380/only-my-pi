@@ -104,6 +104,25 @@ test("M5 swarm parser keeps planning offline and requires explicit yes only for 
   assert.throws(() => parseOmpArgs(["swarm", "status"], context), /requires a run id/);
 });
 
+test("S3 swarm batch parser has a distinct homogeneous command grammar", () => {
+  const plan = parseOmpArgs(["swarm", "batch", "plan", "review-items", "--input-file", "/tmp/items.json", "--json"], context);
+  assert.equal(plan.command, "swarm");
+  assert.equal(plan.mutation, false);
+  assert.equal(plan.options.subcommand, "batch");
+  assert.equal(plan.options.batchSubcommand, "plan");
+  assert.equal(plan.options.batchId, "review-items");
+  assert.equal(plan.options.runId, null);
+  assert.equal(plan.options.inputFile, "/tmp/items.json");
+  const run = parseOmpArgs(["swarm", "batch", "run", "review-items", "--yes"], context);
+  assert.equal(run.mutation, true);
+  assert.equal(run.options.batchSubcommand, "run");
+  assert.equal(parseOmpArgs(["swarm", "batch", "resume", "batch-run-1"], context).options.runId, "batch-run-1");
+  assert.throws(() => parseOmpArgs(["swarm", "batch", "plan"], context), /requires a batch id/);
+  assert.throws(() => parseOmpArgs(["swarm", "batch", "status"], context), /requires a run id/);
+  assert.throws(() => parseOmpArgs(["swarm", "batch", "show", "review-items", "extra"], context), /at most one id/);
+  assert.throws(() => parseOmpArgs(["swarm", "batch", "list", "--yes"], context), /only valid for swarm batch run/);
+});
+
 test("workflow resume is classified as a mutation and binds the run id", () => {
   const parsed = parseOmpArgs(["workflow", "resume", "workflow-run-1", "--input-file", "/tmp/workflow-input.json"], context);
   assert.equal(parsed.mutation, true);

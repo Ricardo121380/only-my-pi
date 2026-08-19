@@ -22,6 +22,7 @@ import {
   PI_SUBAGENTS_RPC_V1_METHODS,
   PI_SUBAGENTS_RPC_V1_REQUIRED_CAPABILITIES,
 } from "../packages/subagents/adapters/pi-subagents-rpc-v1/index.mjs";
+import { createPiSubagentsBatchItemExecutor } from "../packages/subagents/batch-swarm/pi-item-executor.mjs";
 
 function domainFixture({ taskText = "Read the requested files and return a verdict." } = {}) {
   const template = createAgentTemplate({
@@ -524,6 +525,69 @@ test("unknown or missing process proof can only produce a non-authoritative orph
     assert.equal(result.terminal.authoritative, false);
     assert.match(result.terminal.error.code, /^PI_SUBAGENTS_/u);
   }
+});
+
+test("BatchSwarm item adapter uses the structured Pi backend and returns correlated terminal proof", async () => {
+  const fixture = domainFixture();
+  const transport = createFixtureTransport();
+  const backend = createBackend(transport);
+  const itemExecutor = createPiSubagentsBatchItemExecutor({ backend });
+  const result = await itemExecutor.executeItem({
+    runId: "batch-adapter-run",
+    nodeId: "review-batch",
+    itemId: "item-zero",
+    itemAttempt: 1,
+    assignment: fixture.assignment,
+    agentSpec: fixture.agentSpec,
+  });
+  assert.equal(result.terminal.outcome, "completed");
+  assert.equal(result.terminal.authoritative, true);
+  assert.equal(result.handle.local.assignmentHash, fixture.assignment.assignmentHash);
+  assert.match(result.handle.local.nodeId, /^batch-item:/u);
+  assert.match(result.handle.local.attemptId, /^batch-attempt:/u);
+  const spawn = transport.calls.find((call) => call.method === "spawn");
+  assert.ok(spawn);
+  assert.match(spawn.params.workflowScript, /^return await runs\.run\(/u);
+  assert.doesNotMatch(spawn.params.workflowScript, /export default|ctx\.execute/u);
+});
+
+test("BatchSwarm item cancellation requires interrupt terminal proof", async () => {
+  const fixture = domainFixture();
+  const controller = new AbortController();
+  let interrupted = 0;
+  const backend = {
+    capabilityMatrix: createPiSubagentsRpcV1CapabilityMatrix(),
+    async launch({ handle }) {
+      const boundHandle = bindBackendRun(handle, {
+        backendId: "fixture-backend",
+        backendVersion: "1.0.0",
+        protocolVersion: 1,
+        lifecycle: "launch",
+        requestId: "fixture-request",
+        backendRunId: "fixture-run",
+      });
+      queueMicrotask(() => controller.abort());
+      return { handle: boundHandle, binding: activeBackendBinding(boundHandle) };
+    },
+    async awaitTerminal() { return new Promise(() => {}); },
+    async interrupt() {
+      interrupted += 1;
+      return { terminal: { outcome: "cancelled", authoritative: true, receiptId: digestValue("cancelled") } };
+    },
+  };
+  const itemExecutor = createPiSubagentsBatchItemExecutor({ backend });
+  const result = await itemExecutor.executeItem({
+    runId: fixture.handle.local.runId,
+    nodeId: "review-batch",
+    itemId: "item-zero",
+    itemAttempt: 1,
+    assignment: fixture.assignment,
+    agentSpec: fixture.agentSpec,
+    signal: controller.signal,
+  });
+  assert.equal(interrupted, 1);
+  assert.equal(result.terminal.outcome, "cancelled");
+  assert.equal(result.terminal.authoritative, true);
 });
 
 test("mismatched completion or process proof is rejected instead of being rebound", async () => {
