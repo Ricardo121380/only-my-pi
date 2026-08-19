@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { sha256 } from "./state/codec.mjs";
+import { assertPiSubagentsLiveProbeEvidence } from "./live-probe.mjs";
 
 const DEFAULT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const PHYSICAL_OWNER = "subagents";
@@ -21,9 +22,21 @@ function readJson(rootDir, relativePath) {
 
 export function loadSubagentsTopologyDocuments(rootDir = DEFAULT_ROOT) {
   const root = path.resolve(rootDir);
+  const wire = readJson(root, "contracts/pi-subagents-wire-v1.json");
+  const evidencePath = wire?.verification?.liveEvidence?.path;
+  let liveEvidence = null;
+  if (typeof evidencePath === "string") {
+    const absoluteEvidence = path.resolve(root, evidencePath);
+    const relative = path.relative(root, absoluteEvidence);
+    if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) {
+      throw new Error("subagents live evidence path escapes the repository root");
+    }
+    liveEvidence = JSON.parse(fs.readFileSync(absoluteEvidence, "utf8"));
+  }
   return Object.freeze({
     rootDir: root,
-    wire: readJson(root, "contracts/pi-subagents-wire-v1.json"),
+    wire,
+    liveEvidence,
     packages: readJson(root, "inventory/packages.lock.json"),
     resources: readJson(root, "inventory/resources.lock.json"),
     owners: readJson(root, "policies/owners.v1.json"),
@@ -55,12 +68,13 @@ function exactResourceEntries(document, id) {
  * Inspect the static ownership topology for the subagents runtime.
  *
  * This deliberately does not start Pi, load a Provider, inspect ~/.pi, or
- * dispatch a child. It proves only that repository declarations leave one
- * physical child owner and one first-party logical owner. Live RPC evidence
- * remains a separate, explicitly authorized milestone.
+ * dispatch a child. It proves repository ownership and validates the separate
+ * checked-in, low-sensitivity no-model evidence receipt; producing fresh live
+ * evidence remains an explicitly authorized operation.
  */
 export function inspectSubagentsTopology({
   wire,
+  liveEvidence,
   packages,
   resources,
   owners,
@@ -69,7 +83,7 @@ export function inspectSubagentsTopology({
   const report = {
     formatVersion: 1,
     status: "STATIC_TOPOLOGY_PASS",
-    liveRuntime: "NOT_RUN_BY_POLICY",
+    liveRuntime: wire?.verification?.liveRuntime ?? "NOT_RUN_BY_POLICY",
     physicalRuntimeOwner: PHYSICAL_OWNER,
     firstPartyOrchestrationOwner: FIRST_PARTY_OWNER,
     checks: [],
@@ -195,6 +209,31 @@ export function inspectSubagentsTopology({
       delegationRuntimeActive: topology.delegationRuntimeActive,
       secondSubagentToolOwner: topology.secondSubagentToolOwner,
       secondScheduler: topology.secondScheduler,
+    },
+  );
+
+  const evidenceReference = wire?.verification?.liveEvidence;
+  let liveEvidenceValid = false;
+  let liveEvidenceCode = null;
+  try {
+    const validated = assertPiSubagentsLiveProbeEvidence(liveEvidence);
+    liveEvidenceValid = wire?.verification?.liveRuntime === validated.status
+      && evidenceReference?.evidenceDigest === validated.evidenceDigest
+      && evidenceReference?.boundary === validated.boundary
+      && evidenceReference?.provider === validated.providerRequest
+      && evidenceReference?.childDispatch === validated.childDispatch;
+  } catch (error) {
+    liveEvidenceCode = error?.code ?? "INVALID_LIVE_EVIDENCE";
+  }
+  check(
+    report,
+    "live-no-model-evidence",
+    liveEvidenceValid,
+    "checked-in no-model evidence must validate and match the pinned wire reference",
+    {
+      liveStatus: wire?.verification?.liveRuntime ?? null,
+      evidenceDigest: evidenceReference?.evidenceDigest ?? null,
+      errorCode: liveEvidenceCode,
     },
   );
 

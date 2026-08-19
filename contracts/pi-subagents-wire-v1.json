@@ -115,7 +115,14 @@
   },
   "verification": {
     "staticContract": "PASS",
-    "liveRuntime": "NOT_RUN_BY_POLICY",
-    "liveRuntimeMilestone": "M5"
+    "liveRuntime": "LIVE_NO_MODEL_CAPABILITY_PASS",
+    "liveRuntimeMilestone": "S1",
+    "liveEvidence": {
+      "path": "contracts/subagents/pi-subagents-live-no-model-evidence.json",
+      "evidenceDigest": "sha256:a125e6c45a0e47436683c9a60a0087af37b4aaccf9f27c7bfbd4c94c6b8eadbd",
+      "boundary": "PI_RPC_EXTENSION_CAPABILITY_AND_VISIBILITY",
+      "provider": "NOT_RUN_BY_POLICY",
+      "childDispatch": "NOT_REQUESTED"
+    }
   }
 }

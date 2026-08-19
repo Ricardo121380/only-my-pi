@@ -4,9 +4,12 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { assertPiSubagentsLiveProbeEvidence } from "../packages/subagents/live-probe.mjs";
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const contractPath = path.join(root, "contracts", "pi-subagents-wire-v1.json");
+const evidencePath = path.join(root, "contracts", "subagents", "pi-subagents-live-no-model-evidence.json");
 const fixtureRoot = path.join(root, "verification", "fixtures", "pi-subagents-0.45.2");
 
 function readJson(file) {
@@ -151,8 +154,22 @@ test("extension RPC v1 is the sole live lane and the delegation export is refere
   assert.equal(contract.topology.liveDiscovery, "ping-capability-handshake");
   assert.equal(contract.topology.liveExecution, "spawn-with-compiled-workflowScript");
   assert.equal(contract.exportedDelegationReference.activeRuntimeAdapter, false);
-  assert.equal(contract.verification.liveRuntime, "NOT_RUN_BY_POLICY");
+  assert.equal(contract.verification.liveRuntime, "LIVE_NO_MODEL_CAPABILITY_PASS");
+  assert.equal(contract.verification.liveRuntimeMilestone, "S1");
   assert.equal(contract.forbidden.childDispatchDuringM1, true);
+});
+
+test("checked-in no-model live evidence is digest-bound and preserves the authorization boundary", () => {
+  const contract = readJson(contractPath);
+  const evidence = assertPiSubagentsLiveProbeEvidence(readJson(evidencePath));
+  assert.equal(contract.verification.liveEvidence.path, path.relative(root, evidencePath));
+  assert.equal(contract.verification.liveEvidence.evidenceDigest, evidence.evidenceDigest);
+  assert.equal(evidence.promptSubmitted, false);
+  assert.equal(evidence.providerRequest, "NOT_RUN_BY_POLICY");
+  assert.equal(evidence.childDispatch, "NOT_REQUESTED");
+  assert.equal(evidence.realPiHome, "NOT_TOUCHED");
+  assert.deepEqual(evidence.visibility.onlyMyPiModelTools, []);
+  assert.equal(evidence.visibility.primaryToolOwner, "pi-subagents");
 });
 
 test("the capability fixture exactly matches RPC v1 ping", () => {

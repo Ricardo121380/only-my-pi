@@ -38,7 +38,7 @@ scripts/      Repository checks and package governance tooling
 
 ## Current research
 
-- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; S0–S2 implementation underway)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
+- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; S0–S2 Contract Preview implemented)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
 - [Codex successor development Goal for S0–S5](codex/goals/develop-only-my-pi-subagents-ultrarun.md)
 - [Historical Harness MVP development plan (M0–M7, complete)](docs/plans/2026-08-16-only-my-pi-development-plan.md)
 - [Historical Codex Harness MVP Goal](codex/goals/develop-only-my-pi.md)
@@ -112,7 +112,7 @@ receipts bounded. DeepSeek conformance, ACP v1, and workspace checkpoint remain
 non-default Labs modules with the explicit boundaries in the
 [Labs registry](docs/LABS.md).
 
-The S0–S2 successor branch now contains a unified
+The S0–S2 Contract Preview now contains a unified
 `packages/subagents/` facade. It provides typed AgentTemplate v2,
 ResolvedAgentSpec, TaskAssignment and terminal receipts; an exact
 `pi-subagents` RPC v1 backend; immutable WorkflowPlan compilation; a single
@@ -120,7 +120,13 @@ RunCoordinator; a fenced append-only journal; crash-recoverable parent budget
 reservations; and dual-read migration from the v1 Workflow/Swarm resources.
 The static single-owner check is available as `npm run
 doctor:subagents-topology`; it reads only the pinned package/wire contract and
-repository ownership catalogs, and does not start Pi or dispatch a child.
+repository ownership catalogs plus the digest-bound low-sensitivity evidence,
+and does not itself start Pi or dispatch a child. A separately authorized
+disposable Pi `0.84.1` probe has now verified the exact upstream `ready` and
+correlated `ping` contract, four upstream-owned active subagent tools, the
+first-party `omp` commands, and no competing only-my-pi model tool. It submitted
+no prompt, Provider request, or child assignment and did not touch the real Pi
+home.
 The existing `omp workflow`, `omp swarm`, and `/omp` compatibility routes now
 compile those resources to WorkflowPlan and can execute only through an
 explicitly injected unified RunCoordinator; they never instantiate the v1
@@ -138,9 +144,10 @@ is non-authoritative and leaves the run orphaned. Mutating dispatch also require
 an executor that advertises audited path enforcement; a worktree alone is not
 treated as a path allowlist. This is Contract Preview source evidence only.
 Restart-safe plan lookup and durable status/cancel/resume are now implemented
-through the versioned Plan Store sidecar; pause/resume/restart-node beyond the
-bounded run resume path, BatchSwarm execution, SwarmGoal, UltraRun, and live
-child evidence remain S2–S5.
+through the versioned Plan Store sidecar. S0–S2 therefore has source-level
+Contract Preview closure; BatchSwarm execution is the next S3 implementation,
+while SwarmGoal, UltraRun, and promotion-specific child/fault/writer evidence
+remain S4–S5.
 
 `omp workflow|swarm run` and `resume` accept an optional bounded absolute JSON
 `--input-file`; it is read with `O_NOFOLLOW`, hashed into the execution
@@ -197,6 +204,32 @@ For a one-run test without changing Pi settings:
 ```bash
 pi -e .
 ```
+
+### Re-run the no-model subagents compatibility probe
+
+The checked-in S2 evidence can be reproduced without using the real Pi home,
+submitting a prompt, calling a Provider, or dispatching a child. Supply an
+already-present, dependency-complete copy of the exact audited
+`pi-subagents@0.45.2` artifact; the command never downloads or installs it:
+
+```bash
+probe_root="$(mktemp -d)"
+npm run probe:subagents-live -- \
+  --config-root "$probe_root" \
+  --package-root /absolute/path/to/audited/pi-subagents \
+  --only-my-pi-root "$PWD" \
+  --pi-command "$(command -v pi)"
+```
+
+The probe verifies source hashes before starting Pi, creates all runtime state
+under the explicit disposable root, loads the real first-party extensions,
+and observes only the public `ready`/correlated `ping` plus tool/command
+registries. Delete the disposable root after inspecting the result. This is a
+compatibility and ownership check, not evidence of child execution, Provider
+quality, terminal/cancellation behavior, worktree enforcement, or host
+filesystem/network isolation. See the
+[compatibility contract](docs/compatibility/pi-subagents-0.45.2.md) and the
+[low-sensitivity evidence](contracts/subagents/pi-subagents-live-no-model-evidence.json).
 
 ## Run the successor development Goal with Codex
 

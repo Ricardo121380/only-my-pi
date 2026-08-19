@@ -68,6 +68,16 @@ maintenance traffic only. For an untrusted package or unattended task, enforce
 filesystem, process, credential, and network isolation outside Pi as
 appropriate.
 
+The subagents compatibility probe is a separate, explicitly invoked boundary.
+It requires an absolute disposable root and an already-present audited package
+root, validates the pinned package/source hashes, loads the real first-party
+extensions, and uses only public `ready`, correlated `ping`, tool, and command
+registry APIs. It writes no RPC input, prompt, or child request. Its evidence
+removes cwd, source paths, and session identifiers before output. This proves
+RPC compatibility and single model-tool ownership, not child execution or
+extension isolation; loaded extension code still has the caller's OS and
+network authority.
+
 ## Reporting a problem
 
 Do not publish secrets or exploit details in a public issue. For a local

@@ -54,9 +54,19 @@ scheduler to compensate.
 `npm run doctor:subagents-topology` is the static ownership gate. It reads the
 pinned package/wire contract plus the owner, command, and resource catalogs
 and requires exactly one physical/RPC owner (`pi-subagents`) and a separate
-first-party logical owner. It intentionally reports
-`liveRuntime: NOT_RUN_BY_POLICY`; only an explicitly authorized disposable Pi
-RPC probe can promote that field to live evidence.
+first-party logical owner. It also validates the checked-in low-sensitivity
+no-model receipt and now reports `liveRuntime: LIVE_NO_MODEL_CAPABILITY_PASS`.
+The doctor itself remains offline; fresh evidence requires the explicit
+disposable-root `npm run probe:subagents-live -- ...` command.
+
+That probe has been run once against Pi `0.84.1` and the source-hash-verified
+`pi-subagents@0.45.2` artifact. It observed the public `ready`/correlated
+`ping` contract, the four upstream-owned active tools, and the first-party
+`omp` command registrations in an isolated no-session root. It submitted no
+prompt, called no Provider, dispatched no child, and did not read the real Pi
+home. The checked-in receipt is
+`contracts/subagents/pi-subagents-live-no-model-evidence.json`; it is bounded
+compatibility evidence, not a child-execution or sandbox claim.
 
 ## Workflow and recovery
 
@@ -167,16 +177,20 @@ Run the contract slice with:
 ```sh
 npm run test:subagents
 npm run eval:subagents
+npm run doctor:subagents-topology
 ```
 
 The evaluation corpus is deterministic, offline, and explicitly labelled
-`CONTRACT_PREVIEW_OFFLINE_SIMULATOR`. This implementation has not dispatched a
-live child, called a Provider, read credentials, mutated the real Pi home, or
-proved managed-worktree execution. It is not an Alpha/Beta/Stable receipt.
+`CONTRACT_PREVIEW_OFFLINE_SIMULATOR`. A separate disposable Pi `0.84.1`
+no-model probe now proves the exact `pi-subagents@0.45.2` ready/ping contract,
+active tool ownership, and first-party command registration. It did not submit
+a prompt, dispatch a live child, call a Provider, read credentials, mutate the
+real Pi home, isolate extension network/filesystem access, or prove managed
+worktree execution. It is not an Alpha/Beta/Stable receipt.
 The first CLI and `/omp` compatibility routes now pass through the unified
 control facade. Durable plan lookup/status/cancel/resume is covered by the
 Plan Store slice; both cancel and resume are classified as mutations by the
 control grammar, and an unresponsive backend stop call is bounded without
 blocking writer-lease renewal. Pause/restart-node beyond the bounded resume path,
 BatchSwarm execution, dynamic SwarmGoal planning, UltraRun workflow libraries,
-and promotion-specific live evidence remain in S2–S5.
+and promotion-specific child/fault/writer evidence remain in S3–S5.

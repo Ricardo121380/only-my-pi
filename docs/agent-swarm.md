@@ -37,6 +37,8 @@ Gate Runner, not an arbitrary child shell.
   become an overall success;
 - Codex development subagents are not product AgentSwarm children.
 
-Live child dispatch and Provider calls remain `NOT_RUN_BY_POLICY` in the
-repository's offline evidence. A real deployment must add OS/container
-isolation for any untrusted code; a worktree alone is not a sandbox.
+The S2 no-model probe now proves startup, the public RPC handshake, and single
+physical tool ownership. Live child dispatch and Provider calls remain
+`NOT_RUN_BY_POLICY`; the probe sent neither. A real deployment must add
+OS/container isolation for any untrusted code; a worktree alone is not a
+sandbox.

@@ -14,7 +14,8 @@
     "scripts/release-gates.mjs",
     "scripts/verification-receipt.mjs",
     "scripts/mode-doctor.mjs",
-    "scripts/subagents-topology-doctor.mjs"
+    "scripts/subagents-topology-doctor.mjs",
+    "scripts/subagents-live-probe.mjs"
   ],
   "allowedPrefixes": [
     "bin/",
@@ -58,6 +59,7 @@
     "scripts/release-gates.mjs",
     "scripts/verification-receipt.mjs",
     "scripts/subagents-topology-doctor.mjs",
+    "scripts/subagents-live-probe.mjs",
     "agents/generated/omp-scout.md",
     "agents/scout.json",
     "contracts/schema-catalog.json",
@@ -80,6 +82,7 @@
     "contracts/subagents/backend-capability.example.json",
     "contracts/subagents/terminal-receipt.example.json",
     "contracts/subagents/evaluation-corpus.example.json",
+    "contracts/subagents/pi-subagents-live-no-model-evidence.json",
     "extensions/context-doctor/index.ts",
     "extensions/context-doctor/metrics.mjs",
     "extensions/session-ledger/index.ts",
@@ -98,6 +101,8 @@
     "packages/swarm-core/index.mjs",
     "packages/pi-subagents-adapter/index.mjs",
     "packages/subagents/index.mjs",
+    "packages/subagents/live-probe.mjs",
+    "packages/subagents/live-probe-extension.mjs",
     "packages/subagents/domain/index.mjs",
     "packages/subagents/domain/agent.mjs",
     "packages/subagents/domain/assignment.mjs",

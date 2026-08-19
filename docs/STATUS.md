@@ -1,6 +1,6 @@
 # only-my-pi status
 
-Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-18** · Merged
+Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-19** · Merged
 to `main`: **2026-08-17** · Pi **0.84.1** · Node **25.8.0** · macOS
 `darwin-arm64`
 
@@ -20,7 +20,7 @@ This page is a checked-in handoff record. Exact package metadata and risk tags
 live in [`inventory/packages.lock.json`](../inventory/packages.lock.json); this
 summary intentionally contains no credentials, sessions, or host paths.
 
-## Successor roadmap — S0–S2 implementation underway
+## Successor roadmap — S0–S2 Contract Preview implemented; S3 next
 
 The M0–M7 Harness MVP described below remains the current released baseline.
 Development of its S0–S5 successor has started on the isolated
@@ -67,9 +67,12 @@ The first S0–S2 source slice now contains:
   and delegate all live lifecycle work to the one injected RunCoordinator;
 - a 15-case, fixed-seed, three-baseline offline evaluation corpus.
 
-This source slice has no S0–S2 promotion receipt yet. Its tests use injected
-transports and temporary roots; no live child dispatch, Provider/model call,
-credential read, global install, or real Pi home mutation was performed.
+This source slice has no S0–S2 promotion receipt yet. Its deterministic tests
+use injected transports and temporary roots. A separate disposable-root,
+no-model Pi probe now proves the public `pi-subagents@0.45.2` `ready`/correlated
+`ping` handshake and single physical tool ownership. It submitted no prompt,
+made no Provider/model request, dispatched no child, read no credential, made
+no global install, and did not read or mutate the real Pi home.
 All planned orchestration contracts plus the evaluation-corpus and durable
 run-control contracts are now registered in the strict catalog. The catalog validates 33 kinds and 64
 non-vacuous production documents, with positive, unknown-field/version, and
@@ -90,29 +93,34 @@ writer seam remains unavailable rather than being inferred from a worktree.
 The immutable Plan Store now persists the exact run-ID-to-WorkflowPlan binding;
 fresh coordinators can re-project status, publish cross-process cancel intent,
 and resume read-only/recoverable runs after restart without persisting raw
-input. The static single-owner topology probe and its packaged-artifact
-inclusion now pass; its live field remains `NOT_RUN_BY_POLICY` until an
-explicitly authorized Pi RPC capability probe.
-BatchSwarm execution,
+input. The static single-owner topology probe, packaged-artifact inclusion, and
+the separately authorized live no-model capability/visibility probe now pass.
+The digest-bound receipt is
+[`../contracts/subagents/pi-subagents-live-no-model-evidence.json`](../contracts/subagents/pi-subagents-live-no-model-evidence.json).
+It proves startup, public RPC compatibility, and tool ownership only; child
+terminal/cancellation, metering, managed worktrees, and Provider behavior are
+still deliberately untested. BatchSwarm execution,
 SwarmGoal, UltraRun, and promotion-specific live evidence remain S3–S5.
 Historical M5 receipts must not be described as successor evidence.
 
 Current branch evidence for this Contract Preview slice:
 
-- `npm test`: **464/464** pass;
-- `npm run test:subagents`: **106/106** pass;
+- `npm test`: **471/471** pass;
+- `npm run test:subagents`: **112/112** pass;
 - `npm run schema:check`: **64 production documents / 33 schema kinds / 0 findings**;
-- `npm run pack:check`: **226 allowlisted files**, with no tests, receipts, or
+- `npm run pack:check`: **230 allowlisted files**, with no tests, receipts, or
   Codex Goal in the tarball;
 - `npm run lint`: **602 files / 0 findings**;
-- `npm run secret:scan`: **602 tracked files + 226 packed files / 0 findings**;
+- `npm run secret:scan`: **602 tracked files + 230 packed files / 0 findings**;
+- `npm run test:e2e`: fresh scripts-disabled tarball install, bootstrap,
+  rollback, and installed-package topology doctor pass;
 - `npm run doctor`, all six Profile doctors, Mode/Agent/Workflow/Swarm doctors,
   `npm run typecheck`, and the deterministic agent/profile generators: pass.
   Static doctor retains only the two explicit inactive-candidate warnings.
 
-These are source-tree gates only. A promotion receipt intentionally does not
-exist until the remaining S2 compatibility/topology work and the requested
-promotion closure are complete.
+These are source-tree plus bounded no-model compatibility gates. A promotion
+receipt intentionally does not exist for this Contract Preview; S3 must add the
+homogeneous BatchSwarm implementation and its own requested promotion closure.
 
 ## Current external Pi baseline
 
@@ -366,6 +374,7 @@ npm run test:acp
 npm run test:checkpoint
 npm run doctor
 npm run doctor:profiles
+npm run doctor:subagents-topology
 npm run profile:check
 npm run schema:check
 npm run mcp:doctor -- --file verification/fixtures/mcp.safe.json --strict
@@ -464,12 +473,13 @@ plugins, arbitrary JavaScript workflows, automatic marketplaces, remote
 UI/SSH/Cron, and un-sandboxed web fetch also remain outside the default
 profiles.
 
-The static single-owner topology probe and its packaged-artifact inclusion now
-pass; its live field remains `NOT_RUN_BY_POLICY` until an explicitly authorized
-Pi RPC capability probe. The durable Plan Store, restart-safe
+The static single-owner topology probe, packaged-artifact inclusion, and
+digest-bound live no-model Pi RPC capability/visibility probe now pass. The
+probe used a disposable Pi root and submitted no prompt, called no Provider,
+and dispatched no child. The durable Plan Store, restart-safe
 status/resume and cross-process cancel intent are complete; cancel/stop remains
 non-authoritative without correlated backend terminal proof. The legacy direct
 imports remain one-release compatibility shims but no longer own public
-execution. After that S2 closure, S3 adds a true homogeneous BatchSwarm, S4
+execution. With that bounded S2 gate closed, S3 adds a true homogeneous BatchSwarm, S4
 introduces dynamic SwarmGoal plan revisions and UltraRun routing, and S5 adds
 promotion-specific live, fault, security, and compatibility evidence.

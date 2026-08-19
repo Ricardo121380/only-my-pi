@@ -58,10 +58,16 @@ session. Third-party packages and Labs remain opt-in and require review.
 - 15 orchestration schemas/evaluation contracts in the strict catalog, plus a
   deterministic offline corpus with fixed seed, baselines, thresholds, and
   content digests.
+- a disposable-root, no-model Pi probe that source-hash-verifies
+  `pi-subagents@0.45.2`, observes the public `ready`/correlated `ping` contract,
+  and proves that all four active physical subagent tools remain upstream-owned
+  while only-my-pi registers no competing model tool.
+- a packaged no-model evidence contract and fresh-tarball topology smoke, so an
+  installed artifact must retain the same digest-bound ownership evidence.
 
 ### Security boundary
 
-These unreleased changes remain Contract Preview source evidence. They have no
+These unreleased changes remain Contract Preview evidence. They have no
 promotion receipt and do not prove live child execution, Provider quality,
 managed worktrees, adaptive rate limiting, SwarmGoal, UltraRun, or production
 BatchSwarm. Any tracked change after the final 0.1.0 receipt invalidates that
