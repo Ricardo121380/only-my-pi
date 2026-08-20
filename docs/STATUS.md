@@ -20,7 +20,7 @@ This page is a checked-in handoff record. Exact package metadata and risk tags
 live in [`inventory/packages.lock.json`](../inventory/packages.lock.json); this
 summary intentionally contains no credentials, sessions, or host paths.
 
-## Successor roadmap — S0–S4 Preview source implementation; S5 next
+## Successor roadmap — S0–S5 Preview source + deterministic promotion foundation
 
 The M0–M7 Harness MVP described below remains the current released baseline.
 Development of its S0–S5 successor has started on the isolated
@@ -28,6 +28,7 @@ Development of its S0–S5 successor has started on the isolated
 
 - [`plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md`](plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
 - [`../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../codex/goals/develop-only-my-pi-subagents-ultrarun.md)
+- [`architecture/subagents-s5-release.md`](architecture/subagents-s5-release.md)
 
 The successor does **not** connect Pi to the Kimi runtime. It builds one Pi-native
 `@only-my-pi/subagents` facade while retaining `pi-subagents@0.45.2` as the sole
@@ -43,6 +44,14 @@ The approved semantic split is:
 - `SwarmGoal`: a dynamic planner that emits immutable WorkflowPlan revisions;
 - `UltraRun`: an upper-layer strategy that routes and chains multiple workflows,
   with no separate scheduler or permission owner.
+
+S5 deterministic release governance is now implemented on this branch. The
+versioned compatibility matrix, cumulative promotion policy, and
+`release-gates-v2` manifest are strict, digest-bound contracts. The v2 runner
+executes only fixed deterministic gates on a clean source commit; protected
+live gates have no command and remain `NOT_RUN_BY_POLICY` until separately
+authorized evidence is imported. This is still a Preview claim, not Alpha,
+Beta, or Stable.
 
 The S0–S4 source slice now contains:
 
@@ -109,8 +118,9 @@ no-model Pi probe now proves the public `pi-subagents@0.45.2` `ready`/correlated
 `ping` handshake and single physical tool ownership. It submitted no prompt,
 made no Provider/model request, dispatched no child, read no credential, made
 no global install, and did not read or mutate the real Pi home.
-All planned orchestration contracts plus the evaluation-corpus and durable
-run-control contracts are now registered in the strict catalog. The catalog validates 33 kinds and 68
+All planned orchestration contracts plus the evaluation-corpus, durable
+run-control, compatibility, and promotion contracts are now registered in the
+strict catalog. The catalog validates 35 kinds and 70
 non-vacuous production documents, with positive, unknown-field/version, and
 targeted semantic negatives. Public Workflow/Swarm routing now converges on
 the v2 facade. Approval fails closed without a live evidence provider,
@@ -139,15 +149,18 @@ worktrees, writer integration, Provider behavior, and promotion-specific live
 evidence are still deliberately untested and remain S5 work.
 Historical M5 receipts must not be described as successor evidence.
 
-Current branch evidence for this Preview source slice:
+Current branch evidence for this Preview source slice and S5 deterministic
+foundation:
 
-- `npm test`: **520/520** pass;
-- `npm run test:subagents`: **149/149** pass;
-- `npm run schema:check`: **68 production documents / 33 schema kinds / 0 findings**;
-- `npm run pack:check`: **248 allowlisted files**, with no tests, receipts, or
+- `npm test`: **537/537** pass;
+- `npm run test:subagents`: **159/159** pass;
+- `npm run test:contract`: **108/108** pass;
+- `npm run test:integration`: **182/182** pass;
+- `npm run schema:check`: **70 production documents / 35 schema kinds / 0 findings**;
+- `npm run pack:check`: **256 allowlisted files**, with no tests, receipts, or
   Codex Goal in the tarball;
-- `npm run lint`: **620 files / 0 findings**;
-- `npm run secret:scan`: **620 tracked files + 248 packed files / 0 findings**;
+- `npm run lint`: **639 files / 0 findings**;
+- `npm run secret:scan`: **639 tracked files + 256 packed files / 0 findings**;
 - `npm run test:e2e`: fresh scripts-disabled tarball install, bootstrap,
   rollback, and installed-package topology doctor pass;
 - `npm run doctor`, all six Profile doctors, Mode/Agent/Workflow/Swarm doctors,
@@ -155,11 +168,12 @@ Current branch evidence for this Preview source slice:
   deterministic agent/profile generators: pass.
   Static doctor retains only the two explicit inactive-candidate warnings.
 
-These are source-tree plus bounded no-model compatibility gates. A promotion
-receipt intentionally does not exist for this Preview tranche. The canonical
-S3 live read-only batch and every S4 dynamic/live execution path are
-independently authorization-gated and recorded as `NOT_RUN_BY_POLICY`, not as
-PASS. Promotion closure remains S5 work.
+These are source-tree plus bounded no-model compatibility gates. The S5
+deterministic runner is now wired but its clean-source receipt is generated
+only after the source commit. The canonical S3 live read-only batch and every
+S4 dynamic/live execution path are independently authorization-gated and
+recorded as `NOT_RUN_BY_POLICY`, not as PASS. Promotion closure remains
+Preview-only until protected Alpha/Beta/Stable evidence exists.
 
 ## Current external Pi baseline
 

@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../schemas/subagents-promotion-policy-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "id": "only-my-pi-subagents-promotion",
+  "channels": [],
+  "policyDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "unexpected": true
+}

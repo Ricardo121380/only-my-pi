@@ -78,6 +78,23 @@ RPC compatibility and single model-tool ownership, not child execution or
 extension isolation; loaded extension code still has the caller's OS and
 network authority.
 
+## S5 release-gate boundary
+
+The successor release manifest is split into deterministic and protected
+evidence gates. Deterministic gates use a fixed command/argv/environment set,
+`shell:false`, bounded output, offline npm settings, and a clean-source
+commit check before and after execution. The v2 runner cannot accept an
+alternate manifest or execute a protected gate. Protected live evidence is
+`NOT_RUN_BY_POLICY` until a separately authorized disposable run produces a
+digest-bound file under `verification/protected/`.
+
+Passing the Preview deterministic gates therefore proves repository contracts,
+fault/security tests, offline evaluation, and packaging checks only. It does
+not prove live child execution, model quality, background resume, managed
+worktree enforcement, or Provider behavior. Promotion policy and compatibility
+matrix digests are checked independently so a forged receipt or floating Node
+version cannot widen a release claim.
+
 ## BatchSwarm boundary
 
 BatchSwarm is logical orchestration, not a second child runtime or sandbox. It

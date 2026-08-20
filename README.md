@@ -61,6 +61,7 @@ scripts/      Repository checks and package governance tooling
 - [ACP v1 adapter](docs/architecture/acp-v1.md)
 - [Workspace checkpoint](docs/architecture/workspace-checkpoint.md)
 - [Theme and status layer](docs/architecture/theme-status.md)
+- [Subagents S5 release boundary](docs/architecture/subagents-s5-release.md)
 - [Quickstart](docs/quickstart.md)
 - [Modes](docs/modes.md)
 - [AgentSwarm](docs/agent-swarm.md)
@@ -160,6 +161,12 @@ over the same RunCoordinator and sole `pi-subagents` backend; they do not
 connect Pi to Kimi Code or add a second scheduler. The protected real-child
 BatchSwarm check, dynamic-goal live execution, and guarded writer integration
 were not authorized and remain `NOT_RUN_BY_POLICY`/`UNAVAILABLE`.
+
+S5 now adds a versioned compatibility matrix, cumulative promotion policy, and
+digest-pinned `release-gates-v2` runner. `npm run verify:subagents` is an
+inspection-only command; `npm run verify:subagents:run` executes the fixed
+Preview deterministic gates on a clean source commit. Alpha/Beta/Stable live
+claims remain protected and cannot be produced by the deterministic runner.
 
 `omp workflow|swarm run` and `resume` accept an optional bounded absolute JSON
 `--input-file`; it is read with `O_NOFOLLOW`, hashed into the execution

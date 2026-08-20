@@ -21,7 +21,7 @@
       "additionalProperties": false,
       "required": ["kind", "schemaPath", "productionGlobs", "fixtureDir"],
       "properties": {
-        "kind": { "enum": ["inventory", "resourceInventory", "profile", "capability", "owner", "commandOwner", "enforcementSurface", "mode", "agent", "workflow", "agentTemplate", "resolvedAgentSpec", "taskAssignment", "batchSwarm", "workflowDefinitionV2", "workflowPlan", "workflowRunPlan", "workflowCancelRequest", "workflowEvent", "artifactRef", "budgetEnvelope", "approvalReceipt", "swarmGoal", "ultraRun", "backendCapability", "terminalReceipt", "evaluationCorpus", "swarmRecipe", "theme", "bootstrapTransaction", "bootstrapState", "bootstrapGeneration", "bootstrapSnapshot"] },
+        "kind": { "enum": ["inventory", "resourceInventory", "profile", "capability", "owner", "commandOwner", "enforcementSurface", "mode", "agent", "workflow", "agentTemplate", "resolvedAgentSpec", "taskAssignment", "batchSwarm", "workflowDefinitionV2", "workflowPlan", "workflowRunPlan", "workflowCancelRequest", "workflowEvent", "artifactRef", "budgetEnvelope", "approvalReceipt", "swarmGoal", "ultraRun", "backendCapability", "terminalReceipt", "evaluationCorpus", "subagentsCompatibility", "subagentsPromotionPolicy", "swarmRecipe", "theme", "bootstrapTransaction", "bootstrapState", "bootstrapGeneration", "bootstrapSnapshot"] },
         "schemaPath": { "$ref": "#/$defs/path" },
         "productionGlobs": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/path" } },
         "fixtureDir": { "$ref": "#/$defs/path" }

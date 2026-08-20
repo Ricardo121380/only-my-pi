@@ -31,6 +31,13 @@ session. Third-party packages and Labs remain opt-in and require review.
 
 ### Added
 
+- S5 release-governance foundation: exact Node/Pi/`pi-subagents` compatibility
+  matrix, cumulative promotion policy, digest-pinned `release-gates-v2`, and
+  a clean-source deterministic runner that never spawns protected live gates;
+- compatibility/provenance contracts plus listener/timer resource-leak soaks,
+  with Preview/Alpha/Beta/Stable claims kept separate from `NOT_RUN_BY_POLICY`
+  live evidence;
+
 - a single `packages/subagents/` orchestration facade with typed Agent,
   Assignment, backend capability, terminal receipt, immutable WorkflowPlan,
   event journal, budget ledger, and RunCoordinator contracts;

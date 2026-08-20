@@ -16,6 +16,10 @@ import {
   approvalReceiptSemanticFindings,
 } from "../../packages/subagents/policy/approval-receipt.mjs";
 import { assignmentPathClaimCovered } from "../../packages/subagents/domain/assignment.mjs";
+import {
+  validateCompatibilityMatrix,
+  validatePromotionPolicy,
+} from "../../packages/subagents/release/compatibility.mjs";
 import { sha256 as stateSha256, withoutKey } from "../../packages/subagents/state/codec.mjs";
 
 const DEFAULT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -717,6 +721,18 @@ function semanticErrors(kind, document, { sourcePath, rootDir, index, documentsB
         if (caseIds.has(candidate.id)) errors.push(error(`/scenarios/${scenarioPosition}/cases/${casePosition}/id`, "duplicate-id", `duplicate evaluation case id: ${candidate.id}`, { id: candidate.id }));
         caseIds.add(candidate.id);
       }
+    }
+  } else if (kind === "subagentsCompatibility") {
+    try {
+      validateCompatibilityMatrix(document, { rootDir, verifyEvidencePaths: true });
+    } catch (cause) {
+      errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
+    }
+  } else if (kind === "subagentsPromotionPolicy") {
+    try {
+      validatePromotionPolicy(document);
+    } catch (cause) {
+      errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
     }
   } else if (kind === "swarmRecipe") {
     const nodes = document.nodes ?? [];

@@ -165,6 +165,18 @@
       "fixtureDir": "verification/fixtures/contracts/evaluation-corpus"
     },
     {
+      "kind": "subagentsCompatibility",
+      "schemaPath": "schemas/subagents-compatibility-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/compatibility-matrix.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-compatibility"
+    },
+    {
+      "kind": "subagentsPromotionPolicy",
+      "schemaPath": "schemas/subagents-promotion-policy-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/promotion-policy.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-promotion-policy"
+    },
+    {
       "kind": "swarmRecipe",
       "schemaPath": "schemas/swarm-recipe-v1.schema.json",
       "productionGlobs": ["swarm/recipes/*.json"],

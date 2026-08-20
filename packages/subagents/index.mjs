@@ -143,6 +143,7 @@ export * from "./topology.mjs";
 export * from "./policy/budget-ledger.mjs";
 export * from "./policy/approval-receipt.mjs";
 export * from "./policy/writer-handoff.mjs";
+export * from "./release/compatibility.mjs";
 export * from "./workflow/plan-compiler/index.mjs";
 export * from "./workflow/migration/index.mjs";
 export * from "./workflow/run-coordinator/index.mjs";

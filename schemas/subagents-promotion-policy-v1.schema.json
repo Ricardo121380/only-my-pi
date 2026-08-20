@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-promotion-policy-v1.schema.json",
+  "title": "only-my-pi Subagents promotion policy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "id", "channels", "policyDigest"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "subagents-promotion-policy-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "const": "contract-preview" },
+    "id": { "const": "only-my-pi-subagents-promotion" },
+    "channels": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "$ref": "#/$defs/channel" }
+    },
+    "policyDigest": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "channel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "rank", "inherits", "requiredDeterministicGates", "requiredCompatibilityScopes", "requiredProtectedEvidence"],
+      "properties": {
+        "id": { "enum": ["preview", "alpha", "beta", "stable"] },
+        "rank": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "inherits": { "type": ["string", "null"], "enum": [null, "preview", "alpha", "beta"] },
+        "requiredDeterministicGates": {
+          "type": "array",
+          "maxItems": 48,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "requiredCompatibilityScopes": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "repositoryContracts",
+              "noModelRpc",
+              "singleOwnerTopology",
+              "liveAgentTerminal",
+              "liveAgentCancel",
+              "liveBatchTerminal",
+              "backgroundResume",
+              "guardedWriterIntegration",
+              "soakResourceLeak",
+              "migrationRollback"
+            ]
+          }
+        },
+        "requiredProtectedEvidence": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        }
+      }
+    }
+  }
+}

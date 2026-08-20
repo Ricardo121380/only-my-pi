@@ -1,0 +1,97 @@
+{
+  "$schema": "../../schemas/subagents-compatibility-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "id": "only-my-pi-subagents-compatibility",
+  "policy": {
+    "nodeRange": ">=22.19.0",
+    "piVersion": "0.84.1",
+    "backend": {
+      "package": "pi-subagents",
+      "version": "0.45.2",
+      "protocolVersion": 1
+    },
+    "logicalRuntimeOwner": "@only-my-pi/subagents",
+    "physicalRuntimeOwner": "pi-subagents"
+  },
+  "rows": [
+    {
+      "id": "darwin-arm64-node-25.8.0",
+      "environment": {
+        "node": "25.8.0",
+        "pi": "0.84.1",
+        "backend": "pi-subagents@0.45.2",
+        "platform": "darwin-arm64"
+      },
+      "scopes": {
+        "repositoryContracts": "PASS",
+        "noModelRpc": "PASS",
+        "singleOwnerTopology": "PASS",
+        "liveAgentTerminal": "NOT_RUN_BY_POLICY",
+        "liveAgentCancel": "NOT_RUN_BY_POLICY",
+        "liveBatchTerminal": "NOT_RUN_BY_POLICY",
+        "backgroundResume": "NOT_RUN_BY_POLICY",
+        "guardedWriterIntegration": "NOT_RUN_BY_POLICY",
+        "soakResourceLeak": "CONFIGURED_UNVERIFIED",
+        "migrationRollback": "PASS"
+      },
+      "evidence": [
+        "contracts/subagents/pi-subagents-live-no-model-evidence.json",
+        "tests/subagents-live-probe.test.mjs",
+        "tests/subagents-migration.test.mjs",
+        "tests/subagents-topology.test.mjs"
+      ]
+    },
+    {
+      "id": "linux-x64-node-22.19.0",
+      "environment": {
+        "node": "22.19.0",
+        "pi": "0.84.1",
+        "backend": "pi-subagents@0.45.2",
+        "platform": "linux-x64"
+      },
+      "scopes": {
+        "repositoryContracts": "CONFIGURED_UNVERIFIED",
+        "noModelRpc": "NOT_RUN_ENVIRONMENT",
+        "singleOwnerTopology": "CONFIGURED_UNVERIFIED",
+        "liveAgentTerminal": "NOT_RUN_BY_POLICY",
+        "liveAgentCancel": "NOT_RUN_BY_POLICY",
+        "liveBatchTerminal": "NOT_RUN_BY_POLICY",
+        "backgroundResume": "NOT_RUN_BY_POLICY",
+        "guardedWriterIntegration": "NOT_RUN_BY_POLICY",
+        "soakResourceLeak": "CONFIGURED_UNVERIFIED",
+        "migrationRollback": "CONFIGURED_UNVERIFIED"
+      },
+      "evidence": [
+        ".github/workflows/ci.yml",
+        "docs/compatibility/node-pi-matrix.md"
+      ]
+    },
+    {
+      "id": "linux-x64-node-24.x",
+      "environment": {
+        "node": "24.x",
+        "pi": "0.84.1",
+        "backend": "pi-subagents@0.45.2",
+        "platform": "linux-x64"
+      },
+      "scopes": {
+        "repositoryContracts": "CONFIGURED_UNVERIFIED",
+        "noModelRpc": "NOT_RUN_ENVIRONMENT",
+        "singleOwnerTopology": "CONFIGURED_UNVERIFIED",
+        "liveAgentTerminal": "NOT_RUN_BY_POLICY",
+        "liveAgentCancel": "NOT_RUN_BY_POLICY",
+        "liveBatchTerminal": "NOT_RUN_BY_POLICY",
+        "backgroundResume": "NOT_RUN_BY_POLICY",
+        "guardedWriterIntegration": "NOT_RUN_BY_POLICY",
+        "soakResourceLeak": "CONFIGURED_UNVERIFIED",
+        "migrationRollback": "CONFIGURED_UNVERIFIED"
+      },
+      "evidence": [
+        ".github/workflows/ci.yml",
+        "docs/compatibility/node-pi-matrix.md"
+      ]
+    }
+  ],
+  "matrixDigest": "sha256:8153d80fe216dae9d00508580429a43dc1465f40cda3b507c3598880d2e7e3a5"
+}
