@@ -1,6 +1,6 @@
 # only-my-pi status
 
-Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-21** · Merged
+Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-22** · Merged
 to `main`: **2026-08-17** · Pi **0.84.1** · Node **25.8.0** · macOS
 `darwin-arm64`
 
@@ -46,8 +46,9 @@ The approved semantic split is:
   with no separate scheduler or permission owner.
 
 S5 deterministic release governance, the protected-evidence importer, the
-S5-A Alpha capture producer, and the separate S5-B background-resume producer
-are now implemented on this branch. The versioned
+S5-A Alpha capture producer, the separate S5-B background-resume producer, and
+the S5-C protected guarded-writer producer are now implemented on this branch.
+The versioned
 compatibility matrix, cumulative promotion policy, `release-gates-v2`
 manifest, protected-evidence and one-time authorization schemas, and Ed25519
 trust policy are strict, digest-bound contracts. The producer composes the
@@ -67,6 +68,16 @@ upstream artifacts allow restart recovery without writing into the source or
 fixture workspace. The final record requires two authoritative terminals plus
 parent-session-reload and backend-rebind proof digests and stores no session,
 backend, output, credential, or host-path values.
+S5-C adds a third, independently authorized path for exactly one canonical
+`omp-implementer` in a synthetic Git repository and an upstream-managed
+worktree. The ordinary compiler still rejects the backend's `DEGRADED`
+worktree capability; only the protected fixture path can opt into the recorded
+`protected-degraded-probe-v1` admission. After an authoritative child terminal,
+the parent ignores child path/patch assertions and independently verifies the
+base commit, exact staged file claim, absence of untracked and unstaged changes,
+regular-file modes, bounded patch, `git diff --check`, and fixture marker. The
+result is a handoff-only WriterHandoff and digest-only evidence; there is no
+commit, merge, apply, push, or automatic integration.
 Token/cost ceilings are signed reconciliation gates rather than a verified
 mid-child billing circuit breaker. The checked-in
 default remains inert: its trust policy has no signer and no live evidence has
@@ -140,8 +151,8 @@ made no Provider/model request, dispatched no child, read no credential, made
 no global install, and did not read or mutate the real Pi home.
 All planned orchestration contracts plus the evaluation-corpus, durable
 run-control, compatibility, promotion, protected-evidence, and evidence-trust
-contracts are now registered in the strict catalog. The catalog validates 38
-kinds and 73 non-vacuous production documents, with positive,
+contracts are now registered in the strict catalog. The catalog validates 40
+kinds and 75 non-vacuous production documents, with positive,
 unknown-field/version, and
 targeted semantic negatives. Public Workflow/Swarm routing now converges on
 the v2 facade. Approval fails closed without a live evidence provider,
@@ -155,8 +166,11 @@ proof is non-authoritative and makes the run `orphaned`, never a forged
 `timed-out` terminal claim. Child output is depth/node/byte bounded before
 cloning or serialization. Mutating admission additionally requires an executor
 that explicitly advertises audited path enforcement; the current
-`pi-subagents` v1 wire does not itself prove a per-path allowlist, so this live
-writer seam remains unavailable rather than being inferred from a worktree.
+`pi-subagents` v1 wire does not itself prove a per-path allowlist, so the
+general live writer seam remains unavailable rather than being inferred from a
+worktree. S5-C does not widen that claim: it is a separately authorized
+synthetic-fixture evidence producer whose parent validates the staged handoff
+after execution.
 The immutable Plan Store now persists the exact run-ID-to-WorkflowPlan binding;
 fresh coordinators can re-project status, publish cross-process cancel intent,
 and resume read-only/recoverable runs after restart without persisting raw
@@ -166,39 +180,44 @@ The digest-bound no-model receipt is
 [`../contracts/subagents/pi-subagents-live-no-model-evidence.json`](../contracts/subagents/pi-subagents-live-no-model-evidence.json).
 It proves startup, public RPC compatibility, and tool ownership only; live child
 terminal/cancellation, live BatchSwarm or SwarmGoal dispatch, live background
-resume, metering, managed worktrees, writer integration, Provider behavior,
-and promotion-specific live
+resume, metering, managed worktrees, guarded writer execution, Provider
+behavior, and promotion-specific live
 evidence are still deliberately untested. S5-A now provides a production
 capture path for the three Alpha read-only classes, but deterministic tests of
 that path are not live evidence. Its child `cwd` is an isolated synthetic
 fixture, not this repository. S5-B likewise provides the production capture
-path for `background-resume`, but no Provider-backed run has occurred;
-guarded writer integration remains later S5 work.
+path for `background-resume`, but no Provider-backed run has occurred. S5-C
+provides the protected guarded-writer producer, but no Provider-backed writer
+run has occurred. None of these producer implementations is itself protected
+live evidence.
 Historical M5 receipts must not be described as successor evidence.
 
 Current branch evidence for this Preview source slice and S5 deterministic
 foundation:
 
-- `npm test`: **558/558** pass;
-- `npm run test:subagents`: **177/177** pass;
-- `npm run test:contract`: **129/129** pass;
+- `npm test`: **563/563** pass;
+- `npm run test:subagents`: **182/182** pass;
+- `npm run test:contract`: **134/134** pass;
 - `npm run test:integration`: **182/182** pass;
-- `npm run schema:check`: **74 production documents / 39 schema kinds / 0 findings**;
-- `npm run pack:check`: **276 allowlisted files**, with no tests, receipts, or
+- `npm run schema:check`: **75 production documents / 40 schema kinds / 0 findings**;
+- `npm run pack:check`: **284 allowlisted files**, with no tests, receipts, or
   Codex Goal in the tarball;
-- `npm run lint`: **686 files / 0 findings**;
-- `npm run secret:scan`: **686 tracked files + 276 packed files / 0 findings**;
-- `npm run test:e2e`: fresh scripts-disabled tarball install, bootstrap,
-  rollback, and installed-package topology doctor pass;
+- `npm run lint`: **711 files / 0 findings**;
+- `npm run secret:scan`: **711 tracked files + 284 packed files / 0 findings**;
+- `npm run test:e2e`: fresh scripts-disabled offline tarball install, packaged
+  topology doctor, zero-write plan, bootstrap, idempotent second apply,
+  rollback, and final `NOT_INSTALLED` status pass. The verification used a
+  temporary credential-isolated cache warmed from the exact lockfile and
+  moved that temporary root to Trash after completion;
 - `npm run doctor`, all six Profile doctors, Mode/Agent/Workflow/Swarm doctors,
   BatchSwarm, SwarmGoal, and UltraRun doctors, `npm run typecheck`, and the
   deterministic agent/profile generators: pass.
   Static doctor retains only the two explicit inactive-candidate warnings.
 
 These are source-tree plus bounded no-model compatibility gates. The S5
-deterministic runner, protected importer, S5-A capture/signing path, and S5-B
-two-process background-resume path are wired, but a clean-source receipt is
-generated only after the source commit.
+deterministic runner, protected importer, S5-A capture/signing path, S5-B
+two-process background-resume path, and S5-C guarded-writer path are wired, but
+a clean-source receipt is generated only after the source commit.
 `npm run plan:subagents-live-evidence` currently reports
 `CONFIGURED_UNAVAILABLE`, with Provider/child/signer all `NOT_STARTED`, because
 the source tree is under development, the source-pinned trust policy remains
@@ -206,6 +225,9 @@ the source tree is under development, the source-pinned trust policy remains
 `declaredEndpointHosts` are auditable metadata, not OS network enforcement.
 `npm run plan:subagents-background-resume` is independently inert for the same
 trust/authorization reasons; it cannot reuse the S5-A authorization.
+`npm run plan:subagents-guarded-writer` is independently inert and additionally
+requires its exact single-writer/path/gate authorization; it cannot reuse
+either earlier authorization.
 Promotion closure therefore remains Preview-only until protected
 Alpha/Beta/Stable evidence is explicitly authorized, captured, signed,
 reviewed, and imported.

@@ -36,6 +36,14 @@ The ownership boundary remains:
   a one-time bounded authorization, an empty disposable Pi root and synthetic
   fixture workspace, a canonical drift-checked `omp-reviewer`, an external
   digest-only signer, every explicit path, and `--yes`.
+- `subagents-background-resume-authorization-v1` and the
+  [S5-B producer](subagents-s5-background-resume.md) separately bind the
+  two-parent-process persisted-session and public-resume scenario.
+- `subagents-guarded-writer-authorization-v1` and the
+  [S5-C producer](subagents-s5-guarded-writer.md) bind exactly one canonical
+  writer, one synthetic repository/base commit, one managed worktree, one exact
+  file claim, parent-side Git verification and fixed gates. The output is a
+  handoff only; automatic integration is forbidden.
 - `verification/release-gates-v2.json` digest-pins every v1 gate and adds the
   fixed S5 deterministic/protected gate set. Command, argv, environment,
   timeout, channel, and protected execution semantics are code-validated;
@@ -47,6 +55,8 @@ The ownership boundary remains:
 npm run verify:subagents                         # inspect only; no subprocesses
 npm run verify:subagents:run                     # execute Preview deterministic gates
 npm run plan:subagents-live-evidence             # inspect Alpha capture readiness
+npm run plan:subagents-background-resume         # inspect Beta resume readiness
+npm run plan:subagents-guarded-writer             # inspect Beta writer readiness
 node scripts/subagents-release-gates.mjs --run \
   --promotion alpha \
   --source-commit <source-commit> \
@@ -112,7 +122,9 @@ execution, model quality, cancellation, background resume, or writer safety.
 
 No live gate is promoted by inference. The importer, authorization/capture
 schemas, digest-only signer boundary, Pi Alpha scenario driver, signature
-verification, direct-child Git boundary, and background/resume gate now exist.
-The checked-in trust policy still has no signer, however, and no protected live
-evidence has been produced. The current release claim therefore remains
-Preview.
+verification, direct-child Git boundary, background/resume producer, and
+guarded-writer producer now exist. The writer producer does not trust the child
+patch or path report: it recomputes the staged diff and fixed gates in the
+preserved worktree and emits a handoff without integration. The checked-in
+trust policy still has no signer, however, and no protected live evidence has
+been produced. The current release claim therefore remains Preview.

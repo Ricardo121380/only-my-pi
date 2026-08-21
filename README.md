@@ -39,7 +39,7 @@ scripts/      Repository checks and package governance tooling
 
 ## Current research
 
-- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; S0–S4 Preview source plus S5-A/S5-B producers implemented)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
+- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; S0–S4 Preview source plus S5-A/S5-B/S5-C producers implemented)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
 - [Codex successor development Goal for S0–S5](codex/goals/develop-only-my-pi-subagents-ultrarun.md)
 - [Historical Harness MVP development plan (M0–M7, complete)](docs/plans/2026-08-16-only-my-pi-development-plan.md)
 - [Historical Codex Harness MVP Goal](codex/goals/develop-only-my-pi.md)
@@ -64,6 +64,7 @@ scripts/      Repository checks and package governance tooling
 - [Subagents S5 release boundary](docs/architecture/subagents-s5-release.md)
 - [Subagents S5-A protected live capture](docs/architecture/subagents-s5-live-capture.md)
 - [Subagents S5-B protected background resume](docs/architecture/subagents-s5-background-resume.md)
+- [Subagents S5-C protected guarded writer](docs/architecture/subagents-s5-guarded-writer.md)
 - [Quickstart](docs/quickstart.md)
 - [Modes](docs/modes.md)
 - [AgentSwarm](docs/agent-swarm.md)
@@ -161,8 +162,12 @@ the run. S4 now adds a Pi-native SwarmGoal controller, UltraRun router,
 immutable artifact store, and writer handoff contract. These are logical layers
 over the same RunCoordinator and sole `pi-subagents` backend; they do not
 connect Pi to Kimi Code or add a second scheduler. The protected real-child
-BatchSwarm check, dynamic-goal live execution, and guarded writer integration
-were not authorized and remain `NOT_RUN_BY_POLICY`/`UNAVAILABLE`.
+BatchSwarm check and dynamic-goal live execution were not authorized and remain
+`NOT_RUN_BY_POLICY`. General live writer admission remains `UNAVAILABLE`
+because the public backend cannot prove a per-path allowlist. S5-C now provides
+one separately authorized, synthetic-fixture producer for the protected
+guarded-writer evidence class; it uses parent-side Git verification and never
+turns that narrow evidence path into a general writer capability.
 
 S5 now adds a versioned compatibility matrix, cumulative promotion policy, and
 digest-pinned `release-gates-v2` runner. `npm run verify:subagents` is an
@@ -196,7 +201,22 @@ record retains only proof digests and cumulative metering; parent/child session
 IDs, host paths, backend IDs, prompts, and outputs remain in the disposable
 root. This path is also `CONFIGURED_UNAVAILABLE` by default and has not made a
 live Provider request. It supplies producer code for a Beta prerequisite, not
-Beta evidence or promotion; guarded writer integration remains unavailable.
+Beta evidence or promotion.
+
+S5-C now adds the separately authorized
+`npm run plan:subagents-guarded-writer` producer. It runs exactly one canonical
+`omp-implementer` in a synthetic Git repository and an upstream-managed
+worktree, then treats the child result and handoff manifest as untrusted. The
+parent independently verifies the full base commit, exact staged path claim,
+absence of untracked or unstaged changes, regular-file modes, bounded patch,
+`git diff --check`, and a fixed fixture-content gate. It creates a
+handoff-only WriterHandoff and signs only low-sensitivity proof digests; it
+never commits, merges, applies, pushes, or modifies the source checkout. The
+ordinary backend compiler still rejects its `DEGRADED` worktree capability;
+only this protected fixture path may opt into the recorded
+`protected-degraded-probe-v1` admission. The checked-in plan is inert and no
+Provider-backed writer run, protected evidence import, or Beta promotion has
+occurred.
 
 `omp workflow|swarm run` and `resume` accept an optional bounded absolute JSON
 `--input-file`; it is read with `O_NOFOLLOW`, hashed into the execution

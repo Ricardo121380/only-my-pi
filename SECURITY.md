@@ -217,9 +217,32 @@ proof, and passing fixed gates. The pinned v1 backend cannot prove per-path
 enforcement; that live seam therefore remains `UNAVAILABLE`. A worktree is not
 an OS sandbox or path allowlist.
 
+S5-C adds a narrower protected evidence producer without changing that general
+capability claim. Its own authorization fixes one `omp-implementer`, one
+synthetic repository and base commit, one worktree, one exact path claim and two
+fixed gates. Ordinary compilation still rejects the backend's `DEGRADED`
+worktree capability; only this evidence path may record
+`protected-degraded-probe-v1`. The parent treats the child terminal, handoff
+manifest, changed paths and patch as untrusted. It reopens bounded non-symlink
+artifacts, verifies the upstream worktree identity, rejects untracked and
+unstaged changes, recomputes the staged path set and binary patch, rejects
+symlink/submodule modes, and runs `git diff --check` plus the fixed content gate.
+The result is review-only; there is no automatic commit, merge, apply, push or
+source-checkout mutation.
+
+This proves only a staged handoff in a disposable fixture. The Pi parent,
+extension, child and Bash process still run with the caller's OS/network
+authority and could attempt side effects outside that worktree. The outer CLI
+rechecks the only-my-pi source tree, but it is not a whole-machine audit. Use a
+container/VM or equivalent outer boundary for an untrusted Provider, plugin or
+child. Preserved worktrees and private session artifacts stay in the
+operator-owned disposable root for review and are never imported as evidence.
+
 The checked-in S4 evidence uses injected planners/executors and temporary roots.
-No live SwarmGoal, UltraRun child, Provider request, or writer mutation has been
-run. Those gates remain `NOT_RUN_BY_POLICY` until S5 and separate authorization.
+No live SwarmGoal, UltraRun child, Provider request, or guarded writer mutation
+has been run. S5-C supplies the producer code, not protected evidence or a Beta
+claim; those gates remain `NOT_RUN_BY_POLICY` until separate authorization and
+an actual signed capture/import.
 
 ## Reporting a problem
 

@@ -301,6 +301,7 @@ export class PiSubagentsRpcV1Backend {
     mode = "background",
     compiled,
     allowWorktree = false,
+    allowProtectedWorktreeProbe = false,
     allowModelOverlay = false,
     signal,
   } = {}) {
@@ -337,6 +338,7 @@ export class PiSubagentsRpcV1Backend {
       assignment,
       capabilityMatrix: this.capabilityMatrix,
       allowWorktree,
+      allowProtectedWorktreeProbe,
       allowModelOverlay,
     });
     const request = compiled ?? expectedRequest;

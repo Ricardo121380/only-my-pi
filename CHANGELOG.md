@@ -53,6 +53,13 @@ session. Third-party packages and Labs remain opt-in and require review.
   private mode-0600 handoff, requires a new correlated resume binding and two
   authoritative terminals, and stages only digest-only session-reload,
   backend-rebind, terminal, and metering proofs; no live run has been performed;
+- an independently authorized S5-C `guarded-writer-integration` producer that
+  constrains one canonical `omp-implementer` to a synthetic Git repository,
+  full base commit, upstream-managed worktree and exact file claim; keeps the
+  ordinary degraded-worktree path fail-closed; recomputes the staged diff,
+  modes and fixed gates in the parent; rejects untracked/unstaged changes; and
+  produces only a reviewable WriterHandoff plus digest evidence without commit,
+  merge, apply, push or automatic integration; no live run has been performed;
 - compatibility/provenance contracts plus listener/timer resource-leak soaks,
   with Preview/Alpha/Beta/Stable claims kept separate from `NOT_RUN_BY_POLICY`
   live evidence;

@@ -201,6 +201,12 @@
       "fixtureDir": "verification/fixtures/contracts/subagents-background-resume-authorization"
     },
     {
+      "kind": "subagentsGuardedWriterAuthorization",
+      "schemaPath": "schemas/subagents-guarded-writer-authorization-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/guarded-writer-authorization.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-guarded-writer-authorization"
+    },
+    {
       "kind": "swarmRecipe",
       "schemaPath": "schemas/swarm-recipe-v1.schema.json",
       "productionGlobs": ["swarm/recipes/*.json"],

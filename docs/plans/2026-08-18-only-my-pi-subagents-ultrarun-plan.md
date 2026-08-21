@@ -1,7 +1,7 @@
 # only-my-pi：统一 Subagent、Workflow 与 UltraRun 后续开发计划
 
 > 版本：2026-08-18
-> 状态：已批准的 successor implementation baseline；S0–S4 Preview source 已实现；S5 deterministic gates、source-pinned protected-evidence importer 与 S5-A Alpha capture producer 已实现，但 checked-in trust 仍无 signer、未运行真实 Provider/live evidence，promotion 仍为 Preview
+> 状态：已批准的 successor implementation baseline；S0–S4 Preview source 已实现；S5 deterministic gates、source-pinned protected-evidence importer 与 S5-A/S5-B/S5-C protected producers 已实现，但 checked-in trust 仍无 signer、未运行真实 Provider/live evidence，promotion 仍为 Preview
 > 前置基线：M0–M7 Harness MVP 已按 [`2026-08-16-only-my-pi-development-plan.md`](2026-08-16-only-my-pi-development-plan.md) 完成并合入 `main`
 > 配套 Codex Goal：[`../../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../../codex/goals/develop-only-my-pi-subagents-ultrarun.md)
 > 产品边界：纯 Pi 原生；参考 Kimi/Claude/DeepSeek 等源码与公开合同，不接入 Kimi runtime，不重写 Pi agent loop、Provider 或 session engine
@@ -727,7 +727,7 @@ omp ultra plan|run|pause|resume|status|cancel
 
 ### S5：安全、fault/live eval、兼容迁移与发布闭环
 
-当前增量状态：**S5-A/S5-B producers implemented, live run not authorized**。
+当前增量状态：**S5-A/S5-B/S5-C producers implemented, live run not authorized**。
 `subagents-live-evidence-authorization-v1`、隔离 Pi 场景驱动、同一
 `pi-subagents` 后端上的 Agent terminal/cancel 与 two-item BatchSwarm、低敏
 capture、外部 digest-only 签名和 review staging 已实现并由确定性故障测试
@@ -737,14 +737,25 @@ checked-in resource 做逐字节 drift check，upstream artifact scope 固定为
 temp。三个场景共享同一 child/token/cost/time/output 总账，source、config、
 staging roots 必须两两不重叠，并在签名后、staging 前重新验证 clean HEAD。
 该增量只覆盖 Alpha 的三个 read-only protected evidence classes；
-真实 Provider-backed background/resume evidence、guarded writer/integration、
-证据导入和 promotion receipt 仍属于后续 S5 closure，不得由当前测试推断为完成。
+真实 Provider-backed evidence、证据导入和 promotion receipt 仍属于后续
+S5 closure，不得由当前测试推断为完成。
 
 S5-B 现已补上 `background-resume` producer：独立授权固定两个 Pi 父进程、
 同一隔离持久父 session、session-scoped upstream artifacts、私有 digest-bound
 handoff、第二个 correlated resume binding 和两个 authoritative terminals。
-实现/故障测试不是 live evidence；真实 Provider 运行仍未授权，
-`guarded-writer-integration` 仍未实现，因此不得推断 Beta 完成。
+实现/故障测试不是 live evidence；真实 Provider 运行仍未授权。
+
+S5-C 现已补上 `guarded-writer-integration` producer：它使用独立的一次性
+授权，在合成 disposable Git repository 内固定一个 `omp-implementer`、一个
+managed worktree、一个 full base commit 和一个 exact file claim。普通 adapter
+仍拒绝上游 `DEGRADED` worktree capability；只有该 protected fixture 路径可
+显式记录 `protected-degraded-probe-v1` 并继续。authoritative terminal 之后，
+父进程从公开 handoff 重新验证 base/branch/worktree，拒绝 untracked/unstaged
+change，重新计算 exact staged diff，拒绝 symlink/submodule，运行固定
+`git diff --check` 与 fixture-content gate，最后只形成 handoff 和低敏 digest
+evidence；不会 commit、merge、apply、push 或自动 integration。实现和临时 Git
+测试仍不是 live evidence；真实 Provider-backed writer 未获授权，因此不得
+推断 Beta 完成或把 worktree 宣称为 OS sandbox/path allowlist。
 
 任务：
 

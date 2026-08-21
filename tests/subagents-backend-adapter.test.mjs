@@ -262,6 +262,15 @@ test("compiler rejects unenforceable tool narrowing and unproven writer worktree
     }),
     (error) => error instanceof SubagentsError && error.code === "BACKEND_WORKTREE_DEGRADED",
   );
+  const protectedWriter = compileAgentAssignmentToPiSpawnRequest({
+    agentSpec: writerSpec,
+    assignment: writerAssignment,
+    capabilityMatrix: createPiSubagentsRpcV1CapabilityMatrix(),
+    allowWorktree: true,
+    allowProtectedWorktreeProbe: true,
+  });
+  assert.match(protectedWriter.params.workflowScript, /"worktree":true/u);
+  assert.equal(protectedWriter.source.worktreeAdmission, "protected-degraded-probe-v1");
 });
 
 test("background launch maps only structured details into a stable handle", async () => {

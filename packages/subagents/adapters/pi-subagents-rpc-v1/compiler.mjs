@@ -42,6 +42,7 @@ export function compileAgentAssignmentToPiWorkflowScript({
   assignment,
   capabilityMatrix,
   allowWorktree = false,
+  allowProtectedWorktreeProbe = false,
   allowModelOverlay = false,
 } = {}) {
   assertInputs(agentSpec, assignment);
@@ -60,7 +61,11 @@ export function compileAgentAssignmentToPiWorkflowScript({
   }
   if (assignment.ownership.workspace === "managed-worktree") {
     if (!allowWorktree) fail("worktree execution requires explicit compiler admission", "WORKTREE_ADMISSION_REQUIRED");
-    if (capabilityMatrix) requireBackendCapability(capabilityMatrix, "worktree");
+    if (capabilityMatrix) {
+      requireBackendCapability(capabilityMatrix, "worktree", {
+        allowDegraded: allowProtectedWorktreeProbe === true,
+      });
+    }
     invocation.worktree = true;
   }
   if (agentSpec.model.id !== undefined || agentSpec.model.provider !== undefined) {
@@ -91,6 +96,7 @@ export function compileAgentAssignmentToPiWorkflowScript({
 
 export function compileAgentAssignmentToPiSpawnRequest(input = {}) {
   const compiled = compileAgentAssignmentToPiWorkflowScript(input);
+  const managedWorktree = input.assignment?.ownership?.workspace === "managed-worktree";
   return immutable({
     formatVersion: 1,
     kind: "pi-subagents-rpc-v1-spawn-request",
@@ -99,6 +105,9 @@ export function compileAgentAssignmentToPiSpawnRequest(input = {}) {
       extension: "only-my-pi",
       kind: "schema-validated-workflow-compiler",
       schemaValidated: true,
+      worktreeAdmission: managedWorktree
+        ? (input.allowProtectedWorktreeProbe === true ? "protected-degraded-probe-v1" : "capability-supported")
+        : "not-requested",
     },
     params: { workflowScript: compiled.workflowScript, async: true },
     assignmentId: compiled.assignmentId,
@@ -115,6 +124,7 @@ export function assertPiSubagentsRpcV1CompiledSpawn(value) {
     || value?.source?.extension !== "only-my-pi"
     || value?.source?.kind !== "schema-validated-workflow-compiler"
     || value?.source?.schemaValidated !== true
+    || !["not-requested", "capability-supported", "protected-degraded-probe-v1"].includes(value?.source?.worktreeAdmission)
     || value?.params?.async !== true
     || typeof value?.params?.workflowScript !== "string"
     || value.params.workflowScript.trim().length === 0

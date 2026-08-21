@@ -156,7 +156,7 @@ export function validateProtectedLiveCaptureRecord(record, {
   });
   if (!checkedAuthorization.evidenceIds.includes(record.id)) fail("capture id was not authorized", "CAPTURE_ID_UNAUTHORIZED");
   const requirement = PROTECTED_EVIDENCE_REQUIREMENTS[record.id];
-  if (!requirement || requirement.writerAuthorized) fail("capture id is not a read-only live evidence class", "CAPTURE_ID_UNSUPPORTED");
+  if (!requirement) fail("capture id is not a supported live evidence class", "CAPTURE_ID_UNSUPPORTED");
   for (const [field, expected] of [
     ["authorizationDigest", checkedAuthorization.authorizationDigest],
     ["sourceCommit", expectedSourceCommit],
@@ -244,7 +244,9 @@ export async function buildProtectedLiveEvidenceDocument(record, context, signer
     authorization: {
       providerRequests: "AUTHORIZED",
       liveChildDispatch: "AUTHORIZED",
-      liveWriter: "NOT_RUN_BY_POLICY",
+      liveWriter: PROTECTED_EVIDENCE_REQUIREMENTS[record.id]?.writerAuthorized
+        ? "AUTHORIZED"
+        : "NOT_RUN_BY_POLICY",
       realPiHome: "NOT_TOUCHED",
       disposableRoot: true,
     },

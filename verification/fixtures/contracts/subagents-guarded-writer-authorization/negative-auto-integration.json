@@ -1,0 +1,20 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-guarded-writer-authorization-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "operator-template",
+  "authorizationId": "fixture-guarded-writer-authorization",
+  "sourceCommit": "1111111111111111111111111111111111111111",
+  "matrixDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "policyDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "trustPolicyDigest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+  "compatibilityRowId": "darwin-arm64-node-25.8.0",
+  "evidenceIds": ["guarded-writer-integration"],
+  "provider": { "id": "fixture-provider", "model": "fixture-model", "credentialEnvironment": ["FIXTURE_API_KEY"], "declaredEndpointHosts": ["api.example.com"] },
+  "limits": { "maxChildren": 1, "maxConcurrency": 1, "maxWallTimeMs": 60000, "maxOutputBytes": 65536, "maxTokens": 2000, "maxCostUsd": 1 },
+  "workspace": { "mode": "disposable-managed-worktree", "realPiHome": "deny", "mutation": "guarded-exact-claims", "web": "deny", "mcp": "deny", "projectTrust": "deny", "automaticIntegration": true, "parentDiffVerification": "required" },
+  "writer": { "agentId": "implementer", "upstreamAgentId": "omp-implementer", "allowedPaths": ["fixture/allowed.txt"], "fileClaims": ["fixture/allowed.txt"], "baseCommitPolicy": "fixture-head", "requiredGateIds": ["diff-check", "fixture-content"], "expectedMarker": "ONLY_MY_PI_GUARDED_WRITER_PASS" },
+  "signer": { "signerId": "fixture-signer", "publicKeyFingerprint": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "protocol": "digest-stdin-signature-stdout-v1" },
+  "approvedAt": "2026-08-22T00:00:00.000Z",
+  "expiresAt": "2026-08-22T01:00:00.000Z",
+  "authorizationDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}
