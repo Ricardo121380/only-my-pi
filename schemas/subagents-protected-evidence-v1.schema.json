@@ -142,6 +142,7 @@
         "kind": {
           "enum": [
             "approval-receipt",
+            "backend-rebind",
             "background-spawn",
             "base-commit",
             "batch-plan",
@@ -150,11 +151,13 @@
             "contract-shape",
             "input-order-aggregation",
             "parent-diff-verification",
+            "parent-session-reload",
             "process-terminal",
             "process-terminal-set",
             "resume-request",
             "task-assignment",
             "terminal-receipt",
+            "usage-metering",
             "worktree-receipt"
           ]
         },

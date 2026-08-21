@@ -143,6 +143,25 @@ Provider/account budget or outer network control when spend must be prevented
 rather than detected. The runner does enforce child shape before dispatch and
 terminates the isolated Pi process group on its wall-clock deadline.
 
+S5-B uses a separate authorization and command for `background-resume`. The
+same S5-A authorization cannot be widened to cover it. Two distinct Pi parent
+processes must use one explicit session ID and contained session directory;
+`--no-session`, project-scoped artifacts, an unrelated second child, or a
+repeated prompt cannot satisfy the evidence contract. The first process must
+finish with an authoritative terminal and exit before the second process reads
+the same persisted parent session and calls the public `resume` RPC. Resume
+must create a different backend run and binding linked to the original.
+
+The cross-process handoff is private operational state under the disposable Pi
+root. It is mode `0600`, size-bounded, context/digest-bound, and named by the
+phase-one receipt before the phase-two request is created. It may contain
+session and backend correlation identifiers and therefore must never be
+committed, staged, synchronized, or copied into a diagnostic report. The final
+evidence stores only proof digests and cumulative metering. This protects the
+repository evidence boundary; it is not protection against an attacker with
+the same OS-user authority, and it does not turn Pi sessions or extensions into
+an OS sandbox.
+
 ## BatchSwarm boundary
 
 BatchSwarm is logical orchestration, not a second child runtime or sandbox. It

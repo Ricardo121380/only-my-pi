@@ -80,7 +80,7 @@ function readRequest() {
   return Object.freeze({ ...request, repositoryRoot });
 }
 
-function createPiEventTransport(pi, { timeoutMs }) {
+export function createPiEventTransport(pi, { timeoutMs }) {
   const subscriptions = new Set();
   return {
     request(envelope) {
@@ -180,7 +180,7 @@ function boundedResultBytes(value, maximumBytes) {
   return bytes;
 }
 
-function terminalUsage(receipt, maximumOutputBytes) {
+export function terminalUsage(receipt, maximumOutputBytes) {
   const completion = object(receipt?.completion) ? receipt.completion : {};
   const tokens = completion.totalTokens?.total
     ?? completion.totalCost?.totalTokens
@@ -230,7 +230,7 @@ function requireMeteredBackend(backend, maximumOutputBytes) {
   };
 }
 
-async function resolvedReviewer(repositoryRoot, registry) {
+export async function resolvedReviewer(repositoryRoot, registry) {
   const resolvedRegistry = registry ?? (await import("../batch-swarm/registry.mjs")).createBatchSwarmRegistry({ rootDir: repositoryRoot });
   return {
     registry: resolvedRegistry,

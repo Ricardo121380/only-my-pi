@@ -195,6 +195,12 @@
       "fixtureDir": "verification/fixtures/contracts/subagents-live-evidence-authorization"
     },
     {
+      "kind": "subagentsBackgroundResumeAuthorization",
+      "schemaPath": "schemas/subagents-background-resume-authorization-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/background-resume-authorization.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-background-resume-authorization"
+    },
+    {
       "kind": "swarmRecipe",
       "schemaPath": "schemas/swarm-recipe-v1.schema.json",
       "productionGlobs": ["swarm/recipes/*.json"],

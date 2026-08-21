@@ -39,7 +39,7 @@ scripts/      Repository checks and package governance tooling
 
 ## Current research
 
-- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; S0–S4 Preview source implemented)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
+- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; S0–S4 Preview source plus S5-A/S5-B producers implemented)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
 - [Codex successor development Goal for S0–S5](codex/goals/develop-only-my-pi-subagents-ultrarun.md)
 - [Historical Harness MVP development plan (M0–M7, complete)](docs/plans/2026-08-16-only-my-pi-development-plan.md)
 - [Historical Codex Harness MVP Goal](codex/goals/develop-only-my-pi.md)
@@ -63,6 +63,7 @@ scripts/      Repository checks and package governance tooling
 - [Theme and status layer](docs/architecture/theme-status.md)
 - [Subagents S5 release boundary](docs/architecture/subagents-s5-release.md)
 - [Subagents S5-A protected live capture](docs/architecture/subagents-s5-live-capture.md)
+- [Subagents S5-B protected background resume](docs/architecture/subagents-s5-background-resume.md)
 - [Quickstart](docs/quickstart.md)
 - [Modes](docs/modes.md)
 - [AgentSwarm](docs/agent-swarm.md)
@@ -185,6 +186,17 @@ is rechecked after signing before any evidence is staged.
 The checked-in plan remains
 `CONFIGURED_UNAVAILABLE`; no real Provider/child/signer run has been executed,
 and the declared endpoint hosts are not an OS-enforced network allowlist.
+
+S5-B now adds the separately authorized
+`npm run plan:subagents-background-resume` producer. It uses two distinct Pi
+parent processes, one isolated persisted parent session, session-scoped
+`pi-subagents` artifacts, a mode-0600 digest-bound handoff, and a second
+correlated backend binding created through the public `resume` RPC. The final
+record retains only proof digests and cumulative metering; parent/child session
+IDs, host paths, backend IDs, prompts, and outputs remain in the disposable
+root. This path is also `CONFIGURED_UNAVAILABLE` by default and has not made a
+live Provider request. It supplies producer code for a Beta prerequisite, not
+Beta evidence or promotion; guarded writer integration remains unavailable.
 
 `omp workflow|swarm run` and `resume` accept an optional bounded absolute JSON
 `--input-file`; it is read with `O_NOFOLLOW`, hashed into the execution

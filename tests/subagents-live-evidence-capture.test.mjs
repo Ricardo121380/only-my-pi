@@ -617,6 +617,33 @@ test("Pi capture extension composes Agent, cancel, and 2-item BatchSwarm through
     extensionBackend({ metering: false }),
     { clock: () => Date.parse(observedAt) },
   ), { code: "CAPTURE_USAGE_METERING_UNAVAILABLE" });
+
+  const signedActualRecords = await captureProtectedLiveEvidenceSet({
+    authorization: values.authorization,
+    matrix: values.matrix,
+    policy: values.policy,
+    trustPolicy: values.trustPolicy,
+    expectedSourceCommit: sourceCommit,
+    now: Date.parse(observedAt),
+    scenarioRunner: async ({ id, authorization, expectedSourceCommit, compatibilityRowId, environment, scenarioLimits }) => (
+      executeProtectedLiveEvidenceScenario({
+        id,
+        authorizationDigest: authorization.authorizationDigest,
+        sourceCommit: expectedSourceCommit,
+        matrixDigest: values.matrix.matrixDigest,
+        policyDigest: values.policy.policyDigest,
+        trustPolicyDigest: values.trustPolicy.policyDigest,
+        compatibilityRowId,
+        environment,
+        limits: scenarioLimits,
+        repositoryRoot: rootDir,
+      }, extensionBackend(), { clock: () => Date.parse(observedAt) })
+    ),
+    signer: async ({ digest }) => crypto.sign(null, Buffer.from(digest), values.privateKey).toString("base64"),
+  });
+  for (const id of evidenceIds) {
+    assert.equal(signedActualRecords.evidence[id].proofs.some((proof) => proof.kind === "usage-metering"), true);
+  }
 });
 
 test("live evidence CLI defaults to a zero-execution plan and run parsing is fail-closed", async () => {

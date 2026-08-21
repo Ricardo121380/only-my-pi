@@ -47,6 +47,12 @@ session. Third-party packages and Labs remain opt-in and require review.
   over the sole `pi-subagents` backend, digest-only external signing, and
   review-only evidence staging; no real live run has been performed and
   declared endpoint hosts are not an OS network policy;
+- an independently authorized S5-B `background-resume` producer that runs two
+  distinct Pi parent processes over one isolated persisted parent session,
+  keeps `pi-subagents` artifacts session-scoped, binds restart state through a
+  private mode-0600 handoff, requires a new correlated resume binding and two
+  authoritative terminals, and stages only digest-only session-reload,
+  backend-rebind, terminal, and metering proofs; no live run has been performed;
 - compatibility/provenance contracts plus listener/timer resource-leak soaks,
   with Preview/Alpha/Beta/Stable claims kept separate from `NOT_RUN_BY_POLICY`
   live evidence;

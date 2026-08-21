@@ -25,6 +25,7 @@ import {
   validateProtectedEvidenceTrustPolicy,
 } from "../../packages/subagents/release/protected-evidence.mjs";
 import { validateLiveEvidenceAuthorization } from "../../packages/subagents/release/live-evidence-authorization.mjs";
+import { validateBackgroundResumeAuthorization } from "../../packages/subagents/release/background-resume-authorization.mjs";
 import { sha256 as stateSha256, withoutKey } from "../../packages/subagents/state/codec.mjs";
 
 const DEFAULT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -754,6 +755,12 @@ function semanticErrors(kind, document, { sourcePath, rootDir, index, documentsB
   } else if (kind === "subagentsLiveEvidenceAuthorization") {
     try {
       validateLiveEvidenceAuthorization(document, { allowTemplate: true });
+    } catch (cause) {
+      errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
+    }
+  } else if (kind === "subagentsBackgroundResumeAuthorization") {
+    try {
+      validateBackgroundResumeAuthorization(document, { allowTemplate: true });
     } catch (cause) {
       errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
     }

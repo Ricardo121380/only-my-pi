@@ -12,9 +12,11 @@ required for an Alpha claim:
 - `live-batch-terminal`, with exactly two governed read-only items in the
   initial scenario.
 
-`background-resume` and `guarded-writer-integration` remain later S5 work. The
-authorization schema rejects them in this driver, so an operator cannot turn
-an Alpha capture command into a Beta writer or background-resume run.
+`background-resume` now has a separate S5-B producer and authorization contract;
+`guarded-writer-integration` remains later S5 work. This S5-A authorization
+schema still rejects both IDs, so an operator cannot turn an Alpha capture
+command into a Beta writer or background-resume run. See
+[Subagents S5-B protected background resume](subagents-s5-background-resume.md).
 
 ## Execution path
 

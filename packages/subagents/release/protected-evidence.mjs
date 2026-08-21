@@ -44,9 +44,16 @@ export const PROTECTED_EVIDENCE_REQUIREMENTS = Object.freeze({
   }),
   "background-resume": Object.freeze({
     scope: "backgroundResume",
-    minimumAuthoritativeTerminals: 1,
+    minimumAuthoritativeTerminals: 2,
     minimumBatchItems: 0,
-    requiredProofs: Object.freeze(["background-spawn", "process-terminal", "resume-request", "terminal-receipt"]),
+    requiredProofs: Object.freeze([
+      "backend-rebind",
+      "background-spawn",
+      "parent-session-reload",
+      "process-terminal",
+      "resume-request",
+      "terminal-receipt",
+    ]),
     claims: Object.freeze({ cancelObserved: false, backgroundResume: true, managedWorktree: false, parentDiffVerified: false }),
     writerAuthorized: false,
   }),

@@ -135,6 +135,8 @@ export function validateProtectedLiveCaptureRecord(record, {
   policy,
   trustPolicy,
   expectedSourceCommit,
+  authorizationValidator = validateLiveEvidenceAuthorization,
+  scenarioShapes = SUBAGENTS_LIVE_EVIDENCE_SCENARIO_SHAPES,
 } = {}) {
   const encoded = Buffer.from(JSON.stringify(record));
   if (encoded.byteLength > MAX_CAPTURE_RECORD_BYTES) fail("capture record exceeds 64 KiB", "CAPTURE_RECORD_TOO_LARGE");
@@ -144,7 +146,8 @@ export function validateProtectedLiveCaptureRecord(record, {
     || record.status !== "PASS") {
     fail("capture record has missing or unknown fields", "CAPTURE_RECORD_INVALID");
   }
-  const checkedAuthorization = validateLiveEvidenceAuthorization(authorization, {
+  if (typeof authorizationValidator !== "function") throw new TypeError("authorizationValidator must be a function");
+  const checkedAuthorization = authorizationValidator(authorization, {
     matrix,
     policy,
     trustPolicy,
@@ -190,11 +193,11 @@ export function validateProtectedLiveCaptureRecord(record, {
     || !boundedNumber(record.usage.costUsd)) {
     fail("capture usage is malformed", "CAPTURE_USAGE_INVALID");
   }
-  const expectedShape = SUBAGENTS_LIVE_EVIDENCE_SCENARIO_SHAPES[record.id];
+  const expectedShape = scenarioShapes[record.id];
   if (!expectedShape
     || record.usage.children !== expectedShape.children
     || record.usage.concurrency !== expectedShape.concurrency) {
-    fail("capture child count or concurrency differs from the fixed Alpha scenario", "CAPTURE_SCENARIO_SHAPE_INVALID");
+    fail("capture child count or concurrency differs from the fixed protected scenario", "CAPTURE_SCENARIO_SHAPE_INVALID");
   }
   if (record.usage.children > checkedAuthorization.limits.maxChildren
     || record.usage.concurrency > checkedAuthorization.limits.maxConcurrency
@@ -224,7 +227,7 @@ function normalizeSignature(value) {
   return signature;
 }
 
-async function buildEvidenceDocument(record, context, signer) {
+export async function buildProtectedLiveEvidenceDocument(record, context, signer) {
   const { authorization, matrix, policy, trustPolicy, expectedSourceCommit } = context;
   const provisional = createProtectedEvidenceDocument({
     contractStatus: "protected-live-evidence",
@@ -403,7 +406,7 @@ export async function captureProtectedLiveEvidenceSet({
       fail("capture set exceeded its aggregate authorization", "CAPTURE_BUDGET_EXCEEDED");
     }
     records[id] = record;
-    documents[id] = await buildEvidenceDocument(record, context, signer);
+    documents[id] = await buildProtectedLiveEvidenceDocument(record, context, signer);
   }
   return Object.freeze({
     formatVersion: 1,
