@@ -34,6 +34,10 @@ session. Third-party packages and Labs remain opt-in and require review.
 - S5 release-governance foundation: exact Node/Pi/`pi-subagents` compatibility
   matrix, cumulative promotion policy, digest-pinned `release-gates-v2`, and
   a clean-source deterministic runner that never spawns protected live gates;
+- a source-pinned Ed25519 protected-evidence contract and direct-child Git
+  importer for live Agent terminal/cancel, BatchSwarm, background/resume, and
+  guarded-writer receipts; the default trust policy has no signer and remains
+  fail-closed;
 - compatibility/provenance contracts plus listener/timer resource-leak soaks,
   with Preview/Alpha/Beta/Stable claims kept separate from `NOT_RUN_BY_POLICY`
   live evidence;
@@ -87,8 +91,8 @@ session. Third-party packages and Labs remain opt-in and require review.
 
 ### Security boundary
 
-These unreleased changes remain Preview source evidence. They have no promotion
-receipt and do not prove live child execution, Provider quality, managed
+These unreleased changes remain Preview source evidence. Their receipts are
+Preview-only and do not prove live child execution, Provider quality, managed
 worktrees, live adaptive rate limiting, SwarmGoal, UltraRun, or a production
 BatchSwarm deployment. The BatchSwarm implementation itself is covered by
 offline, injected-backend, crash-recovery, and bounded-scale tests; its protected

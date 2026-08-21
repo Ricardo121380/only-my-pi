@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../../schemas/subagents-protected-evidence-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-example",
+  "id": "live-agent-terminal",
+  "status": "CONTRACT_ONLY",
+  "sourceCommit": "1111111111111111111111111111111111111111",
+  "matrixDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "policyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "compatibilityRowId": "contract-row",
+  "observedAt": "2026-08-20T00:00:00.000Z",
+  "environment": { "node": "25.8.0", "pi": "0.84.1", "backend": "pi-subagents@0.45.2", "platform": "darwin-arm64" },
+  "authorization": { "providerRequests": "NOT_RUN_BY_POLICY", "liveChildDispatch": "NOT_RUN_BY_POLICY", "liveWriter": "NOT_RUN_BY_POLICY", "realPiHome": "NOT_TOUCHED", "disposableRoot": false },
+  "privacy": { "rawOutputStored": false, "hostPathsStored": false, "credentialsStored": false, "sessionIdsStored": false },
+  "claims": { "authoritativeTerminals": 0, "batchItemCount": 0, "cancelObserved": false, "backgroundResume": false, "managedWorktree": false, "parentDiffVerified": false, "autoIntegrated": false },
+  "proofs": [{ "kind": "contract-shape", "digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444" }],
+  "attestation": { "class": "contract-shape-only", "authorizationDigest": "sha256:5555555555555555555555555555555555555555555555555555555555555555", "captureDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666" },
+  "evidenceDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "unexpected": true
+}

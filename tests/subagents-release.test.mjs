@@ -47,7 +47,7 @@ test("Preview can pass deterministic gates while Alpha remains NOT_RUN_BY_POLICY
   assert.ok(alphaFindings.some((entry) => entry.kind === "compatibility-scope" && entry.status === "UNAVAILABLE"));
 });
 
-test("a protected PASS object cannot promote while the compatibility matrix still lacks live proof", () => {
+test("a schema-shaped protected PASS descriptor is rejected before compatibility evaluation", () => {
   const { matrix, policy } = contracts();
   const evidence = Object.fromEntries([
     "live-agent-cancel",
@@ -59,16 +59,13 @@ test("a protected PASS object cannot promote while the compatibility matrix stil
     source: `verification/protected/${id}.json`,
     evidenceDigest: `sha256:${"a".repeat(64)}`,
   }]));
-  const result = evaluateSubagentsPromotion({
+  assert.throws(() => evaluateSubagentsPromotion({
     requested: "alpha",
     matrix,
     policy,
     deterministicGates: previewGates(policy),
     protectedEvidence: evidence,
-  });
-  assert.equal(result.eligible, false);
-  assert.equal(result.achieved, "preview");
-  assert.ok(result.evaluations.find((entry) => entry.channel === "alpha").findings.every((entry) => entry.kind === "compatibility-scope"));
+  }), { code: "EVIDENCE_DESCRIPTOR_FORBIDDEN" });
 });
 
 test("matrix and policy drift, floating PASS versions, and forged live evidence fail closed", () => {

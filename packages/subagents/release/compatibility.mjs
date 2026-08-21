@@ -6,6 +6,7 @@ import Ajv2020 from "ajv/dist/2020.js";
 import semver from "semver";
 
 import { jsonClone, sha256, withoutKey } from "../state/codec.mjs";
+import { loadProtectedEvidenceSet, protectedEvidenceSummary } from "./protected-evidence.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = path.resolve(HERE, "../../..");
@@ -179,8 +180,7 @@ function scopeStatus(matrix, scope) {
 function protectedStatus(value, expectedId) {
   if (value === undefined || value === null) return "NOT_RUN_BY_POLICY";
   if (typeof value !== "object" || Array.isArray(value)) return "INVALID";
-  if (value.id !== expectedId || value.status !== "PASS" || !/^sha256:[a-f0-9]{64}$/u.test(value.evidenceDigest ?? "")) return "INVALID";
-  if (typeof value.source !== "string" || !value.source.startsWith("verification/protected/") || !value.source.endsWith(".json")) return "INVALID";
+  if (value.id !== expectedId || !/^sha256:[a-f0-9]{64}$/u.test(value.evidenceDigest ?? "")) return "INVALID";
   return "PASS";
 }
 
@@ -208,11 +208,22 @@ export function evaluateSubagentsPromotion({
   policy,
   deterministicGates = {},
   protectedEvidence = {},
+  trustPolicy,
+  expectedSourceCommit,
   rootDir = DEFAULT_ROOT,
   verifyEvidencePaths = false,
 } = {}) {
   const checkedMatrix = validateCompatibilityMatrix(matrix, { rootDir, verifyEvidencePaths });
   const checkedPolicy = validatePromotionPolicy(policy);
+  const loadedProtectedEvidence = Object.keys(protectedEvidence).length === 0
+    ? Object.freeze({})
+    : loadProtectedEvidenceSet(protectedEvidence, {
+      rootDir,
+      matrix: checkedMatrix,
+      policy: checkedPolicy,
+      trustPolicy,
+      expectedSourceCommit,
+    });
   const requestedRank = CHANNELS.indexOf(requested);
   if (requestedRank < 0) fail(`unknown requested promotion: ${requested}`, "UNKNOWN_PROMOTION");
   const evaluations = CHANNELS.slice(0, requestedRank + 1).map((channel) => evaluateChannel(
@@ -220,7 +231,7 @@ export function evaluateSubagentsPromotion({
     checkedPolicy,
     checkedMatrix,
     deterministicGates,
-    protectedEvidence,
+    loadedProtectedEvidence,
   ));
   let achieved = null;
   for (const evaluation of evaluations) {
@@ -235,6 +246,9 @@ export function evaluateSubagentsPromotion({
     matrixDigest: checkedMatrix.matrixDigest,
     policyDigest: checkedPolicy.policyDigest,
     evaluations,
+    ...(Object.keys(loadedProtectedEvidence).length > 0
+      ? { protectedEvidence: protectedEvidenceSummary(loadedProtectedEvidence) }
+      : {}),
   };
   return Object.freeze({ ...result, evaluationDigest: sha256(result) });
 }

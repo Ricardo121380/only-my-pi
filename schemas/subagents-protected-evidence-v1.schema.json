@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-protected-evidence-v1.schema.json",
+  "title": "only-my-pi Subagents protected live evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "formatVersion",
+    "contractStatus",
+    "id",
+    "status",
+    "sourceCommit",
+    "matrixDigest",
+    "policyDigest",
+    "trustPolicyDigest",
+    "compatibilityRowId",
+    "observedAt",
+    "environment",
+    "authorization",
+    "privacy",
+    "claims",
+    "proofs",
+    "attestation",
+    "evidenceDigest"
+  ],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "subagents-protected-evidence-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "enum": ["contract-example", "protected-live-evidence"] },
+    "id": {
+      "enum": [
+        "live-agent-terminal",
+        "live-agent-cancel",
+        "live-batch-terminal",
+        "background-resume",
+        "guarded-writer-integration"
+      ]
+    },
+    "status": { "enum": ["CONTRACT_ONLY", "PASS"] },
+    "sourceCommit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "matrixDigest": { "$ref": "#/$defs/sha256" },
+    "policyDigest": { "$ref": "#/$defs/sha256" },
+    "trustPolicyDigest": { "$ref": "#/$defs/sha256" },
+    "compatibilityRowId": { "$ref": "#/$defs/id" },
+    "observedAt": { "type": "string", "format": "date-time" },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node", "pi", "backend", "platform"],
+      "properties": {
+        "node": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$", "maxLength": 64 },
+        "pi": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$", "maxLength": 64 },
+        "backend": { "type": "string", "pattern": "^pi-subagents@[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$", "maxLength": 96 },
+        "platform": { "type": "string", "pattern": "^[a-z0-9]+-[a-z0-9_]+$", "maxLength": 64 }
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["providerRequests", "liveChildDispatch", "liveWriter", "realPiHome", "disposableRoot"],
+      "properties": {
+        "providerRequests": { "enum": ["AUTHORIZED", "NOT_RUN_BY_POLICY"] },
+        "liveChildDispatch": { "enum": ["AUTHORIZED", "NOT_RUN_BY_POLICY"] },
+        "liveWriter": { "enum": ["AUTHORIZED", "NOT_RUN_BY_POLICY"] },
+        "realPiHome": { "const": "NOT_TOUCHED" },
+        "disposableRoot": { "type": "boolean" }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rawOutputStored", "hostPathsStored", "credentialsStored", "sessionIdsStored"],
+      "properties": {
+        "rawOutputStored": { "const": false },
+        "hostPathsStored": { "const": false },
+        "credentialsStored": { "const": false },
+        "sessionIdsStored": { "const": false }
+      }
+    },
+    "claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authoritativeTerminals", "batchItemCount", "cancelObserved", "backgroundResume", "managedWorktree", "parentDiffVerified", "autoIntegrated"],
+      "properties": {
+        "authoritativeTerminals": { "type": "integer", "minimum": 0, "maximum": 300 },
+        "batchItemCount": { "type": "integer", "minimum": 0, "maximum": 300 },
+        "cancelObserved": { "type": "boolean" },
+        "backgroundResume": { "type": "boolean" },
+        "managedWorktree": { "type": "boolean" },
+        "parentDiffVerified": { "type": "boolean" },
+        "autoIntegrated": { "const": false }
+      }
+    },
+    "proofs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": { "$ref": "#/$defs/proof" }
+    },
+    "attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "signerId", "publicKeyFingerprint", "authorizationDigest", "captureDigest", "signedPayloadDigest", "signature"],
+      "properties": {
+        "class": { "enum": ["contract-shape-only", "operator-authorized-live-import"] },
+        "signerId": { "$ref": "#/$defs/id" },
+        "publicKeyFingerprint": { "$ref": "#/$defs/sha256" },
+        "authorizationDigest": { "$ref": "#/$defs/sha256" },
+        "captureDigest": { "$ref": "#/$defs/sha256" },
+        "signedPayloadDigest": { "$ref": "#/$defs/sha256" },
+        "signature": { "type": "string", "pattern": "^[A-Za-z0-9+/]{86}==$" }
+      }
+    },
+    "evidenceDigest": { "$ref": "#/$defs/sha256" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "contractStatus": { "const": "contract-example" } }, "required": ["contractStatus"] },
+      "then": {
+        "properties": {
+          "status": { "const": "CONTRACT_ONLY" },
+          "attestation": { "type": "object", "properties": { "class": { "const": "contract-shape-only" } } }
+        }
+      },
+      "else": {
+        "properties": {
+          "status": { "const": "PASS" },
+          "attestation": { "type": "object", "properties": { "class": { "const": "operator-authorized-live-import" } } }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9.-]{0,95}$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "proof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "digest"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "approval-receipt",
+            "background-spawn",
+            "base-commit",
+            "batch-plan",
+            "batch-terminal-set",
+            "cancel-request",
+            "contract-shape",
+            "input-order-aggregation",
+            "parent-diff-verification",
+            "process-terminal",
+            "process-terminal-set",
+            "resume-request",
+            "task-assignment",
+            "terminal-receipt",
+            "worktree-receipt"
+          ]
+        },
+        "digest": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

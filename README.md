@@ -166,7 +166,11 @@ S5 now adds a versioned compatibility matrix, cumulative promotion policy, and
 digest-pinned `release-gates-v2` runner. `npm run verify:subagents` is an
 inspection-only command; `npm run verify:subagents:run` executes the fixed
 Preview deterministic gates on a clean source commit. Alpha/Beta/Stable live
-claims remain protected and cannot be produced by the deterministic runner.
+claims use a source-pinned Ed25519 evidence-import protocol and cannot be
+produced by the deterministic runner. The checked-in trust policy intentionally
+has no signer, so higher promotion remains unavailable until an operator
+explicitly commits a public key and separately authorizes a disposable live
+run; private signing keys must never be committed.
 
 `omp workflow|swarm run` and `resume` accept an optional bounded absolute JSON
 `--input-file`; it is read with `O_NOFOLLOW`, hashed into the execution

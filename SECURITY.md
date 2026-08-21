@@ -86,14 +86,27 @@ evidence gates. Deterministic gates use a fixed command/argv/environment set,
 commit check before and after execution. The v2 runner cannot accept an
 alternate manifest or execute a protected gate. Protected live evidence is
 `NOT_RUN_BY_POLICY` until a separately authorized disposable run produces a
-digest-bound file under `verification/protected/`.
+signed, digest-bound file under `verification/protected/`.
+
+Protected evidence uses a source-pinned Ed25519 public-key policy. The default
+policy contains no key and is intentionally unavailable. A private signing key
+must stay outside Git, package contents, receipts, Pi state, and CI logs. A live
+evidence commit must be the direct single-parent child of its source commit and
+may only update the compatibility matrix plus introduce the exact requested
+evidence files. Code, schemas, promotion gates, and the trust policy cannot be
+changed in that evidence commit. The importer re-hashes and verifies the full
+document, signature, proof classes, runtime tuple, compatibility reference,
+authorization boundary, and privacy boundary; a self-consistent JSON digest
+alone is never promotion authority.
 
 Passing the Preview deterministic gates therefore proves repository contracts,
 fault/security tests, offline evaluation, and packaging checks only. It does
 not prove live child execution, model quality, background resume, managed
 worktree enforcement, or Provider behavior. Promotion policy and compatibility
 matrix digests are checked independently so a forged receipt or floating Node
-version cannot widen a release claim.
+version cannot widen a release claim. The importer is now implemented, but no
+signer is configured and no live evidence has been authorized, so the current
+claim remains Preview.
 
 ## BatchSwarm boundary
 

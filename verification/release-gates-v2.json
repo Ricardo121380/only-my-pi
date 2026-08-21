@@ -131,7 +131,7 @@
       "id": "subagent-security-redteam",
       "description": "Run approval, path, output, terminal, budget, batch, dynamic-plan, and recovery adversarial tests.",
       "command": "node",
-      "args": ["--test", "tests/subagents-approval.test.mjs", "tests/subagents-artifact-writer.test.mjs", "tests/subagents-backend-adapter.test.mjs", "tests/subagents-batch-swarm.test.mjs", "tests/subagents-run-coordinator.test.mjs", "tests/subagents-swarm-goal.test.mjs"],
+      "args": ["--test", "tests/subagents-approval.test.mjs", "tests/subagents-artifact-writer.test.mjs", "tests/subagents-backend-adapter.test.mjs", "tests/subagents-batch-swarm.test.mjs", "tests/subagents-protected-evidence.test.mjs", "tests/subagents-run-coordinator.test.mjs", "tests/subagents-swarm-goal.test.mjs"],
       "cwd": "repository-root",
       "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
       "timeoutMs": 300000,
@@ -168,7 +168,8 @@
       "required": true,
       "execution": "protected-evidence",
       "channels": ["beta", "stable"],
-      "defaultStatus": "NOT_RUN_BY_POLICY"
+      "defaultStatus": "NOT_RUN_BY_POLICY",
+      "evidenceIds": ["guarded-writer-integration"]
     },
     {
       "id": "resource-leak-check",
@@ -211,7 +212,24 @@
       "required": true,
       "execution": "protected-evidence",
       "channels": ["alpha", "beta", "stable"],
-      "defaultStatus": "NOT_RUN_BY_POLICY"
+      "defaultStatus": "NOT_RUN_BY_POLICY",
+      "evidenceIds": ["live-agent-cancel", "live-agent-terminal", "live-batch-terminal"]
+    },
+    {
+      "id": "pi-subagents-background-resume-smoke",
+      "description": "Import separately authorized protected evidence for one background child restored and authoritatively settled after resume.",
+      "command": null,
+      "args": [],
+      "cwd": "repository-root",
+      "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
+      "timeoutMs": 300000,
+      "maxOutputBytes": 2097152,
+      "sensitiveOutput": false,
+      "required": true,
+      "execution": "protected-evidence",
+      "channels": ["beta", "stable"],
+      "defaultStatus": "NOT_RUN_BY_POLICY",
+      "evidenceIds": ["background-resume"]
     },
     {
       "id": "pi-subagents-live-writer-smoke",
@@ -226,7 +244,8 @@
       "required": true,
       "execution": "protected-evidence",
       "channels": ["beta", "stable"],
-      "defaultStatus": "NOT_RUN_BY_POLICY"
+      "defaultStatus": "NOT_RUN_BY_POLICY",
+      "evidenceIds": ["guarded-writer-integration"]
     },
     {
       "id": "compatibility-matrix",

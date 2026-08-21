@@ -177,6 +177,18 @@
       "fixtureDir": "verification/fixtures/contracts/subagents-promotion-policy"
     },
     {
+      "kind": "subagentsProtectedEvidence",
+      "schemaPath": "schemas/subagents-protected-evidence-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/protected-evidence.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-protected-evidence"
+    },
+    {
+      "kind": "subagentsProtectedEvidenceTrust",
+      "schemaPath": "schemas/subagents-protected-evidence-trust-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/protected-evidence-trust.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-protected-evidence-trust"
+    },
+    {
       "kind": "swarmRecipe",
       "schemaPath": "schemas/swarm-recipe-v1.schema.json",
       "productionGlobs": ["swarm/recipes/*.json"],

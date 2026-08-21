@@ -23,17 +23,31 @@ import {
   validateCompatibilityMatrix,
   validatePromotionPolicy,
 } from "../packages/subagents/release/compatibility.mjs";
+import {
+  loadProtectedEvidenceSet,
+  protectedEvidenceSummary,
+  SUBAGENTS_PROTECTED_EVIDENCE_IDS,
+} from "../packages/subagents/release/protected-evidence.mjs";
 
 const FULL_SHA = /^[a-f0-9]{40}$/u;
 const REPORT_KIND = "only-my-pi-subagents-release-report";
 const SHA256 = /^sha256:[a-f0-9]{64}$/u;
 const REPORT_KEYS = new Set([
   "schemaVersion", "kind", "status", "sourceCommit", "manifest", "promotion", "startedAt", "completedAt",
-  "passed", "gates", "summary", "evaluation", "privacy", "authorization",
+  "evidenceCommit", "passed", "gates", "summary", "evaluation", "privacy", "authorization",
 ]);
 
 export function parseSubagentsReleaseGateArgs(argv) {
-  const output = { promotion: "preview", gate: null, json: false, help: false, run: false, output: null };
+  const output = {
+    promotion: "preview",
+    gate: null,
+    json: false,
+    help: false,
+    run: false,
+    output: null,
+    sourceCommit: null,
+    protectedEvidence: {},
+  };
   const seen = new Set();
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -67,12 +81,34 @@ export function parseSubagentsReleaseGateArgs(argv) {
       const value = argv[++index];
       if (!value || value.startsWith("-")) throw new Error("--output requires a path");
       output.output = value;
+    } else if (arg === "--source-commit") {
+      if (seen.has("sourceCommit")) throw new Error("duplicate --source-commit");
+      seen.add("sourceCommit");
+      const value = argv[++index];
+      if (!FULL_SHA.test(value ?? "")) throw new Error("--source-commit requires a full lowercase Git SHA");
+      output.sourceCommit = value;
+    } else if (arg === "--protected-evidence") {
+      const value = argv[++index];
+      if (!value || value.startsWith("-") || value.includes("\0")) throw new Error("--protected-evidence requires id=verification/protected/file.json");
+      const separator = value.indexOf("=");
+      const id = value.slice(0, separator);
+      const source = value.slice(separator + 1);
+      if (separator < 1 || !SUBAGENTS_PROTECTED_EVIDENCE_IDS.includes(id)) throw new Error("--protected-evidence contains an unknown evidence id");
+      if (Object.hasOwn(output.protectedEvidence, id)) throw new Error(`duplicate --protected-evidence id ${id}`);
+      if (!source.startsWith("verification/protected/") || !source.endsWith(".json")) throw new Error("--protected-evidence source must be inside verification/protected");
+      output.protectedEvidence[id] = source;
     } else {
       throw new Error(`unknown argument ${arg}`);
     }
   }
   if (output.output !== null && !output.run) throw new Error("--output requires --run");
   if (output.run && output.gate !== null) throw new Error("--run cannot be combined with --gate");
+  if (Object.keys(output.protectedEvidence).length > 0 && (!output.run || output.sourceCommit === null)) {
+    throw new Error("--protected-evidence requires --run and --source-commit");
+  }
+  if (output.sourceCommit !== null && Object.keys(output.protectedEvidence).length === 0) {
+    throw new Error("--source-commit is only valid with protected evidence import");
+  }
   return output;
 }
 
@@ -80,9 +116,10 @@ function usage() {
   return [
     "Usage: node scripts/subagents-release-gates.mjs [--promotion preview|alpha|beta|stable] [--gate <id>] [--json]",
     "       node scripts/subagents-release-gates.mjs --run --promotion preview|alpha|beta|stable [--output verification/receipts/<file>.json] [--json]",
+    "       node scripts/subagents-release-gates.mjs --run --promotion alpha|beta|stable --source-commit <40-hex> --protected-evidence <id>=verification/protected/<file>.json [...]",
     "",
     "Without --run this validates and inspects the fixed v2 gate contract without executing it.",
-    "With --run it executes only deterministic gates for the requested promotion; protected gates remain evidence-only.",
+    "With --run it executes deterministic gates and may import only explicitly named, source-bound protected evidence files; it never runs a protected gate.",
   ].join("\n");
 }
 
@@ -122,6 +159,7 @@ function git(rootDir, args) {
     cwd: rootDir,
     encoding: "utf8",
     maxBuffer: 1024 * 1024,
+    stdio: ["ignore", "pipe", "pipe"],
   }).trim();
 }
 
@@ -131,6 +169,54 @@ function assertCleanSource(rootDir) {
   const sourceCommit = git(rootDir, ["rev-parse", "HEAD"]);
   if (!FULL_SHA.test(sourceCommit)) throw new Error("cannot resolve a full source commit SHA");
   return sourceCommit;
+}
+
+export function validateProtectedEvidenceImportPaths(changedPaths, protectedEvidence, { deletedPaths = [] } = {}) {
+  if (!Array.isArray(changedPaths) || !Array.isArray(deletedPaths)) throw new Error("protected evidence import paths must be arrays");
+  if (deletedPaths.length > 0) throw new Error("protected evidence import cannot delete repository files");
+  const evidenceSources = new Set(Object.values(protectedEvidence));
+  const allowed = new Set(["contracts/subagents/compatibility-matrix.json", ...evidenceSources]);
+  const normalized = changedPaths.map((entry) => entry.split(path.sep).join("/"));
+  if (normalized.length === 0 || !normalized.includes("contracts/subagents/compatibility-matrix.json")) {
+    throw new Error("protected evidence import must update the compatibility matrix");
+  }
+  for (const changed of normalized) {
+    if (!allowed.has(changed)) throw new Error(`protected evidence import contains an unauthorized change: ${changed}`);
+  }
+  for (const source of evidenceSources) {
+    if (!normalized.includes(source)) throw new Error(`protected evidence source was not introduced by the evidence-only commit: ${source}`);
+  }
+  return Object.freeze([...normalized].sort());
+}
+
+export function validateProtectedEvidenceImportCommit(rootDir, sourceCommit, evidenceCommit, protectedEvidence) {
+  if (!FULL_SHA.test(sourceCommit) || !FULL_SHA.test(evidenceCommit) || sourceCommit === evidenceCommit) {
+    throw new Error("protected evidence requires distinct full source and evidence commits");
+  }
+  try {
+    git(rootDir, ["cat-file", "-e", `${sourceCommit}^{commit}`]);
+  } catch {
+    throw new Error("protected evidence source commit is unavailable");
+  }
+  const parents = git(rootDir, ["show", "-s", "--format=%P", evidenceCommit]).split(" ").filter(Boolean);
+  if (parents.length !== 1 || parents[0] !== sourceCommit) {
+    throw new Error("protected evidence commit must be the direct single-parent child of the source commit");
+  }
+  for (const source of Object.values(protectedEvidence)) {
+    let existed = false;
+    try {
+      git(rootDir, ["cat-file", "-e", `${sourceCommit}:${source}`]);
+      existed = true;
+    } catch {
+      // Expected: protected evidence is introduced only by the evidence commit.
+    }
+    if (existed) throw new Error(`protected evidence already existed in the source commit: ${source}`);
+  }
+  const range = `${sourceCommit}..${evidenceCommit}`;
+  const changed = git(rootDir, ["diff", "--name-only", "--no-renames", range]).split("\n").filter(Boolean);
+  const deleted = git(rootDir, ["diff", "--name-only", "--diff-filter=D", "--no-renames", range]).split("\n").filter(Boolean);
+  validateProtectedEvidenceImportPaths(changed, protectedEvidence, { deletedPaths: deleted });
+  return evidenceCommit;
 }
 
 function safeOutputPath(requested, rootDir) {
@@ -149,23 +235,42 @@ function sha256(value) {
   return `sha256:${createHash("sha256").update(value).digest("hex")}`;
 }
 
-function protectedGateResult(gate) {
+function protectedGateResult(gate, loadedProtectedEvidence = {}) {
+  const evidence = (gate.evidenceIds ?? []).map((id) => loadedProtectedEvidence[id]).filter(Boolean);
+  const passed = evidence.length === (gate.evidenceIds?.length ?? 0);
   return Object.freeze({
     id: gate.id,
     execution: gate.execution,
-    status: gate.defaultStatus ?? "NOT_RUN_BY_POLICY",
-    passed: false,
+    status: passed ? "PASS" : (gate.defaultStatus ?? "NOT_RUN_BY_POLICY"),
+    passed,
     exitCode: null,
     signal: null,
     timedOut: false,
     outputLimitExceeded: false,
-    expectationPassed: false,
+    expectationPassed: passed,
     durationMs: 0,
     stdoutBytes: 0,
     stderrBytes: 0,
     stdoutSha256: sha256(""),
     stderrSha256: sha256(""),
+    ...(passed ? { evidence: protectedEvidenceSummary(Object.fromEntries(evidence.map((entry) => [entry.id, entry]))) } : {}),
   });
+}
+
+function requiredProtectedEvidenceIds(gates) {
+  return [...new Set(gates
+    .filter((gate) => gate.execution === "protected-evidence")
+    .flatMap((gate) => gate.evidenceIds ?? []))]
+    .sort();
+}
+
+function assertExactProtectedEvidenceInput(gates, protectedEvidence) {
+  const supplied = Object.keys(protectedEvidence).sort();
+  if (supplied.length === 0) return;
+  const required = requiredProtectedEvidenceIds(gates);
+  if (JSON.stringify(supplied) !== JSON.stringify(required)) {
+    throw new Error(`protected evidence import must supply the exact requested promotion set: ${required.join(", ")}`);
+  }
 }
 
 function publicGateResult(gate, result) {
@@ -198,9 +303,12 @@ function assertSafeInteger(value, label) {
   if (!Number.isSafeInteger(value) || value < 0) throw new Error(`${label} is invalid`);
 }
 
+const PROTECTED_EVIDENCE_SUMMARY_KEYS = new Set(["id", "scope", "source", "evidenceDigest", "compatibilityRowId"]);
+
 export function validateSubagentsReleaseReport(report, {
   rootDir = repositoryRoot,
   expectedSourceCommit,
+  verifyEvidenceCommit = true,
   manifest = loadReleaseGatesV2Manifest(undefined, { rootDir }),
 } = {}) {
   exactKeys(report, REPORT_KEYS, "subagents release report");
@@ -220,12 +328,13 @@ export function validateSubagentsReleaseReport(report, {
   const required = gatesForPromotion(manifest, report.promotion, { rootDir });
   if (JSON.stringify(report.manifest.gateIds) !== JSON.stringify(required.map((gate) => gate.id))) throw new Error("subagents report gate order mismatch");
   if (!Array.isArray(report.gates) || report.gates.length !== required.length) throw new Error("subagents report gate results are incomplete");
+  const reportedProtectedEvidence = {};
   for (const [index, result] of report.gates.entries()) {
     const expected = required[index];
     exactKeys(result, new Set(["id", "execution", "status", "passed", "exitCode", "signal", "timedOut", "outputLimitExceeded", "expectationPassed", "durationMs", "stdoutBytes", "stderrBytes", "stdoutSha256", "stderrSha256", "evidence"]), `subagents report gate ${index}`);
     if (result.id !== expected.id || result.execution !== expected.execution) throw new Error("subagents report gate identity mismatch");
     if (!["PASS", "FAIL", "NOT_RUN_BY_POLICY"].includes(result.status)) throw new Error(`subagents report gate ${result.id} status is invalid`);
-    if (expected.execution === "protected-evidence" && result.status !== "NOT_RUN_BY_POLICY") throw new Error(`protected gate ${result.id} has unverifiable status`);
+    if (expected.execution === "protected-evidence" && !["PASS", "NOT_RUN_BY_POLICY"].includes(result.status)) throw new Error(`protected gate ${result.id} has unverifiable status`);
     if (expected.execution === "deterministic" && result.status === "NOT_RUN_BY_POLICY") throw new Error(`deterministic gate ${result.id} cannot be not-run`);
     assertSafeInteger(result.durationMs, `gate ${result.id} durationMs`);
     assertSafeInteger(result.stdoutBytes, `gate ${result.id} stdoutBytes`);
@@ -233,7 +342,24 @@ export function validateSubagentsReleaseReport(report, {
     if (!SHA256.test(result.stdoutSha256) || !SHA256.test(result.stderrSha256)) throw new Error(`gate ${result.id} output digest is invalid`);
     if (result.status === "PASS" && result.passed !== true) throw new Error(`gate ${result.id} passed/status mismatch`);
     if (result.status !== "PASS" && result.passed === true) throw new Error(`gate ${result.id} failed status cannot be passed`);
-    if (result.execution === "protected-evidence" && (result.exitCode !== null || result.durationMs !== 0)) throw new Error(`protected gate ${result.id} contains execution evidence`);
+    if (result.execution === "protected-evidence" && (result.exitCode !== null || result.durationMs !== 0 || result.stdoutBytes !== 0 || result.stderrBytes !== 0)) {
+      throw new Error(`protected gate ${result.id} contains execution evidence`);
+    }
+    if (result.execution === "protected-evidence" && result.status === "PASS") {
+      if (!Array.isArray(result.evidence)) throw new Error(`protected gate ${result.id} lacks imported evidence receipts`);
+      const expectedIds = [...expected.evidenceIds].sort();
+      const actualIds = result.evidence.map((entry) => entry?.id).sort();
+      if (JSON.stringify(actualIds) !== JSON.stringify(expectedIds)) throw new Error(`protected gate ${result.id} evidence-id set mismatch`);
+      for (const entry of result.evidence) {
+        exactKeys(entry, PROTECTED_EVIDENCE_SUMMARY_KEYS, `protected evidence summary ${entry?.id}`);
+        if (reportedProtectedEvidence[entry.id] !== undefined && reportedProtectedEvidence[entry.id] !== entry.source) {
+          throw new Error(`protected evidence ${entry.id} has conflicting sources`);
+        }
+        reportedProtectedEvidence[entry.id] = entry.source;
+      }
+    } else if (result.execution === "protected-evidence" && result.evidence !== undefined) {
+      throw new Error(`not-run protected gate ${result.id} cannot contain evidence receipts`);
+    }
   }
   const deterministic = report.gates.filter((gate) => gate.execution === "deterministic");
   const protectedGates = report.gates.filter((gate) => gate.execution === "protected-evidence");
@@ -249,11 +375,25 @@ export function validateSubagentsReleaseReport(report, {
   const contracts = loadSubagentsReleaseContracts({ rootDir });
   const matrix = validateCompatibilityMatrix(contracts.matrix, { rootDir, verifyEvidencePaths: true });
   const policy = validatePromotionPolicy(contracts.policy);
+  const loadedProtectedEvidence = loadProtectedEvidenceSet(reportedProtectedEvidence, {
+    rootDir,
+    matrix,
+    policy,
+    expectedSourceCommit: report.sourceCommit,
+  });
+  for (const [index, result] of report.gates.entries()) {
+    if (result.execution !== "protected-evidence" || result.status !== "PASS") continue;
+    const expected = required[index];
+    const expectedSummary = protectedEvidenceSummary(Object.fromEntries(expected.evidenceIds.map((id) => [id, loadedProtectedEvidence[id]])));
+    if (JSON.stringify(result.evidence) !== JSON.stringify(expectedSummary)) throw new Error(`protected gate ${result.id} evidence receipt drift`);
+  }
   const expectedEvaluation = evaluateSubagentsPromotion({
     requested: report.promotion,
     matrix,
     policy,
     deterministicGates: Object.fromEntries(deterministic.map((gate) => [gate.id, gate.status])),
+    protectedEvidence: reportedProtectedEvidence,
+    expectedSourceCommit: report.sourceCommit,
     rootDir,
     verifyEvidencePaths: true,
   });
@@ -268,8 +408,31 @@ export function validateSubagentsReleaseReport(report, {
   const expectedBlocked = !expectedPassed && expectedSummary.deterministicPassed === expectedSummary.deterministic && expectedSummary.protectedNotRunByPolicy > 0;
   const expectedStatus = expectedPassed ? "COMPLETE" : (expectedBlocked ? "BLOCKED_PROTECTED_EVIDENCE" : "FAILED");
   if (report.passed !== expectedPassed || report.status !== expectedStatus) throw new Error("subagents report aggregate status is inconsistent");
-  if (report.privacy?.rawOutputStored !== false || report.privacy?.hostPathsStored !== false || report.privacy?.credentialsRead !== false) throw new Error("subagents report privacy boundary is invalid");
-  if (report.authorization?.providerRequests !== "NOT_RUN_BY_POLICY" || report.authorization?.realPiHome !== "NOT_TOUCHED" || report.authorization?.publish !== "NOT_AUTHORIZED") throw new Error("subagents report authorization boundary is invalid");
+  const liveEvidenceImported = Object.keys(loadedProtectedEvidence).length > 0;
+  const writerEvidenceImported = loadedProtectedEvidence["guarded-writer-integration"] !== undefined;
+  if (liveEvidenceImported) {
+    if (verifyEvidenceCommit) {
+      if (!FULL_SHA.test(report.evidenceCommit ?? "")) throw new Error("protected report evidenceCommit is invalid");
+      validateProtectedEvidenceImportCommit(rootDir, report.sourceCommit, report.evidenceCommit, reportedProtectedEvidence);
+      try {
+        git(rootDir, ["merge-base", "--is-ancestor", report.evidenceCommit, "HEAD"]);
+      } catch {
+        throw new Error("protected report evidenceCommit is not an ancestor of the current checkout");
+      }
+    } else if (report.evidenceCommit !== "UNCOMMITTED_TEST_ONLY" && !FULL_SHA.test(report.evidenceCommit ?? "")) {
+      throw new Error("test protected report evidenceCommit is invalid");
+    }
+  } else if (report.evidenceCommit !== undefined) {
+    throw new Error("non-live report cannot claim an evidenceCommit");
+  }
+  if (report.privacy?.rawOutputStored !== false
+    || report.privacy?.hostPathsStored !== false
+    || report.privacy?.credentialsRead !== liveEvidenceImported) throw new Error("subagents report privacy boundary is invalid");
+  if (report.authorization?.providerRequests !== (liveEvidenceImported ? "AUTHORIZED" : "NOT_RUN_BY_POLICY")
+    || report.authorization?.liveChildDispatch !== (liveEvidenceImported ? "AUTHORIZED" : "NOT_RUN_BY_POLICY")
+    || report.authorization?.liveWriter !== (writerEvidenceImported ? "AUTHORIZED" : "NOT_RUN_BY_POLICY")
+    || report.authorization?.realPiHome !== "NOT_TOUCHED"
+    || report.authorization?.publish !== "NOT_AUTHORIZED") throw new Error("subagents report authorization boundary is invalid");
   if (JSON.stringify(report).match(/\/Users\/[^/\s]+\//u) || JSON.stringify(report).match(/\/home\/[^/\s]+\//u)) throw new Error("subagents report contains a host home path");
   return Object.freeze({ ok: true, status: report.status, sourceCommit: report.sourceCommit, manifestDigest: report.manifest.digest });
 }
@@ -283,6 +446,7 @@ export async function runSubagentsReleaseVerification({
   promotion = "preview",
   rootDir = repositoryRoot,
   output = null,
+  protectedEvidence = {},
   env = process.env,
   spawnImpl,
   onGate = () => {},
@@ -294,17 +458,38 @@ export async function runSubagentsReleaseVerification({
   const manifest = loadReleaseGatesV2Manifest(undefined, { rootDir: resolvedRoot });
   const target = output === null ? null : safeOutputPath(output, resolvedRoot);
   if (target && fs.existsSync(target)) throw new Error("report output already exists");
-  const sourceCommit = requireCleanSource
-    ? assertCleanSource(resolvedRoot)
-    : (suppliedSourceCommit ?? "UNCOMMITTED_TEST_ONLY");
+  const evidenceImportRequested = Object.keys(protectedEvidence).length > 0;
+  const cleanHead = requireCleanSource ? assertCleanSource(resolvedRoot) : null;
+  let sourceCommit;
+  if (requireCleanSource && evidenceImportRequested) {
+    if (!FULL_SHA.test(suppliedSourceCommit ?? "")) throw new Error("protected evidence import requires an exact source commit");
+    validateProtectedEvidenceImportCommit(resolvedRoot, suppliedSourceCommit, cleanHead, protectedEvidence);
+    sourceCommit = suppliedSourceCommit;
+  } else if (requireCleanSource) {
+    if (suppliedSourceCommit !== undefined && suppliedSourceCommit !== cleanHead) throw new Error("sourceCommit override requires protected evidence import");
+    sourceCommit = cleanHead;
+  } else {
+    sourceCommit = suppliedSourceCommit ?? "UNCOMMITTED_TEST_ONLY";
+  }
   if (requireCleanSource && !FULL_SHA.test(sourceCommit)) throw new Error("source commit is invalid");
+  const executionCommit = requireCleanSource ? cleanHead : sourceCommit;
   const startedAt = new Date().toISOString();
   const required = gatesForPromotion(manifest, promotion, { rootDir: resolvedRoot });
+  assertExactProtectedEvidenceInput(required, protectedEvidence);
+  const contracts = loadSubagentsReleaseContracts({ rootDir: resolvedRoot });
+  const matrix = validateCompatibilityMatrix(contracts.matrix, { rootDir: resolvedRoot, verifyEvidencePaths: true });
+  const policy = validatePromotionPolicy(contracts.policy);
+  const loadedProtectedEvidence = loadProtectedEvidenceSet(protectedEvidence, {
+    rootDir: resolvedRoot,
+    matrix,
+    policy,
+    expectedSourceCommit: sourceCommit,
+  });
   const gates = [];
   for (const gate of required) {
     let result;
     if (gate.execution === "protected-evidence") {
-      result = protectedGateResult(gate);
+      result = protectedGateResult(gate, loadedProtectedEvidence);
     } else {
       result = await runCheck(gate, {
         cwd: resolvedRoot,
@@ -312,7 +497,7 @@ export async function runSubagentsReleaseVerification({
         env,
         spawnImpl,
       });
-      if (gate.id === "test-e2e" && result.evidence?.sourceCommit !== sourceCommit) {
+      if (gate.id === "test-e2e" && result.evidence?.sourceCommit !== executionCommit) {
         result = Object.freeze({ ...result, status: "FAIL", passed: false, expectationPassed: false });
       }
     }
@@ -322,21 +507,20 @@ export async function runSubagentsReleaseVerification({
   }
   if (requireCleanSource) {
     const afterCommit = assertCleanSource(resolvedRoot);
-    if (afterCommit !== sourceCommit) throw new Error("source commit changed while v2 release gates were running");
+    if (afterCommit !== cleanHead) throw new Error("evidence commit changed while v2 release gates were running");
   }
   const deterministic = gates.filter((gate) => gate.execution === "deterministic");
   const protectedGates = gates.filter((gate) => gate.execution === "protected-evidence");
   const deterministicPassed = deterministic.every((gate) => gate.status === "PASS");
   const protectedPassed = protectedGates.every((gate) => gate.status === "PASS");
-  const contracts = loadSubagentsReleaseContracts({ rootDir: resolvedRoot });
-  const matrix = validateCompatibilityMatrix(contracts.matrix, { rootDir: resolvedRoot, verifyEvidencePaths: true });
-  const policy = validatePromotionPolicy(contracts.policy);
   const deterministicStatuses = Object.fromEntries(deterministic.map((gate) => [gate.id, gate.status]));
   const evaluation = evaluateSubagentsPromotion({
     requested: promotion,
     matrix,
     policy,
     deterministicGates: deterministicStatuses,
+    protectedEvidence,
+    expectedSourceCommit: sourceCommit,
     rootDir: resolvedRoot,
     verifyEvidencePaths: true,
   });
@@ -349,6 +533,7 @@ export async function runSubagentsReleaseVerification({
     kind: REPORT_KIND,
     status: passed ? "COMPLETE" : (blockedByProtectedEvidence ? "BLOCKED_PROTECTED_EVIDENCE" : "FAILED"),
     sourceCommit,
+    ...(evidenceImportRequested ? { evidenceCommit: requireCleanSource ? cleanHead : "UNCOMMITTED_TEST_ONLY" } : {}),
     manifest: {
       id: manifest.id,
       digest: releaseGatesV2Digest(manifest),
@@ -378,20 +563,25 @@ export async function runSubagentsReleaseVerification({
     privacy: {
       rawOutputStored: false,
       hostPathsStored: false,
-      credentialsRead: false,
+      credentialsRead: evidenceImportRequested,
       outputFingerprintsMayLeakShortPredictableValues: true,
     },
     authorization: {
-      providerRequests: "NOT_RUN_BY_POLICY",
-      liveChildDispatch: "NOT_RUN_BY_POLICY",
-      liveWriter: "NOT_RUN_BY_POLICY",
+      providerRequests: evidenceImportRequested ? "AUTHORIZED" : "NOT_RUN_BY_POLICY",
+      liveChildDispatch: evidenceImportRequested ? "AUTHORIZED" : "NOT_RUN_BY_POLICY",
+      liveWriter: loadedProtectedEvidence["guarded-writer-integration"] ? "AUTHORIZED" : "NOT_RUN_BY_POLICY",
       realPiHome: "NOT_TOUCHED",
       publish: "NOT_AUTHORIZED",
       tag: "NOT_AUTHORIZED",
       release: "NOT_AUTHORIZED",
     },
   };
-  validateSubagentsReleaseReport(report, { rootDir: resolvedRoot, expectedSourceCommit: sourceCommit, manifest });
+  validateSubagentsReleaseReport(report, {
+    rootDir: resolvedRoot,
+    expectedSourceCommit: sourceCommit,
+    verifyEvidenceCommit: requireCleanSource,
+    manifest,
+  });
   if (target) {
     await mkdir(path.dirname(target), { recursive: true });
     await writeFile(target, `${JSON.stringify(report, null, 2)}\n`, { flag: "wx", mode: 0o644 });
@@ -409,6 +599,8 @@ export function main(argv = process.argv.slice(2)) {
     return runSubagentsReleaseVerification({
       promotion: args.promotion,
       output: args.output,
+      protectedEvidence: args.protectedEvidence,
+      ...(args.sourceCommit ? { sourceCommit: args.sourceCommit } : {}),
       onGate: (gate) => process.stderr.write(`${gate.status} ${gate.id} (${gate.durationMs} ms)\n`),
     }).then(({ report, target }) => {
       const summary = {

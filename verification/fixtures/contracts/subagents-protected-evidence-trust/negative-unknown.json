@@ -1,0 +1,10 @@
+{
+  "$schema": "../../../../schemas/subagents-protected-evidence-trust-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "configured-unavailable",
+  "id": "only-my-pi-subagents-protected-evidence-trust",
+  "algorithm": "ed25519",
+  "signers": [],
+  "policyDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "unexpected": true
+}

@@ -20,6 +20,10 @@ import {
   validateCompatibilityMatrix,
   validatePromotionPolicy,
 } from "../../packages/subagents/release/compatibility.mjs";
+import {
+  validateProtectedEvidenceDocument,
+  validateProtectedEvidenceTrustPolicy,
+} from "../../packages/subagents/release/protected-evidence.mjs";
 import { sha256 as stateSha256, withoutKey } from "../../packages/subagents/state/codec.mjs";
 
 const DEFAULT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -731,6 +735,18 @@ function semanticErrors(kind, document, { sourcePath, rootDir, index, documentsB
   } else if (kind === "subagentsPromotionPolicy") {
     try {
       validatePromotionPolicy(document);
+    } catch (cause) {
+      errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
+    }
+  } else if (kind === "subagentsProtectedEvidence") {
+    try {
+      validateProtectedEvidenceDocument(document, { allowContractExample: true });
+    } catch (cause) {
+      errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
+    }
+  } else if (kind === "subagentsProtectedEvidenceTrust") {
+    try {
+      validateProtectedEvidenceTrustPolicy(document);
     } catch (cause) {
       errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
     }

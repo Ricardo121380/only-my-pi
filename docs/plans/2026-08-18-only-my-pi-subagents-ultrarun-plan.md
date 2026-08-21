@@ -1,7 +1,7 @@
 # only-my-pi：统一 Subagent、Workflow 与 UltraRun 后续开发计划
 
 > 版本：2026-08-18
-> 状态：已批准的 successor implementation baseline；S0–S4 Preview source 已实现，S5 promotion closure 尚未实现
+> 状态：已批准的 successor implementation baseline；S0–S4 Preview source 已实现，S5 deterministic gates 与 source-pinned protected-evidence importer 已实现，但无 signer/live evidence，promotion 仍为 Preview
 > 前置基线：M0–M7 Harness MVP 已按 [`2026-08-16-only-my-pi-development-plan.md`](2026-08-16-only-my-pi-development-plan.md) 完成并合入 `main`
 > 配套 Codex Goal：[`../../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../../codex/goals/develop-only-my-pi-subagents-ultrarun.md)
 > 产品边界：纯 Pi 原生；参考 Kimi/Claude/DeepSeek 等源码与公开合同，不接入 Kimi runtime，不重写 Pi agent loop、Provider 或 session engine

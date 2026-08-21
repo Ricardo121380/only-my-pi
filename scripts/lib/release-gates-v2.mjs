@@ -27,13 +27,14 @@ export const RELEASE_GATES_V2_EXTENSION = Object.freeze({
   "journal-crash-recovery-test": Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/subagents-state.test.mjs", "tests/subagents-run-coordinator.test.mjs"]), execution: "deterministic", channels: PREVIEW_AND_LATER }),
   "late-event-correlation-test": Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/subagents-backend-adapter.test.mjs", "tests/subagents-state.test.mjs"]), execution: "deterministic", channels: PREVIEW_AND_LATER }),
   "terminal-proof-test": Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/subagents-backend-adapter.test.mjs", "tests/subagents-domain.test.mjs", "tests/subagents-run-coordinator.test.mjs"]), execution: "deterministic", channels: PREVIEW_AND_LATER }),
-  "subagent-security-redteam": Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/subagents-approval.test.mjs", "tests/subagents-artifact-writer.test.mjs", "tests/subagents-backend-adapter.test.mjs", "tests/subagents-batch-swarm.test.mjs", "tests/subagents-run-coordinator.test.mjs", "tests/subagents-swarm-goal.test.mjs"]), execution: "deterministic", channels: PREVIEW_AND_LATER }),
+  "subagent-security-redteam": Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/subagents-approval.test.mjs", "tests/subagents-artifact-writer.test.mjs", "tests/subagents-backend-adapter.test.mjs", "tests/subagents-batch-swarm.test.mjs", "tests/subagents-protected-evidence.test.mjs", "tests/subagents-run-coordinator.test.mjs", "tests/subagents-swarm-goal.test.mjs"]), execution: "deterministic", channels: PREVIEW_AND_LATER }),
   "orchestration-eval-offline": Object.freeze({ command: "npm", args: Object.freeze(["run", "eval:subagents"]), execution: "deterministic", channels: PREVIEW_AND_LATER }),
-  "worktree-writer-e2e": Object.freeze({ command: null, args: Object.freeze([]), execution: "protected-evidence", channels: BETA_AND_LATER }),
+  "worktree-writer-e2e": Object.freeze({ command: null, args: Object.freeze([]), execution: "protected-evidence", channels: BETA_AND_LATER, evidenceIds: Object.freeze(["guarded-writer-integration"]) }),
   "resource-leak-check": Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/subagents-resource-leak.test.mjs"]), execution: "deterministic", channels: STABLE_ONLY }),
   "license-provenance-check": Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/subagents-provenance.test.mjs"]), execution: "deterministic", channels: PREVIEW_AND_LATER }),
-  "pi-subagents-live-readonly-smoke": Object.freeze({ command: null, args: Object.freeze([]), execution: "protected-evidence", channels: ALPHA_AND_LATER }),
-  "pi-subagents-live-writer-smoke": Object.freeze({ command: null, args: Object.freeze([]), execution: "protected-evidence", channels: BETA_AND_LATER }),
+  "pi-subagents-live-readonly-smoke": Object.freeze({ command: null, args: Object.freeze([]), execution: "protected-evidence", channels: ALPHA_AND_LATER, evidenceIds: Object.freeze(["live-agent-cancel", "live-agent-terminal", "live-batch-terminal"]) }),
+  "pi-subagents-background-resume-smoke": Object.freeze({ command: null, args: Object.freeze([]), execution: "protected-evidence", channels: BETA_AND_LATER, evidenceIds: Object.freeze(["background-resume"]) }),
+  "pi-subagents-live-writer-smoke": Object.freeze({ command: null, args: Object.freeze([]), execution: "protected-evidence", channels: BETA_AND_LATER, evidenceIds: Object.freeze(["guarded-writer-integration"]) }),
   "compatibility-matrix": Object.freeze({ command: "node", args: Object.freeze(["scripts/subagents-compatibility.mjs", "--requested", "preview", "--json"]), execution: "deterministic", channels: STABLE_ONLY }),
 });
 
@@ -42,7 +43,7 @@ export const REQUIRED_RELEASE_GATES_V2_EXTENSION_IDS = Object.freeze(Object.keys
 const TOP_LEVEL_KEYS = new Set(["formatVersion", "id", "description", "base", "policy", "gates"]);
 const BASE_KEYS = new Set(["path", "digest"]);
 const POLICY_KEYS = new Set(["cwd", "deterministicNetwork", "protectedExecution", "shell", "maxGateCount", "maxOutputBytes"]);
-const GATE_KEYS = new Set(["id", "description", "command", "args", "cwd", "env", "timeoutMs", "maxOutputBytes", "sensitiveOutput", "required", "execution", "channels", "defaultStatus"]);
+const GATE_KEYS = new Set(["id", "description", "command", "args", "cwd", "env", "timeoutMs", "maxOutputBytes", "sensitiveOutput", "required", "execution", "channels", "defaultStatus", "evidenceIds"]);
 const ENV_KEYS = Object.freeze(["CI", "NO_COLOR", "PI_TELEMETRY"]);
 const ENV_VALUES = Object.freeze({ CI: "1", NO_COLOR: "1", PI_TELEMETRY: "0" });
 const GATE_ID = /^[a-z][a-z0-9-]{0,63}$/u;
@@ -110,9 +111,12 @@ function validateGate(gate, expectedId, policy) {
   if (expected.execution === "deterministic") {
     if (gate.command !== expected.command || !equal(gate.args, expected.args)) fail(`gate ${gate.id} command/argv differs from the fixed contract`);
     safeArgs(gate.args, gate.id);
-    if (gate.defaultStatus !== undefined) fail(`deterministic gate ${gate.id} cannot define defaultStatus`);
+    if (gate.defaultStatus !== undefined || gate.evidenceIds !== undefined) fail(`deterministic gate ${gate.id} cannot define protected evidence fields`);
   } else {
-    if (gate.command !== null || !equal(gate.args, []) || gate.defaultStatus !== "NOT_RUN_BY_POLICY") {
+    if (gate.command !== null
+      || !equal(gate.args, [])
+      || gate.defaultStatus !== "NOT_RUN_BY_POLICY"
+      || !equal(gate.evidenceIds, expected.evidenceIds)) {
       fail(`protected gate ${gate.id} must be evidence-only and default NOT_RUN_BY_POLICY`);
     }
   }
@@ -125,7 +129,7 @@ function baseManifest(input, rootDir) {
   const basePath = path.resolve(rootDir, input.base.path);
   const relative = path.relative(path.resolve(rootDir), basePath);
   if (relative.startsWith("..") || path.isAbsolute(relative)) fail("base manifest escapes repository");
-  const manifest = loadReleaseGatesManifest(basePath);
+  const manifest = loadReleaseGatesManifest(basePath, { allowedRoot: path.join(path.resolve(rootDir), "verification") });
   const digest = releaseGatesDigest(manifest);
   if (input.base.digest !== digest) fail("base release-gates-v1 digest drift detected");
   return manifest;
@@ -163,14 +167,19 @@ function assertedContained(file, root) {
   return realFile;
 }
 
-export function loadReleaseGatesV2Manifest(file = defaultReleaseGatesV2Path, { rootDir = repositoryRoot } = {}) {
-  const target = assertedContained(path.resolve(file), path.join(path.resolve(rootDir), "verification"));
+export function loadReleaseGatesV2Manifest(file, { rootDir = repositoryRoot } = {}) {
+  const target = assertedContained(
+    path.resolve(file ?? path.join(path.resolve(rootDir), "verification", "release-gates-v2.json")),
+    path.join(path.resolve(rootDir), "verification"),
+  );
   return validateReleaseGatesV2Manifest(JSON.parse(fs.readFileSync(target, "utf8")), { rootDir });
 }
 
 export function resolveReleaseGatesV2(manifest, { rootDir = repositoryRoot } = {}) {
   const checked = validateReleaseGatesV2Manifest(manifest, { rootDir });
-  const base = loadReleaseGatesManifest(path.resolve(rootDir, checked.base.path));
+  const base = loadReleaseGatesManifest(path.resolve(rootDir, checked.base.path), {
+    allowedRoot: path.join(path.resolve(rootDir), "verification"),
+  });
   const inherited = base.gates.map((gate) => freeze({
     ...gate,
     execution: "deterministic",
