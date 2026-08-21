@@ -163,8 +163,8 @@ foundation:
 - `npm run schema:check`: **72 production documents / 37 schema kinds / 0 findings**;
 - `npm run pack:check`: **261 allowlisted files**, with no tests, receipts, or
   Codex Goal in the tarball;
-- `npm run lint`: **660 files / 0 findings**;
-- `npm run secret:scan`: **660 tracked files + 261 packed files / 0 findings**;
+- `npm run lint`: **672 files / 0 findings**;
+- `npm run secret:scan`: **672 tracked files + 261 packed files / 0 findings**;
 - `npm run test:e2e`: fresh scripts-disabled tarball install, bootstrap,
   rollback, and installed-package topology doctor pass;
 - `npm run doctor`, all six Profile doctors, Mode/Agent/Workflow/Swarm doctors,
