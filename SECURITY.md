@@ -108,6 +108,41 @@ version cannot widen a release claim. The importer is now implemented, but no
 signer is configured and no live evidence has been authorized, so the current
 claim remains Preview.
 
+The S5-A producer adds another explicit boundary rather than weakening this
+rule. Its default plan is zero-execution. A live run requires a clean pinned
+source, runtime-ready public-key policy, active one-time authorization, empty
+disposable config root, audited package root, explicit Pi and signer
+executables, explicit staging directory, and `--yes`. Only authorization-listed
+credential variables enter the isolated Pi environment; the signer receives
+only a payload digest. Output is staged outside `verification/protected/` and
+is neither imported nor committed automatically. Authorization
+`declaredEndpointHosts` are declarations only: this process does not implement
+an OS network sandbox, DNS policy, or egress firewall.
+
+The capture child never uses the source checkout as its `cwd`. It receives a
+synthetic disposable fixture workspace, and the governed `omp-reviewer` is
+recompiled from the canonical manifest/prompt, compared byte-for-byte with the
+checked-in generated resource, then copied into the isolated Pi Agent root.
+Its tool set excludes `bash`, `edit`, `write`, and web access, and upstream
+artifacts are configured for temporary storage. These controls constrain the
+scenario, but the removable workspace directory and extension process still
+run with the caller's OS identity; they are not a container or filesystem
+sandbox.
+
+Live ceilings are cumulative across the complete three-scenario capture. The
+driver passes only the remaining budget to each fresh Pi process and fixes the
+physical child shapes at one, one, and two. Repository, config, and staging
+roots must be pairwise disjoint. A second clean-source/HEAD check after signing
+and before staging prevents concurrent worktree changes from being recorded as
+evidence for the earlier source commit.
+
+Missing token or cost metering is a capture failure. These signed cumulative
+ceilings reject evidence after an observed overrun, but the pinned async
+backend does not prove a mid-child USD/token circuit breaker. Configure a hard
+Provider/account budget or outer network control when spend must be prevented
+rather than detected. The runner does enforce child shape before dispatch and
+terminates the isolated Pi process group on its wall-clock deadline.
+
 ## BatchSwarm boundary
 
 BatchSwarm is logical orchestration, not a second child runtime or sandbox. It

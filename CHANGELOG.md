@@ -38,6 +38,15 @@ session. Third-party packages and Labs remain opt-in and require review.
   importer for live Agent terminal/cancel, BatchSwarm, background/resume, and
   guarded-writer receipts; the default trust policy has no signer and remains
   fail-closed;
+- an inert-by-default S5-A Alpha evidence producer with a one-time bounded
+  authorization contract, exact runtime-row preflight, empty disposable Pi
+  root, synthetic fixture workspace, canonical `omp-reviewer` regeneration and
+  drift check, temporary upstream artifacts, cumulative capture budgets,
+  disjoint runtime/staging/source roots, pre/post source checks, credential
+  allowlist, read-only Agent terminal/cancel and two-item BatchSwarm scenarios
+  over the sole `pi-subagents` backend, digest-only external signing, and
+  review-only evidence staging; no real live run has been performed and
+  declared endpoint hosts are not an OS network policy;
 - compatibility/provenance contracts plus listener/timer resource-leak soaks,
   with Preview/Alpha/Beta/Stable claims kept separate from `NOT_RUN_BY_POLICY`
   live evidence;

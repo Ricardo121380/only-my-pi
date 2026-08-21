@@ -29,6 +29,13 @@ The ownership boundary remains:
   deliberately `configured-unavailable` with no signer. A live promotion is
   impossible until an operator explicitly commits an authorized public key;
   the corresponding private key must never enter the repository.
+- `subagents-live-evidence-authorization-v1` and the
+  [S5-A capture driver](subagents-s5-live-capture.md) define the producer side
+  for the three Alpha read-only evidence classes. The default plan is inert;
+  real execution requires a clean exact source, a runtime-ready trust policy,
+  a one-time bounded authorization, an empty disposable Pi root and synthetic
+  fixture workspace, a canonical drift-checked `omp-reviewer`, an external
+  digest-only signer, every explicit path, and `--yes`.
 - `verification/release-gates-v2.json` digest-pins every v1 gate and adds the
   fixed S5 deterministic/protected gate set. Command, argv, environment,
   timeout, channel, and protected execution semantics are code-validated;
@@ -39,6 +46,7 @@ The ownership boundary remains:
 ```bash
 npm run verify:subagents                         # inspect only; no subprocesses
 npm run verify:subagents:run                     # execute Preview deterministic gates
+npm run plan:subagents-live-evidence             # inspect Alpha capture readiness
 node scripts/subagents-release-gates.mjs --run \
   --promotion alpha \
   --source-commit <source-commit> \
@@ -55,6 +63,11 @@ were running. Protected live gates have no command or argv; they are emitted as
 used. Thus Preview can complete its deterministic contract set, while
 Alpha/Beta/Stable remain blocked until their explicit live scopes, signatures,
 and protected evidence are present.
+
+The separate live-capture command never writes into `verification/protected/`
+or performs the evidence-only Git import. It stages reviewable files in an
+operator-selected empty directory. `declaredEndpointHosts` is metadata bound
+into the authorization; it is not an OS network allowlist or sandbox.
 
 ## Source-pinned evidence import
 
@@ -97,7 +110,9 @@ soaks, and compatibility contract validation. The local no-model Pi probe is
 still the only live evidence and proves startup/RPC ownership—not child
 execution, model quality, cancellation, background resume, or writer safety.
 
-No live gate is promoted by inference. The importer, schemas, signature
-verification, direct-child Git boundary, and background/resume gate now exist,
-but the checked-in trust policy has no signer and no protected live evidence
-has been produced. The current release claim therefore remains Preview.
+No live gate is promoted by inference. The importer, authorization/capture
+schemas, digest-only signer boundary, Pi Alpha scenario driver, signature
+verification, direct-child Git boundary, and background/resume gate now exist.
+The checked-in trust policy still has no signer, however, and no protected live
+evidence has been produced. The current release claim therefore remains
+Preview.

@@ -62,6 +62,7 @@ scripts/      Repository checks and package governance tooling
 - [Workspace checkpoint](docs/architecture/workspace-checkpoint.md)
 - [Theme and status layer](docs/architecture/theme-status.md)
 - [Subagents S5 release boundary](docs/architecture/subagents-s5-release.md)
+- [Subagents S5-A protected live capture](docs/architecture/subagents-s5-live-capture.md)
 - [Quickstart](docs/quickstart.md)
 - [Modes](docs/modes.md)
 - [AgentSwarm](docs/agent-swarm.md)
@@ -171,6 +172,19 @@ produced by the deterministic runner. The checked-in trust policy intentionally
 has no signer, so higher promotion remains unavailable until an operator
 explicitly commits a public key and separately authorizes a disposable live
 run; private signing keys must never be committed.
+
+The S5-A Alpha capture producer is now implemented behind
+`npm run plan:subagents-live-evidence`. It composes a read-only Agent terminal,
+correlated cancel terminal, and two-item BatchSwarm through the same sole
+`pi-subagents` backend, then signs only bounded low-sensitivity evidence through
+an external digest-only signer. Children run in an isolated synthetic fixture
+workspace, not the source checkout; the canonical read-only `omp-reviewer` is
+recompiled and drift-checked before it is copied into the disposable Pi root.
+All three scenarios share one cumulative budget, and the source HEAD/worktree
+is rechecked after signing before any evidence is staged.
+The checked-in plan remains
+`CONFIGURED_UNAVAILABLE`; no real Provider/child/signer run has been executed,
+and the declared endpoint hosts are not an OS-enforced network allowlist.
 
 `omp workflow|swarm run` and `resume` accept an optional bounded absolute JSON
 `--input-file`; it is read with `O_NOFOLLOW`, hashed into the execution

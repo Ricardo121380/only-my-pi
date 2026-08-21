@@ -1,0 +1,46 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-live-evidence-authorization-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "operator-template",
+  "authorizationId": "replace-with-one-time-operator-authorization",
+  "sourceCommit": "1111111111111111111111111111111111111111",
+  "matrixDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "policyDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "trustPolicyDigest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+  "compatibilityRowId": "darwin-arm64-node-25.8.0",
+  "evidenceIds": [
+    "live-agent-cancel",
+    "live-agent-terminal",
+    "live-batch-terminal"
+  ],
+  "provider": {
+    "id": "replace-provider",
+    "model": "replace-model",
+    "credentialEnvironment": ["REPLACE_PROVIDER_API_KEY"],
+    "declaredEndpointHosts": ["api.example.com"]
+  },
+  "limits": {
+    "maxChildren": 4,
+    "maxConcurrency": 2,
+    "maxWallTimeMs": 600000,
+    "maxOutputBytes": 262144,
+    "maxTokens": 50000,
+    "maxCostUsd": 5
+  },
+  "workspace": {
+    "mode": "disposable-read-only",
+    "realPiHome": "deny",
+    "mutation": "deny",
+    "web": "deny",
+    "mcp": "deny",
+    "projectTrust": "deny"
+  },
+  "signer": {
+    "signerId": "replace-approved-signer",
+    "publicKeyFingerprint": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "protocol": "digest-stdin-signature-stdout-v1"
+  },
+  "approvedAt": "2026-08-21T00:00:00.000Z",
+  "expiresAt": "2026-08-21T01:00:00.000Z",
+  "authorizationDigest": "sha256:a6c8b4bbf9d3f3d65d99a3db58c93938640203d2c1f4858b1cb69ffe5a8b6a39"
+}

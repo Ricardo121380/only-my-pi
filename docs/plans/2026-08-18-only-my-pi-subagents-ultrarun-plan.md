@@ -1,7 +1,7 @@
 # only-my-pi：统一 Subagent、Workflow 与 UltraRun 后续开发计划
 
 > 版本：2026-08-18
-> 状态：已批准的 successor implementation baseline；S0–S4 Preview source 已实现，S5 deterministic gates 与 source-pinned protected-evidence importer 已实现，但无 signer/live evidence，promotion 仍为 Preview
+> 状态：已批准的 successor implementation baseline；S0–S4 Preview source 已实现；S5 deterministic gates、source-pinned protected-evidence importer 与 S5-A Alpha capture producer 已实现，但 checked-in trust 仍无 signer、未运行真实 Provider/live evidence，promotion 仍为 Preview
 > 前置基线：M0–M7 Harness MVP 已按 [`2026-08-16-only-my-pi-development-plan.md`](2026-08-16-only-my-pi-development-plan.md) 完成并合入 `main`
 > 配套 Codex Goal：[`../../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../../codex/goals/develop-only-my-pi-subagents-ultrarun.md)
 > 产品边界：纯 Pi 原生；参考 Kimi/Claude/DeepSeek 等源码与公开合同，不接入 Kimi runtime，不重写 Pi agent loop、Provider 或 session engine
@@ -726,6 +726,19 @@ omp ultra plan|run|pause|resume|status|cancel
 - Team、任意 JS 和 Kimi runtime 未被偷偷引入。
 
 ### S5：安全、fault/live eval、兼容迁移与发布闭环
+
+当前增量状态：**S5-A producer implemented, live run not authorized**。
+`subagents-live-evidence-authorization-v1`、隔离 Pi 场景驱动、同一
+`pi-subagents` 后端上的 Agent terminal/cancel 与 two-item BatchSwarm、低敏
+capture、外部 digest-only 签名和 review staging 已实现并由确定性故障测试
+覆盖。子代理只在合成 disposable fixture workspace 运行，不以源码仓库为
+cwd；`omp-reviewer` 在 dispatch 前从 canonical manifest/prompt 重编译并与
+checked-in resource 做逐字节 drift check，upstream artifact scope 固定为
+temp。三个场景共享同一 child/token/cost/time/output 总账，source、config、
+staging roots 必须两两不重叠，并在签名后、staging 前重新验证 clean HEAD。
+该增量只覆盖 Alpha 的三个 read-only protected evidence classes；
+background/resume、guarded writer/integration、真实 Provider 运行、证据导入和
+promotion receipt 仍属于后续 S5 closure，不得由当前测试推断为完成。
 
 任务：
 

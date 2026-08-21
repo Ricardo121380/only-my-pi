@@ -45,15 +45,24 @@ The approved semantic split is:
 - `UltraRun`: an upper-layer strategy that routes and chains multiple workflows,
   with no separate scheduler or permission owner.
 
-S5 deterministic release governance and the protected-evidence importer are
-now implemented on this branch. The versioned compatibility matrix, cumulative
-promotion policy, `release-gates-v2` manifest, protected-evidence schema, and
-Ed25519 trust policy are strict, digest-bound contracts. The v2 runner executes
-only fixed deterministic gates on a clean source commit; protected live gates
-have no command. Live evidence must be signed, source-bound, and introduced in
-a direct evidence-only child commit. The checked-in trust policy deliberately
-has no signer and no live evidence has been authorized, so this remains a
-Preview claim, not Alpha, Beta, or Stable.
+S5 deterministic release governance, the protected-evidence importer, and the
+S5-A Alpha capture producer are now implemented on this branch. The versioned
+compatibility matrix, cumulative promotion policy, `release-gates-v2`
+manifest, protected-evidence and one-time authorization schemas, and Ed25519
+trust policy are strict, digest-bound contracts. The producer composes the
+read-only Agent terminal, correlated cancellation, and two-item BatchSwarm
+scenarios through the sole `pi-subagents` backend, with an empty disposable Pi
+root, a synthetic fixture workspace instead of the source checkout, a
+canonically recompiled and drift-checked read-only `omp-reviewer`, temporary
+upstream artifacts, cumulative capture budgets, pre/post clean-source checks,
+pairwise-disjoint roots, credential allowlist, exact runtime-row preflight,
+required token/cost metering, process-group wall deadlines, bounded
+low-sensitivity records, external digest-only signing, and review-only staging.
+Token/cost ceilings are signed reconciliation gates rather than a verified
+mid-child billing circuit breaker. The checked-in
+default remains inert: its trust policy has no signer and no live evidence has
+been authorized or executed, so this remains a Preview claim, not Alpha, Beta,
+or Stable.
 
 The S0–S4 source slice now contains:
 
@@ -122,8 +131,8 @@ made no Provider/model request, dispatched no child, read no credential, made
 no global install, and did not read or mutate the real Pi home.
 All planned orchestration contracts plus the evaluation-corpus, durable
 run-control, compatibility, promotion, protected-evidence, and evidence-trust
-contracts are now registered in the strict catalog. The catalog validates 37
-kinds and 72 non-vacuous production documents, with positive,
+contracts are now registered in the strict catalog. The catalog validates 38
+kinds and 73 non-vacuous production documents, with positive,
 unknown-field/version, and
 targeted semantic negatives. Public Workflow/Swarm routing now converges on
 the v2 facade. Approval fails closed without a live evidence provider,
@@ -144,27 +153,31 @@ fresh coordinators can re-project status, publish cross-process cancel intent,
 and resume read-only/recoverable runs after restart without persisting raw
 input. The static single-owner topology probe, packaged-artifact inclusion, and
 the separately authorized live no-model capability/visibility probe now pass.
-The digest-bound receipt is
+The digest-bound no-model receipt is
 [`../contracts/subagents/pi-subagents-live-no-model-evidence.json`](../contracts/subagents/pi-subagents-live-no-model-evidence.json).
 It proves startup, public RPC compatibility, and tool ownership only; live child
 terminal/cancellation, live BatchSwarm or SwarmGoal dispatch, background
 resume, metering, managed worktrees, writer integration, Provider behavior,
 and promotion-specific live
-evidence are still deliberately untested and remain S5 work.
+evidence are still deliberately untested. S5-A now provides a production
+capture path for the three Alpha read-only classes, but deterministic tests of
+that path are not live evidence. Its child `cwd` is an isolated synthetic
+fixture, not this repository; background/resume and writer integration remain
+later S5 work.
 Historical M5 receipts must not be described as successor evidence.
 
 Current branch evidence for this Preview source slice and S5 deterministic
 foundation:
 
-- `npm test`: **545/545** pass;
-- `npm run test:subagents`: **164/164** pass;
-- `npm run test:contract`: **116/116** pass;
+- `npm test`: **553/553** pass;
+- `npm run test:subagents`: **172/172** pass;
+- `npm run test:contract`: **124/124** pass;
 - `npm run test:integration`: **182/182** pass;
-- `npm run schema:check`: **72 production documents / 37 schema kinds / 0 findings**;
-- `npm run pack:check`: **261 allowlisted files**, with no tests, receipts, or
+- `npm run schema:check`: **73 production documents / 38 schema kinds / 0 findings**;
+- `npm run pack:check`: **269 allowlisted files**, with no tests, receipts, or
   Codex Goal in the tarball;
-- `npm run lint`: **672 files / 0 findings**;
-- `npm run secret:scan`: **672 tracked files + 261 packed files / 0 findings**;
+- `npm run lint`: **673 files / 0 findings**;
+- `npm run secret:scan`: **673 tracked files + 269 packed files / 0 findings**;
 - `npm run test:e2e`: fresh scripts-disabled tarball install, bootstrap,
   rollback, and installed-package topology doctor pass;
 - `npm run doctor`, all six Profile doctors, Mode/Agent/Workflow/Swarm doctors,
@@ -173,13 +186,16 @@ foundation:
   Static doctor retains only the two explicit inactive-candidate warnings.
 
 These are source-tree plus bounded no-model compatibility gates. The S5
-deterministic runner and protected importer are wired, but a clean-source
-receipt is generated only after the source commit. The canonical S3 live
-read-only batch and every S4 dynamic/live execution path are independently
-authorization-gated and recorded as `NOT_RUN_BY_POLICY`, not as PASS. The
-source-pinned trust policy remains `configured-unavailable`; promotion closure
-therefore remains Preview-only until protected Alpha/Beta/Stable evidence is
-explicitly authorized and signed.
+deterministic runner, protected importer, and S5-A capture/signing path are
+wired, but a clean-source receipt is generated only after the source commit.
+`npm run plan:subagents-live-evidence` currently reports
+`CONFIGURED_UNAVAILABLE`, with Provider/child/signer all `NOT_STARTED`, because
+the source tree is under development, the source-pinned trust policy remains
+`configured-unavailable`, and no one-time authorization exists. The command's
+`declaredEndpointHosts` are auditable metadata, not OS network enforcement.
+Promotion closure therefore remains Preview-only until protected
+Alpha/Beta/Stable evidence is explicitly authorized, captured, signed,
+reviewed, and imported.
 
 ## Current external Pi baseline
 

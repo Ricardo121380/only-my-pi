@@ -189,6 +189,12 @@
       "fixtureDir": "verification/fixtures/contracts/subagents-protected-evidence-trust"
     },
     {
+      "kind": "subagentsLiveEvidenceAuthorization",
+      "schemaPath": "schemas/subagents-live-evidence-authorization-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/live-evidence-authorization.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-live-evidence-authorization"
+    },
+    {
       "kind": "swarmRecipe",
       "schemaPath": "schemas/swarm-recipe-v1.schema.json",
       "productionGlobs": ["swarm/recipes/*.json"],
