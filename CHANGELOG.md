@@ -55,6 +55,9 @@ session. Third-party packages and Labs remain opt-in and require review.
   status; declared endpoint hosts are not an OS network policy;
 - a numeric-only protected usage reducer after the first delegation live
   attempt correctly failed closed on a redacted token sentinel before signing;
+- a zero-tool S5-A lifecycle probe after a complete terminal/Batch run was
+  rejected at roughly 40,588 tokens against the 20,000-token authorization;
+  the limit was not widened and no evidence was signed;
 - an independently authorized S5-B `background-resume` producer that runs two
   distinct Pi parent processes over one isolated persisted parent session,
   keeps `pi-subagents` artifacts session-scoped, binds restart state through a

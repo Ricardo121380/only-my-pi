@@ -118,6 +118,11 @@ redacted token projection masked the numeric usage fallback. Token/cost
 extraction now ignores non-numeric redaction sentinels and requires finite
 numeric metering before evidence can be authoritative.
 
+A later delegation run reached all three scenario classes but exceeded the
+20,000-token aggregate ceiling at roughly 40,588 tokens while remaining under
+$0.01. It was rejected before signing. The ceiling was not enlarged; S5-A now
+uses a zero-tool lifecycle probe, keeping model-quality evaluation separate.
+
 The release runner strips the inherited environment. Its one cache exception
 is `test-e2e`: an explicitly supplied npm cache is normalized to a real
 directory and accepted only inside the actual user's `.npm` cache or the

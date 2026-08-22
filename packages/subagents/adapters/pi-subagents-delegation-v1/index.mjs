@@ -100,19 +100,23 @@ export function compileAgentAssignmentToPiDelegationRequest({
     fail("structured delegation v1 only admits read-only shared-workspace assignments", "DELEGATION_WRITER_UNAVAILABLE", "policy");
   }
   if (typeof cwd !== "string" || cwd.length === 0) throw new TypeError("delegation cwd must be non-empty");
-  if (!Number.isSafeInteger(maximumToolCalls) || maximumToolCalls < 1 || maximumToolCalls > 64) throw new TypeError("maximumToolCalls is invalid");
+  if (!Number.isSafeInteger(maximumToolCalls) || maximumToolCalls < 0 || maximumToolCalls > 64) throw new TypeError("maximumToolCalls is invalid");
   const schema = outputSchema(agentSpec, assignment);
   const request = {
     requestId: handle.local.attemptId,
     ownerRunId: handle.local.runId,
     nodeId: handle.local.nodeId,
     agent: agentSpec.backendAgentId,
-    task: assignment.task.text,
+    task: maximumToolCalls === 0
+      ? `Do not call tools. This is a lifecycle-only probe, not a quality review. ${assignment.task.text}`
+      : assignment.task.text,
     context: assignment.context.mode,
     cwd,
     ...(typeof model === "string" && model.length > 0 ? { model } : {}),
     timeoutMs: assignment.budget.maxElapsedMs,
-    toolBudget: { hard: maximumToolCalls, block: [...MUTATING_TOOLS] },
+    toolBudget: maximumToolCalls === 0
+      ? { hard: 0, block: "*" }
+      : { hard: maximumToolCalls, block: [...MUTATING_TOOLS] },
     artifacts: false,
     result: schema === null ? { kind: "text" } : { kind: "structured", schema },
   };

@@ -441,6 +441,7 @@ export default function protectedLiveEvidenceExtension(pi) {
         transport,
         cwd: process.cwd(),
         timeoutMs: Math.min(60_000, request.limits.maxWallTimeMs),
+        maximumToolCalls: 0,
       });
       const record = await executeProtectedLiveEvidenceScenario(request, backend);
       process.stdout.write(`${JSON.stringify(record)}\n`);

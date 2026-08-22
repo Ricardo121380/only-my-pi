@@ -107,6 +107,13 @@ a redacted `totalTokens` projection ahead of the numeric `usage.total`
 fallback. The reducer now selects only finite numeric token/cost candidates and
 has a direct TerminalReceipt regression. No staged evidence was produced.
 
+The next bounded run completed the terminal and both Batch children but was
+rejected before signing because cumulative usage was about 40,588 tokens versus
+the 20,000-token authorization (cost was about $0.0094 versus the $1 ceiling).
+The lifecycle probe now uses zero tools so it cannot repeatedly spend cached
+context reviewing a synthetic fixture. The ceiling was not widened and no
+additional live run is authorized implicitly.
+
 The S0–S4 source slice now contains:
 
 - source dossiers, two ownership/state ADRs, and a dedicated 35-item subagents

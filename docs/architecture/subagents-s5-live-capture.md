@@ -90,6 +90,14 @@ scenarios, while `createPiBatchSwarmRuntime` covers the homogeneous batch. All
 four physical children pass through the pinned package's exported structured
 delegation events. Extension RPC remains the same package's separately audited
 async workflow/background/resume/control transport.
+
+These Alpha probes measure lifecycle correctness, not model review quality.
+The structured delegation request therefore uses a zero-tool budget and tells
+the child not to call tools. It still exercises a real Provider request, child
+process, structured result, correlated cancellation, exit code, usage and
+Batch aggregation, but it does not spend repeated cached context reading a
+synthetic two-file fixture. Model quality belongs to the separate offline/live
+evaluation corpus rather than promotion lifecycle evidence.
 The source repository is used only to validate and resolve versioned
 first-party contracts. The Pi parent and all children run in a synthetic
 fixture workspace containing only a small read-only `package.json` and

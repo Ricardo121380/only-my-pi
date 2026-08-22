@@ -72,6 +72,9 @@ test("delegation compiler binds read-only domain objects and exposes no raw work
   assert.equal(compiled.request.result.kind, "structured");
   assert.deepEqual(compiled.request.toolBudget.block, ["bash", "edit", "write", "web"]);
   assert.equal(Object.hasOwn(compiled.request, "workflowScript"), false);
+  const lifecycleOnly = compileAgentAssignmentToPiDelegationRequest({ ...values, cwd: "/fixture", maximumToolCalls: 0 });
+  assert.deepEqual(lifecycleOnly.request.toolBudget, { hard: 0, block: "*" });
+  assert.match(lifecycleOnly.request.task, /^Do not call tools\./u);
   assert.throws(() => compileAgentAssignmentToPiDelegationRequest({ ...values, cwd: "/fixture", assignment: { ...values.assignment, ownership: { ...values.assignment.ownership, writer: true } } }), /read-only/u);
 });
 
