@@ -394,20 +394,20 @@ test("status, steer, interrupt, resume, and stop always address explicit backend
   assert.equal(stopped.terminal.authoritative, true);
 
   const statusCalls = transport.calls.filter((call) => call.method === "status");
-  assert.deepEqual(statusCalls[0].params, { target: "backend-run-01" });
-  assert.deepEqual(statusCalls[1].params, { target: "backend-run-02" });
+  assert.deepEqual(statusCalls[0].params, { runId: "backend-run-01" });
+  assert.deepEqual(statusCalls[1].params, { runId: "backend-run-02" });
   const steer = transport.calls.find((call) => call.method === "steer");
   assert.deepEqual(steer.params, { runId: "backend-run-01", message: "Focus on the failing test.", mode: "steer", index: 0 });
   const interrupt = transport.calls.find((call) => call.method === "interrupt");
-  assert.deepEqual(interrupt.params, { target: "backend-run-01" });
+  assert.deepEqual(interrupt.params, { runId: "backend-run-01" });
   const resume = transport.calls.find((call) => call.method === "resume");
   assert.deepEqual(resume.params, {
-    target: "backend-run-01",
+    runId: "backend-run-01",
     message: "Continue after reviewing the failure.",
     output: "artifacts/review.md",
     outputMode: "file",
   });
-  assert.deepEqual(transport.calls.find((call) => call.method === "stop").params, { target: "backend-run-02" });
+  assert.deepEqual(transport.calls.find((call) => call.method === "stop").params, { runId: "backend-run-02" });
 });
 
 test("resume fails closed when upstream reuses an existing backend id", async () => {

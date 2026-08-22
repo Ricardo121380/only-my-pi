@@ -89,12 +89,14 @@ paths. It has no apply/delete surface: all existing targets remain
 evidence/handoff disposition are not inferred.
 Token/cost ceilings are signed reconciliation gates rather than a verified
 mid-child billing circuit breaker. The checked-in default remains inert. One
-external one-time Alpha authorization was used for a live cancel attempt on
-2026-08-22; the attempt failed closed because upstream async workflows reject
-`interrupt`, produced no signed/staged evidence, and left no live child. The
-runtime now uses correlated `stop` plus authoritative `cancelled` proof. Until
-that fixed path produces reviewed evidence this remains Preview, not Alpha,
-Beta, or Stable.
+external one-time Alpha authorization was used for two live cancel attempts on
+2026-08-22. The first exposed that upstream async workflows reject `interrupt`;
+the second exposed that the v2 adapter sent the undocumented `target` field
+instead of upstream's public `runId` field for management RPCs. Both failed
+closed, produced no signed/staged evidence, and left no live child. The runtime
+now uses correlated `stop`, exact `runId` targeting, and authoritative
+`cancelled` proof. Until that fixed path produces reviewed evidence this
+remains Preview, not Alpha, Beta, or Stable.
 
 The S0–S4 source slice now contains:
 
@@ -207,9 +209,9 @@ Historical M5 receipts must not be described as successor evidence.
 Current branch evidence for this Preview source slice and S5 deterministic
 foundation:
 
-- `npm test`: **573/573** pass;
-- `npm run test:subagents`: **190/190** pass;
-- `npm run test:contract`: **142/142** pass;
+- `npm test`: **574/574** pass;
+- `npm run test:subagents`: **191/191** pass;
+- `npm run test:contract`: **143/143** pass;
 - `npm run test:integration`: **182/182** pass;
 - `npm run schema:check`: **77 production documents / 42 schema kinds / 0 findings**;
 - `npm run pack:check`: **291 allowlisted files**, with no tests, receipts, or

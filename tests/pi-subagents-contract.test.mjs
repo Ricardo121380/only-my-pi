@@ -153,6 +153,13 @@ test("extension RPC v1 is the sole live lane and the delegation export is refere
   validateWire(readJson(path.join(fixtureRoot, "wire-plan.json")));
   assert.equal(contract.topology.liveDiscovery, "ping-capability-handshake");
   assert.equal(contract.topology.liveExecution, "spawn-with-compiled-workflowScript");
+  assert.deepEqual(contract.rpc.managementTargetField, {
+    status: "runId",
+    steer: "runId",
+    interrupt: "runId",
+    stop: "runId",
+    resume: "runId",
+  });
   assert.equal(contract.exportedDelegationReference.activeRuntimeAdapter, false);
   assert.equal(contract.verification.liveRuntime, "LIVE_NO_MODEL_CAPABILITY_PASS");
   assert.equal(contract.verification.liveRuntimeMilestone, "S1");

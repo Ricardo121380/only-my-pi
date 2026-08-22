@@ -386,7 +386,7 @@ export class PiSubagentsRpcV1Backend {
     await this.ensureReady({ signal });
     requireBackendCapability(this.capabilityMatrix, "status", { allowDegraded: true });
     const binding = bindingFor(handle);
-    const reply = await this.#request("status", { target: binding.backendRunId }, { signal });
+    const reply = await this.#request("status", { runId: binding.backendRunId }, { signal });
     return immutable({ bindingId: binding.bindingId, backendRunId: binding.backendRunId, data: reply.data ?? null });
   }
 
@@ -414,7 +414,7 @@ export class PiSubagentsRpcV1Backend {
       requireBackendCapability(this.capabilityMatrix, "processTerminalProof");
     }
     const binding = bindingFor(handle);
-    const reply = await this.#request("interrupt", { target: binding.backendRunId }, { signal });
+    const reply = await this.#request("interrupt", { runId: binding.backendRunId }, { signal });
     if (!awaitTerminal) return immutable({ status: "INTERRUPTING", binding, data: reply.data ?? null });
     const terminal = await this.awaitTerminal(handle, { bindingId: binding.bindingId, intent: "interrupt", signal });
     return immutable({ status: "TERMINAL", binding, data: reply.data ?? null, terminal });
@@ -426,7 +426,7 @@ export class PiSubagentsRpcV1Backend {
     requireBackendCapability(this.capabilityMatrix, "terminalEvents");
     requireBackendCapability(this.capabilityMatrix, "processTerminalProof");
     const binding = bindingFor(handle);
-    const reply = await this.#request("stop", { target: binding.backendRunId }, { signal });
+    const reply = await this.#request("stop", { runId: binding.backendRunId }, { signal });
     const terminal = await this.awaitTerminal(handle, { bindingId: binding.bindingId, intent: "stop", signal });
     return immutable({ status: "TERMINAL", binding, data: reply.data ?? null, terminal });
   }
@@ -454,7 +454,7 @@ export class PiSubagentsRpcV1Backend {
     const parent = bindingFor(handle);
     this.eventStore.clear(handle.backendBindings.flatMap((binding) => this.#mappingIdentifiers(binding)));
     const params = {
-      target: parent.backendRunId,
+      runId: parent.backendRunId,
       message: assertMessage(message, "resume message"),
     };
     if (output !== undefined) {

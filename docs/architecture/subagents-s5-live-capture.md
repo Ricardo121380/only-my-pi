@@ -1,8 +1,8 @@
 # Subagents S5-A protected live capture
 
 Status: **production capture path and time-bounded public Alpha signer
-configured; one cancel attempt failed closed before evidence and the upstream
-workflow-stop compatibility fix is ready for re-run** · 2026-08-22
+configured; two cancel attempts failed closed before evidence and the exact
+workflow-stop/runId compatibility fixes are ready for re-run** · 2026-08-22
 
 S5-A supplies the missing producer side of the source-pinned protected-evidence
 protocol. It is intentionally limited to the three read-only evidence classes
@@ -20,6 +20,13 @@ produced no signed or staged evidence and left no live child. The producer now
 waits until the exact backend run is status-visible, sends `stop`, and accepts
 the cancel proof only when the correlated terminal is authoritative and its
 normalized outcome is `cancelled`.
+
+The second attempt exposed a separate adapter defect: the public upstream RPC
+normalizes management targets from `runId`, `id`, or `dir`, while the v2 backend
+had sent `{target: ...}` for status, interrupt, stop, and resume. The attempt
+again produced no signed/staged evidence and left no live child. The adapter
+now sends `{runId: <correlated backend id>}` for every management method, and
+the checked-in wire contract plus backend tests pin that exact field.
 
 `background-resume` now has a separate S5-B producer and authorization contract;
 `guarded-writer-integration` remains later S5 work. This S5-A authorization

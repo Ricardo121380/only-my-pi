@@ -51,6 +51,13 @@
       "params": "method-specific-object",
       "sourceExtension": "only-my-pi"
     },
+    "managementTargetField": {
+      "status": "runId",
+      "steer": "runId",
+      "interrupt": "runId",
+      "stop": "runId",
+      "resume": "runId"
+    },
     "replyEnvelope": {
       "required": ["version", "requestId", "success"],
       "correlationEvent": "replyPrefix + requestId",

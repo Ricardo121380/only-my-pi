@@ -34,6 +34,14 @@ const REQUEST_KEYS = Object.freeze([
 ]);
 const MAX_REQUEST_BYTES = 64 * 1024;
 const SAFE_CODE = /^[A-Z][A-Z0-9_]{0,127}$/u;
+const UPSTREAM_CODE = /^[a-z][a-z0-9_]{0,95}$/u;
+
+export function protectedLivePublicErrorCode(cause) {
+  const code = cause?.code;
+  if (SAFE_CODE.test(code ?? "")) return code;
+  if (UPSTREAM_CODE.test(code ?? "")) return `UPSTREAM_${code.toUpperCase()}`;
+  return "CAPTURE_EXTENSION_FAILED";
+}
 
 function object(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -436,7 +444,7 @@ export default function protectedLiveEvidenceExtension(pi) {
       const record = await executeProtectedLiveEvidenceScenario(request, backend);
       process.stdout.write(`${JSON.stringify(record)}\n`);
     } catch (cause) {
-      const code = SAFE_CODE.test(cause?.code ?? "") ? cause.code : "CAPTURE_EXTENSION_FAILED";
+      const code = protectedLivePublicErrorCode(cause);
       process.stdout.write(`${JSON.stringify({
         formatVersion: 1,
         type: SUBAGENTS_LIVE_CAPTURE_ERROR_TYPE,

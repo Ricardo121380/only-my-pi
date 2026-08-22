@@ -30,6 +30,7 @@ import {
 } from "../packages/subagents/release/live-evidence-provider.mjs";
 import {
   executeProtectedLiveEvidenceScenario,
+  protectedLivePublicErrorCode,
 } from "../packages/subagents/release/live-evidence-extension.mjs";
 import {
   loadProtectedEvidenceTrustPolicy,
@@ -729,6 +730,12 @@ test("Pi capture extension composes Agent, cancel, and 2-item BatchSwarm through
   for (const id of evidenceIds) {
     assert.equal(signedActualRecords.evidence[id].proofs.some((proof) => proof.kind === "usage-metering"), true);
   }
+});
+
+test("live extension preserves stable errors and normalizes upstream lowercase RPC codes", () => {
+  assert.equal(protectedLivePublicErrorCode({ code: "CAPTURE_CANCEL_NOT_READY" }), "CAPTURE_CANCEL_NOT_READY");
+  assert.equal(protectedLivePublicErrorCode({ code: "not_found" }), "UPSTREAM_NOT_FOUND");
+  assert.equal(protectedLivePublicErrorCode(new TypeError("private detail")), "CAPTURE_EXTENSION_FAILED");
 });
 
 test("live evidence CLI defaults to a zero-execution plan and run parsing is fail-closed", async () => {
