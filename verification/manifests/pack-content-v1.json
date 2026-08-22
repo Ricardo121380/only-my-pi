@@ -21,7 +21,8 @@
     "scripts/subagents-live-probe.mjs",
     "scripts/subagents-live-evidence.mjs",
     "scripts/subagents-background-resume-evidence.mjs",
-    "scripts/subagents-guarded-writer-evidence.mjs"
+    "scripts/subagents-guarded-writer-evidence.mjs",
+    "scripts/subagents-guarded-writer-reconcile.mjs"
   ],
   "allowedPrefixes": [
     "bin/",
@@ -70,6 +71,7 @@
     "scripts/subagents-live-evidence.mjs",
     "scripts/subagents-background-resume-evidence.mjs",
     "scripts/subagents-guarded-writer-evidence.mjs",
+    "scripts/subagents-guarded-writer-reconcile.mjs",
     "agents/generated/omp-scout.md",
     "agents/scout.json",
     "contracts/schema-catalog.json",
@@ -99,6 +101,7 @@
     "contracts/subagents/live-evidence-authorization.example.json",
     "contracts/subagents/background-resume-authorization.example.json",
     "contracts/subagents/guarded-writer-authorization.example.json",
+    "contracts/subagents/guarded-writer-reconciliation.example.json",
     "contracts/subagents/pi-subagents-live-no-model-evidence.json",
     "extensions/context-doctor/index.ts",
     "extensions/context-doctor/metrics.mjs",
@@ -154,6 +157,7 @@
     "packages/subagents/release/guarded-writer-extension.mjs",
     "packages/subagents/release/guarded-writer-pi-runner.mjs",
     "packages/subagents/release/guarded-writer-verifier.mjs",
+    "packages/subagents/release/guarded-writer-reconciliation.mjs",
     "packages/subagents/batch-swarm/index.mjs",
     "packages/subagents/batch-swarm/registry.mjs",
     "packages/subagents/batch-swarm/pi-item-executor.mjs",
@@ -213,6 +217,7 @@
     "schemas/subagents-live-evidence-authorization-v1.schema.json",
     "schemas/subagents-background-resume-authorization-v1.schema.json",
     "schemas/subagents-guarded-writer-authorization-v1.schema.json",
+    "schemas/subagents-guarded-writer-reconciliation-v1.schema.json",
     "swarm/recipes/research-synthesis.json",
     "swarm/recipes/coding-guarded.json",
     "swarm/recipes/review-matrix.json",

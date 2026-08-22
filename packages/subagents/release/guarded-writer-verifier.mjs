@@ -39,42 +39,52 @@ function contained(root, candidate, code = "WRITER_PATH_ESCAPE") {
 }
 
 async function safeRealDirectory(root, target) {
-  const lexicalRoot = path.resolve(root);
-  const absolute = contained(lexicalRoot, target, "WRITER_WORKTREE_PATH_ESCAPE");
-  const relative = path.relative(lexicalRoot, absolute);
-  let current = lexicalRoot;
-  for (const segment of relative.split(path.sep)) {
-    if (!segment) continue;
-    current = path.join(current, segment);
-    const stat = await fsPromises.lstat(current);
-    if (stat.isSymbolicLink()) fail("symlinked worktree path is forbidden", "WRITER_SYMLINK_FORBIDDEN");
+  try {
+    const lexicalRoot = path.resolve(root);
+    const absolute = contained(lexicalRoot, target, "WRITER_WORKTREE_PATH_ESCAPE");
+    const relative = path.relative(lexicalRoot, absolute);
+    let current = lexicalRoot;
+    for (const segment of relative.split(path.sep)) {
+      if (!segment) continue;
+      current = path.join(current, segment);
+      const stat = await fsPromises.lstat(current);
+      if (stat.isSymbolicLink()) fail("symlinked worktree path is forbidden", "WRITER_SYMLINK_FORBIDDEN");
+    }
+    const absoluteRoot = await fsPromises.realpath(lexicalRoot);
+    const real = await fsPromises.realpath(absolute);
+    contained(absoluteRoot, real, "WRITER_WORKTREE_PATH_ESCAPE");
+    if (real !== path.join(absoluteRoot, relative)) {
+      fail("worktree path does not resolve canonically", "WRITER_SYMLINK_FORBIDDEN");
+    }
+    const stat = await fsPromises.lstat(real);
+    if (!stat.isDirectory()) fail("preserved worktree is unavailable", "WRITER_WORKTREE_UNAVAILABLE");
+    return real;
+  } catch (cause) {
+    if (cause instanceof GuardedWriterVerificationError) throw cause;
+    fail("preserved worktree is unavailable", "WRITER_WORKTREE_UNAVAILABLE");
   }
-  const absoluteRoot = await fsPromises.realpath(lexicalRoot);
-  const real = await fsPromises.realpath(absolute);
-  contained(absoluteRoot, real, "WRITER_WORKTREE_PATH_ESCAPE");
-  if (real !== path.join(absoluteRoot, relative)) {
-    fail("worktree path does not resolve canonically", "WRITER_SYMLINK_FORBIDDEN");
-  }
-  const stat = await fsPromises.lstat(real);
-  if (!stat.isDirectory()) fail("preserved worktree is unavailable", "WRITER_WORKTREE_UNAVAILABLE");
-  return real;
 }
 
 async function safeRegularFile(root, target, maximum = MAX_MANIFEST_BYTES) {
-  const absolute = contained(root, target);
-  const relative = path.relative(path.resolve(root), absolute);
-  let current = path.resolve(root);
-  for (const segment of relative.split(path.sep)) {
-    if (!segment) continue;
-    current = path.join(current, segment);
-    const stat = await fsPromises.lstat(current);
-    if (stat.isSymbolicLink()) fail("symlinked verification artifact is forbidden", "WRITER_SYMLINK_FORBIDDEN");
+  try {
+    const absolute = contained(root, target);
+    const relative = path.relative(path.resolve(root), absolute);
+    let current = path.resolve(root);
+    for (const segment of relative.split(path.sep)) {
+      if (!segment) continue;
+      current = path.join(current, segment);
+      const stat = await fsPromises.lstat(current);
+      if (stat.isSymbolicLink()) fail("symlinked verification artifact is forbidden", "WRITER_SYMLINK_FORBIDDEN");
+    }
+    const stat = await fsPromises.lstat(absolute);
+    if (!stat.isFile() || stat.size < 2 || stat.size > maximum) {
+      fail("verification artifact must be a bounded regular file", "WRITER_ARTIFACT_INVALID");
+    }
+    return absolute;
+  } catch (cause) {
+    if (cause instanceof GuardedWriterVerificationError) throw cause;
+    fail("verification artifact is unavailable", "WRITER_ARTIFACT_INVALID");
   }
-  const stat = await fsPromises.lstat(absolute);
-  if (!stat.isFile() || stat.size < 2 || stat.size > maximum) {
-    fail("verification artifact must be a bounded regular file", "WRITER_ARTIFACT_INVALID");
-  }
-  return absolute;
 }
 
 function oneString(value, label) {
@@ -222,9 +232,18 @@ export async function verifyGuardedWriterWorktree({
     fail("handoff manifest is not valid JSON", "WRITER_HANDOFF_MANIFEST_INVALID");
   }
   const { group, child, cleanup } = validateManifestShape(manifest);
-  const expectedFixture = await fsPromises.realpath(fixtureRoot);
-  if (await fsPromises.realpath(group.repoRoot) !== expectedFixture
-    || await fsPromises.realpath(manifest.cwd) !== expectedFixture
+  let expectedFixture;
+  let manifestRepository;
+  let manifestCwd;
+  try {
+    expectedFixture = await fsPromises.realpath(fixtureRoot);
+    manifestRepository = await fsPromises.realpath(group.repoRoot);
+    manifestCwd = await fsPromises.realpath(manifest.cwd);
+  } catch {
+    fail("handoff repository is unavailable", "WRITER_BASE_COMMIT_DRIFT");
+  }
+  if (manifestRepository !== expectedFixture
+    || manifestCwd !== expectedFixture
     || group.baseCommit !== assignment.ownership.baseCommit) {
     fail("handoff repository or base commit differs from the assignment", "WRITER_BASE_COMMIT_DRIFT");
   }

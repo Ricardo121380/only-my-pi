@@ -46,8 +46,9 @@ The approved semantic split is:
   with no separate scheduler or permission owner.
 
 S5 deterministic release governance, the protected-evidence importer, the
-S5-A Alpha capture producer, the separate S5-B background-resume producer, and
-the S5-C protected guarded-writer producer are now implemented on this branch.
+S5-A Alpha capture producer, the separate S5-B background-resume producer, the
+S5-C protected guarded-writer producer, and the S5-D deterministic fault/
+recovery closure are now implemented on this branch.
 The versioned
 compatibility matrix, cumulative promotion policy, `release-gates-v2`
 manifest, protected-evidence and one-time authorization schemas, and Ed25519
@@ -78,6 +79,14 @@ base commit, exact staged file claim, absence of untracked and unstaged changes,
 regular-file modes, bounded patch, `git diff --check`, and fixture marker. The
 result is a handoff-only WriterHandoff and digest-only evidence; there is no
 commit, merge, apply, push, or automatic integration.
+S5-D adds stable fail-closed coverage for a started parent with no terminal,
+truncated/missing handoff state, missing worktrees, parent Git failure,
+signer/staging interruption, and post-capture source drift. Its separate
+guarded-writer reconciliation planner derives exactly one authorization-bound
+disposable runtime target and emits a digest-bound review plan without host
+paths. It has no apply/delete surface: all existing targets remain
+`RETAIN_FOR_REVIEW`, including complete ones, because process liveness and
+evidence/handoff disposition are not inferred.
 Token/cost ceilings are signed reconciliation gates rather than a verified
 mid-child billing circuit breaker. The checked-in
 default remains inert: its trust policy has no signer and no live evidence has
@@ -195,15 +204,15 @@ Historical M5 receipts must not be described as successor evidence.
 Current branch evidence for this Preview source slice and S5 deterministic
 foundation:
 
-- `npm test`: **563/563** pass;
-- `npm run test:subagents`: **182/182** pass;
-- `npm run test:contract`: **134/134** pass;
+- `npm test`: **570/570** pass;
+- `npm run test:subagents`: **189/189** pass;
+- `npm run test:contract`: **141/141** pass;
 - `npm run test:integration`: **182/182** pass;
-- `npm run schema:check`: **75 production documents / 40 schema kinds / 0 findings**;
-- `npm run pack:check`: **284 allowlisted files**, with no tests, receipts, or
+- `npm run schema:check`: **76 production documents / 41 schema kinds / 0 findings**;
+- `npm run pack:check`: **288 allowlisted files**, with no tests, receipts, or
   Codex Goal in the tarball;
-- `npm run lint`: **711 files / 0 findings**;
-- `npm run secret:scan`: **711 tracked files + 284 packed files / 0 findings**;
+- `npm run lint`: **720 files / 0 findings**;
+- `npm run secret:scan`: **720 tracked files + 288 packed files / 0 findings**;
 - `npm run test:e2e`: fresh scripts-disabled offline tarball install, packaged
   topology doctor, zero-write plan, bootstrap, idempotent second apply,
   rollback, and final `NOT_INSTALLED` status pass. The verification used a

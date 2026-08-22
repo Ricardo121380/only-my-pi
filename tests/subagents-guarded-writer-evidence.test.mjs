@@ -329,6 +329,43 @@ test("parent verifier recomputes an exact staged diff and creates a handoff with
   }), { code: "WRITER_SYMLINK_FORBIDDEN" });
 });
 
+test("guarded writer handoff faults produce stable fail-closed verifier codes", async (t) => {
+  const invalid = await writerFixture(t);
+  await fsPromises.writeFile(invalid.manifestPath, "{\"version\":1");
+  await assert.rejects(verifyGuardedWriterWorktree({
+    assignment: invalid.assignment,
+    terminalReceipt: invalid.terminalReceipt,
+    artifactRoot: invalid.artifactRoot,
+    worktreeRoot: invalid.worktreeRoot,
+    fixtureRoot: invalid.repository,
+    expectedMarker: marker,
+  }), { code: "WRITER_HANDOFF_MANIFEST_INVALID" });
+
+  const missing = await writerFixture(t);
+  const manifest = JSON.parse(await fsPromises.readFile(missing.manifestPath, "utf8"));
+  manifest.groups[0].cleanup.tasks[0].path = path.join(missing.worktreeRoot, "missing-writer");
+  await fsPromises.writeFile(missing.manifestPath, `${JSON.stringify(manifest)}\n`);
+  await assert.rejects(verifyGuardedWriterWorktree({
+    assignment: missing.assignment,
+    terminalReceipt: missing.terminalReceipt,
+    artifactRoot: missing.artifactRoot,
+    worktreeRoot: missing.worktreeRoot,
+    fixtureRoot: missing.repository,
+    expectedMarker: marker,
+  }), { code: "WRITER_WORKTREE_UNAVAILABLE" });
+
+  const gitFailure = await writerFixture(t);
+  await assert.rejects(verifyGuardedWriterWorktree({
+    assignment: gitFailure.assignment,
+    terminalReceipt: gitFailure.terminalReceipt,
+    artifactRoot: gitFailure.artifactRoot,
+    worktreeRoot: gitFailure.worktreeRoot,
+    fixtureRoot: gitFailure.repository,
+    expectedMarker: marker,
+    runGit: async () => ({ status: 1, stdout: Buffer.alloc(0), stderr: Buffer.from("bounded timeout") }),
+  }), { code: "WRITER_GIT_VERIFICATION_FAILED" });
+});
+
 test("writer capture signs only bounded proof digests and marks liveWriter authorized", async () => {
   const values = fixture();
   const record = captureRecord(values);
@@ -448,6 +485,99 @@ test("Pi guarded writer runner uses one isolated Git fixture, one managed worktr
   const generated = await fsPromises.readFile(path.join(request.agentRoot, "agents", "omp-implementer.md"), "utf8");
   assert.match(generated, /managed\s+worktree supplied by the parent/u);
   assert.equal(await git(request.fixtureRoot, "status", "--porcelain=v1", "--untracked-files=all"), "");
+});
+
+test("started Pi process without a unique terminal record is never accepted as writer evidence", async (t) => {
+  const values = fixture();
+  const directory = await fsPromises.mkdtemp(path.join(os.tmpdir(), "omp-writer-no-terminal-"));
+  t.after(() => fsPromises.rm(directory, { recursive: true, force: true }));
+  const configRoot = path.join(directory, "config");
+  const fakeHome = path.join(directory, "owner-home");
+  await fsPromises.mkdir(configRoot);
+  await fsPromises.mkdir(fakeHome);
+  const audited = await auditedPackageFixture(directory);
+  const runner = createPiGuardedWriterScenarioRunner({
+    configRoot,
+    packageRoot: audited.packageRoot,
+    repositoryRoot: rootDir,
+    piCommand: "/test/pi",
+    expectedArtifact: audited.expected,
+    versionProbe: async () => "0.84.1",
+    homedir: () => fakeHome,
+    hostEnvironment: { PATH: process.env.PATH, FIXTURE_API_KEY: "fixture-secret-value" },
+    spawnImpl: () => {
+      const child = new EventEmitter();
+      child.stdout = new EventEmitter();
+      child.stderr = new EventEmitter();
+      child.stdin = { end() {}, on() {} };
+      child.kill = () => child.emit("exit", null, "SIGTERM");
+      queueMicrotask(() => child.emit("exit", 0, null));
+      return child;
+    },
+  });
+  await assert.rejects(runner({
+    id: "guarded-writer-integration",
+    authorization: values.authorization,
+    expectedSourceCommit: sourceCommit,
+    environment: structuredClone(values.matrix.rows[0].environment),
+    scenarioLimits: structuredClone(values.authorization.limits),
+  }), { code: "WRITER_RUNNER_RECORD_MISSING" });
+});
+
+test("signing, staging, and post-capture source drift never produce a completed writer run", async (t) => {
+  const values = fixture();
+  const record = captureRecord(values);
+  await assert.rejects(captureProtectedGuardedWriterEvidence({
+    authorization: values.authorization,
+    matrix: values.matrix,
+    policy: values.policy,
+    trustPolicy: values.trustPolicy,
+    expectedSourceCommit: sourceCommit,
+    scenarioRunner: async () => record,
+    signer: async () => { throw Object.assign(new Error("signer interrupted"), { code: "SIGNER_INTERRUPTED" }); },
+    now: Date.parse(observedAt),
+  }), { code: "SIGNER_INTERRUPTED" });
+
+  const directory = await fsPromises.mkdtemp(path.join(os.tmpdir(), "omp-writer-cli-fault-"));
+  t.after(() => fsPromises.rm(directory, { recursive: true, force: true }));
+  const configRoot = path.join(directory, "config");
+  const outputDir = path.join(directory, "staging");
+  const authorizationFile = path.join(directory, "authorization.json");
+  await fsPromises.mkdir(configRoot);
+  await fsPromises.mkdir(outputDir);
+  await fsPromises.writeFile(authorizationFile, "{}\n");
+  const argv = [
+    "--run", "--yes", "--authorization-file", authorizationFile,
+    "--config-root", configRoot, "--package-root", path.join(directory, "package"),
+    "--pi-command", "/test/pi", "--signer-command", "/test/signer",
+    "--output-dir", outputDir, "--repository-root", rootDir, "--json",
+  ];
+  const dependencies = {
+    rootDir,
+    scenarioRunnerFactory: () => async () => record,
+    signerFactory: () => async ({ digest }) => crypto.sign(null, Buffer.from(digest), values.privateKey).toString("base64"),
+    releaseContractsLoader: () => ({ matrix: values.matrix, policy: values.policy }),
+    trustPolicyLoader: () => values.trustPolicy,
+    authorizationLoader: () => values.authorization,
+    now: () => Date.parse(observedAt),
+  };
+  await assert.rejects(executeGuardedWriterEvidence(argv, {
+    ...dependencies,
+    sourceInspector: async () => ({ sourceCommit, clean: true }),
+    writer: async () => { throw Object.assign(new Error("staging interrupted"), { code: "STAGING_INTERRUPTED" }); },
+  }), { code: "STAGING_INTERRUPTED" });
+
+  let sourceInspections = 0;
+  let writerCalls = 0;
+  await assert.rejects(executeGuardedWriterEvidence(argv, {
+    ...dependencies,
+    sourceInspector: async () => {
+      sourceInspections += 1;
+      return { sourceCommit: sourceInspections === 1 ? sourceCommit : "d".repeat(40), clean: true };
+    },
+    writer: async () => { writerCalls += 1; },
+  }), { code: "GUARDED_WRITER_SOURCE_CHANGED" });
+  assert.equal(writerCalls, 0);
 });
 
 test("guarded writer CLI is plan-only by default and cannot reuse implicit authorization", async () => {

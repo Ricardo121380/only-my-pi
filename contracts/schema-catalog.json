@@ -207,6 +207,12 @@
       "fixtureDir": "verification/fixtures/contracts/subagents-guarded-writer-authorization"
     },
     {
+      "kind": "subagentsGuardedWriterReconciliation",
+      "schemaPath": "schemas/subagents-guarded-writer-reconciliation-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/guarded-writer-reconciliation.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-guarded-writer-reconciliation"
+    },
+    {
       "kind": "swarmRecipe",
       "schemaPath": "schemas/swarm-recipe-v1.schema.json",
       "productionGlobs": ["swarm/recipes/*.json"],

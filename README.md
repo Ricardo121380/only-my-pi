@@ -39,7 +39,7 @@ scripts/      Repository checks and package governance tooling
 
 ## Current research
 
-- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; S0–S4 Preview source plus S5-A/S5-B/S5-C producers implemented)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
+- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; S0–S4 Preview source plus S5-A/S5-B/S5-C producers and S5-D fault/recovery closure implemented)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
 - [Codex successor development Goal for S0–S5](codex/goals/develop-only-my-pi-subagents-ultrarun.md)
 - [Historical Harness MVP development plan (M0–M7, complete)](docs/plans/2026-08-16-only-my-pi-development-plan.md)
 - [Historical Codex Harness MVP Goal](codex/goals/develop-only-my-pi.md)
@@ -65,6 +65,7 @@ scripts/      Repository checks and package governance tooling
 - [Subagents S5-A protected live capture](docs/architecture/subagents-s5-live-capture.md)
 - [Subagents S5-B protected background resume](docs/architecture/subagents-s5-background-resume.md)
 - [Subagents S5-C protected guarded writer](docs/architecture/subagents-s5-guarded-writer.md)
+- [Subagents S5-D fault and recovery closure](docs/architecture/subagents-s5-fault-recovery.md)
 - [Quickstart](docs/quickstart.md)
 - [Modes](docs/modes.md)
 - [AgentSwarm](docs/agent-swarm.md)
@@ -217,6 +218,16 @@ only this protected fixture path may opt into the recorded
 `protected-degraded-probe-v1` admission. The checked-in plan is inert and no
 Provider-backed writer run, protected evidence import, or Beta promotion has
 occurred.
+
+S5-D adds `npm run plan:subagents-guarded-writer-cleanup`, a review-only
+reconciliation surface for the disposable S5-C runtime. It detects partial,
+drifted, missing and symlinked state, binds its observations to the exact
+authorization/source/request digests, and exposes no deletion operation. The
+plan always retains an existing target for operator review; `--run`, `--apply`
+and `--yes` are rejected. Deterministic tests also cover missing terminal
+records, truncated handoffs, missing worktrees, Git verifier failure,
+signer/staging interruption and post-capture source drift. These are Preview
+fault/recovery checks, not live evidence.
 
 `omp workflow|swarm run` and `resume` accept an optional bounded absolute JSON
 `--input-file`; it is read with `O_NOFOLLOW`, hashed into the execution

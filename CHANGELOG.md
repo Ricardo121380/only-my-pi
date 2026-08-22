@@ -60,6 +60,11 @@ session. Third-party packages and Labs remain opt-in and require review.
   modes and fixed gates in the parent; rejects untracked/unstaged changes; and
   produces only a reviewable WriterHandoff plus digest evidence without commit,
   merge, apply, push or automatic integration; no live run has been performed;
+- an S5-D deterministic guarded-writer fault matrix plus a digest-bound,
+  host-path-free reconciliation planner for preserved disposable runtime state;
+  partial/symlink/source-drift conditions fail closed and the CLI intentionally
+  has no deletion/apply surface, so every existing target remains retained for
+  operator review;
 - compatibility/provenance contracts plus listener/timer resource-leak soaks,
   with Preview/Alpha/Beta/Stable claims kept separate from `NOT_RUN_BY_POLICY`
   live evidence;

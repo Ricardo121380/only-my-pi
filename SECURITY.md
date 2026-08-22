@@ -238,6 +238,16 @@ container/VM or equivalent outer boundary for an untrusted Provider, plugin or
 child. Preserved worktrees and private session artifacts stay in the
 operator-owned disposable root for review and are never imported as evidence.
 
+S5-D adds visibility for those retained artifacts without adding deletion
+authority. The guarded-writer reconciliation command derives one target from
+an exact authorization, rejects the real Pi home and source/config overlap,
+checks request bounds and non-symlink topology, and emits only a digest-bound
+review plan. Its only existing-target disposition is `RETAIN_FOR_REVIEW`; it
+has no `--run`, `--apply`, `--yes`, delete callback, or generated shell
+command. A missing, partial, drifted, unreadable or symlinked runtime therefore
+cannot be converted into automatic cleanup. Process liveness, handoff review,
+and evidence disposition remain explicit operator responsibilities.
+
 The checked-in S4 evidence uses injected planners/executors and temporary roots.
 No live SwarmGoal, UltraRun child, Provider request, or guarded writer mutation
 has been run. S5-C supplies the producer code, not protected evidence or a Beta

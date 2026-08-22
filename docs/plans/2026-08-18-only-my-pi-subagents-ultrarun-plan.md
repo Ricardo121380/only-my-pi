@@ -1,7 +1,7 @@
 # only-my-pi：统一 Subagent、Workflow 与 UltraRun 后续开发计划
 
 > 版本：2026-08-18
-> 状态：已批准的 successor implementation baseline；S0–S4 Preview source 已实现；S5 deterministic gates、source-pinned protected-evidence importer 与 S5-A/S5-B/S5-C protected producers 已实现，但 checked-in trust 仍无 signer、未运行真实 Provider/live evidence，promotion 仍为 Preview
+> 状态：已批准的 successor implementation baseline；S0–S4 Preview source 已实现；S5 deterministic gates、source-pinned protected-evidence importer、S5-A/S5-B/S5-C protected producers 与 S5-D review-only fault/recovery closure 已实现，但 checked-in trust 仍无 signer、未运行真实 Provider/live evidence，promotion 仍为 Preview
 > 前置基线：M0–M7 Harness MVP 已按 [`2026-08-16-only-my-pi-development-plan.md`](2026-08-16-only-my-pi-development-plan.md) 完成并合入 `main`
 > 配套 Codex Goal：[`../../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../../codex/goals/develop-only-my-pi-subagents-ultrarun.md)
 > 产品边界：纯 Pi 原生；参考 Kimi/Claude/DeepSeek 等源码与公开合同，不接入 Kimi runtime，不重写 Pi agent loop、Provider 或 session engine
@@ -727,7 +727,7 @@ omp ultra plan|run|pause|resume|status|cancel
 
 ### S5：安全、fault/live eval、兼容迁移与发布闭环
 
-当前增量状态：**S5-A/S5-B/S5-C producers implemented, live run not authorized**。
+当前增量状态：**S5-A/S5-B/S5-C producers and S5-D deterministic recovery planning implemented; live run not authorized**。
 `subagents-live-evidence-authorization-v1`、隔离 Pi 场景驱动、同一
 `pi-subagents` 后端上的 Agent terminal/cancel 与 two-item BatchSwarm、低敏
 capture、外部 digest-only 签名和 review staging 已实现并由确定性故障测试
@@ -756,6 +756,14 @@ change，重新计算 exact staged diff，拒绝 symlink/submodule，运行固�
 evidence；不会 commit、merge、apply、push 或自动 integration。实现和临时 Git
 测试仍不是 live evidence；真实 Provider-backed writer 未获授权，因此不得
 推断 Beta 完成或把 worktree 宣称为 OS sandbox/path allowlist。
+
+S5-D 现已补上 guarded-writer 的确定性 fault/recovery closure：started-but-no-
+terminal、handoff 截断、worktree 缺失、Git verifier 失败、signer/staging
+中断、capture 后 source drift 均有稳定 fail-closed 结果。单独的 reconciliation
+planner 只检查指定授权对应的 disposable runtime，输出 digest-bound、无 host path
+的 `RETAIN_FOR_REVIEW` 计划，并固定 `automatic=false`、`deleteAuthorized=false`、
+`applyAvailable=false`；它没有删除执行面，不会把 partial/symlink/drift 状态转成
+清理授权。该增量仍只是 Preview deterministic evidence。
 
 任务：
 

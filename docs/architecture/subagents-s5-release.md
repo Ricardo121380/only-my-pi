@@ -44,6 +44,11 @@ The ownership boundary remains:
   writer, one synthetic repository/base commit, one managed worktree, one exact
   file claim, parent-side Git verification and fixed gates. The output is a
   handoff only; automatic integration is forbidden.
+- `subagents-guarded-writer-reconciliation-v1` and the
+  [S5-D fault/recovery contract](subagents-s5-fault-recovery.md) turn preserved
+  or partial disposable runtime state into a digest-bound review plan. The
+  planner has no delete/apply operation and never treats a complete runtime as
+  implicit cleanup permission.
 - `verification/release-gates-v2.json` digest-pins every v1 gate and adds the
   fixed S5 deterministic/protected gate set. Command, argv, environment,
   timeout, channel, and protected execution semantics are code-validated;
@@ -57,6 +62,7 @@ npm run verify:subagents:run                     # execute Preview deterministic
 npm run plan:subagents-live-evidence             # inspect Alpha capture readiness
 npm run plan:subagents-background-resume         # inspect Beta resume readiness
 npm run plan:subagents-guarded-writer             # inspect Beta writer readiness
+npm run plan:subagents-guarded-writer-cleanup     # input-required, review-only reconciliation
 node scripts/subagents-release-gates.mjs --run \
   --promotion alpha \
   --source-commit <source-commit> \
@@ -128,3 +134,7 @@ patch or path report: it recomputes the staged diff and fixed gates in the
 preserved worktree and emits a handoff without integration. The checked-in
 trust policy still has no signer, however, and no protected live evidence has
 been produced. The current release claim therefore remains Preview.
+S5-D additionally proves deterministic fail-closed handling for missing
+terminal records, malformed or missing handoff state, parent Git failure,
+signer/staging interruption and post-capture source drift. Its reconciliation
+planner retains every existing target for review and exposes no mutation API.
