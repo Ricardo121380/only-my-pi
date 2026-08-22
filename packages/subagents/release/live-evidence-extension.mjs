@@ -125,6 +125,19 @@ function taskText(id) {
   return "Return a bounded read-only review result with verdict pass, no findings, no tests run, and no unverified claims. Do not mutate files.";
 }
 
+async function waitForCorrelatedStatus(backend, handle, timeoutMs) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    try {
+      return await backend.status(handle);
+    } catch (cause) {
+      if (cause?.code !== "not_found") throw cause;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  throw Object.assign(new Error("cancel scenario did not become status-visible"), { code: "CAPTURE_CANCEL_NOT_READY" });
+}
+
 function boundedResultBytes(value, maximumBytes) {
   const stack = [{ value, depth: 0 }];
   const seen = new WeakSet();
@@ -206,7 +219,7 @@ function terminalProofs(id, terminal, extra = []) {
     "live-agent-cancel": ["cancel-request", "process-terminal", "terminal-receipt"],
   }[id];
   const values = {
-    "cancel-request": { intent: "interrupt", terminalOutcome: terminal.outcome },
+    "cancel-request": { intent: "stop", terminalOutcome: terminal.outcome },
     "process-terminal": terminal.processTerminal,
     "terminal-receipt": { receiptId: terminal.receiptId, outcome: terminal.outcome, authoritative: terminal.authoritative },
     ...Object.fromEntries(extra.map((entry) => [entry.kind, entry.value])),
@@ -263,16 +276,20 @@ async function runSingleScenario(request, backend, clock) {
   });
   const startedAt = clock();
   const launched = await backend.launch({ handle, agentSpec, assignment, mode: "background" });
-  const terminal = request.id === "live-agent-cancel"
-    ? (await backend.interrupt(launched.handle, { awaitTerminal: true })).terminal
-    : await backend.awaitTerminal(launched.handle, { bindingId: launched.binding.bindingId, intent: "run" });
+  let terminal;
+  if (request.id === "live-agent-cancel") {
+    await waitForCorrelatedStatus(backend, launched.handle, Math.min(5_000, request.limits.maxWallTimeMs));
+    terminal = (await backend.stop(launched.handle)).terminal;
+  } else {
+    terminal = await backend.awaitTerminal(launched.handle, { bindingId: launched.binding.bindingId, intent: "run" });
+  }
   if (terminal?.authoritative !== true) {
     throw Object.assign(new Error("terminal proof is not authoritative"), { code: "CAPTURE_TERMINAL_UNPROVEN" });
   }
   if (request.id === "live-agent-terminal" && terminal.outcome !== "completed") {
     throw Object.assign(new Error("terminal scenario did not complete"), { code: "CAPTURE_TERMINAL_OUTCOME_INVALID" });
   }
-  if (request.id === "live-agent-cancel" && !["cancelled", "interrupted"].includes(terminal.outcome)) {
+  if (request.id === "live-agent-cancel" && terminal.outcome !== "cancelled") {
     throw Object.assign(new Error("cancel scenario did not observe cancellation"), { code: "CAPTURE_CANCEL_OUTCOME_INVALID" });
   }
   const usage = terminalUsage(terminal, request.limits.maxOutputBytes);

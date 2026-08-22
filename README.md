@@ -183,7 +183,7 @@ keys remain outside the repository.
 
 The S5-A Alpha capture producer is now implemented behind
 `npm run plan:subagents-live-evidence`. It composes a read-only Agent terminal,
-correlated cancel terminal, and two-item BatchSwarm through the same sole
+correlated workflow-stop cancellation terminal, and two-item BatchSwarm through the same sole
 `pi-subagents` backend, then signs only bounded low-sensitivity evidence through
 an external digest-only signer. Children run in an isolated synthetic fixture
 workspace, not the source checkout; the canonical read-only `omp-reviewer` is

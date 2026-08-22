@@ -104,8 +104,9 @@ fault/security tests, offline evaluation, and packaging checks only. It does
 not prove live child execution, model quality, background resume, managed
 worktree enforcement, or Provider behavior. Promotion policy and compatibility
 matrix digests are checked independently so a forged receipt or floating Node
-version cannot widen a release claim. The importer is now implemented, but no
-signer is configured and no live evidence has been authorized, so the current
+version cannot widen a release claim. A bounded public Alpha signer is now
+configured. One authorized cancel attempt failed closed before evidence was
+signed or staged; no protected evidence has been imported, so the current
 claim remains Preview.
 
 The release runner strips the inherited environment. Its one cache exception

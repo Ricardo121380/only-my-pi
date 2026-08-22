@@ -88,10 +88,13 @@ paths. It has no apply/delete surface: all existing targets remain
 `RETAIN_FOR_REVIEW`, including complete ones, because process liveness and
 evidence/handoff disposition are not inferred.
 Token/cost ceilings are signed reconciliation gates rather than a verified
-mid-child billing circuit breaker. The checked-in
-default remains inert: its trust policy contains only a time-bounded public
-Alpha signer and no one-time authorization or live evidence has been executed,
-so this remains a Preview claim, not Alpha, Beta, or Stable.
+mid-child billing circuit breaker. The checked-in default remains inert. One
+external one-time Alpha authorization was used for a live cancel attempt on
+2026-08-22; the attempt failed closed because upstream async workflows reject
+`interrupt`, produced no signed/staged evidence, and left no live child. The
+runtime now uses correlated `stop` plus authoritative `cancelled` proof. Until
+that fixed path produces reviewed evidence this remains Preview, not Alpha,
+Beta, or Stable.
 
 The S0–S4 source slice now contains:
 
@@ -211,8 +214,8 @@ foundation:
 - `npm run schema:check`: **77 production documents / 42 schema kinds / 0 findings**;
 - `npm run pack:check`: **291 allowlisted files**, with no tests, receipts, or
   Codex Goal in the tarball;
-- `npm run lint`: **721 files / 0 findings**;
-- `npm run secret:scan`: **721 tracked files + 291 packed files / 0 findings**;
+- `npm run lint`: **727 files / 0 findings**;
+- `npm run secret:scan`: **727 tracked files + 291 packed files / 0 findings**;
 - `npm run test:e2e`: fresh scripts-disabled offline tarball install, packaged
   topology doctor, zero-write plan, bootstrap, idempotent second apply,
   rollback, and final `NOT_INSTALLED` status pass. The verification used a

@@ -1,7 +1,8 @@
 # Subagents S5-A protected live capture
 
 Status: **production capture path and time-bounded public Alpha signer
-configured; no protected live run has been authorized or executed** · 2026-08-22
+configured; one cancel attempt failed closed before evidence and the upstream
+workflow-stop compatibility fix is ready for re-run** · 2026-08-22
 
 S5-A supplies the missing producer side of the source-pinned protected-evidence
 protocol. It is intentionally limited to the three read-only evidence classes
@@ -11,6 +12,14 @@ required for an Alpha claim:
 - `live-agent-cancel`;
 - `live-batch-terminal`, with exactly two governed read-only items in the
   initial scenario.
+
+The first authorized cancel attempt exposed an upstream compatibility fact:
+`pi-subagents@0.45.2` executes the compiler product as an async workflow, for
+which its public RPC rejects `interrupt` and requires `stop`. The attempt
+produced no signed or staged evidence and left no live child. The producer now
+waits until the exact backend run is status-visible, sends `stop`, and accepts
+the cancel proof only when the correlated terminal is authoritative and its
+normalized outcome is `cancelled`.
 
 `background-resume` now has a separate S5-B producer and authorization contract;
 `guarded-writer-integration` remains later S5 work. This S5-A authorization
@@ -39,7 +48,7 @@ scripts/subagents-live-evidence.mjs --run --yes
         v
 one physical pi-subagents RPC backend
         +-- read-only Agent terminal
-        +-- correlated interrupt + authoritative cancellation terminal
+        +-- correlated workflow stop + authoritative cancelled terminal
         `-- two-item homogeneous BatchSwarm terminal set
         |
         v

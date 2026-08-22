@@ -630,7 +630,7 @@ function extensionRequest(id, values) {
   };
 }
 
-function extensionBackend({ metering = true } = {}) {
+function extensionBackend({ metering = true, calls = {}, statusNotFound = 0 } = {}) {
   let sequence = 0;
   const capabilityMatrix = createPiSubagentsRpcV1CapabilityMatrix({ observedAt: 1, terminalTransport: true });
   const terminal = (handle) => ({
@@ -657,14 +657,24 @@ function extensionBackend({ metering = true } = {}) {
       return { handle: bound, binding: bound.backendBindings[0] };
     },
     async awaitTerminal(handle) { return terminal(handle); },
-    async interrupt(handle) { return { terminal: { ...terminal(handle), outcome: "interrupted" } }; },
+    async status() {
+      calls.status = (calls.status ?? 0) + 1;
+      if (calls.status <= statusNotFound) throw Object.assign(new Error("not ready"), { code: "not_found" });
+      return { data: { state: "running" } };
+    },
+    async stop(handle) { calls.stop = (calls.stop ?? 0) + 1; return { terminal: { ...terminal(handle), outcome: "cancelled" } }; },
+    async interrupt(handle) { calls.interrupt = (calls.interrupt ?? 0) + 1; return { terminal: { ...terminal(handle), outcome: "interrupted" } }; },
   };
 }
 
 test("Pi capture extension composes Agent, cancel, and 2-item BatchSwarm through one backend", async () => {
   const values = fixture();
   for (const id of evidenceIds) {
-    const record = await executeProtectedLiveEvidenceScenario(extensionRequest(id, values), extensionBackend(), {
+    const calls = {};
+    const record = await executeProtectedLiveEvidenceScenario(extensionRequest(id, values), extensionBackend({
+      calls,
+      statusNotFound: id === "live-agent-cancel" ? 1 : 0,
+    }), {
       clock: () => Date.parse(observedAt),
     });
     const checked = validateProtectedLiveCaptureRecord(record, {
@@ -680,6 +690,11 @@ test("Pi capture extension composes Agent, cancel, and 2-item BatchSwarm through
     if (id === "live-batch-terminal") {
       assert.equal(checked.claims.batchItemCount, 2);
       assert.equal(checked.usage.concurrency, 2);
+    }
+    if (id === "live-agent-cancel") {
+      assert.equal(calls.status, 2);
+      assert.equal(calls.stop, 1);
+      assert.equal(calls.interrupt, undefined);
     }
   }
   await assert.rejects(executeProtectedLiveEvidenceScenario(
