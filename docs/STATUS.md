@@ -160,8 +160,8 @@ made no Provider/model request, dispatched no child, read no credential, made
 no global install, and did not read or mutate the real Pi home.
 All planned orchestration contracts plus the evaluation-corpus, durable
 run-control, compatibility, promotion, protected-evidence, and evidence-trust
-contracts are now registered in the strict catalog. The catalog validates 40
-kinds and 75 non-vacuous production documents, with positive,
+contracts are now registered in the strict catalog. The catalog validates 41
+kinds and 76 non-vacuous production documents, with positive,
 unknown-field/version, and
 targeted semantic negatives. Public Workflow/Swarm routing now converges on
 the v2 facade. Approval fails closed without a live evidence provider,
