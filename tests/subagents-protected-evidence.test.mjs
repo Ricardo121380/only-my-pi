@@ -174,10 +174,16 @@ test("all promotion evidence classes bind source, runtime, proof receipts, and l
   assert.deepEqual(protectedEvidenceSummary(loaded).map((entry) => entry.id), Object.keys(PROTECTED_EVIDENCE_REQUIREMENTS).sort());
 });
 
-test("the checked-in trust policy is explicitly unavailable for live promotion", () => {
+test("the checked-in trust policy contains only a bounded public Alpha signer", () => {
   const trustPolicy = loadProtectedEvidenceTrustPolicy({ rootDir: repositoryRoot });
-  assert.equal(trustPolicy.contractStatus, "configured-unavailable");
-  assert.deepEqual(trustPolicy.signers, []);
+  assert.equal(trustPolicy.contractStatus, "runtime-ready");
+  assert.equal(trustPolicy.signers.length, 1);
+  assert.deepEqual(trustPolicy.signers[0].evidenceIds, [
+    "live-agent-cancel",
+    "live-agent-terminal",
+    "live-batch-terminal",
+  ]);
+  assert.equal(Object.keys(trustPolicy.signers[0]).some((key) => /private/iu.test(key)), false);
   const { matrix, policy } = contracts();
   const signing = signingFixture(["live-agent-terminal"]);
   const document = structuredClone(signedEvidence("live-agent-terminal", { matrix, policy, signing }));
@@ -197,7 +203,7 @@ test("the checked-in trust policy is explicitly unavailable for live promotion",
       trustPolicy,
       expectedSourceCommit: sourceCommit,
     }),
-    { code: "TRUST_POLICY_UNAVAILABLE" },
+    { code: "TRUST_SIGNER_UNAVAILABLE" },
   );
 });
 

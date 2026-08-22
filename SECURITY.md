@@ -117,7 +117,8 @@ relative, missing, non-directory, or escaping cache fails before child spawn.
 The S5-A producer adds another explicit boundary rather than weakening this
 rule. Its default plan is zero-execution. A live run requires a clean pinned
 source, runtime-ready public-key policy, active one-time authorization, empty
-disposable config root, audited package root, explicit Pi and signer
+disposable config root, audited package root, a digest-bound credential-free
+single-model Provider descriptor, explicit Pi and signer
 executables, explicit staging directory, and `--yes`. Only authorization-listed
 credential variables enter the isolated Pi environment; the signer receives
 only a payload digest. Output is staged outside `verification/protected/` and

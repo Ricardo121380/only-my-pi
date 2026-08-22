@@ -103,8 +103,9 @@ node scripts/subagents-guarded-writer-evidence.mjs --run --yes \
   --repository-root /absolute/only-my-pi --json
 ```
 
-The checked-in trust policy intentionally has no signer, so the plan currently
-returns `CONFIGURED_UNAVAILABLE`. Deterministic tests use fake transport or
+The checked-in signer is intentionally scoped to Alpha evidence and excludes
+`guarded-writer-integration`, so the plan remains `CONFIGURED_UNAVAILABLE`.
+Deterministic tests use fake transport or
 temporary local Git repositories; no Provider-backed guarded writer has been
 run and no Beta evidence or promotion is claimed.
 

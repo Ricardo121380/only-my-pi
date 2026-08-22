@@ -596,7 +596,7 @@ test("guarded writer CLI is plan-only by default and cannot reuse implicit autho
   assert.equal(result.plan.providerRequest, "NOT_STARTED");
   assert.equal(result.plan.automaticIntegration, false);
   assert.equal(result.plan.parentDiffVerification, "REQUIRED");
-  assert.equal(result.plan.blockers.includes("TRUST_POLICY_UNAVAILABLE"), true);
+  assert.equal(result.plan.blockers.includes("TRUST_POLICY_UNAVAILABLE"), false);
   assert.equal(result.plan.blockers.includes("AUTHORIZATION_REQUIRED"), true);
   assert.equal(runnerCalls, 0);
 });

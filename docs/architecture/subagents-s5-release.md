@@ -25,10 +25,10 @@ The ownership boundary remains:
   background/resume, and writer claims; a checked-in JSON object cannot forge
   those claims.
 - `contracts/subagents/protected-evidence-trust.json` is the source-pinned
-  Ed25519 public-key policy for protected evidence. The repository default is
-  deliberately `configured-unavailable` with no signer. A live promotion is
-  impossible until an operator explicitly commits an authorized public key;
-  the corresponding private key must never enter the repository.
+  Ed25519 public-key policy for protected evidence. It now contains one
+  time-bounded public Alpha signer scoped only to Agent terminal/cancel and
+  BatchSwarm evidence. Private keys remain external, and live promotion is
+  impossible without a separate exact one-time authorization.
 - `subagents-live-evidence-authorization-v1` and the
   [S5-A capture driver](subagents-s5-live-capture.md) define the producer side
   for the three Alpha read-only evidence classes. The default plan is inert;
@@ -132,8 +132,9 @@ verification, direct-child Git boundary, background/resume producer, and
 guarded-writer producer now exist. The writer producer does not trust the child
 patch or path report: it recomputes the staged diff and fixed gates in the
 preserved worktree and emits a handoff without integration. The checked-in
-trust policy still has no signer, however, and no protected live evidence has
-been produced. The current release claim therefore remains Preview.
+trust policy now has a bounded Alpha public signer, but no protected live
+evidence has been produced. The current release claim therefore remains
+Preview.
 S5-D additionally proves deterministic fail-closed handling for missing
 terminal records, malformed or missing handoff state, parent Git failure,
 signer/staging interruption and post-capture source drift. Its reconciliation

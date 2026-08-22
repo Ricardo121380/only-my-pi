@@ -534,7 +534,7 @@ test("background resume CLI defaults to zero execution and refuses run without e
   assert.equal(result.plan.runnable, false);
   assert.equal(result.plan.providerRequest, "NOT_STARTED");
   assert.equal(result.plan.parentProcessCount, 2);
-  assert.equal(result.plan.blockers.includes("TRUST_POLICY_UNAVAILABLE"), true);
+  assert.equal(result.plan.blockers.includes("TRUST_POLICY_UNAVAILABLE"), false);
   assert.equal(result.plan.blockers.includes("AUTHORIZATION_REQUIRED"), true);
   assert.equal(runnerCalls, 0);
 });

@@ -12,6 +12,7 @@
   "provider": {
     "id": "fixture-provider",
     "model": "fixture-model",
+    "configurationDigest": "sha256:62a7cba5c5393db9fc55bb9c5aa4ca3dea549ae69a0b2fb3a75c95b807abde81",
     "credentialEnvironment": ["FIXTURE_API_KEY"],
     "declaredEndpointHosts": ["api.example.com"]
   },

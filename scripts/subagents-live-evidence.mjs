@@ -37,6 +37,7 @@ const HELP = `Usage:
     --authorization-file /absolute/operator-authorization.json \\
     --config-root /absolute/disposable/root \\
     --package-root /absolute/pi-subagents/package \\
+    --provider-file /absolute/credential-free-provider.json \\
     --pi-command /absolute/pi \\
     --signer-command /absolute/external-signer \\
     --output-dir /absolute/empty/staging/directory \\
@@ -64,6 +65,7 @@ export function parseSubagentsLiveEvidenceArgs(argv) {
     authorizationFile: null,
     configRoot: null,
     packageRoot: null,
+    providerFile: null,
     repositoryRoot: ROOT,
     piCommand: null,
     signerCommand: null,
@@ -74,6 +76,7 @@ export function parseSubagentsLiveEvidenceArgs(argv) {
     "--authorization-file": "authorizationFile",
     "--config-root": "configRoot",
     "--package-root": "packageRoot",
+    "--provider-file": "providerFile",
     "--repository-root": "repositoryRoot",
     "--pi-command": "piCommand",
     "--signer-command": "signerCommand",
@@ -114,6 +117,7 @@ export function parseSubagentsLiveEvidenceArgs(argv) {
     ["authorizationFile", "--authorization-file"],
     ["configRoot", "--config-root"],
     ["packageRoot", "--package-root"],
+    ["providerFile", "--provider-file"],
     ["repositoryRoot", "--repository-root"],
     ["piCommand", "--pi-command"],
     ["signerCommand", "--signer-command"],
@@ -127,6 +131,7 @@ export function parseSubagentsLiveEvidenceArgs(argv) {
       ["authorizationFile", "--authorization-file"],
       ["configRoot", "--config-root"],
       ["packageRoot", "--package-root"],
+      ["providerFile", "--provider-file"],
       ["piCommand", "--pi-command"],
       ["signerCommand", "--signer-command"],
       ["outputDir", "--output-dir"],
@@ -271,6 +276,7 @@ export async function executeSubagentsLiveEvidence(argv, {
   const scenarioRunner = scenarioRunnerFactory({
     configRoot: liveRoots.configRoot,
     packageRoot: args.packageRoot,
+    modelsFile: args.providerFile,
     repositoryRoot: liveRoots.repositoryRoot,
     piCommand: args.piCommand,
     hostEnvironment,

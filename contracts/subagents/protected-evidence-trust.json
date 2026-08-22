@@ -1,9 +1,24 @@
 {
   "$schema": "../../schemas/subagents-protected-evidence-trust-v1.schema.json",
   "formatVersion": 1,
-  "contractStatus": "configured-unavailable",
+  "contractStatus": "runtime-ready",
   "id": "only-my-pi-subagents-protected-evidence-trust",
   "algorithm": "ed25519",
-  "signers": [],
-  "policyDigest": "sha256:64ef241dee4048dd1c92769cfb76be2dd975a99cbec1f558592e661538dfb5c9"
+  "signers": [
+    {
+      "id": "local-alpha-20260822",
+      "status": "active",
+      "authorizationClass": "local-operator-protected-live",
+      "publicKeySpki": "MCowBQYDK2VwAyEAaHuIWI9d3SWdP/SjeFHm6bmD9IFNRBBgqX+kKrkUGuM=",
+      "publicKeyFingerprint": "sha256:d4bac6a9b21693578e377416fc4dd4f9a944ae374d32440d3b30827818d7be10",
+      "evidenceIds": [
+        "live-agent-cancel",
+        "live-agent-terminal",
+        "live-batch-terminal"
+      ],
+      "notBefore": "2026-08-22T09:20:00.000Z",
+      "notAfter": "2026-08-23T09:20:00.000Z"
+    }
+  ],
+  "policyDigest": "sha256:84eb9c803c31a52c82c5c786391f3f36b425fb91b9754ab1c7b329f2b9eb8135"
 }

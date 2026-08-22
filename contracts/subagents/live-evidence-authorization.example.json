@@ -16,6 +16,7 @@
   "provider": {
     "id": "replace-provider",
     "model": "replace-model",
+    "configurationDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
     "credentialEnvironment": ["REPLACE_PROVIDER_API_KEY"],
     "declaredEndpointHosts": ["api.example.com"]
   },
@@ -42,5 +43,5 @@
   },
   "approvedAt": "2026-08-21T00:00:00.000Z",
   "expiresAt": "2026-08-21T01:00:00.000Z",
-  "authorizationDigest": "sha256:a6c8b4bbf9d3f3d65d99a3db58c93938640203d2c1f4858b1cb69ffe5a8b6a39"
+  "authorizationDigest": "sha256:17638cb18a0d7d14d0332e777282bfb528d23230febc79e5c89b301a7369433f"
 }

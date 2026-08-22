@@ -28,6 +28,10 @@ import {
   SUBAGENTS_LIVE_CAPTURE_REQUEST_ENV,
 } from "./live-evidence-extension.mjs";
 import { SUBAGENTS_LIVE_CAPTURE_RECORD_TYPE } from "./live-evidence-capture.mjs";
+import {
+  compileLiveEvidencePiModels,
+  loadLiveEvidenceProviderDescriptor,
+} from "./live-evidence-provider.mjs";
 
 const execFile = promisify(execFileCallback);
 const MAX_CAPTURE_BYTES = 256 * 1024;
@@ -253,6 +257,7 @@ function safeEnvironment({ directories, authorization, hostEnvironment, requestF
 export function createPiProtectedLiveScenarioRunner({
   configRoot,
   packageRoot,
+  modelsFile,
   repositoryRoot,
   piCommand = "pi",
   spawnImpl = spawn,
@@ -266,6 +271,7 @@ export function createPiProtectedLiveScenarioRunner({
     throw new TypeError("piCommand must be a bounded executable name or path");
   }
   if (typeof spawnImpl !== "function" || typeof versionProbe !== "function") throw new TypeError("live runner dependencies must be functions");
+  const providerDescriptor = loadLiveEvidenceProviderDescriptor(modelsFile);
   let initializedConfigRoot = null;
 
   return async function runPiProtectedLiveScenario({ id, authorization, expectedSourceCommit, environment, scenarioLimits } = {}) {
@@ -296,6 +302,7 @@ export function createPiProtectedLiveScenarioRunner({
       fail("host runtime differs from the authorized compatibility row", "LIVE_RUNNER_ENVIRONMENT_MISMATCH");
     }
     const reviewerResource = await governedReviewerResource(resolvedRepositoryRoot);
+    const piModels = compileLiveEvidencePiModels(providerDescriptor, { authorization });
     const extension = fileURLToPath(new URL("./live-evidence-extension.mjs", import.meta.url));
     const extensionStat = await fs.lstat(extension).catch(() => null);
     if (!extensionStat?.isFile() || extensionStat.isSymbolicLink()) fail("live evidence extension is unavailable", "LIVE_RUNNER_EXTENSION_UNAVAILABLE");
@@ -324,6 +331,12 @@ export function createPiProtectedLiveScenarioRunner({
       resolvedConfigRoot,
       path.join(directories.agentDefinitions, "omp-reviewer.md"),
       reviewerResource,
+      0o600,
+    );
+    await writeContainedFile(
+      resolvedConfigRoot,
+      path.join(directories.agentRoot, "models.json"),
+      `${JSON.stringify(piModels, null, 2)}\n`,
       0o600,
     );
     await writeContainedFile(

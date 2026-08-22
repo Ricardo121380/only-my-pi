@@ -115,7 +115,8 @@ npm run plan:subagents-background-resume
 ```
 
 In the checked-in repository it reports `CONFIGURED_UNAVAILABLE` because the
-trust policy contains no signer and no one-time authorization exists. It makes
+trust policy's only signer is scoped to Alpha evidence and no background-resume
+authorization exists. It makes
 no Provider request, child dispatch, signer call, filesystem mutation, or Pi
 home access.
 

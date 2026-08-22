@@ -1,7 +1,7 @@
 # Subagents S5-A protected live capture
 
-Status: **production capture path implemented; no protected live run has been
-authorized or executed** · 2026-08-21
+Status: **production capture path and time-bounded public Alpha signer
+configured; no protected live run has been authorized or executed** · 2026-08-22
 
 S5-A supplies the missing producer side of the source-pinned protected-evidence
 protocol. It is intentionally limited to the three read-only evidence classes
@@ -73,8 +73,8 @@ npm run plan:subagents-live-evidence
 ```
 
 With the checked-in repository state it returns
-`CONFIGURED_UNAVAILABLE`: the trust policy has no signer and there is no active
-one-time authorization. It does not call a Provider, dispatch a child, invoke a
+`CONFIGURED_UNAVAILABLE`: the trust policy contains a public Alpha signer but
+there is no active one-time authorization. It does not call a Provider, dispatch a child, invoke a
 signer, create a config root, or read the real Pi home.
 
 A real run is available only after a separate operator action supplies every
@@ -83,9 +83,10 @@ explicit path and confirmation:
 ```bash
 node scripts/subagents-live-evidence.mjs --run --yes \
   --authorization-file /absolute/operator-authorization.json \
-  --config-root /absolute/empty-disposable-root \
-  --package-root /absolute/audited-pi-subagents-0.45.2 \
-  --repository-root /absolute/only-my-pi \
+    --config-root /absolute/empty-disposable-root \
+    --package-root /absolute/audited-pi-subagents-0.45.2 \
+    --provider-file /absolute/credential-free-provider.json \
+    --repository-root /absolute/only-my-pi \
   --pi-command /absolute/pi \
   --signer-command /absolute/external-digest-signer \
   --output-dir /absolute/empty-evidence-staging --json
@@ -100,7 +101,7 @@ and must not be imported.
 
 `subagents-live-evidence-authorization-v1` binds the exact source commit,
 compatibility matrix, promotion policy, trust-policy digest, compatibility row,
-three evidence IDs, Provider/model tuple, credential environment variable
+three evidence IDs, Provider/model tuple, Provider-descriptor digest, credential environment variable
 names, ceilings, read-only workspace policy, signer identity/fingerprint, and
 a positive window of at most 24 hours. Live use requires explicit token and USD
 ceilings. The two-item batch requires at least two children and concurrency of
@@ -123,8 +124,13 @@ with the caller's network authority. An operator who needs network isolation
 must enforce it outside Pi with a container, VM, or OS network policy.
 
 Only the authorization-listed credential variables cross into the isolated Pi
-environment. No other Provider variable, session, model store, user HOME, or
-real Pi config is inherited. The external signer receives exactly one canonical
+environment. A separate schema-validated descriptor contains exactly one
+Provider and one authorized model, requires a credential-free HTTPS endpoint,
+and compiles `apiKey` to the one approved `$ENVIRONMENT_VARIABLE` reference.
+Its digest is part of the one-time authorization. Literal keys, credential
+commands, custom headers, extra models, endpoint-host drift, and authority-bearing
+compat fields fail before Pi starts. No other Provider variable, session, model
+store, user HOME, or real Pi config is inherited. The external signer receives exactly one canonical
 `sha256:` line on stdin and returns one canonical 64-byte Ed25519 signature on
 stdout. The driver does not pass a private-key path or private-key environment
 variable; key access belongs to the separately reviewed signer executable.

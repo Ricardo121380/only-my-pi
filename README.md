@@ -175,10 +175,11 @@ digest-pinned `release-gates-v2` runner. `npm run verify:subagents` is an
 inspection-only command; `npm run verify:subagents:run` executes the fixed
 Preview deterministic gates on a clean source commit. Alpha/Beta/Stable live
 claims use a source-pinned Ed25519 evidence-import protocol and cannot be
-produced by the deterministic runner. The checked-in trust policy intentionally
-has no signer, so higher promotion remains unavailable until an operator
-explicitly commits a public key and separately authorizes a disposable live
-run; private signing keys must never be committed.
+produced by the deterministic runner. The checked-in trust policy now contains
+one time-bounded public Alpha signer whose scope excludes background/resume and
+writer evidence. Higher promotion remains unavailable until an operator
+separately authorizes and completes the disposable live run; private signing
+keys remain outside the repository.
 
 The S5-A Alpha capture producer is now implemented behind
 `npm run plan:subagents-live-evidence`. It composes a read-only Agent terminal,

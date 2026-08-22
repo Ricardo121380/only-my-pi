@@ -24,6 +24,11 @@ import {
   createPiProtectedLiveScenarioRunner,
 } from "../packages/subagents/release/live-evidence-pi-runner.mjs";
 import {
+  compileLiveEvidencePiModels,
+  liveEvidenceProviderDescriptorDigest,
+  validateLiveEvidenceProviderDescriptor,
+} from "../packages/subagents/release/live-evidence-provider.mjs";
+import {
   executeProtectedLiveEvidenceScenario,
 } from "../packages/subagents/release/live-evidence-extension.mjs";
 import {
@@ -71,6 +76,27 @@ function fixture() {
     }],
   };
   trustPolicy.policyDigest = protectedEvidenceTrustPolicyDigest(trustPolicy);
+  const providerDescriptor = {
+    $schema: "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-live-provider-v1.schema.json",
+    formatVersion: 1,
+    provider: {
+      id: "fixture-provider",
+      name: "Fixture Provider",
+      baseUrl: "https://api.example.com/v1",
+      api: "openai-responses",
+      credentialEnvironment: "FIXTURE_API_KEY",
+      model: {
+        id: "fixture-model",
+        name: "Fixture Model",
+        reasoning: false,
+        input: ["text"],
+        contextWindow: 128000,
+        maxTokens: 16384,
+        cost: { input: 1, output: 2, cacheRead: 0.1, cacheWrite: 1 },
+      },
+    },
+  };
+  providerDescriptor.descriptorDigest = liveEvidenceProviderDescriptorDigest(providerDescriptor);
   const authorization = {
     $schema: "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-live-evidence-authorization-v1.schema.json",
     formatVersion: 1,
@@ -85,6 +111,7 @@ function fixture() {
     provider: {
       id: "fixture-provider",
       model: "fixture-model",
+      configurationDigest: providerDescriptor.descriptorDigest,
       credentialEnvironment: ["FIXTURE_API_KEY"],
       declaredEndpointHosts: ["api.example.com"],
     },
@@ -113,7 +140,13 @@ function fixture() {
     expiresAt: "2026-08-21T01:00:00.000Z",
   };
   authorization.authorizationDigest = liveEvidenceAuthorizationDigest(authorization);
-  return { matrix, policy, privateKey, trustPolicy, authorization };
+  return { matrix, policy, privateKey, trustPolicy, authorization, providerDescriptor };
+}
+
+async function providerFile(directory, values) {
+  const file = path.join(directory, "live-provider.json");
+  await fsPromises.writeFile(file, `${JSON.stringify(values.providerDescriptor, null, 2)}\n`, { mode: 0o600 });
+  return file;
 }
 
 function captureRecord(id, values) {
@@ -169,7 +202,7 @@ function limitsForScenario(id, values) {
   };
 }
 
-test("capture plan is inert without live authorization and checked-in trust remains unavailable", () => {
+test("capture plan is inert without live authorization and rejects a signer outside checked-in Alpha trust", () => {
   const values = fixture();
   let runnerCalls = 0;
   let signerCalls = 0;
@@ -203,9 +236,38 @@ test("capture plan is inert without live authorization and checked-in trust rema
     now: Date.parse(observedAt),
   });
   assert.equal(unavailable.runnable, false);
-  assert.equal(unavailable.status, "AUTHORIZATION_TRUST_UNAVAILABLE");
+  assert.equal(unavailable.status, "AUTHORIZATION_SIGNER_UNAVAILABLE");
   assert.equal(runnerCalls, 0);
   assert.equal(signerCalls, 0);
+});
+
+test("live Provider descriptor is digest-bound, authorization-bound, and compiles no literal credential", () => {
+  const values = fixture();
+  assert.equal(validateLiveEvidenceProviderDescriptor(values.providerDescriptor, {
+    authorization: values.authorization,
+  }).descriptorDigest, values.authorization.provider.configurationDigest);
+  const compiled = compileLiveEvidencePiModels(values.providerDescriptor, { authorization: values.authorization });
+  assert.equal(compiled.providers[values.authorization.provider.id].apiKey, "$FIXTURE_API_KEY");
+  assert.equal(JSON.stringify(compiled).includes("fixture-secret-value"), false);
+  assert.deepEqual(compiled.providers[values.authorization.provider.id].models.map((model) => model.id), ["fixture-model"]);
+
+  const endpointDrift = structuredClone(values.providerDescriptor);
+  endpointDrift.provider.baseUrl = "https://other.example.net/v1";
+  endpointDrift.descriptorDigest = liveEvidenceProviderDescriptorDigest(endpointDrift);
+  const endpointAuthorization = structuredClone(values.authorization);
+  endpointAuthorization.provider.configurationDigest = endpointDrift.descriptorDigest;
+  assert.throws(() => validateLiveEvidenceProviderDescriptor(endpointDrift, {
+    authorization: endpointAuthorization,
+  }), { code: "PROVIDER_ENDPOINT_DRIFT" });
+
+  const unsafe = structuredClone(values.providerDescriptor);
+  unsafe.provider.model.compat = { apiToken: "!credential-command" };
+  unsafe.descriptorDigest = liveEvidenceProviderDescriptorDigest(unsafe);
+  const unsafeAuthorization = structuredClone(values.authorization);
+  unsafeAuthorization.provider.configurationDigest = unsafe.descriptorDigest;
+  assert.throws(() => validateLiveEvidenceProviderDescriptor(unsafe, {
+    authorization: unsafeAuthorization,
+  }), { code: "PROVIDER_COMPAT_UNSAFE" });
 });
 
 test("authorized capture signs all Alpha read-only evidence and stages only low-sensitivity documents", async (t) => {
@@ -426,10 +488,12 @@ test("Pi scenario runner uses an isolated fixture workspace, governed reviewer, 
   await fsPromises.mkdir(configRoot);
   await fsPromises.mkdir(fakeHome);
   const audited = await auditedPackageFixture(directory);
+  const modelsFile = await providerFile(directory, values);
   const invocation = {};
   const runner = createPiProtectedLiveScenarioRunner({
     configRoot,
     packageRoot: audited.packageRoot,
+    modelsFile,
     repositoryRoot: rootDir,
     piCommand: "/test/pi",
     expectedArtifact: audited.expected,
@@ -494,6 +558,10 @@ test("Pi scenario runner uses an isolated fixture workspace, governed reviewer, 
     "subagent",
     "config.json",
   ), "utf8")), { artifactDir: "temp" });
+  assert.deepEqual(
+    JSON.parse(await fsPromises.readFile(path.join(invocation.options.env.PI_CODING_AGENT_DIR, "models.json"), "utf8")),
+    compileLiveEvidencePiModels(values.providerDescriptor, { authorization: values.authorization }),
+  );
 
   const nonemptyRoot = path.join(directory, "nonempty-config");
   await fsPromises.mkdir(nonemptyRoot);
@@ -501,6 +569,7 @@ test("Pi scenario runner uses an isolated fixture workspace, governed reviewer, 
   const nonemptyRunner = createPiProtectedLiveScenarioRunner({
     configRoot: nonemptyRoot,
     packageRoot: audited.packageRoot,
+    modelsFile,
     repositoryRoot: rootDir,
     piCommand: "/test/pi",
     expectedArtifact: audited.expected,
@@ -527,6 +596,7 @@ test("Pi scenario runner uses an isolated fixture workspace, governed reviewer, 
   const invalidRepositoryRunner = createPiProtectedLiveScenarioRunner({
     configRoot: invalidConfigRoot,
     packageRoot: audited.packageRoot,
+    modelsFile,
     repositoryRoot: invalidRepository,
     piCommand: "/test/pi",
     expectedArtifact: audited.expected,
@@ -668,7 +738,7 @@ test("live evidence CLI defaults to a zero-execution plan and run parsing is fai
   assert.equal(result.plan.providerRequest, "NOT_STARTED");
   assert.equal(result.plan.childDispatch, "NOT_STARTED");
   assert.equal(result.plan.signerInvocation, "NOT_STARTED");
-  assert.equal(result.plan.blockers.includes("TRUST_POLICY_UNAVAILABLE"), true);
+  assert.equal(result.plan.blockers.includes("TRUST_POLICY_UNAVAILABLE"), false);
   assert.equal(result.plan.blockers.includes("AUTHORIZATION_REQUIRED"), true);
   assert.equal(runnerFactoryCalls, 0);
   assert.equal(signerFactoryCalls, 0);
@@ -703,6 +773,7 @@ test("live evidence run rejects overlapping roots and source drift before stagin
     "--authorization-file", authorizationFile,
     "--config-root", configRoot,
     "--package-root", packageRoot,
+    "--provider-file", path.join(directory, "provider.json"),
     "--repository-root", repositoryRoot,
     "--pi-command", path.join(directory, "pi"),
     "--signer-command", path.join(directory, "signer"),

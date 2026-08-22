@@ -1,0 +1,21 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-live-provider-v1.schema.json",
+  "formatVersion": 1,
+  "provider": {
+    "id": "fixture-provider",
+    "name": "Fixture Provider",
+    "baseUrl": "http://api.example.com/v1",
+    "api": "openai-responses",
+    "credentialEnvironment": "FIXTURE_API_KEY",
+    "model": {
+      "id": "fixture-model",
+      "name": "Fixture Model",
+      "reasoning": false,
+      "input": ["text"],
+      "contextWindow": 128000,
+      "maxTokens": 16384,
+      "cost": { "input": 1, "output": 2, "cacheRead": 0.1, "cacheWrite": 1 }
+    }
+  },
+  "descriptorDigest": "sha256:5d845f8a825618a0adf37fca487f15e5a7f899ae72089209b6390cae67d64690"
+}

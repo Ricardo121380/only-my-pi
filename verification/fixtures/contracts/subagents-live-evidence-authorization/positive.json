@@ -12,6 +12,7 @@
   "provider": {
     "id": "fixture-provider",
     "model": "fixture-model",
+    "configurationDigest": "sha256:62a7cba5c5393db9fc55bb9c5aa4ca3dea549ae69a0b2fb3a75c95b807abde81",
     "credentialEnvironment": ["FIXTURE_API_KEY"],
     "declaredEndpointHosts": ["api.example.com"]
   },
@@ -38,5 +39,5 @@
   },
   "approvedAt": "2026-08-21T00:00:00.000Z",
   "expiresAt": "2026-08-21T01:00:00.000Z",
-  "authorizationDigest": "sha256:249b015b36c1b1caa16c133b5524131aed357a9712fd82b838e76aad9eb52ac9"
+  "authorizationDigest": "sha256:e89101735c5a79e53c6be4be0f62102c7fb1ebb444da8ca5d243ee5d79f0fbc1"
 }

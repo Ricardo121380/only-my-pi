@@ -76,5 +76,6 @@ diagnostic command into an implicit `rm` facility.
 S5-D improves Preview fault/recovery evidence only. Alpha still requires the
 separately authorized read-only protected classes; Beta additionally requires
 background/resume and guarded-writer protected evidence; Stable still requires
-the declared cross-platform compatibility/soak/migration closure. The checked-
-in trust policy has no signer, so no live promotion state changes here.
+the declared cross-platform compatibility/soak/migration closure. The checked-in
+trust policy contains only a time-bounded Alpha signer and no one-time live
+authorization, so no live promotion state changes here.

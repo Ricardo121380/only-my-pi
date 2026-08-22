@@ -36,14 +36,16 @@ session. Third-party packages and Labs remain opt-in and require review.
   a clean-source deterministic runner that never spawns protected live gates;
 - a source-pinned Ed25519 protected-evidence contract and direct-child Git
   importer for live Agent terminal/cancel, BatchSwarm, background/resume, and
-  guarded-writer receipts; the default trust policy has no signer and remains
-  fail-closed;
+  guarded-writer receipts; the trust policy contains one time-bounded public
+  Alpha signer, excludes Beta evidence classes, stores no private key, and
+  remains fail-closed without an exact one-time authorization;
 - an inert-by-default S5-A Alpha evidence producer with a one-time bounded
   authorization contract, exact runtime-row preflight, empty disposable Pi
   root, synthetic fixture workspace, canonical `omp-reviewer` regeneration and
   drift check, temporary upstream artifacts, cumulative capture budgets,
   disjoint runtime/staging/source roots, pre/post source checks, credential
-  allowlist, read-only Agent terminal/cancel and two-item BatchSwarm scenarios
+  allowlist, a digest-bound credential-free single-model Provider descriptor,
+  read-only Agent terminal/cancel and two-item BatchSwarm scenarios
   over the sole `pi-subagents` backend, digest-only external signing, and
   review-only evidence staging; no real live run has been performed and
   declared endpoint hosts are not an OS network policy;

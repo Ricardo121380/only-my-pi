@@ -195,6 +195,12 @@
       "fixtureDir": "verification/fixtures/contracts/subagents-live-evidence-authorization"
     },
     {
+      "kind": "subagentsLiveProvider",
+      "schemaPath": "schemas/subagents-live-provider-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/live-provider.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-live-provider"
+    },
+    {
       "kind": "subagentsBackgroundResumeAuthorization",
       "schemaPath": "schemas/subagents-background-resume-authorization-v1.schema.json",
       "productionGlobs": ["contracts/subagents/background-resume-authorization.example.json"],

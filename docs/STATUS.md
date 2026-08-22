@@ -89,9 +89,9 @@ paths. It has no apply/delete surface: all existing targets remain
 evidence/handoff disposition are not inferred.
 Token/cost ceilings are signed reconciliation gates rather than a verified
 mid-child billing circuit breaker. The checked-in
-default remains inert: its trust policy has no signer and no live evidence has
-been authorized or executed, so this remains a Preview claim, not Alpha, Beta,
-or Stable.
+default remains inert: its trust policy contains only a time-bounded public
+Alpha signer and no one-time authorization or live evidence has been executed,
+so this remains a Preview claim, not Alpha, Beta, or Stable.
 
 The S0–S4 source slice now contains:
 
@@ -160,8 +160,8 @@ made no Provider/model request, dispatched no child, read no credential, made
 no global install, and did not read or mutate the real Pi home.
 All planned orchestration contracts plus the evaluation-corpus, durable
 run-control, compatibility, promotion, protected-evidence, and evidence-trust
-contracts are now registered in the strict catalog. The catalog validates 41
-kinds and 76 non-vacuous production documents, with positive,
+contracts are now registered in the strict catalog. The catalog validates 42
+kinds and 77 non-vacuous production documents, with positive,
 unknown-field/version, and
 targeted semantic negatives. Public Workflow/Swarm routing now converges on
 the v2 facade. Approval fails closed without a live evidence provider,
@@ -204,15 +204,15 @@ Historical M5 receipts must not be described as successor evidence.
 Current branch evidence for this Preview source slice and S5 deterministic
 foundation:
 
-- `npm test`: **572/572** pass;
-- `npm run test:subagents`: **189/189** pass;
-- `npm run test:contract`: **141/141** pass;
+- `npm test`: **573/573** pass;
+- `npm run test:subagents`: **190/190** pass;
+- `npm run test:contract`: **142/142** pass;
 - `npm run test:integration`: **182/182** pass;
-- `npm run schema:check`: **76 production documents / 41 schema kinds / 0 findings**;
-- `npm run pack:check`: **288 allowlisted files**, with no tests, receipts, or
+- `npm run schema:check`: **77 production documents / 42 schema kinds / 0 findings**;
+- `npm run pack:check`: **291 allowlisted files**, with no tests, receipts, or
   Codex Goal in the tarball;
-- `npm run lint`: **720 files / 0 findings**;
-- `npm run secret:scan`: **720 tracked files + 288 packed files / 0 findings**;
+- `npm run lint`: **721 files / 0 findings**;
+- `npm run secret:scan`: **721 tracked files + 291 packed files / 0 findings**;
 - `npm run test:e2e`: fresh scripts-disabled offline tarball install, packaged
   topology doctor, zero-write plan, bootstrap, idempotent second apply,
   rollback, and final `NOT_INSTALLED` status pass. The verification used a
@@ -231,8 +231,9 @@ two-process background-resume path, and S5-C guarded-writer path are wired, but
 a clean-source receipt is generated only after the source commit.
 `npm run plan:subagents-live-evidence` currently reports
 `CONFIGURED_UNAVAILABLE`, with Provider/child/signer all `NOT_STARTED`, because
-the source tree is under development, the source-pinned trust policy remains
-`configured-unavailable`, and no one-time authorization exists. The command's
+the source tree is under development and no one-time authorization exists. The
+source-pinned trust policy is `runtime-ready` only for the three Alpha evidence
+classes; it does not authorize execution by itself. The command's
 `declaredEndpointHosts` are auditable metadata, not OS network enforcement.
 `npm run plan:subagents-background-resume` is independently inert for the same
 trust/authorization reasons; it cannot reuse the S5-A authorization.
