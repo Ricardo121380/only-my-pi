@@ -65,6 +65,9 @@ session. Third-party packages and Labs remain opt-in and require review.
   partial/symlink/source-drift conditions fail closed and the CLI intentionally
   has no deletion/apply surface, so every existing target remains retained for
   operator review;
+- a bounded offline-cache handoff for the deterministic `test-e2e` release gate;
+  no other gate receives the cache variable, and cache roots outside the real
+  user npm cache or system temporary directory fail before process spawn;
 - compatibility/provenance contracts plus listener/timer resource-leak soaks,
   with Preview/Alpha/Beta/Stable claims kept separate from `NOT_RUN_BY_POLICY`
   live evidence;

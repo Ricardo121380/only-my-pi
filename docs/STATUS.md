@@ -204,7 +204,7 @@ Historical M5 receipts must not be described as successor evidence.
 Current branch evidence for this Preview source slice and S5 deterministic
 foundation:
 
-- `npm test`: **570/570** pass;
+- `npm test`: **572/572** pass;
 - `npm run test:subagents`: **189/189** pass;
 - `npm run test:contract`: **141/141** pass;
 - `npm run test:integration`: **182/182** pass;
@@ -217,7 +217,9 @@ foundation:
   topology doctor, zero-write plan, bootstrap, idempotent second apply,
   rollback, and final `NOT_INSTALLED` status pass. The verification used a
   temporary credential-isolated cache warmed from the exact lockfile and
-  moved that temporary root to Trash after completion;
+  moved that temporary root to Trash after completion. The unified gate now
+  forwards an explicitly selected cache only to `test-e2e`, and only after it
+  resolves inside the actual user npm-cache root or the system temporary root;
 - `npm run doctor`, all six Profile doctors, Mode/Agent/Workflow/Swarm doctors,
   BatchSwarm, SwarmGoal, and UltraRun doctors, `npm run typecheck`, and the
   deterministic agent/profile generators: pass.

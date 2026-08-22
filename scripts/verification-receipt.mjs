@@ -4,6 +4,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -64,6 +65,40 @@ function safeOutputPath(requested, rootDir = repositoryRoot) {
   return target;
 }
 
+function containedPath(root, candidate, { allowRoot = false } = {}) {
+  const relative = path.relative(root, candidate);
+  return (allowRoot && relative === "")
+    || (relative !== "" && relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
+}
+
+function inheritedNpmCache(gate, inherited) {
+  if (gate.id !== "test-e2e") return undefined;
+  const lower = inherited.npm_config_cache;
+  const upper = inherited.NPM_CONFIG_CACHE;
+  if (lower !== undefined && upper !== undefined && lower !== upper) {
+    throw new Error("test-e2e npm cache environment is ambiguous");
+  }
+  const requested = lower ?? upper;
+  if (requested === undefined) return undefined;
+  if (typeof requested !== "string" || requested.includes("\0") || !path.isAbsolute(requested)) {
+    throw new Error("test-e2e npm cache must be an absolute directory");
+  }
+
+  const cacheRoot = fs.realpathSync(requested);
+  if (!fs.statSync(cacheRoot).isDirectory()) throw new Error("test-e2e npm cache must be a directory");
+  const temporaryRoot = fs.realpathSync(os.tmpdir());
+  let insideHomeCache = false;
+  try {
+    insideHomeCache = containedPath(fs.realpathSync(path.join(os.homedir(), ".npm")), cacheRoot, { allowRoot: true });
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  if (!insideHomeCache && !containedPath(temporaryRoot, cacheRoot)) {
+    throw new Error("test-e2e npm cache must stay inside the user npm cache or system temporary root");
+  }
+  return cacheRoot;
+}
+
 function gateEnvironment(gate, inherited = process.env) {
   const output = {};
   for (const key of [
@@ -79,6 +114,8 @@ function gateEnvironment(gate, inherited = process.env) {
     npm_config_fund: "false",
     npm_config_update_notifier: "false",
   });
+  const cacheRoot = inheritedNpmCache(gate, inherited);
+  if (cacheRoot !== undefined) output.npm_config_cache = cacheRoot;
   return output;
 }
 

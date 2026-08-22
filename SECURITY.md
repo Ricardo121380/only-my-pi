@@ -108,6 +108,12 @@ version cannot widen a release claim. The importer is now implemented, but no
 signer is configured and no live evidence has been authorized, so the current
 claim remains Preview.
 
+The release runner strips the inherited environment. Its one cache exception
+is `test-e2e`: an explicitly supplied npm cache is normalized to a real
+directory and accepted only inside the actual user's `.npm` cache or the
+system temporary root. Other gates never receive it, and an ambiguous,
+relative, missing, non-directory, or escaping cache fails before child spawn.
+
 The S5-A producer adds another explicit boundary rather than weakening this
 rule. Its default plan is zero-execution. A live run requires a clean pinned
 source, runtime-ready public-key policy, active one-time authorization, empty
