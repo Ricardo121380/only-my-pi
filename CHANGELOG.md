@@ -53,6 +53,8 @@ session. Third-party packages and Labs remain opt-in and require review.
   package's single-layer structured delegation response and requires exact
   request/owner/node identity, child exit code, finite usage, and terminal
   status; declared endpoint hosts are not an OS network policy;
+- a numeric-only protected usage reducer after the first delegation live
+  attempt correctly failed closed on a redacted token sentinel before signing;
 - an independently authorized S5-B `background-resume` producer that runs two
   distinct Pi parent processes over one isolated persisted parent session,
   keeps `pi-subagents` artifacts session-scoped, binds restart state through a

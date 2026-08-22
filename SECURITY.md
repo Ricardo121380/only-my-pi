@@ -113,6 +113,11 @@ delegation terminal response and still requires exit code, identity and usage
 correlation. No protected evidence has been imported, so the current claim
 remains Preview.
 
+The first structured-delegation attempt also failed closed before signing: a
+redacted token projection masked the numeric usage fallback. Token/cost
+extraction now ignores non-numeric redaction sentinels and requires finite
+numeric metering before evidence can be authoritative.
+
 The release runner strips the inherited environment. Its one cache exception
 is `test-e2e`: an explicitly supplied npm cache is normalized to a real
 directory and accepted only inside the actual user's `.npm` cache or the

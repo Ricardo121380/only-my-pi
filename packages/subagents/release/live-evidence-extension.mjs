@@ -207,12 +207,10 @@ function boundedResultBytes(value, maximumBytes) {
 
 export function terminalUsage(receipt, maximumOutputBytes) {
   const completion = object(receipt?.completion) ? receipt.completion : {};
-  const tokens = completion.totalTokens?.total
-    ?? completion.totalCost?.totalTokens
-    ?? completion.usage?.total;
-  const costUsd = completion.totalCost?.costUsd
-    ?? completion.usage?.costUsd
-    ?? completion.usage?.cost;
+  const tokens = [completion.totalTokens?.total, completion.totalCost?.totalTokens, completion.usage?.total]
+    .find((value) => Number.isSafeInteger(value) && value >= 0);
+  const costUsd = [completion.totalCost?.costUsd, completion.usage?.costUsd, completion.usage?.cost]
+    .find((value) => Number.isFinite(value) && value >= 0);
   if (!Number.isFinite(tokens) || tokens < 0 || !Number.isSafeInteger(tokens)
     || !Number.isFinite(costUsd) || costUsd < 0) {
     throw Object.assign(new Error("terminal receipt lacks reliable token or cost metering"), { code: "CAPTURE_USAGE_METERING_UNAVAILABLE" });

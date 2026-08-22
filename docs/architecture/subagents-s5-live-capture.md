@@ -38,6 +38,12 @@ the exact request/owner/node identity, an integer exit code, finite usage, and
 a terminal status. The RPC workflow transport remains available for its
 audited background/resume/control scope, not Alpha foreground proof.
 
+The first structured-delegation live attempt reached this terminal response
+but the capture usage reducer selected a redacted `totalTokens` sentinel before
+its numeric `usage.total` fallback. It failed before signing/staging. The
+reducer now filters candidates by finite numeric type first and its regression
+feeds an actual delegation TerminalReceipt into `terminalUsage`.
+
 `background-resume` now has a separate S5-B producer and authorization contract;
 `guarded-writer-integration` remains later S5 work. This S5-A authorization
 schema still rejects both IDs, so an operator cannot turn an Alpha capture

@@ -18,6 +18,7 @@ import {
   createPiBatchSwarmRuntime,
   digestBatchSwarmDefinition,
 } from "../packages/subagents/index.mjs";
+import { terminalUsage } from "../packages/subagents/release/live-evidence-extension.mjs";
 
 function transport() {
   const events = new EventEmitter();
@@ -91,6 +92,7 @@ test("delegation backend creates an authoritative terminal only from correlated 
   assert.equal(terminal.outcome, "completed");
   assert.equal(terminal.processTerminal.instances[0].observationSource, "pi-subagents-structured-delegation-terminal-response");
   assert.equal(terminal.completion.usage.total, 15);
+  assert.deepEqual(terminalUsage(terminal, 65_536), { rawOutputBytes: 60, tokens: 15, costUsd: 0.001 });
   await backend.dispose();
 });
 

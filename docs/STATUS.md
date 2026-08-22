@@ -101,6 +101,12 @@ transport, which emits a terminal response only after child exit. Until that
 path produces reviewed evidence this remains Preview, not Alpha, Beta, or
 Stable.
 
+The first structured-delegation attempt then reached correlated terminal and
+usage data but failed closed before signing because the capture reducer chose
+a redacted `totalTokens` projection ahead of the numeric `usage.total`
+fallback. The reducer now selects only finite numeric token/cost candidates and
+has a direct TerminalReceipt regression. No staged evidence was produced.
+
 The S0–S4 source slice now contains:
 
 - source dossiers, two ownership/state ADRs, and a dedicated 35-item subagents
