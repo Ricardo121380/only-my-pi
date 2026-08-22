@@ -47,11 +47,12 @@ session. Third-party packages and Labs remain opt-in and require review.
   allowlist, a digest-bound credential-free single-model Provider descriptor,
   read-only Agent terminal/cancel and two-item BatchSwarm scenarios
   over the sole `pi-subagents` backend, digest-only external signing, and
-  review-only evidence staging; two live cancel attempts failed closed and
-  produced no evidence, exposing the upstream workflow/interrupt mismatch and
-  the adapter's incorrect `target` management field; the producer now requires
-  correlated workflow `stop`, public `runId` targeting, and an authoritative
-  `cancelled` terminal; declared endpoint hosts are not an OS network policy;
+  review-only evidence staging; three RPC-workflow cancel attempts failed
+  closed and produced no evidence, exposing workflow/interrupt, target/runId,
+  and nested-runner process-terminal gaps; S5-A now uses the same pinned
+  package's single-layer structured delegation response and requires exact
+  request/owner/node identity, child exit code, finite usage, and terminal
+  status; declared endpoint hosts are not an OS network policy;
 - an independently authorized S5-B `background-resume` producer that runs two
   distinct Pi parent processes over one isolated persisted parent session,
   keeps `pi-subagents` artifacts session-scoped, binds restart state through a
@@ -83,6 +84,9 @@ session. Third-party packages and Labs remain opt-in and require review.
 - an exact `pi-subagents@0.45.2` extension-RPC v1 backend that emits only
   statement-body workflow code and correlates every lifecycle action to an
   explicit backend run ID;
+- an exact structured-delegation v1 backend from the same physical package for
+  read-only foreground Agent/Batch execution, correlated cancellation, bounded
+  result/usage projection, and exit-code-backed process-terminal receipts;
 - dual-read migration of legacy Workflow and heterogeneous Swarm resources to
   WorkflowPlan v2, without relabelling them as homogeneous BatchSwarm;
 - Workflow/Swarm public control routes that use the legacy registries only as

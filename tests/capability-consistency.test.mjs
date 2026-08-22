@@ -39,6 +39,7 @@ test("research stays single-agent and orchestration explicitly selects the sole 
   assert.equal(orchestration.packageIds.filter((id) => id === "subagents").length, 1);
   assert.ok(orchestration.capabilityIds.includes("subagent-runtime"));
   assert.ok(orchestration.capabilityIds.includes("subagent-rpc-v1"));
+  assert.ok(orchestration.capabilityIds.includes("subagent-delegation-v1"));
 });
 
 test("workspace-read is an explicit Pi-host capability in every profile", () => {

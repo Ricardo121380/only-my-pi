@@ -116,16 +116,19 @@ service interface by dependency injection.
 
 ### 4. Backend adapter and capability contract
 
-The adapter may use only the exact public extension RPC and events documented
-for `pi-subagents@0.45.2`: `ping`, `status`, `spawn`, `steer`, `interrupt`,
-`stop`, and `resume`, plus correlated request/reply, async completion, and
-process-terminal events.
+The adapters may use only two exact public event protocols documented for the
+same `pi-subagents@0.45.2` physical runtime: extension RPC (`ping`, `status`,
+`spawn`, `steer`, `interrupt`, `stop`, `resume`) for async workflow/background/
+resume/control, and exported structured delegation request/started/update/
+response/cancel for read-only foreground Agent/Batch execution. Both protocols
+share the same owner and never create another scheduler or model-facing tool.
 
 It must not:
 
 - import `pi-subagents/src/**` or any unexported path;
 - parse or simulate another extension's command input;
-- use exported TypeScript shapes as a hidden runtime channel;
+- use any unversioned or legacy direct-delegation shape as a hidden runtime
+  channel; the structured event vocabulary must match the pinned contract;
 - spawn Pi, Node, shell, worktree, or child processes on its own;
 - create a second physical concurrency semaphore that claims backend state;
 - infer support from private source when the public wire cannot demonstrate it.

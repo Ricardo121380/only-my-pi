@@ -89,14 +89,17 @@ paths. It has no apply/delete surface: all existing targets remain
 evidence/handoff disposition are not inferred.
 Token/cost ceilings are signed reconciliation gates rather than a verified
 mid-child billing circuit breaker. The checked-in default remains inert. One
-external one-time Alpha authorization was used for two live cancel attempts on
+external one-time Alpha authorization was used for three live cancel attempts on
 2026-08-22. The first exposed that upstream async workflows reject `interrupt`;
 the second exposed that the v2 adapter sent the undocumented `target` field
-instead of upstream's public `runId` field for management RPCs. Both failed
-closed, produced no signed/staged evidence, and left no live child. The runtime
-now uses correlated `stop`, exact `runId` targeting, and authoritative
-`cancelled` proof. Until that fixed path produces reviewed evidence this
-remains Preview, not Alpha, Beta, or Stable.
+instead of upstream's public `runId` field for management RPCs. The third proved
+that nested `workflowScript -> runs.run` completes its inner child but leaves
+the outer workflow runner without a timely process-terminal proof. All three
+failed closed, produced no signed/staged evidence, and left no live child. S5-A
+now uses the same physical package's single-layer structured delegation
+transport, which emits a terminal response only after child exit. Until that
+path produces reviewed evidence this remains Preview, not Alpha, Beta, or
+Stable.
 
 The S0–S4 source slice now contains:
 
@@ -209,15 +212,15 @@ Historical M5 receipts must not be described as successor evidence.
 Current branch evidence for this Preview source slice and S5 deterministic
 foundation:
 
-- `npm test`: **574/574** pass;
-- `npm run test:subagents`: **191/191** pass;
-- `npm run test:contract`: **143/143** pass;
+- `npm test`: **578/578** pass;
+- `npm run test:subagents`: **195/195** pass;
+- `npm run test:contract`: **147/147** pass;
 - `npm run test:integration`: **182/182** pass;
 - `npm run schema:check`: **77 production documents / 42 schema kinds / 0 findings**;
-- `npm run pack:check`: **291 allowlisted files**, with no tests, receipts, or
+- `npm run pack:check`: **292 allowlisted files**, with no tests, receipts, or
   Codex Goal in the tarball;
-- `npm run lint`: **727 files / 0 findings**;
-- `npm run secret:scan`: **727 tracked files + 291 packed files / 0 findings**;
+- `npm run lint`: **729 files / 0 findings**;
+- `npm run secret:scan`: **729 tracked files + 292 packed files / 0 findings**;
 - `npm run test:e2e`: fresh scripts-disabled offline tarball install, packaged
   topology doctor, zero-write plan, bootstrap, idempotent second apply,
   rollback, and final `NOT_INSTALLED` status pass. The verification used a
@@ -326,9 +329,12 @@ Two version-locked compatibility spikes are also complete:
 - `pi-permission-modes@2.2.0` has no audited public cross-extension read or
   hot-switch API, so hard execution-state changes return `RESTART_REQUIRED`;
   its OS sandbox is conditional and limited to eligible Bash subprocesses.
-- `pi-subagents@0.45.2` remains the sole physical child runtime. The future
-  only-my-pi adapter must use its capability-gated extension RPC and compiled
-  `workflowScript`; exported delegation types are fixture/reference-only.
+- `pi-subagents@0.45.2` remains the sole physical child runtime. The runtime
+  now uses two upstream-owned, version-locked protocols without introducing a
+  second scheduler: structured delegation for read-only foreground Agent/
+  BatchSwarm children, and extension RPC for asynchronous workflow management,
+  background/resume, and control. Caller-supplied workflow source is still
+  forbidden.
 
 M2 now turns those governed inputs into an installable, transactional
 configuration runtime:
@@ -405,10 +411,11 @@ child scheduler or subagent owner:
   Profile/Mode/role budget intersections, rejects recursive or unsafe writer
   topologies, compiles a JSON-safe `workflowScript`, and aggregates child
   results in stable recipe order;
-- `packages/pi-subagents-adapter` is the only live child seam. It pins the
-  audited `pi-subagents@0.45.2` extension-RPC v1 wire, performs capability ping
-  negotiation before spawn, maps stop/interrupt/status events, and refuses
-  private imports or the exported delegation surface as a runtime lane;
+- `packages/pi-subagents-adapter` remains the legacy RPC compatibility seam.
+  The successor runtime pins the same `pi-subagents@0.45.2` package and uses
+  extension RPC for async workflow/background/resume/control plus structured
+  delegation for read-only foreground Agent/Batch execution. Both refuse
+  private imports and caller-provided executable workflow source;
 - read-only research, review, and debug recipes never receive `bash`, `edit`,
   or `write`; tester/verifier evidence is supplied by the fixed Gate Runner;
   coding writers require a negotiated managed-worktree capability and shared

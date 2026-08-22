@@ -121,12 +121,13 @@ non-default Labs modules with the explicit boundaries in the
 
 The S0–S4 Preview source implementation now contains a unified
 `packages/subagents/` facade. It provides typed AgentTemplate v2,
-ResolvedAgentSpec, TaskAssignment and terminal receipts; an exact
-`pi-subagents` RPC v1 backend; immutable WorkflowPlan compilation; a single
+ResolvedAgentSpec, TaskAssignment and terminal receipts; exact structured-
+delegation and extension-RPC v1 adapters over one pinned `pi-subagents`
+physical runtime; immutable WorkflowPlan compilation; a single
 RunCoordinator; a fenced append-only journal; crash-recoverable parent budget
 reservations; dual-read migration from the v1 Workflow/Swarm resources; and a
 true homogeneous BatchSwarm with stable item slots, bounded ramp/retry/failure
-semantics, item-level provenance, and one structured bridge to the same
+semantics, item-level provenance, and one structured delegation bridge to the same
 physical backend. Batch retry has one owner: a Workflow batch node gets one root
 attempt, while `maxItems × item maxAttempts` is capped at 1000 physical
 assignments.

@@ -134,6 +134,7 @@
     "packages/subagents/adapters/pi-subagents-rpc-v1/backend.mjs",
     "packages/subagents/adapters/pi-subagents-rpc-v1/compiler.mjs",
     "packages/subagents/adapters/pi-subagents-rpc-v1/wire.mjs",
+    "packages/subagents/adapters/pi-subagents-delegation-v1/index.mjs",
     "packages/subagents/state/index.mjs",
     "packages/subagents/state/codec.mjs",
     "packages/subagents/state/event-journal.mjs",

@@ -26,12 +26,14 @@
   ],
   "topology": {
     "physicalRuntimeOwner": "pi-subagents",
-    "liveLane": "extension-rpc-v1",
+    "liveLane": "audited-pi-subagents-events-v1",
+    "liveLanes": ["extension-rpc-v1", "structured-delegation-v1"],
     "liveDiscovery": "ping-capability-handshake",
     "liveExecution": "spawn-with-compiled-workflowScript",
     "runtimeImports": [],
-    "delegationReferenceLane": "exported-reference-only",
-    "delegationRuntimeActive": false,
+    "delegationReferenceLane": "exported-foreground-runtime",
+    "delegationRuntimeActive": true,
+    "delegationScope": "read-only-agent-and-batch",
     "secondSubagentToolOwner": false,
     "secondScheduler": false
   },
@@ -98,8 +100,8 @@
   },
   "exportedDelegationReference": {
     "specifier": "pi-subagents/delegation",
-    "use": "contract-and-fixture-reference-only",
-    "activeRuntimeAdapter": false,
+    "use": "audited-read-only-foreground-runtime",
+    "activeRuntimeAdapter": true,
     "events": {
       "request": "prompt-template:subagent:request",
       "started": "prompt-template:subagent:started",

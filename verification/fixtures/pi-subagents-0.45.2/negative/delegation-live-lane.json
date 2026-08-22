@@ -4,5 +4,5 @@
   "operation": "set",
   "path": ["liveLane"],
   "value": "exported-delegation",
-  "expectedError": "extension-rpc-v1 is the only live lane"
+  "expectedError": "both live protocols must remain under the one pinned runtime"
 }

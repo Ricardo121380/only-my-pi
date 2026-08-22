@@ -9,7 +9,9 @@ The ownership boundary remains:
         |
         +-- one RunCoordinator + journal + budget/approval policy
         |
-        `-- pi-subagents@0.45.2 extension RPC (sole physical child runtime)
+        `-- pi-subagents@0.45.2 (sole physical child runtime)
+              |-- structured delegation: foreground Agent/Batch + cancel
+              `-- extension RPC: async workflow/background/resume/control
 ```
 
 ## Versioned contracts

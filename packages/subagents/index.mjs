@@ -138,6 +138,7 @@ export * from "./swarm-goal/registry.mjs";
 export * from "./ultra-run/index.mjs";
 export * from "./ultra-run/registry.mjs";
 export * from "./adapters/pi-subagents-rpc-v1/index.mjs";
+export * from "./adapters/pi-subagents-delegation-v1/index.mjs";
 export * from "./state/index.mjs";
 export * from "./topology.mjs";
 export * from "./policy/budget-ledger.mjs";

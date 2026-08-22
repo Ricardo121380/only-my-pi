@@ -8,9 +8,11 @@ orchestration from physical child execution:
   compilation, logical ready-node admission, the append-only event journal,
   parent budget reservations, approval binding, and recovery;
 - `pi-subagents@0.45.2` remains the sole physical child/session runtime;
-- the adapter uses only the reviewed extension-RPC v1 surface and accepts
-  domain-correlated `AgentRunHandle + ResolvedAgentSpec + TaskAssignment`
-  objects. It does not accept a caller-supplied `workflowScript`.
+- the adapters use only two reviewed public surfaces from the same pinned
+  package: structured delegation v1 for foreground read-only Agent/Batch
+  execution and extension-RPC v1 for async workflow/background/resume/control;
+  both accept domain-correlated `AgentRunHandle + ResolvedAgentSpec +
+  TaskAssignment` objects. Neither accepts caller-supplied `workflowScript`.
 
 ## Public entry point
 
@@ -22,6 +24,7 @@ import {
   createTaskAssignment,
   createAgentRunHandle,
   createPiSubagentsRpcV1Backend,
+  createPiSubagentsDelegationV1Backend,
   createBatchSwarmNodeExecutor,
   createBatchSwarmRegistry,
   createPiSubagentsBatchItemExecutor,
@@ -41,12 +44,15 @@ falls back to a hidden child process.
 ## Agent lifecycle
 
 The public RPC adapter negotiates the exact pinned capability/event map before
-spawn. Foreground is normalized to asynchronous upstream spawn plus correlated
-terminal waiting. Stable local handles retain explicit backend bindings across
-resume. Status, steer, interrupt, stop, and resume address only a recorded
-backend ID. Completed, failed, cancelled, timeout, and budget terminal outcomes
-require both a matching completion event and observed runner-process proof;
-missing proof produces a non-authoritative orphan/interrupted receipt.
+spawn and owns async workflow/background/resume/control. The structured
+delegation adapter owns read-only foreground Agent and BatchSwarm execution;
+its terminal response is accepted as observed process proof only when the exact
+request/owner/node identity, an integer child exit code, finite usage, and a
+terminal status all agree. Cancellation waits for a child run update before it
+emits the correlated delegation cancel event. Stable local handles retain
+explicit backend bindings. Completed, failed, cancelled, timeout, and budget
+terminal outcomes require a matching completion and observed process proof;
+missing proof produces no authoritative receipt.
 
 The current upstream seam has explicit degraded or unavailable entries for
 dynamic concurrency, rate-limit signals, model/tool overlays, usage metering,
@@ -56,7 +62,8 @@ scheduler to compensate.
 
 `npm run doctor:subagents-topology` is the static ownership gate. It reads the
 pinned package/wire contract plus the owner, command, and resource catalogs
-and requires exactly one physical/RPC owner (`pi-subagents`) and a separate
+and requires exactly one physical owner (`pi-subagents`) for both audited
+protocols plus a separate
 first-party logical owner. It also validates the checked-in low-sensitivity
 no-model receipt and now reports `liveRuntime: LIVE_NO_MODEL_CAPABILITY_PASS`.
 The doctor itself remains offline; fresh evidence requires the explicit

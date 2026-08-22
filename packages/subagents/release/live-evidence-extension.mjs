@@ -2,9 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 
 import {
-  PiSubagentsRpcV1Backend,
-  PI_SUBAGENTS_RPC_V1_EVENTS,
-} from "../adapters/pi-subagents-rpc-v1/index.mjs";
+  PiSubagentsDelegationV1Backend,
+} from "../adapters/pi-subagents-delegation-v1/index.mjs";
+import { PI_SUBAGENTS_RPC_V1_EVENTS } from "../adapters/pi-subagents-rpc-v1/index.mjs";
 import {
   createAgentRunHandle,
   createTaskAssignment,
@@ -119,6 +119,9 @@ export function createPiEventTransport(pi, { timeoutMs }) {
         unsubscribe();
       };
     },
+    emit(eventName, value) {
+      pi.events.emit(eventName, value);
+    },
     dispose() {
       for (const unsubscribe of subscriptions) unsubscribe();
       subscriptions.clear();
@@ -134,6 +137,7 @@ function taskText(id) {
 }
 
 async function waitForCorrelatedStatus(backend, handle, timeoutMs) {
+  if (typeof backend.waitForChildStart === "function") return await backend.waitForChildStart(handle, { timeoutMs });
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
     try {
@@ -435,11 +439,10 @@ export default function protectedLiveEvidenceExtension(pi) {
     try {
       const request = readRequest();
       transport = createPiEventTransport(pi, { timeoutMs: request.limits.maxWallTimeMs });
-      backend = new PiSubagentsRpcV1Backend({
+      backend = new PiSubagentsDelegationV1Backend({
         transport,
+        cwd: process.cwd(),
         timeoutMs: Math.min(60_000, request.limits.maxWallTimeMs),
-        terminalTimeoutMs: request.limits.maxWallTimeMs,
-        ownsTransport: true,
       });
       const record = await executeProtectedLiveEvidenceScenario(request, backend);
       process.stdout.write(`${JSON.stringify(record)}\n`);

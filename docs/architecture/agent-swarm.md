@@ -7,11 +7,12 @@ runs their `SwarmRunController` or accepts its historical compiler output.
 
 The compatibility control service translates each heterogeneous recipe into
 an immutable WorkflowPlan and delegates live work only to the injected
-`@only-my-pi/subagents` RunCoordinator. That facade reaches the audited
-`pi-subagents@0.45.2` extension-RPC v1 lane through its typed Agent backend.
-The backend emits only compiler-owned statement bodies and performs the exact
-`ping` capability handshake; caller-supplied `workflowScript` and the exported
-`pi-subagents/delegation` surface remain forbidden.
+`@only-my-pi/subagents` RunCoordinator. Heterogeneous legacy recipes continue
+to compile through the audited `pi-subagents@0.45.2` extension-RPC workflow
+lane. Homogeneous read-only BatchSwarm items may use the separately audited
+structured-delegation transport from the same physical runtime. Caller-
+supplied `workflowScript`, legacy direct delegation, and a second scheduler
+remain forbidden.
 
 ## Safety defaults
 

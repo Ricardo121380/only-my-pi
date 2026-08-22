@@ -11,6 +11,7 @@ test("the unified facade exposes typed Agent and Workflow APIs without a raw wor
     "createTaskAssignment",
     "createAgentRunHandle",
     "createPiSubagentsRpcV1Backend",
+    "createPiSubagentsDelegationV1Backend",
     "createBatchSwarmNodeExecutor",
     "createBatchSwarmRegistry",
     "createPiSubagentsBatchItemExecutor",

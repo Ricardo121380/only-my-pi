@@ -108,6 +108,15 @@ export function inspectSubagentsTopology({
     { owners: rpcOwners, expected: [PHYSICAL_OWNER] },
   );
 
+  const delegationOwners = exactOwnerIds(owners?.owners, "subagent-delegation-v1");
+  check(
+    report,
+    "single-delegation-owner",
+    delegationOwners.length === 1 && delegationOwners[0] === PHYSICAL_OWNER,
+    "exactly one owner must provide the pi-subagents structured delegation lane",
+    { owners: delegationOwners, expected: [PHYSICAL_OWNER] },
+  );
+
   const physicalPackageEntries = exactPackageEntries(packages, PHYSICAL_PACKAGE_ID);
   check(
     report,
@@ -144,6 +153,7 @@ export function inspectSubagentsTopology({
     isObject(firstPartyOwner)
       && !(firstPartyOwner.capabilities ?? []).includes("subagent-runtime")
       && !(firstPartyOwner.capabilities ?? []).includes("subagent-rpc-v1")
+      && !(firstPartyOwner.capabilities ?? []).includes("subagent-delegation-v1")
       && (firstPartyOwner.resourceIds ?? []).includes(FIRST_PARTY_RESOURCE_ID),
     "first-party orchestration may own logical semantics but never the physical runtime",
     {
@@ -194,17 +204,20 @@ export function inspectSubagentsTopology({
   const topology = wire?.topology ?? {};
   check(
     report,
-    "wire-single-lane",
+    "wire-single-runtime",
     topology.physicalRuntimeOwner === "pi-subagents"
-      && topology.liveLane === "extension-rpc-v1"
-      && topology.delegationRuntimeActive === false
+      && topology.liveLane === "audited-pi-subagents-events-v1"
+      && JSON.stringify(topology.liveLanes) === JSON.stringify(["extension-rpc-v1", "structured-delegation-v1"])
+      && topology.delegationRuntimeActive === true
+      && topology.delegationScope === "read-only-agent-and-batch"
       && topology.secondSubagentToolOwner === false
       && topology.secondScheduler === false
       && Array.isArray(topology.runtimeImports)
       && topology.runtimeImports.length === 0,
-    "the pinned wire contract must expose one RPC lane and no second runtime",
+    "the pinned wire contract may use two audited protocols owned by one physical runtime and no second scheduler",
     {
       liveLane: topology.liveLane,
+      liveLanes: topology.liveLanes,
       runtimeImports: topology.runtimeImports,
       delegationRuntimeActive: topology.delegationRuntimeActive,
       secondSubagentToolOwner: topology.secondSubagentToolOwner,

@@ -31,9 +31,11 @@ function validateWire(candidate) {
     assert.doesNotMatch(specifier, /^pi-subagents\/src(?:\/|$)/, "private pi-subagents import is forbidden");
   }
   assert.deepEqual(candidate.runtimeImports, [], "the live event lane requires no package imports");
-  assert.equal(candidate.liveLane, "extension-rpc-v1", "extension-rpc-v1 is the only live lane");
-  assert.equal(candidate.delegationReferenceLane, "exported-reference-only", "delegation export is reference-only");
-  assert.equal(candidate.delegationRuntimeActive, false, "delegation export must not become a second live lane");
+  assert.equal(candidate.liveLane, "audited-pi-subagents-events-v1", "both live protocols must remain under the one pinned runtime");
+  assert.deepEqual(candidate.liveLanes, ["extension-rpc-v1", "structured-delegation-v1"]);
+  assert.equal(candidate.delegationReferenceLane, "exported-foreground-runtime");
+  assert.equal(candidate.delegationRuntimeActive, true);
+  assert.equal(candidate.delegationScope, "read-only-agent-and-batch");
   assert.equal(candidate.secondSubagentToolOwner, false, "a second subagent tool owner is forbidden");
   assert.equal(candidate.secondScheduler, false, "a second scheduler is forbidden");
   assert.equal(candidate.childDispatch, false, "M1 fixtures must not dispatch children");
@@ -81,8 +83,8 @@ function validateSpawn(candidate, contract) {
 function validateDelegationReference(candidate, contract) {
   assert.equal(candidate.formatVersion, 1);
   assert.equal(candidate.specifier, contract.exportedDelegationReference.specifier);
-  assert.equal(candidate.use, "contract-and-fixture-reference-only");
-  assert.equal(candidate.activeRuntimeAdapter, false, "delegation export must stay reference-only");
+  assert.equal(candidate.use, "audited-read-only-foreground-runtime");
+  assert.equal(candidate.activeRuntimeAdapter, true);
   assert.deepEqual(candidate.events, contract.exportedDelegationReference.events);
   assert.deepEqual(candidate.requestRequired, contract.exportedDelegationReference.requestRequired);
   return candidate;
@@ -148,7 +150,7 @@ test("pi-subagents wire pins the exact audited npm artifact and public exports",
   ]);
 });
 
-test("extension RPC v1 is the sole live lane and the delegation export is reference-only", () => {
+test("RPC and structured delegation stay under one pinned physical runtime", () => {
   const contract = readJson(contractPath);
   validateWire(readJson(path.join(fixtureRoot, "wire-plan.json")));
   assert.equal(contract.topology.liveDiscovery, "ping-capability-handshake");
@@ -160,7 +162,7 @@ test("extension RPC v1 is the sole live lane and the delegation export is refere
     stop: "runId",
     resume: "runId",
   });
-  assert.equal(contract.exportedDelegationReference.activeRuntimeAdapter, false);
+  assert.equal(contract.exportedDelegationReference.activeRuntimeAdapter, true);
   assert.equal(contract.verification.liveRuntime, "LIVE_NO_MODEL_CAPABILITY_PASS");
   assert.equal(contract.verification.liveRuntimeMilestone, "S1");
   assert.equal(contract.forbidden.childDispatchDuringM1, true);
@@ -193,7 +195,7 @@ test("the spawn fixture accepts compiler output only and remains non-executing",
   assert.equal(contract.rpc.spawn.asyncOnly, true);
 });
 
-test("the exported delegation types are retained as a static contract reference", () => {
+test("the exported delegation contract is the audited read-only foreground lane", () => {
   const contract = readJson(contractPath);
   validateDelegationReference(readJson(path.join(fixtureRoot, "delegation-reference.json")), contract);
 });

@@ -56,7 +56,7 @@ test("topology rejects a wire contract that enables a second scheduler", () => {
   input.wire.topology.secondScheduler = true;
   const report = inspectSubagentsTopology(input);
   assert.equal(report.status, "STATIC_TOPOLOGY_FAIL");
-  assert.ok(report.findings.some((entry) => entry.code === "wire-single-lane"));
+  assert.ok(report.findings.some((entry) => entry.code === "wire-single-runtime"));
 });
 
 test("topology rejects a tampered checked-in live evidence receipt", () => {

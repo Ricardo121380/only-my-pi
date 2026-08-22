@@ -383,13 +383,14 @@ function boundedValue(value, maximumBytes) {
 function normalizeUsage(value) {
   const usage = object(value) ? value : {};
   const read = (field, fallback = 0) => {
-    const result = usage[field] ?? fallback;
-    return typeof result === "number" && Number.isFinite(result) && result >= 0 ? result : 0;
+    const result = usage[field];
+    if (typeof result === "number" && Number.isFinite(result) && result >= 0) return result;
+    return typeof fallback === "number" && Number.isFinite(fallback) && fallback >= 0 ? fallback : 0;
   };
   return immutable({
-    elapsedMs: Math.trunc(read("elapsedMs")),
+    elapsedMs: Math.trunc(read("elapsedMs", read("durationMs"))),
     rawOutputBytes: Math.trunc(read("rawOutputBytes")),
-    tokens: Math.trunc(read("tokens")),
+    tokens: Math.trunc(read("tokens", read("total"))),
     costUsd: read("costUsd", read("cost")),
   });
 }
@@ -401,7 +402,7 @@ function normalizeItemTerminal(value, maximumBytes) {
   const normalizedOutcome = allowed.has(outcome) ? outcome : "failed";
   const result = boundedValue(terminal.result ?? terminal.data ?? null, maximumBytes);
   const error = boundedValue(terminal.error ?? null, Math.min(4096, maximumBytes));
-  const reportedUsage = normalizeUsage(terminal.usage ?? value?.usage);
+  const reportedUsage = normalizeUsage(terminal.usage ?? terminal.completion?.usage ?? value?.usage);
   const usage = immutable({ ...reportedUsage, rawOutputBytes: result.bytes });
   const handleId = value?.handle?.handleId ?? terminal?.handle?.handleId ?? null;
   return immutable({

@@ -240,7 +240,9 @@ Normative consequences:
 4. A logical node is not `SUCCEEDED`, `CANCELLED`, or safely retryable until a
    correlated backend terminal proof has been reduced durably.
 5. Private `src/**` imports, command-input simulation, exported type abuse, and
-   an alternate delegation lane are prohibited.
+   any unowned/legacy delegation lane are prohibited. The exact exported
+   structured-delegation event contract may serve read-only foreground Agent
+   and Batch execution under the same physical owner; it is not a scheduler.
 6. Capabilities absent from the public backend cannot be inferred from source
    internals or emulated by a hidden physical pool. They remain `UNAVAILABLE`,
    or `DEGRADED` only when the documented degraded behavior is safe.

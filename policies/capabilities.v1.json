@@ -68,7 +68,15 @@
     },
     {
       "id": "subagent-rpc-v1",
-      "description": "Versioned extension-RPC capability seam for a future only-my-pi orchestration adapter.",
+      "description": "Versioned extension-RPC capability seam for asynchronous workflow, background/resume, and management operations.",
+      "surfaces": ["extensionEgress"],
+      "risk": "high",
+      "providedBy": ["subagents"],
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "subagent-delegation-v1",
+      "description": "Versioned structured-delegation seam for read-only foreground Agent and BatchSwarm execution through the same physical runtime.",
       "surfaces": ["extensionEgress"],
       "risk": "high",
       "providedBy": ["subagents"],

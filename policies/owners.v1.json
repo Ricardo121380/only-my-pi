@@ -63,7 +63,7 @@
       "id": "subagents",
       "description": "Sole owner of the physical child runtime, scheduler, and public subagent tool.",
       "exclusive": true,
-      "capabilities": ["subagent-runtime", "subagent-rpc-v1"],
+      "capabilities": ["subagent-delegation-v1", "subagent-rpc-v1", "subagent-runtime"],
       "surfaces": [],
       "status": "upstream"
     },

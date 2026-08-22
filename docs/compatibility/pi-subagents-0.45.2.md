@@ -114,18 +114,23 @@ manifest through a fixed compiler. The RPC envelope records the source as:
 The compiler and live adapter are later-milestone work. M1 contains a static,
 non-executed request fixture solely to lock the boundary and its negative tests.
 
-## Exported delegation reference
+## Exported structured delegation
 
 `pi-subagents/delegation` is a genuine public package export. Its structured
 types and five `prompt-template:subagent:*` event names are useful as a
 compatibility reference for request identity, budget, context, result, update,
 cancel, and terminal-response concepts.
 
-For this harness version it is **reference-only**. It is not imported by the
-live adapter and must not become a parallel runtime lane beside RPC v1. This
-avoids two request protocols, two correlation models, and ambiguous ownership
-of cancellation or terminal state. Reconsidering that choice requires a new
-versioned contract, not an incidental import.
+M1 originally retained this surface as reference-only. S5 live validation then
+proved that a nested `workflowScript -> runs.run` can complete its inner child
+without closing the outer workflow runner or producing timely process-terminal
+proof. The successor therefore adopts the exact structured events as the
+read-only foreground Agent/Batch lane. It does not statically import the
+package implementation: event names, request fields, identity, exit-code and
+usage requirements are pinned in the local wire contract and tests. Extension
+RPC remains the async workflow/background/resume/control lane. Both are owned
+by the same physical package; no second scheduler or public subagent tool is
+introduced.
 
 ## Remaining promotion gate
 

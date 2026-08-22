@@ -23,6 +23,7 @@
     "notifications",
     "subagent-runtime",
     "subagent-rpc-v1",
+    "subagent-delegation-v1",
     "web-access",
     "permission-policy",
     "bash-sandbox-conditional",

@@ -1,8 +1,8 @@
 # Subagents S5-A protected live capture
 
 Status: **production capture path and time-bounded public Alpha signer
-configured; two cancel attempts failed closed before evidence and the exact
-workflow-stop/runId compatibility fixes are ready for re-run** · 2026-08-22
+configured; three RPC-workflow attempts failed closed before evidence and S5-A
+now uses the pinned structured-delegation single-child transport** · 2026-08-22
 
 S5-A supplies the missing producer side of the source-pinned protected-evidence
 protocol. It is intentionally limited to the three read-only evidence classes
@@ -27,6 +27,16 @@ had sent `{target: ...}` for status, interrupt, stop, and resume. The attempt
 again produced no signed/staged evidence and left no live child. The adapter
 now sends `{runId: <correlated backend id>}` for every management method, and
 the checked-in wire contract plus backend tests pin that exact field.
+
+The third attempt reached an inner completed child but the outer async
+workflow runner did not close or persist process-terminal proof within the
+authorized ten-minute window. The parent killed the isolated process group and
+accepted no file state as evidence. Because relaxing terminal proof would be
+unsafe, S5-A now uses the exported structured-delegation protocol: its terminal
+response is emitted only after the foreground child process ends and must carry
+the exact request/owner/node identity, an integer exit code, finite usage, and
+a terminal status. The RPC workflow transport remains available for its
+audited background/resume/control scope, not Alpha foreground proof.
 
 `background-resume` now has a separate S5-B producer and authorization contract;
 `guarded-writer-integration` remains later S5 work. This S5-A authorization
@@ -53,7 +63,7 @@ scripts/subagents-live-evidence.mjs --run --yes
         +-- audited pi-subagents@0.45.2 + first-party capture extension only
         |
         v
-one physical pi-subagents RPC backend
+one physical pi-subagents runtime via structured delegation
         +-- read-only Agent terminal
         +-- correlated workflow stop + authoritative cancelled terminal
         `-- two-item homogeneous BatchSwarm terminal set
@@ -71,7 +81,9 @@ operator-selected empty staging directory
 The capture extension composes existing product contracts rather than adding a
 new scheduler: `AgentRunHandle` and `TaskAssignment` cover the two single-Agent
 scenarios, while `createPiBatchSwarmRuntime` covers the homogeneous batch. All
-physical launches still pass through the pinned `pi-subagents` extension RPC.
+four physical children pass through the pinned package's exported structured
+delegation events. Extension RPC remains the same package's separately audited
+async workflow/background/resume/control transport.
 The source repository is used only to validate and resolve versioned
 first-party contracts. The Pi parent and all children run in a synthetic
 fixture workspace containing only a small read-only `package.json` and

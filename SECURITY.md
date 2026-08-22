@@ -105,11 +105,13 @@ not prove live child execution, model quality, background resume, managed
 worktree enforcement, or Provider behavior. Promotion policy and compatibility
 matrix digests are checked independently so a forged receipt or floating Node
 version cannot widen a release claim. A bounded public Alpha signer is now
-configured. Two authorized cancel attempts failed closed before evidence was
-signed or staged: one on workflow/interrupt incompatibility and one on the
-adapter's incorrect management target field. Both boundaries are now covered
-by exact `stop`/`runId` contract tests. No protected evidence has been imported,
-so the current claim remains Preview.
+configured. Three authorized cancel attempts failed closed before evidence was
+signed or staged: workflow/interrupt incompatibility, the adapter's incorrect
+management target field, and missing timely process-terminal proof for the
+nested workflow runner. S5-A now uses the exported single-layer structured
+delegation terminal response and still requires exit code, identity and usage
+correlation. No protected evidence has been imported, so the current claim
+remains Preview.
 
 The release runner strips the inherited environment. Its one cache exception
 is `test-e2e`: an explicitly supplied npm cache is normalized to a real
