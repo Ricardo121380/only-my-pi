@@ -1,0 +1,32 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-protected-evidence-v1.schema.json",
+  "attestation": {
+    "authorizationDigest": "sha256:54d5e7b0235f1d878a02c479f32fcc16ef058a964568ec24f0a72c4148d7b609",
+    "captureDigest": "sha256:72cba3657e8b86f360aa47f2c74ebc1b56d4fd187ecdb56a51237b7a381557fb",
+    "class": "operator-authorized-live-import",
+    "publicKeyFingerprint": "sha256:d4bac6a9b21693578e377416fc4dd4f9a944ae374d32440d3b30827818d7be10",
+    "signature": "bHTTuoxwJ34fBJ9Gce2y+eWADz9UQRUDg2PXwBb1pTpeX7eoHVp73/yxxpLbWczK9jyTgDCgNYkzIKYlNDP5Bg==",
+    "signedPayloadDigest": "sha256:4e91155855f32117e13df1fd09e0bf1f1324acf28649eaa80337f259712155a5",
+    "signerId": "local-alpha-20260824"
+  },
+  "authorization": { "disposableRoot": true, "liveChildDispatch": "AUTHORIZED", "liveWriter": "NOT_RUN_BY_POLICY", "providerRequests": "AUTHORIZED", "realPiHome": "NOT_TOUCHED" },
+  "claims": { "authoritativeTerminals": 1, "autoIntegrated": false, "backgroundResume": false, "batchItemCount": 0, "cancelObserved": false, "managedWorktree": false, "parentDiffVerified": false },
+  "compatibilityRowId": "darwin-arm64-node-25.8.0",
+  "contractStatus": "protected-live-evidence",
+  "environment": { "backend": "pi-subagents@0.45.2", "node": "25.8.0", "pi": "0.84.1", "platform": "darwin-arm64" },
+  "evidenceDigest": "sha256:84d2381a8a8cbb6ae6018106c289950ffd431e3610931e59f63ba821bc981099",
+  "formatVersion": 1,
+  "id": "live-agent-terminal",
+  "matrixDigest": "sha256:8153d80fe216dae9d00508580429a43dc1465f40cda3b507c3598880d2e7e3a5",
+  "observedAt": "2026-08-23T18:04:09.257Z",
+  "policyDigest": "sha256:5e0b7ab53b3a2cd5e93ad69a6f53e93141509494094da66056a7bb517ce94e6d",
+  "privacy": { "credentialsStored": false, "hostPathsStored": false, "rawOutputStored": false, "sessionIdsStored": false },
+  "proofs": [
+    { "digest": "sha256:e75d1b695cb42784526b3bb6898e43add76d25d6ae272a6ae65f4f622c18a67d", "kind": "process-terminal" },
+    { "digest": "sha256:f80544709b721beabcf30d604a6358ddac134339f8faf6b1d699e09865a7a172", "kind": "terminal-receipt" },
+    { "digest": "sha256:3e26ef01f3baa376888d00d5ff304c8086b827644492343bfdbca1a573982993", "kind": "usage-metering" }
+  ],
+  "sourceCommit": "922b39bc1a8b2bc387cadf66dc366565c47a14f5",
+  "status": "PASS",
+  "trustPolicyDigest": "sha256:cf3bab03b09637f26946a32ce935fb070697426e2941d18eca589b7d032692ed"
+}
