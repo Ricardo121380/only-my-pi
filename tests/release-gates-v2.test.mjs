@@ -302,10 +302,11 @@ function createAlphaEvidenceRoot(sourceCommit) {
   );
   const sources = Object.fromEntries(ids.map((id) => [id, `verification/protected/${id}.json`]));
   const row = matrix.rows[0];
+  row.evidence = row.evidence.filter((entry) => !entry.startsWith("verification/protected/"));
   for (const id of ids) {
     const requirement = PROTECTED_EVIDENCE_REQUIREMENTS[id];
     row.scopes[requirement.scope] = "PASS";
-    row.evidence.push(sources[id]);
+    if (!row.evidence.includes(sources[id])) row.evidence.push(sources[id]);
   }
   row.evidence.sort();
   matrix.matrixDigest = compatibilityMatrixDigest(matrix);

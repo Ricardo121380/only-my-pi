@@ -19,6 +19,24 @@ function contracts() {
   return structuredClone(loadSubagentsReleaseContracts({ rootDir: root }));
 }
 
+const LIVE_SCOPE_KEYS = [
+  "liveAgentCancel",
+  "liveAgentTerminal",
+  "liveBatchTerminal",
+  "backgroundResume",
+  "guardedWriterIntegration",
+];
+
+function baselineMatrix(input) {
+  const matrix = structuredClone(input);
+  for (const row of matrix.rows) {
+    for (const scope of LIVE_SCOPE_KEYS) row.scopes[scope] = "NOT_RUN_BY_POLICY";
+    row.evidence = row.evidence.filter((entry) => !entry.startsWith("verification/protected/"));
+  }
+  matrix.matrixDigest = compatibilityMatrixDigest(matrix);
+  return matrix;
+}
+
 function previewGates(policy) {
   const preview = policy.channels.find((channel) => channel.id === "preview");
   return Object.fromEntries(preview.requiredDeterministicGates.map((id) => [id, "PASS"]));
@@ -33,7 +51,8 @@ test("versioned compatibility and promotion contracts validate their exact diges
 });
 
 test("protected promotion overlay does not create a circular matrix digest", () => {
-  const { matrix } = contracts();
+  const current = contracts().matrix;
+  const matrix = baselineMatrix(current);
   const baselineDigest = matrix.matrixDigest;
   const promoted = structuredClone(matrix);
   promoted.rows[0].scopes.liveAgentCancel = "PASS";
@@ -50,7 +69,9 @@ test("protected promotion overlay does not create a circular matrix digest", () 
 });
 
 test("Preview can pass deterministic gates while Alpha remains NOT_RUN_BY_POLICY", () => {
-  const { matrix, policy } = contracts();
+  const current = contracts();
+  const matrix = baselineMatrix(current.matrix);
+  const { policy } = current;
   const deterministicGates = previewGates(policy);
   const preview = evaluateSubagentsPromotion({ requested: "preview", matrix, policy, deterministicGates });
   assert.equal(preview.eligible, true);
@@ -65,7 +86,9 @@ test("Preview can pass deterministic gates while Alpha remains NOT_RUN_BY_POLICY
 });
 
 test("a schema-shaped protected PASS descriptor is rejected before compatibility evaluation", () => {
-  const { matrix, policy } = contracts();
+  const current = contracts();
+  const matrix = baselineMatrix(current.matrix);
+  const { policy } = current;
   const evidence = Object.fromEntries([
     "live-agent-cancel",
     "live-agent-terminal",
@@ -86,7 +109,9 @@ test("a schema-shaped protected PASS descriptor is rejected before compatibility
 });
 
 test("matrix and policy drift, floating PASS versions, and forged live evidence fail closed", () => {
-  const { matrix, policy } = contracts();
+  const current = contracts();
+  const matrix = baselineMatrix(current.matrix);
+  const { policy } = current;
 
   const driftedMatrix = structuredClone(matrix);
   driftedMatrix.rows[0].environment.node = "25.8.1";
