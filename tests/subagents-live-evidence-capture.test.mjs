@@ -301,6 +301,7 @@ test("authorized capture signs all Alpha read-only evidence and stages only low-
     signer: async ({ digest }) => crypto.sign(null, Buffer.from(digest), values.privateKey).toString("base64"),
   });
   assert.equal(capture.status, "PROTECTED_LIVE_EVIDENCE_CAPTURED");
+  assert.equal(Object.values(capture.evidence).every((document) => !Object.hasOwn(document, "scope")), true);
   assert.deepEqual(capture.usage, {
     children: 4,
     elapsedMs: 30,

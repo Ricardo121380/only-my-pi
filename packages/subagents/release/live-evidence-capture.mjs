@@ -278,13 +278,17 @@ export async function buildProtectedLiveEvidenceDocument(record, context, signer
       signature,
     },
   });
-  return validateProtectedEvidenceDocument(document, {
+  validateProtectedEvidenceDocument(document, {
     expectedId: record.id,
     matrix,
     policy,
     trustPolicy,
     expectedSourceCommit,
   });
+  // The validator returns a caller-facing projection with a derived `scope`.
+  // Persist only the exact signed schema document; adding the projection field
+  // would invalidate both the strict schema and the document digest on disk.
+  return Object.freeze(jsonClone(document));
 }
 
 export function createProtectedLiveEvidenceCapturePlan({
