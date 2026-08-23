@@ -27,9 +27,9 @@
         "repositoryContracts": "PASS",
         "noModelRpc": "PASS",
         "singleOwnerTopology": "PASS",
-        "liveAgentTerminal": "NOT_RUN_BY_POLICY",
-        "liveAgentCancel": "NOT_RUN_BY_POLICY",
-        "liveBatchTerminal": "NOT_RUN_BY_POLICY",
+        "liveAgentTerminal": "PASS",
+        "liveAgentCancel": "PASS",
+        "liveBatchTerminal": "PASS",
         "backgroundResume": "NOT_RUN_BY_POLICY",
         "guardedWriterIntegration": "NOT_RUN_BY_POLICY",
         "soakResourceLeak": "CONFIGURED_UNVERIFIED",
@@ -39,7 +39,10 @@
         "contracts/subagents/pi-subagents-live-no-model-evidence.json",
         "tests/subagents-live-probe.test.mjs",
         "tests/subagents-migration.test.mjs",
-        "tests/subagents-topology.test.mjs"
+        "tests/subagents-topology.test.mjs",
+        "verification/protected/live-agent-cancel.json",
+        "verification/protected/live-agent-terminal.json",
+        "verification/protected/live-batch-terminal.json"
       ]
     },
     {
