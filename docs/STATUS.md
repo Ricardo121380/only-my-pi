@@ -20,7 +20,7 @@ This page is a checked-in handoff record. Exact package metadata and risk tags
 live in [`inventory/packages.lock.json`](../inventory/packages.lock.json); this
 summary intentionally contains no credentials, sessions, or host paths.
 
-## Successor roadmap — S0–S5 Preview source + deterministic promotion foundation
+## Successor roadmap — S0–S5 Alpha achieved for source `922b39b`
 
 The M0–M7 Harness MVP described below remains the current released baseline.
 Development of its S0–S5 successor has started on the isolated
@@ -183,7 +183,16 @@ The S0–S4 source slice now contains:
   and delegate all live lifecycle work to the one injected RunCoordinator;
 - a 15-case, fixed-seed, three-baseline offline evaluation corpus.
 
-This branch has Preview promotion receipts only. Its deterministic tests use
+This branch now contains a source-bound Alpha promotion chain. Source commit
+`922b39bc1a8b2bc387cadf66dc366565c47a14f5` is followed by evidence-only
+commit `15f29159617d9374cff25136fead29d39e3488d0` and receipt-only commit
+`312fc2df97fe1d82da86e4d8d9a5374b6107a232`. The receipt proves 25/25
+deterministic gates plus the protected read-only gate. Its live capture used
+OpenCode Go `deepseek-v4-flash`: four children, 8,154 tokens, about $0.00474,
+and 75.0 seconds. No raw output, host path, credential or session identifier is
+stored in the evidence files. Earlier Preview receipts remain historical.
+
+The deterministic tests use
 injected transports and temporary roots. A separate disposable-root,
 no-model Pi probe now proves the public `pi-subagents@0.45.2` `ready`/correlated
 `ping` handshake and single physical tool ownership. It submitted no prompt,
@@ -271,9 +280,10 @@ trust/authorization reasons; it cannot reuse the S5-A authorization.
 `npm run plan:subagents-guarded-writer` is independently inert and additionally
 requires its exact single-writer/path/gate authorization; it cannot reuse
 either earlier authorization.
-Promotion closure therefore remains Preview-only until protected
-Alpha/Beta/Stable evidence is explicitly authorized, captured, signed,
-reviewed, and imported.
+Alpha closure is complete for the exact source/evidence chain above. Beta still
+requires separately authorized `background-resume` and
+`guarded-writer-integration` evidence; Stable additionally requires its declared
+soak and compatibility gates. Neither later authorization is implied by Alpha.
 
 ## Current external Pi baseline
 

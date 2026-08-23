@@ -140,12 +140,11 @@ session. Third-party packages and Labs remain opt-in and require review.
 
 ### Security boundary
 
-These unreleased changes remain Preview source evidence. Their receipts are
-Preview-only and do not prove live child execution, Provider quality, managed
-worktrees, live adaptive rate limiting, SwarmGoal, UltraRun, or a production
-BatchSwarm deployment. The BatchSwarm implementation itself is covered by
-offline, injected-backend, crash-recovery, and bounded-scale tests; its protected
-live read-only dispatch remains `NOT_RUN_BY_POLICY`. Any tracked change after
-the final 0.1.0 receipt invalidates that
-historical receipt for the new source tree and must follow a new
-source/gate/receipt sequence before release promotion.
+The successor has an Alpha receipt for exact source `922b39b`, evidence commit
+`15f2915`, and receipt commit `312fc2d`. It proves one live Agent cancellation,
+one live Agent terminal and a two-item read-only BatchSwarm through OpenCode Go
+DeepSeek V4 Flash, plus all 25 deterministic gates. It does not prove managed
+writers, background/resume, live adaptive rate limiting, dynamic SwarmGoal or
+UltraRun quality, or Stable deployment. Any tracked source change requires a
+new source/evidence/receipt chain before that newer source can inherit the
+promotion claim.

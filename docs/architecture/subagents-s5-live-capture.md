@@ -1,8 +1,13 @@
 # Subagents S5-A protected live capture
 
-Status: **production capture path and time-bounded public Alpha signer
-configured; three RPC-workflow attempts failed closed before evidence and S5-A
-now uses the pinned structured-delegation single-child transport** · 2026-08-22
+Status: **Alpha achieved for source `922b39b`; evidence `15f2915`; receipt
+`312fc2d`** · 2026-08-24
+
+The final OpenCode Go `deepseek-v4-flash` capture completed four children in
+75,048 ms, used 8,154 tokens and approximately $0.00473968, and produced the
+three required Ed25519-signed evidence files. The Alpha runner then passed all
+25 deterministic gates and the protected read-only gate. This is lifecycle
+evidence, not a model-quality benchmark or a Beta writer/background claim.
 
 S5-A supplies the missing producer side of the source-pinned protected-evidence
 protocol. It is intentionally limited to the three read-only evidence classes

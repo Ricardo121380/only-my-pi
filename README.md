@@ -178,8 +178,12 @@ Preview deterministic gates on a clean source commit. Alpha/Beta/Stable live
 claims use a source-pinned Ed25519 evidence-import protocol and cannot be
 produced by the deterministic runner. The checked-in trust policy now contains
 one time-bounded public Alpha signer whose scope excludes background/resume and
-writer evidence. Higher promotion remains unavailable until an operator
-separately authorizes and completes the disposable live run; private signing
+writer evidence. Alpha is now proved for source `922b39b`, evidence commit
+`15f2915`, and receipt commit `312fc2d`: 25 deterministic gates plus the
+protected read-only gate passed. The OpenCode Go `deepseek-v4-flash` capture ran
+four children within 8,154 tokens and about $0.00474, without storing raw
+output, credentials, host paths, or session IDs. Beta/Stable remain unavailable
+until their separate protected requirements are authorized. Private signing
 keys remain outside the repository.
 
 The S5-A Alpha capture producer is now implemented behind
