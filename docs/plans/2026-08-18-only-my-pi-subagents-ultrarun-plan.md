@@ -1,7 +1,7 @@
 # only-my-pi：统一 Subagent、Workflow 与 UltraRun 后续开发计划
 
 > 版本：2026-08-18
-> 状态：已批准的 successor implementation baseline；S0–S4 Preview source 已实现；S5 deterministic gates、source-pinned protected-evidence importer、S5-A/S5-B/S5-C protected producers 与 S5-D review-only fault/recovery closure 已实现；time-bounded public Alpha signer 已配置；三次 RPC workflow 尝试及后续 structured-delegation 尝试均 fail closed 且未产出 evidence，已闭合 interrupt、target/runId、嵌套 process-terminal、redacted usage fallback、token 放大与 structured_output budget；现采用 external-tools blocked + one structured_output lifecycle probe，等待复跑，promotion 仍为 Preview
+> 状态：已批准的 successor implementation baseline；S0–S4 Preview source 已实现；S5 deterministic gates、source-pinned protected-evidence importer、S5-A/S5-B/S5-C protected producers 与 S5-D review-only fault/recovery closure 已实现；time-bounded public Alpha signer 已配置；external-tools blocked + one structured_output probe 已完成四个 child 且在预算内，但首次 staging 带入 validator scope 派生字段而被 importer 拒绝，未导入 evidence；exact-schema persistence 与稳定 protected matrix overlay 已闭合，等待新 source 复跑，promotion 仍为 Preview
 > 前置基线：M0–M7 Harness MVP 已按 [`2026-08-16-only-my-pi-development-plan.md`](2026-08-16-only-my-pi-development-plan.md) 完成并合入 `main`
 > 配套 Codex Goal：[`../../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../../codex/goals/develop-only-my-pi-subagents-ultrarun.md)
 > 产品边界：纯 Pi 原生；参考 Kimi/Claude/DeepSeek 等源码与公开合同，不接入 Kimi runtime，不重写 Pi agent loop、Provider 或 session engine

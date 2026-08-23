@@ -114,6 +114,13 @@ No caller may instantiate a workflow runner, scheduler, child manager, or
 backend adapter independently. CLI, extension, and tests receive the same
 service interface by dependency injection.
 
+Protected live scope status is a signed promotion overlay, not part of the
+stable compatibility baseline digest. The matrix digest normalizes those five
+scope values and removes protected evidence paths; the importer separately
+requires exact source commit, signer, evidence digest, row and scope. This
+breaks the otherwise circular requirement that evidence sign the matrix value
+which is changed by importing that same evidence.
+
 ### 4. Backend adapter and capability contract
 
 The adapters may use only two exact public event protocols documented for the

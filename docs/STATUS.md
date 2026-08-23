@@ -115,6 +115,15 @@ internal `structured_output` call, so it cannot repeatedly spend cached context
 reviewing a synthetic fixture. The ceiling was not widened and no additional
 live run is authorized implicitly.
 
+After external tools were blocked and only `structured_output` remained, a
+source-bound run completed all four children at 8,351 tokens and about
+$0.00499. Import review then found that the staging writer persisted the
+validator's derived `scope` projection, making the otherwise valid signed JSON
+fail the strict schema. The files were not imported. The writer now persists
+the exact signed schema document, and the compatibility digest has an explicit
+protected-overlay projection so the next evidence-only child commit cannot
+create a matrix-digest cycle.
+
 The S0–S4 source slice now contains:
 
 - source dossiers, two ownership/state ADRs, and a dedicated 35-item subagents
@@ -226,9 +235,9 @@ Historical M5 receipts must not be described as successor evidence.
 Current branch evidence for this Preview source slice and S5 deterministic
 foundation:
 
-- `npm test`: **578/578** pass;
-- `npm run test:subagents`: **195/195** pass;
-- `npm run test:contract`: **147/147** pass;
+- `npm test`: **579/579** pass;
+- `npm run test:subagents`: **196/196** pass;
+- `npm run test:contract`: **148/148** pass;
 - `npm run test:integration`: **182/182** pass;
 - `npm run schema:check`: **77 production documents / 42 schema kinds / 0 findings**;
 - `npm run pack:check`: **292 allowlisted files**, with no tests, receipts, or

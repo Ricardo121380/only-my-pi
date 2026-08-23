@@ -61,7 +61,16 @@ function exactDigest(document, digestKey) {
 }
 
 export function compatibilityMatrixDigest(matrix) {
-  return exactDigest(matrix, "matrixDigest");
+  const base = jsonClone(withoutKey(withoutKey(matrix, "$schema"), "matrixDigest"));
+  for (const row of base.rows ?? []) {
+    for (const scope of LIVE_SCOPES) {
+      if (Object.hasOwn(row.scopes ?? {}, scope)) row.scopes[scope] = "NOT_RUN_BY_POLICY";
+    }
+    if (Array.isArray(row.evidence)) {
+      row.evidence = row.evidence.filter((entry) => !entry.startsWith("verification/protected/"));
+    }
+  }
+  return sha256(base);
 }
 
 export function promotionPolicyDigest(policy) {

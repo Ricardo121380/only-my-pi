@@ -21,6 +21,13 @@ The ownership boundary remains:
   `CONFIGURED_UNVERIFIED`, `NOT_RUN_BY_POLICY`, `NOT_RUN_ENVIRONMENT`, or
   `UNAVAILABLE`. A `PASS` Node row must contain an exact semver; floating
   values such as `24.x` cannot become compatibility evidence.
+  `matrixDigest` identifies the stable runtime/contract baseline: its digest
+  projection normalizes the five protected live scopes to
+  `NOT_RUN_BY_POLICY` and excludes `verification/protected/*` paths. This
+  avoids a circular digest when an evidence-only child commit promotes those
+  exact scopes; the overlay remains valid only when its source-bound Ed25519
+  evidence passes independently. Runtime tuple, owners, static scopes and
+  non-protected evidence remain digest-bound.
 - `contracts/subagents/promotion-policy.json` defines cumulative Preview,
   Alpha, Beta, and Stable requirements. Its digest is checked before any
   evaluation. The policy requires protected evidence for live child,

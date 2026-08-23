@@ -44,6 +44,13 @@ its numeric `usage.total` fallback. It failed before signing/staging. The
 reducer now filters candidates by finite numeric type first and its regression
 feeds an actual delegation TerminalReceipt into `terminalUsage`.
 
+The first external-tool-free run then completed all four children within the
+authorization, but staging had added the validator's derived `scope` field to
+each signed document. Import rejected the additional property. The producer
+now validates and then persists the original signed schema document; `scope`
+remains a caller projection only. The temporary evidence was not edited or
+imported.
+
 `background-resume` now has a separate S5-B producer and authorization contract;
 `guarded-writer-integration` remains later S5 work. This S5-A authorization
 schema still rejects both IDs, so an operator cannot turn an Alpha capture

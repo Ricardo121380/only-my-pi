@@ -32,6 +32,23 @@ test("versioned compatibility and promotion contracts validate their exact diges
   assert.equal(promotionPolicyDigest(policy), policy.policyDigest);
 });
 
+test("protected promotion overlay does not create a circular matrix digest", () => {
+  const { matrix } = contracts();
+  const baselineDigest = matrix.matrixDigest;
+  const promoted = structuredClone(matrix);
+  promoted.rows[0].scopes.liveAgentCancel = "PASS";
+  promoted.rows[0].scopes.liveAgentTerminal = "PASS";
+  promoted.rows[0].scopes.liveBatchTerminal = "PASS";
+  promoted.rows[0].evidence.push(
+    "verification/protected/live-agent-cancel.json",
+    "verification/protected/live-agent-terminal.json",
+    "verification/protected/live-batch-terminal.json",
+  );
+  assert.equal(compatibilityMatrixDigest(promoted), baselineDigest);
+  promoted.rows[0].environment.node = "25.8.1";
+  assert.notEqual(compatibilityMatrixDigest(promoted), baselineDigest);
+});
+
 test("Preview can pass deterministic gates while Alpha remains NOT_RUN_BY_POLICY", () => {
   const { matrix, policy } = contracts();
   const deterministicGates = previewGates(policy);

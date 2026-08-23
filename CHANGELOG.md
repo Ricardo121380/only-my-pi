@@ -59,6 +59,10 @@ session. Third-party packages and Labs remain opt-in and require review.
   `structured_output` call only) after a complete terminal/Batch run was
   rejected at roughly 40,588 tokens against the 20,000-token authorization;
   the limit was not widened and no evidence was signed;
+- exact signed-evidence persistence after the next 8,351-token run exposed a
+  derived `scope` field in staging; import rejected it, no file was normalized
+  by hand, and the producer now keeps validation projections out of schema
+  documents;
 - an independently authorized S5-B `background-resume` producer that runs two
   distinct Pi parent processes over one isolated persisted parent session,
   keeps `pi-subagents` artifacts session-scoped, binds restart state through a

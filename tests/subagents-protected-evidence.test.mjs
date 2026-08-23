@@ -350,5 +350,5 @@ test("Alpha becomes eligible only when all three source-bound files and their sa
     expectedSourceCommit: sourceCommit,
     trustPolicy: signing.trustPolicy,
     rootDir: root,
-  }), { code: "MATRIX_DIGEST_MISMATCH" });
+  }), { code: "MATRIX_EVIDENCE_REFERENCE_MISSING" });
 });

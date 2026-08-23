@@ -124,6 +124,12 @@ $0.01. It was rejected before signing. The ceiling was not enlarged; S5-A now
 blocks every external tool and permits only the internal final
 `structured_output` call, keeping model-quality evaluation separate.
 
+The first run under that envelope completed within budget, but import rejected
+the staged documents because a derived `scope` view had been persisted outside
+the strict evidence schema. The signed documents were not manually normalized
+or imported. The producer now persists the exact signed schema object, and a
+regression proves the derived scope remains validation-only.
+
 The release runner strips the inherited environment. Its one cache exception
 is `test-e2e`: an explicitly supplied npm cache is normalized to a real
 directory and accepted only inside the actual user's `.npm` cache or the
