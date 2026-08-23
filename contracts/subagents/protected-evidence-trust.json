@@ -6,7 +6,7 @@
   "algorithm": "ed25519",
   "signers": [
     {
-      "id": "local-alpha-20260822",
+      "id": "local-alpha-20260824",
       "status": "active",
       "authorizationClass": "local-operator-protected-live",
       "publicKeySpki": "MCowBQYDK2VwAyEAaHuIWI9d3SWdP/SjeFHm6bmD9IFNRBBgqX+kKrkUGuM=",
@@ -16,9 +16,9 @@
         "live-agent-terminal",
         "live-batch-terminal"
       ],
-      "notBefore": "2026-08-22T09:20:00.000Z",
-      "notAfter": "2026-08-23T09:20:00.000Z"
+      "notBefore": "2026-08-23T16:35:00.000Z",
+      "notAfter": "2026-08-23T20:35:00.000Z"
     }
   ],
-  "policyDigest": "sha256:84eb9c803c31a52c82c5c786391f3f36b425fb91b9754ab1c7b329f2b9eb8135"
+  "policyDigest": "sha256:cf3bab03b09637f26946a32ce935fb070697426e2941d18eca589b7d032692ed"
 }
