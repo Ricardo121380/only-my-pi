@@ -92,8 +92,9 @@ delegation events. Extension RPC remains the same package's separately audited
 async workflow/background/resume/control transport.
 
 These Alpha probes measure lifecycle correctness, not model review quality.
-The structured delegation request therefore uses a zero-tool budget and tells
-the child not to call tools. It still exercises a real Provider request, child
+The structured delegation request therefore blocks every external/file/
+network/shell tool and permits exactly one internal `structured_output` call.
+It still exercises a real Provider request, child
 process, structured result, correlated cancellation, exit code, usage and
 Batch aggregation, but it does not spend repeated cached context reading a
 synthetic two-file fixture. Model quality belongs to the separate offline/live

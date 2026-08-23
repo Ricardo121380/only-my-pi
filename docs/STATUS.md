@@ -110,9 +110,10 @@ has a direct TerminalReceipt regression. No staged evidence was produced.
 The next bounded run completed the terminal and both Batch children but was
 rejected before signing because cumulative usage was about 40,588 tokens versus
 the 20,000-token authorization (cost was about $0.0094 versus the $1 ceiling).
-The lifecycle probe now uses zero tools so it cannot repeatedly spend cached
-context reviewing a synthetic fixture. The ceiling was not widened and no
-additional live run is authorized implicitly.
+The lifecycle probe now blocks every external tool and permits exactly one
+internal `structured_output` call, so it cannot repeatedly spend cached context
+reviewing a synthetic fixture. The ceiling was not widened and no additional
+live run is authorized implicitly.
 
 The S0–S4 source slice now contains:
 
@@ -232,8 +233,8 @@ foundation:
 - `npm run schema:check`: **77 production documents / 42 schema kinds / 0 findings**;
 - `npm run pack:check`: **292 allowlisted files**, with no tests, receipts, or
   Codex Goal in the tarball;
-- `npm run lint`: **729 files / 0 findings**;
-- `npm run secret:scan`: **729 tracked files + 292 packed files / 0 findings**;
+- `npm run lint`: **730 files / 0 findings**;
+- `npm run secret:scan`: **730 tracked files + 292 packed files / 0 findings**;
 - `npm run test:e2e`: fresh scripts-disabled offline tarball install, packaged
   topology doctor, zero-write plan, bootstrap, idempotent second apply,
   rollback, and final `NOT_INSTALLED` status pass. The verification used a

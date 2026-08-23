@@ -108,14 +108,14 @@ export function compileAgentAssignmentToPiDelegationRequest({
     nodeId: handle.local.nodeId,
     agent: agentSpec.backendAgentId,
     task: maximumToolCalls === 0
-      ? `Do not call tools. This is a lifecycle-only probe, not a quality review. ${assignment.task.text}`
+      ? `Do not call file, network, shell, or delegation tools. This is a lifecycle-only probe, not a quality review. Your only permitted tool call is the final structured_output submission. ${assignment.task.text}`
       : assignment.task.text,
     context: assignment.context.mode,
     cwd,
     ...(typeof model === "string" && model.length > 0 ? { model } : {}),
     timeoutMs: assignment.budget.maxElapsedMs,
     toolBudget: maximumToolCalls === 0
-      ? { hard: 0, block: "*" }
+      ? { hard: 1, block: ["bash", "edit", "find", "grep", "ls", "read", "web", "write"] }
       : { hard: maximumToolCalls, block: [...MUTATING_TOOLS] },
     artifacts: false,
     result: schema === null ? { kind: "text" } : { kind: "structured", schema },
