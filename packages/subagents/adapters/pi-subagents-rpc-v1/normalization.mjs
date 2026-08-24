@@ -69,9 +69,28 @@ export function normalizePiSubagentsTerminalEvidence(value) {
     ?? value.processTerminalProof
     ?? value.terminalProof
     ?? (directProof ? value : null);
-  const completion = isRecord(completionCandidate) ? unwrapPiSubagentsEvent(completionCandidate) : null;
+  const completion = isRecord(completionCandidate)
+    ? withSafeUsageProjection(unwrapPiSubagentsEvent(completionCandidate))
+    : null;
   const processTerminal = isRecord(proofCandidate) ? unwrapPiSubagentsEvent(proofCandidate) : null;
   return { completion, processTerminal };
+}
+
+function withSafeUsageProjection(completion) {
+  if (!isRecord(completion)) return completion;
+  const tokens = [completion.usage?.total, completion.totalTokens?.total, completion.totalCost?.totalTokens]
+    .find((candidate) => Number.isSafeInteger(candidate) && candidate >= 0);
+  const costUsd = [completion.usage?.costUsd, completion.usage?.cost, completion.totalCost?.costUsd]
+    .find((candidate) => Number.isFinite(candidate) && candidate >= 0);
+  if (tokens === undefined || costUsd === undefined) return completion;
+  return {
+    ...completion,
+    usage: {
+      ...(isRecord(completion.usage) ? completion.usage : {}),
+      total: tokens,
+      costUsd,
+    },
+  };
 }
 
 function normalizedState(completion) {
