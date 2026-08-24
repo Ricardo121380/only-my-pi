@@ -20,6 +20,7 @@ import {
 import {
   executeBackgroundResumeLaunchPhase,
   executeBackgroundResumeResumePhase,
+  loadBackgroundResumeExtensionRequest,
   SUBAGENTS_BACKGROUND_RESUME_PHASE_TYPE,
 } from "../packages/subagents/release/background-resume-extension.mjs";
 import {
@@ -539,6 +540,11 @@ test("Pi runner launches two separate parent processes with one persisted isolat
   assert.equal(invocations[0].argv.includes("--session-dir"), true);
   assert.equal(invocations[0].options.cwd.endsWith(`${path.sep}workspace`), true);
   assert.notEqual(invocations[0].options.cwd, rootDir);
+  assert.equal(invocations[0].options.cwd.startsWith(invocations[0].options.env.PI_CODING_AGENT_DIR), true);
+  for (const invocation of invocations) {
+    const checkedRequest = loadBackgroundResumeExtensionRequest({ environment: invocation.options.env });
+    assert.equal(checkedRequest.workspaceRoot, invocation.options.cwd);
+  }
   assert.equal(invocations[0].options.env.FIXTURE_API_KEY, "fixture-secret-value");
   assert.equal(Object.hasOwn(invocations[0].options.env, "OPENAI_API_KEY"), false);
   assert.notEqual(invocations[0].options.env.OMP_SUBAGENTS_BACKGROUND_RESUME_REQUEST, invocations[1].options.env.OMP_SUBAGENTS_BACKGROUND_RESUME_REQUEST);

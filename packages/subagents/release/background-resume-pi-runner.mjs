@@ -423,7 +423,7 @@ export function createPiBackgroundResumeScenarioRunner({
       agentRoot: path.join(runtimeRoot, "agent"),
       agentDefinitions: path.join(runtimeRoot, "agent", "agents"),
       subagentConfig: path.join(runtimeRoot, "agent", "extensions", "subagent"),
-      workspace: path.join(runtimeRoot, "workspace"),
+      workspace: path.join(runtimeRoot, "agent", "workspace"),
       sessionDir: path.join(runtimeRoot, "agent", "sessions"),
       handoffDir: path.join(runtimeRoot, "agent", "background-resume"),
       home: path.join(runtimeRoot, "home"),

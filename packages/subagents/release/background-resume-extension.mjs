@@ -87,9 +87,9 @@ function containedRegularFile(root, file, maximumBytes) {
   return realFile;
 }
 
-function readRequest() {
-  const requestFile = process.env[SUBAGENTS_BACKGROUND_RESUME_REQUEST_ENV];
-  const agentRoot = process.env.PI_CODING_AGENT_DIR;
+export function loadBackgroundResumeExtensionRequest({ environment = process.env } = {}) {
+  const requestFile = environment[SUBAGENTS_BACKGROUND_RESUME_REQUEST_ENV];
+  const agentRoot = environment.PI_CODING_AGENT_DIR;
   if (typeof requestFile !== "string" || !path.isAbsolute(requestFile)
     || typeof agentRoot !== "string" || !path.isAbsolute(agentRoot)) {
     fail("background resume request unavailable", "BACKGROUND_RESUME_REQUEST_UNAVAILABLE");
@@ -491,7 +491,7 @@ export default function backgroundResumeEvidenceExtension(pi) {
     let transport;
     let backend;
     try {
-      const request = readRequest();
+      const request = loadBackgroundResumeExtensionRequest();
       const session = sessionIdentity(request, event, ctx);
       transport = createPiEventTransport(pi, { timeoutMs: request.limits.maxWallTimeMs });
       backend = new PiSubagentsRpcV1Backend({
