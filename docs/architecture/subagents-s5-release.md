@@ -142,8 +142,9 @@ No live gate is promoted by inference. The importer, authorization/capture
 schemas, digest-only signer boundary, Pi Alpha scenario driver, signature
 verification, direct-child Git boundary, background/resume producer, and
 guarded-writer producer now exist. The writer producer does not trust the child
-patch or path report: it recomputes the staged diff and fixed gates in the
-preserved worktree and emits a handoff without integration. The checked-in
+patch or path report: it reconstructs or reuses a detached disposable review
+worktree, recomputes the staged diff and fixed gates there, and emits a handoff
+without integration. The checked-in
 trust policy now has distinct bounded Alpha and Beta public signers. A public
 key is not execution authorization and does not itself promote a channel; the
 current checked-in Alpha receipt remains the latest completed promotion until

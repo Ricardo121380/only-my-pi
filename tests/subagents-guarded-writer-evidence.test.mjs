@@ -229,7 +229,7 @@ async function git(cwd, ...argv) {
   })).stdout.trim();
 }
 
-async function writerFixture(t) {
+async function writerFixture(t, { capturedAndRemoved = false } = {}) {
   const directory = await fsPromises.mkdtemp(path.join(os.tmpdir(), "omp-writer-verify-"));
   t.after(() => fsPromises.rm(directory, { recursive: true, force: true }));
   const repository = path.join(directory, "fixture-repo");
@@ -248,7 +248,7 @@ async function writerFixture(t) {
   await fsPromises.writeFile(path.join(worktree, "fixture", "allowed.txt"), `before\n${marker}\n`);
   await git(worktree, "add", "--", "fixture/allowed.txt");
   const patchPath = path.join(artifactRoot, "handoffs", "writer.patch");
-  await fsPromises.writeFile(patchPath, await git(worktree, "diff", "--cached", "--binary", baseCommit, "--"));
+  await fsPromises.writeFile(patchPath, `${await git(worktree, "diff", "--cached", "--binary", baseCommit, "--")}\n`);
   const manifestPath = path.join(artifactRoot, "handoffs", "writer.json");
   const manifest = {
     version: 1,
@@ -273,11 +273,22 @@ async function writerFixture(t) {
       cleanup: {
         state: "complete",
         pruned: true,
-        tasks: [{ index: 0, path: worktree, branch: "omp-writer-test", worktreeRemoved: false, branchRemoved: false, preserved: true, reason: "handoff" }],
+        tasks: [{
+          index: 0,
+          path: worktree,
+          branch: "omp-writer-test",
+          worktreeRemoved: capturedAndRemoved,
+          branchRemoved: capturedAndRemoved,
+          ...(capturedAndRemoved ? {} : { preserved: true, reason: "handoff" }),
+        }],
       },
     }],
   };
   await fsPromises.writeFile(manifestPath, `${JSON.stringify(manifest)}\n`);
+  if (capturedAndRemoved) {
+    await git(repository, "worktree", "remove", "--force", worktree);
+    await git(repository, "branch", "-D", "omp-writer-test");
+  }
   const registry = createAgentRegistry({ rootDir });
   const entry = await registry.resolve("implementer");
   const template = agentTemplateFromRegistryEntry(entry);
@@ -314,6 +325,7 @@ test("parent verifier recomputes an exact staged diff and creates a handoff with
   assert.deepEqual(verified.changedPaths, ["fixture/allowed.txt"]);
   assert.equal(verified.integration.automaticIntegration, false);
   assert.equal(verified.handoff.integration.state, "HANDOFF_ONLY");
+  assert.equal(verified.reviewWorktreeMode, "preserved-upstream-worktree");
   assert.equal(await fsPromises.readFile(path.join(value.repository, "fixture", "allowed.txt"), "utf8"), "before\n");
 
   await fsPromises.appendFile(path.join(value.worktreeRoot, "writer-1", "fixture", "allowed.txt"), "unstaged\n");
@@ -356,6 +368,28 @@ test("parent verifier recomputes an exact staged diff and creates a handoff with
     manifestPath: maliciousManifestPath,
     expectedMarker: marker,
   }), { code: "WRITER_SYMLINK_FORBIDDEN" });
+});
+
+test("parent reconstructs a detached review worktree when upstream preserves only the captured patch", async (t) => {
+  const value = await writerFixture(t, { capturedAndRemoved: true });
+  const verified = await verifyGuardedWriterWorktree({
+    assignment: value.assignment,
+    terminalReceipt: value.terminalReceipt,
+    artifactRoot: value.artifactRoot,
+    worktreeRoot: value.worktreeRoot,
+    fixtureRoot: value.repository,
+    expectedMarker: marker,
+  });
+  assert.equal(verified.status, "HANDOFF_READY_FOR_OPERATOR_REVIEW");
+  assert.equal(verified.reviewWorktreeMode, "captured-patch-removed-upstream-worktree");
+  assert.deepEqual(verified.changedPaths, ["fixture/allowed.txt"]);
+  const entries = await fsPromises.readdir(value.worktreeRoot, { withFileTypes: true });
+  const review = entries.find((entry) => entry.isDirectory() && entry.name.startsWith("review-"));
+  assert.ok(review);
+  const reviewRoot = path.join(value.worktreeRoot, review.name);
+  assert.equal(await git(reviewRoot, "rev-parse", "HEAD"), value.baseCommit);
+  assert.equal((await git(reviewRoot, "diff", "--cached", "--name-only")).trim(), "fixture/allowed.txt");
+  assert.equal(await fsPromises.readFile(path.join(value.repository, "fixture", "allowed.txt"), "utf8"), "before\n");
 });
 
 test("guarded writer handoff faults produce stable fail-closed verifier codes", async (t) => {

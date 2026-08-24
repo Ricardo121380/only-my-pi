@@ -110,14 +110,46 @@ function validateManifestShape(manifest) {
   const cleanup = group.cleanup.tasks[0];
   if (child?.status !== "completed" || child?.patch?.changed !== true
     || typeof child.patch.path !== "string" || typeof child.patch.branch !== "string"
-    || cleanup?.preserved !== true || cleanup.worktreeRemoved !== false
-    || cleanup.branchRemoved !== false || cleanup.path !== undefined && typeof cleanup.path !== "string") {
-    fail("upstream writer handoff is not a preserved completed change", "WRITER_HANDOFF_MANIFEST_INVALID");
+    || cleanup?.path !== undefined && typeof cleanup.path !== "string") {
+    fail("upstream writer handoff is not a completed captured change", "WRITER_HANDOFF_MANIFEST_INVALID");
   }
   if (cleanup.path === undefined || cleanup.branch !== child.patch.branch) {
     fail("upstream worktree identity is incomplete", "WRITER_WORKTREE_IDENTITY_INVALID");
   }
-  return { group, child, cleanup };
+  const preserved = cleanup.preserved === true
+    && cleanup.worktreeRemoved === false
+    && cleanup.branchRemoved === false;
+  const capturedAndRemoved = cleanup.preserved !== true
+    && cleanup.worktreeRemoved === true
+    && cleanup.branchRemoved === true;
+  if (!preserved && !capturedAndRemoved) {
+    fail("upstream worktree cleanup state is ambiguous", "WRITER_HANDOFF_MANIFEST_INVALID");
+  }
+  return {
+    group,
+    child,
+    cleanup,
+    cleanupMode: preserved ? "preserved-upstream-worktree" : "captured-patch-removed-upstream-worktree",
+  };
+}
+
+async function assertAbsentContainedPath(root, target) {
+  const lexicalRoot = path.resolve(root);
+  const absolute = contained(lexicalRoot, target, "WRITER_WORKTREE_PATH_ESCAPE");
+  const relative = path.relative(lexicalRoot, absolute);
+  let current = lexicalRoot;
+  for (const segment of relative.split(path.sep).filter(Boolean)) {
+    current = path.join(current, segment);
+    let stat;
+    try {
+      stat = await fsPromises.lstat(current);
+    } catch (cause) {
+      if (cause?.code === "ENOENT") return absolute;
+      fail("review worktree path is unreadable", "WRITER_WORKTREE_UNAVAILABLE");
+    }
+    if (stat.isSymbolicLink()) fail("symlinked review worktree path is forbidden", "WRITER_SYMLINK_FORBIDDEN");
+  }
+  fail("review worktree path already exists", "WRITER_REVIEW_WORKTREE_EXISTS");
 }
 
 export function extractPiSubagentsHandoffPath(terminalReceipt) {
@@ -231,7 +263,7 @@ export async function verifyGuardedWriterWorktree({
   } catch {
     fail("handoff manifest is not valid JSON", "WRITER_HANDOFF_MANIFEST_INVALID");
   }
-  const { group, child, cleanup } = validateManifestShape(manifest);
+  const { group, child, cleanup, cleanupMode } = validateManifestShape(manifest);
   let expectedFixture;
   let manifestRepository;
   let manifestCwd;
@@ -247,8 +279,23 @@ export async function verifyGuardedWriterWorktree({
     || group.baseCommit !== assignment.ownership.baseCommit) {
     fail("handoff repository or base commit differs from the assignment", "WRITER_BASE_COMMIT_DRIFT");
   }
-  const worktree = await safeRealDirectory(worktreeRoot, cleanup.path);
-  await safeRegularFile(artifactRoot, child.patch.path, MAX_GIT_OUTPUT_BYTES);
+  const patchFile = await safeRegularFile(artifactRoot, child.patch.path, MAX_GIT_OUTPUT_BYTES);
+  let worktree;
+  if (cleanupMode === "preserved-upstream-worktree") {
+    worktree = await safeRealDirectory(worktreeRoot, cleanup.path);
+  } else {
+    await assertAbsentContainedPath(worktreeRoot, cleanup.path);
+    const reviewId = sha256({ manifest: sha256(manifest), baseCommit: group.baseCommit }).slice(7, 31);
+    const reviewPath = await assertAbsentContainedPath(worktreeRoot, path.join(worktreeRoot, `review-${reviewId}`));
+    await git(runGit, expectedFixture, ["worktree", "add", "--detach", reviewPath, assignment.ownership.baseCommit]);
+    worktree = await safeRealDirectory(worktreeRoot, reviewPath);
+    await git(
+      runGit,
+      worktree,
+      ["apply", "--index", "--binary", "--whitespace=error-all", patchFile],
+      "WRITER_PATCH_APPLY_FAILED",
+    );
+  }
   const head = (await git(runGit, worktree, ["rev-parse", "HEAD"])).toString("utf8").trim();
   if (head !== assignment.ownership.baseCommit) fail("worktree HEAD differs from the approved base", "WRITER_BASE_COMMIT_DRIFT");
   const status = nulStrings(await git(runGit, worktree, ["status", "--porcelain=v1", "-z", "--untracked-files=all"]));
@@ -279,7 +326,8 @@ export async function verifyGuardedWriterWorktree({
     baseCommit: assignment.ownership.baseCommit,
     changedPaths,
     patchDigest,
-    worktreeBranch: cleanup.branch,
+    upstreamWorktreeBranch: cleanup.branch,
+    reviewWorktreeMode: cleanupMode,
   });
   const gateReceipts = [
     gateReceipt("diff-check", "PASS", { baseCommit: assignment.ownership.baseCommit, patchDigest }),
@@ -302,7 +350,12 @@ export async function verifyGuardedWriterWorktree({
     formatVersion: 1,
     status: "HANDOFF_READY_FOR_OPERATOR_REVIEW",
     manifestDigest: sha256(manifest),
-    worktreeReceiptDigest: sha256({ manifestDigest: sha256(manifest), pathReceipt, branch: cleanup.branch }),
+    worktreeReceiptDigest: sha256({
+      manifestDigest: sha256(manifest),
+      pathReceipt,
+      upstreamBranch: cleanup.branch,
+      reviewWorktreeMode: cleanupMode,
+    }),
     baseCommitDigest: sha256(assignment.ownership.baseCommit),
     taskAssignmentDigest: sha256({ assignmentId: assignment.assignmentId, assignmentHash: assignment.assignmentHash }),
     terminalReceiptDigest: sha256({ receiptId: terminalReceipt.receiptId, outcome: terminalReceipt.outcome }),
@@ -312,6 +365,7 @@ export async function verifyGuardedWriterWorktree({
     gateReceipts: Object.freeze(gateReceipts),
     handoff,
     integration,
+    reviewWorktreeMode: cleanupMode,
     automaticIntegration: false,
   });
 }

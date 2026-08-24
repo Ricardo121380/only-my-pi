@@ -2,7 +2,7 @@
 
 S5-D turns the first protected guarded-writer failure cases into stable,
 reviewable contracts. It does not run a Provider, dispatch a real child,
-delete a preserved worktree, import protected evidence, or widen the general
+delete a retained review worktree, import protected evidence, or widen the general
 writer capability.
 
 ## Fault matrix
@@ -13,7 +13,8 @@ The deterministic matrix now exercises these boundaries:
 | --- | --- |
 | Pi parent starts but emits no unique terminal record | `WRITER_RUNNER_RECORD_MISSING`; no evidence |
 | handoff JSON is truncated | `WRITER_HANDOFF_MANIFEST_INVALID` |
-| preserved worktree is missing | `WRITER_WORKTREE_UNAVAILABLE` |
+| retained upstream worktree is missing | `WRITER_WORKTREE_UNAVAILABLE` |
+| captured patch cannot reconstruct an exact review worktree | `WRITER_PATCH_APPLY_FAILED` |
 | fixed parent Git verification fails or times out | `WRITER_GIT_VERIFICATION_FAILED` |
 | external digest-only signer stops | capture rejects; no staged evidence |
 | review staging stops | command rejects; no `RUN_COMPLETE` claim |

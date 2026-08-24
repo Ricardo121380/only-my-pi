@@ -58,8 +58,13 @@ workflow root is never substituted for a writer terminal.
 
 After an authoritative completed child terminal, the parent does not trust the
 child summary, changed-path list, patch bytes, or gate claims. It reads the
-bounded non-symlink upstream handoff manifest, verifies the exact repository,
-base commit, branch and preserved worktree, then runs fixed `git` commands with
+bounded non-symlink upstream handoff manifest and verifies the exact repository,
+base commit and branch. `pi-subagents@0.45.2` removes the original worktree when
+its patch was successfully captured; in that public v1 state, the parent creates
+a fresh detached review worktree at the approved base inside its disposable
+worktree root and applies the bounded patch with `git apply --index`. If the
+upstream worktree was retained because capture was incomplete, it verifies that
+retained tree directly. In both cases it then runs fixed `git` commands with
 `shell:false` and system/global Git config disabled. It independently checks:
 
 1. the worktree `HEAD` is the authorized base commit;
@@ -84,9 +89,10 @@ output, patch bytes, changed paths, repository/worktree paths, credentials,
 session IDs, backend IDs or private signer material. The signer receives only
 the canonical evidence payload digest.
 
-The upstream preserved worktree and private Pi/session artifacts remain under
-the disposable config root for operator review. The producer does not delete
-them automatically and never copies them into `verification/protected/`.
+The parent-owned detached review worktree and private Pi/session artifacts
+remain under the disposable config root for operator review. The producer does
+not delete them automatically and never copies them into
+`verification/protected/`.
 Removal of the operator-selected disposable root is a separate operator action.
 
 ## Commands
