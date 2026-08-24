@@ -54,9 +54,9 @@ jobs:
       - name: Execute the versioned release-gates-v1 manifest
         run: npm run verify -- --run --output verification/receipts/ci-${{ matrix.node-version }}.json
 
-      - name: Execute the Subagents v2 Preview deterministic gates
-        run: npm run verify:subagents:run
-
-      - name: Remove ephemeral CI receipt
+      - name: Remove ephemeral CI receipt before source-clean gates
         if: always()
         run: rm -f verification/receipts/ci-${{ matrix.node-version }}.json
+
+      - name: Execute the Subagents v2 Preview deterministic gates
+        run: npm run verify:subagents:run

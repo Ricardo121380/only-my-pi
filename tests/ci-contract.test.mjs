@@ -26,4 +26,8 @@ test("CI executes the same manifest-backed verify runner without credentials", (
   assert.doesNotMatch(workflow, /actions\/(?:checkout|setup-node)@v4/u);
   assert.match(workflow, /permissions:\n\s+contents: read/u);
   assert.doesNotMatch(workflow, /NPM_TOKEN|OPENAI_API_KEY|DEEPSEEK_API_KEY|secrets\./u);
+  const v1Runner = workflow.indexOf("npm run verify -- --run");
+  const receiptCleanup = workflow.indexOf("Remove ephemeral CI receipt before source-clean gates");
+  const v2Runner = workflow.indexOf("npm run verify:subagents:run");
+  assert.ok(v1Runner >= 0 && receiptCleanup > v1Runner && v2Runner > receiptCleanup);
 });
