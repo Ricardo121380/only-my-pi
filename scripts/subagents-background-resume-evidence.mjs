@@ -36,6 +36,7 @@ const HELP = `Usage:
     --authorization-file /absolute/operator-authorization.json \\
     --config-root /absolute/disposable/root \\
     --package-root /absolute/pi-subagents/package \\
+    --provider-file /absolute/credential-free-provider.json \\
     --pi-command /absolute/pi \\
     --signer-command /absolute/external-signer \\
     --output-dir /absolute/empty/staging/directory \\
@@ -63,6 +64,7 @@ export function parseBackgroundResumeEvidenceArgs(argv) {
     authorizationFile: null,
     configRoot: null,
     packageRoot: null,
+    providerFile: null,
     repositoryRoot: ROOT,
     piCommand: null,
     signerCommand: null,
@@ -73,6 +75,7 @@ export function parseBackgroundResumeEvidenceArgs(argv) {
     "--authorization-file": "authorizationFile",
     "--config-root": "configRoot",
     "--package-root": "packageRoot",
+    "--provider-file": "providerFile",
     "--repository-root": "repositoryRoot",
     "--pi-command": "piCommand",
     "--signer-command": "signerCommand",
@@ -106,6 +109,7 @@ export function parseBackgroundResumeEvidenceArgs(argv) {
     authorizationFile: "--authorization-file",
     configRoot: "--config-root",
     packageRoot: "--package-root",
+    providerFile: "--provider-file",
     repositoryRoot: "--repository-root",
     piCommand: "--pi-command",
     signerCommand: "--signer-command",
@@ -119,6 +123,7 @@ export function parseBackgroundResumeEvidenceArgs(argv) {
       authorizationFile: "--authorization-file",
       configRoot: "--config-root",
       packageRoot: "--package-root",
+      providerFile: "--provider-file",
       piCommand: "--pi-command",
       signerCommand: "--signer-command",
       outputDir: "--output-dir",
@@ -217,6 +222,7 @@ export async function executeBackgroundResumeEvidence(argv, {
   const scenarioRunner = scenarioRunnerFactory({
     configRoot: roots.configRoot,
     packageRoot: args.packageRoot,
+    modelsFile: args.providerFile,
     repositoryRoot: roots.repositoryRoot,
     piCommand: args.piCommand,
     hostEnvironment,

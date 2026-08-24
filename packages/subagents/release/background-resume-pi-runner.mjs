@@ -27,6 +27,10 @@ import {
   SUBAGENTS_BACKGROUND_RESUME_REQUEST_ENV,
 } from "./background-resume-extension.mjs";
 import { SUBAGENTS_LIVE_CAPTURE_RECORD_TYPE } from "./live-evidence-capture.mjs";
+import {
+  compileLiveEvidencePiModels,
+  loadLiveEvidenceProviderDescriptor,
+} from "./live-evidence-provider.mjs";
 
 const execFile = promisify(execFileCallback);
 const MAX_PROCESS_OUTPUT_BYTES = 256 * 1024;
@@ -364,6 +368,7 @@ function runPiPhase({
 export function createPiBackgroundResumeScenarioRunner({
   configRoot,
   packageRoot,
+  modelsFile,
   repositoryRoot,
   piCommand = "pi",
   spawnImpl = spawn,
@@ -381,6 +386,7 @@ export function createPiBackgroundResumeScenarioRunner({
   for (const dependency of [spawnImpl, versionProbe, nonceFactory, clock]) {
     if (typeof dependency !== "function") throw new TypeError("runner dependencies must be functions");
   }
+  const providerDescriptor = loadLiveEvidenceProviderDescriptor(modelsFile);
   let used = false;
   return async function runBackgroundResume({ id, authorization, expectedSourceCommit, environment, scenarioLimits } = {}) {
     if (used) fail("background resume runner is one-shot", "BACKGROUND_RUNNER_REUSED");
@@ -396,6 +402,7 @@ export function createPiBackgroundResumeScenarioRunner({
       fail("background evidence cannot use the real Pi home", "BACKGROUND_RUNNER_REAL_PI_HOME_FORBIDDEN");
     }
     const audited = await inspectAuditedPiSubagentsPackage({ packageRoot, expected: expectedArtifact });
+    const piModels = compileLiveEvidencePiModels(providerDescriptor, { authorization });
     const actualEnvironment = {
       node: process.versions.node,
       pi: expectedPiVersion,
@@ -431,6 +438,12 @@ export function createPiBackgroundResumeScenarioRunner({
       ...Object.values(directories),
     ]) await containedDirectory(resolvedConfigRoot, directory);
     await writeContainedFile(resolvedConfigRoot, path.join(directories.agentDefinitions, "omp-reviewer.md"), reviewerResource, 0o600);
+    await writeContainedFile(
+      resolvedConfigRoot,
+      path.join(directories.agentRoot, "models.json"),
+      `${JSON.stringify(piModels, null, 2)}\n`,
+      0o600,
+    );
     await writeContainedFile(
       resolvedConfigRoot,
       path.join(directories.subagentConfig, "config.json"),

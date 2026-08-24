@@ -22,6 +22,10 @@ import {
   SUBAGENTS_GUARDED_WRITER_REQUEST_ENV,
 } from "./guarded-writer-extension.mjs";
 import { SUBAGENTS_LIVE_CAPTURE_RECORD_TYPE } from "./live-evidence-capture.mjs";
+import {
+  compileLiveEvidencePiModels,
+  loadLiveEvidenceProviderDescriptor,
+} from "./live-evidence-provider.mjs";
 
 const execFile = promisify(execFileCallback);
 const MAX_CAPTURE_BYTES = 256 * 1024;
@@ -247,6 +251,7 @@ function safeEnvironment({ directories, authorization, hostEnvironment, requestF
 export function createPiGuardedWriterScenarioRunner({
   configRoot,
   packageRoot,
+  modelsFile,
   repositoryRoot,
   piCommand = "pi",
   gitCommand = "git",
@@ -262,6 +267,7 @@ export function createPiGuardedWriterScenarioRunner({
     || typeof spawnImpl !== "function" || typeof versionProbe !== "function") {
     throw new TypeError("guarded writer runner dependencies are invalid");
   }
+  const providerDescriptor = loadLiveEvidenceProviderDescriptor(modelsFile);
   let used = false;
   return async function runGuardedWriter({ id, authorization, expectedSourceCommit, environment, scenarioLimits } = {}) {
     if (used) fail("guarded writer runner is one-shot", "WRITER_RUNNER_REUSED");
@@ -278,6 +284,7 @@ export function createPiGuardedWriterScenarioRunner({
       fail("guarded writer evidence cannot use the real Pi home", "WRITER_RUNNER_REAL_PI_HOME_FORBIDDEN");
     }
     const audited = await inspectAuditedPiSubagentsPackage({ packageRoot, expected: expectedArtifact });
+    const piModels = compileLiveEvidencePiModels(providerDescriptor, { authorization });
     const actualEnvironment = { node: process.versions.node, pi: expectedPiVersion, backend: `${audited.package}@${audited.version}`, platform: `${process.platform}-${process.arch}` };
     if (!exactRuntimeEnvironment(environment, actualEnvironment)) fail("host runtime differs from authorization", "WRITER_RUNNER_ENVIRONMENT_MISMATCH");
     const implementerResource = await governedImplementerResource(resolvedRepositoryRoot);
@@ -309,6 +316,12 @@ export function createPiGuardedWriterScenarioRunner({
     const preliminaryEnv = { PATH: hostEnvironment.PATH ?? process.env.PATH ?? "", HOME: directories.home };
     const fixture = await createFixtureRepository({ configRoot: resolvedConfigRoot, fixtureRoot: directories.fixtureRoot, gitCommand, env: preliminaryEnv });
     await writeContainedFile(resolvedConfigRoot, path.join(directories.agentDefinitions, "omp-implementer.md"), implementerResource, 0o600);
+    await writeContainedFile(
+      resolvedConfigRoot,
+      path.join(directories.agentRoot, "models.json"),
+      `${JSON.stringify(piModels, null, 2)}\n`,
+      0o600,
+    );
     await writeContainedFile(resolvedConfigRoot, path.join(directories.subagentConfig, "config.json"), `${JSON.stringify({ artifactDir: "session" }, null, 2)}\n`, 0o600);
 
     const requestFile = path.join(directories.agentRoot, "guarded-writer-request.json");

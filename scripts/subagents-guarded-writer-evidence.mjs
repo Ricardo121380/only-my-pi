@@ -32,6 +32,7 @@ const HELP = `Usage:
     --authorization-file /absolute/operator-authorization.json \\
     --config-root /absolute/empty/disposable/root \\
     --package-root /absolute/pi-subagents/package \\
+    --provider-file /absolute/credential-free-provider.json \\
     --pi-command /absolute/pi \\
     --signer-command /absolute/external-signer \\
     --output-dir /absolute/empty/staging/directory \\
@@ -54,7 +55,7 @@ function nextValue(argv, index, flag) {
 export function parseGuardedWriterEvidenceArgs(argv) {
   const output = {
     operation: "plan", yes: false, json: false, help: false,
-    authorizationFile: null, configRoot: null, packageRoot: null,
+    authorizationFile: null, configRoot: null, packageRoot: null, providerFile: null,
     repositoryRoot: ROOT, piCommand: null, signerCommand: null, outputDir: null,
   };
   const seen = new Set();
@@ -62,6 +63,7 @@ export function parseGuardedWriterEvidenceArgs(argv) {
     "--authorization-file": "authorizationFile",
     "--config-root": "configRoot",
     "--package-root": "packageRoot",
+    "--provider-file": "providerFile",
     "--repository-root": "repositoryRoot",
     "--pi-command": "piCommand",
     "--signer-command": "signerCommand",
@@ -93,7 +95,7 @@ export function parseGuardedWriterEvidenceArgs(argv) {
   if (output.help) return Object.freeze(output);
   for (const [field, flag] of Object.entries({
     authorizationFile: "--authorization-file", configRoot: "--config-root",
-    packageRoot: "--package-root", repositoryRoot: "--repository-root",
+    packageRoot: "--package-root", providerFile: "--provider-file", repositoryRoot: "--repository-root",
     piCommand: "--pi-command", signerCommand: "--signer-command", outputDir: "--output-dir",
   })) {
     if (output[field] !== null && !path.isAbsolute(output[field])) throw new Error(`${flag} must be absolute`);
@@ -102,7 +104,7 @@ export function parseGuardedWriterEvidenceArgs(argv) {
     if (!output.yes) throw new Error("--run requires --yes");
     for (const [field, flag] of Object.entries({
       authorizationFile: "--authorization-file", configRoot: "--config-root",
-      packageRoot: "--package-root", piCommand: "--pi-command",
+      packageRoot: "--package-root", providerFile: "--provider-file", piCommand: "--pi-command",
       signerCommand: "--signer-command", outputDir: "--output-dir",
     })) if (output[field] === null) throw new Error(`--run requires ${flag}`);
   }
@@ -186,6 +188,7 @@ export async function executeGuardedWriterEvidence(argv, {
   const scenarioRunner = scenarioRunnerFactory({
     configRoot: roots.configRoot,
     packageRoot: args.packageRoot,
+    modelsFile: args.providerFile,
     repositoryRoot: roots.repositoryRoot,
     piCommand: args.piCommand,
     hostEnvironment,

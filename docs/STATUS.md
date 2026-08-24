@@ -272,18 +272,23 @@ a clean-source receipt is generated only after the source commit.
 `npm run plan:subagents-live-evidence` currently reports
 `CONFIGURED_UNAVAILABLE`, with Provider/child/signer all `NOT_STARTED`, because
 the source tree is under development and no one-time authorization exists. The
-source-pinned trust policy is `runtime-ready` only for the three Alpha evidence
-classes; it does not authorize execution by itself. The command's
+source-pinned trust policy now includes an independent, time-bounded Beta
+public signer scoped to the cumulative five Alpha/Beta evidence classes; it
+does not authorize execution by itself. All three capture commands require a
+credential-free Provider descriptor whose digest is bound by their respective
+authorization. The commands'
 `declaredEndpointHosts` are auditable metadata, not OS network enforcement.
 `npm run plan:subagents-background-resume` is independently inert for the same
 trust/authorization reasons; it cannot reuse the S5-A authorization.
 `npm run plan:subagents-guarded-writer` is independently inert and additionally
 requires its exact single-writer/path/gate authorization; it cannot reuse
 either earlier authorization.
-Alpha closure is complete for the exact source/evidence chain above. Beta still
-requires separately authorized `background-resume` and
-`guarded-writer-integration` evidence; Stable additionally requires its declared
-soak and compatibility gates. Neither later authorization is implied by Alpha.
+Alpha closure is complete for the exact source/evidence chain above. A new Beta
+source must recapture the three inherited Alpha classes plus separately
+authorized `background-resume` and `guarded-writer-integration` so all five
+documents bind one exact source commit. Stable additionally requires its
+declared soak and compatibility gates. Neither later authorization is implied
+by Alpha or by a checked-in public key.
 
 ## Current external Pi baseline
 

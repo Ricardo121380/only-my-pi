@@ -31,6 +31,7 @@ import {
   verifyGuardedWriterWorktree,
 } from "../packages/subagents/release/guarded-writer-verifier.mjs";
 import { createPiGuardedWriterScenarioRunner } from "../packages/subagents/release/guarded-writer-pi-runner.mjs";
+import { liveEvidenceProviderDescriptorDigest } from "../packages/subagents/release/live-evidence-provider.mjs";
 import { loadSubagentsReleaseContracts } from "../packages/subagents/release/compatibility.mjs";
 import { protectedEvidenceTrustPolicyDigest } from "../packages/subagents/release/protected-evidence.mjs";
 import { sha256 } from "../packages/subagents/state/codec.mjs";
@@ -68,6 +69,27 @@ function fixture() {
     }],
   };
   trustPolicy.policyDigest = protectedEvidenceTrustPolicyDigest(trustPolicy);
+  const providerDescriptor = {
+    $schema: "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-live-provider-v1.schema.json",
+    formatVersion: 1,
+    provider: {
+      id: "fixture-provider",
+      name: "Fixture Provider",
+      baseUrl: "https://api.example.com/v1",
+      api: "openai-responses",
+      credentialEnvironment: "FIXTURE_API_KEY",
+      model: {
+        id: "fixture-model",
+        name: "Fixture Model",
+        reasoning: false,
+        input: ["text"],
+        contextWindow: 128000,
+        maxTokens: 16384,
+        cost: { input: 1, output: 2, cacheRead: 0.1, cacheWrite: 1 },
+      },
+    },
+  };
+  providerDescriptor.descriptorDigest = liveEvidenceProviderDescriptorDigest(providerDescriptor);
   const authorization = {
     $schema: "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-guarded-writer-authorization-v1.schema.json",
     formatVersion: 1,
@@ -82,6 +104,7 @@ function fixture() {
     provider: {
       id: "fixture-provider",
       model: "fixture-model",
+      configurationDigest: providerDescriptor.descriptorDigest,
       credentialEnvironment: ["FIXTURE_API_KEY"],
       declaredEndpointHosts: ["api.example.com"],
     },
@@ -121,7 +144,13 @@ function fixture() {
     expiresAt: "2026-08-22T01:00:00.000Z",
   };
   authorization.authorizationDigest = guardedWriterAuthorizationDigest(authorization);
-  return { matrix, policy, privateKey, trustPolicy, authorization };
+  return { matrix, policy, privateKey, trustPolicy, authorization, providerDescriptor };
+}
+
+async function providerFile(directory, values) {
+  const file = path.join(directory, "live-provider.json");
+  await fsPromises.writeFile(file, `${JSON.stringify(values.providerDescriptor, null, 2)}\n`, { mode: 0o600 });
+  return file;
 }
 
 function captureRecord(values, proofDigests = {}) {
@@ -433,10 +462,12 @@ test("Pi guarded writer runner uses one isolated Git fixture, one managed worktr
   await fsPromises.mkdir(configRoot);
   await fsPromises.mkdir(fakeHome);
   const audited = await auditedPackageFixture(directory);
+  const modelsFile = await providerFile(directory, values);
   const invocations = [];
   const runner = createPiGuardedWriterScenarioRunner({
     configRoot,
     packageRoot: audited.packageRoot,
+    modelsFile,
     repositoryRoot: rootDir,
     piCommand: "/test/pi",
     expectedArtifact: audited.expected,
@@ -480,6 +511,8 @@ test("Pi guarded writer runner uses one isolated Git fixture, one managed worktr
   const settings = JSON.parse(await fsPromises.readFile(path.join(request.agentRoot, "settings.json"), "utf8"));
   assert.equal(settings.defaultProjectTrust, "never");
   assert.equal(settings.extensions.length, 2);
+  const models = JSON.parse(await fsPromises.readFile(path.join(request.agentRoot, "models.json"), "utf8"));
+  assert.equal(models.providers["fixture-provider"].apiKey, "$FIXTURE_API_KEY");
   const upstreamConfig = JSON.parse(await fsPromises.readFile(path.join(request.agentRoot, "extensions", "subagent", "config.json"), "utf8"));
   assert.deepEqual(upstreamConfig, { artifactDir: "session" });
   const generated = await fsPromises.readFile(path.join(request.agentRoot, "agents", "omp-implementer.md"), "utf8");
@@ -496,9 +529,11 @@ test("started Pi process without a unique terminal record is never accepted as w
   await fsPromises.mkdir(configRoot);
   await fsPromises.mkdir(fakeHome);
   const audited = await auditedPackageFixture(directory);
+  const modelsFile = await providerFile(directory, values);
   const runner = createPiGuardedWriterScenarioRunner({
     configRoot,
     packageRoot: audited.packageRoot,
+    modelsFile,
     repositoryRoot: rootDir,
     piCommand: "/test/pi",
     expectedArtifact: audited.expected,
@@ -549,6 +584,7 @@ test("signing, staging, and post-capture source drift never produce a completed 
   const argv = [
     "--run", "--yes", "--authorization-file", authorizationFile,
     "--config-root", configRoot, "--package-root", path.join(directory, "package"),
+    "--provider-file", path.join(directory, "provider.json"),
     "--pi-command", "/test/pi", "--signer-command", "/test/signer",
     "--output-dir", outputDir, "--repository-root", rootDir, "--json",
   ];

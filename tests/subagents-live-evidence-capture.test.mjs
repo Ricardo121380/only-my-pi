@@ -203,7 +203,7 @@ function limitsForScenario(id, values) {
   };
 }
 
-test("capture plan is inert without live authorization and rejects a signer outside checked-in Alpha trust", () => {
+test("capture plan is inert without live authorization and rejects a signer outside configured trust", () => {
   const values = fixture();
   let runnerCalls = 0;
   let signerCalls = 0;

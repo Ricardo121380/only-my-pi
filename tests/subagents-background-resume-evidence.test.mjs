@@ -26,6 +26,9 @@ import {
   createPiBackgroundResumeScenarioRunner,
 } from "../packages/subagents/release/background-resume-pi-runner.mjs";
 import {
+  liveEvidenceProviderDescriptorDigest,
+} from "../packages/subagents/release/live-evidence-provider.mjs";
+import {
   createProtectedLiveCaptureRecord,
 } from "../packages/subagents/release/live-evidence-capture.mjs";
 import {
@@ -71,6 +74,27 @@ function fixture() {
     }],
   };
   trustPolicy.policyDigest = protectedEvidenceTrustPolicyDigest(trustPolicy);
+  const providerDescriptor = {
+    $schema: "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-live-provider-v1.schema.json",
+    formatVersion: 1,
+    provider: {
+      id: "fixture-provider",
+      name: "Fixture Provider",
+      baseUrl: "https://api.example.com/v1",
+      api: "openai-responses",
+      credentialEnvironment: "FIXTURE_API_KEY",
+      model: {
+        id: "fixture-model",
+        name: "Fixture Model",
+        reasoning: false,
+        input: ["text"],
+        contextWindow: 128000,
+        maxTokens: 16384,
+        cost: { input: 1, output: 2, cacheRead: 0.1, cacheWrite: 1 },
+      },
+    },
+  };
+  providerDescriptor.descriptorDigest = liveEvidenceProviderDescriptorDigest(providerDescriptor);
   const authorization = {
     $schema: "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-background-resume-authorization-v1.schema.json",
     formatVersion: 1,
@@ -85,6 +109,7 @@ function fixture() {
     provider: {
       id: "fixture-provider",
       model: "fixture-model",
+      configurationDigest: providerDescriptor.descriptorDigest,
       credentialEnvironment: ["FIXTURE_API_KEY"],
       declaredEndpointHosts: ["api.example.com"],
     },
@@ -119,7 +144,13 @@ function fixture() {
     expiresAt: "2026-08-22T01:00:00.000Z",
   };
   authorization.authorizationDigest = backgroundResumeAuthorizationDigest(authorization);
-  return { matrix, policy, privateKey, trustPolicy, authorization };
+  return { matrix, policy, privateKey, trustPolicy, authorization, providerDescriptor };
+}
+
+async function providerFile(directory, values) {
+  const file = path.join(directory, "live-provider.json");
+  await fsPromises.writeFile(file, `${JSON.stringify(values.providerDescriptor, null, 2)}\n`, { mode: 0o600 });
+  return file;
 }
 
 function backgroundRecord(values, overrides = {}) {
@@ -434,10 +465,12 @@ test("Pi runner launches two separate parent processes with one persisted isolat
   await fsPromises.mkdir(configRoot);
   await fsPromises.mkdir(fakeHome);
   const audited = await auditedPackageFixture(directory);
+  const modelsFile = await providerFile(directory, values);
   const invocations = [];
   const runner = createPiBackgroundResumeScenarioRunner({
     configRoot,
     packageRoot: audited.packageRoot,
+    modelsFile,
     repositoryRoot: rootDir,
     piCommand: "/test/pi",
     expectedArtifact: audited.expected,
@@ -516,6 +549,11 @@ test("Pi runner launches two separate parent processes with one persisted isolat
     "config.json",
   ), "utf8"));
   assert.deepEqual(subagentConfig, { artifactDir: "session" });
+  const models = JSON.parse(await fsPromises.readFile(path.join(
+    invocations[0].options.env.PI_CODING_AGENT_DIR,
+    "models.json",
+  ), "utf8"));
+  assert.equal(models.providers["fixture-provider"].apiKey, "$FIXTURE_API_KEY");
 });
 
 test("background resume CLI defaults to zero execution and refuses run without explicit confirmation", async () => {

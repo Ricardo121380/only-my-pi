@@ -34,10 +34,11 @@ The ownership boundary remains:
   background/resume, and writer claims; a checked-in JSON object cannot forge
   those claims.
 - `contracts/subagents/protected-evidence-trust.json` is the source-pinned
-  Ed25519 public-key policy for protected evidence. It now contains one
-  time-bounded public Alpha signer scoped only to Agent terminal/cancel and
-  BatchSwarm evidence. Private keys remain external, and live promotion is
-  impossible without a separate exact one-time authorization.
+  Ed25519 public-key policy for protected evidence. It retains the historical
+  Alpha public signer and adds an independent time-bounded Beta public signer
+  scoped to the cumulative five Alpha/Beta evidence classes. Private keys
+  remain external, and live promotion is impossible without separate exact
+  one-time authorizations.
 - `subagents-live-evidence-authorization-v1` and the
   [S5-A capture driver](subagents-s5-live-capture.md) define the producer side
   for the three Alpha read-only evidence classes. The default plan is inert;
@@ -47,12 +48,14 @@ The ownership boundary remains:
   digest-only signer, every explicit path, and `--yes`.
 - `subagents-background-resume-authorization-v1` and the
   [S5-B producer](subagents-s5-background-resume.md) separately bind the
-  two-parent-process persisted-session and public-resume scenario.
+  two-parent-process persisted-session and public-resume scenario. Its
+  Provider descriptor is credential-free and digest-bound by authorization.
 - `subagents-guarded-writer-authorization-v1` and the
   [S5-C producer](subagents-s5-guarded-writer.md) bind exactly one canonical
   writer, one synthetic repository/base commit, one managed worktree, one exact
   file claim, parent-side Git verification and fixed gates. The output is a
-  handoff only; automatic integration is forbidden.
+  handoff only; automatic integration is forbidden. Its Provider descriptor is
+  likewise credential-free and digest-bound.
 - `subagents-guarded-writer-reconciliation-v1` and the
   [S5-D fault/recovery contract](subagents-s5-fault-recovery.md) turn preserved
   or partial disposable runtime state into a digest-bound review plan. The
@@ -141,9 +144,10 @@ verification, direct-child Git boundary, background/resume producer, and
 guarded-writer producer now exist. The writer producer does not trust the child
 patch or path report: it recomputes the staged diff and fixed gates in the
 preserved worktree and emits a handoff without integration. The checked-in
-trust policy now has a bounded Alpha public signer, but no protected live
-evidence has been produced. The current release claim therefore remains
-Preview.
+trust policy now has distinct bounded Alpha and Beta public signers. A public
+key is not execution authorization and does not itself promote a channel; the
+current checked-in Alpha receipt remains the latest completed promotion until
+the cumulative five source-bound documents pass the Beta gate.
 S5-D additionally proves deterministic fail-closed handling for missing
 terminal records, malformed or missing handoff state, parent Git failure,
 signer/staging interruption and post-capture source drift. Its reconciliation

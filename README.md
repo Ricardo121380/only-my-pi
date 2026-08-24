@@ -176,9 +176,9 @@ digest-pinned `release-gates-v2` runner. `npm run verify:subagents` is an
 inspection-only command; `npm run verify:subagents:run` executes the fixed
 Preview deterministic gates on a clean source commit. Alpha/Beta/Stable live
 claims use a source-pinned Ed25519 evidence-import protocol and cannot be
-produced by the deterministic runner. The checked-in trust policy now contains
-one time-bounded public Alpha signer whose scope excludes background/resume and
-writer evidence. Alpha is now proved for source `922b39b`, evidence commit
+produced by the deterministic runner. The checked-in trust policy retains the
+Alpha public signer and adds an independent time-bounded Beta signer for a
+cumulative five-scenario recapture. Alpha is now proved for source `922b39b`, evidence commit
 `15f2915`, and receipt commit `312fc2d`: 25 deterministic gates plus the
 protected read-only gate passed. The OpenCode Go `deepseek-v4-flash` capture ran
 four children within 8,154 tokens and about $0.00474, without storing raw
@@ -195,9 +195,10 @@ workspace, not the source checkout; the canonical read-only `omp-reviewer` is
 recompiled and drift-checked before it is copied into the disposable Pi root.
 All three scenarios share one cumulative budget, and the source HEAD/worktree
 is rechecked after signing before any evidence is staged.
-The checked-in plan remains
-`CONFIGURED_UNAVAILABLE`; no real Provider/child/signer run has been executed,
-and the declared endpoint hosts are not an OS-enforced network allowlist.
+The checked-in plan remains `CONFIGURED_UNAVAILABLE` without a current
+one-time authorization. The completed Alpha run is historical evidence; a new
+Beta source must recapture all inherited Alpha and Beta classes. Declared
+endpoint hosts are not an OS-enforced network allowlist.
 
 S5-B now adds the separately authorized
 `npm run plan:subagents-background-resume` producer. It uses two distinct Pi
@@ -206,9 +207,10 @@ parent processes, one isolated persisted parent session, session-scoped
 correlated backend binding created through the public `resume` RPC. The final
 record retains only proof digests and cumulative metering; parent/child session
 IDs, host paths, backend IDs, prompts, and outputs remain in the disposable
-root. This path is also `CONFIGURED_UNAVAILABLE` by default and has not made a
-live Provider request. It supplies producer code for a Beta prerequisite, not
-Beta evidence or promotion.
+root. A live run additionally requires `--provider-file`; that credential-free
+descriptor is digest-bound by the authorization and compiled into the isolated
+Pi root. This path remains inert without a one-time authorization. Producer
+readiness is not Beta evidence or promotion.
 
 S5-C now adds the separately authorized
 `npm run plan:subagents-guarded-writer` producer. It runs exactly one canonical
@@ -221,8 +223,9 @@ handoff-only WriterHandoff and signs only low-sensitivity proof digests; it
 never commits, merges, applies, pushes, or modifies the source checkout. The
 ordinary backend compiler still rejects its `DEGRADED` worktree capability;
 only this protected fixture path may opt into the recorded
-`protected-degraded-probe-v1` admission. The checked-in plan is inert and no
-Provider-backed writer run, protected evidence import, or Beta promotion has
+`protected-degraded-probe-v1` admission. Its credential-free Provider
+descriptor is also authorization-digest-bound. The checked-in plan is inert
+without the separate writer authorization, and no Beta promotion has
 occurred.
 
 S5-D adds `npm run plan:subagents-guarded-writer-cleanup`, a review-only

@@ -9,12 +9,12 @@
   "trustPolicyDigest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
   "compatibilityRowId": "darwin-arm64-node-25.8.0",
   "evidenceIds": ["guarded-writer-integration"],
-  "provider": { "id": "fixture-provider", "model": "fixture-model", "credentialEnvironment": ["FIXTURE_API_KEY"], "declaredEndpointHosts": ["api.example.com"] },
+  "provider": { "id": "fixture-provider", "model": "fixture-model", "configurationDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666", "credentialEnvironment": ["FIXTURE_API_KEY"], "declaredEndpointHosts": ["api.example.com"] },
   "limits": { "maxChildren": 1, "maxConcurrency": 1, "maxWallTimeMs": 60000, "maxOutputBytes": 65536, "maxTokens": 2000, "maxCostUsd": 1 },
   "workspace": { "mode": "disposable-managed-worktree", "realPiHome": "deny", "mutation": "guarded-exact-claims", "web": "deny", "mcp": "deny", "projectTrust": "deny", "automaticIntegration": false, "parentDiffVerification": "required" },
   "writer": { "agentId": "implementer", "upstreamAgentId": "omp-implementer", "allowedPaths": ["fixture/allowed.txt"], "fileClaims": ["fixture/allowed.txt"], "baseCommitPolicy": "fixture-head", "requiredGateIds": ["diff-check", "fixture-content"], "expectedMarker": "ONLY_MY_PI_GUARDED_WRITER_PASS" },
   "signer": { "signerId": "fixture-signer", "publicKeyFingerprint": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "protocol": "digest-stdin-signature-stdout-v1" },
   "approvedAt": "2026-08-22T00:00:00.000Z",
   "expiresAt": "2026-08-22T01:00:00.000Z",
-  "authorizationDigest": "sha256:016e46562af2eaf4675426cafb0d14e99de4281b725aa48fbbce2c98d64b94b0"
+  "authorizationDigest": "sha256:8dba197e8d01bfb88fed66fa92728e7049bcc5ca1093add7ecf1bca2443984ab"
 }

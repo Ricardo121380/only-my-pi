@@ -1,7 +1,7 @@
 # Subagents S5-B protected background resume
 
-Status: **production capture path implemented; no Provider-backed background
-resume run has been authorized or executed** · 2026-08-22
+Status: **production capture path implemented; source-pinned Beta capture
+prepared, protected run not yet imported** · 2026-08-24
 
 S5-B implements the producer for the `background-resume` protected-evidence
 class. It does not integrate Kimi Code or create a second scheduler. The design
@@ -100,7 +100,8 @@ the S5-A authorization contract. It fixes:
 - session-scoped upstream artifacts;
 - a new backend binding for resume;
 - exact source, release-contract and runtime-row digests;
-- Provider/model, credential-variable names and declared endpoint hosts;
+- Provider/model, credential-free Provider-descriptor digest,
+  credential-variable names and declared endpoint hosts;
 - positive cumulative wall-time, output, token and USD ceilings;
 - a read-only/no-web/no-MCP/no-project-trust workspace;
 - one trusted external signer and a maximum 24-hour authorization window.
@@ -114,9 +115,10 @@ The default command is inspection-only:
 npm run plan:subagents-background-resume
 ```
 
-In the checked-in repository it reports `CONFIGURED_UNAVAILABLE` because the
-trust policy's only signer is scoped to Alpha evidence and no background-resume
-authorization exists. It makes
+Without a current one-time authorization it reports
+`CONFIGURED_UNAVAILABLE`, even though the source-pinned trust policy now has a
+separate time-bounded Beta signer. The public key policy alone cannot start a
+run. The plan makes
 no Provider request, child dispatch, signer call, filesystem mutation, or Pi
 home access.
 
@@ -127,6 +129,7 @@ node scripts/subagents-background-resume-evidence.mjs --run --yes \
   --authorization-file /absolute/background-resume-authorization.json \
   --config-root /absolute/empty-disposable-root \
   --package-root /absolute/audited-pi-subagents-0.45.2 \
+  --provider-file /absolute/credential-free-provider.json \
   --repository-root /absolute/only-my-pi \
   --pi-command /absolute/pi \
   --signer-command /absolute/external-digest-signer \
@@ -147,7 +150,10 @@ root. It has only `read`, `grep`, `find`, and `ls`; it has no Bash, write, web,
 MCP, or nested-subagent authority. Its `cwd` is a tiny synthetic fixture, not
 the source checkout.
 
-Only authorization-listed credential variables enter the Pi subprocess. HOME,
+The Provider descriptor contains no credential value. Its exact digest,
+Provider/model IDs, environment-variable name, and endpoint host are bound by
+the authorization before an isolated `models.json` is compiled. Only
+authorization-listed credential variables enter the Pi subprocess. HOME,
 TMP, XDG and `PI_CODING_AGENT_DIR` point into the disposable root. The real
 `~/.pi` is neither read nor mutated. The external signer receives one payload
 digest, not a key path, model output, session ID, or host path.
@@ -166,8 +172,9 @@ prospective hard spend cap.
 
 ## Current claim
 
-The implementation is covered by deterministic authorization, schema,
-signature, handoff-tamper, session-correlation, two-process runner, credential
-allowlist, proof-parity and packaging tests. No real Provider-backed run was
-performed. The `background-resume` gate remains `NOT_RUN_BY_POLICY`, no signed
-document was imported, and the repository remains Preview.
+The implementation is covered by deterministic authorization, Provider
+descriptor, schema, signature, handoff-tamper, session-correlation,
+two-process runner, credential allowlist, proof-parity and packaging tests.
+Until a source-bound run is reviewed and imported, the `background-resume`
+gate remains `NOT_RUN_BY_POLICY`; implementation and signer readiness alone
+are not Beta evidence.

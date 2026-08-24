@@ -23,7 +23,8 @@ The producer fixes the live shape before any Provider request:
 The authorization is separate from the S5-A read-only and S5-B
 background-resume authorizations. It is bound to the exact source commit,
 release-policy, compatibility-matrix and trust-policy digests, compatibility
-row, Provider/model declaration, credential allowlist, signer, expiry window,
+row, Provider/model declaration, credential-free Provider-descriptor digest,
+credential allowlist, signer, expiry window,
 budget, workspace policy, Agent IDs, base-commit policy, path claim and fixed
 gates. Its maximum validity window is 24 hours.
 
@@ -97,17 +98,20 @@ node scripts/subagents-guarded-writer-evidence.mjs --run --yes \
   --authorization-file /absolute/operator-authorization.json \
   --config-root /absolute/empty/disposable-root \
   --package-root /absolute/audited/pi-subagents \
+  --provider-file /absolute/credential-free-provider.json \
   --pi-command /absolute/pi \
   --signer-command /absolute/digest-only-signer \
   --output-dir /absolute/empty/review-staging \
   --repository-root /absolute/only-my-pi --json
 ```
 
-The checked-in signer is intentionally scoped to Alpha evidence and excludes
-`guarded-writer-integration`, so the plan remains `CONFIGURED_UNAVAILABLE`.
-Deterministic tests use fake transport or
-temporary local Git repositories; no Provider-backed guarded writer has been
-run and no Beta evidence or promotion is claimed.
+The trust policy now contains a separate, time-bounded Beta public signer, but
+the plan remains `CONFIGURED_UNAVAILABLE` without an exact one-time writer
+authorization. The Provider descriptor contains no key; its digest and the
+credential environment-variable name are authorization-bound before the
+isolated `models.json` is compiled. Deterministic tests use fake transport or
+temporary local Git repositories. Until a protected run is reviewed and
+imported, no guarded-writer evidence or Beta promotion is claimed.
 
 ## Residual risk
 
