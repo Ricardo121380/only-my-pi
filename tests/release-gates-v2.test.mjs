@@ -190,7 +190,7 @@ function write(repository, relativePath, contents) {
 
 test("protected evidence import is a direct evidence-only Git child of its source", (t) => {
   const repository = fs.mkdtempSync(path.join(os.tmpdir(), "omp-evidence-git-"));
-  t.after(() => fs.rmSync(repository, { recursive: true, force: true }));
+  t.after(() => fs.rmSync(repository, { recursive: true, force: true, maxRetries: 3, retryDelay: 10 }));
   git(repository, ["init", "--quiet"]);
   git(repository, ["config", "user.name", "only-my-pi test"]);
   git(repository, ["config", "user.email", "only-my-pi-test@example.invalid"]);
@@ -410,7 +410,7 @@ test("v2 runner never spawns protected gates and blocks higher promotion without
 test("authorized Alpha import validates files, marks protected gate PASS, and never executes a protected command", async (t) => {
   const sourceCommit = "c".repeat(40);
   const fixture = createAlphaEvidenceRoot(sourceCommit);
-  t.after(() => fs.rmSync(fixture.temporaryRoot, { recursive: true, force: true }));
+  t.after(() => fs.rmSync(fixture.temporaryRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 10 }));
   const fake = fakeSpawnRecorder(sourceCommit);
   const result = await runSubagentsReleaseVerification({
     promotion: "alpha",
