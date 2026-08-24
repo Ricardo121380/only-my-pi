@@ -21,7 +21,7 @@ const FULL_COMMIT = /^[a-f0-9]{40}$/u;
 const COMPONENTS = Object.freeze([
   Object.freeze({ id: "agent-root", relativePath: "agent", expectedType: "directory" }),
   Object.freeze({ id: "session-root", relativePath: "agent/sessions", expectedType: "directory" }),
-  Object.freeze({ id: "artifact-root", relativePath: "agent/sessions/subagent-artifacts", expectedType: "directory" }),
+  Object.freeze({ id: "artifact-root", relativePath: "tmp", expectedType: "directory" }),
   Object.freeze({ id: "fixture-repository", relativePath: "fixture-repo", expectedType: "directory" }),
   Object.freeze({ id: "worktree-root", relativePath: "worktrees", expectedType: "directory" }),
 ]);
@@ -100,7 +100,7 @@ async function inspectRequest(runtimeRoot, expected) {
     runtimeRoot,
     agentRoot: path.join(runtimeRoot, "agent"),
     fixtureRoot: path.join(runtimeRoot, "fixture-repo"),
-    artifactRoot: path.join(runtimeRoot, "agent", "sessions", "subagent-artifacts"),
+    artifactRoot: path.join(runtimeRoot, "tmp"),
     worktreeRoot: path.join(runtimeRoot, "worktrees"),
   };
   for (const [field, expectedPath] of Object.entries(expectedPaths)) {

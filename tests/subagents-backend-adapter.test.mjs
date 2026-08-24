@@ -333,6 +333,10 @@ test("detached child launch resolves the public workflow root to one process-ter
             results: [{ agent: key, runId: "detached-child-01", success: true, status: "completed" }],
           });
           const evidence = terminalEvidence("detached-child-01");
+          evidence.completion.parallelHandoff = {
+            version: 1,
+            path: "/tmp/detached-child-handoff.json",
+          };
           evidence.completion.totalTokens = { input: 10, output: 5, total: 15 };
           evidence.completion.totalCost = { inputTokens: 10, outputTokens: 5, costUsd: 0.001 };
           emitter.emit(PI_SUBAGENTS_RPC_V1_EVENTS.asyncComplete, evidence.completion);
@@ -353,6 +357,10 @@ test("detached child launch resolves the public workflow root to one process-ter
   assert.equal(terminal.outcome, "completed");
   assert.deepEqual(terminal.completion.usage, { total: 15, costUsd: 0.001 });
   assert.equal(terminal.completion.totalTokens, "[redacted]");
+  assert.deepEqual(terminal.result, {
+    results: terminal.completion.results,
+    parallelHandoff: { version: 1, path: "/tmp/detached-child-handoff.json" },
+  });
 });
 
 test("foreground is normalized as async spawn plus correlated authoritative terminal receipt", async () => {

@@ -111,6 +111,12 @@ export function classifyPiSubagentsTerminalOutcome({ completion, processTerminal
 
 function resultProjection(completion) {
   if (!isRecord(completion)) return null;
+  if (isRecord(completion.parallelHandoff)) {
+    return {
+      results: completion.results ?? completion.result ?? null,
+      parallelHandoff: completion.parallelHandoff,
+    };
+  }
   return completion.results ?? completion.result ?? completion.output ?? completion.details ?? null;
 }
 

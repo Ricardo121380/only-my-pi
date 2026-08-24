@@ -44,7 +44,7 @@ async function writeRuntime(configRoot, { request = "valid", omit = null } = {})
   const directories = {
     agentRoot: path.join(runtime, "agent"),
     sessionRoot: path.join(runtime, "agent", "sessions"),
-    artifactRoot: path.join(runtime, "agent", "sessions", "subagent-artifacts"),
+    artifactRoot: path.join(runtime, "tmp"),
     fixtureRoot: path.join(runtime, "fixture-repo"),
     worktreeRoot: path.join(runtime, "worktrees"),
   };

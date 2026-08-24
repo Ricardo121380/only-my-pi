@@ -501,6 +501,7 @@ test("Pi guarded writer runner uses one isolated Git fixture, one managed worktr
   assert.equal(options.cwd.startsWith(realConfigRoot), true);
   assert.equal(request.worktreeRoot.startsWith(realConfigRoot), true);
   assert.equal(request.artifactRoot.startsWith(realConfigRoot), true);
+  assert.equal(request.artifactRoot, options.env.TMPDIR);
   assert.match(request.baseCommit, /^[a-f0-9]{40}$/u);
   assert.equal(argv.includes("--session-dir"), true);
   assert.equal(argv.includes("--session-id"), true);
