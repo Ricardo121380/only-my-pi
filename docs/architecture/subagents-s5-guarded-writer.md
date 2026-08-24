@@ -49,6 +49,13 @@ Only this protected fixture path may set `allowProtectedWorktreeProbe`; the
 compiled spawn request records `protected-degraded-probe-v1` so it cannot be
 mistaken for a fully enforced backend capability.
 
+Like the background-resume producer, the public RPC call uses an async
+workflow only as a control envelope. The compiled workflow launches exactly
+one detached managed-worktree child. The adapter requires one distinct,
+workflow-key-correlated child ID from the root completion, then accepts only
+that child's own `async-complete` plus durable `process-terminal` proof. The
+workflow root is never substituted for a writer terminal.
+
 After an authoritative completed child terminal, the parent does not trust the
 child summary, changed-path list, patch bytes, or gate claims. It reads the
 bounded non-symlink upstream handoff manifest, verifies the exact repository,

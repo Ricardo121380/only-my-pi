@@ -178,6 +178,7 @@ export async function executeGuardedWriterEvidenceScenario(request, backend, { c
     mode: "background",
     allowWorktree: true,
     allowProtectedWorktreeProbe: true,
+    childAsync: true,
   });
   const terminal = await backend.awaitTerminal(launched.handle, {
     bindingId: launched.binding.bindingId,
