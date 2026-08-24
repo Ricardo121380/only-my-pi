@@ -4,7 +4,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { runCheck } from "../scripts/verification-receipt.mjs";
+import {
+  boundedTestFailureDiagnostic,
+  runCheck,
+} from "../scripts/verification-receipt.mjs";
 
 function spawnRecorder() {
   const calls = [];
@@ -86,4 +89,20 @@ test("test-e2e rejects an npm cache outside the bounded roots before spawn", asy
   assert.equal(result.passed, false);
   assert.equal(result.exitCode, null);
   assert.equal(recorder.calls.length, 0);
+});
+
+test("test-gate diagnostics expose only bounded test names and stable error codes", () => {
+  const diagnostic = boundedTestFailureDiagnostic([
+    "✖ runner keeps /Users/example/private/file.txt isolated (12.3ms)",
+    "not ok 42 - linux cleanup releases every lock",
+    "  code: 'ERR_ASSERTION'",
+    "  failureType: 'TEST_CODE_FAILURE'",
+    "raw secret=must-not-be-copied",
+  ].join("\n"), "");
+  assert.match(diagnostic, /^TEST_FAILURE:/u);
+  assert.match(diagnostic, /runner keeps <path> isolated/u);
+  assert.match(diagnostic, /linux cleanup releases every lock/u);
+  assert.match(diagnostic, /ERR_ASSERTION/u);
+  assert.equal(diagnostic.includes("must-not-be-copied"), false);
+  assert.equal(diagnostic.length <= 1200, true);
 });

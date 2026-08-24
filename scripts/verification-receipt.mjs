@@ -47,6 +47,43 @@ function boundedFailureDiagnostic(stderr) {
   return `${match[1]}:${message}`;
 }
 
+const TEST_GATE_IDS = new Set(["test-unit", "test-contract", "test-integration", "full-tests"]);
+
+function sanitizedTestLabel(value) {
+  return String(value)
+    .replace(/\x1b\[[0-?]*[ -\/]*[@-~]/gu, "")
+    .replace(/[\u0000-\u001f\u007f]/gu, " ")
+    .replace(/(?:[A-Za-z]:)?[\\/](?:[^\s\\/]+[\\/])+[^\s]*/gu, "<path>")
+    .replace(/\s+/gu, " ")
+    .trim()
+    .slice(0, 180);
+}
+
+export function boundedTestFailureDiagnostic(stdout, stderr) {
+  const lines = `${stdout}\n${stderr}`
+    .replace(/\x1b\[[0-?]*[ -\/]*[@-~]/gu, "")
+    .split(/\r?\n/u);
+  const failures = [];
+  const codes = [];
+  const remember = (target, value, maximum) => {
+    const sanitized = sanitizedTestLabel(value);
+    if (sanitized && !target.includes(sanitized) && target.length < maximum) target.push(sanitized);
+  };
+  for (const line of lines) {
+    const tap = /^\s*not ok \d+ - (.+)$/u.exec(line);
+    const spec = /^\s*✖\s+(.+?)(?:\s+\([\d.]+ms\))?$/u.exec(line);
+    if (tap?.[1]) remember(failures, tap[1], 16);
+    else if (spec?.[1] && spec[1] !== "failing tests:") remember(failures, spec[1], 16);
+    const code = /^\s*(?:code|failureType):\s*['"]?([A-Z][A-Z0-9_-]{1,127})['"]?\s*$/u.exec(line);
+    if (code?.[1]) remember(codes, code[1], 16);
+  }
+  const parts = [
+    failures.length > 0 ? `tests=${failures.join(" | ")}` : "tests=UNPARSEABLE",
+    ...(codes.length > 0 ? [`codes=${codes.join(",")}`] : []),
+  ];
+  return `TEST_FAILURE:${parts.join(";")}`.slice(0, 1200);
+}
+
 function exactKeys(value, allowed, label) {
   if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error(`${label} must be an object`);
   const unknown = Object.keys(value).filter((key) => !allowed.has(key));
@@ -193,7 +230,11 @@ export function runCheck(check, {
       const out = Buffer.concat(stdout);
       const err = Buffer.concat(stderr);
       const freshEvidence = check.id === "test-e2e" ? extractFreshEvidence(out.toString("utf8")) : undefined;
-      const diagnostic = check.id === "test-e2e" ? boundedFailureDiagnostic(err.toString("utf8")) : undefined;
+      const diagnostic = check.id === "test-e2e"
+        ? boundedFailureDiagnostic(err.toString("utf8"))
+        : (code !== 0 && TEST_GATE_IDS.has(check.id)
+            ? boundedTestFailureDiagnostic(out.toString("utf8"), err.toString("utf8"))
+            : undefined);
       const emptyOutputPassed = check.expectStdout === "empty" ? out.toString("utf8").trim().length === 0 : true;
       const expectationPassed = emptyOutputPassed && (check.id !== "test-e2e" || freshEvidence !== null);
       const passed = code === 0 && !spawnError && !timedOut && !outputLimitExceeded && expectationPassed;
