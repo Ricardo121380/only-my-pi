@@ -49,7 +49,7 @@ jobs:
 
       - name: Validate the post-merge maintenance receipt when present
         if: hashFiles('verification/receipts/2026-08-17-post-merge-maintenance.json') != ''
-        run: npm run receipt:check -- --receipt verification/receipts/2026-08-17-post-merge-maintenance.json --expect-parent
+        run: npm run receipt:check -- --receipt verification/receipts/2026-08-17-post-merge-maintenance.json --source-commit bff3e3be376bb2ee614a441685e7cab14324727a
 
       - name: Execute the versioned release-gates-v1 manifest
         run: npm run verify -- --run --output verification/receipts/ci-${{ matrix.node-version }}.json

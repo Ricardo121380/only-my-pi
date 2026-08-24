@@ -11,6 +11,15 @@ test("CI executes the same manifest-backed verify runner without credentials", (
   assert.match(workflow, /npm ci --ignore-scripts/);
   assert.match(workflow, /npm run verify -- --run/);
   assert.match(workflow, /receipt:check/);
+  assert.match(
+    workflow,
+    /2026-08-17-post-merge-maintenance\.json --source-commit bff3e3be376bb2ee614a441685e7cab14324727a/u,
+  );
+  assert.doesNotMatch(
+    workflow,
+    /2026-08-17-post-merge-maintenance\.json --expect-parent/u,
+    "historical receipts cannot require the current feature HEAD to be their receipt-only commit",
+  );
   assert.match(workflow, /persist-credentials: false/);
   assert.match(workflow, /actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7\.0\.1/);
   assert.match(workflow, /actions\/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7\.0\.0/);
