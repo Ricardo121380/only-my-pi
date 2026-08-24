@@ -34,6 +34,17 @@ import {
 const EXECUTION_MODES = new Set(["foreground", "background", "continuable"]);
 const STEER_MODES = new Set(["steer", "follow_up", "auto"]);
 
+function normalizeScheduler(input) {
+  const scheduler = input ?? {
+    setTimeout: (...args) => setTimeout(...args),
+    clearTimeout: (...args) => clearTimeout(...args),
+  };
+  if (typeof scheduler.setTimeout !== "function" || typeof scheduler.clearTimeout !== "function") {
+    throw new TypeError("RPC adapter scheduler requires setTimeout and clearTimeout");
+  }
+  return scheduler;
+}
+
 function requestId(prefix = "omp-rpc") {
   return `${prefix}-${crypto.randomUUID()}`;
 }
@@ -146,15 +157,21 @@ function detachedChildMapping(completion, accepted, compiled) {
   return Object.freeze({ backendRunId: childRunId, backendAsyncId: childRunId });
 }
 
-async function boundedTerminalTransportWait(factory, { signal, timeoutMs }) {
+async function boundedTerminalTransportWait(factory, {
+  signal,
+  timeoutMs,
+  scheduler,
+  disposal,
+}) {
   if (signal?.aborted) throw abortError();
   let timer;
   let onAbort;
   const pending = Promise.resolve().then(factory);
   const competitors = [pending];
   competitors.push(new Promise((resolve) => {
-    timer = setTimeout(() => resolve(null), timeoutMs);
+    timer = scheduler.setTimeout(() => resolve(null), timeoutMs);
   }));
+  competitors.push(disposal.then(() => { throw adapterDisposedError(); }));
   if (signal) {
     competitors.push(new Promise((_, reject) => {
       onAbort = () => reject(abortError());
@@ -164,7 +181,7 @@ async function boundedTerminalTransportWait(factory, { signal, timeoutMs }) {
   try {
     return await Promise.race(competitors);
   } finally {
-    clearTimeout(timer);
+    if (timer !== undefined) scheduler.clearTimeout(timer);
     if (onAbort) signal.removeEventListener("abort", onAbort);
   }
 }
@@ -177,6 +194,7 @@ export class PiSubagentsRpcV1Backend {
     idFactory = requestId,
     clock = () => Date.now(),
     ownsTransport = false,
+    scheduler,
   } = {}) {
     if (!transport || typeof transport.request !== "function") {
       throw new SubagentsError("an injected public RPC request transport is required", {
@@ -193,10 +211,14 @@ export class PiSubagentsRpcV1Backend {
     this.terminalTimeoutMs = terminalTimeoutMs;
     this.idFactory = idFactory;
     this.clock = clock;
+    this.scheduler = normalizeScheduler(scheduler);
     this.ownsTransport = ownsTransport === true;
+    this.disposal = new Promise((resolve) => { this.resolveDisposal = resolve; });
+    this.activeTerminalWaits = new Set();
     this.eventStore = new PiSubagentsTerminalEventStore({
       transport,
       events: PI_SUBAGENTS_RPC_V1_EVENTS,
+      scheduler: this.scheduler,
     });
     this.capabilityMatrix = createPiSubagentsRpcV1CapabilityMatrix({
       observedAt: 0,
@@ -242,18 +264,21 @@ export class PiSubagentsRpcV1Backend {
     const id = this.idFactory(`omp-${method}`);
     const envelope = createPiSubagentsRpcV1Envelope({ requestId: id, method, params, source });
     const pending = Promise.resolve().then(() => this.transport.request(envelope));
-    this.inFlight.set(id, pending);
+    let resolveSettled;
+    const settled = new Promise((resolve) => { resolveSettled = resolve; });
+    this.inFlight.set(id, { pending, settled });
     let timer;
     let onAbort;
     const competitors = [pending];
     competitors.push(new Promise((_, reject) => {
-      timer = setTimeout(() => reject(new SubagentsError(`${method} RPC timed out`, {
+      timer = this.scheduler.setTimeout(() => reject(new SubagentsError(`${method} RPC timed out`, {
         code: "PI_SUBAGENTS_RPC_TIMEOUT",
         category: "timeout",
         retryable: true,
         details: { method, timeoutMs },
       })), timeoutMs);
     }));
+    competitors.push(this.disposal.then(() => { throw adapterDisposedError(); }));
     if (signal) {
       competitors.push(new Promise((_, reject) => {
         onAbort = () => reject(abortError());
@@ -271,10 +296,18 @@ export class PiSubagentsRpcV1Backend {
         message: `pi-subagents ${method} RPC failed`,
       });
     } finally {
-      clearTimeout(timer);
+      if (timer !== undefined) this.scheduler.clearTimeout(timer);
       if (onAbort) signal.removeEventListener("abort", onAbort);
       this.inFlight.delete(id);
+      resolveSettled();
     }
+  }
+
+  #trackTerminalWait(operation) {
+    const tracked = Promise.resolve(operation);
+    this.activeTerminalWaits.add(tracked);
+    tracked.finally(() => this.activeTerminalWaits.delete(tracked)).catch(() => {});
+    return tracked;
   }
 
   async negotiate({ signal } = {}) {
@@ -565,7 +598,7 @@ export class PiSubagentsRpcV1Backend {
         ? this.eventStore.wait(identifiers, { signal, timeoutMs })
         : null;
       const transportWait = typeof this.transport.waitForTerminal === "function"
-        ? boundedTerminalTransportWait(() => this.transport.waitForTerminal({
+        ? this.#trackTerminalWait(boundedTerminalTransportWait(() => this.transport.waitForTerminal({
             requestId: binding.requestId,
             runId: binding.backendRunId,
             backendRunId: binding.backendRunId,
@@ -575,7 +608,12 @@ export class PiSubagentsRpcV1Backend {
             events: PI_SUBAGENTS_RPC_V1_EVENTS,
             signal,
             timeoutMs,
-          }), { signal, timeoutMs }).then(normalizePiSubagentsTerminalEvidence)
+          }), {
+            signal,
+            timeoutMs,
+            scheduler: this.scheduler,
+            disposal: this.disposal,
+          }).then(normalizePiSubagentsTerminalEvidence))
         : null;
       if (eventWait && transportWait) {
         const first = await Promise.race([
@@ -610,8 +648,13 @@ export class PiSubagentsRpcV1Backend {
     this.disposed = true;
     this.ready = false;
     this.ping = null;
+    const pendingRequests = [...this.inFlight.values()].map((entry) => entry.settled);
+    const pendingTerminalWaits = [...this.activeTerminalWaits];
+    this.resolveDisposal();
     this.eventStore.dispose();
+    await Promise.allSettled([...pendingRequests, ...pendingTerminalWaits]);
     this.inFlight.clear();
+    this.activeTerminalWaits.clear();
     this.startedAt.clear();
     this.backendIdentifierOwners.clear();
     if (this.ownsTransport && typeof this.transport.dispose === "function") await this.transport.dispose();

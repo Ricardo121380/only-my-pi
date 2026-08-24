@@ -122,6 +122,11 @@ test("matrix and policy drift, floating PASS versions, and forged live evidence 
   floatingPass.matrixDigest = compatibilityMatrixDigest(floatingPass);
   assert.throws(() => validateCompatibilityMatrix(floatingPass), { code: "NONEXACT_NODE_PASS" });
 
+  const unprovedSoak = structuredClone(matrix);
+  unprovedSoak.rows[0].scopes.soakResourceLeak = "PASS";
+  unprovedSoak.matrixDigest = compatibilityMatrixDigest(unprovedSoak);
+  assert.throws(() => validateCompatibilityMatrix(unprovedSoak), { code: "SOAK_EVIDENCE_REQUIRED" });
+
   const forgedLive = structuredClone(matrix);
   forgedLive.rows[0].scopes.liveAgentTerminal = "PASS";
   forgedLive.matrixDigest = compatibilityMatrixDigest(forgedLive);

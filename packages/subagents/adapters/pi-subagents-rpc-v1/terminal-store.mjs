@@ -16,10 +16,17 @@ function abortError() {
 }
 
 export class PiSubagentsTerminalEventStore {
-  constructor({ transport, events, maxEntries = 512 } = {}) {
+  constructor({ transport, events, maxEntries = 512, scheduler } = {}) {
     this.transport = transport;
     this.events = events;
     this.maxEntries = maxEntries;
+    this.scheduler = scheduler ?? {
+      setTimeout: (...args) => setTimeout(...args),
+      clearTimeout: (...args) => clearTimeout(...args),
+    };
+    if (typeof this.scheduler.setTimeout !== "function" || typeof this.scheduler.clearTimeout !== "function") {
+      throw new TypeError("terminal event store scheduler requires setTimeout and clearTimeout");
+    }
     this.completions = new Map();
     this.proofs = new Map();
     this.conflicts = new Map();
@@ -160,7 +167,7 @@ export class PiSubagentsTerminalEventStore {
         },
       };
       const cleanup = () => {
-        clearTimeout(timer);
+        if (timer !== undefined) this.scheduler.clearTimeout(timer);
         signal?.removeEventListener("abort", onAbort);
         for (const runId of runIds) {
           const entries = this.waiters.get(runId);
@@ -175,7 +182,7 @@ export class PiSubagentsTerminalEventStore {
         this.waiters.set(runId, entries);
       }
       signal?.addEventListener("abort", onAbort, { once: true });
-      timer = setTimeout(() => waiter.resolve(this.snapshotAny(runIds)), timeoutMs);
+      timer = this.scheduler.setTimeout(() => waiter.resolve(this.snapshotAny(runIds)), timeoutMs);
       waiter.check();
     });
   }
