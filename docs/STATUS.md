@@ -253,13 +253,38 @@ being reinterpreted as child evidence. Separate signed Beta documents now prove
 live Agent terminal/cancellation, two-item homogeneous BatchSwarm,
 two-parent-process background/resume with metering, and one guarded synthetic
 writer handoff. Dynamic SwarmGoal execution, general production-repository
-writer admission, and Stable soak/cross-platform closure remain deliberately
-unproved. Producer implementations and deterministic tests are still not live
-evidence by themselves; only the five imported, source-bound documents satisfy
-those protected claims.
+writer admission, and Stable cross-platform/promotion closure remain
+deliberately unproved. The Stable development branch now has deterministic
+resource-lifecycle soak coverage, but `soakResourceLeak` remains
+`CONFIGURED_UNVERIFIED` until the exact compatibility rows are closed. Producer
+implementations and deterministic tests are still not live evidence by
+themselves; only the five imported, source-bound documents satisfy those
+protected claims.
 Historical M5 receipts must not be described as successor evidence.
 
-Current branch evidence and the Beta release receipt:
+The current Stable development branch locally proves:
+
+- `npm test`: **587/587** pass;
+- `tests/subagents-resource-leak.test.mjs`: **7/7** lifecycle soak groups pass
+  in about 13 seconds when run alone;
+- RPC request disposal, terminal-event waiters, structured delegation starts,
+  and BatchSwarm deadline/ramp/retry timers each pass 100 deterministic cycles;
+- RunCoordinator passes 32 completed-run cycles and 16 uncooperative-child
+  cancel/orphan cycles with zero retained scheduler handle, active run, writer
+  lease, state lock, or temporary file;
+- Artifact Store passes 100 publish/read cycles, while injected Plan Store,
+  Artifact Store, and Event Journal publication faults leave no temporary or
+  lock residue;
+- adapter disposal now settles pending requests/waiters through injected,
+  auditable schedulers instead of leaving a real timer alive until timeout.
+
+This is deterministic Stable input, not a Stable promotion receipt. Linux
+Node 22/24 CI, the exact compatibility-matrix update, and a new cumulative
+source-bound protected-evidence chain remain required before Stable can be
+claimed. The prior Beta evidence is historically valid for its pinned source,
+but cannot be silently rebound to a changed Stable source.
+
+Historical Beta source evidence and release receipt:
 
 - `npm test`: **581/581** pass in the source regression run;
 - `npm run test:subagents`: **198/198** pass;

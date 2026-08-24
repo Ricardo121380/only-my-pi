@@ -71,6 +71,7 @@ The ownership boundary remains:
 ```bash
 npm run verify:subagents                         # inspect only; no subprocesses
 npm run verify:subagents:run                     # execute Preview deterministic gates
+node --test tests/subagents-resource-leak.test.mjs # execute the Stable lifecycle soak only
 npm run plan:subagents-live-evidence             # inspect Alpha capture readiness
 npm run plan:subagents-background-resume         # inspect Beta resume readiness
 npm run plan:subagents-guarded-writer             # inspect Beta writer readiness
@@ -160,3 +161,18 @@ S5-D additionally proves deterministic fail-closed handling for missing
 terminal records, malformed or missing handoff state, parent Git failure,
 signer/staging interruption and post-capture source drift. Its reconciliation
 planner retains every existing target for review and exposes no mutation API.
+
+The first Stable closure increment replaces the earlier two shallow leak
+smokes with seven bounded lifecycle soaks. RPC and structured-delegation
+adapters expose their timers through injected schedulers and dispose pending
+requests, start waits, terminal waits, and subscriptions. BatchSwarm exercises
+deadline, ramp, and finite-retry timers for 100 runs. RunCoordinator exercises
+32 completed runs plus 16 uncooperative stop/cancel runs, requiring visible
+`orphaned` settlement and release of every heartbeat, deadline, grace timer,
+active-run entry, writer lease, journal lock, and temporary publication file.
+Artifact publication runs 100 content-addressed cycles, and injected Plan,
+Artifact, and Journal publication faults must also leave no transient files.
+`soakResourceLeak: PASS` is now rejected unless its compatibility row cites
+this exact test. These local deterministic results do not update the matrix or
+claim Stable; exact Linux rows and a new source-bound cumulative promotion
+chain remain separate work.
