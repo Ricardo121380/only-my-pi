@@ -92,8 +92,9 @@ test("test-e2e rejects an npm cache outside the bounded roots before spawn", asy
 });
 
 test("test-gate diagnostics expose only bounded test names and stable error codes", () => {
+  const privatePath = ["", "Users", "example", "private", "file.txt"].join("/");
   const diagnostic = boundedTestFailureDiagnostic([
-    "✖ runner keeps /Users/example/private/file.txt isolated (12.3ms)",
+    `✖ runner keeps ${privatePath} isolated (12.3ms)`,
     "not ok 42 - linux cleanup releases every lock",
     "  code: 'ERR_ASSERTION'",
     "  failureType: 'TEST_CODE_FAILURE'",

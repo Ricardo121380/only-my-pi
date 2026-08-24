@@ -762,11 +762,35 @@ test("cancel without correlated terminal proof becomes orphaned, never cancelled
   assert.notEqual(result.status, "cancelled");
 });
 
-test("cancel does not block on a backend stop call that never resolves", async (t) => {
+test("cancel does not block on a backend stop call that never resolves", { timeout: 1000 }, async (t) => {
   const plan = compileWorkflowDefinition(definition({ kind: "sequence", steps: [agent("inspect")] }));
   let entered;
   const enteredPromise = new Promise((resolve) => { entered = resolve; });
+  const activeTimers = new Set();
+  const scheduler = {
+    setTimeout(callback, delay) {
+      const handle = { callback, cancelled: false };
+      activeTimers.add(handle);
+      // Only the explicit cancellation grace window advances automatically.
+      // Lease-heartbeat and node-deadline timers remain observable until the
+      // coordinator clears them during settlement.
+      if (delay === 20) {
+        queueMicrotask(() => {
+          if (handle.cancelled) return;
+          activeTimers.delete(handle);
+          callback();
+        });
+      }
+      return handle;
+    },
+    clearTimeout(handle) {
+      if (!handle) return;
+      handle.cancelled = true;
+      activeTimers.delete(handle);
+    },
+  };
   const { coordinator } = await harness(t, plan, {
+    scheduler,
     nodeExecutor: {
       async startAgent(_node, context) {
         // Let RunCoordinator install the returned handle before the test
@@ -785,12 +809,11 @@ test("cancel does not block on a backend stop call that never resolves", async (
   });
   const running = coordinator.execute(plan, { runId: "cancel-stop-hangs" });
   await enteredPromise;
-  const started = Date.now();
   const cancellation = await coordinator.cancel("cancel-stop-hangs", { graceMs: 20 });
-  assert.ok(Date.now() - started < 500, "cancel must be bounded by its grace window");
   assert.equal(cancellation.stopResults[0].status, "STOP_PENDING");
   const result = await running;
   assert.equal(result.status, "orphaned");
+  assert.equal(activeTimers.size, 0, "settlement must clear every coordinator-owned timer");
 });
 
 test("a durable cancel published before admission prevents child dispatch", async (t) => {

@@ -1606,23 +1606,23 @@ export class RunCoordinator {
       const stopOutcome = await Promise.race([
         stopPromise.then((value) => ({ completed: true, value })),
         new Promise((resolve) => {
-          stopTimer = setTimeout(() => resolve({ completed: false }), graceMs);
+          stopTimer = this.scheduler.setTimeout(() => resolve({ completed: false }), graceMs);
         }),
       ]);
       stopResults = stopOutcome.completed
         ? stopOutcome.value
         : [...active.handles.keys()].map((nodeId) => ({ nodeId, status: "STOP_PENDING" }));
     } finally {
-      if (stopTimer !== undefined) clearTimeout(stopTimer);
+      if (stopTimer !== undefined) this.scheduler.clearTimeout(stopTimer);
     }
     let doneTimer;
     try {
       await Promise.race([
         active.done,
-        new Promise((resolve) => { doneTimer = setTimeout(resolve, graceMs); }),
+        new Promise((resolve) => { doneTimer = this.scheduler.setTimeout(resolve, graceMs); }),
       ]);
     } finally {
-      if (doneTimer !== undefined) clearTimeout(doneTimer);
+      if (doneTimer !== undefined) this.scheduler.clearTimeout(doneTimer);
     }
     return immutable({ status: "CANCEL_REQUESTED", durable: Boolean(request), runId, stopResults, request });
   }
