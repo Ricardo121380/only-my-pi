@@ -118,13 +118,16 @@ node scripts/subagents-guarded-writer-evidence.mjs --run --yes \
   --repository-root /absolute/only-my-pi --json
 ```
 
-The trust policy now contains a separate, time-bounded Beta public signer, but
-the plan remains `CONFIGURED_UNAVAILABLE` without an exact one-time writer
-authorization. The Provider descriptor contains no key; its digest and the
-credential environment-variable name are authorization-bound before the
-isolated `models.json` is compiled. Deterministic tests use fake transport or
-temporary local Git repositories. Until a protected run is reviewed and
-imported, no guarded-writer evidence or Beta promotion is claimed.
+The trust policy contains a separate, time-bounded Beta public signer, but a
+public key alone cannot start a run. For source `6004e61`, the operator-bounded
+capture used one child, 7,150 observed tokens and about $0.00506. The parent
+reconstructed the detached review worktree and passed the exact path, mode,
+diff, whitespace and marker gates before
+`verification/protected/guarded-writer-integration.json` was signed and
+imported. Receipt `cb1a8db` includes the resulting protected writer gate in the
+completed Beta promotion. The used writer authorization is now an inert
+template, so the current plan again reports `CONFIGURED_UNAVAILABLE` with no
+Provider or child start.
 
 ## Residual risk
 

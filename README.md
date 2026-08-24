@@ -39,7 +39,7 @@ scripts/      Repository checks and package governance tooling
 
 ## Current research
 
-- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; S0–S4 Preview source plus S5-A/S5-B/S5-C producers and S5-D fault/recovery closure implemented)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
+- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; cumulative Beta achieved, Stable closure pending)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
 - [Codex successor development Goal for S0–S5](codex/goals/develop-only-my-pi-subagents-ultrarun.md)
 - [Historical Harness MVP development plan (M0–M7, complete)](docs/plans/2026-08-16-only-my-pi-development-plan.md)
 - [Historical Codex Harness MVP Goal](codex/goals/develop-only-my-pi.md)
@@ -119,7 +119,7 @@ receipts bounded. DeepSeek conformance, ACP v1, and workspace checkpoint remain
 non-default Labs modules with the explicit boundaries in the
 [Labs registry](docs/LABS.md).
 
-The S0–S4 Preview source implementation now contains a unified
+The S0–S5 Beta implementation now contains a unified
 `packages/subagents/` facade. It provides typed AgentTemplate v2,
 ResolvedAgentSpec, TaskAssignment and terminal receipts; exact structured-
 delegation and extension-RPC v1 adapters over one pinned `pi-subagents`
@@ -155,7 +155,8 @@ worst-case reservation after recovery. Deadlines and reported output/token/cost
 overruns fail closed. Without correlated process-terminal proof, a local timeout
 is non-authoritative and leaves the run orphaned. Mutating dispatch also requires
 an executor that advertises audited path enforcement; a worktree alone is not
-treated as a path allowlist. This is Contract Preview source evidence only.
+treated as a path allowlist. General production execution remains
+contract-preview outside the separately governed protected Beta fixtures.
 Restart-safe plan lookup and durable status/cancel/resume are now implemented
 through the versioned Plan Store sidecar. S3 BatchSwarm also reuses the same
 event chain and parent reservation across crash recovery: proven completed
@@ -163,9 +164,10 @@ items are not replayed, while a started item without terminal proof interrupts
 the run. S4 now adds a Pi-native SwarmGoal controller, UltraRun router,
 immutable artifact store, and writer handoff contract. These are logical layers
 over the same RunCoordinator and sole `pi-subagents` backend; they do not
-connect Pi to Kimi Code or add a second scheduler. The protected real-child
-BatchSwarm check and dynamic-goal live execution were not authorized and remain
-`NOT_RUN_BY_POLICY`. General live writer admission remains `UNAVAILABLE`
+connect Pi to Kimi Code or add a second scheduler. The protected two-item
+homogeneous BatchSwarm check is now source-bound Beta evidence; dynamic-goal
+live execution remains `NOT_RUN_BY_POLICY`. General live writer admission
+remains `UNAVAILABLE`
 because the public backend cannot prove a per-path allowlist. S5-C now provides
 one separately authorized, synthetic-fixture producer for the protected
 guarded-writer evidence class; it uses parent-side Git verification and never
@@ -178,13 +180,23 @@ Preview deterministic gates on a clean source commit. Alpha/Beta/Stable live
 claims use a source-pinned Ed25519 evidence-import protocol and cannot be
 produced by the deterministic runner. The checked-in trust policy retains the
 Alpha public signer and adds an independent time-bounded Beta signer for a
-cumulative five-scenario recapture. Alpha is now proved for source `922b39b`, evidence commit
+cumulative five-scenario capture. Alpha is proved for source `922b39b`, evidence commit
 `15f2915`, and receipt commit `312fc2d`: 25 deterministic gates plus the
 protected read-only gate passed. The OpenCode Go `deepseek-v4-flash` capture ran
 four children within 8,154 tokens and about $0.00474, without storing raw
-output, credentials, host paths, or session IDs. Beta/Stable remain unavailable
-until their separate protected requirements are authorized. Private signing
-keys remain outside the repository.
+output, credentials, host paths, or session IDs.
+
+Beta is now proved by source `6004e61`, direct evidence-only commit `1d19b5c`,
+and receipt-only commit `cb1a8db`. The cumulative capture used OpenCode Go
+`deepseek-v4-flash` for seven physical children: the three inherited Alpha
+classes used 8,117 tokens and about $0.00391; background/resume used 13,067
+tokens and about $0.01178; the guarded writer used 7,150 tokens and about
+$0.00506. The final release run passed 25/25 deterministic and 4/4 protected
+gates. Its five signed evidence documents retain no raw output, credentials,
+host paths, session IDs, patch bytes, or changed paths. The three external
+one-time authorizations were subsequently downgraded to inert templates.
+Stable remains unavailable until its separately declared soak/compatibility
+requirements pass. Private signing keys remain outside the repository.
 
 The S5-A Alpha capture producer is now implemented behind
 `npm run plan:subagents-live-evidence`. It composes a read-only Agent terminal,
@@ -195,10 +207,11 @@ workspace, not the source checkout; the canonical read-only `omp-reviewer` is
 recompiled and drift-checked before it is copied into the disposable Pi root.
 All three scenarios share one cumulative budget, and the source HEAD/worktree
 is rechecked after signing before any evidence is staged.
-The checked-in plan remains `CONFIGURED_UNAVAILABLE` without a current
-one-time authorization. The completed Alpha run is historical evidence; a new
-Beta source must recapture all inherited Alpha and Beta classes. Declared
-endpoint hosts are not an OS-enforced network allowlist.
+The checked-in plan is again `CONFIGURED_UNAVAILABLE`: the used Beta
+authorization is now an `operator-template`, so Provider, child, and signer
+work remain `NOT_STARTED`. The imported evidence remains valid because it is
+bound to source `6004e61`, not to the post-promotion checkout. Declared endpoint
+hosts are not an OS-enforced network allowlist.
 
 S5-B now adds the separately authorized
 `npm run plan:subagents-background-resume` producer. It uses two distinct Pi
@@ -209,24 +222,29 @@ record retains only proof digests and cumulative metering; parent/child session
 IDs, host paths, backend IDs, prompts, and outputs remain in the disposable
 root. A live run additionally requires `--provider-file`; that credential-free
 descriptor is digest-bound by the authorization and compiled into the isolated
-Pi root. This path remains inert without a one-time authorization. Producer
-readiness is not Beta evidence or promotion.
+Pi root. The protected run proved two authoritative terminals across two Pi
+parent processes and a new resume binding; its signed document is
+`verification/protected/background-resume.json`. The command is inert again
+because its used authorization was downgraded to a template.
 
 S5-C now adds the separately authorized
 `npm run plan:subagents-guarded-writer` producer. It runs exactly one canonical
 `omp-implementer` in a synthetic Git repository and an upstream-managed
 worktree, then treats the child result and handoff manifest as untrusted. The
-parent independently verifies the full base commit, exact staged path claim,
-absence of untracked or unstaged changes, regular-file modes, bounded patch,
-`git diff --check`, and a fixed fixture-content gate. It creates a
+parent reconstructs a detached review worktree at the approved base, applies
+the captured patch only there, then independently verifies the exact staged
+path claim, absence of untracked or unstaged changes, regular-file modes,
+bounded full diff, `git diff --check`, and a fixed fixture-content gate. It
+creates a
 handoff-only WriterHandoff and signs only low-sensitivity proof digests; it
-never commits, merges, applies, pushes, or modifies the source checkout. The
+never commits, merges, pushes, or applies anything to the source checkout. The
 ordinary backend compiler still rejects its `DEGRADED` worktree capability;
 only this protected fixture path may opt into the recorded
 `protected-degraded-probe-v1` admission. Its credential-free Provider
-descriptor is also authorization-digest-bound. The checked-in plan is inert
-without the separate writer authorization, and no Beta promotion has
-occurred.
+descriptor is also authorization-digest-bound. The protected fixture run is
+imported as `verification/protected/guarded-writer-integration.json`; the
+checked-in plan is inert again because the used writer authorization is now a
+template. This narrow proof does not make the general writer seam available.
 
 S5-D adds `npm run plan:subagents-guarded-writer-cleanup`, a review-only
 reconciliation surface for the disposable S5-C runtime. It detects partial,
@@ -235,8 +253,9 @@ authorization/source/request digests, and exposes no deletion operation. The
 plan always retains an existing target for operator review; `--run`, `--apply`
 and `--yes` are rejected. Deterministic tests also cover missing terminal
 records, truncated handoffs, missing worktrees, Git verifier failure,
-signer/staging interruption and post-capture source drift. These are Preview
-fault/recovery checks, not live evidence.
+signer/staging interruption, patch reconstruction failure, and post-capture
+source drift. These remain deterministic fault/recovery checks; the separate
+source-bound writer document is the live evidence.
 
 `omp workflow|swarm run` and `resume` accept an optional bounded absolute JSON
 `--input-file`; it is read with `O_NOFOLLOW`, hashed into the execution

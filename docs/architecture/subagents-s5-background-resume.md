@@ -1,7 +1,7 @@
 # Subagents S5-B protected background resume
 
-Status: **production capture path implemented; source-pinned Beta capture
-prepared, protected run not yet imported** · 2026-08-24
+Status: **source-pinned Beta evidence captured, imported, and promoted** ·
+2026-08-24
 
 S5-B implements the producer for the `background-resume` protected-evidence
 class. It does not integrate Kimi Code or create a second scheduler. The design
@@ -10,11 +10,10 @@ uses only the pinned `pi-subagents@0.45.2` public extension-RPC `spawn`,
 idea of persistent, resumable child work; Pi and `pi-subagents` remain the only
 runtime and physical child owner.
 
-This increment is a Beta prerequisite, not a Beta promotion. Alpha still needs
-separately captured and imported live Agent terminal/cancel and two-item
-BatchSwarm evidence. Beta additionally needs the still-unimplemented
-`guarded-writer-integration` protected evidence. Deterministic tests of this
-producer are not live evidence.
+The producer remains a Beta prerequisite rather than promotion authority by
+itself. For source `6004e61`, its signed document was imported together with
+the inherited Alpha classes and guarded-writer document by direct evidence
+commit `1d19b5c`; receipt `cb1a8db` then promoted the cumulative set to Beta.
 
 ## What is proved
 
@@ -185,6 +184,9 @@ prospective hard spend cap.
 The implementation is covered by deterministic authorization, Provider
 descriptor, schema, signature, handoff-tamper, session-correlation,
 two-process runner, credential allowlist, proof-parity and packaging tests.
-Until a source-bound run is reviewed and imported, the `background-resume`
-gate remains `NOT_RUN_BY_POLICY`; implementation and signer readiness alone
-are not Beta evidence.
+The imported `verification/protected/background-resume.json` proves two
+authoritative child terminals, parent-session reload, a new correlated resume
+binding, 13,067 observed tokens and about $0.01178, while retaining no raw
+output or local identifiers. The used authorization is now an inert template;
+the checked-in public signer and completed evidence do not authorize another
+run.

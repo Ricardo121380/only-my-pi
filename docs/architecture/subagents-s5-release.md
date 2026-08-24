@@ -76,8 +76,10 @@ npm run plan:subagents-background-resume         # inspect Beta resume readiness
 npm run plan:subagents-guarded-writer             # inspect Beta writer readiness
 npm run plan:subagents-guarded-writer-cleanup     # input-required, review-only reconciliation
 node scripts/subagents-release-gates.mjs --run \
-  --promotion alpha \
+  --promotion beta \
   --source-commit <source-commit> \
+  --protected-evidence background-resume=verification/protected/background-resume.json \
+  --protected-evidence guarded-writer-integration=verification/protected/guarded-writer-integration.json \
   --protected-evidence live-agent-terminal=verification/protected/live-agent-terminal.json \
   --protected-evidence live-agent-cancel=verification/protected/live-agent-cancel.json \
   --protected-evidence live-batch-terminal=verification/protected/live-batch-terminal.json \
@@ -88,9 +90,10 @@ The runner requires a clean source commit, executes only gates marked
 `deterministic`, and checks that the commit did not change while the gates
 were running. Protected live gates have no command or argv; they are emitted as
 `NOT_RUN_BY_POLICY` unless the separately authorized evidence-import path is
-used. Thus Preview can complete its deterministic contract set, while
-Alpha/Beta/Stable remain blocked until their explicit live scopes, signatures,
-and protected evidence are present.
+used. Source `6004e61` supplied the exact cumulative Beta set through direct
+evidence commit `1d19b5c`; receipt `cb1a8db` passed all 25 deterministic and
+four protected gates. Stable remains blocked until its additional explicit
+soak/compatibility requirements are present.
 
 The separate live-capture command never writes into `verification/protected/`
 or performs the evidence-only Git import. It stages reviewable files in an
@@ -134,9 +137,11 @@ evidence.
 The repository now has deterministic coverage for ownership/topology, public
 exports, v2 schema/semantics, migration, journal/recovery, terminal proof,
 security red-team cases, offline evaluation, provenance, listener/timer leak
-soaks, and compatibility contract validation. The local no-model Pi probe is
-still the only live evidence and proves startup/RPC ownership—not child
-execution, model quality, cancellation, background resume, or writer safety.
+soaks, and compatibility contract validation. The no-model Pi probe remains
+limited to startup/RPC ownership. Separate source-bound Beta documents now
+prove Agent terminal/cancellation, two-item BatchSwarm, two-process
+background/resume, and one guarded synthetic writer path; none of those claims
+is inferred from the no-model probe.
 
 No live gate is promoted by inference. The importer, authorization/capture
 schemas, digest-only signer boundary, Pi Alpha scenario driver, signature
@@ -146,9 +151,11 @@ patch or path report: it reconstructs or reuses a detached disposable review
 worktree, recomputes the staged diff and fixed gates there, and emits a handoff
 without integration. The checked-in
 trust policy now has distinct bounded Alpha and Beta public signers. A public
-key is not execution authorization and does not itself promote a channel; the
-current checked-in Alpha receipt remains the latest completed promotion until
-the cumulative five source-bound documents pass the Beta gate.
+key is not execution authorization and does not itself promote a channel. The
+cumulative five source-bound documents passed the Beta gate in receipt
+`cb1a8db`; the used external authorizations were then downgraded to inert
+templates. Dynamic SwarmGoal execution, the general writer seam, and Stable
+closure remain outside this claim.
 S5-D additionally proves deterministic fail-closed handling for missing
 terminal records, malformed or missing handoff state, parent Git failure,
 signer/staging interruption and post-capture source drift. Its reconciliation
