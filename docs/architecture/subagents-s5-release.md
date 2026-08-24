@@ -172,7 +172,9 @@ deadline, ramp, and finite-retry timers for 100 runs. RunCoordinator exercises
 active-run entry, writer lease, journal lock, and temporary publication file.
 Artifact publication runs 100 content-addressed cycles, and injected Plan,
 Artifact, and Journal publication faults must also leave no transient files.
-`soakResourceLeak: PASS` is now rejected unless its compatibility row cites
-this exact test. These local deterministic results do not update the matrix or
-claim Stable; exact Linux rows and a new source-bound cumulative promotion
-chain remain separate work.
+`soakResourceLeak: PASS` is rejected unless its compatibility row cites this
+exact test. The matrix now records the exact darwin, Linux Node 22.19.0, and
+Linux Node 24.19.0 deterministic results. This still does not claim Stable:
+the new source baseline resets all live scopes to `NOT_RUN_BY_POLICY`, and a
+new source-bound cumulative protected-evidence/import/receipt chain remains
+separate work.

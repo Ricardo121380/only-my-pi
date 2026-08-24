@@ -255,8 +255,8 @@ two-parent-process background/resume with metering, and one guarded synthetic
 writer handoff. Dynamic SwarmGoal execution, general production-repository
 writer admission, and Stable cross-platform/promotion closure remain
 deliberately unproved. The Stable development branch now has deterministic
-resource-lifecycle soak coverage, but `soakResourceLeak` remains
-`CONFIGURED_UNVERIFIED` until the exact compatibility rows are closed. Producer
+resource-lifecycle soak coverage, and the exact darwin/Node 22.19.0/Node
+24.19.0 rows record `soakResourceLeak: PASS`. Producer
 implementations and deterministic tests are still not live evidence by
 themselves; only the five imported, source-bound documents satisfy those
 protected claims.
@@ -278,11 +278,13 @@ The current Stable development branch locally proves:
 - adapter disposal now settles pending requests/waiters through injected,
   auditable schedulers instead of leaving a real timer alive until timeout.
 
-This is deterministic Stable input, not a Stable promotion receipt. Linux
-Node 22/24 CI, the exact compatibility-matrix update, and a new cumulative
-source-bound protected-evidence chain remain required before Stable can be
-claimed. The prior Beta evidence is historically valid for its pinned source,
-but cannot be silently rebound to a changed Stable source.
+This is deterministic Stable input, not a Stable promotion receipt. Exact
+Linux Node 22.19.0 and Node 24.19.0 CI plus the compatibility matrix are now
+closed, while a new cumulative source-bound protected-evidence chain remains
+required before Stable can be claimed. The prior Beta evidence is historically
+valid for its pinned source, but cannot be silently rebound to a changed Stable
+source; therefore the new source baseline deliberately resets every live scope
+to `NOT_RUN_BY_POLICY`.
 
 Historical Beta source evidence and release receipt:
 

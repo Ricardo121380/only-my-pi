@@ -9,6 +9,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 test("CI executes the same manifest-backed verify runner without credentials", () => {
   const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "ci.yml"), "utf8");
   assert.match(workflow, /npm ci --ignore-scripts/);
+  assert.match(workflow, /node-version: \["22\.19\.0", "24\.19\.0"\]/u);
+  assert.doesNotMatch(workflow, /node-version:.*24\.x/u);
   assert.match(workflow, /npm run verify -- --run/);
   assert.match(workflow, /receipt:check/);
   assert.match(
