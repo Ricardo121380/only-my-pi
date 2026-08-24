@@ -33,6 +33,7 @@ import {
   createProtectedLiveCaptureRecord,
 } from "../packages/subagents/release/live-evidence-capture.mjs";
 import {
+  compatibilityMatrixDigest,
   loadSubagentsReleaseContracts,
 } from "../packages/subagents/release/compatibility.mjs";
 import {
@@ -54,6 +55,14 @@ const observedAt = "2026-08-22T00:30:00.000Z";
 
 function fixture() {
   const { matrix, policy } = structuredClone(loadSubagentsReleaseContracts({ rootDir }));
+  matrix.rows[0].id = `fixture-${process.platform}-${process.arch}-node-${process.versions.node}`;
+  matrix.rows[0].environment = {
+    node: process.versions.node,
+    pi: matrix.policy.piVersion,
+    backend: `${matrix.policy.backend.package}@${matrix.policy.backend.version}`,
+    platform: `${process.platform}-${process.arch}`,
+  };
+  matrix.matrixDigest = compatibilityMatrixDigest(matrix);
   const { privateKey, publicKey } = crypto.generateKeyPairSync("ed25519");
   const publicKeyBytes = publicKey.export({ format: "der", type: "spki" });
   const publicKeyFingerprint = sha256(publicKeyBytes);

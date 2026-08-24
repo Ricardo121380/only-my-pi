@@ -32,7 +32,10 @@ import {
 } from "../packages/subagents/release/guarded-writer-verifier.mjs";
 import { createPiGuardedWriterScenarioRunner } from "../packages/subagents/release/guarded-writer-pi-runner.mjs";
 import { liveEvidenceProviderDescriptorDigest } from "../packages/subagents/release/live-evidence-provider.mjs";
-import { loadSubagentsReleaseContracts } from "../packages/subagents/release/compatibility.mjs";
+import {
+  compatibilityMatrixDigest,
+  loadSubagentsReleaseContracts,
+} from "../packages/subagents/release/compatibility.mjs";
 import { protectedEvidenceTrustPolicyDigest } from "../packages/subagents/release/protected-evidence.mjs";
 import { sha256 } from "../packages/subagents/state/codec.mjs";
 import {
@@ -48,6 +51,14 @@ const marker = "ONLY_MY_PI_GUARDED_WRITER_PASS";
 
 function fixture() {
   const { matrix, policy } = structuredClone(loadSubagentsReleaseContracts({ rootDir }));
+  matrix.rows[0].id = `fixture-${process.platform}-${process.arch}-node-${process.versions.node}`;
+  matrix.rows[0].environment = {
+    node: process.versions.node,
+    pi: matrix.policy.piVersion,
+    backend: `${matrix.policy.backend.package}@${matrix.policy.backend.version}`,
+    platform: `${process.platform}-${process.arch}`,
+  };
+  matrix.matrixDigest = compatibilityMatrixDigest(matrix);
   const { privateKey, publicKey } = crypto.generateKeyPairSync("ed25519");
   const publicKeyBytes = publicKey.export({ format: "der", type: "spki" });
   const publicKeyFingerprint = sha256(publicKeyBytes);
