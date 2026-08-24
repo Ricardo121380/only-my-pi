@@ -45,6 +45,16 @@ reload P -> pi-subagents resume prior child session
 bounded low-sensitivity record -> external digest-only signer -> review staging
 ```
 
+The public RPC `spawn` surface accepts a workflow script and reports a workflow
+control run, not the physical child. The producer therefore compiles exactly
+one `runs.run(..., { async: true })` child. It accepts the workflow-root
+`async-complete` event only as a bounded mapping receipt: the root must expose
+exactly one matching workflow key and one distinct child run ID. The root is
+never treated as a process terminal. The stable only-my-pi handle binds to that
+child ID only after the mapping check, then waits for the child's own
+`async-complete` plus durable `process-terminal` proof. A missing, ambiguous,
+failed, reused, or root-equal child mapping fails closed.
+
 The record requires seven canonical proof digests:
 
 - `background-spawn`;

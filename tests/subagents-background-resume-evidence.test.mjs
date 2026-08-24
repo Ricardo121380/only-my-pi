@@ -311,7 +311,8 @@ function terminal(handle, sequence) {
 function launchBackend() {
   return {
     capabilityMatrix: createPiSubagentsRpcV1CapabilityMatrix({ observedAt: 1, terminalTransport: true }),
-    async launch({ handle }) {
+    async launch({ handle, childAsync }) {
+      assert.equal(childAsync, true);
       const bound = bindBackendRun(handle, {
         backendId: "pi-subagents-rpc-v1",
         backendVersion: "0.45.2",

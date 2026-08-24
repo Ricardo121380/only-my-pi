@@ -198,6 +198,23 @@ test("compiler emits a statement body and JSON-safe invocation, never raw execut
   assert.equal(observed[0].invocation.agent, "omp-reviewer");
   assert.equal(observed[0].invocation.task, dangerous);
   assert.deepEqual(observed[0].invocation.outputSchema, { type: "object", required: ["verdict"] });
+
+  const detached = compileAgentAssignmentToPiSpawnRequest({
+    agentSpec: fixture.agentSpec,
+    assignment: fixture.assignment,
+    capabilityMatrix: createPiSubagentsRpcV1CapabilityMatrix(),
+    childAsync: true,
+  });
+  const detachedObserved = [];
+  await new AsyncFunction("runs", detached.params.workflowScript)({
+    async run(name, invocation) {
+      detachedObserved.push({ name, invocation });
+      return { ok: true };
+    },
+  });
+  assert.equal(detached.childAsync, true);
+  assert.equal(detached.source.childLifecycle, "detached-async");
+  assert.equal(detachedObserved[0].invocation.async, true);
 });
 
 test("compiler rejects unenforceable tool narrowing and unproven writer worktrees before spawn", () => {
@@ -293,6 +310,45 @@ test("background launch maps only structured details into a stable handle", asyn
     () => missing.launch({ ...domainFixture(), mode: "background" }),
     (error) => error instanceof SubagentsError && error.code === "PI_SUBAGENTS_BACKEND_ID_MISSING",
   );
+});
+
+test("detached child launch resolves the public workflow root to one process-terminal child", async () => {
+  const fixture = domainFixture();
+  const emitter = new EventEmitter();
+  const calls = [];
+  const transport = {
+    on: emitter.on.bind(emitter),
+    off: emitter.off.bind(emitter),
+    async request(envelope) {
+      calls.push(structuredClone(envelope));
+      if (envelope.method === "ping") return reply(envelope, pingData());
+      if (envelope.method === "spawn") {
+        const key = `assignment-${fixture.assignment.assignmentHash.slice(7, 39)}`;
+        queueMicrotask(() => {
+          emitter.emit(PI_SUBAGENTS_RPC_V1_EVENTS.asyncComplete, {
+            runId: "workflow-root-01",
+            mode: "workflow",
+            state: "complete",
+            success: true,
+            results: [{ agent: key, runId: "detached-child-01", success: true, status: "completed" }],
+          });
+          const evidence = terminalEvidence("detached-child-01");
+          emitter.emit(PI_SUBAGENTS_RPC_V1_EVENTS.asyncComplete, evidence.completion);
+          emitter.emit(PI_SUBAGENTS_RPC_V1_EVENTS.processTerminal, evidence.processTerminal);
+        });
+        return reply(envelope, { text: "accepted", details: { runId: "workflow-root-01", asyncId: "workflow-root-01" } });
+      }
+      return reply(envelope, {});
+    },
+  };
+  const backend = createBackend(transport);
+  const launched = await backend.launch({ ...fixture, mode: "background", childAsync: true });
+  assert.equal(launched.binding.backendRunId, "detached-child-01");
+  assert.equal(launched.binding.backendAsyncId, "detached-child-01");
+  assert.match(calls[1].params.workflowScript, /"async":true/u);
+  const terminal = await backend.awaitTerminal(launched.handle, { bindingId: launched.binding.bindingId });
+  assert.equal(terminal.authoritative, true);
+  assert.equal(terminal.outcome, "completed");
 });
 
 test("foreground is normalized as async spawn plus correlated authoritative terminal receipt", async () => {

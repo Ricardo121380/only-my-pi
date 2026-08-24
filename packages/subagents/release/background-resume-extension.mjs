@@ -344,7 +344,13 @@ function aggregateUsage(first, second, elapsedMs) {
 export async function executeBackgroundResumeLaunchPhase(request, backend, session, { clock = Date.now } = {}) {
   const { agentSpec, assignment, handle } = await reviewerDomain(request);
   const startedAt = clock();
-  const launched = await backend.launch({ handle, agentSpec, assignment, mode: "background" });
+  const launched = await backend.launch({
+    handle,
+    agentSpec,
+    assignment,
+    mode: "background",
+    childAsync: true,
+  });
   const terminal = await backend.awaitTerminal(launched.handle, {
     bindingId: launched.binding.bindingId,
     intent: "run",

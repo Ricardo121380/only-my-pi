@@ -44,6 +44,7 @@ export function compileAgentAssignmentToPiWorkflowScript({
   allowWorktree = false,
   allowProtectedWorktreeProbe = false,
   allowModelOverlay = false,
+  childAsync = false,
 } = {}) {
   assertInputs(agentSpec, assignment);
   const invocation = {
@@ -78,6 +79,8 @@ export function compileAgentAssignmentToPiWorkflowScript({
       ? agentSpec.model.id
       : `${agentSpec.model.provider}/${agentSpec.model.id}`;
   }
+  if (typeof childAsync !== "boolean") throw new TypeError("childAsync must be a boolean");
+  if (childAsync) invocation.async = true;
   // pi-subagents@0.45.2 public runs.run keys accept only letters, numbers,
   // dot, underscore, and hyphen. TaskAssignment ids also allow colon, and a
   // prefix plus a maximum-length id can exceed the upstream 128-byte bound.
@@ -96,6 +99,8 @@ export function compileAgentAssignmentToPiWorkflowScript({
     agentSpecHash: agentSpec.specHash,
     workflowScript,
     workflowScriptDigest: digestValue(workflowScript),
+    workflowKey: workflowName,
+    childAsync,
   });
 }
 
@@ -113,12 +118,15 @@ export function compileAgentAssignmentToPiSpawnRequest(input = {}) {
       worktreeAdmission: managedWorktree
         ? (input.allowProtectedWorktreeProbe === true ? "protected-degraded-probe-v1" : "capability-supported")
         : "not-requested",
+      childLifecycle: input.childAsync === true ? "detached-async" : "foreground",
     },
     params: { workflowScript: compiled.workflowScript, async: true },
     assignmentId: compiled.assignmentId,
     assignmentHash: compiled.assignmentHash,
     agentSpecHash: compiled.agentSpecHash,
     workflowScriptDigest: compiled.workflowScriptDigest,
+    workflowKey: compiled.workflowKey,
+    childAsync: compiled.childAsync,
   });
 }
 
@@ -130,12 +138,16 @@ export function assertPiSubagentsRpcV1CompiledSpawn(value) {
     || value?.source?.kind !== "schema-validated-workflow-compiler"
     || value?.source?.schemaValidated !== true
     || !["not-requested", "capability-supported", "protected-degraded-probe-v1"].includes(value?.source?.worktreeAdmission)
+    || !["foreground", "detached-async"].includes(value?.source?.childLifecycle)
     || value?.params?.async !== true
     || typeof value?.params?.workflowScript !== "string"
     || value.params.workflowScript.trim().length === 0
     || typeof value?.assignmentHash !== "string"
     || typeof value?.agentSpecHash !== "string"
-    || typeof value?.workflowScriptDigest !== "string") {
+    || typeof value?.workflowScriptDigest !== "string"
+    || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/u.test(value?.workflowKey ?? "")
+    || typeof value?.childAsync !== "boolean"
+    || (value.childAsync !== (value.source.childLifecycle === "detached-async"))) {
     fail("spawn requires a schema-validated compiler product", "INVALID_COMPILED_SPAWN");
   }
   if (value.workflowScriptDigest !== digestValue(value.params.workflowScript)) {

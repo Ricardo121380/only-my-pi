@@ -116,7 +116,7 @@ export class PiSubagentsTerminalEventStore {
     }
   }
 
-  async wait(runIdOrIds, { signal, timeoutMs = 30_000 } = {}) {
+  async wait(runIdOrIds, { signal, timeoutMs = 30_000, completionOnly = false } = {}) {
     if (this.disposed) {
       throw new SubagentsError("terminal event store is disposed", {
         code: "ADAPTER_DISPOSED",
@@ -131,8 +131,11 @@ export class PiSubagentsTerminalEventStore {
     const existingConflict = this.conflictAny(runIds);
     if (existingConflict) throw existingConflict;
     const current = this.snapshotAny(runIds);
-    if (current.processTerminal?.state === "unknown"
-      || (current.processTerminal?.state === "observed" && current.completion !== null)) return current;
+    const settled = (snapshot) => completionOnly
+      ? snapshot.completion !== null
+      : snapshot.processTerminal?.state === "unknown"
+        || (snapshot.processTerminal?.state === "observed" && snapshot.completion !== null);
+    if (settled(current)) return current;
     return new Promise((resolve, reject) => {
       let timer;
       const waiter = {
@@ -151,8 +154,7 @@ export class PiSubagentsTerminalEventStore {
             return;
           }
           const snapshot = this.snapshotAny(runIds);
-          if (snapshot.processTerminal?.state === "unknown"
-            || (snapshot.processTerminal?.state === "observed" && snapshot.completion !== null)) {
+          if (settled(snapshot)) {
             waiter.resolve(snapshot);
           }
         },

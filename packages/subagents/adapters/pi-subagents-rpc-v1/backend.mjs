@@ -18,6 +18,7 @@ import {
   createPiSubagentsTerminalReceipt,
   extractPiSubagentsBackendRunMapping,
   normalizePiSubagentsTerminalEvidence,
+  piSubagentsEventRunId,
 } from "./normalization.mjs";
 import { PiSubagentsTerminalEventStore } from "./terminal-store.mjs";
 import {
@@ -111,6 +112,38 @@ function mergeTerminalEvidence(first, second) {
     completion: first?.completion ?? second?.completion ?? null,
     processTerminal: first?.processTerminal ?? second?.processTerminal ?? null,
   };
+}
+
+function detachedChildMapping(completion, accepted, compiled) {
+  const rootIds = new Set([accepted.mapping.backendRunId, accepted.mapping.backendAsyncId].filter(Boolean));
+  if (!rootIds.has(piSubagentsEventRunId(completion))) {
+    throw new SubagentsError("detached workflow completion does not correlate to its control run", {
+      code: "PI_SUBAGENTS_DETACHED_ROOT_MISMATCH",
+      category: "correlation",
+    });
+  }
+  const state = completion?.state ?? completion?.status;
+  const results = completion?.results;
+  const child = Array.isArray(results) && results.length === 1 ? results[0] : null;
+  const childRunId = typeof child?.runId === "string" && child.runId.length > 0 ? child.runId : null;
+  if (!["complete", "completed"].includes(state)
+    || completion?.success !== true
+    || child === null
+    || child.agent !== compiled.workflowKey
+    || child.success === false
+    || childRunId === null
+    || rootIds.has(childRunId)) {
+    throw new SubagentsError("detached workflow did not expose one correlated child run", {
+      code: "PI_SUBAGENTS_DETACHED_CHILD_MISSING",
+      category: "correlation",
+      details: {
+        state,
+        resultCount: Array.isArray(results) ? results.length : null,
+        childRunIdPresent: childRunId !== null,
+      },
+    });
+  }
+  return Object.freeze({ backendRunId: childRunId, backendAsyncId: childRunId });
 }
 
 async function boundedTerminalTransportWait(factory, { signal, timeoutMs }) {
@@ -303,6 +336,7 @@ export class PiSubagentsRpcV1Backend {
     allowWorktree = false,
     allowProtectedWorktreeProbe = false,
     allowModelOverlay = false,
+    childAsync = false,
     signal,
   } = {}) {
     assertHandleForBackend(handle);
@@ -340,6 +374,7 @@ export class PiSubagentsRpcV1Backend {
       allowWorktree,
       allowProtectedWorktreeProbe,
       allowModelOverlay,
+      childAsync,
     });
     const request = compiled ?? expectedRequest;
     if (compiled !== undefined) {
@@ -359,14 +394,31 @@ export class PiSubagentsRpcV1Backend {
       }
     }
     const accepted = await this.#spawnCompiled(request, { signal });
-    this.#assertMappingAvailable(handle.handleId, accepted.mapping);
+    let mapping = accepted.mapping;
+    if (childAsync) {
+      if (mode !== "background") throw new TypeError("childAsync requires background mode");
+      if (this.eventStore.observable !== 1) {
+        throw new SubagentsError("detached child mapping requires public async-complete events", {
+          code: "PI_SUBAGENTS_DETACHED_MAPPING_UNOBSERVABLE",
+          category: "capability",
+        });
+      }
+      const rootIds = this.#mappingIdentifiers(accepted.mapping);
+      const observed = await this.eventStore.wait(rootIds, {
+        signal,
+        timeoutMs: this.timeoutMs,
+        completionOnly: true,
+      });
+      mapping = detachedChildMapping(observed.completion, accepted, request);
+    }
+    this.#assertMappingAvailable(handle.handleId, mapping);
     const boundHandle = bindBackendRun(handle, {
       backendId: PI_SUBAGENTS_RPC_V1_BACKEND_ID,
       backendVersion: PI_SUBAGENTS_RPC_V1_BACKEND_VERSION,
       protocolVersion: PI_SUBAGENTS_RPC_V1_PROTOCOL_VERSION,
       lifecycle: "launch",
       requestId: accepted.requestId,
-      ...accepted.mapping,
+      ...mapping,
     });
     const binding = activeBackendBinding(boundHandle);
     this.#recordMapping(boundHandle, binding);
