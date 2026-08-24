@@ -78,7 +78,12 @@ export function compileAgentAssignmentToPiWorkflowScript({
       ? agentSpec.model.id
       : `${agentSpec.model.provider}/${agentSpec.model.id}`;
   }
-  const workflowName = `assignment:${assignment.assignmentId}`;
+  // pi-subagents@0.45.2 public runs.run keys accept only letters, numbers,
+  // dot, underscore, and hyphen. TaskAssignment ids also allow colon, and a
+  // prefix plus a maximum-length id can exceed the upstream 128-byte bound.
+  // Use the already canonical assignment digest to produce a short,
+  // collision-resistant key that is valid for every governed assignment.
+  const workflowName = `assignment-${assignment.assignmentHash.slice(7, 39)}`;
   const workflowScript = `return await runs.run(${safeJson(workflowName)}, ${safeJson(invocation)});`;
   if (Buffer.byteLength(workflowScript, "utf8") > MAX_WORKFLOW_SCRIPT_BYTES) {
     fail("compiled workflowScript exceeds the audited RPC payload limit", "WORKFLOW_SCRIPT_TOO_LARGE");

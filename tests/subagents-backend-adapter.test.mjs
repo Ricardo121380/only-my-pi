@@ -192,7 +192,9 @@ test("compiler emits a statement body and JSON-safe invocation, never raw execut
     },
   });
   assert.equal(observed.length, 1);
-  assert.equal(observed[0].name, "assignment:review-01");
+  assert.equal(observed[0].name, `assignment-${fixture.assignment.assignmentHash.slice(7, 39)}`);
+  assert.match(observed[0].name, /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/u);
+  assert.equal(observed[0].name.includes(":"), false);
   assert.equal(observed[0].invocation.agent, "omp-reviewer");
   assert.equal(observed[0].invocation.task, dangerous);
   assert.deepEqual(observed[0].invocation.outputSchema, { type: "object", required: ["verdict"] });
