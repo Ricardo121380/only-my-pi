@@ -213,6 +213,25 @@ changed path. The guarded writer modified only a synthetic fixture, and the
 parent reconstructed and retained a detached disposable review worktree;
 source `HEAD`, commit history, and worktree remained unchanged.
 
+The branch now additionally contains the complete Stable chain. Source commit
+`2207d7230217ebd9efdf0f308e6830f52a9d38ff` is followed directly by
+evidence-only commit `076052d12cfa3b4b68cd58b560252909eb3ba161` and
+receipt-only commit `b205a0b6a848fe5c5785da502dd424354c2c795d`. The Stable
+receipt reports `requested=stable`, `achieved=stable`, `eligible=true`, no
+findings, 27/27 deterministic gates, and 4/4 protected gates across 31 required
+gates. The five new documents use Stable-specific paths and do not overwrite
+the historical Alpha/Beta evidence families.
+
+The Stable OpenCode Go `deepseek-v4-flash` captures used seven children,
+23,004 tokens, approximately $0.016334112, 22,214 bounded output bytes, and
+185,566 ms of aggregate scenario wall time: read-only terminal/cancel/two-item
+BatchSwarm used 7,605 tokens and about $0.0041074; two-process
+background/resume used 9,546 tokens and about $0.007916096; guarded synthetic
+writer used 5,853 tokens and about $0.004310616. Every evidence document binds
+the Stable source, compatibility matrix, promotion policy, trust policy,
+runtime row, authorization and proof digests, and stores no raw output, host
+path, credential, session ID, patch bytes, or changed paths.
+
 The deterministic tests use
 injected transports and temporary roots. A separate disposable-root,
 no-model Pi probe now proves the public `pi-subagents@0.45.2` `ready`/correlated
@@ -249,20 +268,19 @@ the separately authorized live no-model capability/visibility probe now pass.
 The digest-bound no-model receipt is
 [`../contracts/subagents/pi-subagents-live-no-model-evidence.json`](../contracts/subagents/pi-subagents-live-no-model-evidence.json).
 It proves startup, public RPC compatibility, and tool ownership only; it is not
-being reinterpreted as child evidence. Separate signed Beta documents now prove
+being reinterpreted as child evidence. Separate signed Stable documents prove
 live Agent terminal/cancellation, two-item homogeneous BatchSwarm,
 two-parent-process background/resume with metering, and one guarded synthetic
-writer handoff. Dynamic SwarmGoal execution, general production-repository
-writer admission, and Stable cross-platform/promotion closure remain
-deliberately unproved. The Stable development branch now has deterministic
-resource-lifecycle soak coverage, and the exact darwin/Node 22.19.0/Node
-24.19.0 rows record `soakResourceLeak: PASS`. Producer
-implementations and deterministic tests are still not live evidence by
-themselves; only the five imported, source-bound documents satisfy those
+writer handoff. Exact darwin/Node 22.19.0/Node 24.19.0 rows record
+`soakResourceLeak: PASS`, and the cumulative Stable receipt closes the declared
+promotion contract. Dynamic SwarmGoal execution and general
+production-repository writer admission remain deliberately outside this claim.
+Producer implementations and deterministic tests are not live evidence by
+themselves; only the five imported, source-bound documents satisfy the
 protected claims.
 Historical M5 receipts must not be described as successor evidence.
 
-The current Stable development branch locally proves:
+The Stable source and receipt prove:
 
 - `npm test`: **587/587** pass;
 - `tests/subagents-resource-leak.test.mjs`: **7/7** lifecycle soak groups pass
@@ -278,13 +296,11 @@ The current Stable development branch locally proves:
 - adapter disposal now settles pending requests/waiters through injected,
   auditable schedulers instead of leaving a real timer alive until timeout.
 
-This is deterministic Stable input, not a Stable promotion receipt. Exact
-Linux Node 22.19.0 and Node 24.19.0 CI plus the compatibility matrix are now
-closed, while a new cumulative source-bound protected-evidence chain remains
-required before Stable can be claimed. The prior Beta evidence is historically
-valid for its pinned source, but cannot be silently rebound to a changed Stable
-source; therefore the new source baseline deliberately resets every live scope
-to `NOT_RUN_BY_POLICY`.
+The exact Linux Node 22.19.0 and Node 24.19.0 CI lanes, compatibility matrix,
+resource-lifecycle soak, cumulative source-bound protected evidence and Stable
+receipt are now closed. Historical Beta evidence remains valid only for its
+pinned source and was not silently rebound; the Stable source used a new
+signer, three new one-time authorizations and five new evidence files.
 
 Historical Beta source evidence and release receipt:
 
@@ -311,23 +327,22 @@ Historical Beta source evidence and release receipt:
   Static doctor retains only the two explicit inactive-candidate warnings.
 
 The S5 deterministic runner, protected importer, S5-A capture/signing path,
-S5-B two-process background-resume path, and S5-C guarded-writer path have now
-completed the exact source/evidence/receipt protocol above.
-All three capture plan commands currently report `CONFIGURED_UNAVAILABLE`,
-with Provider/child/signer all `NOT_STARTED`, because the three used external
-authorizations were deliberately downgraded to `operator-template` after
-capture. The
-source-pinned trust policy now includes an independent, time-bounded Beta
-public signer scoped to the cumulative five Alpha/Beta evidence classes; it
-does not authorize execution by itself. All three capture commands require a
+S5-B two-process background-resume path, S5-C guarded-writer path and Stable
+promotion runner have completed the exact source/evidence/receipt protocol
+above. All three capture plan commands currently report
+`CONFIGURED_UNAVAILABLE`, with Provider/child/signer all `NOT_STARTED`, because
+the three Stable external authorizations were deliberately downgraded to
+`operator-template` after capture. The source-pinned trust policy contains
+distinct, time-bounded Alpha, Beta and Stable public signers; a public key does
+not authorize execution by itself. All three capture commands require a
 credential-free Provider descriptor whose digest is bound by their respective
 authorization. The commands'
 `declaredEndpointHosts` are auditable metadata, not OS network enforcement.
 The three authorization contracts remain non-interchangeable and cannot be
-reused to start another live capture. Beta closure is complete for the exact
-source/evidence/receipt chain above. Stable additionally requires its declared
-soak and compatibility gates; Beta and a checked-in public key do not imply
-Stable authorization or eligibility.
+reused to start another live capture. Stable closure is complete only for the
+exact source/evidence/receipt chain above. It authorizes no merge, tag, package
+publish, release, real Pi home mutation, general writer mode, or automatic
+integration.
 
 ## Current external Pi baseline
 

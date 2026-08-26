@@ -1,7 +1,7 @@
 # only-my-pi：统一 Subagent、Workflow 与 UltraRun 后续开发计划
 
 > 版本：2026-08-18
-> 状态：S0–S5 Beta closure 已完成；source `6004e61`、evidence-only `1d19b5c`、receipt-only `cb1a8db`；OpenCode Go DeepSeek V4 Flash 完成 Agent terminal/cancel、2-item BatchSwarm、两进程 background/resume 与 guarded synthetic writer，25 deterministic + 4 protected gates 全部 PASS。Stable 的 deterministic resource-lifecycle increment 已完成本机 587/587 回归，并在 exact Linux Node 22.19.0/24.19.0 CI 闭合 compatibility rows；新 source-bound cumulative evidence 与 Stable receipt 尚未完成
+> 状态：S0–S5 Stable closure 已完成；source `2207d72`、evidence-only `076052d`、receipt-only `b205a0b`；OpenCode Go DeepSeek V4 Flash 完成 Agent terminal/cancel、2-item BatchSwarm、两进程 background/resume 与 guarded synthetic writer，共 7 children、23,004 tokens、约 $0.016334112；27 deterministic + 4 protected gates 全部 PASS，exact Linux Node 22.19.0/24.19.0 compatibility 与 resource-lifecycle soak 已闭合
 > 前置基线：M0–M7 Harness MVP 已按 [`2026-08-16-only-my-pi-development-plan.md`](2026-08-16-only-my-pi-development-plan.md) 完成并合入 `main`
 > 配套 Codex Goal：[`../../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../../codex/goals/develop-only-my-pi-subagents-ultrarun.md)
 > 产品边界：纯 Pi 原生；参考 Kimi/Claude/DeepSeek 等源码与公开合同，不接入 Kimi runtime，不重写 Pi agent loop、Provider 或 session engine
