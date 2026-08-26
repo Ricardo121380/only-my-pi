@@ -34,7 +34,23 @@
       ],
       "notBefore": "2026-08-24T01:30:00.000Z",
       "notAfter": "2026-08-24T09:30:00.000Z"
+    },
+    {
+      "id": "local-stable-20260827",
+      "status": "active",
+      "authorizationClass": "local-operator-protected-live",
+      "publicKeySpki": "MCowBQYDK2VwAyEAo69C1sP640qHzSuSFgTrkmtEVYGbvn2eWX5hSzFlf9U=",
+      "publicKeyFingerprint": "sha256:242a2488897611677f4b4e196aba5a8aafec3fff92443aa6e152300091b67cc6",
+      "evidenceIds": [
+        "background-resume",
+        "guarded-writer-integration",
+        "live-agent-cancel",
+        "live-agent-terminal",
+        "live-batch-terminal"
+      ],
+      "notBefore": "2026-08-26T17:00:00.000Z",
+      "notAfter": "2026-08-27T05:00:00.000Z"
     }
   ],
-  "policyDigest": "sha256:c6e709a93ed4f73c495a20e137fdba8c6ff12a827ca6332ba87f4306aac3e5ab"
+  "policyDigest": "sha256:80012b09f338145213e8df5076b0ae3d3114387167e4744f77366e2612f1e2c6"
 }
