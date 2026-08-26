@@ -1,0 +1,81 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-protected-evidence-v1.schema.json",
+  "attestation": {
+    "authorizationDigest": "sha256:71d9ac9e9dab777e6fd75f2b67a38af759f79c4d4ffadce0b26815a25b1c1f78",
+    "captureDigest": "sha256:a3f0a3cc1ec19ee75d5e79a99812e01a8487389e41a8ae3359a426292c1922b2",
+    "class": "operator-authorized-live-import",
+    "publicKeyFingerprint": "sha256:242a2488897611677f4b4e196aba5a8aafec3fff92443aa6e152300091b67cc6",
+    "signature": "D7tj3wK0QnXKU8/1mpbfjIMkDwSZMerpzrDVcnIN0EpoozZ8Rdv4OrncS1Ei+Xn4LT+NR6d2bbzhaApx1FYoDg==",
+    "signedPayloadDigest": "sha256:d2940e16d37b4626abbef1cf832796169c1e1a46c5903733ab0b6ce72efc5579",
+    "signerId": "local-stable-20260827"
+  },
+  "authorization": {
+    "disposableRoot": true,
+    "liveChildDispatch": "AUTHORIZED",
+    "liveWriter": "NOT_RUN_BY_POLICY",
+    "providerRequests": "AUTHORIZED",
+    "realPiHome": "NOT_TOUCHED"
+  },
+  "claims": {
+    "authoritativeTerminals": 2,
+    "autoIntegrated": false,
+    "backgroundResume": true,
+    "batchItemCount": 0,
+    "cancelObserved": false,
+    "managedWorktree": false,
+    "parentDiffVerified": false
+  },
+  "compatibilityRowId": "darwin-arm64-node-25.8.0",
+  "contractStatus": "protected-live-evidence",
+  "environment": {
+    "backend": "pi-subagents@0.45.2",
+    "node": "25.8.0",
+    "pi": "0.84.1",
+    "platform": "darwin-arm64"
+  },
+  "evidenceDigest": "sha256:6f0d5feac7ea3d8944419f9a86c1923895403a762f5eea1fac3cc366c28e1e6f",
+  "formatVersion": 1,
+  "id": "background-resume",
+  "matrixDigest": "sha256:80362d880ed09b42f2b09206717cc52729daa6722484095772181d1b116b022c",
+  "observedAt": "2026-08-26T17:21:50.428Z",
+  "policyDigest": "sha256:5e0b7ab53b3a2cd5e93ad69a6f53e93141509494094da66056a7bb517ce94e6d",
+  "privacy": {
+    "credentialsStored": false,
+    "hostPathsStored": false,
+    "rawOutputStored": false,
+    "sessionIdsStored": false
+  },
+  "proofs": [
+    {
+      "digest": "sha256:d28c2319a572b61e736e1b4703c45f56cec33bcab6e2f766a86f64a9e8604fd3",
+      "kind": "backend-rebind"
+    },
+    {
+      "digest": "sha256:74115cbbfaadca6ce29f4003be212c0993825d1e2e0e6f9975137d0f63fb10ef",
+      "kind": "background-spawn"
+    },
+    {
+      "digest": "sha256:8226a2c953c417610c450d045dfcd2e1960fe8c45f381d724f194a7e61669542",
+      "kind": "parent-session-reload"
+    },
+    {
+      "digest": "sha256:2426c890b7c3880cb33f3dc5103c89974a68bfc9c4494f921519ca3edfe64778",
+      "kind": "process-terminal"
+    },
+    {
+      "digest": "sha256:2c770a1e62b188f9457bea73d5ff40f1c042494406f281203af719803be636c1",
+      "kind": "resume-request"
+    },
+    {
+      "digest": "sha256:264a671205a455e01b23a68ac15c42703fae56e3cc35b4e8adc981511a90b53b",
+      "kind": "terminal-receipt"
+    },
+    {
+      "digest": "sha256:c1f85d5147413b5f12925e6d3ecb4b867084076de75fd5ba166830c8453fde1f",
+      "kind": "usage-metering"
+    }
+  ],
+  "sourceCommit": "2207d7230217ebd9efdf0f308e6830f52a9d38ff",
+  "status": "PASS",
+  "trustPolicyDigest": "sha256:80012b09f338145213e8df5076b0ae3d3114387167e4744f77366e2612f1e2c6"
+}
