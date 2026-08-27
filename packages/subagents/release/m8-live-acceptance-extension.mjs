@@ -86,8 +86,9 @@ export function m8ProtectedToolCallLimit({ agentSpec, handle } = {}) {
 }
 
 export function m8ProtectedTurnLimit({ agentSpec, handle } = {}) {
-  if (handle?.local?.runId?.startsWith("m8-goal-")) return 2;
-  return ["researcher", "source-verifier"].includes(agentSpec?.templateId) ? 4 : 2;
+  if (handle?.local?.runId?.startsWith("m8-cancel-")) return 2;
+  if (handle?.local?.runId?.startsWith("m8-goal-")) return 1;
+  return ["researcher", "source-verifier"].includes(agentSpec?.templateId) ? 4 : 1;
 }
 
 export function m8ProtectedGoalPlannerPolicy({ plannerResult, revision, settledNodeCount } = {}) {

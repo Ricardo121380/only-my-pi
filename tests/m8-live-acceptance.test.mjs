@@ -100,10 +100,12 @@ test("D13 evidence requires the full source-bound low-sensitivity assertion matr
 test("protected Goal and public Web runs have distinct monotonic tool and turn ceilings", () => {
   const researcher = { templateId: "researcher" };
   assert.equal(m8ProtectedToolCallLimit({ agentSpec: researcher, handle: { local: { runId: "m8-goal-source-r0" } } }), 0);
-  assert.equal(m8ProtectedTurnLimit({ agentSpec: researcher, handle: { local: { runId: "m8-goal-source-r0" } } }), 2);
+  assert.equal(m8ProtectedTurnLimit({ agentSpec: researcher, handle: { local: { runId: "m8-goal-source-r0" } } }), 1);
   assert.equal(m8ProtectedToolCallLimit({ agentSpec: researcher, handle: { local: { runId: "m8-web-source" } } }), 4);
   assert.equal(m8ProtectedTurnLimit({ agentSpec: researcher, handle: { local: { runId: "m8-web-source" } } }), 4);
   assert.equal(m8ProtectedToolCallLimit({ agentSpec: { templateId: "reviewer" }, handle: { local: { runId: "m8-agent-source" } } }), 0);
+  assert.equal(m8ProtectedTurnLimit({ agentSpec: { templateId: "reviewer" }, handle: { local: { runId: "m8-agent-source" } } }), 1);
+  assert.equal(m8ProtectedTurnLimit({ agentSpec: { templateId: "reviewer" }, handle: { local: { runId: "m8-cancel-source" } } }), 2);
 });
 
 test("protected Goal convergence requires a later revision plus verified reusable evidence", () => {
