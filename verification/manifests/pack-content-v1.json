@@ -65,6 +65,17 @@
     "packages/subagents/",
     "packages/adapters/"
   ],
+  "allowedBundledPrefixes": [
+    "node_modules/ajv/",
+    "node_modules/ajv-formats/",
+    "node_modules/fast-deep-equal/",
+    "node_modules/fast-uri/",
+    "node_modules/json-schema-traverse/",
+    "node_modules/minipass/",
+    "node_modules/require-from-string/",
+    "node_modules/semver/",
+    "node_modules/ssri/"
+  ],
   "required": [
     "package.json",
     "README.md",

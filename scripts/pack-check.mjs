@@ -29,6 +29,7 @@ export function validatePackEntries(entries, manifest) {
 
   const allowedExact = new Set(manifest?.allowedExact ?? []);
   const allowedPrefixes = manifest?.allowedPrefixes ?? [];
+  const allowedBundledPrefixes = manifest?.allowedBundledPrefixes ?? [];
   const forbiddenPrefixes = manifest?.forbiddenPrefixes ?? [];
   const forbiddenSegments = manifest?.forbiddenSegments ?? [];
   const forbiddenPatterns = (manifest?.forbiddenBasenamePatterns ?? []).map((pattern) => new RegExp(pattern, "i"));
@@ -44,16 +45,21 @@ export function validatePackEntries(entries, manifest) {
     }
     normalized.push(file);
     const basename = path.posix.basename(file);
+    const bundledDependency = allowedBundledPrefixes.some((prefix) => file.startsWith(prefix));
+    const nodeModulesOccurrences = (`/${file}`.match(/\/node_modules\//gu) ?? []).length;
     if (forbiddenPrefixes.some((prefix) => file.startsWith(prefix))) {
       errors.push(`forbidden pack prefix: ${file}`);
     }
-    if (forbiddenSegments.some((segment) => `/${file}`.includes(segment))) {
+    for (const segment of forbiddenSegments) {
+      if (!`/${file}`.includes(segment)) continue;
+      if (bundledDependency && nodeModulesOccurrences === 1 && ["/node_modules/", "/fixtures/"].includes(segment)) continue;
       errors.push(`forbidden pack segment: ${file}`);
+      break;
     }
-    if (forbiddenPatterns.some((pattern) => pattern.test(basename))) {
+    if (!bundledDependency && forbiddenPatterns.some((pattern) => pattern.test(basename))) {
       errors.push(`forbidden pack basename: ${file}`);
     }
-    if (!allowedExact.has(file) && !allowedPrefixes.some((prefix) => file.startsWith(prefix))) {
+    if (!allowedExact.has(file) && !allowedPrefixes.some((prefix) => file.startsWith(prefix)) && !bundledDependency) {
       errors.push(`pack entry is outside allowlist: ${file}`);
     }
   }

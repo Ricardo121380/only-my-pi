@@ -19,10 +19,17 @@ test("pack allowlist rejects receipts, fixtures, tests, traversal, and unlisted 
     "extensions/example/index.test.mjs",
     "../outside.txt",
     "docs/research/report.md",
+    "node_modules/unlisted-package/index.js",
+    "node_modules/ajv/node_modules/unlisted-package/index.js",
   ]) {
     const result = validatePackEntries([...manifest.required, file], manifest);
     assert.equal(result.ok, false, file);
   }
+});
+
+test("pack allowlist accepts only the exact bundled runtime dependency roots", () => {
+  const result = validatePackEntries([...manifest.required, "node_modules/ajv/dist/ajv.js", "node_modules/minipass/dist/commonjs/index.js"], manifest);
+  assert.equal(result.ok, true, JSON.stringify(result.errors));
 });
 
 test("npm pack content is constrained by the positive allowlist", () => {
@@ -32,6 +39,8 @@ test("npm pack content is constrained by the positive allowlist", () => {
   assert.ok(result.files.includes("package.json"));
   assert.ok(!result.files.some((file) => file.startsWith("verification/")));
   assert.ok(!result.files.some((file) => file.startsWith("codex/")));
+  assert.ok(result.files.some((file) => file.startsWith("node_modules/ajv/")));
+  assert.ok(!result.files.some((file) => file.startsWith("node_modules/@earendil-works/")));
 });
 
 test("the packaged static doctor accepts excluded source evidence but requires every packaged resource", async (t) => {

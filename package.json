@@ -145,6 +145,12 @@
     "semver": "7.8.5",
     "ssri": "13.0.1"
   },
+  "bundledDependencies": [
+    "ajv",
+    "ajv-formats",
+    "semver",
+    "ssri"
+  ],
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"
   },

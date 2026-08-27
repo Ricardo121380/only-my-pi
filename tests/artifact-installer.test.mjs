@@ -85,6 +85,7 @@ test("artifact apply revalidates, extracts with scripts disabled, and runs only 
   ]);
   assert.equal(calls[0].options.env.npm_config_ignore_scripts, "true");
   assert.equal(calls[0].options.env.npm_config_cache, paths.npmCache);
+  assert.notEqual(calls[0].options.env.npm_config_userconfig, calls[0].options.env.npm_config_globalconfig);
   assert.equal(Object.hasOwn(calls[0].options.env, "NPM_TOKEN"), false);
   assert.equal(calls[1].command, process.execPath);
   assert.deepEqual(calls[1].argv.slice(1), ["bootstrap", "--profile", "daily", "--config-root", paths.configRoot, "--apply", "--yes", "--json"]);

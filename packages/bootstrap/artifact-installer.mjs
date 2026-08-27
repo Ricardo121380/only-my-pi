@@ -174,9 +174,10 @@ export function createArtifactProcessRunner({ spawnImpl = spawn, timeoutMs = DEF
 function safeEnvironment({ runtimeRoot, npmCache }) {
   const home = path.join(runtimeRoot, "home");
   const tmp = path.join(runtimeRoot, "tmp");
-  const npmrc = path.join(runtimeRoot, "npmrc");
+  const userNpmrc = path.join(runtimeRoot, "user.npmrc");
+  const globalNpmrc = path.join(runtimeRoot, "global.npmrc");
   return Object.freeze({
-    paths: Object.freeze({ home, tmp, npmrc }),
+    paths: Object.freeze({ home, tmp, userNpmrc, globalNpmrc }),
     env: Object.freeze({
       PATH: process.env.PATH ?? "",
       HOME: home,
@@ -186,8 +187,8 @@ function safeEnvironment({ runtimeRoot, npmCache }) {
       XDG_DATA_HOME: path.join(runtimeRoot, "xdg-data"),
       NO_COLOR: "1",
       TERM: "dumb",
-      npm_config_userconfig: npmrc,
-      npm_config_globalconfig: npmrc,
+      npm_config_userconfig: userNpmrc,
+      npm_config_globalconfig: globalNpmrc,
       npm_config_cache: npmCache,
       npm_config_ignore_scripts: "true",
       npm_config_audit: "false",
@@ -205,7 +206,11 @@ async function prepareRuntime(runtimeRoot, paths) {
     path.join(runtimeRoot, "xdg-config"),
     path.join(runtimeRoot, "xdg-data"),
   ].map((target) => fs.mkdir(target, { recursive: true, mode: 0o700 })));
-  await fs.writeFile(paths.npmrc, "audit=false\nfund=false\nignore-scripts=true\nupdate-notifier=false\n", { mode: 0o600, flag: "wx" });
+  const npmrc = "audit=false\nfund=false\nignore-scripts=true\nupdate-notifier=false\n";
+  await Promise.all([
+    fs.writeFile(paths.userNpmrc, npmrc, { mode: 0o600, flag: "wx" }),
+    fs.writeFile(paths.globalNpmrc, npmrc, { mode: 0o600, flag: "wx" }),
+  ]);
 }
 
 async function assertInstalledPackage(installRoot) {
