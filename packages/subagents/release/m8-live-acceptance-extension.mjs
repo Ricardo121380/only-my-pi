@@ -398,6 +398,7 @@ export default function m8LiveAcceptanceExtension(pi) {
           goalPlannerResultPolicy: m8ProtectedGoalPlannerPolicy,
           goalWebEnabled: false,
           allowVerifiedReuseCompletion: true,
+          goalExecutionBudgetDivisor: 1,
           toolCallLimitResolver: m8ProtectedToolCallLimit,
           turnLimitResolver: m8ProtectedTurnLimit,
         },

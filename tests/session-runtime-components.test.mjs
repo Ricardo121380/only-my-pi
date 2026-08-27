@@ -396,8 +396,12 @@ test("Goal maker selection is restricted to the two registered research roles", 
   assert.equal(offline.workflowDefinition.flow.steps[1].budget.maxTokens, Math.floor(revisionTokens * 0.33));
   assert.equal(offline.workflowDefinition.flow.steps[2].budget.maxTokens, Math.floor(revisionTokens * 0.33));
   assert.ok(offline.workflowDefinition.flow.steps.reduce((sum, step) => sum + step.budget.maxTokens, 0) <= revisionTokens);
+  const verifiedReuse = buildGoalProposal(plannerResult, context, configuration().budget, { makerTemplateSelector: () => "reviewer", webEnabled: false, executionBudgetDivisor: 1 });
+  assert.equal(verifiedReuse.workflowDefinition.budget.maxTokens, configuration().budget.maxTotalTokens);
+  assert.equal(verifiedReuse.workflowDefinition.flow.steps.reduce((sum, step) => sum + step.budget.maxTokens, 0), configuration().budget.maxTotalTokens);
   assert.throws(() => buildGoalProposal(plannerResult, context, configuration().budget, { makerTemplateSelector: () => "reviewer" }), { code: "GOAL_MAKER_SELECTOR_INVALID" });
   assert.throws(() => buildGoalProposal(plannerResult, context, configuration().budget, { webEnabled: "no" }), { code: "GOAL_WEB_SELECTOR_INVALID" });
+  assert.throws(() => buildGoalProposal(plannerResult, context, configuration().budget, { executionBudgetDivisor: 3 }), { code: "GOAL_EXECUTION_BUDGET_DIVISOR_INVALID" });
 });
 
 test("composer accepts every injected session service and disposes their public handles once", async (t) => {
@@ -437,6 +441,11 @@ test("composer fails closed on missing session identity, missing Web entry, and 
   loaderDependencies.subagentsPackage = { root: loaderRoot, manifest: { name: "pi-subagents", version: "0.45.2" } };
   delete loaderDependencies.registerCapabilityCeiling;
   await assert.rejects(createSessionRuntimeComposer({ pi: {}, rootDir, configRoot: loaderRoot, getContext: () => ({ cwd: rootDir, sessionManager: { getSessionId: () => "loader-session" } }), dependencies: loaderDependencies }), { code: "CAPABILITY_CEILING_LOADER_UNAVAILABLE" });
+
+  const divisorRoot = await temporary(t, "omp-invalid-goal-divisor-");
+  const divisorDependencies = injectedComposerDependencies(composedConfiguration());
+  divisorDependencies.goalExecutionBudgetDivisor = 1;
+  await assert.rejects(createSessionRuntimeComposer({ pi: {}, rootDir, configRoot: divisorRoot, getContext: () => ({ cwd: rootDir, sessionManager: { getSessionId: () => "divisor-session" } }), dependencies: divisorDependencies }), { code: "GOAL_EXECUTION_BUDGET_DIVISOR_INVALID" });
 });
 
 test("raw Ultra executors preserve failed planning, awaiting approval, blocked verification, and legacy workflow routes", async (t) => {

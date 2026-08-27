@@ -431,8 +431,9 @@ const GOAL_PLANNER_OUTPUT_SCHEMA = Object.freeze({
   required: ["questions", "coveredDimensions", "remainingDimensions", "coverage", "progress", "decision", "reason"],
 });
 
-function goalAgentNode(id, specId, task, budget, web = false, budgetShare = 1 / 3) {
+function goalAgentNode(id, specId, task, budget, web = false, budgetShare = 1 / 3, executionBudgetDivisor = budget.maxGoalRevisions) {
   if (typeof budgetShare !== "number" || !Number.isFinite(budgetShare) || budgetShare <= 0 || budgetShare > 1) fail("GOAL_NODE_BUDGET_SHARE_INVALID", "Goal node budget share is invalid");
+  if (!Number.isSafeInteger(executionBudgetDivisor) || executionBudgetDivisor < 1 || executionBudgetDivisor > budget.maxGoalRevisions) fail("GOAL_EXECUTION_BUDGET_DIVISOR_INVALID", "Goal execution budget divisor is invalid");
   const policy = {
     workspace: "shared-read-only",
     mutation: "none",
@@ -446,14 +447,15 @@ function goalAgentNode(id, specId, task, budget, web = false, budgetShare = 1 / 
     assignment: { taskTemplateRef: task },
     outputSchemaRef: "research-result",
     policy,
-    budget: { maxAttempts: 1, timeoutMs: Math.max(1_000, Math.floor((budget.maxWallSeconds * 1000) / budget.maxGoalRevisions / 3)), maxOutputBytes: Math.min(budget.maxOutputBytesPerChild, Math.floor((budget.maxTotalOutputBytes / budget.maxGoalRevisions) * budgetShare)), maxTokens: Math.max(1, Math.floor((budget.maxTotalTokens / budget.maxGoalRevisions) * budgetShare)), maxCostUsd: (budget.maxCostUsd / budget.maxGoalRevisions) * budgetShare },
+    budget: { maxAttempts: 1, timeoutMs: Math.max(1_000, Math.floor((budget.maxWallSeconds * 1000) / executionBudgetDivisor / 3)), maxOutputBytes: Math.min(budget.maxOutputBytesPerChild, Math.floor((budget.maxTotalOutputBytes / executionBudgetDivisor) * budgetShare)), maxTokens: Math.max(1, Math.floor((budget.maxTotalTokens / executionBudgetDivisor) * budgetShare)), maxCostUsd: (budget.maxCostUsd / executionBudgetDivisor) * budgetShare },
     cache: { mode: "content-addressed", keyInputs: ["assignment", "dependencies"] },
     idempotency: "content-addressed",
   };
 }
 
-function buildGoalProposal(plannerResult, context, budget, { makerTemplateSelector, webEnabled = true } = {}) {
+function buildGoalProposal(plannerResult, context, budget, { makerTemplateSelector, webEnabled = true, executionBudgetDivisor = budget.maxGoalRevisions } = {}) {
   if (typeof webEnabled !== "boolean") fail("GOAL_WEB_SELECTOR_INVALID", "Goal Web selection must be boolean");
+  if (!Number.isSafeInteger(executionBudgetDivisor) || executionBudgetDivisor < 1 || executionBudgetDivisor > budget.maxGoalRevisions) fail("GOAL_EXECUTION_BUDGET_DIVISOR_INVALID", "Goal execution budget divisor is invalid");
   const suffix = `r${context.revision}`;
   const defaultMakerTemplate = context.revision % 2 === 0 ? "researcher" : "source-verifier";
   const makerTemplate = typeof makerTemplateSelector === "function"
@@ -477,10 +479,10 @@ function buildGoalProposal(plannerResult, context, budget, { makerTemplateSelect
     egress: { web: webEnabled ? "allow" : "deny", mcp: "deny", provider: "allow" },
     tools: { allow: webEnabled ? ["read", "web"] : ["read"], deny: webEnabled ? ["bash", "edit", "write"] : ["bash", "edit", "write", "web"] },
   };
-  const maxRevisionTokens = Math.max(3, Math.floor(budget.maxTotalTokens / budget.maxGoalRevisions));
-  const maxRevisionCost = budget.maxCostUsd / budget.maxGoalRevisions;
-  const maxRevisionWallMs = Math.floor((budget.maxWallSeconds * 1000) / budget.maxGoalRevisions);
-  const maxRevisionOutputBytes = Math.floor(budget.maxTotalOutputBytes / budget.maxGoalRevisions);
+  const maxRevisionTokens = Math.max(3, Math.floor(budget.maxTotalTokens / executionBudgetDivisor));
+  const maxRevisionCost = budget.maxCostUsd / executionBudgetDivisor;
+  const maxRevisionWallMs = Math.floor((budget.maxWallSeconds * 1000) / executionBudgetDivisor);
+  const maxRevisionOutputBytes = Math.floor(budget.maxTotalOutputBytes / executionBudgetDivisor);
   const workflowDefinition = {
     $schema: "https://github.com/Ricardo121380/only-my-pi/schemas/workflow-definition-v2.schema.json",
     formatVersion: 2,
@@ -495,9 +497,9 @@ function buildGoalProposal(plannerResult, context, budget, { makerTemplateSelect
       steps: [
         goalAgentNode(`maker-${suffix}`, ids.maker, webEnabled
           ? "Goal evidence maker: investigate the planner questions using only the approved public Web tools and return structured evidence."
-          : "Goal evidence maker: review the supplied bounded objective facts without external tools and return structured evidence.", budget, webEnabled, webEnabled ? 0.5 : 0.34),
-        goalAgentNode(`synthesize-${suffix}`, ids.synth, "Goal artifact synthesis: combine upstream ArtifactRefs against the bound objective without inventing evidence.", budget, false, webEnabled ? 0.25 : 0.33),
-        goalAgentNode(`verify-${suffix}`, ids.verify, "Fresh Goal artifact verification with no GateReceipt manifest: compare upstream ArtifactRefs to the bound objective and return pass, fail, or blocked.", budget, false, webEnabled ? 0.25 : 0.33),
+          : "Goal evidence maker: review the supplied bounded objective facts without external tools and return structured evidence.", budget, webEnabled, webEnabled ? 0.5 : 0.34, executionBudgetDivisor),
+        goalAgentNode(`synthesize-${suffix}`, ids.synth, "Goal artifact synthesis: combine upstream ArtifactRefs against the bound objective without inventing evidence.", budget, false, webEnabled ? 0.25 : 0.33, executionBudgetDivisor),
+        goalAgentNode(`verify-${suffix}`, ids.verify, "Fresh Goal artifact verification with no GateReceipt manifest: compare upstream ArtifactRefs to the bound objective and return pass, fail, or blocked.", budget, false, webEnabled ? 0.25 : 0.33, executionBudgetDivisor),
       ],
     },
   };
@@ -623,6 +625,13 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
   if (!configuration.hardOverlays.includes("orchestration-readonly")) {
     return Object.freeze({ enabled: false, status: "ORCHESTRATION_OVERLAY_DISABLED", configuration, dailyConfig, async dispose() {} });
   }
+  const goalExecutionBudgetDivisor = dependencies.goalExecutionBudgetDivisor ?? configuration.budget.maxGoalRevisions;
+  if (!Number.isSafeInteger(goalExecutionBudgetDivisor)
+    || goalExecutionBudgetDivisor < 1
+    || goalExecutionBudgetDivisor > configuration.budget.maxGoalRevisions
+    || (goalExecutionBudgetDivisor < configuration.budget.maxGoalRevisions && dependencies.allowVerifiedReuseCompletion !== true)) {
+    fail("GOAL_EXECUTION_BUDGET_DIVISOR_INVALID", "a reduced Goal execution budget divisor requires verified-reuse completion and must stay inside maxGoalRevisions");
+  }
   const subagentsPackage = dependencies.subagentsPackage ?? await resolveBoundPackageRoot({ configRoot, packageId: "subagents" });
   let webPackage = dependencies.webPackage ?? null;
   if (configuration.hardOverlays.includes("web")) webPackage ??= await resolveBoundPackageRoot({ configRoot, packageId: "web-access" });
@@ -715,6 +724,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
     return buildGoalProposal(planned, plannerContext, (await configurationProvider()).budget, {
       makerTemplateSelector: dependencies.goalMakerTemplateSelector,
       webEnabled: dependencies.goalWebEnabled ?? true,
+      executionBudgetDivisor: goalExecutionBudgetDivisor,
     });
   });
   const resolveAgentTemplate = async (id) => agentTemplateFromRegistryEntry(await agentRegistry.resolve(id));
@@ -754,6 +764,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
       const modelRoles = [];
       for (const role of roles) modelRoles.push(`role:${(await agentRegistry.resolve(role)).manifest.modelRole}`);
       const revisionDivisor = Math.max(1, Math.min(goal.authority.maxPlanRevisions, current.budget.maxGoalRevisions));
+      const executionDivisor = Math.min(goalExecutionBudgetDivisor, revisionDivisor);
       return createGoalRevisionAuthorizer({
         runId,
         objectiveDigest: objective.digest,
@@ -766,10 +777,10 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
         maxRevisions: revisionDivisor,
         budget: {
           maxAssignments: current.budget.maxChildren,
-          maxCostUsd: current.budget.maxCostUsd / revisionDivisor,
-          maxTokens: Math.floor(current.budget.maxTotalTokens / revisionDivisor),
-          maxWallTimeMs: Math.floor(current.budget.maxWallSeconds * 1000 / revisionDivisor),
-          maxOutputBytes: Math.floor(current.budget.maxTotalOutputBytes / revisionDivisor),
+          maxCostUsd: current.budget.maxCostUsd / executionDivisor,
+          maxTokens: Math.floor(current.budget.maxTotalTokens / executionDivisor),
+          maxWallTimeMs: Math.floor(current.budget.maxWallSeconds * 1000 / executionDivisor),
+          maxOutputBytes: Math.floor(current.budget.maxTotalOutputBytes / executionDivisor),
           maxNodes: current.budget.maxChildren,
           maxParallel: current.budget.maxConcurrency,
           maxDepth: current.budget.maxDepth + 2,
