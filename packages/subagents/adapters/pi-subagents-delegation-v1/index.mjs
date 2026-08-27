@@ -201,14 +201,23 @@ function terminalOutcome(status) {
   return "failed";
 }
 
-function failedStatusCode(status) {
-  return ({
+function failedStatusCode(status, upstreamError) {
+  const fixed = ({
     acceptance_failed: "DELEGATION_ACCEPTANCE_FAILED",
     duplicate_node: "DELEGATION_DUPLICATE_NODE",
-    failed: "DELEGATION_CHILD_FAILED",
     invalid_request: "DELEGATION_INVALID_REQUEST",
     structured_output_failed: "DELEGATION_STRUCTURED_OUTPUT_FAILED",
-  })[status] ?? "DELEGATION_CHILD_FAILED";
+  })[status];
+  if (fixed) return fixed;
+  const message = typeof upstreamError === "string" ? upstreamError.toLowerCase() : "";
+  const category = [
+    [/(?:structured|schema|json)/u, "STRUCTURED_OUTPUT"],
+    [/(?:provider|model|api|http|request)/u, "PROVIDER"],
+    [/(?:tool)/u, "TOOL"],
+    [/(?:turn)/u, "TURN"],
+    [/(?:agent)/u, "AGENT"],
+  ].find(([pattern]) => pattern.test(message))?.[1] ?? "UNKNOWN";
+  return `DELEGATION_CHILD_FAILED_${category}`;
 }
 
 export class PiSubagentsDelegationV1Backend {
@@ -404,7 +413,7 @@ export class PiSubagentsDelegationV1Backend {
       settledAt: observedAt,
       result,
       ...(outcome === "failed"
-        ? { error: new SubagentsError("delegated child failed", { code: failedStatusCode(response.status), category: "backend" }) }
+        ? { error: new SubagentsError("delegated child failed", { code: failedStatusCode(response.status, response.error), category: "backend" }) }
         : outcome === "budget-exhausted"
           ? { error: new SubagentsError("delegated child exhausted its upstream turn, tool, or usage budget", { code: "DELEGATION_CHILD_BUDGET_EXHAUSTED", category: "policy" }) }
           : {}),

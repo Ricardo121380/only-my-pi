@@ -139,6 +139,22 @@ test("delegation structured-output failure remains distinguishable from a generi
   await backend.dispose();
 });
 
+test("generic delegation failure exposes only a fixed classified code, never upstream error text", async () => {
+  const values = await domain();
+  const wire = transport();
+  const backend = createPiSubagentsDelegationV1Backend({ transport: wire, cwd: "/fixture" });
+  const launching = backend.launch({ ...values, mode: "background" });
+  await new Promise((resolve) => setImmediate(resolve));
+  const request = wire.emitted.find((entry) => entry.name === PI_SUBAGENTS_DELEGATION_V1_EVENTS.request).value;
+  wire.deliver(PI_SUBAGENTS_DELEGATION_V1_EVENTS.started, { requestId: request.requestId, ownerRunId: request.ownerRunId, nodeId: request.nodeId });
+  const launched = await launching;
+  wire.deliver(PI_SUBAGENTS_DELEGATION_V1_EVENTS.response, response(request, { status: "failed", exitCode: 1, result: undefined, error: "Structured JSON schema failed at /private/path with secret value" }));
+  const terminal = await backend.awaitTerminal(launched.handle, { bindingId: launched.binding.bindingId });
+  assert.equal(terminal.error.code, "DELEGATION_CHILD_FAILED_STRUCTURED_OUTPUT");
+  assert.doesNotMatch(JSON.stringify(terminal.error), /private|secret value/u);
+  await backend.dispose();
+});
+
 test("delegation cancel is identity-correlated and cannot forge terminal without exit proof", async () => {
   const values = await domain();
   const wire = transport();
