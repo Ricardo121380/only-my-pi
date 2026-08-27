@@ -201,7 +201,8 @@ test("dynamic SwarmGoal uses an LLM planner concept but parent-compiles two immu
   assert.equal(result.revisions.every((revision) => revision.proposal.plan.policy.mutation === "none"), true);
   assert.equal(result.revisions.every((revision) => revision.proposal.agentSpecs.every((spec) => spec.writer === false)), true);
   assert.equal(result.revisions.every((revision) => revision.proposal.plan.nodes.reduce((sum, node) => sum + node.budget.maxTokens, 0) <= revision.proposal.plan.budget.maxTokens), true);
-  assert.equal(result.revisions[0].proposal.plan.nodes[0].budget.maxTokens, Math.floor(composer.configuration.budget.maxTotalTokens / composer.configuration.budget.maxGoalRevisions / 3));
+  assert.equal(result.revisions[0].proposal.plan.nodes[0].budget.maxTokens, Math.floor(composer.configuration.budget.maxTotalTokens / composer.configuration.budget.maxGoalRevisions / 2));
+  assert.equal(result.revisions[0].proposal.plan.nodes[1].budget.maxTokens, Math.floor(composer.configuration.budget.maxTotalTokens / composer.configuration.budget.maxGoalRevisions / 4));
   assert.ok(result.revisions[1].proposal.reuse.length > 0);
   assert.equal((await composer.recordStore.require("session-goal-run")).status, "completed");
   assert.equal((await composer.recordStore.require("session-goal-run:r0")).status, "completed");

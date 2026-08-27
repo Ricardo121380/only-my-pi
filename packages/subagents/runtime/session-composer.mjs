@@ -444,7 +444,7 @@ const GOAL_PLANNER_OUTPUT_SCHEMA = Object.freeze({
   required: ["questions", "coveredDimensions", "remainingDimensions", "coverage", "progress", "decision", "reason"],
 });
 
-function goalAgentNode(id, specId, task, budget, web = false) {
+function goalAgentNode(id, specId, task, budget, web = false, shareDivisor = 3) {
   const policy = {
     workspace: "shared-read-only",
     mutation: "none",
@@ -458,7 +458,7 @@ function goalAgentNode(id, specId, task, budget, web = false) {
     assignment: { taskTemplateRef: task },
     outputSchemaRef: "research-result",
     policy,
-    budget: { maxAttempts: 1, timeoutMs: Math.max(1_000, Math.floor((budget.maxWallSeconds * 1000) / budget.maxGoalRevisions / 3)), maxOutputBytes: Math.min(budget.maxOutputBytesPerChild, Math.floor(budget.maxTotalOutputBytes / budget.maxGoalRevisions / 3)), maxTokens: Math.max(1, Math.floor(budget.maxTotalTokens / budget.maxGoalRevisions / 3)), maxCostUsd: budget.maxCostUsd / budget.maxGoalRevisions / 3 },
+    budget: { maxAttempts: 1, timeoutMs: Math.max(1_000, Math.floor((budget.maxWallSeconds * 1000) / budget.maxGoalRevisions / 3)), maxOutputBytes: Math.min(budget.maxOutputBytesPerChild, Math.floor(budget.maxTotalOutputBytes / budget.maxGoalRevisions / shareDivisor)), maxTokens: Math.max(1, Math.floor(budget.maxTotalTokens / budget.maxGoalRevisions / shareDivisor)), maxCostUsd: budget.maxCostUsd / budget.maxGoalRevisions / shareDivisor },
     cache: { mode: "content-addressed", keyInputs: ["assignment", "dependencies"] },
     idempotency: "content-addressed",
   };
@@ -499,9 +499,9 @@ function buildGoalProposal(plannerResult, context, budget) {
     flow: {
       kind: "sequence",
       steps: [
-        goalAgentNode(`maker-${suffix}`, ids.maker, `questions-${suffix}`, budget, true),
-        goalAgentNode(`synthesize-${suffix}`, ids.synth, `synthesize-${suffix}`, budget, false),
-        goalAgentNode(`verify-${suffix}`, ids.verify, `verify-${suffix}`, budget, false),
+        goalAgentNode(`maker-${suffix}`, ids.maker, `questions-${suffix}`, budget, true, 2),
+        goalAgentNode(`synthesize-${suffix}`, ids.synth, `synthesize-${suffix}`, budget, false, 4),
+        goalAgentNode(`verify-${suffix}`, ids.verify, `verify-${suffix}`, budget, false, 4),
       ],
     },
   };
