@@ -35,7 +35,7 @@
             "assignment": { "taskTemplateRef": "ultra-explore" },
             "outputSchemaRef": null,
             "policy": { "workspace": "shared-read-only", "mutation": "none", "tools": { "allow": ["read"], "deny": ["bash", "edit", "write", "web"] } },
-            "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 12000, "maxCostUsd": 0.06 },
+            "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 7000, "maxCostUsd": 0.035 },
             "cache": { "mode": "content-addressed", "keyInputs": ["assignment", "dependencies"] },
             "idempotency": "content-addressed"
           },
@@ -46,7 +46,7 @@
             "assignment": { "taskTemplateRef": "ultra-review" },
             "outputSchemaRef": null,
             "policy": { "workspace": "shared-read-only", "mutation": "none", "tools": { "allow": ["read"], "deny": ["bash", "edit", "write", "web"] } },
-            "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 6000, "maxCostUsd": 0.03 },
+            "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 7000, "maxCostUsd": 0.035 },
             "cache": { "mode": "content-addressed", "keyInputs": ["assignment", "dependencies"] },
             "idempotency": "content-addressed"
           }
@@ -59,7 +59,7 @@
         "assignment": { "taskTemplateRef": "ultra-synthesize" },
         "outputSchemaRef": null,
         "policy": { "workspace": "shared-read-only", "mutation": "none", "tools": { "allow": ["read"], "deny": ["bash", "edit", "write", "web"] } },
-        "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 12000, "maxCostUsd": 0.06 },
+        "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 15000, "maxCostUsd": 0.075 },
         "cache": { "mode": "content-addressed", "keyInputs": ["assignment", "dependencies"] },
         "idempotency": "content-addressed"
       },
@@ -70,7 +70,7 @@
         "assignment": { "taskTemplateRef": "ultra-verify" },
         "outputSchemaRef": null,
         "policy": { "workspace": "shared-read-only", "mutation": "none", "tools": { "allow": ["read"], "deny": ["bash", "edit", "write", "web"] } },
-        "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 20000, "maxCostUsd": 0.10 },
+        "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 21000, "maxCostUsd": 0.105 },
         "cache": { "mode": "content-addressed", "keyInputs": ["assignment", "dependencies"] },
         "idempotency": "content-addressed"
       }
