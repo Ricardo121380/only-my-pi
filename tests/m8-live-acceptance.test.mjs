@@ -120,7 +120,7 @@ test("protected Goal convergence requires a later revision plus verified reusabl
 
 test("protected sequential Workflow reserves extra context for the final verifier without widening root budget", () => {
   const plan = createM8ProtectedSequentialPlan("m8-budget-test", ["reviewer", "synthesizer", "verifier"]);
-  assert.deepEqual(plan.nodes.map((node) => node.budget.maxTokens), [6000, 6000, 12000]);
+  assert.deepEqual(plan.nodes.map((node) => node.budget.maxTokens), [8000, 16000, 24000]);
   assert.equal(plan.nodes.reduce((sum, node) => sum + node.budget.maxTokens, 0), plan.budget.maxTokens);
   assert.equal(plan.nodes.reduce((sum, node) => sum + node.budget.maxCostUsd, 0), plan.budget.maxCostUsd);
 });

@@ -121,7 +121,7 @@ function ensure(condition, code, message) {
   if (!condition) fail(code, message);
 }
 
-function taskNode(id, role, needs = [], { maxTokens = 6_000, maxCostUsd = 0.03 } = {}) {
+function taskNode(id, role, needs = [], { maxTokens = 8_000, maxCostUsd = 0.04 } = {}) {
   const policy = {
     workspace: "shared-read-only",
     mutation: "none",
@@ -149,7 +149,11 @@ function sequentialPlan(id, roles) {
     egress: { web: "deny", mcp: "deny", provider: "allow" },
     tools: { allow: ["read"], deny: ["bash", "edit", "write", "web"] },
   };
-  const nodes = roles.map((role, index) => taskNode(`node-${index + 1}`, role, [], role === "verifier" ? { maxTokens: 12_000, maxCostUsd: 0.06 } : {}));
+  const nodes = roles.map((role, index) => taskNode(`node-${index + 1}`, role, [], role === "verifier"
+    ? { maxTokens: 24_000, maxCostUsd: 0.12 }
+    : role === "synthesizer"
+      ? { maxTokens: 16_000, maxCostUsd: 0.08 }
+      : {}));
   const maxTokens = nodes.reduce((sum, node) => sum + node.budget.maxTokens, 0);
   const maxCostUsd = nodes.reduce((sum, node) => sum + node.budget.maxCostUsd, 0);
   return compileWorkflowDefinition({
