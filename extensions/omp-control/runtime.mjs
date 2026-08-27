@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -8,7 +9,7 @@ import { validateModeReceipt } from "../../packages/mode-registry/index.mjs";
 import { buildContextSnapshot, formatSnapshot } from "../context-doctor/metrics.mjs";
 
 const TOKEN = /^[A-Za-z0-9:_./-]+$/u;
-const ROOT_COMMANDS = new Set(["", "help", "run", "agent", "status", "doctor", "profile", "mode", "workflow", "tools", "packages", "context", "verify", "safe", "swarm", "theme", "overlays", "models", "gate"]);
+const ROOT_COMMANDS = new Set(["", "help", "run", "runs", "agent", "status", "doctor", "profile", "mode", "workflow", "tools", "packages", "context", "verify", "safe", "swarm", "theme", "overlays", "models", "gate"]);
 
 function fail(code, message) {
   const error = new Error(message);
@@ -57,6 +58,23 @@ function asText(result) {
 
 function notify(ctx, value, level = "info") {
   if (typeof ctx?.ui?.notify === "function") ctx.ui.notify(asText(value), level);
+}
+
+function wizardLines(value, label, { maximum = 64, allowDot = true } = {}) {
+  const lines = String(value ?? "").split(/\r?\n/gu).map((entry) => entry.trim()).filter(Boolean);
+  if (lines.length > maximum) fail("WIZARD_INPUT_INVALID", `${label} exceeds ${maximum} entries`);
+  for (const entry of lines) {
+    if (entry.length > 1024 || entry.includes("\0")) fail("WIZARD_INPUT_INVALID", `${label} contains an invalid entry`);
+    if (label === "scope" && !(allowDot && entry === ".")) {
+      if (path.isAbsolute(entry) || entry.includes("\\") || path.posix.normalize(entry) !== entry || entry.split("/").some((segment) => !segment || segment === "." || segment === "..")) fail("WIZARD_SCOPE_INVALID", `scope path must be repository-relative: ${entry}`);
+    }
+  }
+  return lines;
+}
+
+function wizardItemId(value, index) {
+  const normalized = String(value).toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-+|-+$/gu, "").slice(0, 48);
+  return `${normalized || "item"}-${index + 1}`;
 }
 
 async function readRootJson(rootDir, relative) {
@@ -144,7 +162,7 @@ export async function restoreModeReceipt({ registry, entries, profile } = {}) {
  * It never invokes a shell and treats missing live services as an explicit
  * unavailable state rather than guessing a permission or sandbox state.
  */
-export function createOmpRuntime({ rootDir, configRoot, registry, modeService, agentService, workflowService, swarmService, batchService, ultraService, subagentsOrchestration, goalController, ultraRouter, configurationProvider, projectGateService, webAuthorizer, themeService, dailyConfigService, statusService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
+export function createOmpRuntime({ rootDir, configRoot, registry, modeService, agentService, workflowService, swarmService, batchService, ultraService, subagentsOrchestration, goalController, ultraRouter, configurationProvider, projectGateService, webAuthorizer, runManagement, themeService, dailyConfigService, statusService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
   const derivedRoot = rootDir ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const derivedConfigRoot = configRoot ?? process.env.PI_CODING_AGENT_DIR ?? path.join(os.homedir(), ".pi", "agent");
   let modes = modeService;
@@ -227,6 +245,139 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, a
     await webAuthorizer.grant(webPlan);
     return webPlan;
   };
+  const backgroundRuns = new Map();
+  const gateAdmission = async (plan, ctx) => {
+    const gateIds = [...new Set((plan?.nodes ?? []).filter((node) => node.kind === "gate").map((node) => node.gateId))];
+    if (gateIds.length === 0) return { gateIds, plan: null, needsGrant: false };
+    if (!projectGateService) fail("PROJECT_GATE_UNAVAILABLE", "Workflow requires project gates but the gate service is unavailable");
+    const gatePlan = await projectGateService.plan(gateIds);
+    const status = projectGateService.status();
+    return { gateIds, plan: gatePlan, needsGrant: status.bindingDigest !== gatePlan.binding.bindingDigest };
+  };
+  const runBackground = (runId, label, operation, ctx) => {
+    if (backgroundRuns.has(runId)) fail("RUN_ALREADY_ACTIVE", `run is already active: ${runId}`);
+    const promise = Promise.resolve().then(operation);
+    backgroundRuns.set(runId, promise);
+    if (ctx?.mode === "tui") ctx.ui.setStatus("only-my-pi-run", `${label} ${runId}`);
+    void promise.then(
+      (result) => notify(ctx, result, result?.ok === false ? "warning" : "info"),
+      (cause) => notify(ctx, { status: "RUN_BACKGROUND_FAILED", code: cause?.code ?? "RUN_BACKGROUND_FAILED", message: cause?.message }, "warning"),
+    ).finally(() => {
+      backgroundRuns.delete(runId);
+      if (ctx?.mode === "tui" && backgroundRuns.size === 0) ctx.ui.setStatus("only-my-pi-run", undefined);
+    });
+    return { ok: true, status: "RUN_STARTED_BACKGROUND", mutation: true, runId, label, next: `/omp runs show ${runId}` };
+  };
+  const runWizard = async (ctx) => {
+    if (ctx?.mode !== "tui" || typeof ctx?.ui?.select !== "function" || typeof ctx?.ui?.editor !== "function" || typeof ctx?.ui?.confirm !== "function") {
+      return { ok: false, status: "RUN_WIZARD_UNAVAILABLE", code: "TUI_REQUIRED", mutation: false };
+    }
+    if (typeof ctx.isIdle === "function" && !ctx.isIdle()) return { ok: false, status: "RUN_WIZARD_UNAVAILABLE", code: "SESSION_IDLE_REQUIRED", mutation: false };
+    const type = await ctx.ui.select("Choose only-my-pi execution type", ["Agent", "BatchSwarm", "Workflow", "SwarmGoal", "Ultra"]);
+    if (!type) return { ok: true, status: "RUN_WIZARD_CANCELLED", mutation: false };
+    const task = await ctx.ui.editor("Task objective (required)");
+    if (!task?.trim()) return { ok: true, status: "RUN_WIZARD_CANCELLED", mutation: false };
+    if (Buffer.byteLength(task, "utf8") > 64 * 1024) fail("WIZARD_INPUT_INVALID", "task exceeds 64 KiB");
+    const scopeText = await ctx.ui.editor("Repository-relative scope (one path per line)", ".");
+    if (scopeText === undefined) return { ok: true, status: "RUN_WIZARD_CANCELLED", mutation: false };
+    const scope = wizardLines(scopeText, "scope");
+    const acceptanceText = await ctx.ui.editor("Acceptance criteria (one item per line)", "Return evidence, gaps, and a clear verdict.");
+    if (acceptanceText === undefined) return { ok: true, status: "RUN_WIZARD_CANCELLED", mutation: false };
+    const acceptance = wizardLines(acceptanceText, "acceptance");
+    const input = Object.freeze({ task: task.trim(), scope, acceptance });
+    const execution = await ctx.ui.select("Execution", ["Foreground", "Background (current Pi session)"]);
+    if (!execution) return { ok: true, status: "RUN_WIZARD_CANCELLED", mutation: false };
+
+    let target;
+    let planned;
+    let runOperation;
+    let webRoles = [];
+    let objectiveDigest;
+    if (type === "Agent") {
+      const service = await getAgents();
+      const listed = await service.dispatch({ subcommand: "list" });
+      const choices = listed.agents.map((entry) => entry.id);
+      target = await ctx.ui.select("Choose Agent role", choices);
+      if (!target) return { ok: true, status: "RUN_WIZARD_CANCELLED", mutation: false };
+      planned = await service.dispatch({ subcommand: "plan", agentId: target, input });
+      if (planned.ok === false) return planned;
+      if (planned.authority.web) webRoles = [target];
+      objectiveDigest = planned.executionEnvelope.runInputDigest;
+      runOperation = () => service.dispatch({ subcommand: "run", agentId: target, runId: planned.runId, input: planned.input, yes: true, expectedPlanDigest: planned.plan.planDigest, expectedExecutionDigest: planned.executionEnvelope.executionEnvelopeDigest, signal: ctx.signal });
+    } else if (type === "BatchSwarm") {
+      const service = await getSwarms();
+      const listed = await service.dispatch({ subcommand: "batch", batchSubcommand: "list" });
+      target = await ctx.ui.select("Choose BatchSwarm", listed.batches.map((entry) => entry.id));
+      if (!target) return { ok: true, status: "RUN_WIZARD_CANCELLED", mutation: false };
+      const batchInput = { ...input, artifacts: { items: (scope.length ? scope : ["."]).map((item, index) => ({ itemId: wizardItemId(item, index), path: item, objective: input.task })) } };
+      planned = await service.dispatch({ subcommand: "batch", batchSubcommand: "plan", batchId: target, input: batchInput });
+      if (planned.ok === false) return planned;
+      objectiveDigest = planned.executionEnvelope.runInputDigest;
+      runOperation = () => service.dispatch({ subcommand: "batch", batchSubcommand: "run", batchId: target, runId: planned.runId, input: planned.input, yes: true, expectedPlanDigest: planned.plan.planDigest, expectedExecutionDigest: planned.executionEnvelope.executionEnvelopeDigest, signal: ctx.signal });
+    } else if (type === "Workflow") {
+      const service = await getWorkflows();
+      const listed = await service.dispatch({ subcommand: "list" });
+      const choices = listed.workflows.filter((entry) => entry.manifest?.mutationScope === "none").map((entry) => entry.id);
+      target = await ctx.ui.select("Choose read-only Workflow", choices);
+      if (!target) return { ok: true, status: "RUN_WIZARD_CANCELLED", mutation: false };
+      planned = await service.dispatch({ subcommand: "run", workflowId: target, input, conditions: ["profile-resolved", "mode-resolved", "session-idle"], apply: false, yes: false });
+      if (planned.ok === false) return planned;
+      webRoles = [...new Set((planned.plan.nodes ?? []).filter((node) => node.kind === "agent" && ["researcher", "source-verifier"].includes(node.agentTemplateRef)).map((node) => node.agentTemplateRef))];
+      objectiveDigest = planned.executionEnvelope.runInputDigest;
+      runOperation = () => service.dispatch({ subcommand: "run", workflowId: target, runId: planned.runId, input: planned.input, conditions: planned.executionEnvelope.conditions, apply: true, yes: true, expectedPlanDigest: planned.plan.planDigest, expectedExecutionDigest: planned.executionEnvelope.executionEnvelopeDigest, signal: ctx.signal });
+    } else if (type === "SwarmGoal") {
+      const service = await getSwarms();
+      const listed = await service.dispatch({ subcommand: "goal", goalSubcommand: "list" });
+      target = await ctx.ui.select("Choose SwarmGoal", listed.goals.map((entry) => entry.id));
+      if (!target) return { ok: true, status: "RUN_WIZARD_CANCELLED", mutation: false };
+      planned = await service.dispatch({ subcommand: "goal", goalSubcommand: "plan", goalId: target, input });
+      if (planned.ok === false) return planned;
+      webRoles = planned.authority?.web ? planned.authority.webRoles : [];
+      objectiveDigest = planned.authorization.inputDigest;
+      runOperation = () => service.dispatch({ subcommand: "goal", goalSubcommand: "run", goalId: target, runId: planned.runId, input: planned.input, yes: true, expectedPlanDigest: planned.plan.planDigest, expectedAuthorizationDigest: planned.authorization.authorizationDigest, approveRevisionExpansion: async (_revision, _proposal, assessment) => ctx.ui.confirm("Approve expanded SwarmGoal revision?", JSON.stringify(assessment.expansions)), signal: ctx.signal });
+    } else {
+      const service = await getUltras();
+      const listed = await service.dispatch({ subcommand: "list" });
+      target = await ctx.ui.select("Choose Ultra strategy", listed.strategies.map((entry) => entry.id));
+      if (!target) return { ok: true, status: "RUN_WIZARD_CANCELLED", mutation: false };
+      const effort = await ctx.ui.select("Ultra task shape", ["Focused Agent", "Structured Workflow", "Dynamic SwarmGoal"]);
+      if (!effort) return { ok: true, status: "RUN_WIZARD_CANCELLED", mutation: false };
+      const complexity = effort === "Focused Agent" ? 10 : effort === "Structured Workflow" ? 60 : 90;
+      const requestId = `ultra-${crypto.randomUUID()}`;
+      const taskDigest = `sha256:${crypto.createHash("sha256").update(input.task).digest("hex")}`;
+      const requestDigest = `sha256:${crypto.createHash("sha256").update(JSON.stringify(input)).digest("hex")}`;
+      const ultraRequest = { id: requestId, taskDigest, complexity, itemCount: Math.max(1, scope.length), homogeneous: false, dynamicGoal: effort === "Dynamic SwarmGoal", mutation: "none", risk: effort === "Dynamic SwarmGoal" ? "high" : "low", origin: { kind: "human", requestDigest }, ...(effort === "Structured Workflow" ? { preferredWorkflow: "source-review-v2" } : {}), ...(effort === "Dynamic SwarmGoal" ? { preferredGoal: "research-release-goal" } : {}) };
+      planned = await service.dispatch({ subcommand: "plan", strategyId: target, input: ultraRequest });
+      if (planned.ok === false) return planned;
+      if (planned.plan.route === "swarm-goal") webRoles = ["researcher", "source-verifier"];
+      objectiveDigest = taskDigest;
+      runOperation = () => service.dispatch({ subcommand: "run", strategyId: target, input: planned.request, routeInput: input, yes: true, expectedPlanDigest: planned.plan.planDigest, expectedAuthorizationDigest: planned.authorization?.authorizationDigest ?? null, signal: ctx.signal });
+    }
+
+    const gate = await gateAdmission(planned.plan, ctx);
+    const configuration = typeof configurationProvider === "function" ? await configurationProvider() : null;
+    let webPlan = null;
+    if (webRoles.length > 0) {
+      if (!webAuthorizer || !configuration) fail("PUBLIC_WEB_AUTHORIZATION_UNAVAILABLE", "public Web authorization service is unavailable");
+      webPlan = await webAuthorizer.plan({ runId: planned.runId ?? planned.request?.id, roles: webRoles, objectiveDigest, budget: configuration.budget, providerIds: [...new Set(webRoles.map((role) => configuration.models?.roles?.[role]?.model).filter((value) => value && value !== "inherit"))] });
+    }
+    const runId = planned.runId ?? planned.request?.id;
+    const planDigest = planned.plan?.planDigest;
+    const summary = [
+      `type=${type} target=${target} runId=${runId}`,
+      `plan=${planDigest}`,
+      configuration ? `preset=${configuration.preset.id} budget=${JSON.stringify(configuration.budget)}` : "configuration=unavailable",
+      webPlan ? `web=${webPlan.status} roles=${webPlan.roles.join(",")} cookies=false` : "web=disabled",
+      gate.gateIds.length ? `gates=${gate.gateIds.join(",")} warning=${gate.plan.warning}` : "gates=none",
+      `execution=${execution}`,
+    ].join("\n");
+    const approved = await ctx.ui.confirm("Run this exact only-my-pi plan?", summary);
+    if (!approved) return { ok: true, status: "RUN_WIZARD_CANCELLED", mutation: false };
+    if (webPlan) await webAuthorizer.grant(webPlan);
+    if (gate.needsGrant) await projectGateService.grant(gate.plan);
+    if (execution.startsWith("Background")) return runBackground(runId, `${type}:${target}`, runOperation, ctx);
+    return runOperation();
+  };
 
   const restoreSession = async (entries) => {
     let liveRegistry = registry;
@@ -255,8 +406,18 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, a
         return {
           ok: true,
           status: "HELP",
-          text: "/omp run|agent|workflow|swarm|ultra|gate|status|doctor|profile|overlays|models|mode|theme|tools|packages|context|verify|safe|help",
+          text: "/omp run|runs|agent|workflow|swarm|ultra|gate|status|doctor|profile|overlays|models|mode|theme|tools|packages|context|verify|safe|help",
         };
+      }
+      if (command === "run") {
+        if (args.length > 0) {
+          const result = { ok: false, status: "RUN_WIZARD_INVALID", code: "RUN_WIZARD_ACCEPTS_NO_ARGUMENTS", mutation: false };
+          notify(ctx, result, "warning");
+          return result;
+        }
+        const result = await runWizard(ctx);
+        notify(ctx, result, result.ok === false ? "warning" : "info");
+        return result;
       }
       if (command === "mode") {
         const subcommand = args[0] ?? "list";
@@ -373,6 +534,39 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, a
           catch (cause) { const result = { ok: false, status: "PROJECT_GATE_RUN_BLOCKED", code: cause?.code ?? "PROJECT_GATE_RUN_BLOCKED", message: cause?.message, mutation: false }; notify(ctx, result, "warning"); return result; }
         }
         const result = { ok: false, status: "PROJECT_GATE_COMMAND_INVALID", code: "INVALID_PROJECT_GATE_COMMAND", mutation: false };
+        notify(ctx, result, "warning");
+        return result;
+      }
+      if (command === "runs") {
+        if (!runManagement) {
+          const result = { ok: false, status: "RUN_MANAGEMENT_UNAVAILABLE", code: "RUN_MANAGEMENT_UNAVAILABLE", mutation: false };
+          notify(ctx, result, "warning");
+          return result;
+        }
+        const subcommand = args[0] ?? "list";
+        const id = args[1] ?? null;
+        try {
+          if (subcommand === "list" && args.length === 0) { const result = await runManagement.list(); notify(ctx, result); return result; }
+          if (subcommand === "show" && id && args.length === 2) { const result = await runManagement.show(id); notify(ctx, result); return result; }
+          if (subcommand === "cancel" && id && args.length === 2) { const result = await runManagement.cancel(id); notify(ctx, result, result.ok === false ? "warning" : "info"); return result; }
+          if (subcommand === "resume" && id && args.length === 2) { const result = await runManagement.resume(id); notify(ctx, result, result.ok === false ? "warning" : "info"); return result; }
+          if (subcommand === "gc" && args.length === 1) {
+            const plan = await runManagement.gcPlan();
+            if (plan.candidates.length === 0) { notify(ctx, plan); return plan; }
+            const approved = typeof ctx?.ui?.confirm === "function"
+              ? await ctx.ui.confirm("Delete expired raw run data?", `${plan.candidates.length} terminal run(s). Receipts, digests, plans, and journals are retained.`)
+              : false;
+            if (!approved) return plan;
+            const result = await runManagement.gcApply(plan);
+            notify(ctx, result);
+            return result;
+          }
+        } catch (cause) {
+          const result = { ok: false, status: "RUN_MANAGEMENT_BLOCKED", code: cause?.code ?? "RUN_MANAGEMENT_BLOCKED", message: cause?.message, mutation: false };
+          notify(ctx, result, "warning");
+          return result;
+        }
+        const result = { ok: false, status: "RUN_COMMAND_INVALID", code: "INVALID_RUN_COMMAND", mutation: false };
         notify(ctx, result, "warning");
         return result;
       }

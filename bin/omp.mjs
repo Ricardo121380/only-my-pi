@@ -19,6 +19,8 @@ import { createUltraRunControlService } from "../packages/control-service/ultra-
 import { parseOmpArgs } from "../packages/control-service/cli-parser.mjs";
 import { ControlService, OMP_USAGE } from "../packages/control-service/service.mjs";
 import { DailyConfigService } from "../packages/daily-config/index.mjs";
+import { ProjectGateService, createNodeExecAdapter } from "../packages/project-gates/index.mjs";
+import { RunManagementService, createRunRecordStore } from "../packages/run-management/index.mjs";
 
 const THIS_FILE = fileURLToPath(import.meta.url);
 const DEFAULT_ROOT = path.resolve(path.dirname(THIS_FILE), "..");
@@ -44,6 +46,8 @@ const DEFAULT_DEPENDENCIES = Object.freeze({
   ControlService,
   DoctorService,
   DailyConfigService,
+  ProjectGateService,
+  RunManagementService,
   TransactionEngine,
   createNpmCommandRunner,
   createNoModelSmokeRunner,
@@ -117,6 +121,13 @@ export function createProductionControlService({
   const themes = createThemeControlService({ rootDir: resolvedRoot });
   const statusService = createStatusService();
   const dailyConfig = new wired.DailyConfigService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot });
+  const projectGates = new wired.ProjectGateService({
+    configRoot: resolvedConfigRoot,
+    getContext: () => ({ cwd: process.cwd(), isProjectTrusted: () => true, sessionManager: { getSessionId: () => "explicit-cli-validation" } }),
+    exec: createNodeExecAdapter({ ...(spawnImpl === undefined ? {} : { spawnImpl }) }),
+  });
+  const runRecordStore = createRunRecordStore({ managedRoot: path.join(resolvedConfigRoot, "only-my-pi") });
+  const runManagement = new wired.RunManagementService({ recordStore: runRecordStore });
   return new wired.ControlService({
     bootstrap,
     doctor,
@@ -128,6 +139,8 @@ export function createProductionControlService({
     ultras,
     themes,
     dailyConfig,
+    projectGates,
+    runManagement,
     statusService,
   });
 }
@@ -197,6 +210,7 @@ function humanConfirmationHint(command) {
     return `rerun omp ${command} with --apply --yes after reviewing this plan`;
   }
   if (command === "profiles") return "rerun omp profiles apply <preset> with --yes after reviewing this plan";
+  if (command === "runs") return "rerun omp runs gc with --apply --yes after reviewing this plan";
   return `rerun omp ${command} with --yes after reviewing this plan`;
 }
 

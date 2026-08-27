@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../schemas/run-record-v1.schema.json",
+  "formatVersion": 1,
+  "kind": "private-run-record",
+  "runId": "run-example",
+  "createdAt": "2026-08-27T00:00:00.000Z",
+  "updatedAt": "2026-08-27T00:00:01.000Z",
+  "sessionId": "session-example",
+  "repository": { "root": "/workspace", "rootDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "head": null },
+  "configurationDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "planDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "executionEnvelopeDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "inputDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "input": {}, "inputRetained": true, "status": "running", "terminalAt": null, "artifacts": [], "artifactsRetained": true, "receiptDigest": null,
+  "recordDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "unknown": true
+}

@@ -46,6 +46,7 @@ test("Web authorization is bound to session, run, roles, objective and budget", 
   assert.throws(() => authorizer.require("goal-run:r0", "researcher"), { code: "PUBLIC_WEB_AUTHORIZATION_REQUIRED" });
   assert.equal((await authorizer.grant(plan)).status, "PUBLIC_WEB_AUTHORIZED");
   assert.equal(authorizer.require("goal-run:r0", "researcher").authorizationDigest, plan.authorizationDigest);
+  assert.equal(authorizer.require("goal-run:r0:r1", "source-verifier").authorizationDigest, plan.authorizationDigest);
   assert.throws(() => authorizer.require("goal-run:r0", "reviewer"), { code: "PUBLIC_WEB_AUTHORIZATION_REQUIRED" });
   sessionId = "web-session-two";
   assert.throws(() => authorizer.require("goal-run", "researcher"), { code: "PUBLIC_WEB_AUTHORIZATION_REQUIRED" });

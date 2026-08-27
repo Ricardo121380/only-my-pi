@@ -13,6 +13,7 @@ import { createHumanGoalAuthorization } from "../packages/subagents/swarm-goal/i
 import { createSwarmGoalRegistry } from "../packages/subagents/swarm-goal/registry.mjs";
 import { compileWorkflowDefinition, digestWorkflowValue } from "../packages/subagents/workflow/plan-compiler/index.mjs";
 import { createUltraRunRegistry } from "../packages/subagents/ultra-run/registry.mjs";
+import { createUltraRunAuthorization } from "../packages/subagents/ultra-run/index.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -142,6 +143,10 @@ test("single Agent live path uses the composer coordinator and publishes a priva
   assert.equal(stored.result.verdict, "pass");
   const events = (await composer.eventJournal.read(planned.runId)).events;
   assert.ok(events.some((event) => event.type === "NodeArtifactPublished"));
+  const record = await composer.recordStore.require(planned.runId);
+  assert.equal(record.status, "completed");
+  assert.equal(record.input.task, "Review package metadata without changes.");
+  assert.equal(record.artifacts.length, 1);
 });
 
 test("dynamic SwarmGoal uses an LLM planner concept but parent-compiles two immutable read-only revisions", async (t) => {
@@ -170,6 +175,8 @@ test("dynamic SwarmGoal uses an LLM planner concept but parent-compiles two immu
   assert.equal(result.revisions.every((revision) => revision.proposal.plan.policy.mutation === "none"), true);
   assert.equal(result.revisions.every((revision) => revision.proposal.agentSpecs.every((spec) => spec.writer === false)), true);
   assert.ok(result.revisions[1].proposal.reuse.length > 0);
+  assert.equal((await composer.recordStore.require("session-goal-run")).status, "completed");
+  assert.equal((await composer.recordStore.require("session-goal-run:r0")).status, "completed");
 });
 
 test("composer executes a two-item BatchSwarm within concurrency two", async (t) => {
@@ -244,6 +251,7 @@ test("Ultra Agent and Workflow routes use the same composer and fresh verifier",
   assert.equal(agent.result.status, "completed", JSON.stringify(agent));
   assert.equal(agent.result.verification.contextMode, "fresh");
   assert.equal(agent.result.scale.logicalAssignments, agent.plan.scale.logicalAssignments);
+  assert.equal((await composer.recordStore.require("ultra-agent-test")).status, "completed");
 
   const workflowRequest = {
     ...agentRequest,
@@ -258,4 +266,32 @@ test("Ultra Agent and Workflow routes use the same composer and fresh verifier",
   assert.equal(workflow.result.status, "completed", JSON.stringify(workflow));
   assert.equal(workflow.plan.route, "workflow");
   assert.equal(workflow.result.verification.verdict, "pass");
+});
+
+test("Ultra dynamic Goal reuses the Goal fresh verifier and stays within eight children", async (t) => {
+  const { composer, requests } = await harness(t);
+  const strategy = (await createUltraRunRegistry({ rootDir }).resolve("ultra-deep")).definition;
+  const request = {
+    id: "ultra-goal-test",
+    taskDigest: digestWorkflowValue("dynamic goal task"),
+    complexity: 90,
+    itemCount: 4,
+    homogeneous: false,
+    dynamicGoal: true,
+    mutation: "none",
+    risk: "high",
+    origin: { kind: "human", requestDigest: digestWorkflowValue("human dynamic goal") },
+    preferredGoal: "research-release-goal",
+  };
+  const plan = composer.ultraRouter.plan(strategy, request);
+  const webPlan = await composer.webAuthorizer.plan({ runId: request.id, roles: ["researcher", "source-verifier"], objectiveDigest: request.taskDigest, budget: composer.configuration.budget });
+  await composer.webAuthorizer.grant(webPlan);
+  const result = await composer.ultraRouter.run(strategy, request, {
+    authorization: createUltraRunAuthorization(plan, "ultra-goal-human-1"),
+    input: { task: "Research and verify the dynamic goal." },
+  });
+  assert.equal(result.result.status, "completed", JSON.stringify(result));
+  assert.equal(result.result.verification.contextMode, "fresh");
+  assert.equal(requests.length, 8);
+  assert.equal((await composer.recordStore.require(request.id)).status, "completed");
 });

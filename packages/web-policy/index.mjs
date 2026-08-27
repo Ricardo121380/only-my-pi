@@ -96,7 +96,7 @@ export function assertPublicRedirect(fromUrl, toUrl, options = {}) {
 
 function canonical(value) { if (Array.isArray(value)) return value.map(canonical); if (value && typeof value === "object") return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])])); return value; }
 function digest(value) { return `sha256:${crypto.createHash("sha256").update(JSON.stringify(canonical(value))).digest("hex")}`; }
-function rootRunId(runId) { return String(runId).replace(/:(?:r\d+|planner:\d+|verifier:\d+)$/u, ""); }
+function rootRunId(runId) { return String(runId).replace(/(?::r\d+|:planner:\d+|:verifier:\d+)+$/u, ""); }
 
 export class WebRunAuthorizer {
   constructor({ configRoot, getSessionId } = {}) {

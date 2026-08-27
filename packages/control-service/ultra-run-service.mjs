@@ -54,7 +54,7 @@ export class UltraRunControlService {
       if (options.yes !== true) return { ok: false, status: "CONFIRMATION_REQUIRED", mutation: true, code: "EXACT_ULTRA_CONFIRMATION_REQUIRED", plan: prepared.plan };
       if (options.expectedPlanDigest !== prepared.plan.planDigest || (prepared.authorization && options.expectedAuthorizationDigest !== prepared.authorization.authorizationDigest)) return { ok: false, status: "ULTRA_RUN_PLAN_STALE", mutation: false, code: "ULTRA_RUN_ADMISSION_DRIFT", currentPlanDigest: prepared.plan.planDigest, currentAuthorizationDigest: prepared.authorization?.authorizationDigest ?? null };
       if (!this.router) return { ok: false, status: "LIVE_ULTRA_RUN_REQUIRES_PI_SESSION", mutation: true, code: "LIVE_RUNTIME_UNAVAILABLE", liveDispatch: "NOT_RUN_BY_POLICY", next: "Inject route executors backed by the unified @only-my-pi/subagents facade." };
-      const result = await this.router.run(prepared.entry.definition, prepared.request, { authorization: prepared.authorization, input: options.input, signal: options.signal });
+      const result = await this.router.run(prepared.entry.definition, prepared.request, { authorization: prepared.authorization, input: options.routeInput ?? options.input, signal: options.signal });
       return { ok: result.result.status === "completed", status: `ULTRA_RUN_${result.result.status.toUpperCase().replaceAll("-", "_")}`, mutation: true, plan: result.plan, result: result.result };
     }
     return { ok: false, status: "ULTRA_RUN_COMMAND_INVALID", mutation: false, code: "INVALID_ULTRA_RUN_COMMAND" };

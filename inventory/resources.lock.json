@@ -1129,6 +1129,36 @@
       "packaged": true
     },
     {
+      "id": "omp-run-management-runtime",
+      "type": "library",
+      "path": "packages/run-management",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "omp-run-record-schema",
+      "type": "library",
+      "path": "schemas/run-record-v1.schema.json",
+      "version": "1.0.0",
+      "provides": [],
+      "requires": [],
+      "owners": ["only-my-pi-control"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
       "id": "omp-project-gates-runtime",
       "type": "library",
       "path": "packages/project-gates",

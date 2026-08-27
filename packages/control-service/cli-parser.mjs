@@ -38,6 +38,7 @@ const COMMANDS = new Set([
   "profiles",
   "models",
   "gate",
+  "runs",
   "tools",
   "packages",
   "context",
@@ -55,6 +56,7 @@ const PROFILE_COMMANDS = new Set(["list", "show", "diff"]);
 const PRESET_COMMANDS = new Set(["list", "show", "plan", "apply"]);
 const MODEL_COMMANDS = new Set(["validate"]);
 const GATE_COMMANDS = new Set(["validate"]);
+const RUN_COMMANDS = new Set(["list", "show", "gc"]);
 const WORKFLOW_COMMANDS = new Set(["list", "show", "run", "status", "cancel", "resume"]);
 const SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume", "batch", "goal"]);
 const BATCH_SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume"]);
@@ -269,6 +271,21 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
     const subcommand = positionals[0] ?? "validate";
     if (!GATE_COMMANDS.has(subcommand) || positionals.length !== 1) fail("gate accepts only the validate subcommand");
     return { command, mutation: false, options: { configRoot, subcommand, projectRoot: options.projectRoot ? path.resolve(options.projectRoot) : null, json: options.json === true } };
+  }
+
+  if (command === "runs") {
+    reject(options, ["profile", "mode", "provider", "model", "scope", "dryRun", "static", "live", "resolved", "projectRoot"], command);
+    const subcommand = positionals[0] ?? "list";
+    if (!RUN_COMMANDS.has(subcommand)) fail(`unknown runs subcommand: ${subcommand}`);
+    const runId = positionals[1] ?? null;
+    if (subcommand === "list" && positionals.length !== 1) fail("runs list accepts no run id");
+    if (subcommand === "show" && positionals.length !== 2) fail("runs show requires one run id");
+    if (subcommand === "gc" && positionals.length !== 1) fail("runs gc accepts no run id");
+    if (runId !== null && !/^[a-z0-9][a-z0-9._:-]{0,127}$/u.test(runId)) fail("run id is invalid");
+    if (subcommand !== "gc" && (options.apply || options.plan || options.yes)) fail("--plan/--apply/--yes are only valid for runs gc");
+    if (options.apply && options.plan) fail("--apply and --plan are mutually exclusive");
+    if (options.yes && !options.apply) fail("--yes is only valid with --apply");
+    return { command, mutation: subcommand === "gc" && options.apply === true, options: { configRoot, subcommand, runId, apply: options.apply === true, plan: options.apply !== true, yes: options.yes === true, json: options.json === true } };
   }
 
   if (["tools", "packages", "context", "verify"].includes(command)) {

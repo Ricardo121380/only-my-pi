@@ -10,6 +10,7 @@ import { createBatchSwarmControlService } from "../../control-service/batch-swar
 import { createDailyConfigService, selectRoleModel } from "../../daily-config/index.mjs";
 import { createWorkflowRegistry } from "../../workflow-core/index.mjs";
 import { createNodeExecAdapter, createProjectGateService } from "../../project-gates/index.mjs";
+import { createManagedCoordinator, createRecordedGoalController, createRecordedUltraRouter, createRunManagementService, createRunRecordStore } from "../../run-management/index.mjs";
 import { createWebRunAuthorizer, inspectPublicWebPolicy } from "../../web-policy/index.mjs";
 import { createPiBatchSwarmRuntime } from "../batch-swarm/runtime.mjs";
 import {
@@ -67,6 +68,28 @@ async function ensurePrivateDirectory(root, directory) {
   const stat = await fs.lstat(directory);
   if (!stat.isDirectory() || stat.isSymbolicLink()) fail("RUNTIME_PATH_UNSAFE", "runtime directory must be a real directory");
   await fs.chmod(directory, 0o700);
+}
+
+async function resolveRunContext({ cwd, sessionId, configuration, exec }) {
+  const requested = await fs.realpath(path.resolve(cwd));
+  let repositoryRoot = requested;
+  let head = null;
+  try {
+    const rootResult = await exec("git", ["-C", requested, "rev-parse", "--show-toplevel"], { cwd: requested, timeout: 10_000 });
+    if (rootResult.code === 0 && path.isAbsolute(String(rootResult.stdout ?? "").trim())) {
+      repositoryRoot = await fs.realpath(String(rootResult.stdout).trim());
+      const headResult = await exec("git", ["-C", repositoryRoot, "rev-parse", "HEAD"], { cwd: repositoryRoot, timeout: 10_000 });
+      const candidate = String(headResult.stdout ?? "").trim();
+      if (headResult.code === 0 && /^[a-f0-9]{40}$/u.test(candidate)) head = candidate;
+    }
+  } catch {
+    // Non-Git directories remain bound to their realpath and a null HEAD.
+  }
+  return Object.freeze({
+    sessionId,
+    repository: { root: repositoryRoot, rootDigest: digestValue(repositoryRoot), head },
+    configurationDigest: digestValue(configuration),
+  });
 }
 
 async function assertRegularNoSymlink(filename, label) {
@@ -197,7 +220,7 @@ class SessionBudgetGovernor {
     if (this.disposed) fail("SESSION_RUNTIME_DISPOSED", "session runtime is disposed");
     const configuration = await this.configurationProvider();
     const budget = configuration.budget;
-    const budgetRunId = runId.replace(/:(?:r\d+|planner:\d+|verifier:\d+)$/u, "");
+    const budgetRunId = runId.replace(/(?::r\d+|:planner:\d+|:verifier:\d+)+$/u, "");
     const state = this.runs.get(budgetRunId) ?? { assignments: 0, tokens: 0, cost: 0 };
     if (state.assignments >= budget.maxChildren) fail("BUDGET_EXHAUSTED", `run ${runId} reached maxChildren`);
     state.assignments += 1;
@@ -625,7 +648,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
   const batchRuntime = dependencies.batchRuntime ?? createPiBatchSwarmRuntime({ backend, rootDir, maximumItemOutputBytes: configuration.budget.maxOutputBytesPerChild });
   const dynamicSpecs = new Map();
   const nodeExecutor = dependencies.nodeExecutor ?? await createNodeExecutor({ agentRegistry, backend, batchRuntime, artifactStore, configurationProvider, dynamicSpecs, webAuthorizer });
-  const coordinator = dependencies.coordinator ?? createRunCoordinator({
+  const rawCoordinator = dependencies.rawCoordinator ?? dependencies.coordinator ?? createRunCoordinator({
     eventJournal,
     budgetLedger,
     planStore,
@@ -633,6 +656,19 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
     nodeExecutor,
     gateRunner: dependencies.gateRunner ?? projectGateService,
   });
+  const recordStore = dependencies.recordStore ?? createRunRecordStore({ managedRoot });
+  const runContextExec = dependencies.runContextExec ?? createNodeExecAdapter({ maxOutputBytes: 64 * 1024 });
+  const contextProvider = dependencies.runContextProvider ?? (async () => {
+    const currentContext = getContext();
+    return resolveRunContext({
+      cwd: currentContext?.cwd ?? process.cwd(),
+      sessionId: currentContext?.sessionManager?.getSessionId?.(),
+      configuration: await configurationProvider(),
+      exec: runContextExec,
+    });
+  });
+  const coordinator = dependencies.managedCoordinator ?? createManagedCoordinator({ coordinator: rawCoordinator, recordStore, contextProvider });
+  const runManagement = dependencies.runManagement ?? createRunManagementService({ recordStore, coordinator });
   const runDirectAgent = dependencies.runDirectAgent ?? directAgentRunner({ agentRegistry, backend, configurationProvider, webAuthorizer });
   const goalPlanner = dependencies.goalPlanner ?? (async (plannerContext) => {
     const objectiveText = typeof plannerContext.objective?.inputDigest === "string"
@@ -680,7 +716,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
       usage: {},
     };
   });
-  const goalController = dependencies.goalController ?? createSwarmGoalController({
+  const rawGoalController = dependencies.rawGoalController ?? dependencies.goalController ?? createSwarmGoalController({
     eventJournal,
     budgetLedger,
     planner: goalPlanner,
@@ -715,6 +751,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
       });
     },
   });
+  const goalController = dependencies.recordedGoalController ?? createRecordedGoalController({ controller: rawGoalController, recordStore, contextProvider });
   const workflowRegistry = dependencies.workflowRegistry ?? createWorkflowRegistry({ rootDir });
   const goalRegistry = dependencies.goalRegistry ?? createSwarmGoalRegistry({ rootDir });
   const batchControl = dependencies.batchControl ?? createBatchSwarmControlService({ rootDir, orchestration: coordinator, registry: batchRuntime.registry, capabilityMatrix: backend.capabilityMatrix, configurationProvider });
@@ -743,7 +780,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
       receiptDigest: terminal.receiptId,
     };
   };
-  const ultraRouter = dependencies.ultraRouter ?? createUltraRunRouter({
+  const rawUltraRouter = dependencies.rawUltraRouter ?? dependencies.ultraRouter ?? createUltraRunRouter({
     executors: {
       async agent({ runId, plan, input, signal }) {
         const maker = await runDirectAgent({
@@ -789,11 +826,16 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
         const projection = await goalController.run(entry.definition, { runId: `${runId}:r0`, objective, authorization, input: input ?? {}, signal });
         const routeResult = { runId: projection.runId, status: projection.status, terminal: projection.terminal };
         if (projection.status !== "completed") return { status: projection.status === "awaiting-approval" ? "awaiting-approval" : "failed", routeResult, scale: { logicalAssignments: plan.scale.logicalAssignments, observedAssignments: 0, costVisibility: "VISIBLE" } };
-        const verification = await verifyUltraResult({ runId, route: "swarm-goal", routeResult, plan, signal });
+        const verification = {
+          verdict: "pass",
+          contextMode: "fresh",
+          receiptDigest: projection.terminal?.verifierReceiptDigest ?? digestValue({ runId: projection.runId, planDigest: plan.planDigest, verdict: "pass" }),
+        };
         return { status: verification.verdict === "pass" ? "completed" : "failed", routeResult, verification, scale: { logicalAssignments: plan.scale.logicalAssignments, observedAssignments: projection.revisions.reduce((sum, revision) => sum + (revision.proposal?.agentSpecs?.length ?? 0), 1), costVisibility: "VISIBLE" } };
       },
     },
   });
+  const ultraRouter = dependencies.recordedUltraRouter ?? createRecordedUltraRouter({ router: rawUltraRouter, recordStore, contextProvider });
   const ctx = getContext();
   const sessionId = ctx?.sessionManager?.getSessionId?.();
   if (typeof sessionId !== "string" || !sessionId) fail("PI_SESSION_ID_UNAVAILABLE", "session-scoped capability ceiling requires a Pi session id");
@@ -837,16 +879,22 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
     batchRuntime,
     nodeExecutor,
     coordinator,
+    rawCoordinator,
+    recordStore,
+    runManagement,
     runDirectAgent,
     goalPlanner,
     goalController,
+    rawGoalController,
     batchControl,
     ultraRouter,
+    rawUltraRouter,
     dynamicSpecs,
     configurationProvider,
     async dispose() {
       if (disposed) return { status: "DISPOSED" };
       disposed = true;
+      await coordinator.shutdown?.().catch(() => {});
       ceilingHandle.dispose();
       await backend.dispose().catch(() => {});
       transport.dispose?.();

@@ -184,3 +184,20 @@ test("M8 profiles and models grammar separates plans, apply, and explicit projec
   assert.throws(() => parseOmpArgs(["models", "validate", "--project", "relative"]), /absolute/u);
   assert.throws(() => parseOmpArgs(["status", "--project", "/tmp/project"]), /only valid for models/u);
 });
+
+test("M8 terminal runs surface is management-only and GC remains plan-first", () => {
+  const configRoot = "/tmp/pi-test";
+  const list = parseOmpArgs(["runs", "list", "--config-root", configRoot]);
+  assert.equal(list.mutation, false);
+  assert.equal(list.options.subcommand, "list");
+  const show = parseOmpArgs(["runs", "show", "run-one", "--config-root", configRoot]);
+  assert.equal(show.options.runId, "run-one");
+  const plan = parseOmpArgs(["runs", "gc", "--plan", "--config-root", configRoot]);
+  assert.equal(plan.mutation, false);
+  assert.equal(plan.options.plan, true);
+  const apply = parseOmpArgs(["runs", "gc", "--apply", "--yes", "--config-root", configRoot]);
+  assert.equal(apply.mutation, true);
+  assert.equal(apply.options.apply, true);
+  assert.throws(() => parseOmpArgs(["runs", "show", "run-one", "--apply"]), /only valid for runs gc/u);
+  assert.throws(() => parseOmpArgs(["runs", "gc", "--yes"]), /only valid with --apply/u);
+});

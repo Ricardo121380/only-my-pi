@@ -131,6 +131,7 @@ export default function ompControl(pi: ExtensionAPI): void {
         configurationProvider: sessionComposer.configurationProvider,
         projectGateService: sessionComposer.projectGateService,
         webAuthorizer: sessionComposer.webAuthorizer,
+        runManagement: sessionComposer.runManagement,
         dailyConfigService: sessionComposer.dailyConfig,
       } : {
         dailyConfigService: sessionComposer.dailyConfig,

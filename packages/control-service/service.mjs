@@ -15,6 +15,7 @@ Usage:
   omp profiles [list|show <id>|plan <preset>|apply <preset>] [--yes] [--config-root <absolute>] [--json]
   omp models validate [--project <absolute>] [--config-root <absolute>] [--json]
   omp gate validate [--project <absolute>] [--config-root <absolute>] [--json]
+  omp runs [list|show <run-id>|gc --plan|--apply] [--yes] [--config-root <absolute>] [--json]
   omp tools|packages|context|verify [--config-root <absolute>] [--json]
   omp mode [list|show|use|reset|doctor|diff|scaffold] [mode-id] [--profile <id>] [--resolved] [--config-root <absolute>] [--json]
   omp workflow [list|show|run|status|cancel|resume] [workflow-or-run-id] [--input-file <absolute>] [--apply --yes] [--config-root <absolute>] [--json]
@@ -44,7 +45,7 @@ async function approve(request, plan, confirm) {
 }
 
 export class ControlService {
-  constructor({ bootstrap, doctor, confirm, modes, workflows, swarms, ultras, themes, dailyConfig, projectGates, statusService, rootDir, configRoot } = {}) {
+  constructor({ bootstrap, doctor, confirm, modes, workflows, swarms, ultras, themes, dailyConfig, projectGates, runManagement, statusService, rootDir, configRoot } = {}) {
     if (!bootstrap || !doctor) throw new TypeError("bootstrap and doctor services are required");
     this.bootstrap = bootstrap;
     this.doctor = doctor;
@@ -56,6 +57,7 @@ export class ControlService {
     this.themes = themes;
     this.dailyConfig = dailyConfig;
     this.projectGates = projectGates;
+    this.runManagement = runManagement;
     this.statusService = statusService;
     this.rootDir = rootDir;
     this.configRoot = configRoot;
@@ -187,6 +189,16 @@ export class ControlService {
         } catch (cause) {
           return { ok: false, status: "PROJECT_GATE_INVALID", code: cause?.code ?? "PROJECT_GATE_INVALID", message: cause?.message, mutation: false };
         }
+      }
+      case "runs": {
+        if (!this.runManagement) return { ok: false, status: "RUN_MANAGEMENT_UNAVAILABLE", code: "RUN_MANAGEMENT_UNAVAILABLE", mutation: false };
+        const options = request.options ?? {};
+        if (options.subcommand === "list") return this.runManagement.list();
+        if (options.subcommand === "show") return this.runManagement.show(options.runId);
+        const plan = await this.runManagement.gcPlan();
+        if (!options.apply) return plan;
+        if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
+        return this.runManagement.gcApply(plan);
       }
       case "tools":
         return {
