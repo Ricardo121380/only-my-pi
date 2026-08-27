@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/preferences-v1.schema.json",
+  "title": "only-my-pi Preferences v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "preferences-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "defaultPreset": { "$ref": "#/$defs/id" },
+    "enabledOverlays": { "$ref": "#/$defs/idSet" },
+    "disabledOverlays": { "$ref": "#/$defs/idSet" },
+    "models": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "default": { "$ref": "#/$defs/modelSelection" },
+        "roles": {
+          "type": "object",
+          "propertyNames": { "enum": ["scout", "explorer", "researcher", "source-verifier", "tester", "planner", "reviewer", "security-reviewer", "synthesizer", "verifier", "goal-planner"] },
+          "additionalProperties": { "$ref": "#/$defs/modelSelection" }
+        }
+      }
+    },
+    "pricingOverrides": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/modelId" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["inputPerMillion", "outputPerMillion"],
+        "properties": {
+          "inputPerMillion": { "type": "number", "minimum": 0 },
+          "outputPerMillion": { "type": "number", "minimum": 0 }
+        }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/id" },
+      "additionalProperties": { "$ref": "#/$defs/budget" }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+    "idSet": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "modelId": { "type": "string", "pattern": "^(?:inherit|[A-Za-z0-9][A-Za-z0-9._+-]{0,63}/[A-Za-z0-9][A-Za-z0-9._:+-]{0,127})$" },
+    "modelSelection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "model": { "$ref": "#/$defs/modelId" },
+        "thinking": { "enum": ["inherit", "off", "minimal", "low", "medium", "high", "xhigh", "max"] },
+        "fallbackModels": { "type": "array", "maxItems": 4, "uniqueItems": true, "items": { "$ref": "#/$defs/modelId" } }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "maxConcurrency": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "maxChildren": { "type": "integer", "minimum": 1, "maximum": 64 },
+        "maxDepth": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "maxWallSeconds": { "type": "integer", "minimum": 1, "maximum": 86400 },
+        "maxTotalTokens": { "type": "integer", "minimum": 1 },
+        "maxCostUsd": { "type": "number", "exclusiveMinimum": 0 },
+        "maxTurnsPerChild": { "type": "integer", "minimum": 1, "maximum": 128 },
+        "maxToolCallsPerChild": { "type": "integer", "minimum": 1, "maximum": 512 },
+        "maxTotalToolCalls": { "type": "integer", "minimum": 1, "maximum": 4096 },
+        "maxOutputBytesPerChild": { "type": "integer", "minimum": 1024, "maximum": 2097152 },
+        "maxTotalOutputBytes": { "type": "integer", "minimum": 1024, "maximum": 16777216 },
+        "maxGoalRevisions": { "type": "integer", "minimum": 1, "maximum": 16 }
+      }
+    }
+  }
+}

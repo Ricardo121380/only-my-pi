@@ -12,6 +12,8 @@ Usage:
   omp uninstall [--plan|--apply] [--yes] [--config-root <absolute>] [--json]
   omp safe [--config-root <absolute>] [--json]
   omp profile [list|show <id>|diff <from> <to>] [--config-root <absolute>] [--json]
+  omp profiles [list|show <id>|plan <preset>|apply <preset>] [--yes] [--config-root <absolute>] [--json]
+  omp models validate [--project <absolute>] [--config-root <absolute>] [--json]
   omp tools|packages|context|verify [--config-root <absolute>] [--json]
   omp mode [list|show|use|reset|doctor|diff|scaffold] [mode-id] [--profile <id>] [--resolved] [--config-root <absolute>] [--json]
   omp workflow [list|show|run|status|cancel|resume] [workflow-or-run-id] [--input-file <absolute>] [--apply --yes] [--config-root <absolute>] [--json]
@@ -41,7 +43,7 @@ async function approve(request, plan, confirm) {
 }
 
 export class ControlService {
-  constructor({ bootstrap, doctor, confirm, modes, workflows, swarms, ultras, themes, statusService, rootDir, configRoot } = {}) {
+  constructor({ bootstrap, doctor, confirm, modes, workflows, swarms, ultras, themes, dailyConfig, statusService, rootDir, configRoot } = {}) {
     if (!bootstrap || !doctor) throw new TypeError("bootstrap and doctor services are required");
     this.bootstrap = bootstrap;
     this.doctor = doctor;
@@ -51,6 +53,7 @@ export class ControlService {
     this.swarms = swarms;
     this.ultras = ultras;
     this.themes = themes;
+    this.dailyConfig = dailyConfig;
     this.statusService = statusService;
     this.rootDir = rootDir;
     this.configRoot = configRoot;
@@ -126,6 +129,53 @@ export class ControlService {
           mutation: false,
           diff: profiles.diff(request.options.profileId, request.options.toProfileId),
         };
+      }
+      case "profiles": {
+        if (!this.dailyConfig) return { ok: false, status: "DAILY_CONFIG_UNAVAILABLE", code: "DAILY_CONFIG_UNAVAILABLE", mutation: false };
+        const options = request.options ?? {};
+        if (options.subcommand === "list") return this.dailyConfig.list();
+        if (options.subcommand === "show") return this.dailyConfig.show(options.presetId);
+        const selected = await this.dailyConfig.show(options.presetId);
+        if (selected.ok === false) return selected;
+        if (selected.status !== "PRESET_SHOW" || typeof selected.item?.profileId !== "string") {
+          return { ok: false, status: "PRESET_REQUIRED", code: "PRESET_REQUIRED", mutation: false, id: options.presetId };
+        }
+        const plan = await this.bootstrap.planBootstrap({
+          configRoot: options.configRoot,
+          profile: selected.item.profileId,
+          scope: "global",
+        });
+        const profilePlan = {
+          ...plan,
+          status: plan.status === "NO_CHANGES" ? "NO_CHANGES" : "PROFILE_APPLY_PLAN",
+          preset: selected.item,
+          restartRequired: plan.status !== "NO_CHANGES",
+        };
+        if (options.subcommand === "plan") return profilePlan;
+        if (!(await approve(request, profilePlan, this.confirm))) return confirmationRequired(request.command, profilePlan);
+        const result = await this.bootstrap.applyBootstrap({ ...options, plan });
+        return { ...result, preset: selected.item, restartRequired: result.status !== "NO_CHANGES" };
+      }
+      case "models": {
+        if (!this.dailyConfig) return { ok: false, status: "DAILY_CONFIG_UNAVAILABLE", code: "DAILY_CONFIG_UNAVAILABLE", mutation: false };
+        try {
+          const configuration = await this.dailyConfig.resolve({
+            projectRoot: request.options?.projectRoot ?? null,
+            // CLI validation may parse an explicitly named project document,
+            // but this is not Pi runtime trust and cannot activate it.
+            projectTrusted: request.options?.projectRoot !== null,
+          });
+          return {
+            ok: true,
+            status: "MODEL_CONFIGURATION_VALID_STATIC",
+            mutation: false,
+            runtimeAuthValidation: "UNAVAILABLE_OUTSIDE_PI_SESSION",
+            projectTrust: request.options?.projectRoot ? "EXPLICIT_PATH_VALIDATION_ONLY" : "NOT_REQUESTED",
+            configuration,
+          };
+        } catch (cause) {
+          return { ok: false, status: "MODEL_CONFIGURATION_INVALID", code: cause?.code ?? "MODEL_CONFIGURATION_INVALID", mutation: false, message: cause?.message };
+        }
       }
       case "tools":
         return {

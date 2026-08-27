@@ -1,0 +1,12 @@
+{
+  "$schema": "../schemas/overlay-v1.schema.json",
+  "formatVersion": 1,
+  "id": "web",
+  "kind": "hard",
+  "description": "Public HTTP(S) research with per-run confirmation, browser cookies disabled and SSRF/redirect guards required.",
+  "packageIds": ["web-access"],
+  "capabilityIds": ["web-access"],
+  "authority": { "network": "public-ssrf-guarded", "persistence": "harness-private", "tools": ["web_search", "source_check", "fetch_content", "get_search_content"], "webConfirmation": true, "browserCookies": false },
+  "defaultEnabled": true,
+  "available": true
+}

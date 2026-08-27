@@ -449,7 +449,7 @@ test("promoted orchestration resources close the Workflow v2 and Swarm planning 
   assert.match(compiled.ownedSettings.packages[0], /resources\/bundles\/only-my-pi-agent-bundle$/u);
   for (const relative of [
     "resources/bundles/only-my-pi-agent-bundle/package.json",
-    "resources/agents/generated/omp-reviewer.md",
+    "resources/bundles/only-my-pi-agent-bundle/agents/omp-reviewer.md",
     "resources/extensions/omp-control/runtime.mjs",
     "resources/packages/control-service/workflow-service.mjs",
     "resources/packages/control-service/swarm-service.mjs",

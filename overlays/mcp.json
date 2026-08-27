@@ -1,0 +1,12 @@
+{
+  "$schema": "../schemas/overlay-v1.schema.json",
+  "formatVersion": 1,
+  "id": "mcp",
+  "kind": "hard",
+  "description": "Reserved reviewed MCP surface; unavailable until a concrete server and tool allowlist are approved.",
+  "packageIds": [],
+  "capabilityIds": [],
+  "authority": { "network": "inherit", "persistence": "harness-private", "tools": [], "webConfirmation": false, "browserCookies": false },
+  "defaultEnabled": false,
+  "available": false
+}

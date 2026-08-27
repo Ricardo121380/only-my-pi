@@ -18,6 +18,7 @@ import { createStatusService } from "../packages/control-service/status-service.
 import { createUltraRunControlService } from "../packages/control-service/ultra-run-service.mjs";
 import { parseOmpArgs } from "../packages/control-service/cli-parser.mjs";
 import { ControlService, OMP_USAGE } from "../packages/control-service/service.mjs";
+import { DailyConfigService } from "../packages/daily-config/index.mjs";
 
 const THIS_FILE = fileURLToPath(import.meta.url);
 const DEFAULT_ROOT = path.resolve(path.dirname(THIS_FILE), "..");
@@ -42,6 +43,7 @@ const DEFAULT_DEPENDENCIES = Object.freeze({
   BootstrapService,
   ControlService,
   DoctorService,
+  DailyConfigService,
   TransactionEngine,
   createNpmCommandRunner,
   createNoModelSmokeRunner,
@@ -114,6 +116,7 @@ export function createProductionControlService({
   const ultras = createUltraRunControlService({ rootDir: resolvedRoot });
   const themes = createThemeControlService({ rootDir: resolvedRoot });
   const statusService = createStatusService();
+  const dailyConfig = new wired.DailyConfigService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot });
   return new wired.ControlService({
     bootstrap,
     doctor,
@@ -124,6 +127,7 @@ export function createProductionControlService({
     swarms,
     ultras,
     themes,
+    dailyConfig,
     statusService,
   });
 }
@@ -192,6 +196,7 @@ function humanConfirmationHint(command) {
   if (["bootstrap", "update", "uninstall"].includes(command)) {
     return `rerun omp ${command} with --apply --yes after reviewing this plan`;
   }
+  if (command === "profiles") return "rerun omp profiles apply <preset> with --yes after reviewing this plan";
   return `rerun omp ${command} with --yes after reviewing this plan`;
 }
 

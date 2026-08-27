@@ -12,6 +12,7 @@ const VALUE_OPTIONS = new Map([
   ["--scope", "scope"],
   ["--config-root", "configRoot"],
   ["--input-file", "inputFile"],
+  ["--project", "projectRoot"],
 ]);
 
 const BOOLEAN_OPTIONS = new Map([
@@ -34,6 +35,8 @@ const COMMANDS = new Set([
   "uninstall",
   "safe",
   "profile",
+  "profiles",
+  "models",
   "tools",
   "packages",
   "context",
@@ -48,6 +51,8 @@ const COMMANDS = new Set([
 
 const MODE_COMMANDS = new Set(["list", "show", "use", "reset", "doctor", "diff", "scaffold"]);
 const PROFILE_COMMANDS = new Set(["list", "show", "diff"]);
+const PRESET_COMMANDS = new Set(["list", "show", "plan", "apply"]);
+const MODEL_COMMANDS = new Set(["validate"]);
 const WORKFLOW_COMMANDS = new Set(["list", "show", "run", "status", "cancel", "resume"]);
 const SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume", "batch", "goal"]);
 const BATCH_SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume"]);
@@ -129,6 +134,7 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   const configRoot = resolveConfigRoot(options.configRoot, env, homedir);
 
   if (!new Set(["swarm", "workflow", "ultra"]).has(command) && options.inputFile !== undefined) fail("--input-file is only valid for workflow, swarm, or ultra commands");
+  if (command !== "models" && options.projectRoot !== undefined) fail("--project is only valid for models validate");
 
   if (options.profile !== undefined) assertIdentifier(options.profile, "profile");
   if (options.mode !== undefined) {
@@ -137,6 +143,7 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   }
   if (options.provider !== undefined) assertIdentifier(options.provider, "provider");
   if (options.scope !== undefined && !SCOPES.has(options.scope)) fail("scope must be global or project");
+  if (options.projectRoot !== undefined && !path.isAbsolute(options.projectRoot)) fail("--project must be an absolute path");
   if (options.model !== undefined && !/^[A-Za-z0-9][A-Za-z0-9._:/+-]{0,127}$/.test(options.model)) {
     fail("model must be a bounded non-secret identifier");
   }
@@ -207,7 +214,7 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   }
 
   if (command === "profile") {
-    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live", "resolved"], command);
+    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live", "resolved", "projectRoot"], command);
     const subcommand = positionals[0] ?? "list";
     if (!PROFILE_COMMANDS.has(subcommand)) fail(`unknown profile subcommand: ${subcommand}`);
     if (subcommand === "list" && positionals.length !== 1) fail("profile list accepts no profile id");
@@ -225,6 +232,33 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
         toProfileId: ids[1] ?? null,
         json: options.json === true,
       },
+    };
+  }
+
+  if (command === "profiles") {
+    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "static", "live", "resolved", "projectRoot"], command);
+    const subcommand = positionals[0] ?? "list";
+    if (!PRESET_COMMANDS.has(subcommand)) fail(`unknown profiles subcommand: ${subcommand}`);
+    const presetId = positionals[1] ?? null;
+    if (subcommand === "list" && positionals.length !== 1) fail("profiles list accepts no preset id");
+    if (["show", "plan", "apply"].includes(subcommand) && positionals.length !== 2) fail(`profiles ${subcommand} requires one preset or overlay id`);
+    if (presetId !== null) assertIdentifier(presetId, "preset or overlay id");
+    if (options.yes && subcommand !== "apply") fail("--yes is only valid for profiles apply");
+    return {
+      command,
+      mutation: subcommand === "apply",
+      options: { configRoot, subcommand, presetId, yes: options.yes === true, json: options.json === true },
+    };
+  }
+
+  if (command === "models") {
+    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live", "resolved"], command);
+    const subcommand = positionals[0] ?? "validate";
+    if (!MODEL_COMMANDS.has(subcommand) || positionals.length !== 1) fail("models accepts only the validate subcommand");
+    return {
+      command,
+      mutation: false,
+      options: { configRoot, subcommand, projectRoot: options.projectRoot ? path.resolve(options.projectRoot) : null, json: options.json === true },
     };
   }
 

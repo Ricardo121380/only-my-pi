@@ -1,0 +1,12 @@
+{
+  "$schema": "../schemas/overlay-v1.schema.json",
+  "formatVersion": 1,
+  "id": "memory",
+  "kind": "hard",
+  "description": "Optional single-owner persistent memory; disabled in the daily preset.",
+  "packageIds": ["memory"],
+  "capabilityIds": ["memory"],
+  "authority": { "network": "inherit", "persistence": "harness-private", "tools": [], "webConfirmation": false, "browserCookies": false },
+  "defaultEnabled": false,
+  "available": true
+}

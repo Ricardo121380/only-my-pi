@@ -46,6 +46,18 @@ test("orchestration explicitly selects the sole subagent runtime and stays unver
   assert.ok(orchestration.capabilities.some((entry) => entry.id === "subagent-runtime" && entry.state === "CONFIGURED_UNVERIFIED"));
 });
 
+test("daily is Core plus public Web and read-only orchestration without default memory or sync", () => {
+  const daily = resolveProfileData(inventory, profile("daily"));
+  assert.equal(daily.policy.network, "public-ssrf-guarded");
+  assert.equal(daily.policy.browserCookies, false);
+  assert.equal(daily.policy.subagents.enabled, true);
+  assert.equal(daily.policy.subagents.maxConcurrency, 2);
+  assert.ok(daily.packages.some((entry) => entry.id === "web-access"));
+  assert.ok(daily.packages.some((entry) => entry.id === "subagents"));
+  assert.equal(daily.packages.some((entry) => entry.id === "memory"), false);
+  assert.equal(daily.packages.some((entry) => entry.id === "git-sync"), false);
+});
+
 test("blocked package cannot be activated", () => {
   const unsafe = { ...profile("minimal"), id: "unsafe", packageIds: ["workspace-history"] };
   assert.throws(() => resolveProfileData(inventory, unsafe), /unavailable package workspace-history/);

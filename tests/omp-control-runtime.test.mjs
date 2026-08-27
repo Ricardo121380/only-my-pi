@@ -208,6 +208,69 @@ test("/omp theme routes public Pi UI theme methods and keeps apply explicit", as
   assert.deepEqual(applied, [{ success: true, name: "only-my-pi-dark" }]);
 });
 
+test("/omp overlays shows effective layers and hard apply returns an exact restart plan", async () => {
+  const calls = [];
+  const dailyConfigService = {
+    async resolve(options) {
+      calls.push(options);
+      return {
+        preset: { id: "daily" },
+        base: "core",
+        overlays: [{ id: "orchestration-readonly" }, { id: "ui-terminal" }, { id: "web" }],
+        hardOverlays: ["orchestration-readonly", "web"],
+        softOverlays: ["ui-terminal"],
+        source: { global: "defaults", project: "TRUSTED_PROJECT_CONFIG_APPLIED", perRun: "none" },
+      };
+    },
+    async show(id) { return { ok: true, status: "PRESET_SHOW", item: { id, profileId: "daily" } }; },
+  };
+  const runtime = createOmpRuntime({ rootDir: process.cwd(), dailyConfigService });
+  const ctx = { cwd: "/tmp/project", isProjectTrusted: () => true, ui: { notify() {} } };
+  const shown = await runtime.execute("overlays show", ctx);
+  assert.equal(shown.status, "OVERLAY_STATUS");
+  assert.deepEqual(shown.hardOverlays, ["orchestration-readonly", "web"]);
+  assert.deepEqual(calls, [{ projectRoot: "/tmp/project", projectTrusted: true }]);
+  const apply = await runtime.execute("overlays apply daily", ctx);
+  assert.equal(apply.status, "RESTART_REQUIRED");
+  assert.match(apply.next, /omp profiles apply daily/u);
+});
+
+test("/omp models validates against Pi registry and edits only through the idle TUI", async () => {
+  const saved = [];
+  const configuration = {
+    models: {
+      roles: Object.fromEntries(["scout", "explorer", "researcher", "source-verifier", "tester", "planner", "reviewer", "security-reviewer", "synthesizer", "verifier", "goal-planner"].map((role) => [role, { model: "provider/model", thinking: "medium", fallbackModels: [] }])),
+    },
+    pricingOverrides: { "provider/model": { inputPerMillion: 1, outputPerMillion: 2 } },
+    budget: { maxCostUsd: 0.25 },
+    source: { global: "global", project: "NOT_CONFIGURED", perRun: "none" },
+  };
+  const dailyConfigService = {
+    async resolve() { return configuration; },
+    async readGlobal() { return { formatVersion: 1, models: {}, budgets: {} }; },
+    async save(value) { saved.push(value); return { ok: true, status: "PREFERENCES_SAVED", mutation: true }; },
+    async reset() { return { ok: true, status: "PREFERENCES_RESET", mutation: true }; },
+  };
+  const runtime = createOmpRuntime({ rootDir: process.cwd(), dailyConfigService });
+  const ctx = {
+    cwd: "/tmp/project",
+    mode: "tui",
+    isIdle: () => true,
+    isProjectTrusted: () => false,
+    modelRegistry: { async find(provider, id) { return { provider, id }; }, async hasConfiguredAuth() { return true; } },
+    model: { provider: "provider", id: "model", cost: { input: 1, output: 2 } },
+    ui: {
+      notify() {},
+      async editor() { return JSON.stringify({ formatVersion: 1, models: { default: { model: "provider/model" } } }); },
+      async confirm() { return true; },
+    },
+  };
+  assert.equal((await runtime.execute("models validate", ctx)).status, "MODEL_CONFIGURATION_READY");
+  assert.equal((await runtime.execute("models edit", ctx)).status, "PREFERENCES_SAVED");
+  assert.deepEqual(saved, [{ formatVersion: 1, models: { default: { model: "provider/model" } } }]);
+  assert.equal((await runtime.execute("models reset", ctx)).status, "PREFERENCES_RESET");
+});
+
 test("/omp status retains legacy STATUS while adding the redacted harness projection", async () => {
   const runtime = createOmpRuntime({
     rootDir: process.cwd(),

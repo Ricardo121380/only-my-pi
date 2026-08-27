@@ -1,0 +1,12 @@
+{
+  "$schema": "../schemas/overlay-v1.schema.json",
+  "formatVersion": 1,
+  "id": "ui-terminal",
+  "kind": "soft",
+  "description": "First-party theme, status and bounded terminal rendering without authority expansion.",
+  "packageIds": [],
+  "capabilityIds": [],
+  "authority": { "network": "inherit", "persistence": "session", "tools": [], "webConfirmation": false, "browserCookies": false },
+  "defaultEnabled": true,
+  "available": true
+}

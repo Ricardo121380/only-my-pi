@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/overlay-v1.schema.json",
+  "title": "only-my-pi Base or Overlay v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "id", "kind", "description", "packageIds", "capabilityIds", "authority", "defaultEnabled", "available"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "overlay-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "id": { "$ref": "#/$defs/id" },
+    "kind": { "enum": ["base", "hard", "soft", "reserved", "labs"] },
+    "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "packageIds": { "$ref": "#/$defs/idSet" },
+    "capabilityIds": { "$ref": "#/$defs/idSet" },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["network", "persistence", "tools", "webConfirmation", "browserCookies"],
+      "properties": {
+        "network": { "enum": ["deny", "inherit", "public-ssrf-guarded"] },
+        "persistence": { "enum": ["none", "session", "harness-private", "user-config-sync", "reserved"] },
+        "tools": { "type": "array", "uniqueItems": true, "items": { "enum": ["read", "grep", "find", "ls", "web_search", "source_check", "fetch_content", "get_search_content", "subagent", "structured_output"] } },
+        "webConfirmation": { "type": "boolean" },
+        "browserCookies": { "const": false }
+      }
+    },
+    "defaultEnabled": { "type": "boolean" },
+    "available": { "type": "boolean" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+    "idSet": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } }
+  }
+}

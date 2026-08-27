@@ -1,0 +1,12 @@
+{
+  "$schema": "../schemas/overlay-v1.schema.json",
+  "formatVersion": 1,
+  "id": "sync",
+  "kind": "hard",
+  "description": "Optional reviewed configuration synchronization; never auth, sessions or secrets.",
+  "packageIds": ["git-sync"],
+  "capabilityIds": ["configuration-sync"],
+  "authority": { "network": "inherit", "persistence": "user-config-sync", "tools": [], "webConfirmation": false, "browserCookies": false },
+  "defaultEnabled": false,
+  "available": true
+}

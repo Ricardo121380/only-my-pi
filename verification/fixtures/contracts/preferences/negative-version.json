@@ -1,0 +1,4 @@
+{
+  "$schema": "../../../schemas/preferences-v1.schema.json",
+  "formatVersion": 2
+}

@@ -82,7 +82,7 @@
       "properties": {
         "projectTrust": { "enum": ["ask", "never", "trusted-only"] },
         "approval": { "enum": ["ask", "never-auto-approve", "deny"] },
-        "network": { "enum": ["deny", "deny-unless-explicit", "allow-listed-only", "deny-unless-test-case"] },
+        "network": { "enum": ["deny", "deny-unless-explicit", "allow-listed-only", "public-ssrf-guarded", "deny-unless-test-case"] },
         "browserCookies": { "const": false },
         "session": { "enum": ["central-user-session-dir", "no-session-by-default", "isolated-session-dir"] },
         "contextFiles": { "enum": ["review-before-trust", "disabled-by-default"] },

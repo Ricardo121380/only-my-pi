@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,7 +8,7 @@ import { validateModeReceipt } from "../../packages/mode-registry/index.mjs";
 import { buildContextSnapshot, formatSnapshot } from "../context-doctor/metrics.mjs";
 
 const TOKEN = /^[A-Za-z0-9:_./-]+$/u;
-const ROOT_COMMANDS = new Set(["", "help", "status", "doctor", "profile", "mode", "workflow", "tools", "packages", "context", "verify", "safe", "swarm", "theme"]);
+const ROOT_COMMANDS = new Set(["", "help", "status", "doctor", "profile", "mode", "workflow", "tools", "packages", "context", "verify", "safe", "swarm", "theme", "overlays", "models"]);
 
 function fail(code, message) {
   const error = new Error(message);
@@ -39,6 +40,9 @@ function asText(result) {
   if (result.message) lines.push(`message: ${bounded(result.message)}`);
   if (result.modeId) lines.push(`mode: ${bounded(result.modeId)}`);
   if (result.themeId) lines.push(`theme: ${bounded(result.themeId)}`);
+  if (result.presetId) lines.push(`preset: ${bounded(result.presetId)}`);
+  if (Array.isArray(result.hardOverlays)) lines.push(`hardOverlays: ${result.hardOverlays.map((entry) => bounded(entry)).join(", ") || "none"}`);
+  if (Array.isArray(result.softOverlays)) lines.push(`softOverlays: ${result.softOverlays.map((entry) => bounded(entry)).join(", ") || "none"}`);
   if (result.piThemeName) lines.push(`piTheme: ${bounded(result.piThemeName)}`);
   if (result.count !== undefined) lines.push(`count: ${bounded(result.count)}`);
   if (result.next) lines.push(`next: ${bounded(result.next)}`);
@@ -140,14 +144,15 @@ export async function restoreModeReceipt({ registry, entries, profile } = {}) {
  * It never invokes a shell and treats missing live services as an explicit
  * unavailable state rather than guessing a permission or sandbox state.
  */
-export function createOmpRuntime({ rootDir, configRoot, registry, modeService, workflowService, swarmService, ultraService, subagentsOrchestration, themeService, statusService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
+export function createOmpRuntime({ rootDir, configRoot, registry, modeService, workflowService, swarmService, ultraService, subagentsOrchestration, themeService, dailyConfigService, statusService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
   const derivedRoot = rootDir ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-  const derivedConfigRoot = configRoot ?? process.env.PI_CODING_AGENT_DIR ?? null;
+  const derivedConfigRoot = configRoot ?? process.env.PI_CODING_AGENT_DIR ?? path.join(os.homedir(), ".pi", "agent");
   let modes = modeService;
   let workflows = workflowService;
   let swarms = swarmService;
   let ultras = ultraService;
   let themes = themeService;
+  let dailyConfig = dailyConfigService;
   let statuses = statusService;
   const getModes = async () => {
     if (!modes) modes = createModeControlService({ rootDir: derivedRoot, configRoot: derivedConfigRoot, registry, sessionDriver });
@@ -194,6 +199,14 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
     }
     return statuses;
   };
+  const getDailyConfig = async () => {
+    if (!dailyConfig) {
+      if (!derivedConfigRoot) fail("DAILY_CONFIG_UNAVAILABLE", "Pi config root is unavailable");
+      const module = await import("../../packages/daily-config/index.mjs");
+      dailyConfig = module.createDailyConfigService({ rootDir: derivedRoot, configRoot: derivedConfigRoot });
+    }
+    return dailyConfig;
+  };
 
   const restoreSession = async (entries) => {
     let liveRegistry = registry;
@@ -222,7 +235,7 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
         return {
           ok: true,
           status: "HELP",
-          text: "/omp status|doctor|profile|mode|workflow|swarm|ultra|theme|tools|packages|context|verify|safe|help",
+          text: "/omp status|doctor|profile|overlays|models|mode|workflow|swarm|ultra|theme|tools|packages|context|verify|safe|help",
         };
       }
       if (command === "mode") {
@@ -354,6 +367,108 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
           setTheme: (name) => (typeof ctx?.ui?.setTheme === "function" ? ctx.ui.setTheme(name) : undefined),
         };
         const result = await (await getThemes()).dispatch({ subcommand, themeId, apply, themeDriver: driver });
+        notify(ctx, result, result.ok === false ? "warning" : "info");
+        return result;
+      }
+      if (command === "overlays") {
+        const subcommand = args[0] ?? "show";
+        if (!["show", "apply"].includes(subcommand) || args.length > (subcommand === "show" ? 1 : 2)) {
+          const result = { ok: false, status: "OVERLAY_COMMAND_INVALID", code: "INVALID_OVERLAY_COMMAND", mutation: false };
+          notify(ctx, result, "warning");
+          return result;
+        }
+        const service = await getDailyConfig();
+        if (subcommand === "apply") {
+          const id = args[1];
+          if (!id) {
+            const result = { ok: false, status: "OVERLAY_COMMAND_INVALID", code: "PRESET_ID_REQUIRED", mutation: false };
+            notify(ctx, result, "warning");
+            return result;
+          }
+          const selected = await service.show(id);
+          const result = selected.ok === false
+            ? selected
+            : selected.status !== "PRESET_SHOW"
+              ? { ok: false, status: "PRESET_REQUIRED", code: "PRESET_REQUIRED", mutation: false, id }
+              : {
+                  ok: false,
+                  status: "RESTART_REQUIRED",
+                  code: "HARD_OVERLAY_RESTART_REQUIRED",
+                  mutation: false,
+                  presetId: id,
+                  next: `run omp profiles apply ${id}, review the transaction, then start a new Pi session`,
+                };
+          notify(ctx, result, result.ok === false ? "warning" : "info");
+          return result;
+        }
+        const resolved = await service.resolve({
+          projectRoot: ctx?.cwd ?? null,
+          projectTrusted: typeof ctx?.isProjectTrusted === "function" && ctx.isProjectTrusted(),
+        });
+        const result = {
+          ok: true,
+          status: "OVERLAY_STATUS",
+          mutation: false,
+          presetId: resolved.preset.id,
+          base: resolved.base,
+          overlays: resolved.overlays,
+          hardOverlays: resolved.hardOverlays,
+          softOverlays: resolved.softOverlays,
+          source: resolved.source,
+        };
+        notify(ctx, result);
+        return result;
+      }
+      if (command === "models") {
+        const subcommand = args[0] ?? "show";
+        if (!["show", "validate", "edit", "reset"].includes(subcommand) || args.length > 1) {
+          const result = { ok: false, status: "MODEL_COMMAND_INVALID", code: "INVALID_MODEL_COMMAND", mutation: false };
+          notify(ctx, result, "warning");
+          return result;
+        }
+        const service = await getDailyConfig();
+        if (subcommand === "edit") {
+          if (ctx?.mode !== "tui" || typeof ctx?.ui?.editor !== "function" || typeof ctx?.isIdle !== "function" || !ctx.isIdle()) {
+            const result = { ok: false, status: "MODEL_EDIT_UNAVAILABLE", code: "TUI_IDLE_REQUIRED", mutation: false };
+            notify(ctx, result, "warning");
+            return result;
+          }
+          const current = await service.readGlobal();
+          const edited = await ctx.ui.editor("only-my-pi model and budget preferences (JSON)", JSON.stringify(current, null, 2));
+          if (edited === undefined) return { ok: true, status: "MODEL_EDIT_CANCELLED", mutation: false };
+          let document;
+          try { document = JSON.parse(edited); } catch {
+            const result = { ok: false, status: "MODEL_CONFIGURATION_INVALID", code: "PREFERENCES_FILE_INVALID", mutation: false, message: "edited preferences are not valid JSON" };
+            notify(ctx, result, "warning");
+            return result;
+          }
+          const result = await service.save(document);
+          notify(ctx, result);
+          return result;
+        }
+        if (subcommand === "reset") {
+          if (ctx?.mode !== "tui" || typeof ctx?.ui?.confirm !== "function") {
+            const result = { ok: false, status: "MODEL_RESET_UNAVAILABLE", code: "TUI_CONFIRMATION_REQUIRED", mutation: false };
+            notify(ctx, result, "warning");
+            return result;
+          }
+          const approved = await ctx.ui.confirm("Reset only-my-pi preferences?", "This removes only only-my-pi/preferences.json; Pi auth and models are untouched.");
+          if (!approved) return { ok: true, status: "MODEL_RESET_CANCELLED", mutation: false };
+          const result = await service.reset();
+          notify(ctx, result);
+          return result;
+        }
+        const resolved = await service.resolve({
+          projectRoot: ctx?.cwd ?? null,
+          projectTrusted: typeof ctx?.isProjectTrusted === "function" && ctx.isProjectTrusted(),
+        });
+        if (subcommand === "show") {
+          const result = { ok: true, status: "MODEL_CONFIGURATION_SHOW", mutation: false, models: resolved.models, budget: resolved.budget, source: resolved.source };
+          notify(ctx, result);
+          return result;
+        }
+        const module = await import("../../packages/daily-config/index.mjs");
+        const result = await module.validateResolvedModels(resolved, { modelRegistry: ctx?.modelRegistry, currentModel: ctx?.model ?? null });
         notify(ctx, result, result.ok === false ? "warning" : "info");
         return result;
       }
