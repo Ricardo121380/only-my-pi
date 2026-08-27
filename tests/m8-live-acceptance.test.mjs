@@ -11,7 +11,7 @@ import {
   parseM8LiveAcceptanceArgs,
   runPiM8Phase,
 } from "../scripts/m8-live-acceptance.mjs";
-import { M8_LIVE_RECORD_TYPE } from "../packages/subagents/release/m8-live-acceptance-extension.mjs";
+import { M8_LIVE_RECORD_TYPE, m8ProtectedToolCallLimit, m8ProtectedTurnLimit } from "../packages/subagents/release/m8-live-acceptance-extension.mjs";
 import { protectedEvidenceDigest, validateDailyHarnessProtectedEvidence } from "../scripts/lib/daily-harness-gates.mjs";
 
 test("M8 live CLI is plan-first and run requires explicit artifact/output confirmation", () => {
@@ -95,4 +95,13 @@ test("D13 evidence requires the full source-bound low-sensitivity assertion matr
   missing.assertions.pop();
   missing.evidenceDigest = protectedEvidenceDigest(missing);
   assert.throws(() => validateDailyHarnessProtectedEvidence(missing, { gateId: "D13" }), /assertion set/u);
+});
+
+test("protected Goal and public Web runs have distinct monotonic tool and turn ceilings", () => {
+  const researcher = { templateId: "researcher" };
+  assert.equal(m8ProtectedToolCallLimit({ agentSpec: researcher, handle: { local: { runId: "m8-goal-source-r0" } } }), 0);
+  assert.equal(m8ProtectedTurnLimit({ agentSpec: researcher, handle: { local: { runId: "m8-goal-source-r0" } } }), 2);
+  assert.equal(m8ProtectedToolCallLimit({ agentSpec: researcher, handle: { local: { runId: "m8-web-source" } } }), 4);
+  assert.equal(m8ProtectedTurnLimit({ agentSpec: researcher, handle: { local: { runId: "m8-web-source" } } }), 4);
+  assert.equal(m8ProtectedToolCallLimit({ agentSpec: { templateId: "reviewer" }, handle: { local: { runId: "m8-agent-source" } } }), 0);
 });

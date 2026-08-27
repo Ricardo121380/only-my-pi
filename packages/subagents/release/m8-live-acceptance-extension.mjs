@@ -80,6 +80,16 @@ function publicCode(cause) {
   return /^[A-Z][A-Z0-9_]{1,127}$/u.test(cause?.code ?? "") ? cause.code : "M8_LIVE_ACCEPTANCE_FAILED";
 }
 
+export function m8ProtectedToolCallLimit({ agentSpec, handle } = {}) {
+  if (handle?.local?.runId?.startsWith("m8-goal-")) return 0;
+  return ["researcher", "source-verifier"].includes(agentSpec?.templateId) ? 4 : 0;
+}
+
+export function m8ProtectedTurnLimit({ agentSpec, handle } = {}) {
+  if (handle?.local?.runId?.startsWith("m8-goal-")) return 2;
+  return ["researcher", "source-verifier"].includes(agentSpec?.templateId) ? 4 : 2;
+}
+
 function assertion(id, value) {
   return Object.freeze({ id, status: "PASS", digest: digestValue(value) });
 }
@@ -346,8 +356,8 @@ export default function m8LiveAcceptanceExtension(pi) {
         getContext: () => ctx,
         dependencies: {
           dailyConfig: protectedDailyConfig,
-          toolCallLimitResolver: ({ agentSpec }) => ["researcher", "source-verifier"].includes(agentSpec?.templateId) ? 4 : 0,
-          turnLimitResolver: ({ agentSpec }) => ["researcher", "source-verifier"].includes(agentSpec?.templateId) ? 4 : 2,
+          toolCallLimitResolver: m8ProtectedToolCallLimit,
+          turnLimitResolver: m8ProtectedTurnLimit,
         },
       });
       const result = request.phase === "main" ? await executeM8LiveMain(composer, request) : await executeM8LiveResume(composer, request);
