@@ -1,0 +1,53 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-daily-harness-protected-evidence",
+  "gateId": "D14",
+  "evidenceId": "m8-real-root-rehearsal",
+  "sourceCommit": "6f77bb69a3bcf4184a71bef1cb0fb878b40a5cb6",
+  "status": "PASS",
+  "createdAt": "2026-08-27T15:22:17.466Z",
+  "assertions": [
+    {
+      "id": "artifact-applied",
+      "status": "PASS",
+      "digest": "sha256:0b8340d9e3a833444abfb2fad50710d2b5bb0281bcc1b138dfe4bf04e7d2fc2f"
+    },
+    {
+      "id": "external-packages-preserved",
+      "status": "PASS",
+      "digest": "sha256:6938e8d65834b01548d7e26288b7643abbec4b5dbe6b18d828ca0341e7365317"
+    },
+    {
+      "id": "final-installed",
+      "status": "PASS",
+      "digest": "sha256:f72fd536394ed6b4eb8d3d08b97c402b06309ca3472a6877e65b89b42e9e3b45"
+    },
+    {
+      "id": "no-model-smoke",
+      "status": "PASS",
+      "digest": "sha256:fd4c445e3015f5f705b6636f81dcb9b9c2197dd8c4031ae4ba06c00a49775f33"
+    },
+    {
+      "id": "reapplied",
+      "status": "PASS",
+      "digest": "sha256:94a91343aa816a96840cb8d6028307a80022206181167dbbea24045f8e50dcc4"
+    },
+    {
+      "id": "rollback-restored",
+      "status": "PASS",
+      "digest": "sha256:64fee2c58b991ef585bb78579f556b491add919656228e8dbdbd90b20bbd3481"
+    }
+  ],
+  "privacy": {
+    "rawOutputStored": false,
+    "hostPathsStored": false,
+    "secretsStored": false
+  },
+  "authorization": {
+    "providerRequests": "NOT_RUN_BY_POLICY",
+    "realPiHome": "AUTHORIZED",
+    "credentials": "NOT_READ",
+    "writer": "NOT_RUN_BY_POLICY"
+  },
+  "evidenceDigest": "sha256:3e517f56b6127943093ba18c4caa342f1cf4482f833f23230edd083845916b30"
+}
