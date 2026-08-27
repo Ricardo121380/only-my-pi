@@ -9,6 +9,7 @@ import process from "node:process";
 import { promisify } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { verifyOwnedSettingsSnapshot } from "../packages/config-runtime/index.mjs";
 import { protectedEvidenceDigest, validateDailyHarnessProtectedEvidence } from "./lib/daily-harness-gates.mjs";
 
 const execFile = promisify(execFileCallback);
@@ -17,6 +18,7 @@ const ompBin = path.join(rootDir, "bin", "omp.mjs");
 const FULL_SHA = /^[a-f0-9]{40}$/u;
 const HEX_SHA256 = /^[a-f0-9]{64}$/u;
 const TRANSACTION_ID = /^[a-f0-9-]{16,64}$/u;
+const SNAPSHOT_ID = /^[a-z0-9][a-z0-9._-]{0,127}$/u;
 const EXPECTED_PACKAGES = Object.freeze([
   "npm:@narumitw/pi-lsp@0.49.4",
   "npm:@narumitw/pi-plan-mode@0.49.3",
@@ -44,7 +46,7 @@ function absolute(value, label) {
 }
 
 export function parseM8RealRootArgs(argv) {
-  const output = { operation: "plan", yes: false, json: false, artifact: null, configRoot: path.join(os.homedir(), ".pi", "agent"), baselineRawSha256: null, baselineSemanticSha256: null, output: null };
+  const output = { operation: "plan", yes: false, json: false, artifact: null, configRoot: path.join(os.homedir(), ".pi", "agent"), baselineRawSha256: null, baselineSemanticSha256: null, baselineSnapshotId: null, output: null };
   const seen = new Set();
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -57,7 +59,7 @@ export function parseM8RealRootArgs(argv) {
       else output.json = true;
       continue;
     }
-    if (["--artifact", "--config-root", "--baseline-raw-sha256", "--baseline-semantic-sha256", "--output"].includes(argument)) {
+    if (["--artifact", "--config-root", "--baseline-raw-sha256", "--baseline-semantic-sha256", "--baseline-snapshot-id", "--output"].includes(argument)) {
       if (seen.has(argument)) fail("M8_REHEARSAL_ARGUMENT_INVALID", `duplicate ${argument}`);
       seen.add(argument);
       const value = argv[++index];
@@ -66,6 +68,7 @@ export function parseM8RealRootArgs(argv) {
       else if (argument === "--config-root") output.configRoot = absolute(value, "configRoot");
       else if (argument === "--output") output.output = absolute(value, "output");
       else if (argument === "--baseline-raw-sha256") output.baselineRawSha256 = value.replace(/^sha256:/u, "");
+      else if (argument === "--baseline-snapshot-id") output.baselineSnapshotId = value;
       else output.baselineSemanticSha256 = value.replace(/^sha256:/u, "");
       continue;
     }
@@ -73,7 +76,8 @@ export function parseM8RealRootArgs(argv) {
   }
   if (seen.has("--run") && seen.has("--plan")) fail("M8_REHEARSAL_ARGUMENT_INVALID", "--run and --plan are mutually exclusive");
   if (output.yes && output.operation !== "run") fail("M8_REHEARSAL_ARGUMENT_INVALID", "--yes requires --run");
-  if (output.operation === "run" && (!output.yes || output.artifact === null || output.output === null || !HEX_SHA256.test(output.baselineRawSha256 ?? "") || !HEX_SHA256.test(output.baselineSemanticSha256 ?? ""))) fail("M8_REHEARSAL_ARGUMENT_INVALID", "--run requires --yes, artifact, both baseline digests, and output");
+  if (output.baselineSnapshotId !== null && !SNAPSHOT_ID.test(output.baselineSnapshotId)) fail("M8_REHEARSAL_ARGUMENT_INVALID", "baseline snapshot id must be canonical lower-case");
+  if (output.operation === "run" && (!output.yes || output.artifact === null || output.output === null || !HEX_SHA256.test(output.baselineRawSha256 ?? "") || !HEX_SHA256.test(output.baselineSemanticSha256 ?? "") || !SNAPSHOT_ID.test(output.baselineSnapshotId ?? ""))) fail("M8_REHEARSAL_ARGUMENT_INVALID", "--run requires --yes, artifact, both baseline digests, an explicit baseline snapshot id, and output");
   return Object.freeze(output);
 }
 
@@ -158,6 +162,8 @@ export async function executeM8RealRootRehearsal(args, { now = () => new Date() 
   const plan = { status: "M8_REAL_ROOT_PLAN_READY", sourceCommit: source.sourceCommit, sourceClean: source.clean, artifact: artifact ? { bytes: artifact.bytes, sha256: `sha256:${artifact.sha256}` } : null, configRoot: "REAL_PI_HOME_EXPLICIT", sequence: ["idempotent-artifact-apply", "verify-external", "rollback", "verify-baseline", "artifact-reapply", "verify-smoke-and-final"] };
   if (args.operation === "plan") return { status: source.clean ? "PLAN" : "PLAN_BLOCKED_SOURCE_DIRTY", plan, exitCode: 0 };
   const configRoot = await fs.realpath(args.configRoot);
+  const baselineSnapshot = await verifyOwnedSettingsSnapshot(configRoot, args.baselineSnapshotId);
+  if (baselineSnapshot.sourceDigest !== `sha256:${args.baselineSemanticSha256}`) fail("M8_REHEARSAL_BASELINE_SNAPSHOT_DRIFT", "baseline snapshot does not bind the authorized pre-install semantic digest");
   const before = await settingsState(configRoot);
   requireInstalled(before, "pre-rehearsal state");
   const temporaryHome = await fs.mkdtemp(path.join(os.tmpdir(), "only-my-pi-m8-rehearsal-"));
@@ -167,7 +173,7 @@ export async function executeM8RealRootRehearsal(args, { now = () => new Date() 
     if (firstApply.status !== "ARTIFACT_APPLIED" || firstApply.artifact?.sha256 !== `sha256:${artifact.sha256}` || !["NO_CHANGES", "REPAIRED_NO_CHANGES", "COMMITTED"].includes(firstApply.receipt?.status)) fail("M8_REHEARSAL_APPLY_FAILED", "idempotent artifact apply did not validate the installed generation");
     const afterFirstApply = await settingsState(configRoot);
     requireInstalled(afterFirstApply, "idempotent apply state");
-    const rollback = await runOmp(["rollback", "--config-root", configRoot, "--yes"], temporaryHome);
+    const rollback = await runOmp(["rollback", args.baselineSnapshotId, "--config-root", configRoot, "--yes"], temporaryHome);
     if (rollback.status !== "COMMITTED") fail("M8_REHEARSAL_ROLLBACK_FAILED", "rollback did not commit");
     const restored = await settingsState(configRoot);
     const baselineMatches = restored.rawSha256 === args.baselineRawSha256 || restored.semanticSha256 === args.baselineSemanticSha256;
@@ -184,7 +190,7 @@ export async function executeM8RealRootRehearsal(args, { now = () => new Date() 
       assertion("artifact-applied", { artifact: artifact.sha256, generationId: before.generationId, status: firstApply.receipt.status }),
       assertion("external-packages-preserved", { ids: afterFirstApply.externalIds, packageSources: afterFirstApply.userPackageSources, managedBundleCount: afterFirstApply.managedPackageSources.length }),
       assertion("no-model-smoke", smoke),
-      assertion("rollback-restored", { rawMatch: restored.rawSha256 === args.baselineRawSha256, semanticMatch: restored.semanticSha256 === args.baselineSemanticSha256, packageSources: restored.packageSources }),
+      assertion("rollback-restored", { rawMatch: restored.rawSha256 === args.baselineRawSha256, semanticMatch: restored.semanticSha256 === args.baselineSemanticSha256, packageSources: restored.packageSources, snapshotDigest: baselineSnapshot.digest, snapshotId: digest(args.baselineSnapshotId) }),
       assertion("reapplied", { artifact: artifact.sha256, transaction: smoke.transactionId, generationId: final.generationId }),
       assertion("final-installed", { generationId: final.generationId, lkg: status.lastKnownGood.generationId, incompleteTransactions: status.incompleteTransactions.length }),
     ].sort((left, right) => left.id.localeCompare(right.id));
