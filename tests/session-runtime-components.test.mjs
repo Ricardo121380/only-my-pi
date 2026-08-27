@@ -372,7 +372,12 @@ test("Goal maker selection is restricted to the two registered research roles", 
   const context = { revision: 0, settledNodes: [] };
   const proposal = buildGoalProposal(plannerResult, context, configuration().budget, { makerTemplateSelector: () => "source-verifier" });
   assert.equal(proposal.agentIntents[0].templateId, "source-verifier");
+  const offline = buildGoalProposal(plannerResult, context, configuration().budget, { makerTemplateSelector: () => "reviewer", webEnabled: false });
+  assert.equal(offline.agentIntents[0].templateId, "reviewer");
+  assert.equal(offline.workflowDefinition.policy.egress.web, "deny");
+  assert.deepEqual(offline.workflowDefinition.flow.steps[0].policy.tools.deny, ["bash", "edit", "write", "web"]);
   assert.throws(() => buildGoalProposal(plannerResult, context, configuration().budget, { makerTemplateSelector: () => "reviewer" }), { code: "GOAL_MAKER_SELECTOR_INVALID" });
+  assert.throws(() => buildGoalProposal(plannerResult, context, configuration().budget, { webEnabled: "no" }), { code: "GOAL_WEB_SELECTOR_INVALID" });
 });
 
 test("composer accepts every injected session service and disposes their public handles once", async (t) => {

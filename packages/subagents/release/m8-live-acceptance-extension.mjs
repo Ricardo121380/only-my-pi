@@ -206,10 +206,12 @@ async function grantWeb(composer, { runId, roles, objectiveDigest }) {
 async function runGoal(composer, request) {
   const runId = `m8-goal-${request.runNonce}`;
   const entry = await createSwarmGoalRegistry({ rootDir: request.repositoryRoot }).resolve("research-release-goal");
-  const objective = { ref: entry.definition.objective.ref, digest: entry.definition.objective.digest, input: { task: "Research and verify the public release surface of only-my-pi using bounded public sources." } };
-  await grantWeb(composer, { runId, roles: ["researcher", "source-verifier"], objectiveDigest: objective.digest });
-  const authorization = createHumanGoalAuthorization(entry.definition, { objective, nonce: `m8-goal-${request.runNonce}` });
-  const result = await composer.goalController.run(entry.definition, { runId, objective, authorization, input: objective.input });
+  const goal = structuredClone(entry.definition);
+  goal.authority.allowedAgentTemplates = ["reviewer", "synthesizer", "verifier"];
+  goal.authority.egress = "deny";
+  const objective = { ref: entry.definition.objective.ref, digest: entry.definition.objective.digest, input: { task: "Dynamically plan, review, synthesize, and freshly verify the supplied bounded release objective without external tools." } };
+  const authorization = createHumanGoalAuthorization(goal, { objective, nonce: `m8-goal-${request.runNonce}` });
+  const result = await composer.goalController.run(goal, { runId, objective, authorization, input: objective.input });
   ensure(result.status === "completed" && result.revisions.length >= 2, "M8_GOAL_REPLAN_MISSING", "M8 SwarmGoal did not complete after a replan");
   ensure(result.revisions[0].proposal.decision === "replan" && result.revisions.at(-1).proposal.decision === "complete", "M8_GOAL_REPLAN_MISSING", "M8 SwarmGoal replan/complete sequence is invalid");
   return assertion("swarm-goal-replan", { runId, revisions: result.revisions.map((revision) => ({ revision: revision.revision, decision: revision.proposal.decision, planDigest: revision.proposal.plan.planDigest })), terminal: result.terminal });
@@ -356,7 +358,8 @@ export default function m8LiveAcceptanceExtension(pi) {
         getContext: () => ctx,
         dependencies: {
           dailyConfig: protectedDailyConfig,
-          goalMakerTemplateSelector: () => "source-verifier",
+          goalMakerTemplateSelector: () => "reviewer",
+          goalWebEnabled: false,
           toolCallLimitResolver: m8ProtectedToolCallLimit,
           turnLimitResolver: m8ProtectedTurnLimit,
         },

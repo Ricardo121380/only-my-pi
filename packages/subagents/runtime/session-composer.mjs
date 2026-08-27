@@ -456,13 +456,15 @@ function goalAgentNode(id, specId, task, budget, web = false, shareDivisor = 3) 
   };
 }
 
-function buildGoalProposal(plannerResult, context, budget, { makerTemplateSelector } = {}) {
+function buildGoalProposal(plannerResult, context, budget, { makerTemplateSelector, webEnabled = true } = {}) {
+  if (typeof webEnabled !== "boolean") fail("GOAL_WEB_SELECTOR_INVALID", "Goal Web selection must be boolean");
   const suffix = `r${context.revision}`;
   const defaultMakerTemplate = context.revision % 2 === 0 ? "researcher" : "source-verifier";
   const makerTemplate = typeof makerTemplateSelector === "function"
     ? makerTemplateSelector({ revision: context.revision, plannerResult: clone(plannerResult), defaultMakerTemplate })
     : defaultMakerTemplate;
-  if (!WEB_AGENT_IDS.has(makerTemplate)) fail("GOAL_MAKER_SELECTOR_INVALID", "Goal maker selector must return researcher or source-verifier");
+  const allowedMakerTemplates = webEnabled ? WEB_AGENT_IDS : new Set([...WEB_AGENT_IDS, "reviewer"]);
+  if (!allowedMakerTemplates.has(makerTemplate)) fail("GOAL_MAKER_SELECTOR_INVALID", "Goal maker selector returned a role outside the selected Web envelope");
   const ids = {
     maker: `maker-${suffix}`,
     synth: `synthesize-${suffix}`,
@@ -476,8 +478,8 @@ function buildGoalProposal(plannerResult, context, budget, { makerTemplateSelect
   const rootPolicy = {
     workspace: "shared-read-only",
     mutation: "none",
-    egress: { web: "allow", mcp: "deny", provider: "allow" },
-    tools: { allow: ["read", "web"], deny: ["bash", "edit", "write"] },
+    egress: { web: webEnabled ? "allow" : "deny", mcp: "deny", provider: "allow" },
+    tools: { allow: webEnabled ? ["read", "web"] : ["read"], deny: webEnabled ? ["bash", "edit", "write"] : ["bash", "edit", "write", "web"] },
   };
   const maxRevisionTokens = Math.max(3, Math.floor(budget.maxTotalTokens / budget.maxGoalRevisions));
   const maxRevisionCost = budget.maxCostUsd / budget.maxGoalRevisions;
@@ -495,7 +497,7 @@ function buildGoalProposal(plannerResult, context, budget, { makerTemplateSelect
     flow: {
       kind: "sequence",
       steps: [
-        goalAgentNode(`maker-${suffix}`, ids.maker, `questions-${suffix}`, budget, true, 2),
+        goalAgentNode(`maker-${suffix}`, ids.maker, `questions-${suffix}`, budget, webEnabled, 2),
         goalAgentNode(`synthesize-${suffix}`, ids.synth, `synthesize-${suffix}`, budget, false, 4),
         goalAgentNode(`verify-${suffix}`, ids.verify, `verify-${suffix}`, budget, false, 4),
       ],
@@ -708,7 +710,10 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
       nodeId: `goal-planner-${plannerContext.revision}`,
     });
     const planned = normalizedPlannerResult(terminal.result, plannerContext.revision, plannerContext.priorCoverage);
-    return buildGoalProposal(planned, plannerContext, (await configurationProvider()).budget, { makerTemplateSelector: dependencies.goalMakerTemplateSelector });
+    return buildGoalProposal(planned, plannerContext, (await configurationProvider()).budget, {
+      makerTemplateSelector: dependencies.goalMakerTemplateSelector,
+      webEnabled: dependencies.goalWebEnabled ?? true,
+    });
   });
   const resolveAgentTemplate = async (id) => agentTemplateFromRegistryEntry(await agentRegistry.resolve(id));
   const executeGoalRevision = dependencies.executeGoalRevision ?? (async ({ childRunId, plan, proposal, agentSpecs, approval, input, signal }) => {
