@@ -250,7 +250,6 @@ export async function runPiM9Phase({ piCommand, phase, request, configRoot, suba
       resolve(found[0]);
     }));
     timer = setTimeout(() => { terminate(child); void finish(() => reject(Object.assign(new Error("Pi M9 live phase timed out"), { code: "M9_LIVE_TIMEOUT" }))); }, timeoutMs);
-    timer.unref?.();
   });
 }
 
