@@ -53,13 +53,19 @@ test("M9 manifest rejects executable protected gates, candidate drift, and deter
   assert.throws(() => validateUpstreamCompatibilityGatesManifest(argvDrift), /contract drifted/u);
 });
 
-test("M9 runner defaults to inspection and never exposes a protected execution flag", () => {
+test("M9 runner defaults to inspection and accepts only explicit source-bound protected evidence", () => {
   const inspection = inspectUpstreamCompatibilityGates(["--json"]);
   assert.equal(inspection.executable, false);
   assert.deepEqual(inspection.protectedGateIds, ["U9"]);
   assert.equal(inspection.decision.state, "HOLD");
   assert.equal(parseUpstreamCompatibilityGateArgs(["--run", "--json"]).run, true);
-  assert.throws(() => parseUpstreamCompatibilityGateArgs(["--protected-evidence", "U9=file.json"]), /unknown argument/u);
+  assert.throws(() => parseUpstreamCompatibilityGateArgs(["--protected-evidence", "U9=verification/protected/u9.json"]), /requires --run/u);
+  const protectedArgs = parseUpstreamCompatibilityGateArgs([
+    "--run",
+    "--source-commit", "a".repeat(40),
+    "--protected-evidence", "U9=verification/protected/u9.json",
+  ]);
+  assert.equal(protectedArgs.protectedEvidence, "verification/protected/u9.json");
   assert.throws(() => parseUpstreamCompatibilityGateArgs(["--run", "--gate", "U1"]), /cannot be combined/u);
 });
 

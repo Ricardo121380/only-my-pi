@@ -16,6 +16,15 @@ export const UPSTREAM_COMPATIBILITY_DETERMINISTIC_IDS = Object.freeze(
   UPSTREAM_COMPATIBILITY_GATE_IDS.filter((id) => id !== "U9"),
 );
 export const UPSTREAM_COMPATIBILITY_PROTECTED_IDS = Object.freeze(["U9"]);
+export const UPSTREAM_COMPATIBILITY_PROTECTED_EVIDENCE = Object.freeze({
+  U9: Object.freeze(["m9-candidate-live-readonly-matrix"]),
+});
+export const UPSTREAM_COMPATIBILITY_U9_ASSERTION_IDS = Object.freeze([
+  "agent-terminal", "artifact-identity", "batch-swarm-terminal", "budget-boundary",
+  "cancellation", "candidate-artifact-audit", "candidate-runtime-identity", "public-web",
+  "resume-across-session", "resume-prepared", "swarm-goal-replan", "ultra-agent-route",
+  "ultra-workflow-route", "usage-metering", "workflow-artifact-flow", "writer-denial",
+].sort());
 
 export const UPSTREAM_COMPATIBILITY_COMMANDS = Object.freeze({
   U1: Object.freeze({
@@ -83,6 +92,19 @@ const GATE_KEYS = new Set([
 const ENV_KEYS = Object.freeze(["CI", "NO_COLOR", "PI_TELEMETRY"]);
 const ENV_VALUES = Object.freeze({ CI: "1", NO_COLOR: "1", PI_TELEMETRY: "0" });
 const SHELL_META = /[\0\r\n;&|`$<>]/u;
+const FULL_SHA = /^[a-f0-9]{40}$/u;
+const SHA256 = /^sha256:[a-f0-9]{64}$/u;
+const SAFE_MODEL = /^[A-Za-z0-9][A-Za-z0-9._:+/-]{0,127}$/u;
+const PROTECTED_KEYS = new Set([
+  "formatVersion", "kind", "gateId", "evidenceId", "sourceCommit", "status", "createdAt",
+  "candidate", "artifacts", "assertions", "usage", "privacy", "authorization", "evidenceDigest",
+]);
+const CANDIDATE_KEYS = new Set(["piVersion", "subagentsVersion", "webAccessVersion", "provider", "model"]);
+const ARTIFACT_KEYS = new Set(["sourceArtifactSha256", "candidateAuditDigest", "contractDigest"]);
+const ASSERTION_KEYS = new Set(["id", "status", "digest"]);
+const USAGE_KEYS = new Set(["tokens", "costUsd", "toolCalls", "meteredTerminals"]);
+const PRIVACY_KEYS = new Set(["rawOutputStored", "hostPathsStored", "secretsStored"]);
+const AUTHORIZATION_KEYS = new Set(["providerRequests", "realPiHome", "credentials", "writer"]);
 
 function fail(message) {
   throw new Error(`upstream-compatibility-gates-v1: ${message}`);
@@ -222,4 +244,98 @@ export function loadUpstreamCompatibilityGatesManifest(
 export function resolveUpstreamCompatibilityGate(manifest, gateId) {
   if (!UPSTREAM_COMPATIBILITY_GATE_IDS.includes(gateId)) fail(`unknown gate ${gateId}`);
   return validateUpstreamCompatibilityGatesManifest(manifest).gates.find((gate) => gate.id === gateId);
+}
+
+function forbiddenEvidenceShape(value, pointer = "$") {
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) => forbiddenEvidenceShape(entry, `${pointer}[${index}]`));
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+  for (const [key, child] of Object.entries(value)) {
+    if (/^(?:api.?key|token|secret|password|cookie|authorization.?header|raw.?output|host.?path)$/iu.test(key)) {
+      fail(`protected evidence contains forbidden field ${pointer}.${key}`);
+    }
+    forbiddenEvidenceShape(child, `${pointer}.${key}`);
+  }
+}
+
+export function upstreamProtectedEvidenceDigest(document) {
+  const unsigned = { ...document };
+  delete unsigned.evidenceDigest;
+  return `sha256:${crypto.createHash("sha256").update(canonicalJson(unsigned)).digest("hex")}`;
+}
+
+export function validateUpstreamCompatibilityProtectedEvidence(input, { expectedSourceCommit } = {}) {
+  object(input, "protected evidence");
+  exactKeys(input, PROTECTED_KEYS, "protected evidence");
+  if (input.formatVersion !== 1
+    || input.kind !== "only-my-pi-upstream-compatibility-protected-evidence"
+    || input.gateId !== "U9"
+    || input.evidenceId !== UPSTREAM_COMPATIBILITY_PROTECTED_EVIDENCE.U9[0]) {
+    fail("protected evidence identity is invalid");
+  }
+  if (!FULL_SHA.test(input.sourceCommit ?? "")
+    || (expectedSourceCommit !== undefined && input.sourceCommit !== expectedSourceCommit)) {
+    fail("protected evidence source commit is invalid");
+  }
+  if (input.status !== "PASS" || !Number.isFinite(Date.parse(input.createdAt))) fail("protected evidence status or timestamp is invalid");
+
+  object(input.candidate, "protected evidence candidate");
+  exactKeys(input.candidate, CANDIDATE_KEYS, "protected evidence candidate");
+  if (input.candidate.piVersion !== "0.84.3"
+    || input.candidate.subagentsVersion !== "0.57.0"
+    || input.candidate.webAccessVersion !== "0.25.0"
+    || !SAFE_MODEL.test(input.candidate.provider ?? "")
+    || !SAFE_MODEL.test(input.candidate.model ?? "")) {
+    fail("protected evidence candidate identity is invalid");
+  }
+
+  object(input.artifacts, "protected evidence artifacts");
+  exactKeys(input.artifacts, ARTIFACT_KEYS, "protected evidence artifacts");
+  for (const [key, value] of Object.entries(input.artifacts)) if (!SHA256.test(value ?? "")) fail(`protected evidence artifacts.${key} is invalid`);
+
+  if (!Array.isArray(input.assertions) || input.assertions.length !== UPSTREAM_COMPATIBILITY_U9_ASSERTION_IDS.length) fail("protected evidence assertions are invalid");
+  const ids = new Set();
+  for (const assertion of input.assertions) {
+    object(assertion, "protected evidence assertion");
+    exactKeys(assertion, ASSERTION_KEYS, "protected evidence assertion");
+    if (typeof assertion.id !== "string"
+      || !/^[a-z][a-z0-9-]{0,63}$/u.test(assertion.id)
+      || ids.has(assertion.id)
+      || assertion.status !== "PASS"
+      || !SHA256.test(assertion.digest ?? "")) {
+      fail("protected evidence assertion is invalid");
+    }
+    ids.add(assertion.id);
+  }
+  if (JSON.stringify([...ids].sort()) !== JSON.stringify(UPSTREAM_COMPATIBILITY_U9_ASSERTION_IDS)) fail("protected evidence assertion set is incomplete or unexpected");
+
+  object(input.usage, "protected evidence usage");
+  exactKeys(input.usage, USAGE_KEYS, "protected evidence usage");
+  for (const key of ["tokens", "toolCalls", "meteredTerminals"]) if (!Number.isSafeInteger(input.usage[key]) || input.usage[key] < 0) fail(`protected evidence usage.${key} is invalid`);
+  if (typeof input.usage.costUsd !== "number" || !Number.isFinite(input.usage.costUsd) || input.usage.costUsd < 0 || input.usage.costUsd > 1) fail("protected evidence usage.costUsd is invalid");
+
+  object(input.privacy, "protected evidence privacy");
+  exactKeys(input.privacy, PRIVACY_KEYS, "protected evidence privacy");
+  if (input.privacy.rawOutputStored !== false || input.privacy.hostPathsStored !== false || input.privacy.secretsStored !== false) fail("protected evidence privacy boundary is invalid");
+  object(input.authorization, "protected evidence authorization");
+  exactKeys(input.authorization, AUTHORIZATION_KEYS, "protected evidence authorization");
+  if (input.authorization.providerRequests !== "AUTHORIZED"
+    || input.authorization.realPiHome !== "AUTH_AND_PRIVATE_RUN_STATE_ONLY"
+    || input.authorization.credentials !== "PI_RUNTIME_ONLY"
+    || input.authorization.writer !== "DENIED") {
+    fail("protected evidence authorization boundary is invalid");
+  }
+  if (!SHA256.test(input.evidenceDigest ?? "") || input.evidenceDigest !== upstreamProtectedEvidenceDigest(input)) fail("protected evidence digest is invalid");
+  forbiddenEvidenceShape(input);
+  const serialized = JSON.stringify(input);
+  if (/\/Users\/[^/\s]+\//u.test(serialized) || /\/home\/[^/\s]+\//u.test(serialized)) fail("protected evidence contains a host home path");
+  return deepFreeze(JSON.parse(JSON.stringify(input)));
+}
+
+export function loadUpstreamCompatibilityProtectedEvidence(file, { rootDir = repositoryRoot, expectedSourceCommit } = {}) {
+  const protectedRoot = path.join(path.resolve(rootDir), "verification", "protected");
+  const target = containedManifest(path.resolve(file), protectedRoot);
+  return validateUpstreamCompatibilityProtectedEvidence(JSON.parse(fs.readFileSync(target, "utf8")), { expectedSourceCommit });
 }

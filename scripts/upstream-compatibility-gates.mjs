@@ -11,6 +11,7 @@ import { pathToFileURL } from "node:url";
 import { loadUpstreamCompatibility } from "../packages/upstream-compatibility/index.mjs";
 import {
   loadUpstreamCompatibilityGatesManifest,
+  loadUpstreamCompatibilityProtectedEvidence,
   resolveUpstreamCompatibilityGate,
   UPSTREAM_COMPATIBILITY_DETERMINISTIC_IDS,
   UPSTREAM_COMPATIBILITY_PROTECTED_IDS,
@@ -25,7 +26,7 @@ function fail(message) {
 }
 
 export function parseUpstreamCompatibilityGateArgs(argv) {
-  const output = { run: false, json: false, help: false, gate: null, output: null };
+  const output = { run: false, json: false, help: false, gate: null, output: null, sourceCommit: null, protectedEvidence: null };
   const seen = new Set();
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -38,19 +39,32 @@ export function parseUpstreamCompatibilityGateArgs(argv) {
       else output.help = true;
       continue;
     }
-    if (["--gate", "--output"].includes(argument)) {
+    if (["--gate", "--output", "--source-commit", "--protected-evidence"].includes(argument)) {
       if (seen.has(argument)) fail(`duplicate ${argument}`);
       seen.add(argument);
       const value = argv[++index];
       if (!value || value.startsWith("-") || /[\0\r\n]/u.test(value)) fail(`${argument} requires a value`);
       if (argument === "--gate") output.gate = value;
-      else output.output = value;
+      else if (argument === "--output") output.output = value;
+      else if (argument === "--source-commit") {
+        if (!FULL_SHA.test(value)) fail("--source-commit requires a full lowercase Git SHA");
+        output.sourceCommit = value;
+      } else {
+        const separator = value.indexOf("=");
+        const gateId = value.slice(0, separator);
+        const source = value.slice(separator + 1);
+        if (separator < 1 || gateId !== "U9") fail("--protected-evidence requires U9=path");
+        if (!source.startsWith("verification/protected/") || !source.endsWith(".json") || path.isAbsolute(source) || source.includes("..")) fail("protected evidence must be a JSON file inside verification/protected");
+        output.protectedEvidence = source;
+      }
       continue;
     }
     fail(`unknown argument ${argument}`);
   }
   if (output.output !== null && !output.run) fail("--output requires --run");
   if (output.run && output.gate !== null) fail("--run cannot be combined with --gate");
+  if (output.protectedEvidence !== null && (!output.run || output.sourceCommit === null)) fail("protected evidence requires --run and --source-commit");
+  if (output.protectedEvidence === null && output.sourceCommit !== null) fail("--source-commit is valid only with protected evidence");
   return Object.freeze(output);
 }
 
@@ -58,10 +72,12 @@ function usage() {
   return [
     "Usage: node scripts/upstream-compatibility-gates.mjs [--gate U1..U9] [--json]",
     "       node scripts/upstream-compatibility-gates.mjs --run [--output verification/receipts/<file>.json] [--json]",
+    "       node scripts/upstream-compatibility-gates.mjs --run --source-commit <40-hex> --protected-evidence U9=verification/protected/<file>.json [--output verification/receipts/<file>.json] [--json]",
     "",
     "Without --run this validates and displays the fixed M9 gate contract.",
     "With --run it executes U1-U8 with shell:false. U9 is protected evidence-only,",
-    "is never spawned by this runner, and cannot silently promote the candidate defaults.",
+    "is never spawned by this runner. Exact source-bound U9 evidence may be imported,",
+    "but cannot silently promote the candidate defaults.",
   ].join("\n");
 }
 
@@ -111,6 +127,20 @@ function assertCleanHead(rootDir) {
   return head;
 }
 
+function validateEvidenceCommit(rootDir, sourceCommit, evidenceCommit, protectedEvidence) {
+  const parents = git(rootDir, ["show", "-s", "--format=%P", evidenceCommit]).split(" ").filter(Boolean);
+  if (parents.length !== 1 || parents[0] !== sourceCommit) fail("protected evidence must be a direct single-parent child of the source commit");
+  const changed = git(rootDir, ["diff", "--name-only", "--no-renames", `${sourceCommit}..${evidenceCommit}`]).split("\n").filter(Boolean);
+  const deleted = git(rootDir, ["diff", "--name-only", "--diff-filter=D", "--no-renames", `${sourceCommit}..${evidenceCommit}`]).split("\n").filter(Boolean);
+  if (deleted.length > 0 || changed.length !== 1 || changed[0] !== protectedEvidence) fail("protected evidence commit contains files outside the exact U9 evidence set");
+  try {
+    git(rootDir, ["cat-file", "-e", `${sourceCommit}:${protectedEvidence}`]);
+    fail("protected evidence already existed in the source commit");
+  } catch (cause) {
+    if (cause?.message?.startsWith("upstream-compatibility-gates:")) throw cause;
+  }
+}
+
 function safeOutputPath(requested, rootDir) {
   if (requested === null) return null;
   const receiptsRoot = path.join(rootDir, "verification", "receipts");
@@ -146,45 +176,58 @@ function publicDeterministicResult(result) {
   });
 }
 
-function protectedResult(gate) {
+function protectedResult(gate, evidence) {
+  const passed = evidence !== undefined;
   return Object.freeze({
     id: gate.id,
     execution: "protected-evidence",
-    status: "NOT_RUN_BY_POLICY",
-    passed: false,
+    status: passed ? "PASS" : "NOT_RUN_BY_POLICY",
+    passed,
     exitCode: null,
     signal: null,
     timedOut: false,
     outputLimitExceeded: false,
-    expectationPassed: false,
+    expectationPassed: passed,
     durationMs: 0,
     stdoutBytes: 0,
     stderrBytes: 0,
     stdoutSha256: emptyDigest(),
     stderrSha256: emptyDigest(),
+    ...(passed ? { evidence: { evidenceId: evidence.evidenceId, evidenceDigest: evidence.evidenceDigest, assertionCount: evidence.assertions.length } } : {}),
   });
 }
 
 export async function runUpstreamCompatibilityVerification({
   rootDir = repositoryRoot,
   output = null,
+  protectedEvidence = null,
+  sourceCommit: suppliedSourceCommit,
   env = process.env,
   spawnImpl,
   onGate = () => {},
   requireCleanSource = true,
-  sourceCommit = "UNCOMMITTED_TEST_ONLY",
 } = {}) {
   const resolvedRoot = fs.realpathSync(path.resolve(rootDir));
   const manifest = loadUpstreamCompatibilityGatesManifest(undefined, { rootDir: resolvedRoot });
   const contract = loadUpstreamCompatibility({ rootDir: resolvedRoot });
   const target = safeOutputPath(output, resolvedRoot);
-  const executionCommit = requireCleanSource ? assertCleanHead(resolvedRoot) : sourceCommit;
+  const cleanHead = requireCleanSource ? assertCleanHead(resolvedRoot) : suppliedSourceCommit ?? "UNCOMMITTED_TEST_ONLY";
+  let sourceCommit = cleanHead;
+  let evidenceCommit;
+  let loadedEvidence;
+  if (protectedEvidence !== null) {
+    if (!FULL_SHA.test(suppliedSourceCommit ?? "")) fail("protected evidence requires an exact source commit");
+    sourceCommit = suppliedSourceCommit;
+    evidenceCommit = cleanHead;
+    if (requireCleanSource) validateEvidenceCommit(resolvedRoot, sourceCommit, evidenceCommit, protectedEvidence);
+    loadedEvidence = loadUpstreamCompatibilityProtectedEvidence(path.resolve(resolvedRoot, protectedEvidence), { rootDir: resolvedRoot, expectedSourceCommit: sourceCommit });
+  }
   const startedAt = new Date().toISOString();
   const gates = [];
 
   for (const gate of manifest.gates) {
     let result;
-    if (gate.execution === "protected-evidence") result = protectedResult(gate);
+    if (gate.execution === "protected-evidence") result = protectedResult(gate, loadedEvidence);
     else {
       const raw = await runCheck(gate, {
         cwd: resolvedRoot,
@@ -198,16 +241,21 @@ export async function runUpstreamCompatibilityVerification({
     onGate(result);
   }
 
-  if (requireCleanSource && assertCleanHead(resolvedRoot) !== executionCommit) {
+  if (requireCleanSource && assertCleanHead(resolvedRoot) !== cleanHead) {
     fail("source commit changed while gates were running");
   }
   const deterministic = gates.filter((gate) => gate.execution === "deterministic");
+  const protectedGates = gates.filter((gate) => gate.execution === "protected-evidence");
   const deterministicPassed = deterministic.every((gate) => gate.status === "PASS");
+  const protectedPassed = protectedGates.every((gate) => gate.status === "PASS");
+  const passed = deterministicPassed && protectedPassed;
   const report = Object.freeze({
     schemaVersion: 1,
     kind: "only-my-pi-upstream-compatibility-report",
-    status: deterministicPassed ? "HOLD_PROTECTED_EVIDENCE" : "FAILED",
-    sourceCommit: executionCommit,
+    status: passed ? "COMPLETE" : deterministicPassed ? "HOLD_PROTECTED_EVIDENCE" : "FAILED",
+    sourceCommit,
+    executionCommit: cleanHead,
+    ...(evidenceCommit ? { evidenceCommit } : {}),
     manifest: Object.freeze({
       id: manifest.id,
       digest: upstreamCompatibilityGatesDigest(manifest),
@@ -225,7 +273,7 @@ export async function runUpstreamCompatibilityVerification({
     }),
     startedAt,
     completedAt: new Date().toISOString(),
-    passed: false,
+    passed,
     deterministicPassed,
     gates: Object.freeze(gates),
     summary: Object.freeze({
@@ -233,7 +281,8 @@ export async function runUpstreamCompatibilityVerification({
       deterministic: deterministic.length,
       deterministicPassed: deterministic.filter((gate) => gate.status === "PASS").length,
       protected: 1,
-      protectedNotRunByPolicy: 1,
+      protectedPassed: protectedGates.filter((gate) => gate.status === "PASS").length,
+      protectedNotRunByPolicy: protectedGates.filter((gate) => gate.status === "NOT_RUN_BY_POLICY").length,
     }),
     privacy: Object.freeze({
       rawOutputStored: false,
@@ -242,8 +291,8 @@ export async function runUpstreamCompatibilityVerification({
       outputFingerprintsMayLeakShortPredictableValues: true,
     }),
     authorization: Object.freeze({
-      providerRequests: "NOT_RUN_BY_POLICY",
-      realPiHome: "NOT_TOUCHED",
+      providerRequests: loadedEvidence ? "AUTHORIZED_BY_IMPORTED_EVIDENCE" : "NOT_RUN_BY_POLICY",
+      realPiHome: loadedEvidence ? "AUTH_AND_PRIVATE_RUN_STATE_BY_IMPORTED_EVIDENCE" : "NOT_TOUCHED",
       publish: "NOT_AUTHORIZED",
       release: "NOT_AUTHORIZED",
     }),
@@ -270,6 +319,8 @@ export async function main(argv = process.argv.slice(2)) {
   }
   const { report, target } = await runUpstreamCompatibilityVerification({
     output: args.output,
+    protectedEvidence: args.protectedEvidence,
+    ...(args.sourceCommit ? { sourceCommit: args.sourceCommit } : {}),
     onGate: (gate) => process.stderr.write(`${gate.status} ${gate.id} (${gate.durationMs} ms)\n`),
   });
   const summary = {
@@ -283,7 +334,7 @@ export async function main(argv = process.argv.slice(2)) {
   process.stdout.write(args.json
     ? `${JSON.stringify(summary, null, 2)}\n`
     : `upstream-compatibility-gates-v1: ${summary.status} (${summary.deterministic}/${report.summary.required} deterministic/protected gates)\n`);
-  return report.deterministicPassed ? 0 : 1;
+  return args.protectedEvidence !== null ? (report.passed ? 0 : 1) : (report.deterministicPassed ? 0 : 1);
 }
 
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
