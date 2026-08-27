@@ -11,7 +11,7 @@ import {
   parseM8LiveAcceptanceArgs,
   runPiM8Phase,
 } from "../scripts/m8-live-acceptance.mjs";
-import { M8_LIVE_RECORD_TYPE, createM8ProtectedSequentialPlan, m8ProtectedConfiguration, m8ProtectedGoalPlannerPolicy, m8ProtectedToolCallLimit, m8ProtectedTurnLimit } from "../packages/subagents/release/m8-live-acceptance-extension.mjs";
+import { M8_LIVE_RECORD_TYPE, createM8ProtectedSequentialPlan, m8ProtectedConfiguration, m8ProtectedGoalPlannerPolicy, m8ProtectedToolCallLimit, m8ProtectedTurnLimit, m8TerminalUsage } from "../packages/subagents/release/m8-live-acceptance-extension.mjs";
 import { protectedEvidenceDigest, validateDailyHarnessProtectedEvidence } from "../scripts/lib/daily-harness-gates.mjs";
 
 test("M8 live CLI is plan-first and run requires explicit artifact/output confirmation", () => {
@@ -135,4 +135,11 @@ test("protected configuration pins low thinking and only narrows daily runtime b
   assert.equal(protectedConfig.models.roles.verifier.thinking, "low");
   assert.deepEqual(protectedConfig.budget, { maxTurnsPerChild: 8, maxToolCallsPerChild: 8, maxTotalToolCalls: 16, maxGoalRevisions: 2 });
   assert.equal(original.models.roles.reviewer.thinking, "inherit");
+});
+
+test("protected terminal metering accepts every correlated TerminalReceipt numeric projection", () => {
+  assert.deepEqual(m8TerminalUsage({ completion: { usage: { tokens: 10, costUsd: 0.01, toolCalls: 2 } } }), { tokens: 10, costUsd: 0.01, toolCalls: 2 });
+  assert.deepEqual(m8TerminalUsage({ completion: { usage: { total: 11, cost: 0.02 }, totalTokens: { total: 11 }, totalCost: { totalTokens: 11, costUsd: 0.02 } } }), { tokens: 11, costUsd: 0.02, toolCalls: 0 });
+  assert.throws(() => m8TerminalUsage({ completion: { usage: {}, totalCost: { costUsd: 0.01 } } }), { code: "M8_TOKEN_USAGE_UNAVAILABLE" });
+  assert.throws(() => m8TerminalUsage({ completion: { usage: { total: 1 } } }), { code: "M8_COST_USAGE_UNAVAILABLE" });
 });

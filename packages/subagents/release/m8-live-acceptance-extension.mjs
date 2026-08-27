@@ -166,16 +166,24 @@ function sequentialPlan(id, roles) {
   });
 }
 
+export function m8TerminalUsage(terminal) {
+  const completion = terminal?.completion ?? {};
+  const usage = completion.usage ?? {};
+  const tokens = [usage.tokens, usage.total, completion.totalTokens?.total, completion.totalCost?.totalTokens].find((value) => Number.isSafeInteger(value) && value >= 0);
+  const costUsd = [usage.costUsd, usage.cost, completion.totalCost?.costUsd].find((value) => Number.isFinite(value) && value >= 0);
+  ensure(tokens !== undefined, "M8_TOKEN_USAGE_UNAVAILABLE", "terminal token usage is unavailable");
+  ensure(costUsd !== undefined, "M8_COST_USAGE_UNAVAILABLE", "terminal cost usage is unavailable");
+  return { tokens, costUsd, toolCalls: Number.isSafeInteger(usage.toolCalls) && usage.toolCalls >= 0 ? usage.toolCalls : 0 };
+}
+
 function usageAccumulator() {
   const totals = { tokens: 0, costUsd: 0, toolCalls: 0, meteredTerminals: 0 };
   return {
     charge(terminal) {
-      const usage = terminal?.completion?.usage;
-      ensure(Number.isSafeInteger(usage?.tokens) && usage.tokens >= 0, "M8_USAGE_UNAVAILABLE", "terminal token usage is unavailable");
-      ensure(Number.isFinite(usage?.costUsd) && usage.costUsd >= 0, "M8_USAGE_UNAVAILABLE", "terminal cost usage is unavailable");
+      const usage = m8TerminalUsage(terminal);
       totals.tokens += usage.tokens;
       totals.costUsd += usage.costUsd;
-      totals.toolCalls += Number.isSafeInteger(usage.toolCalls) ? usage.toolCalls : 0;
+      totals.toolCalls += usage.toolCalls;
       totals.meteredTerminals += 1;
       return usage;
     },
