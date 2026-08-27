@@ -3,6 +3,8 @@ name: omp-planner
 description: "Read-only planner that converts evidence into an executable, bounded plan."
 tools: read, grep, find, ls
 thinking: high
+extensions:
+maxSubagentDepth: 0
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

@@ -1054,6 +1054,21 @@
       "packaged": true
     },
     {
+      "id": "omp-agent-service",
+      "type": "library",
+      "path": "packages/control-service/agent-service.mjs",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": ["workspace-read", "subagent-runtime"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["orchestration", "daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
       "id": "omp-daily-config-runtime",
       "type": "library",
       "path": "packages/daily-config",
@@ -1110,6 +1125,36 @@
       "egressSurfaces": [],
       "defaultLoaded": false,
       "profileEligibility": ["daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "source-review-v2-workflow",
+      "type": "workflow",
+      "path": "workflows-v2/source-review-v2.json",
+      "version": "2.1.0",
+      "provides": [],
+      "requires": ["workspace-read", "subagent-runtime"],
+      "owners": ["only-my-pi-resource-registry"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["orchestration", "daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "goal-planner-agent",
+      "type": "agent",
+      "path": "agents/goal-planner.json",
+      "version": "1.0.0",
+      "provides": [],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },

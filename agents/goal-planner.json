@@ -1,0 +1,50 @@
+{
+  "$schema": "../schemas/agent-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "goal-planner",
+  "upstreamAgentId": "omp-goal-planner",
+  "version": "1.0.0",
+  "description": "Read-only dynamic-goal planner that proposes bounded research dimensions; the parent compiles the executable WorkflowPlan.",
+  "prompt": { "file": "agents/prompts/goal-planner.md" },
+  "tools": { "allow": [], "deny": ["read", "grep", "find", "ls", "bash", "edit", "write", "web"] },
+  "allowedExecutionStates": ["plan"],
+  "requiredCapabilities": ["workspace-read"],
+  "policyCeiling": {
+    "workspace": "read-only",
+    "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" },
+    "approval": "deny",
+    "mutation": "none"
+  },
+  "modelRole": "deep",
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "objective": { "type": "string" },
+      "revision": { "type": "integer" },
+      "priorCoverage": { "type": "number" }
+    },
+    "required": ["objective", "revision"]
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "questions": { "type": "array", "description": "Two to four distinct research questions." },
+      "coveredDimensions": { "type": "array", "description": "Dimensions supported by prior or proposed evidence." },
+      "remainingDimensions": { "type": "array", "description": "Dimensions still requiring evidence." },
+      "coverage": { "type": "number" },
+      "progress": { "type": "number" },
+      "decision": { "type": "string" },
+      "reason": { "type": "string" }
+    },
+    "required": ["questions", "coveredDimensions", "remainingDimensions", "coverage", "progress", "decision", "reason"]
+  },
+  "writer": false,
+  "timeoutSeconds": 600,
+  "continuable": false,
+  "resumable": false,
+  "redaction": { "rawPrompts": "omit", "reasoning": "omit", "credentials": "deny", "maxOutputBytes": 32768 },
+  "gateIds": []
+}

@@ -3,6 +3,8 @@ name: omp-verifier
 description: "Read-only verifier that interprets deterministic gate receipts and emits a terminal verdict."
 tools: read, grep, find, ls
 thinking: low
+extensions:
+maxSubagentDepth: 0
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

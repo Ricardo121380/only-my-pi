@@ -107,7 +107,7 @@
     {
       "kind": "workflowDefinitionV2",
       "schemaPath": "schemas/workflow-definition-v2.schema.json",
-      "productionGlobs": ["contracts/subagents/workflow-definition.example.json"],
+      "productionGlobs": ["contracts/subagents/workflow-definition.example.json", "workflows-v2/*.json"],
       "fixtureDir": "verification/fixtures/contracts/workflow-definition-v2"
     },
     {

@@ -478,6 +478,32 @@ export async function validateResolvedModels(configuration, { modelRegistry, cur
   return immutable({ ok, status: ok ? "MODEL_CONFIGURATION_READY" : "MODEL_CONFIGURATION_BLOCKED", code: ok ? null : "MODEL_CONFIGURATION_BLOCKED", roles: results });
 }
 
+export async function selectRoleModel(configuration, role, { modelRegistry, currentModel = null } = {}) {
+  if (!ROLE_SET.has(role)) fail("MODEL_ROLE_UNKNOWN", `unknown model role ${role}`);
+  if (!modelRegistry || typeof modelRegistry.find !== "function" || typeof modelRegistry.hasConfiguredAuth !== "function") fail("MODEL_REGISTRY_UNAVAILABLE", "Pi model registry is unavailable");
+  const selection = configuration.models.roles[role];
+  const failures = [];
+  for (const configuredId of [selection.model, ...selection.fallbackModels]) {
+    let model = currentModel;
+    let effectiveId = configuredId;
+    if (configuredId !== "inherit") {
+      const tuple = modelTuple(configuredId);
+      model = await modelRegistry.find(tuple.provider, tuple.id);
+    } else if (model) effectiveId = `${model.provider ?? model.providerId}/${model.id ?? model.modelId}`;
+    if (!model) { failures.push({ model: effectiveId, status: "MODEL_NOT_FOUND" }); continue; }
+    if (!(await modelRegistry.hasConfiguredAuth(model))) { failures.push({ model: effectiveId, status: "AUTH_UNAVAILABLE" }); continue; }
+    if (!modelHasPricing(model, configuration.pricingOverrides[effectiveId])) { failures.push({ model: effectiveId, status: "PRICING_UNAVAILABLE" }); continue; }
+    return immutable({
+      role,
+      model: configuredId === "inherit" ? undefined : effectiveId,
+      effectiveModel: effectiveId,
+      thinking: selection.thinking === "inherit" ? undefined : selection.thinking,
+      source: configuredId === "inherit" ? "parent" : "configured",
+    });
+  }
+  fail("MODEL_CONFIGURATION_BLOCKED", `no ready model candidate for role ${role}`, { failures });
+}
+
 async function ensurePrivateDirectory(directory) {
   await fs.mkdir(directory, { recursive: true, mode: 0o700 });
   const stat = await fs.lstat(directory);

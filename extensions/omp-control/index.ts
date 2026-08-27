@@ -1,4 +1,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createContextSnapshotProvider, createOmpRuntime } from "./runtime.mjs";
 
 export default function ompControl(pi: ExtensionAPI): void {
@@ -7,6 +10,11 @@ export default function ompControl(pi: ExtensionAPI): void {
   let turnIndex: number | undefined;
   let context: any;
   let runtime: ReturnType<typeof createOmpRuntime> | undefined;
+  let sessionComposer: any;
+  let runtimeServices: any = {};
+  let sessionRuntimeStatus = "NOT_INITIALIZED";
+  const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+  const configRoot = process.env.PI_CODING_AGENT_DIR ?? path.join(os.homedir(), ".pi", "agent");
   let pendingModePrompt: { text: string; modeId: string; hash: string } | undefined;
   let activeModeSnapshot: any;
   let modeRestoreStatus: string | undefined;
@@ -44,8 +52,9 @@ export default function ompControl(pi: ExtensionAPI): void {
   const getRuntime = () => {
     if (!runtime) {
       runtime = createOmpRuntime({
-        rootDir: undefined,
-        configRoot: undefined,
+        rootDir,
+        configRoot,
+        ...runtimeServices,
         sessionDriver,
         onModeRestored: async (target: any, result: any) => {
           activeModeSnapshot = target;
@@ -100,6 +109,34 @@ export default function ompControl(pi: ExtensionAPI): void {
     activeModeSnapshot = undefined;
     pendingModePrompt = undefined;
     modeRestoreStatus = undefined;
+    runtime = undefined;
+    runtimeServices = {};
+    await sessionComposer?.dispose?.().catch(() => {});
+    sessionComposer = undefined;
+    sessionRuntimeStatus = "INITIALIZING";
+    try {
+      const module: any = await import("../../packages/subagents/runtime/session-composer.mjs");
+      sessionComposer = await module.createSessionRuntimeComposer({
+        pi,
+        rootDir,
+        configRoot,
+        getContext: () => context,
+      });
+      sessionRuntimeStatus = sessionComposer.status;
+      runtimeServices = sessionComposer.enabled === true ? {
+        subagentsOrchestration: sessionComposer.coordinator,
+        goalController: sessionComposer.goalController,
+        batchService: sessionComposer.batchControl,
+        ultraRouter: sessionComposer.ultraRouter,
+        configurationProvider: sessionComposer.configurationProvider,
+        dailyConfigService: sessionComposer.dailyConfig,
+      } : {
+        dailyConfigService: sessionComposer.dailyConfig,
+      };
+    } catch (error: any) {
+      sessionRuntimeStatus = error?.code ?? "SESSION_RUNTIME_UNAVAILABLE";
+      if (ctx.mode === "tui") ctx.ui?.notify?.(`only-my-pi live runtime unavailable: ${sessionRuntimeStatus}`, "warning");
+    }
     if (ctx.mode === "tui") ctx.ui.setStatus("only-my-pi-control", "omp");
     const entries = typeof ctx.sessionManager?.getEntries === "function" ? ctx.sessionManager.getEntries() : null;
     let restored: { status: string; code?: string };
@@ -118,8 +155,13 @@ export default function ompControl(pi: ExtensionAPI): void {
     }
   });
 
-  pi.on("session_shutdown", (_event, ctx) => {
+  pi.on("session_shutdown", async (_event, ctx) => {
     if (ctx.mode === "tui") ctx.ui.setStatus("only-my-pi-control", undefined);
+    await sessionComposer?.dispose?.().catch(() => {});
+    sessionComposer = undefined;
+    runtime = undefined;
+    runtimeServices = {};
+    sessionRuntimeStatus = "SHUTDOWN";
   });
 
   const handler = async (args: string, ctx: any) => {
@@ -132,7 +174,7 @@ export default function ompControl(pi: ExtensionAPI): void {
   };
 
   pi.registerCommand("omp", {
-    description: "only-my-pi control plane (status, doctor, mode, theme, context, and safe guidance)",
+    description: "only-my-pi daily Harness (run, agents, workflows, swarms, modes, configuration, and status)",
     handler,
   });
 

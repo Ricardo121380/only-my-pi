@@ -3,6 +3,8 @@ name: omp-source-verifier
 description: "Read-only source verifier that checks evidence provenance and freshness."
 tools: read, grep, find, ls, web
 thinking: high
+extensions:
+maxSubagentDepth: 0
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

@@ -3,6 +3,8 @@ name: omp-synthesizer
 description: "Read-only result synthesizer that preserves provenance and does not invent evidence."
 tools: read, grep, find, ls
 thinking: high
+extensions:
+maxSubagentDepth: 0
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

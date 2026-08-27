@@ -34,6 +34,7 @@
     "bundles/",
     "modes/",
     "workflows/",
+    "workflows-v2/",
     "swarm/",
     "ultra/",
     "profiles/",
@@ -77,6 +78,10 @@
     "scripts/subagents-guarded-writer-evidence.mjs",
     "scripts/subagents-guarded-writer-reconcile.mjs",
     "agents/generated/omp-scout.md",
+    "agents/goal-planner.json",
+    "agents/prompts/goal-planner.md",
+    "agents/generated/omp-goal-planner.md",
+    "bundles/only-my-pi-agent-bundle/agents/omp-goal-planner.md",
     "bundles/only-my-pi-agent-bundle/package.json",
     "bundles/only-my-pi-agent-bundle/agents/omp-reviewer.md",
     "agents/scout.json",
@@ -117,6 +122,9 @@
     "extensions/omp-control/index.ts",
     "extensions/omp-control/runtime.mjs",
     "packages/control-service/mode-service.mjs",
+    "packages/control-service/agent-service.mjs",
+    "packages/subagents/runtime/session-composer.mjs",
+    "packages/subagents/adapters/pi-event-transport.mjs",
     "packages/control-service/theme-service.mjs",
     "packages/control-service/status-service.mjs",
     "packages/mode-registry/index.mjs",
@@ -253,6 +261,7 @@
     "workflows/research-report.json",
     "workflows/review-findings.json",
     "workflows/debug-fix-verify.json"
+    ,"workflows-v2/source-review-v2.json"
   ],
   "forbiddenPrefixes": [
     "codex/",

@@ -3,6 +3,8 @@ name: omp-reviewer
 description: "Fresh-context, read-only reviewer that identifies correctness, security, and contract gaps."
 tools: read, grep, find, ls
 thinking: high
+extensions:
+maxSubagentDepth: 0
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

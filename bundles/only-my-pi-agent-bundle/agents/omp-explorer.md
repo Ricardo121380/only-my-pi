@@ -3,6 +3,8 @@ name: omp-explorer
 description: "Read-only repository explorer that maps entry points and control flow."
 tools: read, grep, find, ls
 thinking: low
+extensions:
+maxSubagentDepth: 0
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

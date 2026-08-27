@@ -3,6 +3,8 @@ name: omp-scout
 description: "M1 contract seed for a read-only evidence-gathering role; child dispatch is not implemented until M5."
 tools: read, grep, find, ls
 thinking: medium
+extensions:
+maxSubagentDepth: 0
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

@@ -3,6 +3,8 @@ name: omp-test-analyst
 description: "Read-only test and regression reviewer with no shell access."
 tools: read, grep, find, ls
 thinking: medium
+extensions:
+maxSubagentDepth: 0
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

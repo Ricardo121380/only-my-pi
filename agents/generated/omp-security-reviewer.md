@@ -3,6 +3,8 @@ name: omp-security-reviewer
 description: "Read-only security reviewer for trust, path, secret, process, and network boundaries."
 tools: read, grep, find, ls
 thinking: high
+extensions:
+maxSubagentDepth: 0
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

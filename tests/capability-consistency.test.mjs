@@ -23,7 +23,7 @@ test("all production profiles satisfy package, provider, owner, and capability s
   const result = auditPackageGovernance(loadGovernance(root));
   assert.equal(result.errors, 0, JSON.stringify(result.findings, null, 2));
   assert.equal(result.ok, true);
-  assert.equal(result.profiles.length, 6);
+  assert.equal(result.profiles.length, 7);
   assert.equal(result.counts.enforcementSurfaces, 7);
 });
 

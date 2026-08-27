@@ -8,7 +8,7 @@ import { validateModeReceipt } from "../../packages/mode-registry/index.mjs";
 import { buildContextSnapshot, formatSnapshot } from "../context-doctor/metrics.mjs";
 
 const TOKEN = /^[A-Za-z0-9:_./-]+$/u;
-const ROOT_COMMANDS = new Set(["", "help", "status", "doctor", "profile", "mode", "workflow", "tools", "packages", "context", "verify", "safe", "swarm", "theme", "overlays", "models"]);
+const ROOT_COMMANDS = new Set(["", "help", "run", "agent", "status", "doctor", "profile", "mode", "workflow", "tools", "packages", "context", "verify", "safe", "swarm", "theme", "overlays", "models"]);
 
 function fail(code, message) {
   const error = new Error(message);
@@ -144,10 +144,11 @@ export async function restoreModeReceipt({ registry, entries, profile } = {}) {
  * It never invokes a shell and treats missing live services as an explicit
  * unavailable state rather than guessing a permission or sandbox state.
  */
-export function createOmpRuntime({ rootDir, configRoot, registry, modeService, workflowService, swarmService, ultraService, subagentsOrchestration, themeService, dailyConfigService, statusService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
+export function createOmpRuntime({ rootDir, configRoot, registry, modeService, agentService, workflowService, swarmService, batchService, ultraService, subagentsOrchestration, goalController, ultraRouter, configurationProvider, themeService, dailyConfigService, statusService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
   const derivedRoot = rootDir ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const derivedConfigRoot = configRoot ?? process.env.PI_CODING_AGENT_DIR ?? path.join(os.homedir(), ".pi", "agent");
   let modes = modeService;
+  let agents = agentService;
   let workflows = workflowService;
   let swarms = swarmService;
   let ultras = ultraService;
@@ -157,6 +158,13 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
   const getModes = async () => {
     if (!modes) modes = createModeControlService({ rootDir: derivedRoot, configRoot: derivedConfigRoot, registry, sessionDriver });
     return modes;
+  };
+  const getAgents = async () => {
+    if (!agents) {
+      const module = await import("../../packages/control-service/agent-service.mjs");
+      agents = module.createAgentControlService({ rootDir: derivedRoot, orchestration: subagentsOrchestration, configurationProvider });
+    }
+    return agents;
   };
   const getWorkflows = async () => {
     if (!workflows) {
@@ -174,14 +182,14 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
       // Swarm is an optional M5 surface.  Keep it out of minimal startup and
       // only load the adapter/control bundle when the user invokes /omp swarm.
       const module = await import("../../packages/control-service/swarm-service.mjs");
-      swarms = module.createSwarmControlService({ rootDir: derivedRoot, orchestration: subagentsOrchestration });
+      swarms = module.createSwarmControlService({ rootDir: derivedRoot, orchestration: subagentsOrchestration, batchService, goalController });
     }
     return swarms;
   };
   const getUltras = async () => {
     if (!ultras) {
       const module = await import("../../packages/control-service/ultra-run-service.mjs");
-      ultras = module.createUltraRunControlService({ rootDir: derivedRoot });
+      ultras = module.createUltraRunControlService({ rootDir: derivedRoot, router: ultraRouter });
     }
     return ultras;
   };
@@ -235,7 +243,7 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
         return {
           ok: true,
           status: "HELP",
-          text: "/omp status|doctor|profile|overlays|models|mode|workflow|swarm|ultra|theme|tools|packages|context|verify|safe|help",
+          text: "/omp run|agent|workflow|swarm|ultra|status|doctor|profile|overlays|models|mode|theme|tools|packages|context|verify|safe|help",
         };
       }
       if (command === "mode") {
@@ -246,6 +254,50 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
           modeId,
           configRoot,
           resolved: args.includes("--resolved"),
+        });
+        notify(ctx, result, result.ok === false ? "warning" : "info");
+        return result;
+      }
+      if (command === "agent") {
+        const subcommand = args[0] ?? "list";
+        const identifier = args[1] && !args[1].startsWith("--") ? args[1] : null;
+        if (!["list", "show", "plan", "run", "status", "cancel", "resume"].includes(subcommand)) {
+          const result = { ok: false, status: "AGENT_COMMAND_INVALID", code: "INVALID_AGENT_COMMAND", mutation: false };
+          notify(ctx, result, "warning");
+          return result;
+        }
+        const service = await getAgents();
+        const lifecycle = ["status", "cancel", "resume"].includes(subcommand);
+        let input = {};
+        if (["plan", "run", "resume"].includes(subcommand)) {
+          if (ctx?.mode !== "tui" || typeof ctx?.ui?.editor !== "function") {
+            const result = { ok: false, status: "AGENT_INPUT_UNAVAILABLE", code: "TUI_TASK_EDITOR_REQUIRED", mutation: false };
+            notify(ctx, result, "warning");
+            return result;
+          }
+          const task = await ctx.ui.editor(subcommand === "resume" ? "Original Agent task" : `Task for ${identifier ?? "Agent"}`);
+          if (task === undefined || !task.trim()) return { ok: true, status: "AGENT_RUN_CANCELLED", mutation: false };
+          input = { task: task.trim() };
+        }
+        const request = { subcommand, agentId: lifecycle ? null : identifier, runId: lifecycle ? identifier : null, input, signal: ctx?.signal };
+        if (subcommand !== "run") {
+          const result = await service.dispatch(request);
+          notify(ctx, result, result.ok === false ? "warning" : "info");
+          return result;
+        }
+        const plan = await service.dispatch({ ...request, subcommand: "plan" });
+        if (plan.ok === false) { notify(ctx, plan, "warning"); return plan; }
+        const approved = typeof ctx?.ui?.confirm === "function"
+          ? await ctx.ui.confirm(`Run read-only Agent ${identifier}?`, `Model/tool/budget plan: ${plan.plan.planDigest}`)
+          : false;
+        if (!approved) return { ok: true, status: "AGENT_RUN_CANCELLED", mutation: false };
+        const result = await service.dispatch({
+          ...request,
+          yes: true,
+          runId: plan.runId,
+          input: plan.input,
+          expectedPlanDigest: plan.plan.planDigest,
+          expectedExecutionDigest: plan.executionEnvelope.executionEnvelopeDigest,
         });
         notify(ctx, result, result.ok === false ? "warning" : "info");
         return result;

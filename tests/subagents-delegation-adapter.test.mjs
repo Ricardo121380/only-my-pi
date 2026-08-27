@@ -70,7 +70,7 @@ test("delegation compiler binds read-only domain objects and exposes no raw work
   assert.equal(compiled.request.context, "fresh");
   assert.equal(compiled.request.model, "provider/model");
   assert.equal(compiled.request.result.kind, "structured");
-  assert.deepEqual(compiled.request.toolBudget.block, ["bash", "edit", "write", "web"]);
+  assert.deepEqual(compiled.request.toolBudget.block, ["bash", "edit", "write", "web", "web_search", "source_check", "fetch_content", "get_search_content"]);
   assert.equal(Object.hasOwn(compiled.request, "workflowScript"), false);
   const lifecycleOnly = compileAgentAssignmentToPiDelegationRequest({ ...values, cwd: "/fixture", maximumToolCalls: 0 });
   assert.deepEqual(lifecycleOnly.request.toolBudget, {
@@ -79,6 +79,10 @@ test("delegation compiler binds read-only domain objects and exposes no raw work
   });
   assert.match(lifecycleOnly.request.task, /^Do not call file, network, shell, or delegation tools\./u);
   assert.match(lifecycleOnly.request.task, /only permitted tool call is the final structured_output/u);
+  const metered = compileAgentAssignmentToPiDelegationRequest({ ...values, cwd: "/fixture", thinking: "high", maximumTurns: 8, maximumToolCalls: 16 });
+  assert.equal(metered.request.thinking, "high");
+  assert.deepEqual(metered.request.turnBudget, { maxTurns: 8 });
+  assert.equal(metered.request.toolBudget.hard, 16);
   assert.throws(() => compileAgentAssignmentToPiDelegationRequest({ ...values, cwd: "/fixture", assignment: { ...values.assignment, ownership: { ...values.assignment.ownership, writer: true } } }), /read-only/u);
 });
 

@@ -3,6 +3,8 @@ name: omp-researcher
 description: "Bounded web researcher with explicit allow-listed egress and cookies disabled."
 tools: read, grep, find, ls, web
 thinking: high
+extensions:
+maxSubagentDepth: 0
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

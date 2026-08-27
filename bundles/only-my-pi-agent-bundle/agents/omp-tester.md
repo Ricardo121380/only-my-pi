@@ -3,6 +3,8 @@ name: omp-tester
 description: "Read-only test analyst that consumes deterministic allow-listed gate receipts."
 tools: read, grep, find, ls
 thinking: low
+extensions:
+maxSubagentDepth: 0
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

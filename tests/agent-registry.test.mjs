@@ -14,6 +14,7 @@ test("agent registry discovers all runtime-ready roles and produces redacted rec
   assert.deepEqual(agents.map((entry) => entry.rawId), [
     "debugger",
     "explorer",
+    "goal-planner",
     "implementer",
     "planner",
     "researcher",

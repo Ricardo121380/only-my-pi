@@ -41,6 +41,7 @@ export function createSubagentsFacade({
   eventJournal = null,
   budgetLedger = null,
   planStore = null,
+  artifactStore = null,
   nodeExecutor = null,
   approvalVerifier = null,
   approvalEvidenceProvider = null,
@@ -111,6 +112,7 @@ export function createSubagentsFacade({
       eventJournal: journal,
       budgetLedger: ledger,
       planStore: durablePlans,
+      artifactStore: overrides.artifactStore ?? artifactStore,
       nodeExecutor: executor,
       approvalVerifier: overrides.approvalVerifier ?? approvalVerifier ?? coordinatorOptions.approvalVerifier,
       approvalEvidenceProvider: overrides.approvalEvidenceProvider

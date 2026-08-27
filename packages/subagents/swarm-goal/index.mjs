@@ -641,6 +641,7 @@ export function createSwarmGoalController(options = {}) {
         if (!revisionState) {
           const rawProposal = await Promise.race([
             planner({
+              runId,
               goal,
               objective,
               revision,

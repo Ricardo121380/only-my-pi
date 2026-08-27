@@ -20,6 +20,7 @@ const NODE_EVENT_TYPES = new Set([
   "ChildStarted",
   "ChildOutputProjected",
   "ChildTerminal",
+  "NodeArtifactPublished",
   "NodeSettled",
   "GateEvaluated",
 ]);
