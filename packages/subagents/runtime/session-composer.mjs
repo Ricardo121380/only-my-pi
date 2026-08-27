@@ -229,10 +229,17 @@ class SessionBudgetGovernor {
     if (this.active >= budget.maxConcurrency) {
       transferred = await new Promise((resolve, reject) => {
         const waiter = { resolve, reject, signal, budget };
-        const abort = () => { this.waiters = this.waiters.filter((entry) => entry !== waiter); reject(Object.assign(new Error("launch aborted while waiting for concurrency"), { code: "CANCEL_REQUESTED" })); };
+        const abort = () => {
+          const queued = this.waiters.includes(waiter);
+          this.waiters = this.waiters.filter((entry) => entry !== waiter);
+          if (!queued) return;
+          state.assignments = Math.max(0, state.assignments - 1);
+          reject(Object.assign(new Error("launch aborted while waiting for concurrency"), { code: "CANCEL_REQUESTED" }));
+        };
         waiter.abort = abort;
-        signal?.addEventListener("abort", abort, { once: true });
         this.waiters.push(waiter);
+        signal?.addEventListener("abort", abort, { once: true });
+        if (signal?.aborted) abort();
       });
     }
     if (!transferred) this.active += 1;

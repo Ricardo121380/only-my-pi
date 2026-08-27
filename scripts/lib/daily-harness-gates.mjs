@@ -17,7 +17,7 @@ export const DAILY_HARNESS_COMMANDS = Object.freeze({
   D1: Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/bootstrap-package-bindings.test.mjs", "tests/bootstrap-settings-merge.test.mjs"]) }),
   D2: Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/artifact-installer.test.mjs", "tests/bootstrap-service.test.mjs", "tests/bootstrap-transaction-engine.test.mjs"]) }),
   D3: Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/daily-config.test.mjs", "tests/daily-control.test.mjs", "tests/omp-cli-parser.test.mjs"]) }),
-  D4: Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/session-runtime-composer.test.mjs", "tests/omp-control-runtime.test.mjs"]) }),
+  D4: Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/session-runtime-composer.test.mjs", "tests/session-runtime-components.test.mjs", "tests/omp-control-runtime.test.mjs", "tests/omp-control-runtime-daily.test.mjs"]) }),
   D5: Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/session-runtime-composer.test.mjs", "tests/subagents-batch-swarm.test.mjs", "tests/batch-swarm-control.test.mjs"]) }),
   D6: Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/subagents-run-coordinator.test.mjs", "tests/workflow-core.test.mjs", "tests/subagents-state.test.mjs"]) }),
   D7: Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/goal-revision-authority.test.mjs", "tests/subagents-swarm-goal.test.mjs"]) }),
@@ -26,7 +26,7 @@ export const DAILY_HARNESS_COMMANDS = Object.freeze({
   D10: Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/project-gates.test.mjs"]) }),
   D11: Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/run-management.test.mjs", "tests/subagents-run-coordinator.test.mjs", "tests/subagents-state.test.mjs"]) }),
   D12: Object.freeze({ command: "npm", args: Object.freeze(["run", "test:e2e:daily"]) }),
-  D15: Object.freeze({ command: "node", args: Object.freeze(["--test", "tests/daily-harness-gates.test.mjs", "tests/docs-links.test.mjs", "tests/ci-contract.test.mjs", "tests/schema-validation.test.mjs", "tests/pack-content.test.mjs", "tests/agent-resource-generator.test.mjs"]) }),
+  D15: Object.freeze({ command: "node", args: Object.freeze(["scripts/m8-deterministic-acceptance.mjs"]) }),
 });
 
 const TOP_LEVEL_KEYS = new Set(["formatVersion", "id", "description", "baseStableReceipt", "policy", "gates"]);

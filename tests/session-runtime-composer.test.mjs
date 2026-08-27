@@ -16,6 +16,8 @@ import { createUltraRunRegistry } from "../packages/subagents/ultra-run/registry
 import { createUltraRunAuthorization } from "../packages/subagents/ultra-run/index.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const SHA_A = `sha256:${"a".repeat(64)}`;
+const SHA_B = `sha256:${"b".repeat(64)}`;
 
 function responseValue(agent, task = "") {
   if (agent === "omp-goal-planner") {
@@ -58,7 +60,7 @@ function automaticTransport(requests = []) {
   };
 }
 
-async function harness(t) {
+async function harness(t, { withoutWeb = false, inheritedExtraAgentDirs } = {}) {
   const configRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-session-composer-"));
   t.after(() => fs.rm(configRoot, { recursive: true, force: true }));
   const webRoot = path.join(configRoot, "fake-web");
@@ -78,16 +80,38 @@ async function harness(t) {
     },
   };
   const prior = process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS;
+  if (inheritedExtraAgentDirs !== undefined) process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS = inheritedExtraAgentDirs;
   const requests = [];
+  const dailyConfig = withoutWeb ? {
+    async resolve() {
+      return {
+        base: "core",
+        preset: { id: "daily", profileId: "daily" },
+        overlays: [{ id: "orchestration-readonly", type: "hard" }],
+        hardOverlays: ["orchestration-readonly"],
+        softOverlays: [],
+        models: { default: { model: "inherit", thinking: "inherit", fallbackModels: [] }, roles: {} },
+        pricingOverrides: {},
+        budget: { maxConcurrency: 2, maxChildren: 8, maxDepth: 1, maxWallSeconds: 1800, maxTotalTokens: 50000, maxCostUsd: 0.25, maxTurnsPerChild: 8, maxToolCallsPerChild: 16, maxTotalToolCalls: 64, maxOutputBytesPerChild: 65536, maxTotalOutputBytes: 262144, maxGoalRevisions: 4 },
+        source: { global: "test", project: "NOT_CONFIGURED", perRun: "none" },
+      };
+    },
+  } : undefined;
   const composer = await createSessionRuntimeComposer({
     pi: { events: { on() { throw new Error("injected transport owns events"); }, emit() {} } },
     rootDir,
     configRoot,
     getContext: () => ctx,
     dependencies: {
+      ...(dailyConfig ? { dailyConfig } : {}),
       transport: automaticTransport(requests),
       subagentsPackage: { root: configRoot, manifest: { name: "pi-subagents", version: "0.45.2" } },
-      webPackage: { root: webRoot, manifest: { name: "pi-web-access", version: "0.20.0", pi: { extensions: ["./index.ts"] } } },
+      ...(withoutWeb ? {} : {
+        webPackage: {
+          root: webRoot,
+          manifest: { name: "pi-web-access", version: "0.20.0", pi: { extensions: ["./index.ts"] } },
+        },
+      }),
       registerCapabilityCeiling(input) { ceilingCalls.push(input); return { update() {}, dispose() { ceilingDisposed = true; } }; },
     },
   });
@@ -294,4 +318,48 @@ test("Ultra dynamic Goal reuses the Goal fresh verifier and stays within eight c
   assert.equal(result.result.verification.contextMode, "fresh");
   assert.equal(requests.length, 8);
   assert.equal((await composer.recordStore.require(request.id)).status, "completed");
+});
+
+test("Ultra BatchSwarm route leaves one of eight child slots for fresh verification", async (t) => {
+  const { composer, requests } = await harness(t);
+  const strategy = (await createUltraRunRegistry({ rootDir }).resolve("ultra-deep")).definition;
+  assert.equal(strategy.routePolicy.batchMinItems, 7);
+  const request = {
+    id: "ultra-batch-test",
+    taskDigest: digestWorkflowValue("homogeneous seven item task"),
+    complexity: 50,
+    itemCount: 7,
+    homogeneous: true,
+    dynamicGoal: false,
+    mutation: "none",
+    risk: "low",
+    origin: { kind: "human", requestDigest: digestWorkflowValue("human homogeneous task") },
+    preferredBatch: "review-items",
+  };
+  const input = { artifacts: { items: Array.from({ length: 7 }, (_, index) => ({ itemId: `item-${index + 1}`, path: `fixture-${index + 1}.txt` })) } };
+  const result = await composer.ultraRouter.run(strategy, request, { input });
+  assert.equal(result.plan.route, "batch-swarm");
+  assert.equal(result.result.status, "completed", JSON.stringify(result));
+  assert.equal(result.result.scale.observedAssignments, 8);
+  assert.equal(requests.length, 8);
+});
+
+test("composer without Web keeps inherited agent directories, truncates oversized raw artifacts, and disposes idempotently", async (t) => {
+  const inherited = path.join(os.tmpdir(), "existing-agent-dir");
+  const { composer } = await harness(t, { withoutWeb: true, inheritedExtraAgentDirs: inherited });
+  assert.deepEqual(composer.configuration.hardOverlays, ["orchestration-readonly"]);
+  assert.equal(process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS, inherited);
+  const ref = await composer.artifactStore.publish({
+    id: "truncate-artifact",
+    producer: { runId: "truncate-run", revision: 0, nodeId: "truncate-node", attemptId: "truncate-attempt" },
+    mediaType: "application/json",
+    contents: "x".repeat(composer.configuration.budget.maxTotalOutputBytes + 1),
+    provenance: { sourceDigest: SHA_A, policyDigest: SHA_B, redaction: "bounded" },
+  });
+  const stored = JSON.parse((await composer.artifactStore.read(ref)).toString("utf8"));
+  assert.equal(stored.truncated, true);
+  assert.equal(stored.originalBytes, composer.configuration.budget.maxTotalOutputBytes + 1);
+  assert.equal((await composer.dispose()).status, "DISPOSED");
+  assert.equal((await composer.dispose()).status, "DISPOSED");
+  assert.equal(process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS, inherited);
 });

@@ -9,7 +9,7 @@ import { validateModeReceipt } from "../../packages/mode-registry/index.mjs";
 import { buildContextSnapshot, formatSnapshot } from "../context-doctor/metrics.mjs";
 
 const TOKEN = /^[A-Za-z0-9:_./-]+$/u;
-const ROOT_COMMANDS = new Set(["", "help", "run", "runs", "agent", "status", "doctor", "profile", "mode", "workflow", "tools", "packages", "context", "verify", "safe", "swarm", "theme", "overlays", "models", "gate"]);
+const ROOT_COMMANDS = new Set(["", "help", "run", "runs", "agent", "status", "doctor", "profile", "mode", "workflow", "tools", "packages", "context", "verify", "safe", "swarm", "ultra", "theme", "overlays", "models", "gate"]);
 
 function fail(code, message) {
   const error = new Error(message);

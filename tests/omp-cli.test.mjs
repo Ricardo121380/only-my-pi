@@ -395,7 +395,7 @@ test("the production BatchSwarm CLI expands offline without Pi, Provider, or con
   assert.equal(plan.status, "BATCH_SWARM_PLAN");
   assert.equal(plan.liveDispatch, "NOT_RUN_BY_POLICY");
   assert.equal(plan.expansion.itemCount, 2);
-  assert.equal(plan.expansion.maximumAssignments, 4);
+  assert.equal(plan.expansion.maximumAssignments, 2);
   assert.equal(spawned, false);
   assert.deepEqual(await fs.readdir(isolatedConfig), []);
 });

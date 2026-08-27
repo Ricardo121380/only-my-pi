@@ -70,7 +70,7 @@ test("BatchSwarm plan expands items and budgets offline without dispatching a ch
   assert.equal(preview.mutation, false);
   assert.equal(preview.liveDispatch, "NOT_RUN_BY_POLICY");
   assert.equal(preview.expansion.itemCount, 2);
-  assert.equal(preview.expansion.maximumAssignments, 4);
+  assert.equal(preview.expansion.maximumAssignments, 2);
   assert.deepEqual(preview.expansion.items.map((item) => item.itemId), ["src-a", "src-b"]);
   assert.equal(preview.plan.nodes[0].kind, "batch-swarm");
   assert.equal(preview.plan.nodes[0].batchMaxItems, 300);

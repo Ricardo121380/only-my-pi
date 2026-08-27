@@ -17,6 +17,7 @@ import {
   parseDailyHarnessGateArgs,
   runDailyHarnessVerification,
 } from "../scripts/daily-harness-gates.mjs";
+import { M8_DETERMINISTIC_CHECKS, runM8AcceptanceCheck } from "../scripts/m8-deterministic-acceptance.mjs";
 
 function successfulSpawn() {
   const child = new EventEmitter();
@@ -97,4 +98,27 @@ test("deterministic M8 execution never spawns protected gates", async () => {
   assert.equal(result.report.status, "BLOCKED_PROTECTED_EVIDENCE");
   assert.equal(result.report.deterministicPassed, true);
   assert.equal(result.report.summary.protectedNotRunByPolicy, 2);
+});
+
+test("D15 enforces global and per-runtime coverage through fixed shell-free argv", async () => {
+  const composer = M8_DETERMINISTIC_CHECKS.find((check) => check.id === "session-composer-coverage");
+  const control = M8_DETERMINISTIC_CHECKS.find((check) => check.id === "omp-control-coverage");
+  assert.ok(composer.args.includes("--test-coverage-lines=90"));
+  assert.ok(composer.args.includes("--test-coverage-branches=80"));
+  assert.ok(composer.args.includes("--test-coverage-functions=90"));
+  assert.ok(control.args.includes("--test-coverage-lines=85"));
+  assert.ok(control.args.includes("--test-coverage-branches=70"));
+  assert.ok(control.args.includes("--test-coverage-functions=85"));
+  let invocation;
+  const result = await runM8AcceptanceCheck(composer, {
+    spawnImpl(command, args, options) {
+      invocation = { command, args, options };
+      return successfulSpawn();
+    },
+    env: { PATH: "/usr/bin", API_KEY: "must-not-pass" },
+  });
+  assert.equal(result.status, "PASS");
+  assert.equal(invocation.options.shell, false);
+  assert.equal(invocation.options.env.API_KEY, undefined);
+  assert.deepEqual(invocation.args, composer.args);
 });

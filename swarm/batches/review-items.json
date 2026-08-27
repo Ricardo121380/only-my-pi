@@ -19,7 +19,7 @@
   },
   "failurePolicy": { "kind": "all-required" },
   "retryPolicy": {
-    "maxAttempts": 2,
+    "maxAttempts": 1,
     "maxDelayMs": 1000,
     "deadlineMs": 1200000
   },
