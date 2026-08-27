@@ -502,8 +502,8 @@ function buildGoalProposal(plannerResult, context, budget, { makerTemplateSelect
       steps: [
         goalAgentNode(`maker-${suffix}`, ids.maker, webEnabled
           ? "Goal evidence maker: investigate the planner questions using only the approved public Web tools and return structured evidence."
-          : "Goal evidence maker: review the supplied bounded objective facts without external tools and return structured evidence.", budget, webEnabled, webEnabled ? 0.5 : 0.48),
-        goalAgentNode(`synthesize-${suffix}`, ids.synth, "Goal artifact synthesis: combine upstream ArtifactRefs against the bound objective without inventing evidence.", budget, false, webEnabled ? 0.25 : 0.24),
+          : "Goal evidence maker: review the supplied bounded objective facts without external tools and return structured evidence.", budget, webEnabled, webEnabled ? 0.5 : 0.44),
+        goalAgentNode(`synthesize-${suffix}`, ids.synth, "Goal artifact synthesis: combine upstream ArtifactRefs against the bound objective without inventing evidence.", budget, false, webEnabled ? 0.25 : 0.28),
         goalAgentNode(`verify-${suffix}`, ids.verify, "Fresh Goal artifact verification with no GateReceipt manifest: compare upstream ArtifactRefs to the bound objective and return pass, fail, or blocked.", budget, false, webEnabled ? 0.25 : 0.28),
       ],
     },

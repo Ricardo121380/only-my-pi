@@ -377,8 +377,8 @@ test("Goal maker selection is restricted to the two registered research roles", 
   assert.equal(offline.workflowDefinition.policy.egress.web, "deny");
   assert.deepEqual(offline.workflowDefinition.flow.steps[0].policy.tools.deny, ["bash", "edit", "write", "web"]);
   const revisionTokens = configuration().budget.maxTotalTokens / configuration().budget.maxGoalRevisions;
-  assert.equal(offline.workflowDefinition.flow.steps[0].budget.maxTokens, Math.floor(revisionTokens * 0.48));
-  assert.equal(offline.workflowDefinition.flow.steps[1].budget.maxTokens, Math.floor(revisionTokens * 0.24));
+  assert.equal(offline.workflowDefinition.flow.steps[0].budget.maxTokens, Math.floor(revisionTokens * 0.44));
+  assert.equal(offline.workflowDefinition.flow.steps[1].budget.maxTokens, Math.floor(revisionTokens * 0.28));
   assert.equal(offline.workflowDefinition.flow.steps[2].budget.maxTokens, Math.floor(revisionTokens * 0.28));
   assert.equal(offline.workflowDefinition.flow.steps.reduce((sum, step) => sum + step.budget.maxTokens, 0), revisionTokens);
   assert.throws(() => buildGoalProposal(plannerResult, context, configuration().budget, { makerTemplateSelector: () => "reviewer" }), { code: "GOAL_MAKER_SELECTOR_INVALID" });
