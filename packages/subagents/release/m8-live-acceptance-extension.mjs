@@ -237,11 +237,12 @@ async function runGoal(composer, request) {
 
 async function runUltra(composer, request) {
   const strategy = (await createUltraRunRegistry({ rootDir: request.repositoryRoot }).resolve("ultra-deep")).definition;
+  const fixtureFacts = "Parent-supplied fixture facts: package name is only-my-pi-m8-live-fixture; private is true; version is 0.0.0; README says this is a bounded read-only lifecycle fixture. Verify internal consistency, preserve provenance, name unsupported claims, and do not call external tools.";
   const lightRequest = { id: `m8-ultra-light-${request.runNonce}`, taskDigest: digestValue("M8 light review"), complexity: 10, itemCount: 1, homogeneous: false, dynamicGoal: false, mutation: "none", risk: "low", origin: { kind: "human", requestDigest: digestValue("M8 human light") } };
-  const light = await composer.ultraRouter.run(strategy, lightRequest, { input: { task: "Perform a short read-only package metadata review." } });
+  const light = await composer.ultraRouter.run(strategy, lightRequest, { input: { task: `Perform a short read-only metadata review. ${fixtureFacts}`, scope: ["parent-supplied-fixture-facts"], acceptance: ["structured evidence", "fresh verifier pass"] } });
   ensure(light.plan.route === "agent" && light.result.status === "completed" && light.result.verification?.contextMode === "fresh", "M8_ULTRA_LIGHT_FAILED", "M8 Ultra light route failed");
   const complexRequest = { ...lightRequest, id: `m8-ultra-complex-${request.runNonce}`, taskDigest: digestValue("M8 complex review"), complexity: 60, itemCount: 3, preferredWorkflow: "source-review-v2", origin: { kind: "human", requestDigest: digestValue("M8 human complex") } };
-  const complex = await composer.ultraRouter.run(strategy, complexRequest, { input: { task: "Perform a multi-angle read-only release review and fresh verification." } });
+  const complex = await composer.ultraRouter.run(strategy, complexRequest, { input: { task: `Perform a multi-angle read-only release review and fresh verification. ${fixtureFacts}`, scope: ["parent-supplied-fixture-facts"], acceptance: ["maker artifacts", "synthesis", "fresh verifier pass"] } });
   ensure(complex.plan.route === "workflow" && complex.result.status === "completed" && complex.result.verification?.contextMode === "fresh", "M8_ULTRA_COMPLEX_FAILED", "M8 Ultra complex route failed");
   return [
     assertion("ultra-agent-route", { planDigest: light.plan.planDigest, route: light.plan.route, verification: light.result.verification, scale: light.result.scale }),
