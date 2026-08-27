@@ -324,6 +324,14 @@ test("Ultra Agent and Workflow routes use the same composer and fresh verifier",
   assert.match(workflowVerifierRequest.task, /"boundInput":\{"task":"Perform a multi-angle source review\."\}/u);
 });
 
+test("source-review-v2 reserves its exact root token and cost budget by context depth", async () => {
+  const definition = JSON.parse(await fs.readFile(path.join(rootDir, "workflows-v2", "source-review-v2.json"), "utf8"));
+  const plan = compileWorkflowDefinition(definition);
+  assert.deepEqual(Object.fromEntries(plan.nodes.map((node) => [node.id, node.budget.maxTokens])), { explore: 5000, review: 5500, synthesize: 6500, verify: 8000 });
+  assert.equal(plan.nodes.reduce((sum, node) => sum + node.budget.maxTokens, 0), plan.budget.maxTokens);
+  assert.equal(plan.nodes.reduce((sum, node) => sum + node.budget.maxCostUsd, 0), plan.budget.maxCostUsd);
+});
+
 test("Ultra dynamic Goal reuses the Goal fresh verifier and stays within eight children", async (t) => {
   const { composer, requests } = await harness(t);
   const strategy = (await createUltraRunRegistry({ rootDir }).resolve("ultra-deep")).definition;

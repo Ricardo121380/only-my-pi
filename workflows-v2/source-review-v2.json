@@ -35,7 +35,7 @@
             "assignment": { "taskTemplateRef": "ultra-explore" },
             "outputSchemaRef": null,
             "policy": { "workspace": "shared-read-only", "mutation": "none", "tools": { "allow": ["read"], "deny": ["bash", "edit", "write", "web"] } },
-            "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 4500, "maxCostUsd": 0.0225 },
+            "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 5000, "maxCostUsd": 0.025 },
             "cache": { "mode": "content-addressed", "keyInputs": ["assignment", "dependencies"] },
             "idempotency": "content-addressed"
           },
@@ -46,7 +46,7 @@
             "assignment": { "taskTemplateRef": "ultra-review" },
             "outputSchemaRef": null,
             "policy": { "workspace": "shared-read-only", "mutation": "none", "tools": { "allow": ["read"], "deny": ["bash", "edit", "write", "web"] } },
-            "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 4000, "maxCostUsd": 0.02 },
+            "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 5500, "maxCostUsd": 0.0275 },
             "cache": { "mode": "content-addressed", "keyInputs": ["assignment", "dependencies"] },
             "idempotency": "content-addressed"
           }
@@ -70,7 +70,7 @@
         "assignment": { "taskTemplateRef": "ultra-verify" },
         "outputSchemaRef": null,
         "policy": { "workspace": "shared-read-only", "mutation": "none", "tools": { "allow": ["read"], "deny": ["bash", "edit", "write", "web"] } },
-        "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 10000, "maxCostUsd": 0.05 },
+        "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 8000, "maxCostUsd": 0.04 },
         "cache": { "mode": "content-addressed", "keyInputs": ["assignment", "dependencies"] },
         "idempotency": "content-addressed"
       }
