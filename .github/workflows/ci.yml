@@ -63,3 +63,6 @@ jobs:
 
       - name: Execute the M8 Daily Harness deterministic gates
         run: npm run verify:m8:run
+
+      - name: Execute the M9 upstream compatibility deterministic gates
+        run: npm run verify:m9:run

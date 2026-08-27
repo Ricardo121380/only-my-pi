@@ -13,6 +13,7 @@ test("CI executes the same manifest-backed verify runner without credentials", (
   assert.doesNotMatch(workflow, /node-version:.*24\.x/u);
   assert.match(workflow, /npm run verify -- --run/);
   assert.match(workflow, /npm run verify:m8:run/u);
+  assert.match(workflow, /npm run verify:m9:run/u);
   assert.match(workflow, /receipt:check/);
   assert.match(
     workflow,
@@ -33,5 +34,6 @@ test("CI executes the same manifest-backed verify runner without credentials", (
   const receiptCleanup = workflow.indexOf("Remove ephemeral CI receipt before source-clean gates");
   const v2Runner = workflow.indexOf("npm run verify:subagents:run");
   const m8Runner = workflow.indexOf("npm run verify:m8:run");
-  assert.ok(v1Runner >= 0 && receiptCleanup > v1Runner && v2Runner > receiptCleanup && m8Runner > v2Runner);
+  const m9Runner = workflow.indexOf("npm run verify:m9:run");
+  assert.ok(v1Runner >= 0 && receiptCleanup > v1Runner && v2Runner > receiptCleanup && m8Runner > v2Runner && m9Runner > m8Runner);
 });
