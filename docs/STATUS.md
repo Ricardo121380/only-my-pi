@@ -12,7 +12,7 @@ session runtime, all five read-only execution classes use the same
 `pi-subagents` backend, artifact/run/config/Web/Gate/TUI paths are wired, and
 the current user's real Pi home completed apply, smoke, exact pre-install
 rollback, verification and reapply. The source/evidence/receipt chain is
-`1b7767f` -> `0c07509` -> `d2c1400`; its gate map is
+`6f77bb6` -> `42185b9` -> `02dac32`; its gate map is
 [`../verification/daily-harness-gates-v1.json`](../verification/daily-harness-gates-v1.json).
 
 M8 starts from these explicit truths:
@@ -31,9 +31,9 @@ M8 starts from these explicit truths:
   `omp-control` (lines/branches/functions);
 - a scripts-disabled, offline, self-contained artifact installs successfully in
   both shadow and real roots; the final artifact SHA-256 is
-  `4d3a95fc8dd56ca9e88c040430f71d60d087226745dc2f199e0427533dd58e11`
-  and the installed/LKG generation is `sha256:ac9d2a1c...2533637c`;
-- the D13 matrix passed 14/14 assertions with 22,500 metered tokens, three
+  `a8d0aaf521f3242776975876f64909fdf97f6e735813146f7258aa95f5fc2455`
+  and the installed/LKG generation is `sha256:62ebd02c...d6ab3310`;
+- the final D13 matrix passed 14/14 assertions with 32,149 metered tokens, five
   tool calls and no stored raw model output, host paths or credentials;
 - the D14 rehearsal passed 6/6 assertions and restored the authorized original
   raw or semantic settings baseline before reapplying the same artifact;
@@ -44,14 +44,16 @@ M8 protected acceptance is source-bound. `scripts/m8-live-acceptance.mjs` used
 the configured Pi model without printing or copying credentials, ran the
 Agent/BatchSwarm/Workflow/SwarmGoal/Ultra/Web/cancel/resume/budget/writer-denial
 matrix in two Pi processes, and produced
-[`2026-08-27-m8-live-model-matrix.json`](../verification/protected/2026-08-27-m8-live-model-matrix.json).
+[`2026-08-27-m8-live-model-matrix-final.json`](../verification/protected/2026-08-27-m8-live-model-matrix-final.json).
 `scripts/m8-real-root-rehearsal.mjs` produced the separately authorized D14
 apply/preservation/exact-rollback/reapply evidence in
-[`2026-08-27-m8-real-root-rehearsal.json`](../verification/protected/2026-08-27-m8-real-root-rehearsal.json).
+[`2026-08-27-m8-real-root-rehearsal-final.json`](../verification/protected/2026-08-27-m8-real-root-rehearsal-final.json).
 The combined D1-D15 report is
-[`2026-08-27-m8-daily-harness.json`](../verification/receipts/2026-08-27-m8-daily-harness.json).
+[`2026-08-27-m8-daily-harness-final.json`](../verification/receipts/2026-08-27-m8-daily-harness-final.json).
 Both producers remain plan-first and require explicit `--run --yes`; neither is
-callable from ordinary CI.
+callable from ordinary CI. The unsuffixed M8 evidence and receipt files remain
+as the audit trail for the earlier closure candidate; the `*-final.json` chain
+supersedes it after bounded journal-lock and Ultra budget hardening.
 
 The Harness MVP was fast-forwarded to private repository `main` at
 `12b24b59980386683a90af8250a4de4ff738d67c`. The post-merge `main` workflow

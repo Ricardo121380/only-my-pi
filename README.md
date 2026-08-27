@@ -41,21 +41,21 @@ scripts/      Repository checks and package governance tooling
 
 The governed S0-S5 kernel reached Stable on 2026-08-27: its exact source,
 protected evidence, and receipt chain passed 31/31 required gates. **M8 Daily
-Harness Closure is also complete.** Implementation source `1b7767f`, its direct
-evidence-only child `0c07509`, and receipt commit `d2c1400` passed D1-D15 with
+Harness Closure is also complete.** Final implementation source `6f77bb6`, its
+direct evidence-only child `42185b9`, and receipt commit `02dac32` passed D1-D15 with
 15/15 gates. D13 used the configured OpenCode Go / DeepSeek V4 Flash model for
 the protected Agent, BatchSwarm, Workflow, SwarmGoal, Ultra, public-Web,
 cancellation, resume, budget and writer-denial matrix. D14 applied the same
 commit-pinned artifact to the real Pi home, restored the exact pre-install
 nine-package baseline, verified it, and reapplied the artifact. The installed
 artifact SHA-256 is
-`4d3a95fc8dd56ca9e88c040430f71d60d087226745dc2f199e0427533dd58e11`;
-the installed generation is `sha256:ac9d2a1c...2533637c`, with all selected
+`a8d0aaf521f3242776975876f64909fdf97f6e735813146f7258aa95f5fc2455`;
+the installed generation is `sha256:62ebd02c...d6ab3310`, with all selected
 third-party runtime packages still borrowed as `external` user assets.
 
-- [M8 D13 protected live-model evidence](verification/protected/2026-08-27-m8-live-model-matrix.json)
-- [M8 D14 real-root rehearsal evidence](verification/protected/2026-08-27-m8-real-root-rehearsal.json)
-- [M8 D1-D15 completion receipt](verification/receipts/2026-08-27-m8-daily-harness.json)
+- [M8 final D13 protected live-model evidence](verification/protected/2026-08-27-m8-live-model-matrix-final.json)
+- [M8 final D14 real-root rehearsal evidence](verification/protected/2026-08-27-m8-real-root-rehearsal-final.json)
+- [M8 final D1-D15 completion receipt](verification/receipts/2026-08-27-m8-daily-harness-final.json)
 
 - [M8 Daily Harness Closure plan](docs/plans/2026-08-27-m8-daily-harness-closure.md)
 - [Current implementation status](docs/STATUS.md)
