@@ -104,9 +104,14 @@ test("session composer owns one read-only runtime, ceiling, private stores and W
   assert.equal(ceilingCalls[0].ceiling.allowedAgents.includes("omp-implementer"), false);
   const extraRoot = process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS.split(path.delimiter)[0];
   const researcher = await fs.readFile(path.join(extraRoot, "omp-researcher.md"), "utf8");
-  assert.match(researcher, /subagentOnlyExtensions: .*fake-web.*index\.ts/u);
+  assert.match(researcher, /subagentOnlyExtensions: .*safe-web-extension\.mjs/u);
   assert.match(researcher, /tools: .*web_search/u);
   assert.doesNotMatch(researcher, /^tools:.*(?:bash|edit|write)/mu);
+  const runtimeRoot = path.dirname(extraRoot);
+  const webConfig = JSON.parse(await fs.readFile(path.join(runtimeRoot, "web-config", "web-search.json"), "utf8"));
+  assert.deepEqual(webConfig, { allowBrowserCookies: false, autoOpenBrowser: false, curatorRemote: false, workflow: "none", ssrf: { allowRanges: [], trustEnvProxy: false } });
+  const wrapper = await fs.readFile(path.join(runtimeRoot, "safe-web-extension.mjs"), "utf8");
+  assert.match(wrapper, /process\.env\.PI_CODING_AGENT_DIR/u);
   assert.equal((await fs.stat(path.join(configRoot, "only-my-pi", "runs"))).mode & 0o777, 0o700);
   await composer.dispose();
   assert.equal(ceilingDisposed(), true);
@@ -144,6 +149,8 @@ test("dynamic SwarmGoal uses an LLM planner concept but parent-compiles two immu
   const entry = await createSwarmGoalRegistry({ rootDir }).resolve("research-release-goal");
   const objective = { ref: entry.definition.objective.ref, digest: entry.definition.objective.digest, input: { task: "Research the release evidence." } };
   const authorization = createHumanGoalAuthorization(entry.definition, { objective, nonce: "session-goal-test" });
+  const webPlan = await composer.webAuthorizer.plan({ runId: "session-goal-run", roles: ["researcher", "source-verifier"], objectiveDigest: objective.digest, budget: composer.configuration.budget });
+  await composer.webAuthorizer.grant(webPlan);
   let result;
   try {
     result = await composer.goalController.run(entry.definition, {

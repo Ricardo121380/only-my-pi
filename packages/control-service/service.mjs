@@ -14,6 +14,7 @@ Usage:
   omp profile [list|show <id>|diff <from> <to>] [--config-root <absolute>] [--json]
   omp profiles [list|show <id>|plan <preset>|apply <preset>] [--yes] [--config-root <absolute>] [--json]
   omp models validate [--project <absolute>] [--config-root <absolute>] [--json]
+  omp gate validate [--project <absolute>] [--config-root <absolute>] [--json]
   omp tools|packages|context|verify [--config-root <absolute>] [--json]
   omp mode [list|show|use|reset|doctor|diff|scaffold] [mode-id] [--profile <id>] [--resolved] [--config-root <absolute>] [--json]
   omp workflow [list|show|run|status|cancel|resume] [workflow-or-run-id] [--input-file <absolute>] [--apply --yes] [--config-root <absolute>] [--json]
@@ -43,7 +44,7 @@ async function approve(request, plan, confirm) {
 }
 
 export class ControlService {
-  constructor({ bootstrap, doctor, confirm, modes, workflows, swarms, ultras, themes, dailyConfig, statusService, rootDir, configRoot } = {}) {
+  constructor({ bootstrap, doctor, confirm, modes, workflows, swarms, ultras, themes, dailyConfig, projectGates, statusService, rootDir, configRoot } = {}) {
     if (!bootstrap || !doctor) throw new TypeError("bootstrap and doctor services are required");
     this.bootstrap = bootstrap;
     this.doctor = doctor;
@@ -54,6 +55,7 @@ export class ControlService {
     this.ultras = ultras;
     this.themes = themes;
     this.dailyConfig = dailyConfig;
+    this.projectGates = projectGates;
     this.statusService = statusService;
     this.rootDir = rootDir;
     this.configRoot = configRoot;
@@ -175,6 +177,15 @@ export class ControlService {
           };
         } catch (cause) {
           return { ok: false, status: "MODEL_CONFIGURATION_INVALID", code: cause?.code ?? "MODEL_CONFIGURATION_INVALID", mutation: false, message: cause?.message };
+        }
+      }
+      case "gate": {
+        if (!this.projectGates || typeof this.projectGates.plan !== "function") return { ok: false, status: "PROJECT_GATE_UNAVAILABLE", code: "PROJECT_GATE_UNAVAILABLE", mutation: false };
+        try {
+          const plan = await this.projectGates.plan(null, { projectRoot: request.options?.projectRoot ?? process.cwd(), requireTrust: false });
+          return { ...plan, status: "PROJECT_GATE_VALID", explicitPathValidation: true };
+        } catch (cause) {
+          return { ok: false, status: "PROJECT_GATE_INVALID", code: cause?.code ?? "PROJECT_GATE_INVALID", message: cause?.message, mutation: false };
         }
       }
       case "tools":

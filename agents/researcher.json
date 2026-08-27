@@ -5,7 +5,7 @@
   "id": "researcher",
   "upstreamAgentId": "omp-researcher",
   "version": "1.0.0",
-  "description": "Bounded web researcher with explicit allow-listed egress and cookies disabled.",
+  "description": "Bounded public Web researcher with per-run approval, SSRF-guarded HTTP(S) egress, and browser cookies disabled.",
   "prompt": { "file": "agents/prompts/researcher.md" },
   "tools": {
     "allow": ["read", "grep", "find", "ls", "web"],
@@ -23,8 +23,8 @@
   "inputSchema": {
     "type": "object",
     "additionalProperties": false,
-    "properties": { "question": { "type": "string", "description": "Research question." }, "domains": { "type": "array", "description": "Allow-listed domains." } },
-    "required": ["question", "domains"]
+    "properties": { "question": { "type": "string", "description": "Research question." }, "domains": { "type": "array", "description": "Optional preferred public domains; not a network allowlist." } },
+    "required": ["question"]
   },
   "outputSchema": {
     "type": "object",

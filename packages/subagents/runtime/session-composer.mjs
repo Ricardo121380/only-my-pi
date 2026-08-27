@@ -9,6 +9,8 @@ import { hashResourcePath } from "../../bootstrap/graph-plan.mjs";
 import { createBatchSwarmControlService } from "../../control-service/batch-swarm-service.mjs";
 import { createDailyConfigService, selectRoleModel } from "../../daily-config/index.mjs";
 import { createWorkflowRegistry } from "../../workflow-core/index.mjs";
+import { createNodeExecAdapter, createProjectGateService } from "../../project-gates/index.mjs";
+import { createWebRunAuthorizer, inspectPublicWebPolicy } from "../../web-policy/index.mjs";
 import { createPiBatchSwarmRuntime } from "../batch-swarm/runtime.mjs";
 import {
   agentTemplateFromRegistryEntry,
@@ -18,6 +20,7 @@ import {
   digestValue,
 } from "../domain/index.mjs";
 import { createBudgetLedger } from "../policy/budget-ledger.mjs";
+import { createGoalRevisionAuthorizer } from "../policy/goal-revision-authority.mjs";
 import { createPiEventTransport } from "../adapters/pi-event-transport.mjs";
 import { createPiSubagentsDelegationV1Backend } from "../adapters/pi-subagents-delegation-v1/index.mjs";
 import { createArtifactStore, createEventJournal, createPlanStore } from "../state/index.mjs";
@@ -77,20 +80,45 @@ async function prepareWebAgentOverrides({ rootDir, managedRoot, sessionId, webEx
   const sessionDigest = crypto.createHash("sha256").update(sessionId).digest("hex").slice(0, 24);
   const runtimeRoot = path.join(managedRoot, "runtime", sessionDigest);
   const agentsRoot = path.join(runtimeRoot, "agents");
+  const webConfigRoot = path.join(runtimeRoot, "web-config");
   await ensurePrivateDirectory(managedRoot, path.join(managedRoot, "runtime"));
   await ensurePrivateDirectory(managedRoot, runtimeRoot);
   await ensurePrivateDirectory(managedRoot, agentsRoot);
+  await ensurePrivateDirectory(managedRoot, webConfigRoot);
+  await fs.writeFile(path.join(webConfigRoot, "web-search.json"), `${JSON.stringify({
+    allowBrowserCookies: false,
+    autoOpenBrowser: false,
+    curatorRemote: false,
+    workflow: "none",
+    ssrf: { allowRanges: [], trustEnvProxy: false },
+  }, null, 2)}\n`, { encoding: "utf8", mode: 0o600, flag: "w" });
+  const packageManifestPath = path.join(path.dirname(webExtensionPath), "package.json");
+  const wrapperPath = path.join(runtimeRoot, "safe-web-extension.mjs");
+  const wrapper = [
+    'import { createRequire } from "node:module";',
+    `const require = createRequire(${JSON.stringify(packageManifestPath)});`,
+    'const { createJiti } = require("jiti");',
+    'const jiti = createJiti(import.meta.url, { moduleCache: true });',
+    'export default async function onlyMyPiSafeWeb(pi) {',
+    `  process.env.PI_CODING_AGENT_DIR = ${JSON.stringify(webConfigRoot)};`,
+    `  const module = await jiti.import(${JSON.stringify(webExtensionPath)});`,
+    '  return module.default(pi);',
+    '}',
+    '',
+  ].join("\n");
+  await fs.writeFile(wrapperPath, wrapper, { encoding: "utf8", mode: 0o600, flag: "w" });
+  await fs.chmod(wrapperPath, 0o600);
   for (const name of ["omp-researcher.md", "omp-source-verifier.md"]) {
     const source = path.join(rootDir, "bundles", "only-my-pi-agent-bundle", "agents", name);
     await assertRegularNoSymlink(source, `generated ${name}`);
     let content = await fs.readFile(source, "utf8");
     content = content.replace(/^tools:.*$/mu, "tools: read, grep, find, ls, web_search, source_check, fetch_content, get_search_content");
-    content = content.replace(/^extensions:$/mu, `extensions:\nsubagentOnlyExtensions: ${webExtensionPath}`);
+    content = content.replace(/^extensions:$/mu, `extensions:\nsubagentOnlyExtensions: ${wrapperPath}`);
     const target = path.join(agentsRoot, name);
     await fs.writeFile(target, content, { encoding: "utf8", mode: 0o600, flag: "w" });
     await fs.chmod(target, 0o600);
   }
-  return { runtimeRoot, agentsRoot };
+  return { runtimeRoot, agentsRoot, webConfigRoot, wrapperPath };
 }
 
 function packageSettingSource(value) {
@@ -308,11 +336,12 @@ async function artifactContext(store, refs, maximumBytes = 64 * 1024) {
   return output;
 }
 
-function directAgentRunner({ agentRegistry, backend, configurationProvider }) {
+function directAgentRunner({ agentRegistry, backend, configurationProvider, webAuthorizer }) {
   return async function runDirectAgent({ role, task, outputSchema = null, runId, nodeId, signal }) {
     const entry = await agentRegistry.resolve(role);
     if (entry.manifest.writer !== false || entry.manifest.tools.allow.some((tool) => MUTATING_TOOLS.has(tool))) fail("WRITER_UNAVAILABLE_IN_READONLY_MILESTONE", `direct Agent ${role} is not read-only`);
     const configuration = await configurationProvider();
+    if (WEB_AGENT_IDS.has(role)) webAuthorizer.require(runId, role);
     const agentSpec = createResolvedAgentSpec({ template: agentTemplateFromRegistryEntry(entry), runtimeMode: "REGISTERED_ROLES_ONLY" });
     const assignment = createTaskAssignment({
       assignmentId: `assignment-${digestValue([runId, nodeId, task]).slice(7, 39)}`,
@@ -446,7 +475,7 @@ function buildGoalProposal(plannerResult, context, budget) {
   };
 }
 
-async function createNodeExecutor({ agentRegistry, backend, batchRuntime, artifactStore, configurationProvider, dynamicSpecs }) {
+async function createNodeExecutor({ agentRegistry, backend, batchRuntime, artifactStore, configurationProvider, dynamicSpecs, webAuthorizer }) {
   async function staticSpec(reference) {
     const entry = await agentRegistry.resolve(reference);
     if (entry.manifest.writer !== false || entry.manifest.tools.allow.some((tool) => MUTATING_TOOLS.has(tool))) fail("WRITER_UNAVAILABLE_IN_READONLY_MILESTONE", `Agent ${reference} is not read-only`);
@@ -457,6 +486,8 @@ async function createNodeExecutor({ agentRegistry, backend, batchRuntime, artifa
   }
   async function startAgent(node, context) {
     const agentSpec = await specFor(node, context.runId);
+    const role = roleForSpec(agentSpec);
+    if (WEB_AGENT_IDS.has(role)) webAuthorizer.require(context.runId, role);
     const artifacts = await artifactContext(artifactStore, context.artifactRefs);
     const budgetConfiguration = await configurationProvider();
     const assignment = createTaskAssignment({
@@ -558,6 +589,14 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
   if (configuration.hardOverlays.includes("web")) webPackage ??= await resolveBoundPackageRoot({ configRoot, packageId: "web-access" });
   await ensurePrivateDirectory(configRoot, managedRoot);
   await ensurePrivateDirectory(configRoot, runsRoot);
+  const sessionIdProvider = () => getContext()?.sessionManager?.getSessionId?.();
+  const webPolicy = dependencies.webPolicy ?? await inspectPublicWebPolicy({ configRoot });
+  const webAuthorizer = dependencies.webAuthorizer ?? createWebRunAuthorizer({ configRoot, getSessionId: sessionIdProvider });
+  const projectGateService = dependencies.projectGateService ?? createProjectGateService({
+    configRoot,
+    getContext,
+    exec: dependencies.projectGateExec ?? createNodeExecAdapter(),
+  });
   const transport = dependencies.transport ?? createPiEventTransport(pi);
   const modelResolver = async ({ agentSpec }) => {
     const ctx = getContext();
@@ -585,16 +624,16 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
   const agentRegistry = dependencies.agentRegistry ?? createAgentRegistry({ rootDir });
   const batchRuntime = dependencies.batchRuntime ?? createPiBatchSwarmRuntime({ backend, rootDir, maximumItemOutputBytes: configuration.budget.maxOutputBytesPerChild });
   const dynamicSpecs = new Map();
-  const nodeExecutor = dependencies.nodeExecutor ?? await createNodeExecutor({ agentRegistry, backend, batchRuntime, artifactStore, configurationProvider, dynamicSpecs });
+  const nodeExecutor = dependencies.nodeExecutor ?? await createNodeExecutor({ agentRegistry, backend, batchRuntime, artifactStore, configurationProvider, dynamicSpecs, webAuthorizer });
   const coordinator = dependencies.coordinator ?? createRunCoordinator({
     eventJournal,
     budgetLedger,
     planStore,
     artifactStore,
     nodeExecutor,
-    gateRunner: dependencies.gateRunner ?? null,
+    gateRunner: dependencies.gateRunner ?? projectGateService,
   });
-  const runDirectAgent = dependencies.runDirectAgent ?? directAgentRunner({ agentRegistry, backend, configurationProvider });
+  const runDirectAgent = dependencies.runDirectAgent ?? directAgentRunner({ agentRegistry, backend, configurationProvider, webAuthorizer });
   const goalPlanner = dependencies.goalPlanner ?? (async (plannerContext) => {
     const objectiveText = typeof plannerContext.objective?.inputDigest === "string"
       ? JSON.stringify({ objectiveRef: plannerContext.objective.ref, inputDigest: plannerContext.objective.inputDigest })
@@ -647,6 +686,34 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
     planner: goalPlanner,
     resolveAgentTemplate,
     executeRevision: executeGoalRevision,
+    revisionAuthorizer: async ({ goal, objective, runId }) => {
+      const current = await configurationProvider();
+      const roles = goal.authority.allowedAgentTemplates;
+      const modelRoles = [];
+      for (const role of roles) modelRoles.push(`role:${(await agentRegistry.resolve(role)).manifest.modelRole}`);
+      const revisionDivisor = Math.max(1, Math.min(goal.authority.maxPlanRevisions, current.budget.maxGoalRevisions));
+      return createGoalRevisionAuthorizer({
+        runId,
+        objectiveDigest: objective.digest,
+        allowedRoles: roles,
+        allowedModels: [...new Set(modelRoles)],
+        overlays: current.overlays.map((overlay) => overlay.id),
+        scope: ["repository"],
+        web: current.hardOverlays.includes("web") && goal.authority.egress !== "deny",
+        mutation: "none",
+        maxRevisions: revisionDivisor,
+        budget: {
+          maxAssignments: current.budget.maxChildren,
+          maxCostUsd: current.budget.maxCostUsd / revisionDivisor,
+          maxTokens: Math.floor(current.budget.maxTotalTokens / revisionDivisor),
+          maxWallTimeMs: Math.floor(current.budget.maxWallSeconds * 1000 / revisionDivisor),
+          maxOutputBytes: Math.floor(current.budget.maxTotalOutputBytes / revisionDivisor),
+          maxNodes: current.budget.maxChildren,
+          maxParallel: current.budget.maxConcurrency,
+          maxDepth: current.budget.maxDepth + 2,
+        },
+      });
+    },
   });
   const workflowRegistry = dependencies.workflowRegistry ?? createWorkflowRegistry({ rootDir });
   const goalRegistry = dependencies.goalRegistry ?? createSwarmGoalRegistry({ rootDir });
@@ -756,6 +823,9 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
     physicalRuntimeOwner: "pi-subagents",
     logicalRuntimeOwner: "@only-my-pi/subagents",
     configuration,
+    webPolicy,
+    webAuthorizer,
+    projectGateService,
     dailyConfig,
     transport,
     backend,
@@ -780,6 +850,8 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
       ceilingHandle.dispose();
       await backend.dispose().catch(() => {});
       transport.dispose?.();
+      webAuthorizer.dispose?.();
+      await projectGateService.dispose?.();
       if (runtimeAgentOverride) {
         if (previousExtraAgentDirs === undefined) delete process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS;
         else process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS = previousExtraAgentDirs;

@@ -37,6 +37,7 @@ const COMMANDS = new Set([
   "profile",
   "profiles",
   "models",
+  "gate",
   "tools",
   "packages",
   "context",
@@ -53,6 +54,7 @@ const MODE_COMMANDS = new Set(["list", "show", "use", "reset", "doctor", "diff",
 const PROFILE_COMMANDS = new Set(["list", "show", "diff"]);
 const PRESET_COMMANDS = new Set(["list", "show", "plan", "apply"]);
 const MODEL_COMMANDS = new Set(["validate"]);
+const GATE_COMMANDS = new Set(["validate"]);
 const WORKFLOW_COMMANDS = new Set(["list", "show", "run", "status", "cancel", "resume"]);
 const SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume", "batch", "goal"]);
 const BATCH_SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume"]);
@@ -134,7 +136,7 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   const configRoot = resolveConfigRoot(options.configRoot, env, homedir);
 
   if (!new Set(["swarm", "workflow", "ultra"]).has(command) && options.inputFile !== undefined) fail("--input-file is only valid for workflow, swarm, or ultra commands");
-  if (command !== "models" && options.projectRoot !== undefined) fail("--project is only valid for models validate");
+  if (!["models", "gate"].includes(command) && options.projectRoot !== undefined) fail("--project is only valid for models or gate validate");
 
   if (options.profile !== undefined) assertIdentifier(options.profile, "profile");
   if (options.mode !== undefined) {
@@ -260,6 +262,13 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
       mutation: false,
       options: { configRoot, subcommand, projectRoot: options.projectRoot ? path.resolve(options.projectRoot) : null, json: options.json === true },
     };
+  }
+
+  if (command === "gate") {
+    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live", "resolved"], command);
+    const subcommand = positionals[0] ?? "validate";
+    if (!GATE_COMMANDS.has(subcommand) || positionals.length !== 1) fail("gate accepts only the validate subcommand");
+    return { command, mutation: false, options: { configRoot, subcommand, projectRoot: options.projectRoot ? path.resolve(options.projectRoot) : null, json: options.json === true } };
   }
 
   if (["tools", "packages", "context", "verify"].includes(command)) {

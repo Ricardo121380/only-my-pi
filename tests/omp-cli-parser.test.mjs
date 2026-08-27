@@ -175,6 +175,10 @@ test("M8 profiles and models grammar separates plans, apply, and explicit projec
   const models = parseOmpArgs(["models", "validate", "--project", "/tmp/project", "--config-root", configRoot]);
   assert.equal(models.command, "models");
   assert.equal(models.options.projectRoot, "/tmp/project");
+  const gate = parseOmpArgs(["gate", "validate", "--project", "/tmp/project", "--config-root", configRoot]);
+  assert.equal(gate.command, "gate");
+  assert.equal(gate.mutation, false);
+  assert.equal(gate.options.projectRoot, "/tmp/project");
 
   assert.throws(() => parseOmpArgs(["profiles", "plan", "daily", "--yes"]), /--yes is only valid/u);
   assert.throws(() => parseOmpArgs(["models", "validate", "--project", "relative"]), /absolute/u);

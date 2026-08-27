@@ -39,6 +39,12 @@
       "fixtureDir": "verification/fixtures/contracts/preferences"
     },
     {
+      "kind": "projectGates",
+      "schemaPath": "schemas/project-gates-v1.schema.json",
+      "productionGlobs": ["contracts/daily/project-gates.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/project-gates"
+    },
+    {
       "kind": "capability",
       "schemaPath": "schemas/capability-v1.schema.json",
       "productionGlobs": ["policies/capabilities.v1.json"],

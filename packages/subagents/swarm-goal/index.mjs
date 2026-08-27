@@ -484,6 +484,8 @@ export function createSwarmGoalController(options = {}) {
   const leaseTtlMs = options.leaseTtlMs ?? 60_000;
   const leaseRenewalIntervalMs = options.leaseRenewalIntervalMs ?? Math.floor(leaseTtlMs / 3);
   const scheduler = options.scheduler ?? { setTimeout, clearTimeout };
+  const revisionAuthorizer = options.revisionAuthorizer ?? null;
+  if (revisionAuthorizer !== null && typeof revisionAuthorizer !== "function" && (typeof revisionAuthorizer.assess !== "function" || typeof revisionAuthorizer.approve !== "function")) throw new TypeError("revisionAuthorizer must be a factory or implement assess() and approve()");
   if (!Number.isSafeInteger(leaseTtlMs) || leaseTtlMs < 1 || !Number.isSafeInteger(leaseRenewalIntervalMs) || leaseRenewalIntervalMs < 1 || leaseRenewalIntervalMs >= leaseTtlMs) throw new TypeError("SwarmGoal lease heartbeat must be positive and shorter than the lease TTL");
 
   async function append(runId, leaseRef, event) {
@@ -596,6 +598,10 @@ export function createSwarmGoalController(options = {}) {
     const runId = canonicalId(runOptions.runId ?? idFactory("swarm-goal"), "goal runId");
     const objective = normalizeObjective(goal, runOptions.objective ?? {});
     const authorization = assertAuthorization(goal, objective, runOptions.authorization);
+    const activeRevisionAuthorizer = typeof revisionAuthorizer === "function"
+      ? await revisionAuthorizer({ goal, objective, authorization, runId })
+      : revisionAuthorizer;
+    if (activeRevisionAuthorizer !== null && (typeof activeRevisionAuthorizer?.assess !== "function" || typeof activeRevisionAuthorizer?.approve !== "function")) throw new TypeError("revisionAuthorizer factory returned an invalid authorizer");
     const leaseRef = { current: await eventJournal.acquireWriter(runId, { writerId: idFactory("goal-writer"), ttlMs: leaseTtlMs }) };
     const leaseHeartbeat = heartbeat(runId, leaseRef);
     try {
@@ -671,6 +677,29 @@ export function createSwarmGoalController(options = {}) {
           });
           revisionState = { revision, proposal, childRunId, status: "proposed", execution: null };
         } else proposal = revisionState.proposal;
+
+        if (activeRevisionAuthorizer) {
+          let assessment = activeRevisionAuthorizer.assess(proposal);
+          if (assessment.requiresApproval) {
+            let approval = await runOptions.approveRevisionExpansion?.(revision, proposal, assessment);
+            if (approval === true && typeof activeRevisionAuthorizer.createApproval === "function") {
+              approval = activeRevisionAuthorizer.createApproval(proposal, `${runId}:revision-${revision}`);
+            }
+            if (approval) {
+              activeRevisionAuthorizer.approve(proposal, approval);
+              assessment = activeRevisionAuthorizer.assess(proposal);
+            }
+            if (assessment.requiresApproval) {
+              await append(runId, leaseRef, {
+                eventId: `goal-revision-awaiting-authority:${revision}`,
+                type: "GoalRevisionAwaitingApproval",
+                revision,
+                payload: { childRunId: revisionState.childRunId, planDigest: proposal.plan.planDigest, authorityProjectionDigest: assessment.projectionDigest, code: "GOAL_REVISION_REAPPROVAL_REQUIRED" },
+              });
+              return inspect(runId);
+            }
+          }
+        }
 
         if (revisionState.status === "settled") {
           const terminal = await terminalizeSettledRevision(runId, leaseRef, goal, revisionState, noProgress);

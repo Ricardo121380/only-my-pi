@@ -79,11 +79,25 @@ export class SwarmGoalControlService {
     if (["plan", "run"].includes(subcommand)) {
       let prepared;
       try { prepared = await this.#plan(options); } catch (cause) { return { ok: false, status: "SWARM_GOAL_PLAN_BLOCKED", mutation: false, code: cause.code ?? "SWARM_GOAL_PLAN_BLOCKED", message: cause.message }; }
-      if (subcommand === "plan") return { ok: true, status: "SWARM_GOAL_PLAN", mutation: false, plan: prepared.plan, runId: prepared.plan.runId, input: prepared.input, authorization: prepared.authorization, liveDispatch: "NOT_RUN_BY_POLICY" };
+      if (subcommand === "plan") return {
+        ok: true,
+        status: "SWARM_GOAL_PLAN",
+        mutation: false,
+        plan: prepared.plan,
+        runId: prepared.plan.runId,
+        input: prepared.input,
+        authorization: prepared.authorization,
+        authority: {
+          mutation: prepared.entry.definition.authority.mutation,
+          web: prepared.entry.definition.authority.egress !== "deny",
+          webRoles: prepared.entry.definition.authority.allowedAgentTemplates.filter((role) => ["researcher", "source-verifier"].includes(role)),
+        },
+        liveDispatch: this.controller ? "PI_SESSION_READY" : "NOT_RUN_BY_POLICY",
+      };
       if (options.yes !== true) return { ok: false, status: "CONFIRMATION_REQUIRED", mutation: true, code: "EXACT_GOAL_CONFIRMATION_REQUIRED", plan: prepared.plan };
       if (options.expectedPlanDigest !== prepared.plan.planDigest || options.expectedAuthorizationDigest !== prepared.authorization.authorizationDigest) return { ok: false, status: "SWARM_GOAL_PLAN_STALE", mutation: false, code: "SWARM_GOAL_ADMISSION_DRIFT", currentPlanDigest: prepared.plan.planDigest, currentAuthorizationDigest: prepared.authorization.authorizationDigest };
       if (!this.controller) return { ok: false, status: "LIVE_SWARM_GOAL_REQUIRES_PI_SESSION", mutation: true, code: "LIVE_RUNTIME_UNAVAILABLE", liveDispatch: "NOT_RUN_BY_POLICY", next: "Inject the governed SwarmGoalController and Pi-backed RunCoordinator." };
-      const state = await this.controller.run(prepared.entry.definition, { runId: prepared.plan.runId, objective: prepared.objective, authorization: prepared.authorization, input: prepared.input, approvalForRevision: options.approvalForRevision, signal: options.signal });
+      const state = await this.controller.run(prepared.entry.definition, { runId: prepared.plan.runId, objective: prepared.objective, authorization: prepared.authorization, input: prepared.input, approvalForRevision: options.approvalForRevision, approveRevisionExpansion: options.approveRevisionExpansion, signal: options.signal });
       return { ok: state.status === "completed", status: `SWARM_GOAL_${state.status.toUpperCase().replaceAll("-", "_")}`, mutation: true, state };
     }
     if (subcommand === "status") {
