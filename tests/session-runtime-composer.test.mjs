@@ -266,7 +266,7 @@ test("composer Workflow consumes the prior node ArtifactRef as bounded child con
 });
 
 test("Ultra Agent and Workflow routes use the same composer and fresh verifier", async (t) => {
-  const { composer } = await harness(t);
+  const { composer, requests } = await harness(t);
   const strategy = (await createUltraRunRegistry({ rootDir }).resolve("ultra-deep")).definition;
   const agentRequest = {
     id: "ultra-agent-test",
@@ -284,6 +284,8 @@ test("Ultra Agent and Workflow routes use the same composer and fresh verifier",
   assert.equal(agent.result.verification.contextMode, "fresh");
   assert.equal(agent.result.scale.logicalAssignments, agent.plan.scale.logicalAssignments);
   assert.equal((await composer.recordStore.require("ultra-agent-test")).status, "completed");
+  const lightVerifierRequest = requests.find((request) => request.ownerRunId === "ultra-agent-test:verifier:0");
+  assert.match(lightVerifierRequest.task, /"boundInput":\{"task":"Review the package metadata\."\}/u);
 
   const workflowRequest = {
     ...agentRequest,
@@ -300,6 +302,8 @@ test("Ultra Agent and Workflow routes use the same composer and fresh verifier",
   assert.equal(workflow.result.verification.verdict, "pass");
   assert.ok(workflow.result.routeResult.artifactEvidence.length >= 1);
   assert.ok(workflow.result.routeResult.artifactEvidence.every((entry) => typeof entry.digest === "string" && entry.result !== undefined));
+  const workflowVerifierRequest = requests.find((request) => request.ownerRunId === "ultra-workflow-test:verifier:0");
+  assert.match(workflowVerifierRequest.task, /"boundInput":\{"task":"Perform a multi-angle source review\."\}/u);
 });
 
 test("Ultra dynamic Goal reuses the Goal fresh verifier and stays within eight children", async (t) => {
