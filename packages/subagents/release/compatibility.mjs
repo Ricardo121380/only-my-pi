@@ -132,6 +132,9 @@ function assertCompatibilitySemantics(matrix, { rootDir, verifyEvidencePaths }) 
     if (row.scopes.migrationRollback === "PASS" && !evidenceIncludes(row, "tests/subagents-migration.test.mjs")) {
       fail("migration/rollback PASS lacks its contract test", "MIGRATION_EVIDENCE_REQUIRED", { rowId: row.id });
     }
+    if (row.scopes.soakResourceLeak === "PASS" && !evidenceIncludes(row, "tests/subagents-resource-leak.test.mjs")) {
+      fail("resource-leak soak PASS lacks its deterministic lifecycle test", "SOAK_EVIDENCE_REQUIRED", { rowId: row.id });
+    }
     if (verifyEvidencePaths) for (const evidence of row.evidence) ensureEvidencePath(rootDir, evidence);
   }
   if (!noModelPass || !topologyPass) fail("matrix needs at least one proved no-model RPC and single-owner row", "MISSING_PREVIEW_COMPATIBILITY_EVIDENCE");

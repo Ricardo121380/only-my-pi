@@ -138,12 +138,23 @@ function deferred() {
   return { promise, resolve, reject };
 }
 
-function withTimeout(promise, timeoutMs, createError) {
+function normalizeScheduler(input) {
+  const scheduler = input ?? {
+    setTimeout: (...args) => setTimeout(...args),
+    clearTimeout: (...args) => clearTimeout(...args),
+  };
+  if (typeof scheduler.setTimeout !== "function" || typeof scheduler.clearTimeout !== "function") {
+    throw new TypeError("delegation adapter scheduler requires setTimeout and clearTimeout");
+  }
+  return scheduler;
+}
+
+function withTimeout(promise, timeoutMs, createError, scheduler) {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(createError()), timeoutMs);
+    const timer = scheduler.setTimeout(() => reject(createError()), timeoutMs);
     promise.then(
-      (value) => { clearTimeout(timer); resolve(value); },
-      (error) => { clearTimeout(timer); reject(error); },
+      (value) => { scheduler.clearTimeout(timer); resolve(value); },
+      (error) => { scheduler.clearTimeout(timer); reject(error); },
     );
   });
 }
@@ -182,7 +193,7 @@ function terminalOutcome(status) {
 }
 
 export class PiSubagentsDelegationV1Backend {
-  constructor({ transport, cwd, model, clock = Date.now, timeoutMs = 120_000, maximumToolCalls = 8 } = {}) {
+  constructor({ transport, cwd, model, clock = Date.now, timeoutMs = 120_000, maximumToolCalls = 8, scheduler } = {}) {
     if (typeof transport?.subscribe !== "function" || typeof transport?.emit !== "function") throw new TypeError("delegation backend requires subscribe() and emit()");
     if (typeof cwd !== "string" || cwd.length === 0) throw new TypeError("delegation backend requires cwd");
     this.transport = transport;
@@ -191,6 +202,7 @@ export class PiSubagentsDelegationV1Backend {
     this.clock = clock;
     this.timeoutMs = timeoutMs;
     this.maximumToolCalls = maximumToolCalls;
+    this.scheduler = normalizeScheduler(scheduler);
     this.capabilityMatrix = createPiSubagentsDelegationV1CapabilityMatrix({ observedAt: clock() });
     this.attempts = new Map();
     this.disposed = false;
@@ -252,7 +264,7 @@ export class PiSubagentsDelegationV1Backend {
     const key = keyOf(compiled.request);
     if (this.attempts.has(key)) fail("delegation attempt identity is already active", "DELEGATION_IDENTITY_REUSE", "correlation");
     this.attempts.set(key, attempt);
-    const timer = setTimeout(() => attempt.started.reject(new SubagentsError("delegation start timed out", { code: "DELEGATION_START_TIMEOUT", category: "unavailable" })), Math.min(this.timeoutMs, 30_000));
+    const timer = this.scheduler.setTimeout(() => attempt.started.reject(new SubagentsError("delegation start timed out", { code: "DELEGATION_START_TIMEOUT", category: "unavailable" })), Math.min(this.timeoutMs, 30_000));
     const onAbort = () => this.transport.emit(PI_SUBAGENTS_DELEGATION_V1_EVENTS.cancel, {
       requestId: compiled.request.requestId,
       ownerRunId: compiled.request.ownerRunId,
@@ -268,7 +280,7 @@ export class PiSubagentsDelegationV1Backend {
       this.attempts.delete(key);
       throw cause;
     } finally {
-      clearTimeout(timer);
+      this.scheduler.clearTimeout(timer);
       signal?.removeEventListener("abort", onAbort);
     }
     const boundHandle = bindBackendRun(handle, {
@@ -302,13 +314,13 @@ export class PiSubagentsDelegationV1Backend {
       attempt.response.promise.then(() => {
         throw new SubagentsError("delegated child settled before a run id was observed", { code: "DELEGATION_CANCEL_TOO_LATE", category: "cancelled" });
       }),
-    ]), timeoutMs, () => new SubagentsError("delegated child did not become observable", { code: "DELEGATION_CHILD_START_TIMEOUT", category: "unavailable" }));
+    ]), timeoutMs, () => new SubagentsError("delegated child did not become observable", { code: "DELEGATION_CHILD_START_TIMEOUT", category: "unavailable" }), this.scheduler);
   }
 
   async awaitTerminal(handle, { bindingId, intent = "run", timeoutMs = this.timeoutMs } = {}) {
     const attempt = this.#attempt(handle);
     if (bindingId !== undefined && bindingId !== attempt.binding.bindingId) fail("delegation binding id drifted", "DELEGATION_BINDING_UNKNOWN", "correlation");
-    const response = await withTimeout(attempt.response.promise, timeoutMs, () => new SubagentsError("delegation terminal timed out", { code: "DELEGATION_TERMINAL_TIMEOUT", category: "unavailable" }));
+    const response = await withTimeout(attempt.response.promise, timeoutMs, () => new SubagentsError("delegation terminal timed out", { code: "DELEGATION_TERMINAL_TIMEOUT", category: "unavailable" }), this.scheduler);
     const usage = normalizeUsage(response);
     const outcome = terminalOutcome(response.status);
     const observedAt = this.clock();

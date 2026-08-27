@@ -174,18 +174,21 @@ test("all promotion evidence classes bind source, runtime, proof receipts, and l
   assert.deepEqual(protectedEvidenceSummary(loaded).map((entry) => entry.id), Object.keys(PROTECTED_EVIDENCE_REQUIREMENTS).sort());
 });
 
-test("the checked-in trust policy contains distinct bounded public Alpha and Beta signers", () => {
+test("the checked-in trust policy contains distinct bounded public Alpha, Beta, and Stable signers", () => {
   const trustPolicy = loadProtectedEvidenceTrustPolicy({ rootDir: repositoryRoot });
   assert.equal(trustPolicy.contractStatus, "runtime-ready");
-  assert.equal(trustPolicy.signers.length, 2);
+  assert.equal(trustPolicy.signers.length, 3);
   const alpha = trustPolicy.signers.find((signer) => signer.id === "local-alpha-20260824");
   const beta = trustPolicy.signers.find((signer) => signer.id === "local-beta-20260824");
+  const stable = trustPolicy.signers.find((signer) => signer.id === "local-stable-20260827");
   assert.deepEqual(alpha.evidenceIds, [
     "live-agent-cancel",
     "live-agent-terminal",
     "live-batch-terminal",
   ]);
   assert.deepEqual(beta.evidenceIds, Object.keys(PROTECTED_EVIDENCE_REQUIREMENTS).sort());
+  assert.deepEqual(stable.evidenceIds, Object.keys(PROTECTED_EVIDENCE_REQUIREMENTS).sort());
+  assert.notEqual(stable.publicKeyFingerprint, beta.publicKeyFingerprint);
   assert.equal(trustPolicy.signers.every((signer) => Object.keys(signer).every((key) => !/private/iu.test(key))), true);
   const { matrix, policy } = contracts();
   const signing = signingFixture(["live-agent-terminal"]);

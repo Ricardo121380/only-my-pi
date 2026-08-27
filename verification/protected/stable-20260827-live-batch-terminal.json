@@ -1,0 +1,73 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-protected-evidence-v1.schema.json",
+  "attestation": {
+    "authorizationDigest": "sha256:0c563cbd6bcf89cca6e7840e30a7a31fddeb3b95de51eba9fdc3750f03327907",
+    "captureDigest": "sha256:35c5eb05b0e5fac37b1a2f7af22ed16f1d8c98e1a87d66853cdddd3492189391",
+    "class": "operator-authorized-live-import",
+    "publicKeyFingerprint": "sha256:242a2488897611677f4b4e196aba5a8aafec3fff92443aa6e152300091b67cc6",
+    "signature": "3Chu63jlxKfC75jWV+kYApBjSYhfJ0R/Sp5s3aL3/6bKxLtpO/OUe45TiPXX5DGuYmldFs+KRUY8puQBgFjOBQ==",
+    "signedPayloadDigest": "sha256:0dcacdb9b83f072749c93609100ea2f8a0dcf737212fba8e213256daaedbd035",
+    "signerId": "local-stable-20260827"
+  },
+  "authorization": {
+    "disposableRoot": true,
+    "liveChildDispatch": "AUTHORIZED",
+    "liveWriter": "NOT_RUN_BY_POLICY",
+    "providerRequests": "AUTHORIZED",
+    "realPiHome": "NOT_TOUCHED"
+  },
+  "claims": {
+    "authoritativeTerminals": 2,
+    "autoIntegrated": false,
+    "backgroundResume": false,
+    "batchItemCount": 2,
+    "cancelObserved": false,
+    "managedWorktree": false,
+    "parentDiffVerified": false
+  },
+  "compatibilityRowId": "darwin-arm64-node-25.8.0",
+  "contractStatus": "protected-live-evidence",
+  "environment": {
+    "backend": "pi-subagents@0.45.2",
+    "node": "25.8.0",
+    "pi": "0.84.1",
+    "platform": "darwin-arm64"
+  },
+  "evidenceDigest": "sha256:6b87ed09b4f17c1e9b25e1fb485535dbfc87e991662de99e917b1676201907c8",
+  "formatVersion": 1,
+  "id": "live-batch-terminal",
+  "matrixDigest": "sha256:80362d880ed09b42f2b09206717cc52729daa6722484095772181d1b116b022c",
+  "observedAt": "2026-08-26T17:20:56.402Z",
+  "policyDigest": "sha256:5e0b7ab53b3a2cd5e93ad69a6f53e93141509494094da66056a7bb517ce94e6d",
+  "privacy": {
+    "credentialsStored": false,
+    "hostPathsStored": false,
+    "rawOutputStored": false,
+    "sessionIdsStored": false
+  },
+  "proofs": [
+    {
+      "digest": "sha256:9d1457e09536b94bd08329039526649743ff0b4aa4855d8324423d8ebe11c98b",
+      "kind": "batch-plan"
+    },
+    {
+      "digest": "sha256:2332b3f2b4e6e98e3edda7bd2ebf2f8fc4b73ab32b67c2975e14d35401c685cf",
+      "kind": "batch-terminal-set"
+    },
+    {
+      "digest": "sha256:01cc44a89295f4655649684f3cdc4a3b368a79f3aa82c5b7abaf4cbc187a1b10",
+      "kind": "input-order-aggregation"
+    },
+    {
+      "digest": "sha256:99d5aeb5624986b391d57fadb608c7f24810426c90d6be397b7dc917f828f9ab",
+      "kind": "process-terminal-set"
+    },
+    {
+      "digest": "sha256:f1a966937ed6707df47e4834e46e94a188f44b0dcf2bcba52a6a9b3ebce1d670",
+      "kind": "usage-metering"
+    }
+  ],
+  "sourceCommit": "2207d7230217ebd9efdf0f308e6830f52a9d38ff",
+  "status": "PASS",
+  "trustPolicyDigest": "sha256:80012b09f338145213e8df5076b0ae3d3114387167e4744f77366e2612f1e2c6"
+}

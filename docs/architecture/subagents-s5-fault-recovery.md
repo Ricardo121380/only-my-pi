@@ -72,12 +72,13 @@ and exact-target deletion with no symlink traversal. S5-D intentionally stops
 before that boundary. It supplies recovery visibility without turning a
 diagnostic command into an implicit `rm` facility.
 
-## Remaining release boundary
+## Historical release boundary
 
-S5-D improves fault/recovery evidence only. Alpha is closed by its historical
-source/evidence/receipt chain; Beta additionally requires a new cumulative
-source-bound capture of the inherited read-only classes plus background/resume
-and guarded-writer evidence. Stable still requires the declared cross-platform
-compatibility/soak/migration closure. The checked-in trust policy has distinct
-time-bounded public Alpha and Beta signers, but no public key substitutes for a
-one-time live authorization, so S5-D itself changes no promotion state.
+S5-D itself improved fault/recovery evidence only and changed no promotion
+state. Alpha and Beta were then closed by their historical
+source/evidence/receipt chains. Stable source `2207d72`, evidence commit
+`076052d`, and receipt `b205a0b` subsequently closed the declared
+cross-platform compatibility, soak, migration and cumulative live-evidence
+requirements. The checked-in trust policy has distinct time-bounded public
+Alpha, Beta and Stable signers, but no public key substitutes for a one-time
+live authorization.

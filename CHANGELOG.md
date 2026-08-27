@@ -31,14 +31,20 @@ session. Third-party packages and Labs remain opt-in and require review.
 
 ### Added
 
+- completed the source-bound Stable promotion chain: source `2207d72`, direct
+  evidence-only child `076052d`, and receipt-only child `b205a0b`; the exact
+  31-gate runner passed 27 deterministic and four protected gates with no
+  findings, using five new Stable-specific evidence files rather than
+  overwriting or rebinding historical Alpha/Beta evidence;
+
 - S5 release-governance foundation: exact Node/Pi/`pi-subagents` compatibility
   matrix, cumulative promotion policy, digest-pinned `release-gates-v2`, and
   a clean-source deterministic runner that never spawns protected live gates;
 - a source-pinned Ed25519 protected-evidence contract and direct-child Git
   importer for live Agent terminal/cancel, BatchSwarm, background/resume, and
-  guarded-writer receipts; the trust policy contains one time-bounded public
-  Alpha signer, excludes Beta evidence classes, stores no private key, and
-  remains fail-closed without an exact one-time authorization;
+  guarded-writer receipts; the trust policy contains distinct time-bounded
+  public Alpha, Beta, and Stable signers, stores no private key, and remains
+  fail-closed without an exact one-time authorization;
 - an inert-by-default S5-A Alpha evidence producer with a one-time bounded
   authorization contract, exact runtime-row preflight, empty disposable Pi
   root, synthetic fixture workspace, canonical `omp-reviewer` regeneration and
@@ -68,14 +74,18 @@ session. Third-party packages and Labs remain opt-in and require review.
   keeps `pi-subagents` artifacts session-scoped, binds restart state through a
   private mode-0600 handoff, requires a new correlated resume binding and two
   authoritative terminals, and stages only digest-only session-reload,
-  backend-rebind, terminal, and metering proofs; no live run has been performed;
+  backend-rebind, terminal, and metering proofs; the Stable capture proved two
+  parent processes, two authoritative terminals, 9,546 tokens, and a new
+  backend binding without retaining session identifiers;
 - an independently authorized S5-C `guarded-writer-integration` producer that
   constrains one canonical `omp-implementer` to a synthetic Git repository,
   full base commit, upstream-managed worktree and exact file claim; keeps the
   ordinary degraded-worktree path fail-closed; recomputes the staged diff,
   modes and fixed gates in the parent; rejects untracked/unstaged changes; and
   produces only a reviewable WriterHandoff plus digest evidence without commit,
-  merge, apply, push or automatic integration; no live run has been performed;
+  merge, apply, push or automatic integration; the Stable capture proved one
+  guarded synthetic writer, exact parent-verified diff and fixed gates using
+  5,853 tokens, without integrating the handoff;
 - an S5-D deterministic guarded-writer fault matrix plus a digest-bound,
   host-path-free reconciliation planner for preserved disposable runtime state;
   partial/symlink/source-drift conditions fail closed and the CLI intentionally
@@ -84,9 +94,10 @@ session. Third-party packages and Labs remain opt-in and require review.
 - a bounded offline-cache handoff for the deterministic `test-e2e` release gate;
   no other gate receives the cache variable, and cache roots outside the real
   user npm cache or system temporary directory fail before process spawn;
-- compatibility/provenance contracts plus listener/timer resource-leak soaks,
-  with Preview/Alpha/Beta/Stable claims kept separate from `NOT_RUN_BY_POLICY`
-  live evidence;
+- compatibility/provenance contracts plus seven listener/timer/lease/lock/temp
+  resource-lifecycle soak groups across exact Darwin, Linux Node 22.19.0, and
+  Linux Node 24.19.0 rows, with Preview/Alpha/Beta/Stable claims kept separate
+  until their source-bound evidence and receipts pass;
 
 - a single `packages/subagents/` orchestration facade with typed Agent,
   Assignment, backend capability, terminal receipt, immutable WorkflowPlan,

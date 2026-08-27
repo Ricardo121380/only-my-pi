@@ -32,19 +32,20 @@
         "liveBatchTerminal": "PASS",
         "backgroundResume": "PASS",
         "guardedWriterIntegration": "PASS",
-        "soakResourceLeak": "CONFIGURED_UNVERIFIED",
+        "soakResourceLeak": "PASS",
         "migrationRollback": "PASS"
       },
       "evidence": [
         "contracts/subagents/pi-subagents-live-no-model-evidence.json",
         "tests/subagents-live-probe.test.mjs",
         "tests/subagents-migration.test.mjs",
+        "tests/subagents-resource-leak.test.mjs",
         "tests/subagents-topology.test.mjs",
-        "verification/protected/background-resume.json",
-        "verification/protected/guarded-writer-integration.json",
-        "verification/protected/live-agent-cancel.json",
-        "verification/protected/live-agent-terminal.json",
-        "verification/protected/live-batch-terminal.json"
+        "verification/protected/stable-20260827-background-resume.json",
+        "verification/protected/stable-20260827-guarded-writer-integration.json",
+        "verification/protected/stable-20260827-live-agent-cancel.json",
+        "verification/protected/stable-20260827-live-agent-terminal.json",
+        "verification/protected/stable-20260827-live-batch-terminal.json"
       ]
     },
     {
@@ -56,47 +57,53 @@
         "platform": "linux-x64"
       },
       "scopes": {
-        "repositoryContracts": "CONFIGURED_UNVERIFIED",
+        "repositoryContracts": "PASS",
         "noModelRpc": "NOT_RUN_ENVIRONMENT",
-        "singleOwnerTopology": "CONFIGURED_UNVERIFIED",
+        "singleOwnerTopology": "PASS",
         "liveAgentTerminal": "NOT_RUN_BY_POLICY",
         "liveAgentCancel": "NOT_RUN_BY_POLICY",
         "liveBatchTerminal": "NOT_RUN_BY_POLICY",
         "backgroundResume": "NOT_RUN_BY_POLICY",
         "guardedWriterIntegration": "NOT_RUN_BY_POLICY",
-        "soakResourceLeak": "CONFIGURED_UNVERIFIED",
-        "migrationRollback": "CONFIGURED_UNVERIFIED"
+        "soakResourceLeak": "PASS",
+        "migrationRollback": "PASS"
       },
       "evidence": [
         ".github/workflows/ci.yml",
-        "docs/compatibility/node-pi-matrix.md"
+        "docs/compatibility/node-pi-matrix.md",
+        "tests/subagents-migration.test.mjs",
+        "tests/subagents-resource-leak.test.mjs",
+        "tests/subagents-topology.test.mjs"
       ]
     },
     {
-      "id": "linux-x64-node-24.x",
+      "id": "linux-x64-node-24.19.0",
       "environment": {
-        "node": "24.x",
+        "node": "24.19.0",
         "pi": "0.84.1",
         "backend": "pi-subagents@0.45.2",
         "platform": "linux-x64"
       },
       "scopes": {
-        "repositoryContracts": "CONFIGURED_UNVERIFIED",
+        "repositoryContracts": "PASS",
         "noModelRpc": "NOT_RUN_ENVIRONMENT",
-        "singleOwnerTopology": "CONFIGURED_UNVERIFIED",
+        "singleOwnerTopology": "PASS",
         "liveAgentTerminal": "NOT_RUN_BY_POLICY",
         "liveAgentCancel": "NOT_RUN_BY_POLICY",
         "liveBatchTerminal": "NOT_RUN_BY_POLICY",
         "backgroundResume": "NOT_RUN_BY_POLICY",
         "guardedWriterIntegration": "NOT_RUN_BY_POLICY",
-        "soakResourceLeak": "CONFIGURED_UNVERIFIED",
-        "migrationRollback": "CONFIGURED_UNVERIFIED"
+        "soakResourceLeak": "PASS",
+        "migrationRollback": "PASS"
       },
       "evidence": [
         ".github/workflows/ci.yml",
-        "docs/compatibility/node-pi-matrix.md"
+        "docs/compatibility/node-pi-matrix.md",
+        "tests/subagents-migration.test.mjs",
+        "tests/subagents-resource-leak.test.mjs",
+        "tests/subagents-topology.test.mjs"
       ]
     }
   ],
-  "matrixDigest": "sha256:8153d80fe216dae9d00508580429a43dc1465f40cda3b507c3598880d2e7e3a5"
+  "matrixDigest": "sha256:80362d880ed09b42f2b09206717cc52729daa6722484095772181d1b116b022c"
 }
