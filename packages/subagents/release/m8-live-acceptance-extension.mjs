@@ -150,7 +150,7 @@ function usageAccumulator() {
 async function runAgent(composer, request) {
   const service = createAgentControlService({ rootDir: request.repositoryRoot, orchestration: composer.coordinator, configurationProvider: composer.configurationProvider });
   const runId = `m8-agent-${request.runNonce}`;
-  const input = { task: "Review package.json and README.md read-only. Return a concise structured verdict with evidence and no unsupported claims.", scope: ["package.json", "README.md"], acceptance: ["structured verdict", "no mutation"] };
+  const input = { task: "Lifecycle-only protected probe. Do not call file, network, shell, or delegation tools. Fixture facts supplied by the parent: package name only-my-pi-m8-live-fixture, private=true, version=0.0.0, README describes a bounded read-only lifecycle fixture. Return a concise structured verdict using only these facts and make no unsupported claims.", scope: ["package.json", "README.md"], acceptance: ["structured verdict", "no mutation", "no external tool calls"] };
   const plan = await service.dispatch({ subcommand: "plan", agentId: "reviewer", runId, input });
   ensure(plan.ok === true, plan.code ?? "M8_AGENT_PLAN_FAILED", "M8 Agent plan failed");
   const result = await service.dispatch({ subcommand: "run", agentId: "reviewer", runId, input: plan.input, yes: true, expectedPlanDigest: plan.plan.planDigest, expectedExecutionDigest: plan.executionEnvelope.executionEnvelopeDigest });

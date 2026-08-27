@@ -179,6 +179,8 @@ export async function runPiM8Phase({ piCommand, phase, request, configRoot, suba
   const requestFile = await writeRequest(temporaryRoot, { ...request, phase });
   const extension = fileURLToPath(new URL("../packages/subagents/release/m8-live-acceptance-extension.mjs", import.meta.url));
   const env = safeEnvironment({ temporaryRoot, configRoot, requestFile });
+  const workspaceRoot = path.join(configRoot, "only-my-pi", "live-workspaces", request.runNonce);
+  await fs.mkdir(workspaceRoot, { recursive: true, mode: 0o700 });
   const argv = [
       "--mode", "rpc",
       "--provider", request.model.provider,
@@ -211,7 +213,7 @@ export async function runPiM8Phase({ piCommand, phase, request, configRoot, suba
       if (found.length > 1) { terminate(child); void finish(() => reject(Object.assign(new Error("multiple M8 live records were emitted"), { code: "M8_LIVE_RECORD_AMBIGUOUS" }))); }
     };
     try {
-      child = spawnImpl(piCommand, argv, { cwd: rootDir, env, shell: false, detached: process.platform !== "win32", stdio: ["pipe", "pipe", "pipe"] });
+      child = spawnImpl(piCommand, argv, { cwd: workspaceRoot, env, shell: false, detached: process.platform !== "win32", stdio: ["pipe", "pipe", "pipe"] });
     } catch (cause) {
       void finish(() => reject(Object.assign(new Error("Pi M8 live phase could not start", { cause }), { code: "M8_LIVE_START_FAILED" })));
       return;
@@ -302,9 +304,21 @@ export async function executeM8LiveAcceptance(args, { phaseRunner = runPiM8Phase
   const subagentsEntry = await fs.realpath(path.resolve(subagents.root, extensionEntry));
   if (!subagentsEntry.startsWith(`${subagents.root}${path.sep}`) || !(await fs.lstat(subagentsEntry)).isFile()) fail("M8_LIVE_SUBAGENTS_ENTRY_INVALID", "pi-subagents extension entry escaped its package");
   const runNonce = `${sourceCommit.slice(0, 8)}-${crypto.randomBytes(4).toString("hex")}`;
+  const workspaceRoot = path.join(configRoot, "only-my-pi", "live-workspaces", runNonce);
+  await fs.mkdir(workspaceRoot, { recursive: true, mode: 0o700 });
+  await Promise.all([
+    fs.writeFile(path.join(workspaceRoot, "package.json"), `${JSON.stringify({ name: "only-my-pi-m8-live-fixture", private: true, version: "0.0.0" }, null, 2)}\n`, { mode: 0o400, flag: "wx" }),
+    fs.writeFile(path.join(workspaceRoot, "README.md"), "# M8 live fixture\n\nBounded read-only lifecycle fixture.\n", { mode: 0o400, flag: "wx" }),
+  ]);
   const request = { formatVersion: 1, phase: "main", sourceCommit, repositoryRoot: rootDir, configRoot, model: { provider: args.provider, id: args.model }, runNonce, webAuthorized: true };
-  const main = await phaseRunner({ piCommand: args.piCommand, phase: "main", request, configRoot, subagentsEntry, timeoutMs: 30 * 60 * 1000 });
-  const resume = await phaseRunner({ piCommand: args.piCommand, phase: "resume", request, configRoot, subagentsEntry, timeoutMs: 10 * 60 * 1000 });
+  let main;
+  let resume;
+  try {
+    main = await phaseRunner({ piCommand: args.piCommand, phase: "main", request, configRoot, subagentsEntry, timeoutMs: 30 * 60 * 1000 });
+    resume = await phaseRunner({ piCommand: args.piCommand, phase: "resume", request, configRoot, subagentsEntry, timeoutMs: 10 * 60 * 1000 });
+  } finally {
+    await fs.rm(workspaceRoot, { recursive: true, force: true });
+  }
   const assertions = combineRecords(main, resume, { sourceCommit, artifactSha256: args.artifactSha256 });
   const after = await assertRealInstall(configRoot);
   if (after.settingsSha256 !== before.settingsSha256 || after.generationId !== before.generationId) fail("M8_LIVE_SETTINGS_DRIFT", "live acceptance changed installed settings or generation identity");

@@ -67,6 +67,7 @@ test("Pi M8 phase uses real config through a scrubbed shell-free process and emi
   });
   assert.equal(result.status, "PASS");
   assert.equal(invocation.options.shell, false);
+  assert.match(invocation.options.cwd, new RegExp(`${configRoot.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}/only-my-pi/live-workspaces/fixture$`, "u"));
   assert.equal(invocation.options.env.PI_CODING_AGENT_DIR, configRoot);
   assert.equal(invocation.options.env.OPENCODE_API_KEY, undefined);
   assert.equal(invocation.options.env.CODEX_API_KEY, undefined);
