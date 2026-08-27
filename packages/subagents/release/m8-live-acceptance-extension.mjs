@@ -209,7 +209,15 @@ async function runGoal(composer, request) {
   const goal = structuredClone(entry.definition);
   goal.authority.allowedAgentTemplates = ["reviewer", "synthesizer", "verifier"];
   goal.authority.egress = "deny";
-  const objective = { ref: entry.definition.objective.ref, digest: entry.definition.objective.digest, input: { task: "Dynamically plan, review, synthesize, and freshly verify the supplied bounded release objective without external tools." } };
+  const objective = {
+    ref: entry.definition.objective.ref,
+    digest: entry.definition.objective.digest,
+    input: {
+      task: "Dynamically plan, review, synthesize, and freshly verify these parent-supplied fixture facts without external tools: package name is only-my-pi-m8-live-fixture; private is true; version is 0.0.0; README states this is a bounded read-only lifecycle fixture. Acceptance requires a provenance-preserving structured artifact that reports whether those facts are internally consistent and names any unsupported claim.",
+      scope: ["parent-supplied-fixture-facts"],
+      acceptance: ["structured artifact", "provenance retained", "fresh verifier verdict", "no external tool calls"],
+    },
+  };
   const authorization = createHumanGoalAuthorization(goal, { objective, nonce: `m8-goal-${request.runNonce}` });
   const result = await composer.goalController.run(goal, { runId, objective, authorization, input: objective.input });
   ensure(result.status === "completed" && result.revisions.length >= 2, "M8_GOAL_REPLAN_MISSING", "M8 SwarmGoal did not complete after a replan");
