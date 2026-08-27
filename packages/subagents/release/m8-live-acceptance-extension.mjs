@@ -331,8 +331,8 @@ export default function m8LiveAcceptanceExtension(pi) {
             ...configuration,
             budget: Object.freeze({
               ...configuration.budget,
-              maxTurnsPerChild: Math.min(2, configuration.budget.maxTurnsPerChild),
-              maxToolCallsPerChild: Math.min(2, configuration.budget.maxToolCallsPerChild),
+              maxTurnsPerChild: Math.min(4, configuration.budget.maxTurnsPerChild),
+              maxToolCallsPerChild: Math.min(4, configuration.budget.maxToolCallsPerChild),
               maxTotalToolCalls: Math.min(16, configuration.budget.maxTotalToolCalls),
               maxGoalRevisions: Math.min(2, configuration.budget.maxGoalRevisions),
             }),
@@ -346,8 +346,8 @@ export default function m8LiveAcceptanceExtension(pi) {
         getContext: () => ctx,
         dependencies: {
           dailyConfig: protectedDailyConfig,
-          toolCallLimitResolver: ({ agentSpec }) => ["researcher", "source-verifier"].includes(agentSpec?.templateId) ? 2 : 0,
-          turnLimitResolver: () => 2,
+          toolCallLimitResolver: ({ agentSpec }) => ["researcher", "source-verifier"].includes(agentSpec?.templateId) ? 4 : 0,
+          turnLimitResolver: ({ agentSpec }) => ["researcher", "source-verifier"].includes(agentSpec?.templateId) ? 4 : 2,
         },
       });
       const result = request.phase === "main" ? await executeM8LiveMain(composer, request) : await executeM8LiveResume(composer, request);

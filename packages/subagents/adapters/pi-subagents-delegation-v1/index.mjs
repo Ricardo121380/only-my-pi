@@ -393,7 +393,11 @@ export class PiSubagentsDelegationV1Backend {
       startedAt: attempt.startedAt,
       settledAt: observedAt,
       result,
-      ...(outcome === "failed" ? { error: new SubagentsError("delegated child failed", { code: "DELEGATION_CHILD_FAILED", category: "backend" }) } : {}),
+      ...(outcome === "failed"
+        ? { error: new SubagentsError("delegated child failed", { code: "DELEGATION_CHILD_FAILED", category: "backend" }) }
+        : outcome === "budget-exhausted"
+          ? { error: new SubagentsError("delegated child exhausted its upstream turn, tool, or usage budget", { code: "DELEGATION_CHILD_BUDGET_EXHAUSTED", category: "policy" }) }
+          : {}),
     });
     this.attempts.delete(keyOf(attempt.request));
     return terminal;
