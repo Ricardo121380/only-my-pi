@@ -18,6 +18,7 @@ import {
   runDailyHarnessVerification,
 } from "../scripts/daily-harness-gates.mjs";
 import { M8_DETERMINISTIC_CHECKS, runM8AcceptanceCheck } from "../scripts/m8-deterministic-acceptance.mjs";
+import { M8_LIVE_EXPECTED_ASSERTIONS } from "../scripts/m8-live-acceptance.mjs";
 
 function successfulSpawn() {
   const child = new EventEmitter();
@@ -71,7 +72,7 @@ test("protected evidence is source-bound, digest-bound, privacy-safe, and gate-s
     sourceCommit: "a".repeat(40),
     status: "PASS",
     createdAt: "2026-08-27T00:00:00.000Z",
-    assertions: [{ id: "agent-terminal", status: "PASS", digest: `sha256:${"1".repeat(64)}` }],
+    assertions: M8_LIVE_EXPECTED_ASSERTIONS.map((id, index) => ({ id, status: "PASS", digest: `sha256:${String((index % 9) + 1).repeat(64)}` })),
     privacy: { rawOutputStored: false, hostPathsStored: false, secretsStored: false },
     authorization: { providerRequests: "AUTHORIZED", realPiHome: "NOT_TOUCHED", credentials: "PI_RUNTIME_ONLY", writer: "DENIED" },
   };

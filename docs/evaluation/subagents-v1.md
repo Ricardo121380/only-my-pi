@@ -31,6 +31,10 @@ node --test tests/subagents-evaluation.test.mjs
 
 S5 protected live gates were separately authorized and closed for their exact
 Stable source/evidence chain. They do not turn this offline corpus into live
-quality evidence and do not authorize a daily Pi-home installation. M8 adds a
-separate daily-session matrix and keeps this report's
+quality evidence and do not authorize a daily Pi-home installation. M8 now has
+a separate, implemented daily-session producer covering Agent, BatchSwarm,
+Workflow ArtifactRefs, SwarmGoal replan, Ultra routing, public Web,
+cancellation, cross-session resume, budget denial and writer denial. Its D13
+result remains pending until a source-bound protected run completes; this
+offline report still keeps
 `claim=CONTRACT_PREVIEW_OFFLINE_SIMULATOR` and `liveQualityClaim=false`.

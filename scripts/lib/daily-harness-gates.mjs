@@ -41,6 +41,17 @@ const PROTECTED_KEYS = new Set(["formatVersion", "kind", "gateId", "evidenceId",
 const ASSERTION_KEYS = new Set(["id", "status", "digest"]);
 const PRIVACY_KEYS = new Set(["rawOutputStored", "hostPathsStored", "secretsStored"]);
 const AUTHORIZATION_KEYS = new Set(["providerRequests", "realPiHome", "credentials", "writer"]);
+const PROTECTED_ASSERTION_IDS = Object.freeze({
+  D13: Object.freeze([
+    "agent-terminal", "artifact-identity", "batch-swarm-terminal", "budget-boundary", "cancellation",
+    "public-web", "resume-across-session", "resume-prepared", "swarm-goal-replan", "ultra-agent-route",
+    "ultra-workflow-route", "usage-metering", "workflow-artifact-flow", "writer-denial",
+  ].sort()),
+  D14: Object.freeze([
+    "artifact-applied", "external-packages-preserved", "final-installed", "no-model-smoke",
+    "reapplied", "rollback-restored",
+  ].sort()),
+});
 
 function fail(message) {
   throw new Error(`daily-harness-gates-v1: ${message}`);
@@ -194,6 +205,7 @@ export function validateDailyHarnessProtectedEvidence(input, { gateId, expectedS
     if (typeof assertion.id !== "string" || !/^[a-z][a-z0-9-]{0,63}$/u.test(assertion.id) || ids.has(assertion.id) || assertion.status !== "PASS" || !SHA256.test(assertion.digest ?? "")) fail("protected evidence assertion is invalid");
     ids.add(assertion.id);
   }
+  if (JSON.stringify([...ids].sort()) !== JSON.stringify(PROTECTED_ASSERTION_IDS[gateId])) fail("protected evidence assertion set is incomplete or unexpected");
   assertObject(input.privacy, "protected evidence privacy");
   exactKeys(input.privacy, PRIVACY_KEYS, "protected evidence privacy");
   if (input.privacy.rawOutputStored !== false || input.privacy.hostPathsStored !== false || input.privacy.secretsStored !== false) fail("protected evidence privacy boundary is invalid");

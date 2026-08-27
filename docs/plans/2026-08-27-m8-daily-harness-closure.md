@@ -1,6 +1,12 @@
 # M8 Daily Harness Closure
 
-Status: **IMPLEMENTING** on `codex/m8-daily-harness`.
+Status: **PROTECTED ACCEPTANCE PENDING** on `codex/m8-daily-harness`.
+
+M8.0-M8.6 and deterministic D1-D12/D15 are complete. The artifact is
+scripts-disabled, offline-installable, and cache-independent through an exact
+bundled runtime dependency allowlist. Remaining work is deliberately limited
+to D13 (source-bound DeepSeek V4 Flash live matrix) and D14 (real Pi-root
+apply/rollback/reapply), followed by the evidence/receipt commits and merge.
 
 M8 turns the source-bound Stable orchestration kernel into a read-only-first
 Harness usable from a normal Pi TUI session. The standalone `omp` CLI remains
@@ -24,6 +30,13 @@ real Agent execution belongs exclusively to `/omp` inside Pi.
 8. Only after shadow verification, apply a commit-pinned tarball to the real Pi
    root, smoke it, roll it back, prove the nine borrowed packages remain, and
    reapply it.
+
+The first-party `review-items` BatchSwarm uses one physical attempt per item in
+M8. This makes the eight-child ceiling literal: a standalone batch may admit
+eight items, while Ultra admits at most seven batch items and reserves the
+eighth child slot for its required fresh verifier. Retrying a failed item is an
+explicit new run/replan decision, not hidden amplification inside the Daily
+preset.
 
 ## Completion boundary
 

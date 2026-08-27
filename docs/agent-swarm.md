@@ -40,7 +40,10 @@ Gate Runner, not an arbitrary child shell.
 The S2 no-model probe proves startup, the public RPC handshake, and single
 physical tool ownership. Later source-bound Stable evidence proves the
 protected live Agent and two-item BatchSwarm scenarios. Normal `/omp` daily
-dispatch is an M8 integration surface and must not reuse those evidence claims;
-it requires the session composer, per-run ceilings, budgets, artifacts, and
-approval UI described by the M8 ADRs. A real deployment must add OS/container
-isolation for untrusted code; a worktree alone is not a sandbox.
+dispatch is now wired through the M8 session composer, per-run ceilings,
+budgets, artifacts and approval UI; it does not reuse the older Stable fixture
+as evidence. The Daily first-party BatchSwarm performs one attempt per item,
+admits at most eight items, and Ultra reserves one of those eight child slots
+for fresh verification. D13/D14 remain the protected evidence boundary before
+the real installation is called complete. A real deployment must add
+OS/container isolation for untrusted code; a worktree alone is not a sandbox.

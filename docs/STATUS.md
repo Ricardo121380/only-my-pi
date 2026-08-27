@@ -6,10 +6,12 @@ kernel merged to `main`: **2026-08-27** · Pi **0.84.1** · Node **25.8.0** · m
 
 ## Active milestone — M8 Daily Harness Closure
 
-The S0-S5 kernel is Stable for the pinned source/evidence/receipt chain below,
-but the product is not yet installed in the real Pi home and the normal
-`/omp` extension does not yet inject the unified live orchestration runtime.
-M8 closes that product gap. Its implementation branch is
+The S0-S5 kernel is Stable for the pinned source/evidence/receipt chain below.
+M8.0-M8.6 are now implemented: the normal `/omp` extension composes the unified
+session runtime, all five read-only execution classes use the same
+`pi-subagents` backend, and artifact/run/config/Web/Gate/TUI paths are wired.
+The product is not yet claimed complete because protected live-model and
+real-root rollback/reapply evidence (D13/D14) is still pending. Its implementation branch is
 `codex/m8-daily-harness` and its gate map is
 [`../verification/daily-harness-gates-v1.json`](../verification/daily-harness-gates-v1.json).
 
@@ -22,8 +24,21 @@ M8 starts from these explicit truths:
   stack over the sole `pi-subagents` physical runtime;
 - the production milestone is read-only; the historical protected writer is
   evidence for a synthetic fixture and is not a daily writer capability;
-- real Pi-home mutation happens only after D1-D12/D15, shadow installation,
-  and an exact reviewed apply/rollback/reapply plan have passed.
+- D1-D12 and D15 have passed as 13 fixed deterministic gates; D13/D14 remain
+  evidence-only and cannot be spawned by CI;
+- global coverage is above 85/69/85, the session composer is above 90/80/90,
+  and `omp-control` is above 85/70/85;
+- a scripts-disabled, offline, self-contained artifact installs successfully in
+  a shadow root; real Pi-home mutation follows the exact reviewed
+  apply/live/rollback/reapply sequence only.
+
+M8 protected acceptance is source-bound. `scripts/m8-live-acceptance.mjs`
+uses the configured Pi model without printing or copying credentials, runs the
+Agent/BatchSwarm/Workflow/SwarmGoal/Ultra/Web/cancel/resume/budget/writer-denial
+matrix in two Pi processes, and stores digest-only D13 evidence.
+`scripts/m8-real-root-rehearsal.mjs` owns the D14 no-model
+apply/preservation/rollback/reapply sequence. Both scripts are plan-first and
+require explicit `--run --yes`; neither is callable from ordinary CI.
 
 The Harness MVP was fast-forwarded to private repository `main` at
 `12b24b59980386683a90af8250a4de4ff738d67c`. The post-merge `main` workflow

@@ -44,8 +44,10 @@ protected evidence, and receipt chain passed 31/31 required gates. The active
 M8 milestone is different: **Daily Harness Closure** connects that verified
 kernel to a normal interactive Pi session, introduces borrowed package
 ownership, Base + Overlay configuration, private run artifacts, and a
-read-only `/omp run` experience. Until M8's D1-D15 gates and real-root
-installation rehearsal pass, Stable describes the pinned kernel evidence—not a
+read-only `/omp run` experience. M8.0-M8.6 and all 13 deterministic Daily gates
+are implemented and passing; D13 live-model evidence and D14 real-root
+rollback/reapply evidence remain protected and pending. Until those two
+evidence-only gates pass, Stable describes the pinned kernel evidence—not a
 claim that the current checkout is already installed as the user's daily
 Harness.
 

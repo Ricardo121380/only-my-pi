@@ -24,7 +24,7 @@ function responseValue(agent, task = "") {
     const second = /Revision:\s*1/u.test(task);
     return second
       ? { questions: ["remaining edge evidence", "final source check"], coveredDimensions: ["edge-cases", "primary-evidence"], remainingDimensions: [], coverage: 1, progress: 0.4, decision: "complete", reason: "coverage target reached" }
-      : { questions: ["primary evidence", "edge cases"], coveredDimensions: ["primary-evidence"], remainingDimensions: ["edge-cases"], coverage: 0.6, progress: 0.6, decision: "replan", reason: "initial bounded fanout" };
+      : { questions: ["primary evidence", "edge cases"], coveredDimensions: ["primary-evidence"], remainingDimensions: ["edge-cases"], coverage: 1, progress: 1, decision: "complete", reason: "planner attempted completion before any evidence was executed" };
   }
   if (agent === "omp-reviewer") return { verdict: "pass", findings: [], tested: [], unverified: [] };
   if (agent === "omp-verifier") return { verdict: "pass", passedGates: [], failedGates: [], reason: "evidence is bounded" };

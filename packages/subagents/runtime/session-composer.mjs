@@ -411,6 +411,7 @@ function normalizedPlannerResult(value, revision, priorCoverage) {
   const coveredDimensions = [...new Set((Array.isArray(value.coveredDimensions) ? value.coveredDimensions : []).map((entry, index) => safeDimension(entry, `covered-${revision}-${index}`)))].sort();
   const remainingDimensions = [...new Set((Array.isArray(value.remainingDimensions) ? value.remainingDimensions : []).map((entry, index) => safeDimension(entry, `remaining-${revision}-${index}`)).filter((entry) => !coveredDimensions.includes(entry)))].sort();
   let decision = ["replan", "complete", "blocked"].includes(value.decision) ? value.decision : "replan";
+  if (revision === 0 && decision === "complete") decision = "replan";
   if (decision === "complete" && coverage < 0.9) decision = "replan";
   const reason = typeof value.reason === "string" && value.reason.trim() ? value.reason.trim().slice(0, 1000) : `bounded revision ${revision}`;
   return { questions, coverage, progress, coveredDimensions, remainingDimensions, decision, reason };
