@@ -121,14 +121,17 @@ async function harness(t, { withoutWeb = false, inheritedExtraAgentDirs, allowVe
 }
 
 test("session composer owns one read-only runtime, ceiling, private stores and Web child override", async (t) => {
-  const { configRoot, composer, ceilingCalls, prior, ceilingDisposed } = await harness(t);
+  const inheritedExtraAgentDirs = "/tmp/only-my-pi-existing-agent-dir";
+  const { configRoot, composer, ceilingCalls, ceilingDisposed } = await harness(t, { inheritedExtraAgentDirs });
   assert.equal(composer.status, "SESSION_RUNTIME_READY");
   assert.equal(composer.logicalRuntimeOwner, "@only-my-pi/subagents");
   assert.equal(composer.physicalRuntimeOwner, "pi-subagents");
   assert.equal(ceilingCalls.length, 1);
   assert.ok(ceilingCalls[0].ceiling.allowedAgents.includes("omp-reviewer"));
   assert.equal(ceilingCalls[0].ceiling.allowedAgents.includes("omp-implementer"), false);
-  const extraRoot = process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS.split(path.delimiter)[0];
+  const extraRoots = process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS.split(path.delimiter);
+  assert.equal(extraRoots[0], inheritedExtraAgentDirs);
+  const extraRoot = extraRoots.at(-1);
   const researcher = await fs.readFile(path.join(extraRoot, "omp-researcher.md"), "utf8");
   assert.match(researcher, /subagentOnlyExtensions: .*safe-web-extension\.mjs/u);
   assert.match(researcher, /tools: .*web_search/u);
@@ -141,7 +144,7 @@ test("session composer owns one read-only runtime, ceiling, private stores and W
   assert.equal((await fs.stat(path.join(configRoot, "only-my-pi", "runs"))).mode & 0o777, 0o700);
   await composer.dispose();
   assert.equal(ceilingDisposed(), true);
-  assert.equal(process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS, prior);
+  assert.equal(process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS, inheritedExtraAgentDirs);
 });
 
 test("single Agent live path uses the composer coordinator and publishes a private artifact", async (t) => {

@@ -899,7 +899,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
     if (typeof extensionEntry !== "string" || !extensionEntry) fail("WEB_EXTENSION_ENTRY_UNAVAILABLE", "pi-web-access has no extension entry");
     const webExtensionPath = contained(webPackage.root, path.resolve(webPackage.root, extensionEntry));
     runtimeAgentOverride = await prepareWebAgentOverrides({ rootDir, managedRoot, sessionId, webExtensionPath });
-    process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS = [runtimeAgentOverride.agentsRoot, previousExtraAgentDirs].filter(Boolean).join(path.delimiter);
+    process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS = [previousExtraAgentDirs, runtimeAgentOverride.agentsRoot].filter(Boolean).join(path.delimiter);
   }
   const registerCeiling = dependencies.registerCapabilityCeiling ?? await loadCapabilityCeilingRegistrar(subagentsPackage.root);
   const ceilingHandle = registerCeiling({
