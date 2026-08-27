@@ -3,7 +3,7 @@ name: only-my-pi release gates
 on:
   push:
     branches:
-      - "**"
+      - main
   pull_request:
     branches:
       - main
