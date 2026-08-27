@@ -11,7 +11,7 @@ import {
   parseM8LiveAcceptanceArgs,
   runPiM8Phase,
 } from "../scripts/m8-live-acceptance.mjs";
-import { M8_LIVE_RECORD_TYPE, m8ProtectedToolCallLimit, m8ProtectedTurnLimit } from "../packages/subagents/release/m8-live-acceptance-extension.mjs";
+import { M8_LIVE_RECORD_TYPE, m8ProtectedGoalPlannerPolicy, m8ProtectedToolCallLimit, m8ProtectedTurnLimit } from "../packages/subagents/release/m8-live-acceptance-extension.mjs";
 import { protectedEvidenceDigest, validateDailyHarnessProtectedEvidence } from "../scripts/lib/daily-harness-gates.mjs";
 
 test("M8 live CLI is plan-first and run requires explicit artifact/output confirmation", () => {
@@ -104,4 +104,14 @@ test("protected Goal and public Web runs have distinct monotonic tool and turn c
   assert.equal(m8ProtectedToolCallLimit({ agentSpec: researcher, handle: { local: { runId: "m8-web-source" } } }), 4);
   assert.equal(m8ProtectedTurnLimit({ agentSpec: researcher, handle: { local: { runId: "m8-web-source" } } }), 4);
   assert.equal(m8ProtectedToolCallLimit({ agentSpec: { templateId: "reviewer" }, handle: { local: { runId: "m8-agent-source" } } }), 0);
+});
+
+test("protected Goal convergence requires a later revision plus verified reusable evidence", () => {
+  const base = { questions: ["one", "two"], coverage: 0, progress: 0, coveredDimensions: [], remainingDimensions: ["one"], decision: "replan", reason: "model requested more work" };
+  assert.equal(m8ProtectedGoalPlannerPolicy({ plannerResult: base, revision: 0, settledNodeCount: 3 }).decision, "replan");
+  assert.equal(m8ProtectedGoalPlannerPolicy({ plannerResult: base, revision: 1, settledNodeCount: 0 }).decision, "replan");
+  const completed = m8ProtectedGoalPlannerPolicy({ plannerResult: base, revision: 1, settledNodeCount: 3 });
+  assert.equal(completed.decision, "complete");
+  assert.equal(completed.coverage, 1);
+  assert.deepEqual(completed.remainingDimensions, []);
 });

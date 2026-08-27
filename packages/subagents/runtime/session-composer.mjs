@@ -713,7 +713,11 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
       runId: `${plannerContext.runId}:planner:${plannerContext.revision}`,
       nodeId: `goal-planner-${plannerContext.revision}`,
     });
-    const planned = normalizedPlannerResult(terminal.result, plannerContext.revision, plannerContext.priorCoverage);
+    let planned = normalizedPlannerResult(terminal.result, plannerContext.revision, plannerContext.priorCoverage);
+    if (typeof dependencies.goalPlannerResultPolicy === "function") {
+      const adjusted = dependencies.goalPlannerResultPolicy({ plannerResult: clone(planned), revision: plannerContext.revision, priorCoverage: plannerContext.priorCoverage, settledNodeCount: plannerContext.settledNodes?.length ?? 0 });
+      planned = normalizedPlannerResult(adjusted, plannerContext.revision, plannerContext.priorCoverage);
+    }
     return buildGoalProposal(planned, plannerContext, (await configurationProvider()).budget, {
       makerTemplateSelector: dependencies.goalMakerTemplateSelector,
       webEnabled: dependencies.goalWebEnabled ?? true,

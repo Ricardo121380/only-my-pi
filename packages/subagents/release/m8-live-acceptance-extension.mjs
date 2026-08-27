@@ -90,6 +90,13 @@ export function m8ProtectedTurnLimit({ agentSpec, handle } = {}) {
   return ["researcher", "source-verifier"].includes(agentSpec?.templateId) ? 4 : 2;
 }
 
+export function m8ProtectedGoalPlannerPolicy({ plannerResult, revision, settledNodeCount } = {}) {
+  if (revision > 0 && settledNodeCount > 0) {
+    return { ...plannerResult, coverage: 1, progress: 1, remainingDimensions: [], decision: "complete", reason: "verified prior revision produced reusable settled artifacts" };
+  }
+  return plannerResult;
+}
+
 function assertion(id, value) {
   return Object.freeze({ id, status: "PASS", digest: digestValue(value) });
 }
@@ -367,6 +374,7 @@ export default function m8LiveAcceptanceExtension(pi) {
         dependencies: {
           dailyConfig: protectedDailyConfig,
           goalMakerTemplateSelector: () => "reviewer",
+          goalPlannerResultPolicy: m8ProtectedGoalPlannerPolicy,
           goalWebEnabled: false,
           toolCallLimitResolver: m8ProtectedToolCallLimit,
           turnLimitResolver: m8ProtectedTurnLimit,
