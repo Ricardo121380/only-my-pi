@@ -173,7 +173,7 @@ export async function hashResourcePath({ artifactRoot, relativePath, allowContai
 }
 
 function graphDigestPayload(plan) {
-  return {
+  const payload = {
     formatVersion: plan.formatVersion,
     kind: plan.kind,
     profileId: plan.profileId,
@@ -181,6 +181,8 @@ function graphDigestPayload(plan) {
     packages: plan.packages,
     resources: plan.resources,
   };
+  if (Array.isArray(plan.packageBindings)) payload.packageBindings = plan.packageBindings;
+  return payload;
 }
 
 export function computeOwnedGraphDigest(plan) {

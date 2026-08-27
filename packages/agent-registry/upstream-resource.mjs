@@ -58,6 +58,8 @@ export function compileAgentResource(manifest, promptText) {
     `description: ${yamlString(manifest.description)}`,
     `tools: ${allow.join(", ")}`,
     `thinking: ${manifest.modelRole === "deep" ? "high" : manifest.modelRole === "fast" ? "low" : "medium"}`,
+    "extensions:",
+    "maxSubagentDepth: 0",
     "systemPromptMode: replace",
     "inheritProjectContext: true",
     "inheritSkills: false",

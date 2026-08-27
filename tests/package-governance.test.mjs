@@ -218,7 +218,7 @@ test("first-party inventory covers manifest resources, contract seeds, and non-d
   assert.equal(byId.get("research-synthesis-recipe").defaultLoaded, false);
   assert.equal(byId.get("research-synthesis-recipe").packaged, true);
   assert.equal(byId.get("omp-subagents-v2-runtime").lifecycle, "experimental");
-  assert.deepEqual(byId.get("omp-agent-prompts-runtime").profileEligibility, ["minimal", "coding", "research", "orchestration"]);
+  assert.deepEqual(byId.get("omp-agent-prompts-runtime").profileEligibility, ["minimal", "coding", "research", "orchestration", "daily"]);
   assert.ok(byId.get("researcher-agent").profileEligibility.includes("orchestration"));
   assert.deepEqual(byId.get("omp-subagents-v2-runtime").owners, ["only-my-pi-subagent-orchestration"]);
   for (const id of ["omp-workflow-core-runtime", "omp-swarm-core-runtime", "omp-pi-subagents-adapter-runtime"]) {

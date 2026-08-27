@@ -12,6 +12,8 @@ const VALUE_OPTIONS = new Map([
   ["--scope", "scope"],
   ["--config-root", "configRoot"],
   ["--input-file", "inputFile"],
+  ["--project", "projectRoot"],
+  ["--artifact", "artifact"],
 ]);
 
 const BOOLEAN_OPTIONS = new Map([
@@ -27,6 +29,7 @@ const BOOLEAN_OPTIONS = new Map([
 
 const COMMANDS = new Set([
   "bootstrap",
+  "install",
   "doctor",
   "status",
   "update",
@@ -34,6 +37,10 @@ const COMMANDS = new Set([
   "uninstall",
   "safe",
   "profile",
+  "profiles",
+  "models",
+  "gate",
+  "runs",
   "tools",
   "packages",
   "context",
@@ -48,6 +55,10 @@ const COMMANDS = new Set([
 
 const MODE_COMMANDS = new Set(["list", "show", "use", "reset", "doctor", "diff", "scaffold"]);
 const PROFILE_COMMANDS = new Set(["list", "show", "diff"]);
+const PRESET_COMMANDS = new Set(["list", "show", "plan", "apply"]);
+const MODEL_COMMANDS = new Set(["validate"]);
+const GATE_COMMANDS = new Set(["validate"]);
+const RUN_COMMANDS = new Set(["list", "show", "gc"]);
 const WORKFLOW_COMMANDS = new Set(["list", "show", "run", "status", "cancel", "resume"]);
 const SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume", "batch", "goal"]);
 const BATCH_SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume"]);
@@ -129,6 +140,8 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   const configRoot = resolveConfigRoot(options.configRoot, env, homedir);
 
   if (!new Set(["swarm", "workflow", "ultra"]).has(command) && options.inputFile !== undefined) fail("--input-file is only valid for workflow, swarm, or ultra commands");
+  if (!["models", "gate"].includes(command) && options.projectRoot !== undefined) fail("--project is only valid for models or gate validate");
+  if (!["install", "update"].includes(command) && options.artifact !== undefined) fail("--artifact is only valid for install or update");
 
   if (options.profile !== undefined) assertIdentifier(options.profile, "profile");
   if (options.mode !== undefined) {
@@ -137,6 +150,8 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   }
   if (options.provider !== undefined) assertIdentifier(options.provider, "provider");
   if (options.scope !== undefined && !SCOPES.has(options.scope)) fail("scope must be global or project");
+  if (options.projectRoot !== undefined && !path.isAbsolute(options.projectRoot)) fail("--project must be an absolute path");
+  if (options.artifact !== undefined && !path.isAbsolute(options.artifact)) fail("--artifact must be an absolute path");
   if (options.model !== undefined && !/^[A-Za-z0-9][A-Za-z0-9._:/+-]{0,127}$/.test(options.model)) {
     fail("model must be a bounded non-secret identifier");
   }
@@ -170,6 +185,16 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
     };
   }
 
+  if (command === "install") {
+    if (positionals.length) fail("install accepts no positional arguments");
+    reject(options, ["mode", "provider", "model", "scope", "dryRun", "static", "live", "resolved", "projectRoot"], command);
+    if (!options.artifact) fail("install requires --artifact <absolute tarball>");
+    if (options.apply && options.plan) fail("--apply and --plan are mutually exclusive");
+    const apply = options.apply === true;
+    if (options.yes && !apply) fail("--yes is only valid with --apply");
+    return { command, mutation: apply, options: { artifact: path.resolve(options.artifact), profile: options.profile ?? "daily", configRoot, apply, plan: !apply, yes: options.yes === true, json: options.json === true } };
+  }
+
   if (command === "doctor") {
     if (positionals.length) fail("doctor accepts no positional arguments");
     reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "resolved"], command);
@@ -185,11 +210,13 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
 
   if (command === "update" || command === "uninstall") {
     if (positionals.length) fail(`${command} accepts no positional arguments`);
-    reject(options, ["profile", "mode", "provider", "model", "scope", "dryRun", "static", "live", "resolved"], command);
+    reject(options, ["mode", "provider", "model", "scope", "dryRun", "static", "live", "resolved", "projectRoot"], command);
+    if (command === "uninstall" && (options.artifact !== undefined || options.profile !== undefined)) fail("--artifact/--profile are not valid for uninstall");
+    if (command === "update" && options.profile !== undefined && options.artifact === undefined) fail("--profile is valid for update only with --artifact");
     if (options.apply && options.plan) fail("--apply and --plan are mutually exclusive");
     const apply = options.apply === true;
     if (options.yes && !apply) fail("--yes is only valid with --apply");
-    return { command, mutation: apply, options: { configRoot, apply, plan: !apply, yes: options.yes === true, json: options.json === true } };
+    return { command, mutation: apply, options: { configRoot, artifact: options.artifact ? path.resolve(options.artifact) : null, profile: options.artifact ? options.profile ?? "daily" : null, apply, plan: !apply, yes: options.yes === true, json: options.json === true } };
   }
 
   if (command === "rollback") {
@@ -207,7 +234,7 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   }
 
   if (command === "profile") {
-    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live", "resolved"], command);
+    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live", "resolved", "projectRoot"], command);
     const subcommand = positionals[0] ?? "list";
     if (!PROFILE_COMMANDS.has(subcommand)) fail(`unknown profile subcommand: ${subcommand}`);
     if (subcommand === "list" && positionals.length !== 1) fail("profile list accepts no profile id");
@@ -226,6 +253,55 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
         json: options.json === true,
       },
     };
+  }
+
+  if (command === "profiles") {
+    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "static", "live", "resolved", "projectRoot"], command);
+    const subcommand = positionals[0] ?? "list";
+    if (!PRESET_COMMANDS.has(subcommand)) fail(`unknown profiles subcommand: ${subcommand}`);
+    const presetId = positionals[1] ?? null;
+    if (subcommand === "list" && positionals.length !== 1) fail("profiles list accepts no preset id");
+    if (["show", "plan", "apply"].includes(subcommand) && positionals.length !== 2) fail(`profiles ${subcommand} requires one preset or overlay id`);
+    if (presetId !== null) assertIdentifier(presetId, "preset or overlay id");
+    if (options.yes && subcommand !== "apply") fail("--yes is only valid for profiles apply");
+    return {
+      command,
+      mutation: subcommand === "apply",
+      options: { configRoot, subcommand, presetId, yes: options.yes === true, json: options.json === true },
+    };
+  }
+
+  if (command === "models") {
+    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live", "resolved"], command);
+    const subcommand = positionals[0] ?? "validate";
+    if (!MODEL_COMMANDS.has(subcommand) || positionals.length !== 1) fail("models accepts only the validate subcommand");
+    return {
+      command,
+      mutation: false,
+      options: { configRoot, subcommand, projectRoot: options.projectRoot ? path.resolve(options.projectRoot) : null, json: options.json === true },
+    };
+  }
+
+  if (command === "gate") {
+    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live", "resolved"], command);
+    const subcommand = positionals[0] ?? "validate";
+    if (!GATE_COMMANDS.has(subcommand) || positionals.length !== 1) fail("gate accepts only the validate subcommand");
+    return { command, mutation: false, options: { configRoot, subcommand, projectRoot: options.projectRoot ? path.resolve(options.projectRoot) : null, json: options.json === true } };
+  }
+
+  if (command === "runs") {
+    reject(options, ["profile", "mode", "provider", "model", "scope", "dryRun", "static", "live", "resolved", "projectRoot"], command);
+    const subcommand = positionals[0] ?? "list";
+    if (!RUN_COMMANDS.has(subcommand)) fail(`unknown runs subcommand: ${subcommand}`);
+    const runId = positionals[1] ?? null;
+    if (subcommand === "list" && positionals.length !== 1) fail("runs list accepts no run id");
+    if (subcommand === "show" && positionals.length !== 2) fail("runs show requires one run id");
+    if (subcommand === "gc" && positionals.length !== 1) fail("runs gc accepts no run id");
+    if (runId !== null && !/^[a-z0-9][a-z0-9._:-]{0,127}$/u.test(runId)) fail("run id is invalid");
+    if (subcommand !== "gc" && (options.apply || options.plan || options.yes)) fail("--plan/--apply/--yes are only valid for runs gc");
+    if (options.apply && options.plan) fail("--apply and --plan are mutually exclusive");
+    if (options.yes && !options.apply) fail("--yes is only valid with --apply");
+    return { command, mutation: subcommand === "gc" && options.apply === true, options: { configRoot, subcommand, runId, apply: options.apply === true, plan: options.apply !== true, yes: options.yes === true, json: options.json === true } };
   }
 
   if (["tools", "packages", "context", "verify"].includes(command)) {

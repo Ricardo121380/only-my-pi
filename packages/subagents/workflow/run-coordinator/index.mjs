@@ -261,15 +261,17 @@ function normalizeTerminal(value, { runId, nodeId, attemptId, fallbackOutcome = 
   const receipt = value?.terminal ?? value?.receipt ?? value;
   const rawResult = receipt?.result ?? receipt?.data ?? null;
   const output = boundedOutputProjection(rawResult, maxOutputBytes);
-  const usage = boundedOutputProjection(receipt?.usage ?? value?.usage ?? null, 4096);
+  const rawUsage = receipt?.usage ?? receipt?.completion?.usage ?? value?.usage ?? null;
+  const usage = boundedOutputProjection(rawUsage, 4096);
   const error = boundedOutputProjection(receipt?.error ?? value?.error ?? null, 4096);
   const handle = boundedOutputProjection(value?.handle ?? receipt?.handle ?? null, 16 * 1024);
+  const finiteMetric = (...values) => values.find((entry) => typeof entry === "number" && Number.isFinite(entry));
   const observed = {
     rawOutputBytes: output.rawOutputBytes,
-    elapsedMs: receipt?.usage?.elapsedMs ?? value?.usage?.elapsedMs ?? 0,
-    assignments: receipt?.usage?.assignments ?? value?.usage?.assignments ?? 1,
-    tokens: receipt?.usage?.tokens ?? value?.usage?.tokens ?? 0,
-    cost: receipt?.usage?.costUsd ?? receipt?.usage?.cost ?? value?.usage?.costUsd ?? value?.usage?.cost ?? 0,
+    elapsedMs: finiteMetric(rawUsage?.elapsedMs, rawUsage?.durationMs) ?? 0,
+    assignments: finiteMetric(rawUsage?.assignments) ?? 1,
+    tokens: finiteMetric(rawUsage?.tokens, rawUsage?.total, receipt?.completion?.totalTokens?.total, receipt?.completion?.totalCost?.totalTokens) ?? 0,
+    cost: finiteMetric(rawUsage?.costUsd, rawUsage?.cost, receipt?.completion?.totalCost?.costUsd) ?? 0,
   };
   const outcome = receipt?.outcome
     ?? (receipt?.status === "PASS" ? "completed" : receipt?.status === "FAIL" ? "failed" : fallbackOutcome);
@@ -326,6 +328,8 @@ function emptyProjection(runId, plan) {
       status: "planned",
       attempts: [],
       resultDigest: null,
+      artifactRefs: [],
+      artifacts: [],
       outcome: null,
       batch: null,
     }])),
@@ -401,6 +405,19 @@ export function projectWorkflowRun(events, plan, runId) {
         if (!attempt) fail("ChildTerminal has no admitted attempt", "ATTEMPT_EVENT_ORDER");
         attempt.status = event.payload.outcome;
         attempt.terminal = clone(event.payload);
+        break;
+      }
+      case "NodeArtifactPublished": {
+        const ref = event.payload?.artifactRef;
+        if (!object(ref) || ref.kind !== "artifact-ref" || typeof ref.id !== "string" || typeof ref.digest !== "string") {
+          fail("NodeArtifactPublished has an invalid ArtifactRef", "ARTIFACT_EVENT_INVALID");
+        }
+        const existing = node.artifacts.find((candidate) => candidate.id === ref.id);
+        if (existing && digestWorkflowValue(existing) !== digestWorkflowValue(ref)) fail("ArtifactRef id was reused with different content", "ARTIFACT_EVENT_CONFLICT");
+        if (!existing) {
+          node.artifacts.push(clone(ref));
+          node.artifactRefs.push(ref.id);
+        }
         break;
       }
       case "BatchStarted":
@@ -592,6 +609,10 @@ export class RunCoordinator {
     this.eventJournal = options.eventJournal;
     this.budgetLedger = options.budgetLedger;
     this.planStore = options.planStore ?? null;
+    this.artifactStore = options.artifactStore ?? null;
+    if (this.artifactStore !== null && (typeof this.artifactStore.publish !== "function" || typeof this.artifactStore.read !== "function")) {
+      throw new TypeError("RunCoordinator artifactStore must implement publish() and read()");
+    }
     if (this.planStore !== null
       && (typeof this.planStore.put !== "function" || typeof this.planStore.get !== "function")) {
       throw new TypeError("RunCoordinator planStore must implement put() and get()");
@@ -997,6 +1018,7 @@ export class RunCoordinator {
           inputDigest: active.inputDigest,
           signal,
           authorization,
+          artifactRefs: execution.artifactRefs ?? [],
           ...leaseContext,
         }));
         const handle = started?.handle ?? null;
@@ -1021,6 +1043,7 @@ export class RunCoordinator {
         inputDigest: active.inputDigest,
         signal,
         authorization,
+        artifactRefs: execution.artifactRefs ?? [],
         ...leaseContext,
       }));
       return normalize(value);
@@ -1057,6 +1080,7 @@ export class RunCoordinator {
         inputDigest: active.inputDigest,
         signal,
         authorization,
+        artifactRefs: execution.artifactRefs ?? [],
         prepared: execution.prepared ?? null,
         priorBatchEvents: execution.priorBatchEvents ?? [],
         recordBatchEvent,
@@ -1065,7 +1089,7 @@ export class RunCoordinator {
     }
     if (node.kind === "gate") {
       if (!this.gateRunner?.run) return normalize({ status: "FAIL", error: { code: "GATE_RUNNER_UNAVAILABLE" } });
-      const result = await wait(this.gateRunner.run(node.gateId, { runId: active.runId, input: active.input, inputDigest: active.inputDigest, signal, ...leaseContext }));
+      const result = await wait(this.gateRunner.run(node.gateId, { runId: active.runId, input: active.input, inputDigest: active.inputDigest, artifactRefs: execution.artifactRefs ?? [], signal, ...leaseContext }));
       const outcome = result?.status === "PASS" ? "completed" : "failed";
       await this.#append(active, this.#event(active, "GateEvaluated", {
         eventId: `gate-evaluated:${attemptId}`,
@@ -1098,6 +1122,8 @@ export class RunCoordinator {
       nodeId: node.id,
       payload: { nodeDigest: digestWorkflowValue(node), needs: node.needs },
     }));
+    const dependencyProjection = (await this.#project(active)).projection;
+    const dependencyArtifactRefs = node.needs.flatMap((dependencyId) => dependencyProjection.nodes[dependencyId]?.artifacts ?? []);
     let lastTerminal = null;
     const historicalAttempts = active.physicalAttempts.get(node.id) ?? 0;
     for (let localAttempt = 1; localAttempt <= node.budget.maxAttempts - historicalAttempts; localAttempt += 1) {
@@ -1207,6 +1233,7 @@ export class RunCoordinator {
           ...(node.kind === "batch-swarm" ? { wait: cooperativeBatchWait } : {}),
           prepared: batchPreparation,
           priorBatchEvents,
+          artifactRefs: dependencyArtifactRefs,
         }, authorization);
         // The first-party BatchSwarm observes deadline.signal and persists its
         // own item terminals before returning. Do not race it a second time at
@@ -1253,7 +1280,33 @@ export class RunCoordinator {
             receiptId: terminal.receiptId,
             resultDigest: digestWorkflowValue(terminal.result),
             errorCode: terminal.error?.code ?? null,
+            budgetOverruns: terminal.error?.overruns ?? [],
           },
+        }));
+      }
+      let artifactRef = null;
+      if (this.artifactStore && terminal.authoritative === true && SUCCESS_NODE_OUTCOMES.has(settledOutcome)) {
+        const artifactPayload = {
+          formatVersion: 1,
+          kind: "agent-result",
+          result: terminal.result,
+          usage: terminal.usage,
+          receiptId: terminal.receiptId,
+          outputDigest: terminal.outputDigest,
+        };
+        const contents = JSON.stringify(artifactPayload);
+        artifactRef = await this.artifactStore.publish({
+          id: `art-${digestWorkflowValue({ runId: active.runId, nodeId: node.id, attemptId, resultDigest: terminal.outputDigest }).slice(7, 39)}`,
+          contents,
+          mediaType: "application/json",
+          producer: { runId: active.runId, revision: active.plan.revision.number, nodeId: node.id, attemptId },
+          provenance: { sourceDigest: active.plan.definitionDigest, policyDigest: active.plan.policyDigest, redaction: "bounded" },
+        });
+        await this.#append(active, this.#event(active, "NodeArtifactPublished", {
+          eventId: `node-artifact:${active.plan.revision.number}:${node.id}`,
+          nodeId: node.id,
+          attemptId,
+          payload: { artifactRef },
         }));
       }
       await this.#ensureLeaseForWrite(active);
@@ -1277,8 +1330,10 @@ export class RunCoordinator {
           authoritative: terminal.authoritative,
           receiptId: terminal.receiptId,
           resultDigest: digestWorkflowValue(terminal.result),
+          artifactIds: artifactRef ? [artifactRef.id] : [],
           attempts: attemptNumber,
           errorCode: terminal.error?.code ?? null,
+          budgetOverruns: terminal.error?.overruns ?? [],
         },
       }));
       active.handles.delete(node.id);

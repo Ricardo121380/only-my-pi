@@ -11,6 +11,8 @@ export { compileAgentResource };
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE_DIR = path.join(ROOT, "agents");
 const OUTPUT_DIR = path.join(SOURCE_DIR, "generated");
+const READ_ONLY_OUTPUT_DIR = path.join(ROOT, "bundles", "only-my-pi-agent-bundle", "agents");
+const MUTATING_TOOLS = new Set(["bash", "edit", "write"]);
 
 function containedFile(relativePath) {
   if (typeof relativePath !== "string" || path.isAbsolute(relativePath) || relativePath.includes("\0")) {
@@ -37,19 +39,31 @@ export function buildAgentResources({ rootDir = ROOT } = {}) {
     const manifest = JSON.parse(fs.readFileSync(sourcePath, "utf8"));
     const promptPath = containedFile(manifest.prompt?.file);
     const compiled = compileAgentResource(manifest, fs.readFileSync(promptPath, "utf8"));
-    return { sourcePath, outputPath: path.join(rootDir, "agents", "generated", `${compiled.name}.md`), ...compiled };
+    const readOnly = manifest.writer === false && !(manifest.tools?.allow ?? []).some((tool) => MUTATING_TOOLS.has(tool));
+    return {
+      sourcePath,
+      outputPath: path.join(rootDir, "agents", "generated", `${compiled.name}.md`),
+      readOnlyOutputPath: readOnly ? path.join(rootDir, "bundles", "only-my-pi-agent-bundle", "agents", `${compiled.name}.md`) : null,
+      readOnly,
+      ...compiled,
+    };
   });
 }
 
-function writeResources(resources) {
-  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-  const expected = new Set(resources.map((resource) => path.basename(resource.outputPath)));
-  for (const entry of fs.readdirSync(OUTPUT_DIR, { withFileTypes: true })) {
+function syncOutputDirectory(directory, resources, pathKey) {
+  fs.mkdirSync(directory, { recursive: true });
+  const expected = new Set(resources.map((resource) => path.basename(resource[pathKey])));
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     if (entry.isFile() && entry.name.endsWith(".md") && !expected.has(entry.name)) {
       throw new Error(`refusing to remove stale generated resource automatically: ${entry.name}`);
     }
   }
-  for (const resource of resources) fs.writeFileSync(resource.outputPath, resource.content, { encoding: "utf8", mode: 0o644 });
+  for (const resource of resources) fs.writeFileSync(resource[pathKey], resource.content, { encoding: "utf8", mode: 0o644 });
+}
+
+function writeResources(resources) {
+  syncOutputDirectory(OUTPUT_DIR, resources, "outputPath");
+  syncOutputDirectory(READ_ONLY_OUTPUT_DIR, resources.filter((resource) => resource.readOnly), "readOnlyOutputPath");
 }
 
 function checkResources(resources) {
@@ -57,6 +71,16 @@ function checkResources(resources) {
   for (const resource of resources) {
     if (!fs.existsSync(resource.outputPath)) errors.push(`missing generated agent: ${path.relative(ROOT, resource.outputPath)}`);
     else if (fs.readFileSync(resource.outputPath, "utf8") !== resource.content) errors.push(`stale generated agent: ${path.relative(ROOT, resource.outputPath)}`);
+    if (resource.readOnly) {
+      if (!fs.existsSync(resource.readOnlyOutputPath)) errors.push(`missing read-only generated agent: ${path.relative(ROOT, resource.readOnlyOutputPath)}`);
+      else if (fs.readFileSync(resource.readOnlyOutputPath, "utf8") !== resource.content) errors.push(`stale read-only generated agent: ${path.relative(ROOT, resource.readOnlyOutputPath)}`);
+    }
+  }
+  if (fs.existsSync(READ_ONLY_OUTPUT_DIR)) {
+    const expected = new Set(resources.filter((resource) => resource.readOnly).map((resource) => path.basename(resource.readOnlyOutputPath)));
+    for (const entry of fs.readdirSync(READ_ONLY_OUTPUT_DIR, { withFileTypes: true })) {
+      if (entry.isFile() && entry.name.endsWith(".md") && !expected.has(entry.name)) errors.push(`unexpected read-only generated agent: ${entry.name}`);
+    }
   }
   return errors;
 }
@@ -71,7 +95,7 @@ function main() {
     const errors = checkResources(resources);
     if (errors.length) throw new Error(errors.join("\n"));
   }
-  process.stdout.write(`${JSON.stringify({ ok: true, mode: option.slice(2), agents: resources.map(({ name, sourceDigest, promptDigest }) => ({ name, sourceDigest, promptDigest })) }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({ ok: true, mode: option.slice(2), agents: resources.map(({ name, sourceDigest, promptDigest, readOnly }) => ({ name, sourceDigest, promptDigest, readOnly })) }, null, 2)}\n`);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

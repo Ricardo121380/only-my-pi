@@ -5,13 +5,18 @@ export const OMP_USAGE = `only-my-pi control CLI
 
 Usage:
   omp bootstrap [--profile <id>] [--mode <id>] [--provider <id>] [--model <id>] [--scope global|project] [--config-root <absolute>] [--dry-run|--apply] [--yes] [--json]
+  omp install --artifact <absolute-tarball> [--profile <id>] [--plan|--apply] [--yes] [--config-root <absolute>] [--json]
   omp doctor [--static|--live] [--config-root <absolute>] [--json]
   omp status [--config-root <absolute>] [--json]
-  omp update [--plan|--apply] [--yes] [--config-root <absolute>] [--json]
+  omp update [--artifact <absolute-tarball> [--profile <id>]] [--plan|--apply] [--yes] [--config-root <absolute>] [--json]
   omp rollback [snapshot-id] [--yes] [--config-root <absolute>] [--json]
   omp uninstall [--plan|--apply] [--yes] [--config-root <absolute>] [--json]
   omp safe [--config-root <absolute>] [--json]
   omp profile [list|show <id>|diff <from> <to>] [--config-root <absolute>] [--json]
+  omp profiles [list|show <id>|plan <preset>|apply <preset>] [--yes] [--config-root <absolute>] [--json]
+  omp models validate [--project <absolute>] [--config-root <absolute>] [--json]
+  omp gate validate [--project <absolute>] [--config-root <absolute>] [--json]
+  omp runs [list|show <run-id>|gc --plan|--apply] [--yes] [--config-root <absolute>] [--json]
   omp tools|packages|context|verify [--config-root <absolute>] [--json]
   omp mode [list|show|use|reset|doctor|diff|scaffold] [mode-id] [--profile <id>] [--resolved] [--config-root <absolute>] [--json]
   omp workflow [list|show|run|status|cancel|resume] [workflow-or-run-id] [--input-file <absolute>] [--apply --yes] [--config-root <absolute>] [--json]
@@ -21,7 +26,7 @@ Usage:
   omp ultra [list|show|validate|plan|run] [strategy-id] [--input-file <absolute>] [--yes] [--config-root <absolute>] [--json]
   omp theme [list|show|preview|use|reset|doctor] [theme-id] [--apply --yes] [--config-root <absolute>] [--json]
 
-Mutation is never implicit. bootstrap, update, and uninstall default to a zero-write plan.
+Mutation is never implicit. bootstrap, install, update, and uninstall default to a zero-write plan.
 Provider/model flags save metadata only and remain CONFIGURED_UNVERIFIED.`;
 
 function confirmationRequired(command, plan) {
@@ -41,16 +46,20 @@ async function approve(request, plan, confirm) {
 }
 
 export class ControlService {
-  constructor({ bootstrap, doctor, confirm, modes, workflows, swarms, ultras, themes, statusService, rootDir, configRoot } = {}) {
+  constructor({ bootstrap, doctor, confirm, artifactInstaller, modes, workflows, swarms, ultras, themes, dailyConfig, projectGates, runManagement, statusService, rootDir, configRoot } = {}) {
     if (!bootstrap || !doctor) throw new TypeError("bootstrap and doctor services are required");
     this.bootstrap = bootstrap;
     this.doctor = doctor;
     this.confirm = confirm;
+    this.artifactInstaller = artifactInstaller;
     this.modes = modes;
     this.workflows = workflows;
     this.swarms = swarms;
     this.ultras = ultras;
     this.themes = themes;
+    this.dailyConfig = dailyConfig;
+    this.projectGates = projectGates;
+    this.runManagement = runManagement;
     this.statusService = statusService;
     this.rootDir = rootDir;
     this.configRoot = configRoot;
@@ -66,7 +75,21 @@ export class ControlService {
         if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
         return this.bootstrap.applyBootstrap({ ...request.options, plan });
       }
+      case "install": {
+        if (!this.artifactInstaller) return { ok: false, status: "ARTIFACT_INSTALLER_UNAVAILABLE", code: "ARTIFACT_INSTALLER_UNAVAILABLE", mutation: false };
+        const plan = await this.artifactInstaller.plan({ ...request.options, operation: "install" });
+        if (!request.options.apply) return plan;
+        if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
+        return this.artifactInstaller.apply({ ...request.options, operation: "install", plan });
+      }
       case "update": {
+        if (request.options.artifact) {
+          if (!this.artifactInstaller) return { ok: false, status: "ARTIFACT_INSTALLER_UNAVAILABLE", code: "ARTIFACT_INSTALLER_UNAVAILABLE", mutation: false };
+          const plan = await this.artifactInstaller.plan({ ...request.options, operation: "update" });
+          if (!request.options.apply) return plan;
+          if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
+          return this.artifactInstaller.apply({ ...request.options, operation: "update", plan });
+        }
         const plan = await this.bootstrap.planUpdate(request.options);
         if (!request.options.apply) return plan;
         if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
@@ -126,6 +149,72 @@ export class ControlService {
           mutation: false,
           diff: profiles.diff(request.options.profileId, request.options.toProfileId),
         };
+      }
+      case "profiles": {
+        if (!this.dailyConfig) return { ok: false, status: "DAILY_CONFIG_UNAVAILABLE", code: "DAILY_CONFIG_UNAVAILABLE", mutation: false };
+        const options = request.options ?? {};
+        if (options.subcommand === "list") return this.dailyConfig.list();
+        if (options.subcommand === "show") return this.dailyConfig.show(options.presetId);
+        const selected = await this.dailyConfig.show(options.presetId);
+        if (selected.ok === false) return selected;
+        if (selected.status !== "PRESET_SHOW" || typeof selected.item?.profileId !== "string") {
+          return { ok: false, status: "PRESET_REQUIRED", code: "PRESET_REQUIRED", mutation: false, id: options.presetId };
+        }
+        const plan = await this.bootstrap.planBootstrap({
+          configRoot: options.configRoot,
+          profile: selected.item.profileId,
+          scope: "global",
+        });
+        const profilePlan = {
+          ...plan,
+          status: plan.status === "NO_CHANGES" ? "NO_CHANGES" : "PROFILE_APPLY_PLAN",
+          preset: selected.item,
+          restartRequired: plan.status !== "NO_CHANGES",
+        };
+        if (options.subcommand === "plan") return profilePlan;
+        if (!(await approve(request, profilePlan, this.confirm))) return confirmationRequired(request.command, profilePlan);
+        const result = await this.bootstrap.applyBootstrap({ ...options, plan });
+        return { ...result, preset: selected.item, restartRequired: result.status !== "NO_CHANGES" };
+      }
+      case "models": {
+        if (!this.dailyConfig) return { ok: false, status: "DAILY_CONFIG_UNAVAILABLE", code: "DAILY_CONFIG_UNAVAILABLE", mutation: false };
+        try {
+          const configuration = await this.dailyConfig.resolve({
+            projectRoot: request.options?.projectRoot ?? null,
+            // CLI validation may parse an explicitly named project document,
+            // but this is not Pi runtime trust and cannot activate it.
+            projectTrusted: request.options?.projectRoot !== null,
+          });
+          return {
+            ok: true,
+            status: "MODEL_CONFIGURATION_VALID_STATIC",
+            mutation: false,
+            runtimeAuthValidation: "UNAVAILABLE_OUTSIDE_PI_SESSION",
+            projectTrust: request.options?.projectRoot ? "EXPLICIT_PATH_VALIDATION_ONLY" : "NOT_REQUESTED",
+            configuration,
+          };
+        } catch (cause) {
+          return { ok: false, status: "MODEL_CONFIGURATION_INVALID", code: cause?.code ?? "MODEL_CONFIGURATION_INVALID", mutation: false, message: cause?.message };
+        }
+      }
+      case "gate": {
+        if (!this.projectGates || typeof this.projectGates.plan !== "function") return { ok: false, status: "PROJECT_GATE_UNAVAILABLE", code: "PROJECT_GATE_UNAVAILABLE", mutation: false };
+        try {
+          const plan = await this.projectGates.plan(null, { projectRoot: request.options?.projectRoot ?? process.cwd(), requireTrust: false });
+          return { ...plan, status: "PROJECT_GATE_VALID", explicitPathValidation: true };
+        } catch (cause) {
+          return { ok: false, status: "PROJECT_GATE_INVALID", code: cause?.code ?? "PROJECT_GATE_INVALID", message: cause?.message, mutation: false };
+        }
+      }
+      case "runs": {
+        if (!this.runManagement) return { ok: false, status: "RUN_MANAGEMENT_UNAVAILABLE", code: "RUN_MANAGEMENT_UNAVAILABLE", mutation: false };
+        const options = request.options ?? {};
+        if (options.subcommand === "list") return this.runManagement.list();
+        if (options.subcommand === "show") return this.runManagement.show(options.runId);
+        const plan = await this.runManagement.gcPlan();
+        if (!options.apply) return plan;
+        if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
+        return this.runManagement.gcApply(plan);
       }
       case "tools":
         return {

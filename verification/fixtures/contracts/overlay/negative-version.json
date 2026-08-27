@@ -1,0 +1,12 @@
+{
+  "$schema": "../../../schemas/overlay-v1.schema.json",
+  "formatVersion": 2,
+  "id": "fixture",
+  "kind": "hard",
+  "description": "Invalid overlay fixture.",
+  "packageIds": [],
+  "capabilityIds": [],
+  "authority": { "network": "deny", "persistence": "none", "tools": [], "webConfirmation": false, "browserCookies": false },
+  "defaultEnabled": false,
+  "available": true
+}

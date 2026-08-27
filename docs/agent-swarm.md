@@ -37,8 +37,17 @@ Gate Runner, not an arbitrary child shell.
   become an overall success;
 - Codex development subagents are not product AgentSwarm children.
 
-The S2 no-model probe now proves startup, the public RPC handshake, and single
-physical tool ownership. Live child dispatch and Provider calls remain
-`NOT_RUN_BY_POLICY`; the probe sent neither. A real deployment must add
-OS/container isolation for any untrusted code; a worktree alone is not a
+The S2 no-model probe proves startup, the public RPC handshake, and single
+physical tool ownership. Later source-bound Stable evidence proves the
+protected live Agent and two-item BatchSwarm scenarios. Normal `/omp` daily
+dispatch is now wired through the M8 session composer, per-run ceilings,
+budgets, artifacts and approval UI; it does not reuse the older Stable fixture
+as evidence. The Daily first-party BatchSwarm performs one attempt per item,
+admits at most eight items, and Ultra reserves one of those eight child slots
+for fresh verification. M8 D13 then proved the live Agent/BatchSwarm/Workflow/
+SwarmGoal/Ultra matrix with the configured DeepSeek model, while D14 proved the
+real-root external-package preservation and exact rollback/reapply sequence.
+Both protected gates passed in the source-bound Daily receipt; no Kimi runtime
+or second subagent scheduler was introduced. A deployment that executes
+untrusted code still needs OS/container isolation; a worktree alone is not a
 sandbox.

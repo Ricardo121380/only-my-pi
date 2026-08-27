@@ -7,6 +7,7 @@ import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 
 import { BootstrapService } from "../packages/bootstrap/bootstrap-service.mjs";
+import { ArtifactInstaller, createArtifactProcessRunner } from "../packages/bootstrap/artifact-installer.mjs";
 import { createNpmCommandRunner } from "../packages/bootstrap/command-runner.mjs";
 import { DoctorService } from "../packages/bootstrap/doctor-service.mjs";
 import { createNoModelSmokeRunner } from "../packages/bootstrap/smoke-runner.mjs";
@@ -18,6 +19,9 @@ import { createStatusService } from "../packages/control-service/status-service.
 import { createUltraRunControlService } from "../packages/control-service/ultra-run-service.mjs";
 import { parseOmpArgs } from "../packages/control-service/cli-parser.mjs";
 import { ControlService, OMP_USAGE } from "../packages/control-service/service.mjs";
+import { DailyConfigService } from "../packages/daily-config/index.mjs";
+import { ProjectGateService, createNodeExecAdapter } from "../packages/project-gates/index.mjs";
+import { RunManagementService, createRunRecordStore } from "../packages/run-management/index.mjs";
 
 const THIS_FILE = fileURLToPath(import.meta.url);
 const DEFAULT_ROOT = path.resolve(path.dirname(THIS_FILE), "..");
@@ -39,12 +43,17 @@ export const OMP_EXIT_CODES = Object.freeze({
 });
 
 const DEFAULT_DEPENDENCIES = Object.freeze({
+  ArtifactInstaller,
   BootstrapService,
   ControlService,
   DoctorService,
+  DailyConfigService,
+  ProjectGateService,
+  RunManagementService,
   TransactionEngine,
   createNpmCommandRunner,
   createNoModelSmokeRunner,
+  createArtifactProcessRunner,
   createWorkflowControlService,
 });
 
@@ -94,6 +103,10 @@ export function createProductionControlService({
   const resolvedRoot = assertAbsolutePath(rootDir, "rootDir");
   const resolvedConfigRoot = assertAbsolutePath(configRoot, "configRoot");
   const wired = dependenciesWithDefaults(dependencies);
+  const artifactProcessOptions = spawnImpl === undefined ? {} : { spawnImpl };
+  const artifactInstaller = new wired.ArtifactInstaller({
+    runCommand: wired.createArtifactProcessRunner(artifactProcessOptions),
+  });
   const doctor = new wired.DoctorService({ rootDir: resolvedRoot });
   const runner = wired.createNpmCommandRunner({ configRoot: resolvedConfigRoot });
   const smokeOptions = spawnImpl === undefined ? {} : { spawnImpl };
@@ -114,7 +127,16 @@ export function createProductionControlService({
   const ultras = createUltraRunControlService({ rootDir: resolvedRoot });
   const themes = createThemeControlService({ rootDir: resolvedRoot });
   const statusService = createStatusService();
+  const dailyConfig = new wired.DailyConfigService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot });
+  const projectGates = new wired.ProjectGateService({
+    configRoot: resolvedConfigRoot,
+    getContext: () => ({ cwd: process.cwd(), isProjectTrusted: () => true, sessionManager: { getSessionId: () => "explicit-cli-validation" } }),
+    exec: createNodeExecAdapter({ ...(spawnImpl === undefined ? {} : { spawnImpl }) }),
+  });
+  const runRecordStore = createRunRecordStore({ managedRoot: path.join(resolvedConfigRoot, "only-my-pi") });
+  const runManagement = new wired.RunManagementService({ recordStore: runRecordStore });
   return new wired.ControlService({
+    artifactInstaller,
     bootstrap,
     doctor,
     confirm,
@@ -124,6 +146,9 @@ export function createProductionControlService({
     swarms,
     ultras,
     themes,
+    dailyConfig,
+    projectGates,
+    runManagement,
     statusService,
   });
 }
@@ -189,9 +214,11 @@ function addField(lines, label, value) {
 }
 
 function humanConfirmationHint(command) {
-  if (["bootstrap", "update", "uninstall"].includes(command)) {
+  if (["bootstrap", "install", "update", "uninstall"].includes(command)) {
     return `rerun omp ${command} with --apply --yes after reviewing this plan`;
   }
+  if (command === "profiles") return "rerun omp profiles apply <preset> with --yes after reviewing this plan";
+  if (command === "runs") return "rerun omp runs gc with --apply --yes after reviewing this plan";
   return `rerun omp ${command} with --yes after reviewing this plan`;
 }
 

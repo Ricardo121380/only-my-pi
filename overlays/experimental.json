@@ -1,0 +1,12 @@
+{
+  "$schema": "../schemas/overlay-v1.schema.json",
+  "formatVersion": 1,
+  "id": "experimental",
+  "kind": "labs",
+  "description": "Labs-only candidates that are never enabled by a daily preset.",
+  "packageIds": [],
+  "capabilityIds": [],
+  "authority": { "network": "deny", "persistence": "reserved", "tools": [], "webConfirmation": false, "browserCookies": false },
+  "defaultEnabled": false,
+  "available": false
+}

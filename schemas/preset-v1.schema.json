@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/preset-v1.schema.json",
+  "title": "only-my-pi Preset v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "id", "description", "base", "overlays", "profileId"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "preset-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "id": { "$ref": "#/$defs/id" },
+    "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "base": { "$ref": "#/$defs/id" },
+    "overlays": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "profileId": { "$ref": "#/$defs/id" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" }
+  }
+}

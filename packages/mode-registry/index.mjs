@@ -659,7 +659,7 @@ function assertProfileCeiling(manifest, profile) {
   const ceiling = profile.policy;
   if (ceiling.workspace !== undefined && !Object.hasOwn(WORKSPACE_RANK, ceiling.workspace)) fail("INVALID_PROFILE_CEILING", "profile workspace ceiling is unknown");
   if (ceiling.approval !== undefined && !Object.hasOwn(APPROVAL_RANK, ceiling.approval)) fail("INVALID_PROFILE_CEILING", "profile approval ceiling is unknown");
-  const knownNetworks = new Set(["deny", "deny-unless-test-case", "deny-unless-explicit", "allow-listed-only"]);
+  const knownNetworks = new Set(["deny", "deny-unless-test-case", "deny-unless-explicit", "allow-listed-only", "public-ssrf-guarded"]);
   if (ceiling.network !== undefined && (typeof ceiling.network !== "string" || !knownNetworks.has(ceiling.network))) fail("INVALID_PROFILE_CEILING", "profile network ceiling is unknown");
   if (ceiling.workspace && WORKSPACE_RANK[manifest.policy.workspace] > WORKSPACE_RANK[ceiling.workspace]) {
     fail("PROFILE_CEILING_EXCEEDED", "mode workspace policy exceeds profile ceiling");

@@ -431,8 +431,9 @@ function auditProfile({
   }
 
   const webSelected = packageIds.includes("web-access") && declaredCapabilities.has("web-access");
-  if (webSelected !== (profile?.policy?.network === "allow-listed-only")) {
-    add(findings, "error", "policy-package-mismatch", `Profile ${profileId} web package selection must exactly match allow-listed-only network policy.`, {
+  const webNetworkPolicy = ["allow-listed-only", "public-ssrf-guarded"].includes(profile?.policy?.network);
+  if (webSelected !== webNetworkPolicy) {
+    add(findings, "error", "policy-package-mismatch", `Profile ${profileId} web package selection must exactly match an explicit governed Web network policy.`, {
       policy: "network",
       ...data,
     });

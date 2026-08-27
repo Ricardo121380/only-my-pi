@@ -1,0 +1,22 @@
+{
+  "$schema": "../../schemas/run-record-v1.schema.json",
+  "formatVersion": 1,
+  "kind": "private-run-record",
+  "runId": "run-example",
+  "createdAt": "2026-08-27T00:00:00.000Z",
+  "updatedAt": "2026-08-27T00:00:01.000Z",
+  "sessionId": "session-example",
+  "repository": { "root": "/private/workspace", "rootDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "head": "0123456789abcdef0123456789abcdef01234567" },
+  "configurationDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "planDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "executionEnvelopeDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "inputDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "input": { "task": "private raw task retained for seven days" },
+  "inputRetained": true,
+  "status": "completed",
+  "terminalAt": "2026-08-27T00:00:01.000Z",
+  "artifacts": [{ "id": "art-example", "digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "relativePath": "runs/run-example/ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.blob", "byteLength": 128 }],
+  "artifactsRetained": true,
+  "receiptDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "recordDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+}

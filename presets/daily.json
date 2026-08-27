@@ -1,0 +1,9 @@
+{
+  "$schema": "../schemas/preset-v1.schema.json",
+  "formatVersion": 1,
+  "id": "daily",
+  "description": "Core plus public Web, read-only orchestration and first-party terminal UI.",
+  "base": "core",
+  "overlays": ["web", "orchestration-readonly", "ui-terminal"],
+  "profileId": "daily"
+}

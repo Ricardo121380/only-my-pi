@@ -208,6 +208,69 @@ test("/omp theme routes public Pi UI theme methods and keeps apply explicit", as
   assert.deepEqual(applied, [{ success: true, name: "only-my-pi-dark" }]);
 });
 
+test("/omp overlays shows effective layers and hard apply returns an exact restart plan", async () => {
+  const calls = [];
+  const dailyConfigService = {
+    async resolve(options) {
+      calls.push(options);
+      return {
+        preset: { id: "daily" },
+        base: "core",
+        overlays: [{ id: "orchestration-readonly" }, { id: "ui-terminal" }, { id: "web" }],
+        hardOverlays: ["orchestration-readonly", "web"],
+        softOverlays: ["ui-terminal"],
+        source: { global: "defaults", project: "TRUSTED_PROJECT_CONFIG_APPLIED", perRun: "none" },
+      };
+    },
+    async show(id) { return { ok: true, status: "PRESET_SHOW", item: { id, profileId: "daily" } }; },
+  };
+  const runtime = createOmpRuntime({ rootDir: process.cwd(), dailyConfigService });
+  const ctx = { cwd: "/tmp/project", isProjectTrusted: () => true, ui: { notify() {} } };
+  const shown = await runtime.execute("overlays show", ctx);
+  assert.equal(shown.status, "OVERLAY_STATUS");
+  assert.deepEqual(shown.hardOverlays, ["orchestration-readonly", "web"]);
+  assert.deepEqual(calls, [{ projectRoot: "/tmp/project", projectTrusted: true }]);
+  const apply = await runtime.execute("overlays apply daily", ctx);
+  assert.equal(apply.status, "RESTART_REQUIRED");
+  assert.match(apply.next, /omp profiles apply daily/u);
+});
+
+test("/omp models validates against Pi registry and edits only through the idle TUI", async () => {
+  const saved = [];
+  const configuration = {
+    models: {
+      roles: Object.fromEntries(["scout", "explorer", "researcher", "source-verifier", "tester", "planner", "reviewer", "security-reviewer", "synthesizer", "verifier", "goal-planner"].map((role) => [role, { model: "provider/model", thinking: "medium", fallbackModels: [] }])),
+    },
+    pricingOverrides: { "provider/model": { inputPerMillion: 1, outputPerMillion: 2 } },
+    budget: { maxCostUsd: 0.25 },
+    source: { global: "global", project: "NOT_CONFIGURED", perRun: "none" },
+  };
+  const dailyConfigService = {
+    async resolve() { return configuration; },
+    async readGlobal() { return { formatVersion: 1, models: {}, budgets: {} }; },
+    async save(value) { saved.push(value); return { ok: true, status: "PREFERENCES_SAVED", mutation: true }; },
+    async reset() { return { ok: true, status: "PREFERENCES_RESET", mutation: true }; },
+  };
+  const runtime = createOmpRuntime({ rootDir: process.cwd(), dailyConfigService });
+  const ctx = {
+    cwd: "/tmp/project",
+    mode: "tui",
+    isIdle: () => true,
+    isProjectTrusted: () => false,
+    modelRegistry: { async find(provider, id) { return { provider, id }; }, async hasConfiguredAuth() { return true; } },
+    model: { provider: "provider", id: "model", cost: { input: 1, output: 2 } },
+    ui: {
+      notify() {},
+      async editor() { return JSON.stringify({ formatVersion: 1, models: { default: { model: "provider/model" } } }); },
+      async confirm() { return true; },
+    },
+  };
+  assert.equal((await runtime.execute("models validate", ctx)).status, "MODEL_CONFIGURATION_READY");
+  assert.equal((await runtime.execute("models edit", ctx)).status, "PREFERENCES_SAVED");
+  assert.deepEqual(saved, [{ formatVersion: 1, models: { default: { model: "provider/model" } } }]);
+  assert.equal((await runtime.execute("models reset", ctx)).status, "PREFERENCES_RESET");
+});
+
 test("/omp status retains legacy STATUS while adding the redacted harness projection", async () => {
   const runtime = createOmpRuntime({
     rootDir: process.cwd(),
@@ -217,4 +280,79 @@ test("/omp status retains legacy STATUS while adding the redacted harness projec
   assert.equal(result.status, "STATUS");
   assert.equal(result.harnessStatus.status, "HARNESS_STATUS");
   assert.equal(result.harnessStatus.theme.id, "only-my-pi-dark");
+});
+
+test("/omp run wizard collects task/scope/acceptance, previews exact plan, and executes Agent foreground", async () => {
+  const calls = [];
+  const selections = ["Agent", "Foreground", "reviewer"];
+  const editors = ["Review the package", "package.json\nREADME.md", "Return a verdict"];
+  const plan = {
+    ok: true,
+    status: "AGENT_PLAN",
+    runId: "wizard-agent-run",
+    input: { task: "Review the package", scope: ["package.json", "README.md"], acceptance: ["Return a verdict"] },
+    authority: { web: false },
+    plan: { planDigest: "sha256:" + "a".repeat(64), nodes: [], policy: { egress: { web: "deny" } } },
+    executionEnvelope: { executionEnvelopeDigest: "sha256:" + "b".repeat(64), runInputDigest: "sha256:" + "c".repeat(64) },
+  };
+  const agentService = {
+    async dispatch(options) {
+      calls.push(options);
+      if (options.subcommand === "list") return { agents: [{ id: "reviewer" }] };
+      if (options.subcommand === "plan") return plan;
+      return { ok: true, status: "AGENT_COMPLETED", mutation: true, state: { runId: options.runId } };
+    },
+  };
+  const runtime = createOmpRuntime({
+    rootDir: process.cwd(),
+    agentService,
+    configurationProvider: async () => ({ preset: { id: "daily" }, budget: { maxChildren: 8 }, models: { roles: {} } }),
+  });
+  const confirms = [];
+  const ctx = {
+    mode: "tui",
+    signal: undefined,
+    isIdle: () => true,
+    ui: {
+      notify() {},
+      setStatus() {},
+      async select() { return selections.shift(); },
+      async editor() { return editors.shift(); },
+      async confirm(_title, message) { confirms.push(message); return true; },
+    },
+  };
+  const result = await runtime.execute("run", ctx);
+  assert.equal(result.status, "AGENT_COMPLETED");
+  assert.deepEqual(calls[1].input, plan.input);
+  assert.equal(calls[2].runId, "wizard-agent-run");
+  assert.equal(calls[2].expectedPlanDigest, plan.plan.planDigest);
+  assert.match(confirms[0], /type=Agent target=reviewer/u);
+  assert.match(confirms[0], /web=disabled/u);
+});
+
+test("/omp run supports current-session background execution and /omp runs management", async () => {
+  let finish;
+  const completed = new Promise((resolve) => { finish = resolve; });
+  const selections = ["Agent", "Background (current Pi session)", "reviewer"];
+  const editors = ["Background review", ".", "Return result"];
+  const runManagement = {
+    async list() { return { ok: true, status: "RUN_LIST", runs: [{ runId: "background-run" }] }; },
+    async show(id) { return { ok: true, status: "RUN_SHOW", run: { runId: id } }; },
+    async cancel(id) { return { ok: true, status: "RUN_CANCEL", runId: id }; },
+    async resume(id) { return { ok: true, status: "RUN_COMPLETED", runId: id }; },
+    async gcPlan() { return { ok: true, status: "RUN_GC_PLAN", candidates: [], planDigest: "sha256:" + "d".repeat(64) }; },
+  };
+  const plan = { ok: true, status: "AGENT_PLAN", runId: "background-run", input: { task: "Background review", scope: ["."], acceptance: ["Return result"] }, authority: { web: false }, plan: { planDigest: "sha256:" + "a".repeat(64), nodes: [], policy: { egress: { web: "deny" } } }, executionEnvelope: { executionEnvelopeDigest: "sha256:" + "b".repeat(64), runInputDigest: "sha256:" + "c".repeat(64) } };
+  const agentService = { async dispatch(options) { if (options.subcommand === "list") return { agents: [{ id: "reviewer" }] }; if (options.subcommand === "plan") return plan; await completed; return { ok: true, status: "AGENT_COMPLETED" }; } };
+  const statuses = [];
+  const runtime = createOmpRuntime({ rootDir: process.cwd(), agentService, runManagement, configurationProvider: async () => ({ preset: { id: "daily" }, budget: {}, models: { roles: {} } }) });
+  const ctx = { mode: "tui", isIdle: () => true, ui: { notify() {}, setStatus(_key, value) { statuses.push(value); }, async select() { return selections.shift(); }, async editor() { return editors.shift(); }, async confirm() { return true; } } };
+  const started = await runtime.execute("run", ctx);
+  assert.equal(started.status, "RUN_STARTED_BACKGROUND");
+  assert.equal(started.runId, "background-run");
+  assert.equal((await runtime.execute("runs", ctx)).status, "RUN_LIST");
+  assert.equal((await runtime.execute("runs show background-run", ctx)).status, "RUN_SHOW");
+  finish();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.ok(statuses.some((value) => typeof value === "string" && value.includes("background-run")));
 });

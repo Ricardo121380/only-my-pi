@@ -1,0 +1,93 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-daily-harness-protected-evidence",
+  "gateId": "D13",
+  "evidenceId": "m8-live-model-matrix",
+  "sourceCommit": "1b7767f27c67c210b3ac8f4411c37a9086a7c2f7",
+  "status": "PASS",
+  "createdAt": "2026-08-27T14:51:08.320Z",
+  "assertions": [
+    {
+      "id": "agent-terminal",
+      "status": "PASS",
+      "digest": "sha256:059756174826b38333190be48e5f94961947220fe1735585dc0813950deb361c"
+    },
+    {
+      "id": "artifact-identity",
+      "status": "PASS",
+      "digest": "sha256:1c80988c5a936486b19e0c1246e4841b302c3243fc4ca3a711229a679e0a9dfc"
+    },
+    {
+      "id": "batch-swarm-terminal",
+      "status": "PASS",
+      "digest": "sha256:b8f4a5a32fa8554e4b3edb1169e0743063a880e7107d191d53e8a75cc22ba604"
+    },
+    {
+      "id": "budget-boundary",
+      "status": "PASS",
+      "digest": "sha256:5df564190337b6cd0217c72c5ae86aaf75e75c17c308254610ef3b573df6ab05"
+    },
+    {
+      "id": "cancellation",
+      "status": "PASS",
+      "digest": "sha256:a61abd0ac1fe7a3bf748606ff7ae809d7d733e09bb1bc4f1ae05ffd674617c21"
+    },
+    {
+      "id": "public-web",
+      "status": "PASS",
+      "digest": "sha256:57469dbb7808143a7665b02575b22d13846e40760411d91ed5a80a70050360dc"
+    },
+    {
+      "id": "resume-across-session",
+      "status": "PASS",
+      "digest": "sha256:6d4331f368c74339af8bb2a413798a657a3ca516c7f4183e186818a57cb1f646"
+    },
+    {
+      "id": "resume-prepared",
+      "status": "PASS",
+      "digest": "sha256:e1e2e9bf804739a6bf64cb971f49995f17cbb607c42e9080ec6743b81faaf7c6"
+    },
+    {
+      "id": "swarm-goal-replan",
+      "status": "PASS",
+      "digest": "sha256:59569a2b0a8433577900c4f651a089da4af13f12ad9ba1b4f16de614c3a3d1c1"
+    },
+    {
+      "id": "ultra-agent-route",
+      "status": "PASS",
+      "digest": "sha256:f3edfa70cb29fc4e703faf84ac98146425ed8a208667c951a4a409e3475fcd29"
+    },
+    {
+      "id": "ultra-workflow-route",
+      "status": "PASS",
+      "digest": "sha256:1f3b53704e982d3a42edd42b188d2813a0bb8204093edeb539323a0d6783ec8f"
+    },
+    {
+      "id": "usage-metering",
+      "status": "PASS",
+      "digest": "sha256:443a14cbc4173fe37e33cd97c10a80f162812e60e81329edcafc9d6b48f82d0d"
+    },
+    {
+      "id": "workflow-artifact-flow",
+      "status": "PASS",
+      "digest": "sha256:8d05b7b1b326ffaeeff770ebabcb29b8fb5fbac3d2d0b0ad4f8284e3b154101f"
+    },
+    {
+      "id": "writer-denial",
+      "status": "PASS",
+      "digest": "sha256:576920187547e6420eceab68846c451e6d374cec6ccdd395cb2a1b21bae3b063"
+    }
+  ],
+  "privacy": {
+    "rawOutputStored": false,
+    "hostPathsStored": false,
+    "secretsStored": false
+  },
+  "authorization": {
+    "providerRequests": "AUTHORIZED",
+    "realPiHome": "AUTHORIZED",
+    "credentials": "PI_RUNTIME_ONLY",
+    "writer": "DENIED"
+  },
+  "evidenceDigest": "sha256:837dc7cfc2bc4b17fe67b8240225521be04c9e3765391e33f7b9582ffb31f3ab"
+}

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/run-record-v1.schema.json",
+  "title": "only-my-pi private Run Record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "kind", "runId", "createdAt", "updatedAt", "sessionId", "repository", "configurationDigest", "planDigest", "executionEnvelopeDigest", "inputDigest", "input", "inputRetained", "status", "terminalAt", "artifacts", "artifactsRetained", "receiptDigest", "recordDigest"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "run-record-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "kind": { "const": "private-run-record" },
+    "runId": { "$ref": "#/$defs/id" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "sessionId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "rootDigest", "head"],
+      "properties": {
+        "root": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "rootDigest": { "$ref": "#/$defs/digest" },
+        "head": { "oneOf": [{ "type": "null" }, { "type": "string", "pattern": "^[a-f0-9]{40}$" }] }
+      }
+    },
+    "configurationDigest": { "$ref": "#/$defs/digest" },
+    "planDigest": { "$ref": "#/$defs/digest" },
+    "executionEnvelopeDigest": { "$ref": "#/$defs/digest" },
+    "inputDigest": { "$ref": "#/$defs/digest" },
+    "input": { "oneOf": [{ "type": "null" }, { "type": "object" }] },
+    "inputRetained": { "type": "boolean" },
+    "status": { "enum": ["planned", "running", "awaiting-approval", "paused", "recovering", "interrupted", "completed", "failed", "cancelled", "orphaned", "timed-out", "budget-exhausted", "unavailable"] },
+    "terminalAt": { "oneOf": [{ "type": "null" }, { "type": "string", "format": "date-time" }] },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "digest", "relativePath", "byteLength"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "digest": { "$ref": "#/$defs/digest" },
+          "relativePath": { "type": "string", "pattern": "^runs/[a-z0-9][a-z0-9._:-]{0,127}/[a-f0-9]{64}\\.blob$" },
+          "byteLength": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "artifactsRetained": { "type": "boolean" },
+    "receiptDigest": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/digest" }] },
+    "recordDigest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

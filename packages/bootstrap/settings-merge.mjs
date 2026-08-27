@@ -7,7 +7,7 @@ const ID = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u;
 const MODE_ID = /^(?:[a-z][a-z0-9-]{0,63}|(?:user|project|package):[a-z][a-z0-9-]{0,63}|[a-z][a-z0-9-]{0,63}\/[a-z][a-z0-9-]{0,63})$/u;
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:/+-]{0,127}$/u;
 const SHA256 = /^sha256:[a-f0-9]{64}$/u;
-const METADATA_KEYS = Object.freeze([
+const METADATA_KEYS_V1 = Object.freeze([
   "formatVersion",
   "generationId",
   "graphDigest",
@@ -16,6 +16,21 @@ const METADATA_KEYS = Object.freeze([
   "profileId",
   "providerSelection",
 ].sort());
+const METADATA_KEYS_V2 = Object.freeze([...METADATA_KEYS_V1, "packageBindings"].sort());
+const PACKAGE_BINDING_KEYS = Object.freeze([
+  "binding",
+  "id",
+  "integrity",
+  "name",
+  "owner",
+  "physicalRootDigest",
+  "resolvedUrlDigest",
+  "resolvedVersion",
+  "resourceFilter",
+  "sourceSpec",
+].sort());
+const PACKAGE_NAME = /^(?:@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*|[a-z0-9][a-z0-9._-]*)$/u;
+const SRI = /^sha512-[A-Za-z0-9+/]+={0,2}$/u;
 
 function plainObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -72,9 +87,37 @@ function isInitialMode(value) {
   );
 }
 
+function isPackageBinding(value) {
+  return exactKeys(value, PACKAGE_BINDING_KEYS)
+    && ID.test(value.id)
+    && (value.name === null || (typeof value.name === "string" && PACKAGE_NAME.test(value.name)))
+    && ["external", "managed"].includes(value.binding)
+    && typeof value.sourceSpec === "string"
+    && value.sourceSpec.length > 0
+    && value.sourceSpec.length <= 512
+    && !/[\0\r\n]/u.test(value.sourceSpec)
+    && (value.resolvedVersion === null || (typeof value.resolvedVersion === "string" && value.resolvedVersion.length <= 128))
+    && typeof value.integrity === "string"
+    && SRI.test(value.integrity)
+    && (value.resolvedUrlDigest === null || SHA256.test(value.resolvedUrlDigest))
+    && (value.physicalRootDigest === null || SHA256.test(value.physicalRootDigest))
+    && value.owner === (value.binding === "external" ? "user" : "only-my-pi")
+    && Array.isArray(value.resourceFilter)
+    && value.resourceFilter.every((entry) => typeof entry === "string" && entry.length > 0 && entry.length <= 512 && !/[\0\r\n]/u.test(entry))
+    && (value.binding === "external" ? value.physicalRootDigest !== null && value.resolvedUrlDigest !== null : value.physicalRootDigest === null);
+}
+
+function isPackageBindings(value) {
+  return Array.isArray(value)
+    && value.every(isPackageBinding)
+    && new Set(value.map((entry) => entry.id)).size === value.length
+    && value.every((entry, index) => index === 0 || value[index - 1].id < entry.id);
+}
+
 function isManagedMetadata(value) {
-  if (!exactKeys(value, METADATA_KEYS)
-    || value.formatVersion !== 1
+  const expectedKeys = value?.formatVersion === 2 ? METADATA_KEYS_V2 : METADATA_KEYS_V1;
+  if (!exactKeys(value, expectedKeys)
+    || ![1, 2].includes(value.formatVersion)
     || !ID.test(value.profileId)
     || !SHA256.test(value.generationId)
     || value.graphDigest !== value.generationId
@@ -83,18 +126,20 @@ function isManagedMetadata(value) {
     || !exactKeys(value.managedSettings, MANAGED_SETTING_FIELDS)) {
     return false;
   }
-  return MANAGED_SETTING_FIELDS.every((field) => Array.isArray(value.managedSettings[field]));
+  return MANAGED_SETTING_FIELDS.every((field) => Array.isArray(value.managedSettings[field]))
+    && (value.formatVersion === 1 || isPackageBindings(value.packageBindings));
 }
 
 function normalizeDesiredMetadata(metadata, managedSettings) {
   const value = {
-    formatVersion: 1,
+    formatVersion: Array.isArray(metadata.packageBindings) ? 2 : 1,
     profileId: metadata.profileId,
     generationId: metadata.generationId,
     graphDigest: metadata.graphDigest,
     providerSelection: metadata.providerSelection ?? null,
     initialMode: metadata.initialMode ?? null,
     managedSettings,
+    ...(Array.isArray(metadata.packageBindings) ? { packageBindings: clone(metadata.packageBindings) } : {}),
   };
   if (!isManagedMetadata(value)) {
     const error = new Error("desired onlyMyPi metadata is malformed, sensitive, or unsupported");

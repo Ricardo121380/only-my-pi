@@ -8,7 +8,7 @@
   "effort": "deep",
   "routePolicy": {
     "singleAgentMaxComplexity": 20,
-    "batchMinItems": 8,
+    "batchMinItems": 7,
     "dynamicGoalRequiresExplicitApproval": true
   },
   "workflowLibrary": ["source-review-v2"],

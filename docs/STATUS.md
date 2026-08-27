@@ -1,8 +1,59 @@
 # only-my-pi status
 
-Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-24** · Merged
-to `main`: **2026-08-17** · Pi **0.84.1** · Node **25.8.0** · macOS
+Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-27** · Stable
+kernel merged to `main`: **2026-08-27** · Pi **0.84.1** · Node **25.8.0** · macOS
 `darwin-arm64`
+
+## Completed milestone — M8 Daily Harness Closure
+
+The S0-S5 kernel is Stable for the pinned source/evidence/receipt chain below.
+M8.0-M8.7 are now complete: the normal `/omp` extension composes the unified
+session runtime, all five read-only execution classes use the same
+`pi-subagents` backend, artifact/run/config/Web/Gate/TUI paths are wired, and
+the current user's real Pi home completed apply, smoke, exact pre-install
+rollback, verification and reapply. The source/evidence/receipt chain is
+`6f77bb6` -> `42185b9` -> `02dac32`; its gate map is
+[`../verification/daily-harness-gates-v1.json`](../verification/daily-harness-gates-v1.json).
+
+M8 starts from these explicit truths:
+
+- the current real Pi home already owns nine third-party package entries;
+- only-my-pi must borrow verified matching packages and must never remove them
+  on uninstall or rollback;
+- Agent, BatchSwarm, WorkflowPlan, SwarmGoal and UltraRun remain one logical
+  stack over the sole `pi-subagents` physical runtime;
+- the production milestone is read-only; the historical protected writer is
+  evidence for a synthetic fixture and is not a daily writer capability;
+- D1-D12 and D15 passed as 13 fixed deterministic gates; source-bound D13/D14
+  also passed as evidence-only gates and remain non-executable from ordinary CI;
+- final measured coverage is 85.65/70.46/86.78 globally,
+  94.20/80.05/91.67 for the session composer, and 94.43/73.69/85.14 for
+  `omp-control` (lines/branches/functions);
+- a scripts-disabled, offline, self-contained artifact installs successfully in
+  both shadow and real roots; the final artifact SHA-256 is
+  `a8d0aaf521f3242776975876f64909fdf97f6e735813146f7258aa95f5fc2455`
+  and the installed/LKG generation is `sha256:62ebd02c...d6ab3310`;
+- the final D13 matrix passed 14/14 assertions with 32,149 metered tokens, five
+  tool calls and no stored raw model output, host paths or credentials;
+- the D14 rehearsal passed 6/6 assertions and restored the authorized original
+  raw or semantic settings baseline before reapplying the same artifact;
+- the final Daily receipt reports `COMPLETE`, 13/13 deterministic gates and
+  2/2 protected gates with no protected gate left `NOT_RUN_BY_POLICY`.
+
+M8 protected acceptance is source-bound. `scripts/m8-live-acceptance.mjs` used
+the configured Pi model without printing or copying credentials, ran the
+Agent/BatchSwarm/Workflow/SwarmGoal/Ultra/Web/cancel/resume/budget/writer-denial
+matrix in two Pi processes, and produced
+[`2026-08-27-m8-live-model-matrix-final.json`](../verification/protected/2026-08-27-m8-live-model-matrix-final.json).
+`scripts/m8-real-root-rehearsal.mjs` produced the separately authorized D14
+apply/preservation/exact-rollback/reapply evidence in
+[`2026-08-27-m8-real-root-rehearsal-final.json`](../verification/protected/2026-08-27-m8-real-root-rehearsal-final.json).
+The combined D1-D15 report is
+[`2026-08-27-m8-daily-harness-final.json`](../verification/receipts/2026-08-27-m8-daily-harness-final.json).
+Both producers remain plan-first and require explicit `--run --yes`; neither is
+callable from ordinary CI. The unsuffixed M8 evidence and receipt files remain
+as the audit trail for the earlier closure candidate; the `*-final.json` chain
+supersedes it after bounded journal-lock and Ultra budget hardening.
 
 The Harness MVP was fast-forwarded to private repository `main` at
 `12b24b59980386683a90af8250a4de4ff738d67c`. The post-merge `main` workflow
@@ -20,11 +71,10 @@ This page is a checked-in handoff record. Exact package metadata and risk tags
 live in [`inventory/packages.lock.json`](../inventory/packages.lock.json); this
 summary intentionally contains no credentials, sessions, or host paths.
 
-## Successor roadmap — S0–S5 Beta achieved for source `6004e61`
+## Historical successor roadmap — S0-S5 Stable kernel achieved
 
-The M0–M7 Harness MVP described below remains the current released baseline.
-Development of its S0–S5 successor has started on the isolated
-`codex/subagents-ultrarun-v2` branch:
+The M0-M7 Harness MVP and S0-S5 successor are historical completed baselines.
+The exact Stable source/evidence/receipt chain is recorded later on this page:
 
 - [`plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md`](plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
 - [`../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../codex/goals/develop-only-my-pi-subagents-ultrarun.md)
@@ -710,8 +760,10 @@ imports remain one-release compatibility shims but no longer own public
 execution. S3 now supplies the true homogeneous BatchSwarm implementation,
 stable item ledger, bounded ramp/retry/failure semantics, exact AgentSpec and
 template binding, WorkflowPlan node, parent-budget recovery, and CLI/TUI
-control. The 1/8/20/64/300 logical simulations and injected adapter tests pass;
-the protected live read-only batch is `NOT_RUN_BY_POLICY`. S4 now supplies
+control. The 1/8/20/64/300 logical simulations and injected adapter tests pass.
+At the historical S3 boundary the protected live read-only batch was
+`NOT_RUN_BY_POLICY`; later S5 and M8 source-bound evidence supersedes that
+historical status. S4 now supplies
 dynamic SwarmGoal plan revisions, UltraRun routing, quality policy, immutable
 artifacts, and guarded writer handoff without automatic integration. S5 adds
 promotion-specific live, fault, security, and compatibility evidence.

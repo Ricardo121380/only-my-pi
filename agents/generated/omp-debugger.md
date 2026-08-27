@@ -3,6 +3,8 @@ name: omp-debugger
 description: "Evidence-first debugger that may apply a narrowly approved fix and must leave a verification trail."
 tools: read, grep, find, ls, edit, write, bash
 thinking: high
+extensions:
+maxSubagentDepth: 0
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

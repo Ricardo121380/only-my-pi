@@ -3,6 +3,8 @@ name: omp-implementer
 description: "Managed-worktree writer that implements an approved plan and reports exact changes for parent verification."
 tools: read, grep, find, ls, edit, write, bash
 thinking: medium
+extensions:
+maxSubagentDepth: 0
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

@@ -126,6 +126,7 @@ async function harness(t, plan, options = {}) {
     eventJournal: coordinatorJournal,
     budgetLedger,
     planStore,
+    artifactStore: options.artifactStore,
     clock: () => instant,
     idFactory,
     nodeExecutor: options.nodeExecutor,
@@ -139,6 +140,66 @@ async function harness(t, plan, options = {}) {
   });
   return { root, eventJournal, budgetLedger, planStore, coordinator, clock, idFactory, advance: (ms) => { instant += ms; } };
 }
+
+test("authoritative node results publish ArtifactRefs before dependent assignment", async (t) => {
+  const plan = compileWorkflowDefinition(definition({
+    kind: "sequence",
+    steps: [agent("collect"), agent("synthesize")],
+  }));
+  const publications = [];
+  const observed = [];
+  const artifactStore = {
+    async publish(input) {
+      publications.push(input);
+      return Object.freeze({
+        formatVersion: 1,
+        contractStatus: "runtime-ready",
+        kind: "artifact-ref",
+        id: input.id,
+        mediaType: input.mediaType,
+        byteLength: Buffer.byteLength(input.contents),
+        digest: digestWorkflowValue(input.contents),
+        producer: input.producer,
+        storage: { scheme: "artifact", relativePath: `runs/${input.producer.runId}/${input.id}.blob` },
+        provenance: input.provenance,
+      });
+    },
+    async read() { throw new Error("coordinator does not read artifacts"); },
+  };
+  const { coordinator, eventJournal } = await harness(t, plan, {
+    artifactStore,
+    nodeExecutor: {
+      async runAgent(node, context) {
+        observed.push({ nodeId: node.id, artifactRefs: context.artifactRefs });
+        return {
+          runId: context.runId,
+          nodeId: node.id,
+          attemptId: context.attemptId,
+          outcome: "completed",
+          authoritative: true,
+          result: { summary: `${node.id} result` },
+          usage: { elapsedMs: 10 },
+        };
+      },
+    },
+  });
+  const result = await coordinator.execute(plan, { runId: "artifact-flow-run", input: { task: "compose" } });
+  assert.equal(result.status, "completed");
+  assert.equal(publications.length, 2);
+  assert.deepEqual(observed[0], { nodeId: "collect", artifactRefs: [] });
+  assert.equal(observed[1].nodeId, "synthesize");
+  assert.equal(observed[1].artifactRefs.length, 1);
+  assert.equal(observed[1].artifactRefs[0].producer.nodeId, "collect");
+  assert.equal(result.nodes.collect.artifactRefs.length, 1);
+  assert.equal(result.nodes.collect.artifacts.length, 1);
+  assert.equal(result.nodes.synthesize.artifactRefs.length, 1);
+  const events = (await eventJournal.read("artifact-flow-run")).events;
+  const published = events.filter((event) => event.type === "NodeArtifactPublished");
+  assert.equal(published.length, 2);
+  assert.ok(events.findIndex((event) => event.type === "NodeArtifactPublished" && event.nodeId === "collect")
+    < events.findIndex((event) => event.type === "NodeQueued" && event.nodeId === "synthesize"));
+  assert.deepEqual(events.find((event) => event.type === "NodeSettled" && event.nodeId === "collect").payload.artifactIds, [result.nodes.collect.artifactRefs[0]]);
+});
 
 test("durable Plan Store lets a fresh coordinator inspect, cancel, and resume a paused run", async (t) => {
   const workflowPlan = compileWorkflowDefinition(definition({ kind: "sequence", steps: [agent("inspect")] }));

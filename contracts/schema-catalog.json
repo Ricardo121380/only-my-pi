@@ -21,6 +21,36 @@
       "fixtureDir": "verification/fixtures/contracts/profile"
     },
     {
+      "kind": "overlay",
+      "schemaPath": "schemas/overlay-v1.schema.json",
+      "productionGlobs": ["overlays/*.json"],
+      "fixtureDir": "verification/fixtures/contracts/overlay"
+    },
+    {
+      "kind": "preset",
+      "schemaPath": "schemas/preset-v1.schema.json",
+      "productionGlobs": ["presets/*.json"],
+      "fixtureDir": "verification/fixtures/contracts/preset"
+    },
+    {
+      "kind": "preferences",
+      "schemaPath": "schemas/preferences-v1.schema.json",
+      "productionGlobs": ["contracts/daily/preferences.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/preferences"
+    },
+    {
+      "kind": "projectGates",
+      "schemaPath": "schemas/project-gates-v1.schema.json",
+      "productionGlobs": ["contracts/daily/project-gates.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/project-gates"
+    },
+    {
+      "kind": "runRecord",
+      "schemaPath": "schemas/run-record-v1.schema.json",
+      "productionGlobs": ["contracts/daily/run-record.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/run-record"
+    },
+    {
       "kind": "capability",
       "schemaPath": "schemas/capability-v1.schema.json",
       "productionGlobs": ["policies/capabilities.v1.json"],
@@ -89,7 +119,7 @@
     {
       "kind": "workflowDefinitionV2",
       "schemaPath": "schemas/workflow-definition-v2.schema.json",
-      "productionGlobs": ["contracts/subagents/workflow-definition.example.json"],
+      "productionGlobs": ["contracts/subagents/workflow-definition.example.json", "workflows-v2/*.json"],
       "fixtureDir": "verification/fixtures/contracts/workflow-definition-v2"
     },
     {

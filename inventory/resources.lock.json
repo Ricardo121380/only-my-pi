@@ -14,7 +14,7 @@
       "commands": [],
       "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": true,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -29,7 +29,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -44,7 +44,7 @@
       "commands": [],
       "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": true,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -59,7 +59,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -74,7 +74,7 @@
       "commands": ["omp", "/omp", "omp-context"],
       "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": true,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -89,7 +89,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -104,7 +104,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -119,7 +119,7 @@
       "commands": ["omp"],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -134,7 +134,7 @@
       "commands": ["omp"],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -149,7 +149,7 @@
       "commands": ["omp"],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -164,7 +164,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -179,7 +179,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -194,7 +194,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -209,7 +209,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -224,7 +224,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -239,7 +239,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -254,7 +254,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": true,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "planned",
       "packaged": true
     },
@@ -269,7 +269,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": true,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "planned",
       "packaged": true
     },
@@ -284,7 +284,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": true,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "planned",
       "packaged": true
     },
@@ -299,7 +299,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -314,7 +314,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -329,7 +329,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
       "lifecycle": "planned",
       "packaged": true
     },
@@ -344,7 +344,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
       "lifecycle": "planned",
       "packaged": true
     },
@@ -359,7 +359,7 @@
       "commands": [],
       "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -374,7 +374,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -389,7 +389,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -404,7 +404,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -419,7 +419,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -434,7 +434,7 @@
       "commands": [],
       "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -449,7 +449,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration", "ui-terminal", "experimental"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -464,7 +464,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["coding", "research", "orchestration", "experimental"],
+      "profileEligibility": ["coding", "research", "orchestration", "daily", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -479,7 +479,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -494,7 +494,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["coding", "research", "orchestration"],
+      "profileEligibility": ["coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -509,7 +509,7 @@
       "commands": [],
       "egressSurfaces": ["toolCallPolicy", "fileToolPolicy", "bashSandbox"],
       "defaultLoaded": false,
-      "profileEligibility": ["coding", "orchestration"],
+      "profileEligibility": ["coding", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -524,7 +524,7 @@
       "commands": [],
       "egressSurfaces": ["toolCallPolicy", "fileToolPolicy", "bashSandbox"],
       "defaultLoaded": false,
-      "profileEligibility": ["coding", "orchestration"],
+      "profileEligibility": ["coding", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -539,7 +539,7 @@
       "commands": [],
       "egressSurfaces": ["fileToolPolicy"],
       "defaultLoaded": false,
-      "profileEligibility": ["coding", "research", "orchestration"],
+      "profileEligibility": ["coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -569,7 +569,7 @@
       "commands": [],
       "egressSurfaces": ["fileToolPolicy"],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -584,7 +584,22 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "only-my-pi-agent-bundle",
+      "type": "library",
+      "path": "bundles/only-my-pi-agent-bundle",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": ["subagent-runtime"],
+      "owners": ["only-my-pi-resource-registry"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -599,7 +614,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -614,7 +629,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["coding", "research", "orchestration"],
+      "profileEligibility": ["coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -629,7 +644,7 @@
       "commands": [],
       "egressSurfaces": ["bashSandbox", "fileToolPolicy"],
       "defaultLoaded": false,
-      "profileEligibility": ["coding", "orchestration"],
+      "profileEligibility": ["coding", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -644,7 +659,7 @@
       "commands": [],
       "egressSurfaces": ["bashSandbox", "fileToolPolicy"],
       "defaultLoaded": false,
-      "profileEligibility": ["coding", "orchestration"],
+      "profileEligibility": ["coding", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -659,7 +674,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["coding", "research", "orchestration"],
+      "profileEligibility": ["coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -674,7 +689,7 @@
       "commands": [],
       "egressSurfaces": ["webEgress"],
       "defaultLoaded": false,
-      "profileEligibility": ["research", "orchestration"],
+      "profileEligibility": ["research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -689,7 +704,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["minimal", "coding", "research", "orchestration"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -704,7 +719,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["coding", "orchestration"],
+      "profileEligibility": ["coding", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -734,7 +749,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["coding", "research", "orchestration"],
+      "profileEligibility": ["coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -749,7 +764,7 @@
       "commands": [],
       "egressSurfaces": ["bashSandbox"],
       "defaultLoaded": false,
-      "profileEligibility": ["coding", "orchestration"],
+      "profileEligibility": ["coding", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -764,7 +779,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -779,7 +794,7 @@
       "commands": [],
       "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -794,7 +809,7 @@
       "commands": ["omp"],
       "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -809,7 +824,7 @@
       "commands": ["omp"],
       "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -824,7 +839,7 @@
       "commands": ["omp"],
       "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -839,7 +854,7 @@
       "commands": ["omp"],
       "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -854,7 +869,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -869,7 +884,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -884,7 +899,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -899,7 +914,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -914,7 +929,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -929,7 +944,7 @@
       "commands": [],
       "egressSurfaces": ["webEgress"],
       "defaultLoaded": false,
-      "profileEligibility": ["research", "orchestration"],
+      "profileEligibility": ["research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -944,7 +959,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["research", "orchestration"],
+      "profileEligibility": ["research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -959,7 +974,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["coding", "orchestration"],
+      "profileEligibility": ["coding", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -974,7 +989,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["coding", "research", "orchestration"],
+      "profileEligibility": ["coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -989,7 +1004,7 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["coding", "research", "orchestration"],
+      "profileEligibility": ["coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1004,7 +1019,7 @@
       "commands": [],
       "egressSurfaces": ["extensionEgress", "fileToolPolicy"],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1019,7 +1034,7 @@
       "commands": [],
       "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1034,7 +1049,187 @@
       "commands": [],
       "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": ["orchestration"],
+      "profileEligibility": ["orchestration", "daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "omp-agent-service",
+      "type": "library",
+      "path": "packages/control-service/agent-service.mjs",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": ["workspace-read", "subagent-runtime"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["orchestration", "daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "omp-daily-config-runtime",
+      "type": "library",
+      "path": "packages/daily-config",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": [],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "omp-overlay-catalog",
+      "type": "library",
+      "path": "overlays",
+      "version": "1.0.0",
+      "provides": [],
+      "requires": [],
+      "owners": ["only-my-pi-control"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "omp-preset-catalog",
+      "type": "library",
+      "path": "presets",
+      "version": "1.0.0",
+      "provides": [],
+      "requires": [],
+      "owners": ["only-my-pi-control"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "omp-daily-config-schemas",
+      "type": "library",
+      "path": "contracts/daily",
+      "version": "1.0.0",
+      "provides": [],
+      "requires": [],
+      "owners": ["only-my-pi-control"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "omp-run-management-runtime",
+      "type": "library",
+      "path": "packages/run-management",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "omp-run-record-schema",
+      "type": "library",
+      "path": "schemas/run-record-v1.schema.json",
+      "version": "1.0.0",
+      "provides": [],
+      "requires": [],
+      "owners": ["only-my-pi-control"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "omp-project-gates-runtime",
+      "type": "library",
+      "path": "packages/project-gates",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "omp-web-policy-runtime",
+      "type": "library",
+      "path": "packages/web-policy",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": ["web-access"],
+      "owners": ["only-my-pi-control"],
+      "commands": [],
+      "egressSurfaces": ["webEgress"],
+      "defaultLoaded": false,
+      "profileEligibility": ["daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "omp-project-gates-schema",
+      "type": "library",
+      "path": "schemas/project-gates-v1.schema.json",
+      "version": "1.0.0",
+      "provides": [],
+      "requires": [],
+      "owners": ["only-my-pi-control"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "source-review-v2-workflow",
+      "type": "workflow",
+      "path": "workflows-v2/source-review-v2.json",
+      "version": "2.1.0",
+      "provides": [],
+      "requires": ["workspace-read", "subagent-runtime"],
+      "owners": ["only-my-pi-resource-registry"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["orchestration", "daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "goal-planner-agent",
+      "type": "agent",
+      "path": "agents/goal-planner.json",
+      "version": "1.0.0",
+      "provides": [],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },

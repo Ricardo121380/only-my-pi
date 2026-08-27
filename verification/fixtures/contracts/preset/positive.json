@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/preset-v1.schema.json",
+  "formatVersion": 1,
+  "id": "fixture",
+  "description": "Positive preset fixture.",
+  "base": "core",
+  "overlays": ["web"],
+  "profileId": "daily"
+}

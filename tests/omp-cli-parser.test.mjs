@@ -40,6 +40,21 @@ test("update and uninstall are plans unless apply is explicit", () => {
   }
 });
 
+test("artifact install and update require absolute tarballs and default to daily", () => {
+  const install = parseOmpArgs(["install", "--artifact", "/tmp/only-my-pi.tgz"], context);
+  assert.equal(install.command, "install");
+  assert.equal(install.mutation, false);
+  assert.equal(install.options.profile, "daily");
+  assert.equal(install.options.plan, true);
+  const update = parseOmpArgs(["update", "--artifact", "/tmp/only-my-pi.tgz", "--apply", "--yes"], context);
+  assert.equal(update.mutation, true);
+  assert.equal(update.options.profile, "daily");
+  assert.equal(parseOmpArgs(["update"], context).options.profile, null);
+  assert.throws(() => parseOmpArgs(["install", "--artifact", "relative.tgz"], context), /absolute/u);
+  assert.throws(() => parseOmpArgs(["install"], context), /requires --artifact/u);
+  assert.throws(() => parseOmpArgs(["uninstall", "--artifact", "/tmp/only-my-pi.tgz"], context), /only valid for install or update/u);
+});
+
 test("doctor defaults to static and live is explicit", () => {
   assert.equal(parseOmpArgs(["doctor"], context).options.live, false);
   assert.equal(parseOmpArgs(["doctor", "--live"], context).options.live, true);
@@ -155,4 +170,49 @@ test("M6 theme parser separates read-only inspection from explicit apply", () =>
     ["theme", "doctor", "--apply"],
     ["theme", "use", "only-my-pi-dark", "--profile", "coding"],
   ]) assert.throws(() => parseOmpArgs(argv, context), Error, argv.join(" "));
+});
+
+test("M8 profiles and models grammar separates plans, apply, and explicit project inspection", () => {
+  const configRoot = "/tmp/pi-test";
+  const list = parseOmpArgs(["profiles", "list", "--config-root", configRoot]);
+  assert.equal(list.command, "profiles");
+  assert.equal(list.mutation, false);
+  assert.equal(list.options.subcommand, "list");
+
+  const plan = parseOmpArgs(["profiles", "plan", "daily", "--config-root", configRoot]);
+  assert.equal(plan.mutation, false);
+  assert.equal(plan.options.presetId, "daily");
+
+  const apply = parseOmpArgs(["profiles", "apply", "daily", "--yes", "--config-root", configRoot]);
+  assert.equal(apply.mutation, true);
+  assert.equal(apply.options.yes, true);
+
+  const models = parseOmpArgs(["models", "validate", "--project", "/tmp/project", "--config-root", configRoot]);
+  assert.equal(models.command, "models");
+  assert.equal(models.options.projectRoot, "/tmp/project");
+  const gate = parseOmpArgs(["gate", "validate", "--project", "/tmp/project", "--config-root", configRoot]);
+  assert.equal(gate.command, "gate");
+  assert.equal(gate.mutation, false);
+  assert.equal(gate.options.projectRoot, "/tmp/project");
+
+  assert.throws(() => parseOmpArgs(["profiles", "plan", "daily", "--yes"]), /--yes is only valid/u);
+  assert.throws(() => parseOmpArgs(["models", "validate", "--project", "relative"]), /absolute/u);
+  assert.throws(() => parseOmpArgs(["status", "--project", "/tmp/project"]), /only valid for models/u);
+});
+
+test("M8 terminal runs surface is management-only and GC remains plan-first", () => {
+  const configRoot = "/tmp/pi-test";
+  const list = parseOmpArgs(["runs", "list", "--config-root", configRoot]);
+  assert.equal(list.mutation, false);
+  assert.equal(list.options.subcommand, "list");
+  const show = parseOmpArgs(["runs", "show", "run-one", "--config-root", configRoot]);
+  assert.equal(show.options.runId, "run-one");
+  const plan = parseOmpArgs(["runs", "gc", "--plan", "--config-root", configRoot]);
+  assert.equal(plan.mutation, false);
+  assert.equal(plan.options.plan, true);
+  const apply = parseOmpArgs(["runs", "gc", "--apply", "--yes", "--config-root", configRoot]);
+  assert.equal(apply.mutation, true);
+  assert.equal(apply.options.apply, true);
+  assert.throws(() => parseOmpArgs(["runs", "show", "run-one", "--apply"]), /only valid for runs gc/u);
+  assert.throws(() => parseOmpArgs(["runs", "gc", "--yes"]), /only valid with --apply/u);
 });

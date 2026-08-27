@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../schemas/project-gates-v1.schema.json",
+  "formatVersion": 1,
+  "id": "default",
+  "gates": [{ "id": "tests", "description": "Run tests.", "command": "npm", "args": ["test"], "cwd": ".", "timeoutSeconds": 900, "env": { "CI": "1" } }]
+}

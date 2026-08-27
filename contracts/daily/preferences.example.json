@@ -1,0 +1,28 @@
+{
+  "$schema": "../../schemas/preferences-v1.schema.json",
+  "formatVersion": 1,
+  "defaultPreset": "daily",
+  "enabledOverlays": [],
+  "disabledOverlays": [],
+  "models": {
+    "default": { "model": "inherit", "thinking": "inherit", "fallbackModels": [] },
+    "roles": {}
+  },
+  "pricingOverrides": {},
+  "budgets": {
+    "daily": {
+      "maxConcurrency": 2,
+      "maxChildren": 8,
+      "maxDepth": 1,
+      "maxWallSeconds": 1800,
+      "maxTotalTokens": 50000,
+      "maxCostUsd": 0.25,
+      "maxTurnsPerChild": 8,
+      "maxToolCallsPerChild": 16,
+      "maxTotalToolCalls": 64,
+      "maxOutputBytesPerChild": 65536,
+      "maxTotalOutputBytes": 262144,
+      "maxGoalRevisions": 4
+    }
+  }
+}

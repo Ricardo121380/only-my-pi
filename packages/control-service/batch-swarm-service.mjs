@@ -82,9 +82,17 @@ function policyFromAgentSpec(agentSpec) {
   });
 }
 
-function workflowDefinition(entry) {
+function workflowDefinition(entry, ceiling = null) {
   const batch = entry.definition;
   const policy = policyFromAgentSpec(entry.agentSpec);
+  // WorkflowPlan validation binds the definition's declared worst-case batch
+  // width. The live preparation below separately limits the concrete input to
+  // maxChildren, and RunCoordinator reserves only its prepared assignments.
+  const maxAssignments = batch.maxItems * batch.retryPolicy.maxAttempts;
+  const maxWallTimeMs = Math.min(batch.retryPolicy.deadlineMs, (ceiling?.maxWallSeconds ?? Math.ceil(batch.retryPolicy.deadlineMs / 1000)) * 1000);
+  const maxOutputBytes = Math.min(16 * 1024 * 1024, ceiling?.maxTotalOutputBytes ?? 16 * 1024 * 1024);
+  const maxTokens = ceiling?.maxTotalTokens ?? null;
+  const maxCostUsd = ceiling?.maxCostUsd ?? null;
   return deepFreeze({
     $schema: "https://github.com/Ricardo121380/only-my-pi/schemas/workflow-definition-v2.schema.json",
     formatVersion: 2,
@@ -98,11 +106,11 @@ function workflowDefinition(entry) {
       maxParallel: 1,
       maxDepth: 1,
       maxAttemptsPerNode: 1,
-      maxWallTimeMs: batch.retryPolicy.deadlineMs,
-      maxOutputBytes: 16 * 1024 * 1024,
-      maxAssignments: batch.maxItems * batch.retryPolicy.maxAttempts,
-      maxTokens: null,
-      maxCostUsd: null,
+      maxWallTimeMs,
+      maxOutputBytes,
+      maxAssignments,
+      maxTokens,
+      maxCostUsd,
     },
     flow: {
       kind: "batch-swarm",
@@ -111,8 +119,10 @@ function workflowDefinition(entry) {
       policy,
       budget: {
         maxAttempts: 1,
-        timeoutMs: batch.retryPolicy.deadlineMs,
-        maxOutputBytes: 16 * 1024 * 1024,
+        timeoutMs: maxWallTimeMs,
+        maxOutputBytes,
+        maxTokens,
+        maxCostUsd,
       },
       cache: { mode: "content-addressed", keyInputs: [`artifacts.${batch.itemsFrom.slice("artifact://".length)}`] },
       idempotency: "content-addressed",
@@ -139,15 +149,17 @@ function resultStatus(status) {
     "awaiting-approval": "BATCH_SWARM_AWAITING_APPROVAL",
     interrupted: "BATCH_SWARM_INTERRUPTED",
     orphaned: "BATCH_SWARM_ORPHANED",
+    "budget-exhausted": "BATCH_SWARM_BUDGET_EXHAUSTED",
   })[status] ?? "BATCH_SWARM_FAILED";
 }
 
 export class BatchSwarmControlService {
-  constructor({ rootDir, registry, orchestration, capabilityMatrix } = {}) {
+  constructor({ rootDir, registry, orchestration, capabilityMatrix, configurationProvider } = {}) {
     this.rootDir = rootDir;
     this.registry = registry ?? createBatchSwarmRegistry({ rootDir });
     this.orchestration = orchestration ?? null;
     this.capabilityMatrix = capabilityMatrix ?? staticCapabilityMatrix();
+    this.configurationProvider = configurationProvider ?? null;
     this.runPlans = new Map();
   }
 
@@ -157,7 +169,8 @@ export class BatchSwarmControlService {
 
   async #plan(options) {
     const entry = await this.registry.resolve(options.batchId);
-    const definition = workflowDefinition(entry);
+    const configuration = this.configurationProvider ? await this.configurationProvider(options) : null;
+    const definition = workflowDefinition(entry, configuration?.budget ?? null);
     const plan = compileWorkflowDefinition(definition, { resolveBatch: (id) => id === entry.id ? entry.definition : null });
     const runId = options.runId ?? `batch-${crypto.randomUUID()}`;
     if (!RUN_ID.test(runId)) throw controlError("batch run id is invalid", "INVALID_RUN_ID");
@@ -175,6 +188,9 @@ export class BatchSwarmControlService {
       input,
       priorBatchEvents: [],
     });
+    if (configuration && prepared.itemCount > configuration.budget.maxChildren) {
+      throw controlError(`batch item count exceeds maxChildren ${configuration.budget.maxChildren}`, "BATCH_CHILD_BUDGET_EXCEEDED");
+    }
     const executionEnvelope = createExecutionEnvelope(plan, {
       runId,
       sourceHash: entry.sourceHash,

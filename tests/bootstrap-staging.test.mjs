@@ -439,7 +439,17 @@ test("promoted orchestration resources close the Workflow v2 and Swarm planning 
     runCommand: async () => { throw new Error("resource-only closure must not invoke npm"); },
   });
   const root = generation.layout.generationRoot;
+  const compiled = await compileGenerationSettings({
+    plan,
+    promotion: generation.receipt,
+    configRoot,
+    transactionId: "s2-orchestration-settings",
+  });
+  assert.equal(compiled.ownedSettings.packages.length, 1);
+  assert.match(compiled.ownedSettings.packages[0], /resources\/bundles\/only-my-pi-agent-bundle$/u);
   for (const relative of [
+    "resources/bundles/only-my-pi-agent-bundle/package.json",
+    "resources/bundles/only-my-pi-agent-bundle/agents/omp-reviewer.md",
     "resources/extensions/omp-control/runtime.mjs",
     "resources/packages/control-service/workflow-service.mjs",
     "resources/packages/control-service/swarm-service.mjs",

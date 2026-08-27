@@ -1,0 +1,12 @@
+{
+  "$schema": "../schemas/overlay-v1.schema.json",
+  "formatVersion": 1,
+  "id": "orchestration-readonly",
+  "kind": "hard",
+  "description": "One-level read-only Agent, BatchSwarm, Workflow, SwarmGoal and Ultra orchestration over pi-subagents.",
+  "packageIds": ["subagents"],
+  "capabilityIds": ["subagent-runtime", "subagent-rpc-v1", "subagent-delegation-v1"],
+  "authority": { "network": "inherit", "persistence": "harness-private", "tools": ["subagent", "structured_output"], "webConfirmation": false, "browserCookies": false },
+  "defaultEnabled": true,
+  "available": true
+}

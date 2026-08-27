@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../schemas/preferences-v1.schema.json",
+  "formatVersion": 1,
+  "defaultPreset": "daily",
+  "models": { "default": { "model": "inherit", "thinking": "inherit", "fallbackModels": [] }, "roles": {} },
+  "pricingOverrides": {},
+  "budgets": { "daily": { "maxConcurrency": 2, "maxChildren": 8 } }
+}

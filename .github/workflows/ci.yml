@@ -60,3 +60,6 @@ jobs:
 
       - name: Execute the Subagents v2 Preview deterministic gates
         run: npm run verify:subagents:run
+
+      - name: Execute the M8 Daily Harness deterministic gates
+        run: npm run verify:m8:run

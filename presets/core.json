@@ -1,0 +1,9 @@
+{
+  "$schema": "../schemas/preset-v1.schema.json",
+  "formatVersion": 1,
+  "id": "core",
+  "description": "Core read-only inspection and local coding assistance without Web or subagents.",
+  "base": "core",
+  "overlays": ["ui-terminal"],
+  "profileId": "coding"
+}

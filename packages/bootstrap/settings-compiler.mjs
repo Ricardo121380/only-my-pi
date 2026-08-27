@@ -102,6 +102,13 @@ export async function compileGenerationSettings({
     themes: [],
   };
   const stagedById = new Map(verified.manifest.resources.map((entry) => [entry.id, entry]));
+  const agentBundle = stagedById.get("only-my-pi-agent-bundle");
+  if (agentBundle) {
+    ownedSettings.packages.push(toRelativeSettingPath(
+      layout.configRoot,
+      path.join(layout.generationRoot, ...agentBundle.stagedPath.split("/")),
+    ));
+  }
   for (const resource of plan.resources) {
     const field = RESOURCE_SETTING_FIELD[resource.type];
     if (!field || resource.defaultLoaded !== true) continue;
@@ -112,7 +119,7 @@ export async function compileGenerationSettings({
       path.join(layout.generationRoot, ...staged.stagedPath.split("/")),
     ));
   }
-  for (const field of ["extensions", "skills", "prompts", "themes"]) ownedSettings[field].sort();
+  for (const field of ["packages", "extensions", "skills", "prompts", "themes"]) ownedSettings[field].sort();
 
   return deepFreeze({
     formatVersion: 1,

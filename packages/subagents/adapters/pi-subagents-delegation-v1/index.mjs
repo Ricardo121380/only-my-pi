@@ -24,7 +24,8 @@ const TERMINAL_STATUS = new Set([
   "interrupted", "invalid_request", "structured_output_failed", "timed_out",
   "tool_budget_exhausted", "turn_budget_exhausted", "unavailable_context",
 ]);
-const MUTATING_TOOLS = Object.freeze(["bash", "edit", "write", "web"]);
+const MUTATING_TOOLS = Object.freeze(["bash", "edit", "write"]);
+const THINKING_LEVELS = new Set(["off", "minimal", "low", "medium", "high", "xhigh", "max"]);
 
 function entry(state, reasonCode, evidence, constraints = {}) {
   return { state, reasonCode, evidence, constraints };
@@ -88,6 +89,8 @@ export function compileAgentAssignmentToPiDelegationRequest({
   assignment,
   cwd,
   model,
+  thinking,
+  maximumTurns,
   maximumToolCalls = 8,
 } = {}) {
   if (handle?.kind !== "agent-run-handle" || agentSpec?.kind !== "resolved-agent-spec" || assignment?.kind !== "task-assignment") {
@@ -101,7 +104,11 @@ export function compileAgentAssignmentToPiDelegationRequest({
   }
   if (typeof cwd !== "string" || cwd.length === 0) throw new TypeError("delegation cwd must be non-empty");
   if (!Number.isSafeInteger(maximumToolCalls) || maximumToolCalls < 0 || maximumToolCalls > 64) throw new TypeError("maximumToolCalls is invalid");
+  if (maximumTurns !== undefined && (!Number.isSafeInteger(maximumTurns) || maximumTurns < 1 || maximumTurns > 128)) throw new TypeError("maximumTurns is invalid");
+  if (thinking !== undefined && !THINKING_LEVELS.has(thinking)) throw new TypeError("thinking is invalid");
   const schema = outputSchema(agentSpec, assignment);
+  const blockedTools = [...MUTATING_TOOLS];
+  if (agentSpec.effectivePolicy?.egress?.web === "deny") blockedTools.push("web", "web_search", "source_check", "fetch_content", "get_search_content");
   const request = {
     requestId: handle.local.attemptId,
     ownerRunId: handle.local.runId,
@@ -113,10 +120,12 @@ export function compileAgentAssignmentToPiDelegationRequest({
     context: assignment.context.mode,
     cwd,
     ...(typeof model === "string" && model.length > 0 ? { model } : {}),
+    ...(thinking === undefined ? {} : { thinking }),
     timeoutMs: assignment.budget.maxElapsedMs,
+    ...(maximumTurns === undefined ? {} : { turnBudget: { maxTurns: maximumTurns } }),
     toolBudget: maximumToolCalls === 0
-      ? { hard: 1, block: ["bash", "edit", "find", "grep", "ls", "read", "web", "write"] }
-      : { hard: maximumToolCalls, block: [...MUTATING_TOOLS] },
+      ? { hard: 1, block: ["bash", "edit", "fetch_content", "find", "get_search_content", "grep", "ls", "read", "source_check", "web", "web_search", "write"] }
+      : { hard: maximumToolCalls, block: blockedTools },
     artifacts: false,
     result: schema === null ? { kind: "text" } : { kind: "structured", schema },
   };
@@ -192,13 +201,41 @@ function terminalOutcome(status) {
   return "failed";
 }
 
+function failedStatusCode(status, upstreamError) {
+  const fixed = ({
+    acceptance_failed: "DELEGATION_ACCEPTANCE_FAILED",
+    duplicate_node: "DELEGATION_DUPLICATE_NODE",
+    invalid_request: "DELEGATION_INVALID_REQUEST",
+    structured_output_failed: "DELEGATION_STRUCTURED_OUTPUT_FAILED",
+  })[status];
+  if (fixed) return fixed;
+  const message = typeof upstreamError === "string" ? upstreamError.toLowerCase() : "";
+  const category = [
+    [/(?:structured|schema|json)/u, "STRUCTURED_OUTPUT"],
+    [/(?:401|403|auth|credential|api.?key)/u, "AUTH"],
+    [/(?:429|rate.?limit)/u, "RATE_LIMIT"],
+    [/(?:timed? ?out|timeout)/u, "TIMEOUT"],
+    [/(?:provider)/u, "PROVIDER"],
+    [/(?:model)/u, "MODEL"],
+    [/(?:http)/u, "HTTP"],
+    [/(?:request)/u, "REQUEST"],
+    [/(?:tool)/u, "TOOL"],
+    [/(?:turn)/u, "TURN"],
+    [/(?:agent)/u, "AGENT"],
+  ].find(([pattern]) => pattern.test(message))?.[1] ?? "UNKNOWN";
+  return `DELEGATION_CHILD_FAILED_${category}`;
+}
+
 export class PiSubagentsDelegationV1Backend {
-  constructor({ transport, cwd, model, clock = Date.now, timeoutMs = 120_000, maximumToolCalls = 8, scheduler } = {}) {
+  constructor({ transport, cwd, model, thinking, modelResolver, clock = Date.now, timeoutMs = 120_000, maximumTurns, maximumToolCalls = 8, scheduler } = {}) {
     if (typeof transport?.subscribe !== "function" || typeof transport?.emit !== "function") throw new TypeError("delegation backend requires subscribe() and emit()");
     if (typeof cwd !== "string" || cwd.length === 0) throw new TypeError("delegation backend requires cwd");
     this.transport = transport;
     this.cwd = cwd;
     this.model = model;
+    this.thinking = thinking;
+    this.modelResolver = modelResolver;
+    this.maximumTurns = maximumTurns;
     this.clock = clock;
     this.timeoutMs = timeoutMs;
     this.maximumToolCalls = maximumToolCalls;
@@ -245,12 +282,20 @@ export class PiSubagentsDelegationV1Backend {
     return immutable({ capabilityMatrix: this.capabilityMatrix });
   }
 
-  async launch({ handle, agentSpec, assignment, mode = "background", signal } = {}) {
+  async launch({ handle, agentSpec, assignment, model, thinking, maximumTurns, maximumToolCalls, mode = "background", signal } = {}) {
     await this.ensureReady();
     if (!new Set(["foreground", "background"]).has(mode)) throw new TypeError("delegation mode must be foreground or background");
     if (handle.backendBindings.length !== 0) fail("delegation launch requires an unbound handle", "HANDLE_ALREADY_BOUND", "correlation");
+    const resolvedModel = typeof this.modelResolver === "function" ? await this.modelResolver({ agentSpec, assignment }) : null;
     const compiled = compileAgentAssignmentToPiDelegationRequest({
-      handle, agentSpec, assignment, cwd: this.cwd, model: this.model, maximumToolCalls: this.maximumToolCalls,
+      handle,
+      agentSpec,
+      assignment,
+      cwd: this.cwd,
+      model: model ?? resolvedModel?.model ?? this.model,
+      thinking: thinking ?? resolvedModel?.thinking ?? this.thinking,
+      maximumTurns: maximumTurns ?? this.maximumTurns,
+      maximumToolCalls: maximumToolCalls ?? this.maximumToolCalls,
     });
     const attempt = {
       request: compiled.request,
@@ -333,7 +378,15 @@ export class PiSubagentsDelegationV1Backend {
       runId: attempt.binding.backendRunId,
       state: response.status,
       success: response.status === "completed",
-      usage: { total: usage.total, tokens: usage.total, costUsd: usage.costUsd, durationMs: usage.durationMs, elapsedMs: usage.durationMs },
+      usage: {
+        total: usage.total,
+        tokens: usage.total,
+        costUsd: usage.costUsd,
+        durationMs: usage.durationMs,
+        elapsedMs: usage.durationMs,
+        turns: usage.turns,
+        toolCalls: usage.toolCalls,
+      },
       totalTokens: { total: usage.total },
       totalCost: { totalTokens: usage.total, costUsd: usage.costUsd },
       upstreamRunId: response.runId ?? null,
@@ -365,7 +418,11 @@ export class PiSubagentsDelegationV1Backend {
       startedAt: attempt.startedAt,
       settledAt: observedAt,
       result,
-      ...(outcome === "failed" ? { error: new SubagentsError("delegated child failed", { code: "DELEGATION_CHILD_FAILED", category: "backend" }) } : {}),
+      ...(outcome === "failed"
+        ? { error: new SubagentsError("delegated child failed", { code: failedStatusCode(response.status, response.error), category: "backend" }) }
+        : outcome === "budget-exhausted"
+          ? { error: new SubagentsError("delegated child exhausted its upstream turn or tool budget", { code: response.status === "tool_budget_exhausted" ? "DELEGATION_TOOL_BUDGET_EXHAUSTED" : "DELEGATION_TURN_BUDGET_EXHAUSTED", category: "policy" }) }
+          : {}),
     });
     this.attempts.delete(keyOf(attempt.request));
     return terminal;
