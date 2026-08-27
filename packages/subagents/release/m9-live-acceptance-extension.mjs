@@ -122,82 +122,91 @@ function publicCode(cause) {
   return /^[A-Z][A-Z0-9_]{1,127}$/u.test(cause?.code ?? "") ? cause.code : "M9_LIVE_ACCEPTANCE_FAILED";
 }
 
-export default function m9LiveAcceptanceExtension(pi) {
-  let started = false;
-  pi.on("session_start", async (_event, ctx) => {
-    if (started) return;
-    started = true;
-    let composer;
-    try {
-      const request = readRequest();
-      if (ctx?.model?.provider !== request.model.provider || ctx?.model?.id !== request.model.id) {
-        fail("M9_LIVE_MODEL_DRIFT", "active Pi model differs from the acceptance request");
-      }
-      const subagentsPackage = packageBinding(request.candidateInstallationRoot, "pi-subagents", CANDIDATE.subagentsVersion);
-      const webPackage = packageBinding(request.candidateInstallationRoot, "pi-web-access", CANDIDATE.webAccessVersion);
-      const dailyConfig = createDailyConfigService({ rootDir: request.repositoryRoot, configRoot: request.configRoot });
-      const protectedDailyConfig = {
-        async resolve(options) {
-          const configuration = m8ProtectedConfiguration(await dailyConfig.resolve(options));
-          return Object.freeze({
-            ...configuration,
-            pricingOverrides: Object.freeze({
-              ...configuration.pricingOverrides,
-              [`${request.model.provider}/${request.model.id}`]: Object.freeze({
-                inputPerMillion: request.pricing.inputPerMillion,
-                outputPerMillion: request.pricing.outputPerMillion,
+export function createM9LiveAcceptanceExtension({
+  writeRecord = (record) => process.stdout.write(`${JSON.stringify(record)}\n`),
+} = {}) {
+  if (typeof writeRecord !== "function") throw new TypeError("writeRecord must be a function");
+  return function m9LiveAcceptanceExtension(pi) {
+    let started = false;
+    pi.on("session_start", async (_event, ctx) => {
+      if (started) return;
+      started = true;
+      let composer;
+      try {
+        const request = readRequest();
+        if (ctx?.model?.provider !== request.model.provider || ctx?.model?.id !== request.model.id) {
+          fail("M9_LIVE_MODEL_DRIFT", "active Pi model differs from the acceptance request");
+        }
+        const subagentsPackage = packageBinding(request.candidateInstallationRoot, "pi-subagents", CANDIDATE.subagentsVersion);
+        const webPackage = packageBinding(request.candidateInstallationRoot, "pi-web-access", CANDIDATE.webAccessVersion);
+        const dailyConfig = createDailyConfigService({ rootDir: request.repositoryRoot, configRoot: request.configRoot });
+        const protectedDailyConfig = {
+          async resolve(options) {
+            const configuration = m8ProtectedConfiguration(await dailyConfig.resolve(options));
+            return Object.freeze({
+              ...configuration,
+              pricingOverrides: Object.freeze({
+                ...configuration.pricingOverrides,
+                [`${request.model.provider}/${request.model.id}`]: Object.freeze({
+                  inputPerMillion: request.pricing.inputPerMillion,
+                  outputPerMillion: request.pricing.outputPerMillion,
+                }),
               }),
-            }),
-          });
-        },
-      };
-      composer = await createSessionRuntimeComposer({
-        pi,
-        rootDir: request.repositoryRoot,
-        configRoot: request.configRoot,
-        getContext: () => ctx,
-        dependencies: {
-          dailyConfig: protectedDailyConfig,
-          subagentsPackage,
-          webPackage,
-          goalMakerTemplateSelector: () => "reviewer",
-          goalPlannerResultPolicy: m8ProtectedGoalPlannerPolicy,
-          goalWebEnabled: false,
-          allowVerifiedReuseCompletion: true,
-          goalExecutionBudgetDivisor: 1,
-          toolCallLimitResolver: m8ProtectedToolCallLimit,
-          turnLimitResolver: m8ProtectedTurnLimit,
-        },
-      });
-      const result = request.phase === "main"
-        ? await executeM8LiveMain(composer, request)
-        : await executeM8LiveResume(composer, request);
-      process.stdout.write(`${JSON.stringify({
-        formatVersion: 1,
-        type: M9_LIVE_RECORD_TYPE,
-        phase: request.phase,
-        status: "PASS",
-        sourceCommit: request.sourceCommit,
-        model: request.model,
-        pricing: request.pricing,
-        candidate: CANDIDATE,
-        candidateAuditDigest: request.candidateAuditDigest,
-        candidateContractDigest: request.candidateContractDigest,
-        assertions: result.assertions,
-        usage: result.usage,
-      })}\n`);
-    } catch (cause) {
-      process.stdout.write(`${JSON.stringify({
-        formatVersion: 1,
-        type: M9_LIVE_ERROR_TYPE,
-        status: "FAIL",
-        code: publicCode(cause),
-      })}\n`);
-    } finally {
-      await composer?.dispose?.().catch(() => {});
-    }
-  });
+            });
+          },
+        };
+        composer = await createSessionRuntimeComposer({
+          pi,
+          rootDir: request.repositoryRoot,
+          configRoot: request.configRoot,
+          getContext: () => ctx,
+          dependencies: {
+            dailyConfig: protectedDailyConfig,
+            subagentsPackage,
+            webPackage,
+            goalMakerTemplateSelector: () => "reviewer",
+            goalPlannerResultPolicy: m8ProtectedGoalPlannerPolicy,
+            goalWebEnabled: false,
+            allowVerifiedReuseCompletion: true,
+            goalExecutionBudgetDivisor: 1,
+            toolCallLimitResolver: m8ProtectedToolCallLimit,
+            turnLimitResolver: m8ProtectedTurnLimit,
+          },
+        });
+        const result = request.phase === "main"
+          ? await executeM8LiveMain(composer, request)
+          : await executeM8LiveResume(composer, request);
+        writeRecord({
+          formatVersion: 1,
+          type: M9_LIVE_RECORD_TYPE,
+          phase: request.phase,
+          status: "PASS",
+          sourceCommit: request.sourceCommit,
+          model: request.model,
+          pricing: request.pricing,
+          candidate: CANDIDATE,
+          candidateAuditDigest: request.candidateAuditDigest,
+          candidateContractDigest: request.candidateContractDigest,
+          assertions: result.assertions,
+          usage: result.usage,
+        });
+      } catch (cause) {
+        writeRecord({
+          formatVersion: 1,
+          type: M9_LIVE_ERROR_TYPE,
+          status: "FAIL",
+          code: publicCode(cause),
+        });
+      } finally {
+        await composer?.dispose?.().catch(() => {});
+      }
+    });
+  };
 }
+
+const m9LiveAcceptanceExtension = createM9LiveAcceptanceExtension();
+
+export default m9LiveAcceptanceExtension;
 
 export {
   CANDIDATE as M9_LIVE_CANDIDATE,

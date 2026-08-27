@@ -37,7 +37,7 @@ Completed M9 evidence and controls on the compatibility branch include:
   Workflow ArtifactRef flow, SwarmGoal replan, Ultra Agent/Workflow routing,
   public Web, cancellation, cross-session resume, budget denial, writer denial,
   exact candidate identity, and explicit subscription-pricing authority;
-- a clean full repository regression of **711/711 tests** after the protected
+- a clean full repository regression of **714/714 tests** after the protected
   runner and pricing fail-closed change;
 - a complete U1-U9 receipt at
   [`2026-08-28-m9-upstream-compatibility.json`](../verification/receipts/2026-08-28-m9-upstream-compatibility.json).

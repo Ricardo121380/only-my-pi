@@ -63,7 +63,7 @@ remaining `HOLD` is a deliberate promotion-review boundary, not a missing-test
 state: the Stable defaults cannot change until a separate reviewed decision
 explicitly approves the candidate versions.
 
-The complete repository regression has since passed with 711/711 tests. M9 is
+The complete repository regression has since passed with 714/714 tests. M9 is
 now represented by a fixed U1-U9 gate contract:
 
 | Gate | Scope | Current policy |
