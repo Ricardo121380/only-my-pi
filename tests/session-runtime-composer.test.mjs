@@ -308,6 +308,7 @@ test("Ultra Agent and Workflow routes use the same composer and fresh verifier",
   assert.equal((await composer.recordStore.require("ultra-agent-test")).status, "completed");
   const lightVerifierRequest = requests.find((request) => request.ownerRunId === "ultra-agent-test:verifier:0");
   assert.match(lightVerifierRequest.task, /"boundInput":\{"task":"Review the package metadata\."\}/u);
+  assert.match(lightVerifierRequest.task, /Do not invent acceptance requirements outside the bound scope/u);
 
   const workflowRequest = {
     ...agentRequest,
