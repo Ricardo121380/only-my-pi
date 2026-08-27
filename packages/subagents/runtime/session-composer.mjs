@@ -438,7 +438,8 @@ const GOAL_PLANNER_OUTPUT_SCHEMA = Object.freeze({
   required: ["questions", "coveredDimensions", "remainingDimensions", "coverage", "progress", "decision", "reason"],
 });
 
-function goalAgentNode(id, specId, task, budget, web = false, shareDivisor = 3) {
+function goalAgentNode(id, specId, task, budget, web = false, budgetShare = 1 / 3) {
+  if (typeof budgetShare !== "number" || !Number.isFinite(budgetShare) || budgetShare <= 0 || budgetShare > 1) fail("GOAL_NODE_BUDGET_SHARE_INVALID", "Goal node budget share is invalid");
   const policy = {
     workspace: "shared-read-only",
     mutation: "none",
@@ -452,7 +453,7 @@ function goalAgentNode(id, specId, task, budget, web = false, shareDivisor = 3) 
     assignment: { taskTemplateRef: task },
     outputSchemaRef: "research-result",
     policy,
-    budget: { maxAttempts: 1, timeoutMs: Math.max(1_000, Math.floor((budget.maxWallSeconds * 1000) / budget.maxGoalRevisions / 3)), maxOutputBytes: Math.min(budget.maxOutputBytesPerChild, Math.floor(budget.maxTotalOutputBytes / budget.maxGoalRevisions / shareDivisor)), maxTokens: Math.max(1, Math.floor(budget.maxTotalTokens / budget.maxGoalRevisions / shareDivisor)), maxCostUsd: budget.maxCostUsd / budget.maxGoalRevisions / shareDivisor },
+    budget: { maxAttempts: 1, timeoutMs: Math.max(1_000, Math.floor((budget.maxWallSeconds * 1000) / budget.maxGoalRevisions / 3)), maxOutputBytes: Math.min(budget.maxOutputBytesPerChild, Math.floor((budget.maxTotalOutputBytes / budget.maxGoalRevisions) * budgetShare)), maxTokens: Math.max(1, Math.floor((budget.maxTotalTokens / budget.maxGoalRevisions) * budgetShare)), maxCostUsd: (budget.maxCostUsd / budget.maxGoalRevisions) * budgetShare },
     cache: { mode: "content-addressed", keyInputs: ["assignment", "dependencies"] },
     idempotency: "content-addressed",
   };
@@ -501,9 +502,9 @@ function buildGoalProposal(plannerResult, context, budget, { makerTemplateSelect
       steps: [
         goalAgentNode(`maker-${suffix}`, ids.maker, webEnabled
           ? "Goal evidence maker: investigate the planner questions using only the approved public Web tools and return structured evidence."
-          : "Goal evidence maker: review the supplied bounded objective facts without external tools and return structured evidence.", budget, webEnabled, webEnabled ? 2 : 4),
-        goalAgentNode(`synthesize-${suffix}`, ids.synth, "Goal artifact synthesis: combine upstream ArtifactRefs against the bound objective without inventing evidence.", budget, false, 4),
-        goalAgentNode(`verify-${suffix}`, ids.verify, "Fresh Goal artifact verification with no GateReceipt manifest: compare upstream ArtifactRefs to the bound objective and return pass, fail, or blocked.", budget, false, webEnabled ? 4 : 2),
+          : "Goal evidence maker: review the supplied bounded objective facts without external tools and return structured evidence.", budget, webEnabled, webEnabled ? 0.5 : 0.48),
+        goalAgentNode(`synthesize-${suffix}`, ids.synth, "Goal artifact synthesis: combine upstream ArtifactRefs against the bound objective without inventing evidence.", budget, false, webEnabled ? 0.25 : 0.24),
+        goalAgentNode(`verify-${suffix}`, ids.verify, "Fresh Goal artifact verification with no GateReceipt manifest: compare upstream ArtifactRefs to the bound objective and return pass, fail, or blocked.", budget, false, webEnabled ? 0.25 : 0.28),
       ],
     },
   };
