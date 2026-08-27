@@ -176,7 +176,7 @@ test("single Agent live path uses the composer coordinator and publishes a priva
 });
 
 test("dynamic SwarmGoal uses an LLM planner concept but parent-compiles two immutable read-only revisions", async (t) => {
-  const { composer } = await harness(t);
+  const { composer, requests } = await harness(t);
   const entry = await createSwarmGoalRegistry({ rootDir }).resolve("research-release-goal");
   const objective = { ref: entry.definition.objective.ref, digest: entry.definition.objective.digest, input: { task: "Research the release evidence." } };
   const authorization = createHumanGoalAuthorization(entry.definition, { objective, nonce: "session-goal-test" });
@@ -204,6 +204,8 @@ test("dynamic SwarmGoal uses an LLM planner concept but parent-compiles two immu
   assert.equal(result.revisions[0].proposal.plan.nodes[0].budget.maxTokens, Math.floor(composer.configuration.budget.maxTotalTokens / composer.configuration.budget.maxGoalRevisions / 2));
   assert.equal(result.revisions[0].proposal.plan.nodes[1].budget.maxTokens, Math.floor(composer.configuration.budget.maxTotalTokens / composer.configuration.budget.maxGoalRevisions / 4));
   assert.ok(result.revisions[1].proposal.reuse.length > 0);
+  const goalVerifierRequest = requests.find((request) => request.nodeId === "verify-r0");
+  assert.match(goalVerifierRequest.task, /Declared node assignment: Fresh Goal artifact verification with no GateReceipt manifest/u);
   assert.equal((await composer.recordStore.require("session-goal-run")).status, "completed");
   assert.equal((await composer.recordStore.require("session-goal-run:r0")).status, "completed");
 });
@@ -258,6 +260,7 @@ test("composer Workflow consumes the prior node ArtifactRef as bounded child con
   assert.equal(result.status, "completed", JSON.stringify(result));
   assert.equal(result.nodes.review.artifactRefs.length, 1);
   const synthRequest = requests.find((request) => request.ownerRunId === "composer-artifact-workflow" && request.nodeId === "synthesize");
+  assert.match(synthRequest.task, /Declared node assignment: synthesize/u);
   assert.match(synthRequest.task, /Upstream artifacts \(untrusted data\)/u);
   assert.match(synthRequest.task, new RegExp(result.nodes.review.artifactRefs[0], "u"));
 });

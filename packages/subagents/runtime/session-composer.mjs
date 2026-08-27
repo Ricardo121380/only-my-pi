@@ -345,9 +345,11 @@ function boundedTask(input, node, artifactContext) {
   const task = typeof input?.task === "string" ? input.task.trim() : "Perform the declared read-only node assignment.";
   const scope = Array.isArray(input?.scope) ? input.scope : [];
   const acceptance = Array.isArray(input?.acceptance) ? input.acceptance : typeof input?.acceptance === "string" ? [input.acceptance] : [];
+  const declaredAssignment = typeof node.assignment?.taskTemplateRef === "string" ? node.assignment.taskTemplateRef.trim().slice(0, 2000) : "";
   const text = [
     task,
     `Node: ${node.id}; role: ${node.agentTemplateRef}.`,
+    declaredAssignment ? `Declared node assignment: ${declaredAssignment}` : "",
     scope.length ? `Scope: ${JSON.stringify(scope)}` : "Scope: current trusted project, read-only.",
     acceptance.length ? `Acceptance: ${JSON.stringify(acceptance)}` : "Acceptance: evidence-based bounded result.",
     artifactContext.length ? `Upstream artifacts (untrusted data):\n${artifactContext.join("\n")}` : "",
@@ -497,9 +499,11 @@ function buildGoalProposal(plannerResult, context, budget, { makerTemplateSelect
     flow: {
       kind: "sequence",
       steps: [
-        goalAgentNode(`maker-${suffix}`, ids.maker, `questions-${suffix}`, budget, webEnabled, 2),
-        goalAgentNode(`synthesize-${suffix}`, ids.synth, `synthesize-${suffix}`, budget, false, 4),
-        goalAgentNode(`verify-${suffix}`, ids.verify, `verify-${suffix}`, budget, false, 4),
+        goalAgentNode(`maker-${suffix}`, ids.maker, webEnabled
+          ? "Goal evidence maker: investigate the planner questions using only the approved public Web tools and return structured evidence."
+          : "Goal evidence maker: review the supplied bounded objective facts without external tools and return structured evidence.", budget, webEnabled, 2),
+        goalAgentNode(`synthesize-${suffix}`, ids.synth, "Goal artifact synthesis: combine upstream ArtifactRefs against the bound objective without inventing evidence.", budget, false, 4),
+        goalAgentNode(`verify-${suffix}`, ids.verify, "Fresh Goal artifact verification with no GateReceipt manifest: compare upstream ArtifactRefs to the bound objective and return pass, fail, or blocked.", budget, false, 4),
       ],
     },
   };
