@@ -7,6 +7,7 @@ import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 
 import { BootstrapService } from "../packages/bootstrap/bootstrap-service.mjs";
+import { ArtifactInstaller, createArtifactProcessRunner } from "../packages/bootstrap/artifact-installer.mjs";
 import { createNpmCommandRunner } from "../packages/bootstrap/command-runner.mjs";
 import { DoctorService } from "../packages/bootstrap/doctor-service.mjs";
 import { createNoModelSmokeRunner } from "../packages/bootstrap/smoke-runner.mjs";
@@ -42,6 +43,7 @@ export const OMP_EXIT_CODES = Object.freeze({
 });
 
 const DEFAULT_DEPENDENCIES = Object.freeze({
+  ArtifactInstaller,
   BootstrapService,
   ControlService,
   DoctorService,
@@ -51,6 +53,7 @@ const DEFAULT_DEPENDENCIES = Object.freeze({
   TransactionEngine,
   createNpmCommandRunner,
   createNoModelSmokeRunner,
+  createArtifactProcessRunner,
   createWorkflowControlService,
 });
 
@@ -100,6 +103,10 @@ export function createProductionControlService({
   const resolvedRoot = assertAbsolutePath(rootDir, "rootDir");
   const resolvedConfigRoot = assertAbsolutePath(configRoot, "configRoot");
   const wired = dependenciesWithDefaults(dependencies);
+  const artifactProcessOptions = spawnImpl === undefined ? {} : { spawnImpl };
+  const artifactInstaller = new wired.ArtifactInstaller({
+    runCommand: wired.createArtifactProcessRunner(artifactProcessOptions),
+  });
   const doctor = new wired.DoctorService({ rootDir: resolvedRoot });
   const runner = wired.createNpmCommandRunner({ configRoot: resolvedConfigRoot });
   const smokeOptions = spawnImpl === undefined ? {} : { spawnImpl };
@@ -129,6 +136,7 @@ export function createProductionControlService({
   const runRecordStore = createRunRecordStore({ managedRoot: path.join(resolvedConfigRoot, "only-my-pi") });
   const runManagement = new wired.RunManagementService({ recordStore: runRecordStore });
   return new wired.ControlService({
+    artifactInstaller,
     bootstrap,
     doctor,
     confirm,
@@ -206,7 +214,7 @@ function addField(lines, label, value) {
 }
 
 function humanConfirmationHint(command) {
-  if (["bootstrap", "update", "uninstall"].includes(command)) {
+  if (["bootstrap", "install", "update", "uninstall"].includes(command)) {
     return `rerun omp ${command} with --apply --yes after reviewing this plan`;
   }
   if (command === "profiles") return "rerun omp profiles apply <preset> with --yes after reviewing this plan";

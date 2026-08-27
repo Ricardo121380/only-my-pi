@@ -35,6 +35,28 @@ test("bootstrap plan never reaches the mutation method", async () => {
   assert.deepEqual(calls.map((entry) => entry.method), ["planBootstrap"]);
 });
 
+test("artifact install and artifact update share the plan-confirm-apply boundary", async () => {
+  const calls = [];
+  const artifactInstaller = {
+    async plan(options) {
+      calls.push({ method: "plan", options });
+      return { ok: true, status: "ARTIFACT_INSTALL_PLAN", mutation: false, planDigest: "sha256:plan" };
+    },
+    async apply(options) {
+      calls.push({ method: "apply", options });
+      return { ok: true, status: "ARTIFACT_APPLIED", mutation: true };
+    },
+  };
+  const bootstrap = { planUpdate: async () => assert.fail("artifact update must not use checkout bootstrap") };
+  const doctor = { live: async () => ({ status: "UNAVAILABLE" }) };
+  const denied = createControlService({ bootstrap, doctor, artifactInstaller });
+  const options = { artifact: "/tmp/only-my-pi.tgz", profile: "daily", configRoot: "/tmp/agent", apply: true, yes: false };
+  assert.equal((await denied.dispatch({ command: "install", options })).status, "CONFIRMATION_REQUIRED");
+  const approved = createControlService({ bootstrap, doctor, artifactInstaller, confirm: async () => true });
+  assert.equal((await approved.dispatch({ command: "update", options })).status, "ARTIFACT_APPLIED");
+  assert.deepEqual(calls.map((entry) => `${entry.method}:${entry.options.operation}`), ["plan:install", "plan:update", "apply:update"]);
+});
+
 test("apply requires explicit yes or a positive parent confirmation", async () => {
   const request = { command: "bootstrap", options: { apply: true, yes: false } };
   const denied = harness();

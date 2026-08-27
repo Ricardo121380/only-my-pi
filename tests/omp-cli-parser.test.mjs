@@ -40,6 +40,21 @@ test("update and uninstall are plans unless apply is explicit", () => {
   }
 });
 
+test("artifact install and update require absolute tarballs and default to daily", () => {
+  const install = parseOmpArgs(["install", "--artifact", "/tmp/only-my-pi.tgz"], context);
+  assert.equal(install.command, "install");
+  assert.equal(install.mutation, false);
+  assert.equal(install.options.profile, "daily");
+  assert.equal(install.options.plan, true);
+  const update = parseOmpArgs(["update", "--artifact", "/tmp/only-my-pi.tgz", "--apply", "--yes"], context);
+  assert.equal(update.mutation, true);
+  assert.equal(update.options.profile, "daily");
+  assert.equal(parseOmpArgs(["update"], context).options.profile, null);
+  assert.throws(() => parseOmpArgs(["install", "--artifact", "relative.tgz"], context), /absolute/u);
+  assert.throws(() => parseOmpArgs(["install"], context), /requires --artifact/u);
+  assert.throws(() => parseOmpArgs(["uninstall", "--artifact", "/tmp/only-my-pi.tgz"], context), /only valid for install or update/u);
+});
+
 test("doctor defaults to static and live is explicit", () => {
   assert.equal(parseOmpArgs(["doctor"], context).options.live, false);
   assert.equal(parseOmpArgs(["doctor", "--live"], context).options.live, true);

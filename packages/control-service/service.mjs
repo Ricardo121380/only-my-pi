@@ -5,9 +5,10 @@ export const OMP_USAGE = `only-my-pi control CLI
 
 Usage:
   omp bootstrap [--profile <id>] [--mode <id>] [--provider <id>] [--model <id>] [--scope global|project] [--config-root <absolute>] [--dry-run|--apply] [--yes] [--json]
+  omp install --artifact <absolute-tarball> [--profile <id>] [--plan|--apply] [--yes] [--config-root <absolute>] [--json]
   omp doctor [--static|--live] [--config-root <absolute>] [--json]
   omp status [--config-root <absolute>] [--json]
-  omp update [--plan|--apply] [--yes] [--config-root <absolute>] [--json]
+  omp update [--artifact <absolute-tarball> [--profile <id>]] [--plan|--apply] [--yes] [--config-root <absolute>] [--json]
   omp rollback [snapshot-id] [--yes] [--config-root <absolute>] [--json]
   omp uninstall [--plan|--apply] [--yes] [--config-root <absolute>] [--json]
   omp safe [--config-root <absolute>] [--json]
@@ -25,7 +26,7 @@ Usage:
   omp ultra [list|show|validate|plan|run] [strategy-id] [--input-file <absolute>] [--yes] [--config-root <absolute>] [--json]
   omp theme [list|show|preview|use|reset|doctor] [theme-id] [--apply --yes] [--config-root <absolute>] [--json]
 
-Mutation is never implicit. bootstrap, update, and uninstall default to a zero-write plan.
+Mutation is never implicit. bootstrap, install, update, and uninstall default to a zero-write plan.
 Provider/model flags save metadata only and remain CONFIGURED_UNVERIFIED.`;
 
 function confirmationRequired(command, plan) {
@@ -45,11 +46,12 @@ async function approve(request, plan, confirm) {
 }
 
 export class ControlService {
-  constructor({ bootstrap, doctor, confirm, modes, workflows, swarms, ultras, themes, dailyConfig, projectGates, runManagement, statusService, rootDir, configRoot } = {}) {
+  constructor({ bootstrap, doctor, confirm, artifactInstaller, modes, workflows, swarms, ultras, themes, dailyConfig, projectGates, runManagement, statusService, rootDir, configRoot } = {}) {
     if (!bootstrap || !doctor) throw new TypeError("bootstrap and doctor services are required");
     this.bootstrap = bootstrap;
     this.doctor = doctor;
     this.confirm = confirm;
+    this.artifactInstaller = artifactInstaller;
     this.modes = modes;
     this.workflows = workflows;
     this.swarms = swarms;
@@ -73,7 +75,21 @@ export class ControlService {
         if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
         return this.bootstrap.applyBootstrap({ ...request.options, plan });
       }
+      case "install": {
+        if (!this.artifactInstaller) return { ok: false, status: "ARTIFACT_INSTALLER_UNAVAILABLE", code: "ARTIFACT_INSTALLER_UNAVAILABLE", mutation: false };
+        const plan = await this.artifactInstaller.plan({ ...request.options, operation: "install" });
+        if (!request.options.apply) return plan;
+        if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
+        return this.artifactInstaller.apply({ ...request.options, operation: "install", plan });
+      }
       case "update": {
+        if (request.options.artifact) {
+          if (!this.artifactInstaller) return { ok: false, status: "ARTIFACT_INSTALLER_UNAVAILABLE", code: "ARTIFACT_INSTALLER_UNAVAILABLE", mutation: false };
+          const plan = await this.artifactInstaller.plan({ ...request.options, operation: "update" });
+          if (!request.options.apply) return plan;
+          if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
+          return this.artifactInstaller.apply({ ...request.options, operation: "update", plan });
+        }
         const plan = await this.bootstrap.planUpdate(request.options);
         if (!request.options.apply) return plan;
         if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);

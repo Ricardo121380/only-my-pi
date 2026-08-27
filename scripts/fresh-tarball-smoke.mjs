@@ -139,7 +139,8 @@ function assertStatus(value, expected, label) {
   if (!expected.includes(value?.status)) fail("FRESH_UNEXPECTED_STATUS", `${label} returned ${value?.status ?? "no status"}`);
 }
 
-export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT } = {}) {
+export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT, profileId = "minimal" } = {}) {
+  if (!/^[a-z][a-z0-9-]{0,63}$/u.test(profileId)) fail("FRESH_PROFILE_INVALID", "profileId is invalid");
   const root = await fs.realpath(path.resolve(rootDir));
   const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "only-my-pi-fresh-"));
   try {
@@ -258,13 +259,14 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT } = {}) {
     const help = await runCommand(ompBin, ["--help"], { cwd: workspace, env, label: "fresh omp help" });
     if (!help.stdout.includes("Usage:")) fail("FRESH_HELP_MISSING", "fresh omp binary did not render usage");
 
-    const plan = await runOmp(ompBin, ["bootstrap", "--profile", "minimal", "--mode", "inspect", "--config-root", configRoot], { cwd: workspace, env });
+    const profileArgs = ["--profile", profileId, ...(profileId === "minimal" ? ["--mode", "inspect"] : [])];
+    const plan = await runOmp(ompBin, ["bootstrap", ...profileArgs, "--config-root", configRoot], { cwd: workspace, env });
     assertStatus(plan, ["PLAN_READY"], "bootstrap dry-run");
     if (await pathExists(configRoot)) fail("FRESH_DRY_RUN_WROTE", "bootstrap dry-run created the Pi config root");
 
-    const first = await runOmp(ompBin, ["bootstrap", "--profile", "minimal", "--mode", "inspect", "--config-root", configRoot, "--apply", "--yes"], { cwd: workspace, env });
+    const first = await runOmp(ompBin, ["bootstrap", ...profileArgs, "--config-root", configRoot, "--apply", "--yes"], { cwd: workspace, env });
     assertStatus(first, ["COMMITTED"], "first bootstrap apply");
-    const second = await runOmp(ompBin, ["bootstrap", "--profile", "minimal", "--mode", "inspect", "--config-root", configRoot, "--apply", "--yes"], { cwd: workspace, env });
+    const second = await runOmp(ompBin, ["bootstrap", ...profileArgs, "--config-root", configRoot, "--apply", "--yes"], { cwd: workspace, env });
     assertStatus(second, ["NO_CHANGES", "REPAIRED_NO_CHANGES"], "second bootstrap apply");
     const doctor = await runOmp(ompBin, ["doctor", "--config-root", configRoot], { cwd: workspace, env });
     const doctorFindings = doctor?.repository?.findings;
@@ -316,6 +318,7 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT } = {}) {
         digest: topology.digest,
       }),
       bootstrap: Object.freeze({
+        profileId,
         dryRun: "PLAN_READY_ZERO_WRITE",
         firstApply: first.status,
         secondApply: second.status,
@@ -335,7 +338,13 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT } = {}) {
 }
 
 export async function main() {
-  const evidence = await runFreshTarballSmoke();
+  const argv = process.argv.slice(2);
+  let profileId = "minimal";
+  if (argv.length > 0) {
+    if (argv.length !== 2 || argv[0] !== "--profile") fail("FRESH_ARGUMENT_INVALID", "usage: fresh-tarball-smoke.mjs [--profile <id>]");
+    profileId = argv[1];
+  }
+  const evidence = await runFreshTarballSmoke({ profileId });
   process.stdout.write(`OMP_FRESH_TARBALL_EVIDENCE=${JSON.stringify(evidence)}\n`);
   return 0;
 }
