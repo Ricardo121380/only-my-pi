@@ -184,6 +184,10 @@ test("session budget governor queues fairly, aborts waiters, charges usage once,
   const overrun = governor.finalize({ handleId: "handle-two", local: { runId: "budget-run" } }, terminal, configuration().budget, "budget-run");
   assert.equal(overrun.outcome, "budget-exhausted");
   assert.equal(overrun.error.code, "RUN_BUDGET_OVERRUN");
+  assert.deepEqual(overrun.error.overruns, [
+    { resource: "tokens", limit: 100, observed: 120 },
+    { resource: "cost", limit: 1, observed: 1.2 },
+  ]);
 
   const children = new SessionBudgetGovernor(async () => configuration({ maxChildren: 1 }));
   await children.acquire("child-limit");

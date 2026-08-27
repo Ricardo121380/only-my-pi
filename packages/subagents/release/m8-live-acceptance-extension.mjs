@@ -292,10 +292,10 @@ export async function executeM8LiveMain(composer, request) {
   ensure(composer.enabled === true && composer.status === "SESSION_RUNTIME_READY", "M8_RUNTIME_UNAVAILABLE", "M8 session runtime is unavailable");
   const usage = usageAccumulator();
   const assertions = [];
+  assertions.push(await runGoal(composer, request));
   assertions.push(await runAgent(composer, request));
   assertions.push(await runBatch(composer, request));
   assertions.push(await runWorkflow(composer, request));
-  assertions.push(await runGoal(composer, request));
   assertions.push(...await runUltra(composer, request));
   assertions.push(await runPublicWeb(composer, request, usage));
   assertions.push(await runCancellation(composer, request, usage));

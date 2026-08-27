@@ -263,12 +263,16 @@ class SessionBudgetGovernor {
     this.releaseSlot();
     let result = terminal;
     if (state.tokens > budget.maxTotalTokens || state.cost > budget.maxCostUsd) {
+      const overruns = [
+        ...(state.tokens > budget.maxTotalTokens ? [{ resource: "tokens", limit: budget.maxTotalTokens, observed: state.tokens }] : []),
+        ...(state.cost > budget.maxCostUsd ? [{ resource: "cost", limit: budget.maxCostUsd, observed: state.cost }] : []),
+      ];
       result = Object.freeze({
         ...terminal,
         outcome: "budget-exhausted",
         result: null,
-        error: { code: "RUN_BUDGET_OVERRUN" },
-        receiptId: digestValue({ childReceiptId: terminal.receiptId, outcome: "budget-exhausted", usage: state }),
+        error: { code: "RUN_BUDGET_OVERRUN", overruns },
+        receiptId: digestValue({ childReceiptId: terminal.receiptId, outcome: "budget-exhausted", overruns }),
       });
     }
     this.finalized.set(handle.handleId, result);
