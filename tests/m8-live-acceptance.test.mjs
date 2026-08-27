@@ -101,8 +101,8 @@ test("protected Goal and public Web runs have distinct monotonic tool and turn c
   const researcher = { templateId: "researcher" };
   assert.equal(m8ProtectedToolCallLimit({ agentSpec: researcher, handle: { local: { runId: "m8-goal-source-r0" } } }), 0);
   assert.equal(m8ProtectedTurnLimit({ agentSpec: researcher, handle: { local: { runId: "m8-goal-source-r0" } } }), 1);
-  assert.equal(m8ProtectedToolCallLimit({ agentSpec: researcher, handle: { local: { runId: "m8-web-source" } } }), 4);
-  assert.equal(m8ProtectedTurnLimit({ agentSpec: researcher, handle: { local: { runId: "m8-web-source" } } }), 4);
+  assert.equal(m8ProtectedToolCallLimit({ agentSpec: researcher, handle: { local: { runId: "m8-web-source" } } }), 8);
+  assert.equal(m8ProtectedTurnLimit({ agentSpec: researcher, handle: { local: { runId: "m8-web-source" } } }), 8);
   assert.equal(m8ProtectedToolCallLimit({ agentSpec: { templateId: "reviewer" }, handle: { local: { runId: "m8-agent-source" } } }), 0);
   assert.equal(m8ProtectedTurnLimit({ agentSpec: { templateId: "reviewer" }, handle: { local: { runId: "m8-agent-source" } } }), 1);
   assert.equal(m8ProtectedTurnLimit({ agentSpec: { templateId: "reviewer" }, handle: { local: { runId: "m8-cancel-source" } } }), 2);
@@ -133,6 +133,6 @@ test("protected configuration pins low thinking and only narrows daily runtime b
   const protectedConfig = m8ProtectedConfiguration(original);
   assert.equal(protectedConfig.models.roles.reviewer.thinking, "low");
   assert.equal(protectedConfig.models.roles.verifier.thinking, "low");
-  assert.deepEqual(protectedConfig.budget, { maxTurnsPerChild: 4, maxToolCallsPerChild: 4, maxTotalToolCalls: 16, maxGoalRevisions: 2 });
+  assert.deepEqual(protectedConfig.budget, { maxTurnsPerChild: 8, maxToolCallsPerChild: 8, maxTotalToolCalls: 16, maxGoalRevisions: 2 });
   assert.equal(original.models.roles.reviewer.thinking, "inherit");
 });

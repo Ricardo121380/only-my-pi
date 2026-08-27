@@ -82,13 +82,13 @@ function publicCode(cause) {
 
 export function m8ProtectedToolCallLimit({ agentSpec, handle } = {}) {
   if (handle?.local?.runId?.startsWith("m8-goal-")) return 0;
-  return ["researcher", "source-verifier"].includes(agentSpec?.templateId) ? 4 : 0;
+  return ["researcher", "source-verifier"].includes(agentSpec?.templateId) ? 8 : 0;
 }
 
 export function m8ProtectedTurnLimit({ agentSpec, handle } = {}) {
   if (handle?.local?.runId?.startsWith("m8-cancel-")) return 2;
   if (handle?.local?.runId?.startsWith("m8-goal-")) return 1;
-  return ["researcher", "source-verifier"].includes(agentSpec?.templateId) ? 4 : 1;
+  return ["researcher", "source-verifier"].includes(agentSpec?.templateId) ? 8 : 1;
 }
 
 export function m8ProtectedGoalPlannerPolicy({ plannerResult, revision, settledNodeCount } = {}) {
@@ -105,8 +105,8 @@ export function m8ProtectedConfiguration(configuration) {
     models: Object.freeze({ ...configuration.models, roles: Object.freeze(roles) }),
     budget: Object.freeze({
       ...configuration.budget,
-      maxTurnsPerChild: Math.min(4, configuration.budget.maxTurnsPerChild),
-      maxToolCallsPerChild: Math.min(4, configuration.budget.maxToolCallsPerChild),
+      maxTurnsPerChild: Math.min(8, configuration.budget.maxTurnsPerChild),
+      maxToolCallsPerChild: Math.min(8, configuration.budget.maxToolCallsPerChild),
       maxTotalToolCalls: Math.min(16, configuration.budget.maxTotalToolCalls),
       maxGoalRevisions: Math.min(2, configuration.budget.maxGoalRevisions),
     }),
@@ -339,8 +339,8 @@ export async function executeM8LiveMain(composer, request) {
   ensure(composer.enabled === true && composer.status === "SESSION_RUNTIME_READY", "M8_RUNTIME_UNAVAILABLE", "M8 session runtime is unavailable");
   const usage = usageAccumulator();
   const assertions = [];
-  assertions.push(await runGoal(composer, request));
   assertions.push(await runPublicWeb(composer, request, usage));
+  assertions.push(await runGoal(composer, request));
   assertions.push(...await runUltra(composer, request));
   assertions.push(await runAgent(composer, request));
   assertions.push(await runBatch(composer, request));

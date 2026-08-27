@@ -119,7 +119,22 @@ test("delegation budget exhaustion retains an explicit stable error code", async
   wire.deliver(PI_SUBAGENTS_DELEGATION_V1_EVENTS.response, response(request, { status: "turn_budget_exhausted", exitCode: 0, result: undefined }));
   const terminal = await backend.awaitTerminal(launched.handle, { bindingId: launched.binding.bindingId });
   assert.equal(terminal.outcome, "budget-exhausted");
-  assert.equal(terminal.error.code, "DELEGATION_CHILD_BUDGET_EXHAUSTED");
+  assert.equal(terminal.error.code, "DELEGATION_TURN_BUDGET_EXHAUSTED");
+  await backend.dispose();
+});
+
+test("delegation tool budget exhaustion remains distinct from turn exhaustion", async () => {
+  const values = await domain();
+  const wire = transport();
+  const backend = createPiSubagentsDelegationV1Backend({ transport: wire, cwd: "/fixture" });
+  const launching = backend.launch({ ...values, mode: "background" });
+  await new Promise((resolve) => setImmediate(resolve));
+  const request = wire.emitted.find((entry) => entry.name === PI_SUBAGENTS_DELEGATION_V1_EVENTS.request).value;
+  wire.deliver(PI_SUBAGENTS_DELEGATION_V1_EVENTS.started, { requestId: request.requestId, ownerRunId: request.ownerRunId, nodeId: request.nodeId });
+  const launched = await launching;
+  wire.deliver(PI_SUBAGENTS_DELEGATION_V1_EVENTS.response, response(request, { status: "tool_budget_exhausted", exitCode: 0, result: undefined }));
+  const terminal = await backend.awaitTerminal(launched.handle, { bindingId: launched.binding.bindingId });
+  assert.equal(terminal.error.code, "DELEGATION_TOOL_BUDGET_EXHAUSTED");
   await backend.dispose();
 });
 
