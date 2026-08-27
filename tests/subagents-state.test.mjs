@@ -38,7 +38,7 @@ function manager(rootDir, clock, options = {}) {
     filesystem: options.filesystem ?? fs,
     clock,
     idFactory: options.idFactory ?? ((prefix) => `${prefix}-generated`),
-    lockRetries: options.lockRetries ?? 2_000,
+    ...(options.lockRetries === undefined ? {} : { lockRetries: options.lockRetries }),
     delay: options.delay,
   });
 }
@@ -168,6 +168,41 @@ test("an operation that waited for the state lock rechecks lease expiry inside i
 
   await assert.rejects(append, hasCode("STALE_WRITER"));
   assert.equal((await journal.read(runId)).lastSeq, 0);
+});
+
+test("the production default tolerates a bounded lock window longer than the old 250 ms retry budget", async (t) => {
+  const root = await temporaryRoot(t);
+  const clock = fakeClock();
+  const runId = "run-default-lock-window";
+  let lockPath;
+  let delays = 0;
+  const journal = manager(root, clock, {
+    async delay() {
+      delays += 1;
+      if (delays === 300) await fs.unlink(lockPath);
+    },
+  });
+  const lease = await journal.acquireWriter(runId, { writerId: "writer-default-lock-window", ttlMs: 120_000 });
+  lockPath = journal.forRun(runId).paths.lock;
+  await fs.writeFile(lockPath, `${JSON.stringify({
+    fencingToken: lease.fencingToken,
+    purpose: "bounded-slow-operation",
+    writerId: lease.writerId,
+    createdAt: "2026-08-18T00:00:00.000Z",
+  })}\n`, "utf8");
+
+  const appended = await journal.append(runId, {
+    eventId: "after-bounded-lock-window",
+    type: "RunPlanned",
+    payload: {},
+  }, {
+    lease,
+    expectedSeq: 0,
+    expectedDigest: GENESIS_EVENT_DIGEST,
+  });
+
+  assert.equal(delays, 300);
+  assert.equal(appended.event.seq, 1);
 });
 
 test("event journal enforces CAS, digest chaining, duplicate identity, and late terminal classification", async (t) => {

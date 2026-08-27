@@ -430,7 +430,10 @@ export function createAppendOnlyEventJournal(options = {}) {
   validateId(runId, "runId");
   const maxRecordBytes = options.maxRecordBytes ?? 64 * 1024;
   validateInteger(maxRecordBytes, "maxRecordBytes", { min: 1024 });
-  const lockRetries = options.lockRetries ?? 250;
+  // A single durable append may exceed 250 ms on a contended hosted runner.
+  // Keep the wait bounded, but give legitimate same-run writers the same
+  // two-second retry window already used by the state stress tests.
+  const lockRetries = options.lockRetries ?? 2_000;
   validateInteger(lockRetries, "lockRetries", { min: 1 });
   const paths = Object.freeze({
     events: path.join(runDir, "events.jsonl"),
