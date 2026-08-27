@@ -17,6 +17,7 @@ import {
 import {
   M9_LIVE_CANDIDATE,
   M9_LIVE_ERROR_TYPE,
+  M9_LIVE_PRICING,
   M9_LIVE_RECORD_TYPE,
   M9_LIVE_REQUEST_ENV,
 } from "../packages/subagents/release/m9-live-acceptance-extension.mjs";
@@ -41,6 +42,7 @@ export const M9_LIVE_EXPECTED_ASSERTIONS = Object.freeze([
   ...M8_LIVE_EXPECTED_ASSERTIONS,
   "candidate-artifact-audit",
   "candidate-runtime-identity",
+  "pricing-authority",
 ].sort());
 
 function fail(code, message, details = {}) {
@@ -116,6 +118,9 @@ export function parseM9LiveAcceptanceArgs(argv) {
     fail("M9_LIVE_ARGUMENT_INVALID", "--run requires --yes, --installation-root, --artifact-sha256, and --output");
   }
   if (![output.provider, output.model].every((value) => SAFE_MODEL.test(value))) fail("M9_LIVE_ARGUMENT_INVALID", "provider or model is invalid");
+  if (output.operation === "run" && (output.provider !== DEFAULT_PROVIDER || output.model !== DEFAULT_MODEL)) {
+    fail("M9_LIVE_MODEL_UNSUPPORTED", "U9 is bound to the authorized OpenCode Go DeepSeek V4 Flash subscription tuple");
+  }
   return Object.freeze(output);
 }
 
@@ -304,7 +309,8 @@ function combineRecords(main, resume, { sourceCommit, artifactSha256, audit, con
       || record.sourceCommit !== sourceCommit
       || record.candidateAuditDigest !== audit.auditDigest
       || record.candidateContractDigest !== contractDigest
-      || JSON.stringify(record.candidate) !== JSON.stringify(M9_LIVE_CANDIDATE)) {
+      || JSON.stringify(record.candidate) !== JSON.stringify(M9_LIVE_CANDIDATE)
+      || JSON.stringify(record.pricing) !== JSON.stringify(M9_LIVE_PRICING)) {
       fail("M9_LIVE_RECORD_INVALID", "M9 live record source/candidate/status is invalid");
     }
   }
@@ -314,6 +320,7 @@ function combineRecords(main, resume, { sourceCommit, artifactSha256, audit, con
     assertion("artifact-identity", { sourceCommit, artifactSha256, model: main.model }),
     assertion("candidate-artifact-audit", { auditDigest: audit.auditDigest, packages: audit.packages.map(({ id, version, integrity }) => ({ id, version, integrity })) }),
     assertion("candidate-runtime-identity", { ...runtime, webAccessVersion: M9_LIVE_CANDIDATE.webAccessVersion, contractDigest }),
+    assertion("pricing-authority", M9_LIVE_PRICING),
   ].sort((left, right) => left.id.localeCompare(right.id));
   const ids = assertions.map((entry) => entry.id);
   if (JSON.stringify(ids) !== JSON.stringify(M9_LIVE_EXPECTED_ASSERTIONS) || new Set(ids).size !== ids.length) fail("M9_LIVE_ASSERTION_SET_INVALID", "M9 live assertion set is incomplete or duplicated");
@@ -336,6 +343,7 @@ export async function executeM9LiveAcceptance(args, { phaseRunner = runPiM9Phase
     sourceClean: source.clean,
     candidate: M9_LIVE_CANDIDATE,
     model: { provider: args.provider, id: args.model },
+    pricing: M9_LIVE_PRICING,
     artifactSha256: args.artifactSha256 ? `sha256:${args.artifactSha256}` : null,
     installationRoot: args.installationRoot === null ? "REQUIRED_FOR_RUN" : "EXPLICIT_DISPOSABLE_CANDIDATE_ROOT",
     configRoot: "REAL_PI_HOME_AUTH_AND_PRIVATE_RUN_STATE_ONLY",
@@ -375,6 +383,7 @@ export async function executeM9LiveAcceptance(args, { phaseRunner = runPiM9Phase
     candidateAuditDigest: audit.auditDigest,
     candidateContractDigest: contract.contractDigest,
     model: { provider: args.provider, id: args.model },
+    pricing: M9_LIVE_PRICING,
     runNonce,
     webAuthorized: true,
   };
@@ -408,6 +417,7 @@ export async function executeM9LiveAcceptance(args, { phaseRunner = runPiM9Phase
       provider: args.provider,
       model: args.model,
     },
+    pricing: M9_LIVE_PRICING,
     artifacts: {
       sourceArtifactSha256: `sha256:${args.artifactSha256}`,
       candidateAuditDigest: audit.auditDigest,

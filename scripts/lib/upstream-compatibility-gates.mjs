@@ -22,6 +22,7 @@ export const UPSTREAM_COMPATIBILITY_PROTECTED_EVIDENCE = Object.freeze({
 export const UPSTREAM_COMPATIBILITY_U9_ASSERTION_IDS = Object.freeze([
   "agent-terminal", "artifact-identity", "batch-swarm-terminal", "budget-boundary",
   "cancellation", "candidate-artifact-audit", "candidate-runtime-identity", "public-web",
+  "pricing-authority",
   "resume-across-session", "resume-prepared", "swarm-goal-replan", "ultra-agent-route",
   "ultra-workflow-route", "usage-metering", "workflow-artifact-flow", "writer-denial",
 ].sort());
@@ -98,8 +99,10 @@ const SAFE_MODEL = /^[A-Za-z0-9][A-Za-z0-9._:+/-]{0,127}$/u;
 const PROTECTED_KEYS = new Set([
   "formatVersion", "kind", "gateId", "evidenceId", "sourceCommit", "status", "createdAt",
   "candidate", "artifacts", "assertions", "usage", "privacy", "authorization", "evidenceDigest",
+  "pricing",
 ]);
 const CANDIDATE_KEYS = new Set(["piVersion", "subagentsVersion", "webAccessVersion", "provider", "model"]);
+const PRICING_KEYS = new Set(["mode", "inputPerMillion", "outputPerMillion", "fixedFeeUsd", "fixedFeeIncludedInRunCost", "source"]);
 const ARTIFACT_KEYS = new Set(["sourceArtifactSha256", "candidateAuditDigest", "contractDigest"]);
 const ASSERTION_KEYS = new Set(["id", "status", "digest"]);
 const USAGE_KEYS = new Set(["tokens", "costUsd", "toolCalls", "meteredTerminals"]);
@@ -286,9 +289,22 @@ export function validateUpstreamCompatibilityProtectedEvidence(input, { expected
   if (input.candidate.piVersion !== "0.84.3"
     || input.candidate.subagentsVersion !== "0.57.0"
     || input.candidate.webAccessVersion !== "0.25.0"
-    || !SAFE_MODEL.test(input.candidate.provider ?? "")
-    || !SAFE_MODEL.test(input.candidate.model ?? "")) {
+    || input.candidate.provider !== "cc-switch-open-code-go"
+    || input.candidate.model !== "deepseek-v4-flash"
+    || !SAFE_MODEL.test(input.candidate.provider)
+    || !SAFE_MODEL.test(input.candidate.model)) {
     fail("protected evidence candidate identity is invalid");
+  }
+
+  object(input.pricing, "protected evidence pricing");
+  exactKeys(input.pricing, PRICING_KEYS, "protected evidence pricing");
+  if (input.pricing.mode !== "subscription-fixed-fee"
+    || input.pricing.inputPerMillion !== 0
+    || input.pricing.outputPerMillion !== 0
+    || input.pricing.fixedFeeUsd !== 10
+    || input.pricing.fixedFeeIncludedInRunCost !== false
+    || input.pricing.source !== "https://opencode.ai/docs/go/") {
+    fail("protected evidence pricing authority is invalid");
   }
 
   object(input.artifacts, "protected evidence artifacts");

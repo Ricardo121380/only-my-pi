@@ -13,6 +13,7 @@ import {
 } from "../scripts/m9-live-acceptance.mjs";
 import {
   M9_LIVE_CANDIDATE,
+  M9_LIVE_PRICING,
   M9_LIVE_RECORD_TYPE,
 } from "../packages/subagents/release/m9-live-acceptance-extension.mjs";
 import {
@@ -34,6 +35,13 @@ test("M9 live CLI is plan-first and requires an explicit candidate root and sour
   ]);
   assert.equal(run.operation, "run");
   assert.equal(run.installationRoot, "/tmp/only-my-pi-candidate");
+  assert.throws(() => parseM9LiveAcceptanceArgs([
+    "--run", "--yes",
+    "--installation-root", "/tmp/only-my-pi-candidate",
+    "--provider", "other",
+    "--artifact-sha256", "a".repeat(64),
+    "--output", "/tmp/evidence.json",
+  ]), { code: "M9_LIVE_MODEL_UNSUPPORTED" });
 });
 
 test("candidate Pi M9 phase is shell-free, scrubbed, and loads only candidate subagents plus the acceptance extension", async (t) => {
@@ -52,6 +60,7 @@ test("candidate Pi M9 phase is shell-free, scrubbed, and loads only candidate su
     sourceCommit: "a".repeat(40),
     model: { provider: "provider", id: "model" },
     candidate: M9_LIVE_CANDIDATE,
+    pricing: M9_LIVE_PRICING,
     candidateAuditDigest: `sha256:${"b".repeat(64)}`,
     candidateContractDigest: `sha256:${"c".repeat(64)}`,
     assertions: [],
@@ -70,6 +79,7 @@ test("candidate Pi M9 phase is shell-free, scrubbed, and loads only candidate su
       candidateAuditDigest: `sha256:${"b".repeat(64)}`,
       candidateContractDigest: `sha256:${"c".repeat(64)}`,
       model: { provider: "provider", id: "model" },
+      pricing: M9_LIVE_PRICING,
       runNonce: "fixture",
       webAuthorized: true,
     },
@@ -118,6 +128,7 @@ test("U9 evidence is exact candidate-, source-, digest-, privacy-, and assertion
       provider: "cc-switch-open-code-go",
       model: "deepseek-v4-flash",
     },
+    pricing: M9_LIVE_PRICING,
     artifacts: {
       sourceArtifactSha256: `sha256:${"b".repeat(64)}`,
       candidateAuditDigest: `sha256:${"c".repeat(64)}`,

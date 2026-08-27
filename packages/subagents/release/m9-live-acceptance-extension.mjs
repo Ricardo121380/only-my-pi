@@ -28,6 +28,7 @@ const EXPECTED_REQUEST_KEYS = Object.freeze([
   "formatVersion",
   "model",
   "phase",
+  "pricing",
   "repositoryRoot",
   "runNonce",
   "sourceCommit",
@@ -37,6 +38,14 @@ const CANDIDATE = Object.freeze({
   piVersion: "0.84.3",
   subagentsVersion: "0.57.0",
   webAccessVersion: "0.25.0",
+});
+const PRICING = Object.freeze({
+  mode: "subscription-fixed-fee",
+  inputPerMillion: 0,
+  outputPerMillion: 0,
+  fixedFeeUsd: 10,
+  fixedFeeIncludedInRunCost: false,
+  source: "https://opencode.ai/docs/go/",
 });
 
 function fail(code, message, details = {}) {
@@ -98,7 +107,8 @@ function readRequest() {
     || !SHA256.test(request.candidateAuditDigest ?? "")
     || !SHA256.test(request.candidateContractDigest ?? "")
     || !plain(request.model)
-    || JSON.stringify(Object.keys(request.model).sort()) !== JSON.stringify(["id", "provider"])) {
+    || JSON.stringify(Object.keys(request.model).sort()) !== JSON.stringify(["id", "provider"])
+    || JSON.stringify(request.pricing) !== JSON.stringify(PRICING)) {
     fail("M9_LIVE_REQUEST_INVALID", "M9 live request shape is invalid");
   }
   request.repositoryRoot = realDirectory(request.repositoryRoot, "repositoryRoot");
@@ -128,7 +138,17 @@ export default function m9LiveAcceptanceExtension(pi) {
       const dailyConfig = createDailyConfigService({ rootDir: request.repositoryRoot, configRoot: request.configRoot });
       const protectedDailyConfig = {
         async resolve(options) {
-          return m8ProtectedConfiguration(await dailyConfig.resolve(options));
+          const configuration = m8ProtectedConfiguration(await dailyConfig.resolve(options));
+          return Object.freeze({
+            ...configuration,
+            pricingOverrides: Object.freeze({
+              ...configuration.pricingOverrides,
+              [`${request.model.provider}/${request.model.id}`]: Object.freeze({
+                inputPerMillion: request.pricing.inputPerMillion,
+                outputPerMillion: request.pricing.outputPerMillion,
+              }),
+            }),
+          });
         },
       };
       composer = await createSessionRuntimeComposer({
@@ -159,6 +179,7 @@ export default function m9LiveAcceptanceExtension(pi) {
         status: "PASS",
         sourceCommit: request.sourceCommit,
         model: request.model,
+        pricing: request.pricing,
         candidate: CANDIDATE,
         candidateAuditDigest: request.candidateAuditDigest,
         candidateContractDigest: request.candidateContractDigest,
@@ -178,4 +199,7 @@ export default function m9LiveAcceptanceExtension(pi) {
   });
 }
 
-export { CANDIDATE as M9_LIVE_CANDIDATE };
+export {
+  CANDIDATE as M9_LIVE_CANDIDATE,
+  PRICING as M9_LIVE_PRICING,
+};

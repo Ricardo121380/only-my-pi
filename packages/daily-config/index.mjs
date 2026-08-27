@@ -442,7 +442,14 @@ function modelHasPricing(model, override) {
   if (override && Number.isFinite(override.inputPerMillion) && Number.isFinite(override.outputPerMillion)) return true;
   const input = model?.cost?.input ?? model?.pricing?.input ?? model?.inputCostPerMillion;
   const output = model?.cost?.output ?? model?.pricing?.output ?? model?.outputCostPerMillion;
-  return Number.isFinite(input) && input >= 0 && Number.isFinite(output) && output >= 0;
+  // Pi normalizes missing custom-provider prices to zero. Treating that
+  // synthetic 0/0 pair as authoritative would disguise unknown pricing as a
+  // free model and make maxCostUsd ineffective. A real positive provider
+  // price is accepted; zero-variable-cost and subscription models require an
+  // explicit global or protected-run override.
+  return Number.isFinite(input) && input >= 0
+    && Number.isFinite(output) && output >= 0
+    && (input > 0 || output > 0);
 }
 
 export async function validateResolvedModels(configuration, { modelRegistry, currentModel = null } = {}) {
