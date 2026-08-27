@@ -365,7 +365,7 @@ async function artifactContext(store, refs, maximumBytes = 64 * 1024) {
   return output;
 }
 
-function directAgentRunner({ agentRegistry, backend, configurationProvider, webAuthorizer }) {
+function directAgentRunner({ agentRegistry, backend, configurationProvider, webAuthorizer, artifactStore, recordStore, contextProvider }) {
   return async function runDirectAgent({ role, task, outputSchema = null, runId, nodeId, signal }) {
     const entry = await agentRegistry.resolve(role);
     if (entry.manifest.writer !== false || entry.manifest.tools.allow.some((tool) => MUTATING_TOOLS.has(tool))) fail("WRITER_UNAVAILABLE_IN_READONLY_MILESTONE", `direct Agent ${role} is not read-only`);
@@ -389,10 +389,40 @@ function directAgentRunner({ agentRegistry, backend, configurationProvider, webA
     });
     const attemptId = `attempt-${crypto.randomUUID()}`;
     const handle = createAgentRunHandle({ runId, nodeId, attemptId, assignment, agentSpec });
-    const launched = await backend.launch({ handle, agentSpec, assignment, mode: "background", signal });
-    const terminal = await backend.awaitTerminal(launched.handle, { bindingId: launched.binding.bindingId, intent: "run", signal });
-    if (terminal.authoritative !== true || terminal.outcome !== "completed") fail(terminal.error?.code ?? "DIRECT_AGENT_FAILED", `direct Agent ${role} did not complete`, { terminal });
-    return terminal;
+    let recordStarted = false;
+    let recordSettled = false;
+    if (recordStore?.begin && typeof contextProvider === "function") {
+      const context = await contextProvider();
+      const planDigest = digestValue({ kind: "direct-agent", role, assignmentHash: assignment.assignmentHash, agentSpecHash: agentSpec.specHash });
+      await recordStore.begin({ id: runId, sessionId: context.sessionId, repository: context.repository, configurationDigest: context.configurationDigest, planDigest, executionEnvelopeDigest: digestValue({ runId, nodeId, planDigest }), input: { task }, inputDigest: digestValue({ task }) });
+      await recordStore.update(runId, { status: "running" });
+      recordStarted = true;
+    }
+    try {
+      const launched = await backend.launch({ handle, agentSpec, assignment, mode: "background", signal });
+      const terminal = await backend.awaitTerminal(launched.handle, { bindingId: launched.binding.bindingId, intent: "run", signal });
+      if (terminal.authoritative !== true || terminal.outcome !== "completed") {
+        if (recordStarted) { await recordStore.update(runId, { status: terminal.outcome, receiptDigest: terminal.receiptId ?? null }).catch(() => {}); recordSettled = true; }
+        fail(terminal.error?.code ?? "DIRECT_AGENT_FAILED", `direct Agent ${role} did not complete`, { terminal });
+      }
+      if (!artifactStore || typeof artifactStore.publish !== "function") {
+        if (recordStarted) { await recordStore.update(runId, { status: "completed", receiptDigest: terminal.receiptId }); recordSettled = true; }
+        return terminal;
+      }
+      const contents = JSON.stringify({ formatVersion: 1, kind: "direct-agent-result", role, receiptId: terminal.receiptId, result: terminal.result ?? null });
+      const artifactRef = await artifactStore.publish({
+        id: `art-${digestValue([runId, nodeId, attemptId, terminal.receiptId]).slice(7, 39)}`,
+        producer: { runId, revision: 0, nodeId, attemptId },
+        mediaType: "application/json",
+        contents,
+        provenance: { sourceDigest: assignment.assignmentHash, policyDigest: agentSpec.effectivePolicyHash, redaction: "bounded" },
+      });
+      if (recordStarted) { await recordStore.update(runId, { status: "completed", artifacts: [{ id: artifactRef.id, digest: artifactRef.digest, relativePath: artifactRef.storage.relativePath, byteLength: artifactRef.byteLength }], artifactsRetained: true, receiptDigest: terminal.receiptId }); recordSettled = true; }
+      return Object.freeze({ ...terminal, artifactRef });
+    } catch (cause) {
+      if (recordStarted && !recordSettled) await recordStore.update(runId, { status: "interrupted" }).catch(() => {});
+      throw cause;
+    }
   };
 }
 
@@ -697,7 +727,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
   });
   const coordinator = dependencies.managedCoordinator ?? createManagedCoordinator({ coordinator: rawCoordinator, recordStore, contextProvider });
   const runManagement = dependencies.runManagement ?? createRunManagementService({ recordStore, coordinator });
-  const runDirectAgent = dependencies.runDirectAgent ?? directAgentRunner({ agentRegistry, backend, configurationProvider, webAuthorizer });
+  const runDirectAgent = dependencies.runDirectAgent ?? directAgentRunner({ agentRegistry, backend, configurationProvider, webAuthorizer, artifactStore, recordStore, contextProvider });
   const goalPlanner = dependencies.goalPlanner ?? (async (plannerContext) => {
     const objectiveText = typeof plannerContext.objective?.inputDigest === "string"
       ? JSON.stringify({ objectiveRef: plannerContext.objective.ref, inputDigest: plannerContext.objective.inputDigest })
@@ -835,6 +865,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
       verdict: ["pass", "fail", "blocked"].includes(terminal.result?.verdict) ? terminal.result.verdict : "blocked",
       contextMode: "fresh",
       receiptDigest: terminal.receiptId,
+      artifactRef: terminal.artifactRef ?? null,
     };
   };
   const rawUltraRouter = dependencies.rawUltraRouter ?? dependencies.ultraRouter ?? createUltraRunRouter({
@@ -847,7 +878,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
           nodeId: "ultra-agent",
           signal,
         });
-        const routeResult = { makerReceiptDigest: maker.receiptId, result: maker.result };
+        const routeResult = { makerReceiptDigest: maker.receiptId, makerArtifactRef: maker.artifactRef ?? null, result: maker.result };
         const verification = await verifyUltraResult({ runId, route: "agent", routeResult, plan, input, signal });
         return { status: verification.verdict === "pass" ? "completed" : "failed", routeResult, verification, scale: { logicalAssignments: plan.scale.logicalAssignments, observedAssignments: 2, costVisibility: "VISIBLE" } };
       },

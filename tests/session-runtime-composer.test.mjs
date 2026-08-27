@@ -152,6 +152,10 @@ test("single Agent live path uses the composer coordinator and publishes a priva
   const { composer } = await harness(t);
   const direct = await composer.runDirectAgent({ role: "reviewer", task: "Direct metering probe.", runId: "direct-metering-run", nodeId: "direct-review" });
   assert.equal(typeof direct.completion?.usage?.total, "number", JSON.stringify(direct));
+  assert.equal(direct.artifactRef.kind, "artifact-ref");
+  const directRecord = await composer.recordStore.require("direct-metering-run");
+  assert.equal(directRecord.status, "completed");
+  assert.equal(directRecord.artifacts.length, 1);
   const service = createAgentControlService({ rootDir, orchestration: composer.coordinator, configurationProvider: composer.configurationProvider });
   const planned = await service.dispatch({ subcommand: "plan", agentId: "reviewer", input: { task: "Review package metadata without changes." } });
   assert.equal(planned.status, "AGENT_PLAN");
@@ -306,6 +310,7 @@ test("Ultra Agent and Workflow routes use the same composer and fresh verifier",
   assert.equal(agent.result.verification.contextMode, "fresh");
   assert.equal(agent.result.scale.logicalAssignments, agent.plan.scale.logicalAssignments);
   assert.equal((await composer.recordStore.require("ultra-agent-test")).status, "completed");
+  assert.equal((await composer.recordStore.require("ultra-agent-test:verifier:0")).artifacts.length, 1);
   const lightVerifierRequest = requests.find((request) => request.ownerRunId === "ultra-agent-test:verifier:0");
   assert.match(lightVerifierRequest.task, /"boundInput":\{"task":"Review the package metadata\."\}/u);
   assert.match(lightVerifierRequest.task, /Do not invent acceptance requirements outside the bound scope/u);
