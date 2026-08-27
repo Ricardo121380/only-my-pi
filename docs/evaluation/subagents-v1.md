@@ -29,6 +29,8 @@ Run the corpus with:
 node --test tests/subagents-evaluation.test.mjs
 ```
 
-Live gates belong to S5 and remain `NOT_RUN_BY_POLICY` until separately
-authorized. The offline report always carries
+S5 protected live gates were separately authorized and closed for their exact
+Stable source/evidence chain. They do not turn this offline corpus into live
+quality evidence and do not authorize a daily Pi-home installation. M8 adds a
+separate daily-session matrix and keeps this report's
 `claim=CONTRACT_PREVIEW_OFFLINE_SIMULATOR` and `liveQualityClaim=false`.

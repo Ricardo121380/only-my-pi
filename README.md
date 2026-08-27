@@ -37,9 +37,24 @@ packages/     First-party protocol/recovery seams and offline fixtures
 scripts/      Repository checks and package governance tooling
 ```
 
+## Current milestone
+
+The governed S0-S5 kernel reached Stable on 2026-08-27: its exact source,
+protected evidence, and receipt chain passed 31/31 required gates. The active
+M8 milestone is different: **Daily Harness Closure** connects that verified
+kernel to a normal interactive Pi session, introduces borrowed package
+ownership, Base + Overlay configuration, private run artifacts, and a
+read-only `/omp run` experience. Until M8's D1-D15 gates and real-root
+installation rehearsal pass, Stable describes the pinned kernel evidence—not a
+claim that the current checkout is already installed as the user's daily
+Harness.
+
+- [M8 Daily Harness Closure plan](docs/plans/2026-08-27-m8-daily-harness-closure.md)
+- [Current implementation status](docs/STATUS.md)
+
 ## Current research
 
-- [Subagents Orchestration v2 and UltraRun successor plan (S0–S5; cumulative Beta achieved, Stable closure pending)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
+- [Subagents Orchestration v2 and UltraRun successor plan (S0-S5 Stable kernel achieved)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
 - [Codex successor development Goal for S0–S5](codex/goals/develop-only-my-pi-subagents-ultrarun.md)
 - [Historical Harness MVP development plan (M0–M7, complete)](docs/plans/2026-08-16-only-my-pi-development-plan.md)
 - [Historical Codex Harness MVP Goal](codex/goals/develop-only-my-pi.md)
@@ -119,7 +134,7 @@ receipts bounded. DeepSeek conformance, ACP v1, and workspace checkpoint remain
 non-default Labs modules with the explicit boundaries in the
 [Labs registry](docs/LABS.md).
 
-The S0–S5 Beta implementation now contains a unified
+The S0-S5 Stable kernel now contains a unified
 `packages/subagents/` facade. It provides typed AgentTemplate v2,
 ResolvedAgentSpec, TaskAssignment and terminal receipts; exact structured-
 delegation and extension-RPC v1 adapters over one pinned `pi-subagents`
@@ -155,8 +170,8 @@ worst-case reservation after recovery. Deadlines and reported output/token/cost
 overruns fail closed. Without correlated process-terminal proof, a local timeout
 is non-authoritative and leaves the run orphaned. Mutating dispatch also requires
 an executor that advertises audited path enforcement; a worktree alone is not
-treated as a path allowlist. General production execution remains
-contract-preview outside the separately governed protected Beta fixtures.
+treated as a path allowlist. General daily-session execution remains an M8
+integration surface outside the separately governed protected fixtures.
 Restart-safe plan lookup and durable status/cancel/resume are now implemented
 through the versioned Plan Store sidecar. S3 BatchSwarm also reuses the same
 event chain and parent reservation across crash recovery: proven completed
@@ -165,8 +180,9 @@ the run. S4 now adds a Pi-native SwarmGoal controller, UltraRun router,
 immutable artifact store, and writer handoff contract. These are logical layers
 over the same RunCoordinator and sole `pi-subagents` backend; they do not
 connect Pi to Kimi Code or add a second scheduler. The protected two-item
-homogeneous BatchSwarm check is now source-bound Beta evidence; dynamic-goal
-live execution remains `NOT_RUN_BY_POLICY`. General live writer admission
+homogeneous BatchSwarm check is now source-bound Stable evidence. Dynamic-goal
+live execution is implemented as a logical controller but is not exposed as a
+daily-session claim until M8 injects its real session composer. General live writer admission
 remains `UNAVAILABLE`
 because the public backend cannot prove a per-path allowlist. S5-C now provides
 one separately authorized, synthetic-fixture producer for the protected
@@ -195,8 +211,9 @@ $0.00506. The final release run passed 25/25 deterministic and 4/4 protected
 gates. Its five signed evidence documents retain no raw output, credentials,
 host paths, session IDs, patch bytes, or changed paths. The three external
 one-time authorizations were subsequently downgraded to inert templates.
-Stable remains unavailable until its separately declared soak/compatibility
-requirements pass. Private signing keys remain outside the repository.
+Stable was subsequently closed by the source/evidence/receipt chain documented
+in `docs/STATUS.md`. Private signing keys remain outside the repository. That
+promotion does not authorize real Pi-home installation or general writer use.
 
 The S5-A Alpha capture producer is now implemented behind
 `npm run plan:subagents-live-evidence`. It composes a read-only Agent terminal,

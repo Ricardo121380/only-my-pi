@@ -1,8 +1,29 @@
 # only-my-pi status
 
-Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-24** · Merged
-to `main`: **2026-08-17** · Pi **0.84.1** · Node **25.8.0** · macOS
+Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-27** · Stable
+kernel merged to `main`: **2026-08-27** · Pi **0.84.1** · Node **25.8.0** · macOS
 `darwin-arm64`
+
+## Active milestone — M8 Daily Harness Closure
+
+The S0-S5 kernel is Stable for the pinned source/evidence/receipt chain below,
+but the product is not yet installed in the real Pi home and the normal
+`/omp` extension does not yet inject the unified live orchestration runtime.
+M8 closes that product gap. Its implementation branch is
+`codex/m8-daily-harness` and its gate map is
+[`../verification/daily-harness-gates-v1.json`](../verification/daily-harness-gates-v1.json).
+
+M8 starts from these explicit truths:
+
+- the current real Pi home already owns nine third-party package entries;
+- only-my-pi must borrow verified matching packages and must never remove them
+  on uninstall or rollback;
+- Agent, BatchSwarm, WorkflowPlan, SwarmGoal and UltraRun remain one logical
+  stack over the sole `pi-subagents` physical runtime;
+- the production milestone is read-only; the historical protected writer is
+  evidence for a synthetic fixture and is not a daily writer capability;
+- real Pi-home mutation happens only after D1-D12/D15, shadow installation,
+  and an exact reviewed apply/rollback/reapply plan have passed.
 
 The Harness MVP was fast-forwarded to private repository `main` at
 `12b24b59980386683a90af8250a4de4ff738d67c`. The post-merge `main` workflow
@@ -20,11 +41,10 @@ This page is a checked-in handoff record. Exact package metadata and risk tags
 live in [`inventory/packages.lock.json`](../inventory/packages.lock.json); this
 summary intentionally contains no credentials, sessions, or host paths.
 
-## Successor roadmap — S0–S5 Beta achieved for source `6004e61`
+## Historical successor roadmap — S0-S5 Stable kernel achieved
 
-The M0–M7 Harness MVP described below remains the current released baseline.
-Development of its S0–S5 successor has started on the isolated
-`codex/subagents-ultrarun-v2` branch:
+The M0-M7 Harness MVP and S0-S5 successor are historical completed baselines.
+The exact Stable source/evidence/receipt chain is recorded later on this page:
 
 - [`plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md`](plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
 - [`../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../codex/goals/develop-only-my-pi-subagents-ultrarun.md)

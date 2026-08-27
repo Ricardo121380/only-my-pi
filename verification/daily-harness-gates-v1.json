@@ -1,0 +1,28 @@
+{
+  "formatVersion": 1,
+  "id": "daily-harness-gates-v1",
+  "status": "IMPLEMENTING",
+  "baseStableReceipt": "verification/receipts/2026-08-27-subagents-stable.json",
+  "policy": {
+    "shell": false,
+    "ciDeterministic": ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D15"],
+    "protected": ["D13", "D14"]
+  },
+  "gates": [
+    { "id": "D1", "name": "Package ownership and uninstall preservation", "status": "PENDING" },
+    { "id": "D2", "name": "Shadow install update rollback uninstall", "status": "PENDING" },
+    { "id": "D3", "name": "Overlay preset and model configuration", "status": "PENDING" },
+    { "id": "D4", "name": "Real Pi runtime composition", "status": "PENDING" },
+    { "id": "D5", "name": "Agent and BatchSwarm execution", "status": "PENDING" },
+    { "id": "D6", "name": "Workflow artifact data flow", "status": "PENDING" },
+    { "id": "D7", "name": "SwarmGoal revisions and approval", "status": "PENDING" },
+    { "id": "D8", "name": "Ultra routing and verification", "status": "PENDING" },
+    { "id": "D9", "name": "Public Web and SSRF enforcement", "status": "PENDING" },
+    { "id": "D10", "name": "Project Gate Manifest and session grant", "status": "PENDING" },
+    { "id": "D11", "name": "Run recovery cancellation and retention", "status": "PENDING" },
+    { "id": "D12", "name": "Real Pi no-model smoke", "status": "PENDING" },
+    { "id": "D13", "name": "Protected live-model matrix", "status": "PENDING" },
+    { "id": "D14", "name": "Real-root rollback and reapply rehearsal", "status": "PENDING" },
+    { "id": "D15", "name": "Documentation and evidence consistency", "status": "PENDING" }
+  ]
+}
