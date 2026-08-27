@@ -11,7 +11,7 @@ import {
   parseM8LiveAcceptanceArgs,
   runPiM8Phase,
 } from "../scripts/m8-live-acceptance.mjs";
-import { M8_LIVE_RECORD_TYPE, createM8ProtectedSequentialPlan, m8ProtectedConfiguration, m8ProtectedGoalPlannerPolicy, m8ProtectedToolCallLimit, m8ProtectedTurnLimit, m8TerminalUsage } from "../packages/subagents/release/m8-live-acceptance-extension.mjs";
+import { M8_LIVE_RECORD_TYPE, M8_PROTECTED_ULTRA_COMPLEX_ACCEPTANCE, createM8ProtectedSequentialPlan, m8ProtectedConfiguration, m8ProtectedGoalPlannerPolicy, m8ProtectedToolCallLimit, m8ProtectedTurnLimit, m8ProtectedUltraWorkflowArtifacts, m8TerminalUsage } from "../packages/subagents/release/m8-live-acceptance-extension.mjs";
 import { protectedEvidenceDigest, validateDailyHarnessProtectedEvidence } from "../scripts/lib/daily-harness-gates.mjs";
 
 test("M8 live CLI is plan-first and run requires explicit artifact/output confirmation", () => {
@@ -123,6 +123,23 @@ test("protected sequential Workflow reserves extra context for the final verifie
   assert.deepEqual(plan.nodes.map((node) => node.budget.maxTokens), [8000, 16000, 24000]);
   assert.equal(plan.nodes.reduce((sum, node) => sum + node.budget.maxTokens, 0), plan.budget.maxTokens);
   assert.equal(plan.nodes.reduce((sum, node) => sum + node.budget.maxCostUsd, 0), plan.budget.maxCostUsd);
+});
+
+test("protected Ultra makes model-verifiable criteria explicit and proves the workflow ArtifactRefs in the parent", () => {
+  assert.deepEqual(M8_PROTECTED_ULTRA_COMPLEX_ACCEPTANCE, [
+    "the four parent-supplied fixture facts are internally consistent",
+    "parent-supplied fact provenance is retained in artifact content",
+    "unsupported claims are explicitly named",
+  ]);
+  const complex = { result: { routeResult: { artifactEvidence: ["explore", "review", "synthesize", "verify"].map((nodeId) => ({ nodeId, artifactId: `art-${nodeId}`, digest: `sha256:${"a".repeat(64)}`, result: { ignored: true } })) } } };
+  assert.deepEqual(m8ProtectedUltraWorkflowArtifacts(complex).map(({ nodeId, artifactId }) => ({ nodeId, artifactId })), [
+    { nodeId: "explore", artifactId: "art-explore" },
+    { nodeId: "review", artifactId: "art-review" },
+    { nodeId: "synthesize", artifactId: "art-synthesize" },
+    { nodeId: "verify", artifactId: "art-verify" },
+  ]);
+  complex.result.routeResult.artifactEvidence.pop();
+  assert.throws(() => m8ProtectedUltraWorkflowArtifacts(complex), /every expected maker/u);
 });
 
 test("protected configuration pins low thinking and only narrows daily runtime budgets", () => {

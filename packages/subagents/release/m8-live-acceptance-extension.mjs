@@ -20,6 +20,11 @@ import { createSessionRuntimeComposer } from "../runtime/session-composer.mjs";
 export const M8_LIVE_REQUEST_ENV = "OMP_M8_LIVE_ACCEPTANCE_REQUEST";
 export const M8_LIVE_RECORD_TYPE = "omp_m8_live_acceptance_record_v1";
 export const M8_LIVE_ERROR_TYPE = "omp_m8_live_acceptance_error_v1";
+export const M8_PROTECTED_ULTRA_COMPLEX_ACCEPTANCE = Object.freeze([
+  "the four parent-supplied fixture facts are internally consistent",
+  "parent-supplied fact provenance is retained in artifact content",
+  "unsupported claims are explicitly named",
+]);
 
 const MAX_REQUEST_BYTES = 64 * 1024;
 const SOURCE_COMMIT = /^[a-f0-9]{40}$/u;
@@ -119,6 +124,22 @@ function assertion(id, value) {
 
 function ensure(condition, code, message) {
   if (!condition) fail(code, message);
+}
+
+export function m8ProtectedUltraWorkflowArtifacts(complex) {
+  const evidence = complex?.result?.routeResult?.artifactEvidence;
+  ensure(Array.isArray(evidence), "M8_ULTRA_ARTIFACTS_MISSING", "M8 Ultra workflow omitted ArtifactRef evidence");
+  const byNode = new Map(evidence.map((item) => [item?.nodeId, item]));
+  const expected = ["explore", "review", "synthesize", "verify"];
+  ensure(expected.every((nodeId) => {
+    const item = byNode.get(nodeId);
+    return typeof item?.artifactId === "string" && typeof item?.digest === "string" && item.digest.startsWith("sha256:");
+  }), "M8_ULTRA_ARTIFACTS_MISSING", "M8 Ultra workflow did not publish every expected maker, synthesis, and verifier ArtifactRef");
+  return Object.freeze(expected.map((nodeId) => Object.freeze({
+    nodeId,
+    artifactId: byNode.get(nodeId).artifactId,
+    digest: byNode.get(nodeId).digest,
+  })));
 }
 
 function taskNode(id, role, needs = [], { maxTokens = 8_000, maxCostUsd = 0.04 } = {}) {
@@ -270,11 +291,12 @@ async function runUltra(composer, request) {
   const light = await composer.ultraRouter.run(strategy, lightRequest, { input: { task: `Perform a short read-only metadata review. ${fixtureFacts}`, scope: ["parent-supplied-fixture-facts"], acceptance: ["structured evidence", "provenance retained", "unsupported claims named"] } });
   ensure(light.plan.route === "agent" && light.result.status === "completed" && light.result.verification?.contextMode === "fresh", "M8_ULTRA_LIGHT_FAILED", "M8 Ultra light route failed");
   const complexRequest = { ...lightRequest, id: `m8-ultra-complex-${request.runNonce}`, taskDigest: digestValue("M8 complex review"), complexity: 60, itemCount: 3, preferredWorkflow: "source-review-v2", origin: { kind: "human", requestDigest: digestValue("M8 human complex") } };
-  const complex = await composer.ultraRouter.run(strategy, complexRequest, { input: { task: `Perform a multi-angle read-only release review and fresh verification. ${fixtureFacts}`, scope: ["parent-supplied-fixture-facts"], acceptance: ["maker artifacts", "synthesis artifact", "provenance retained", "unsupported claims named"] } });
+  const complex = await composer.ultraRouter.run(strategy, complexRequest, { input: { task: `Perform a multi-angle read-only release review and fresh verification. ${fixtureFacts}`, scope: ["parent-supplied-fixture-facts"], acceptance: M8_PROTECTED_ULTRA_COMPLEX_ACCEPTANCE } });
   ensure(complex.plan.route === "workflow" && complex.result.status === "completed" && complex.result.verification?.contextMode === "fresh", "M8_ULTRA_COMPLEX_FAILED", "M8 Ultra complex route failed");
+  const complexArtifacts = m8ProtectedUltraWorkflowArtifacts(complex);
   return [
     assertion("ultra-agent-route", { planDigest: light.plan.planDigest, route: light.plan.route, verification: light.result.verification, scale: light.result.scale }),
-    assertion("ultra-workflow-route", { planDigest: complex.plan.planDigest, route: complex.plan.route, verification: complex.result.verification, scale: complex.result.scale }),
+    assertion("ultra-workflow-route", { planDigest: complex.plan.planDigest, route: complex.plan.route, verification: complex.result.verification, scale: complex.result.scale, artifacts: complexArtifacts }),
   ];
 }
 
