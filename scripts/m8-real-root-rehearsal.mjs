@@ -96,12 +96,16 @@ async function settingsState(configRoot) {
   const bytes = await fs.readFile(path.join(configRoot, "settings.json"));
   const document = JSON.parse(bytes.toString("utf8"));
   const packageSources = (document.packages ?? []).map((entry) => typeof entry === "string" ? entry : entry?.source).filter(Boolean).sort();
+  const userPackageSources = packageSources.filter((source) => source.startsWith("npm:") || source.startsWith("git:"));
+  const managedPackageSources = packageSources.filter((source) => !userPackageSources.includes(source));
   const bindings = document.onlyMyPi?.packageBindings ?? [];
   const externalIds = bindings.filter((entry) => entry.binding === "external" && entry.owner === "user").map((entry) => entry.id).sort();
   return {
     rawSha256: sha256(bytes),
     semanticSha256: sha256(JSON.stringify(canonical(document))),
     packageSources,
+    userPackageSources,
+    managedPackageSources,
     externalIds,
     installed: document.onlyMyPi?.profileId === "daily" && typeof document.onlyMyPi?.generationId === "string",
     generationId: document.onlyMyPi?.generationId ?? null,
@@ -134,7 +138,11 @@ async function transactionEvidence(configRoot, transactionId) {
 }
 
 function requireInstalled(state, label) {
-  if (!state.installed || JSON.stringify(state.externalIds) !== JSON.stringify(EXTERNAL_IDS) || JSON.stringify(state.packageSources) !== JSON.stringify(EXPECTED_PACKAGES)) fail("M8_REHEARSAL_EXTERNAL_DRIFT", `${label} does not preserve the installed external package set`);
+  if (!state.installed
+    || JSON.stringify(state.externalIds) !== JSON.stringify(EXTERNAL_IDS)
+    || JSON.stringify(state.userPackageSources) !== JSON.stringify(EXPECTED_PACKAGES)
+    || state.managedPackageSources.length !== 1
+    || !state.managedPackageSources[0].startsWith("./only-my-pi/generations/")) fail("M8_REHEARSAL_EXTERNAL_DRIFT", `${label} does not preserve the installed external package set and sole first-party bundle`);
 }
 
 function outputPath(output) {
@@ -163,7 +171,7 @@ export async function executeM8RealRootRehearsal(args, { now = () => new Date() 
     if (rollback.status !== "COMMITTED") fail("M8_REHEARSAL_ROLLBACK_FAILED", "rollback did not commit");
     const restored = await settingsState(configRoot);
     const baselineMatches = restored.rawSha256 === args.baselineRawSha256 || restored.semanticSha256 === args.baselineSemanticSha256;
-    if (!baselineMatches || restored.installed || JSON.stringify(restored.packageSources) !== JSON.stringify(EXPECTED_PACKAGES)) fail("M8_REHEARSAL_BASELINE_DRIFT", "rollback did not restore the pre-install settings baseline");
+    if (!baselineMatches || restored.installed || JSON.stringify(restored.packageSources) !== JSON.stringify(EXPECTED_PACKAGES) || restored.managedPackageSources.length !== 0) fail("M8_REHEARSAL_BASELINE_DRIFT", "rollback did not restore the pre-install settings baseline");
     const reapplied = await runOmp(["install", "--artifact", args.artifact, "--profile", "daily", "--config-root", configRoot, "--apply", "--yes"], temporaryHome);
     if (reapplied.status !== "ARTIFACT_APPLIED" || reapplied.receipt?.status !== "COMMITTED") fail("M8_REHEARSAL_REAPPLY_FAILED", "artifact reapply did not commit");
     const smoke = await transactionEvidence(configRoot, reapplied.receipt.transactionId);
@@ -174,7 +182,7 @@ export async function executeM8RealRootRehearsal(args, { now = () => new Date() 
     if ((await sourceIdentity()).sourceCommit !== source.sourceCommit) fail("M8_REHEARSAL_SOURCE_DRIFT", "source changed during real-root rehearsal");
     const assertions = [
       assertion("artifact-applied", { artifact: artifact.sha256, generationId: before.generationId, status: firstApply.receipt.status }),
-      assertion("external-packages-preserved", { ids: afterFirstApply.externalIds, packageSources: afterFirstApply.packageSources }),
+      assertion("external-packages-preserved", { ids: afterFirstApply.externalIds, packageSources: afterFirstApply.userPackageSources, managedBundleCount: afterFirstApply.managedPackageSources.length }),
       assertion("no-model-smoke", smoke),
       assertion("rollback-restored", { rawMatch: restored.rawSha256 === args.baselineRawSha256, semanticMatch: restored.semanticSha256 === args.baselineSemanticSha256, packageSources: restored.packageSources }),
       assertion("reapplied", { artifact: artifact.sha256, transaction: smoke.transactionId, generationId: final.generationId }),
