@@ -94,13 +94,20 @@
     "planModeBehavior": { "status": "PASS", "evidence": ["docs/compatibility/m9-upstream-candidates.md", "tests/upstream-compatibility.test.mjs", "verification/evidence/m9-pi-0.84.3-full-stack-no-model.json"] },
     "resourceSoak": { "status": "PASS", "evidence": ["tests/subagents-resource-leak.test.mjs"] },
     "fullRegression": { "status": "PASS", "evidence": [".github/workflows/ci.yml", "tests/upstream-compatibility-gates.test.mjs", "verification/upstream-compatibility-gates-v1.json"] },
-    "liveReadOnlyMatrix": { "status": "NOT_RUN_BY_POLICY", "evidence": ["docs/compatibility/m9-upstream-candidates.md"] }
+    "liveReadOnlyMatrix": {
+      "status": "PASS",
+      "evidence": [
+        "docs/compatibility/m9-upstream-candidates.md",
+        "verification/protected/2026-08-28-m9-candidate-live-readonly-matrix.json",
+        "verification/receipts/2026-08-28-m9-upstream-compatibility.json"
+      ]
+    }
   },
   "decision": {
     "state": "HOLD",
-    "reasonCode": "CANDIDATE_PROTECTED_MATRIX_PENDING",
+    "reasonCode": "CANDIDATE_PROMOTION_REVIEW_PENDING",
     "defaultPiVersion": "0.84.1",
     "defaultSubagentsVersion": "0.45.2"
   },
-  "contractDigest": "sha256:32879d3b5ec460f77a32a66c1faf218c0fda1f4867bbd87660b24b0617a6db87"
+  "contractDigest": "sha256:0d12becabe3c4079bfdf742304127e2003500b1c397c6664335414adad9a5266"
 }

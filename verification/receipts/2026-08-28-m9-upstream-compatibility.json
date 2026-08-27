@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "kind": "only-my-pi-upstream-compatibility-report",
+  "status": "COMPLETE",
+  "sourceCommit": "a5a71b596e8983ffbba8075f02bc2b39ba19a72b",
+  "executionCommit": "2af92de9f701d305f7263aeecec017b7c10bd696",
+  "evidenceCommit": "2af92de9f701d305f7263aeecec017b7c10bd696",
+  "manifest": {
+    "id": "upstream-compatibility-gates-v1",
+    "digest": "sha256:b8e6dd3725f1be2d2d3151f1eb0540d680a6dad96c69a4b6b3c748d427a8be34",
+    "gateIds": [
+      "U1",
+      "U2",
+      "U3",
+      "U4",
+      "U5",
+      "U6",
+      "U7",
+      "U8",
+      "U9"
+    ]
+  },
+  "contract": {
+    "id": "only-my-pi-m9-upstream-compatibility",
+    "digest": "sha256:32879d3b5ec460f77a32a66c1faf218c0fda1f4867bbd87660b24b0617a6db87",
+    "decision": "HOLD",
+    "baseline": {
+      "piVersion": "0.84.1",
+      "subagentsVersion": "0.45.2"
+    },
+    "candidate": {
+      "piVersion": "0.84.3",
+      "subagentsVersion": "0.57.0"
+    }
+  },
+  "startedAt": "2026-08-27T18:35:10.156Z",
+  "completedAt": "2026-08-27T18:36:24.943Z",
+  "passed": true,
+  "deterministicPassed": true,
+  "gates": [
+    {
+      "id": "U1",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 391,
+      "stdoutBytes": 1354,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:959ab01a5243ffe810a94f2c800a4a2e01237b147e0a367baea5a41a5940a602",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "U2",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 275,
+      "stdoutBytes": 3592,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:7ff65dc98c711a88987801ba5420bd6bfb2d3dd0a1093d278382a3d7bd50220d",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "U3",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 9871,
+      "stdoutBytes": 1388,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:7ed601dd2d417b67e6e96682658fa92e4de94a7a0e5a89f7932c37585ab3ec85",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "U4",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 7290,
+      "stdoutBytes": 4416,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:9a1aaf001b7105db595755f9fea5faf5b884e5afa13226ab60a4812a60ec179e",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "U5",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 396,
+      "stdoutBytes": 1853,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:5b0b493c2e3568a1f2c857b07d01ebe55c32cf1df8d086759a94e3cf9a05aae2",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "U6",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 15049,
+      "stdoutBytes": 896,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:09e9f5def7578398ad6d00368b11bc450095e0299fea0ca406dce67cfd06d5c3",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "U7",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 2047,
+      "stdoutBytes": 2338,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:ba69e7bc22dce5021d5f412cca93ddfdb959be71c29822a80a2be6cf815bb5ad",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "U8",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 39439,
+      "stdoutBytes": 65142,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:6012a63e5766530199c39244473167083321add96438317bc952cd0c7f02bb79",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "U9",
+      "execution": "protected-evidence",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": null,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "expectationPassed": true,
+      "durationMs": 0,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evidence": {
+        "evidenceId": "m9-candidate-live-readonly-matrix",
+        "evidenceDigest": "sha256:ec6b8b70a397471a79279aab5634bd1ceb213b157cf1e368928afa12ca07e5a4",
+        "assertionCount": 17
+      }
+    }
+  ],
+  "summary": {
+    "required": 9,
+    "deterministic": 8,
+    "deterministicPassed": 8,
+    "protected": 1,
+    "protectedPassed": 1,
+    "protectedNotRunByPolicy": 0
+  },
+  "privacy": {
+    "rawOutputStored": false,
+    "hostPathsStored": false,
+    "secretsStored": false,
+    "outputFingerprintsMayLeakShortPredictableValues": true
+  },
+  "authorization": {
+    "providerRequests": "AUTHORIZED_BY_IMPORTED_EVIDENCE",
+    "realPiHome": "AUTH_AND_PRIVATE_RUN_STATE_BY_IMPORTED_EVIDENCE",
+    "publish": "NOT_AUTHORIZED",
+    "release": "NOT_AUTHORIZED"
+  }
+}

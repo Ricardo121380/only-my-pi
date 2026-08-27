@@ -15,7 +15,7 @@ M9 evaluates a new upstream package set without changing the Stable defaults or 
 
 ### Pi 0.84.3
 
-The candidate keeps the Node `>=22.19.0` floor. Its relevant upstream changes include safer managed package updates, session-scoped model/thinking selection, and corrected DeepSeek V4 Flash thinking-level handling. M9 does not hard-code OpenCode Go or any model credential.
+The candidate keeps the Node `>=22.19.0` floor. Its relevant upstream changes include safer managed package updates, session-scoped model/thinking selection, and corrected DeepSeek V4 Flash thinking-level handling. Production role configuration does not hard-code OpenCode Go or any model credential. The protected U9 evidence runner is deliberately bound to the separately authorized `cc-switch-open-code-go/deepseek-v4-flash` tuple so that a different Provider or model cannot be substituted into the same evidence claim.
 
 ### pi-subagents 0.57.0
 
@@ -43,17 +43,27 @@ The candidate adds broader cookie/auth-fetch functionality upstream. only-my-pi 
 
 The complete 13-entry extension stack has been launched under Pi `0.84.3` in offline RPC/no-session mode: the selected four agent extensions, plan mode, Web access, subagents, LSP, usage, three first-party only-my-pi extensions, and a non-tool observer. The observer proved unique `/plan`, `/lsp`, `/usage`, `/omp`, `/omp-context`, sessions/context/review commands; one physical owner for the subagent tools; the expected Web and LSP tools; no active first-party model tool; no active `intercom`; and no duplicate command or tool registration. It submitted no prompt and dispatched no child.
 
+## Protected U9 live-model matrix
+
+U9 is complete. Source `a5a71b596e8983ffbba8075f02bc2b39ba19a72b` was packed into a fixed local artifact with SHA-256 `746d171f580a0c58d6f58a5a4c600ecd0487d59c1b341909a99a5e7842da7877`; the direct evidence-only child is `2af92de9f701d305f7263aeecec017b7c10bd696`. The candidate installation audit remained bound to Pi `0.84.3`, `pi-subagents@0.57.0`, and `pi-web-access@0.25.0` before and after the run. The low-sensitivity result is recorded in [`2026-08-28-m9-candidate-live-readonly-matrix.json`](../../verification/protected/2026-08-28-m9-candidate-live-readonly-matrix.json), and the combined U1-U9 result is recorded in [`2026-08-28-m9-upstream-compatibility.json`](../../verification/receipts/2026-08-28-m9-upstream-compatibility.json). The receipt intentionally retains the execution-time contract digest from the evidence commit; the later machine-contract update records that U9 passed and changes only the post-evidence decision reason to promotion review pending.
+
+The protected matrix passed all 17 assertions: single Agent, BatchSwarm, Workflow ArtifactRef transfer, SwarmGoal replan, Ultra Agent and Workflow routes, public Web, cancellation, preparation plus cross-session resume, budget denial, writer denial, candidate artifact/runtime identity, usage metering, and pricing authority. It stored neither raw model output, host paths, nor credentials. The real Pi home was used only for existing runtime authentication and private run state; byte digests of `settings.json` and the installed generation identity were unchanged.
+
+OpenCode Go is a fixed-fee subscription rather than a metered token-price Provider. The protected runner therefore records the verified billing mode explicitly: `$10` fixed fee, zero variable input/output price, and the fixed subscription fee excluded from the per-run `costUsd` subtotal. Pi's implicit zero-filled price metadata is not accepted as pricing authority. The recorded `24,960` tokens and three tool calls are a low-sensitivity subtotal from two directly metered terminal paths, not a claim that every nested child token was aggregated. No pricing override was written to the user's global preferences.
+
 ## Current decision
 
 The current decision is `HOLD`. Manifest/source-surface, strict RPC,
 delegation, capability-ceiling, isolated session composition, all five
 read-only executor paths, background/cancel/resume adapter behavior, Web
 black-box security, 100-cycle-per-version resource disposal, and the complete
-repository regression now pass. The protected live read-only matrix must still
-finish before promotion. This document must be updated alongside the
-machine-readable contract as that final scope advances.
+repository regression now pass. The protected live read-only matrix also
+passed 17/17 assertions and was imported into a complete U1-U9 receipt. The
+remaining `HOLD` is a deliberate promotion-review boundary, not a missing-test
+state: the Stable defaults cannot change until a separate reviewed decision
+explicitly approves the candidate versions.
 
-The complete repository regression has since passed with 706/706 tests. M9 is
+The complete repository regression has since passed with 711/711 tests. M9 is
 now represented by a fixed U1-U9 gate contract:
 
 | Gate | Scope | Current policy |
@@ -69,8 +79,8 @@ now represented by a fixed U1-U9 gate contract:
 | U9 | candidate live read-only model matrix | protected evidence-only |
 
 Ordinary CI executes U1-U8 with no credentials and `shell:false`. U9 has no
-command tuple and cannot be triggered by that runner. Therefore the remaining
-promotion blocker is now only the source-bound protected U9 matrix, not the
-deterministic regression. Until U9 is complete and reviewed, the decision stays
-`HOLD`, the baseline versions remain the defaults, and the real Pi home is not
-changed.
+command tuple and cannot be triggered by that runner. U9 is imported only from
+the exact source-bound evidence file and has now passed. The decision stays
+`HOLD` with reason `CANDIDATE_PROMOTION_REVIEW_PENDING`, the baseline versions
+remain the defaults, and the real Pi home is not changed until a separate
+promotion review says otherwise.

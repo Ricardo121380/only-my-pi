@@ -67,7 +67,8 @@ test("M9 contract keeps Stable defaults and exact audited candidate provenance w
   assert.equal(contract.decision.defaultPiVersion, contract.baseline.piVersion);
   assert.equal(contract.decision.defaultSubagentsVersion, contract.baseline.subagentsVersion);
   assert.equal(contract.scopes.noModelRpc.status, "PASS");
-  assert.equal(contract.scopes.liveReadOnlyMatrix.status, "NOT_RUN_BY_POLICY");
+  assert.equal(contract.scopes.liveReadOnlyMatrix.status, "PASS");
+  assert.equal(contract.decision.reasonCode, "CANDIDATE_PROMOTION_REVIEW_PENDING");
   assert.doesNotThrow(() => validateUpstreamCompatibility(contract, { rootDir: ROOT, verifyEvidencePaths: true }));
 });
 
@@ -88,8 +89,41 @@ test("checked-in M9 no-model evidence is digest-bound to Pi 0.84.3 and pi-subage
   assert.equal(verified.childDispatch, "NOT_REQUESTED");
 });
 
+test("checked-in U9 completion receipt is bound to the protected evidence-only commit", async () => {
+  const evidence = JSON.parse(await fs.readFile(path.join(
+    ROOT,
+    "verification",
+    "protected",
+    "2026-08-28-m9-candidate-live-readonly-matrix.json",
+  ), "utf8"));
+  const receipt = JSON.parse(await fs.readFile(path.join(
+    ROOT,
+    "verification",
+    "receipts",
+    "2026-08-28-m9-upstream-compatibility.json",
+  ), "utf8"));
+  const u9 = receipt.gates.find((gate) => gate.id === "U9");
+  assert.equal(receipt.status, "COMPLETE");
+  assert.equal(receipt.sourceCommit, evidence.sourceCommit);
+  assert.equal(receipt.executionCommit, "2af92de9f701d305f7263aeecec017b7c10bd696");
+  assert.equal(receipt.evidenceCommit, receipt.executionCommit);
+  assert.equal(receipt.contract.digest, evidence.artifacts.contractDigest);
+  assert.deepEqual(receipt.summary, {
+    required: 9,
+    deterministic: 8,
+    deterministicPassed: 8,
+    protected: 1,
+    protectedPassed: 1,
+    protectedNotRunByPolicy: 0,
+  });
+  assert.equal(u9.status, "PASS");
+  assert.equal(u9.evidence.evidenceDigest, evidence.evidenceDigest);
+  assert.equal(u9.evidence.assertionCount, 17);
+});
+
 test("M9 contract rejects premature promotion, candidate package drift, and Stable default drift", () => {
   const contract = structuredClone(loadUpstreamCompatibility({ rootDir: ROOT }));
+  contract.scopes.liveReadOnlyMatrix.status = "NOT_RUN_BY_POLICY";
   contract.decision.state = "PROMOTE";
   contract.decision.defaultPiVersion = contract.candidate.piVersion;
   contract.decision.defaultSubagentsVersion = contract.candidate.subagentsVersion;
