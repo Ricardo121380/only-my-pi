@@ -106,34 +106,27 @@ async function prepareWebAgentOverrides({ rootDir, managedRoot, sessionId, webEx
   await ensurePrivateDirectory(managedRoot, path.join(managedRoot, "runtime"));
   await ensurePrivateDirectory(managedRoot, runtimeRoot);
   await ensurePrivateDirectory(managedRoot, agentsRoot);
-  const packageManifestPath = path.join(path.dirname(webExtensionPath), "package.json");
-  const wrapperPath = path.join(runtimeRoot, "safe-web-extension.mjs");
-  const wrapper = [
-    'import { createRequire } from "node:module";',
-    `const require = createRequire(${JSON.stringify(packageManifestPath)});`,
-    'const { createJiti } = require("jiti");',
-    'const jiti = createJiti(import.meta.url, { moduleCache: true });',
-    'export default async function onlyMyPiSafeWeb(pi) {',
+  const guardPath = path.join(runtimeRoot, "safe-web-guard.mjs");
+  const guard = [
+    'export default function onlyMyPiSafeWebGuard() {',
     '  delete process.env.PI_ALLOW_BROWSER_COOKIES;',
     '  delete process.env.FEYNMAN_ALLOW_BROWSER_COOKIES;',
-    `  const module = await jiti.import(${JSON.stringify(webExtensionPath)});`,
-    '  return module.default(pi);',
     '}',
     '',
   ].join("\n");
-  await fs.writeFile(wrapperPath, wrapper, { encoding: "utf8", mode: 0o600, flag: "w" });
-  await fs.chmod(wrapperPath, 0o600);
+  await fs.writeFile(guardPath, guard, { encoding: "utf8", mode: 0o600, flag: "w" });
+  await fs.chmod(guardPath, 0o600);
   for (const name of ["omp-researcher.md", "omp-source-verifier.md"]) {
     const source = path.join(rootDir, "bundles", "only-my-pi-agent-bundle", "agents", name);
     await assertRegularNoSymlink(source, `generated ${name}`);
     let content = await fs.readFile(source, "utf8");
     content = content.replace(/^tools:.*$/mu, "tools: read, grep, find, ls, web_search, source_check, fetch_content, get_search_content");
-    content = content.replace(/^extensions:$/mu, `extensions:\nsubagentOnlyExtensions: ${wrapperPath}`);
+    content = content.replace(/^extensions:$/mu, `extensions:\nsubagentOnlyExtensions: ${guardPath}, ${webExtensionPath}`);
     const target = path.join(agentsRoot, name);
     await fs.writeFile(target, content, { encoding: "utf8", mode: 0o600, flag: "w" });
     await fs.chmod(target, 0o600);
   }
-  return { runtimeRoot, agentsRoot, wrapperPath };
+  return { runtimeRoot, agentsRoot, guardPath, webExtensionPath };
 }
 
 function packageSettingSource(value) {
