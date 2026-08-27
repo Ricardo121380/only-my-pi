@@ -1,0 +1,9 @@
+{
+  "formatVersion": 1,
+  "id": "agent-correlated",
+  "kind": "agent",
+  "input": {
+    "expected": { "runId": "run-a", "nodeId": "node-a", "attemptId": "attempt-a", "childId": "child-a" },
+    "observed": { "runId": "run-a", "nodeId": "node-a", "attemptId": "attempt-a", "childId": "child-a" }
+  }
+}

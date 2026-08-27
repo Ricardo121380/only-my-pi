@@ -1,0 +1,30 @@
+{
+  "$schema": "approval-receipt-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "kind": "approval-receipt",
+  "planDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "parentRevisionDigest": null,
+  "repo": {
+    "identity": "github.com/example/only-my-pi",
+    "baseCommit": "0123456789abcdef0123456789abcdef01234567",
+    "allowedPaths": [],
+    "writerClaims": []
+  },
+  "effectivePolicyHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "capabilityEnvelopeHash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "executionEnvelopeDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "budgetEnvelopeHash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "scope": {
+    "mutation": "guarded",
+    "integration": "serial",
+    "delivery": "local",
+    "maxAssignments": 1,
+    "maxActiveChildren": 1
+  },
+  "origin": "interactive-user",
+  "approvedAt": "2026-08-18T00:00:00.000Z",
+  "approvedPlanRevision": 0,
+  "replanEnvelopeDigest": null,
+  "receiptId": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+}

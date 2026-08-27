@@ -1,0 +1,64 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/workflow-run-plan-v1.schema.json",
+  "contractStatus": "contract-preview",
+  "createdAt": "2026-08-19T00:00:00.000Z",
+  "executionEnvelope": {
+    "conditions": [],
+    "executionEnvelopeDigest": "sha256:9b0ef530b4d69dad166670f0a3ee8da3e8c4d1fec9e67c0625661d8359dcb6e7",
+    "formatVersion": 1,
+    "planDigest": "sha256:99020c26734242d2c001cae172d7d6f5d0f42bf36ed4b989a69881524882b121",
+    "runId": "example-run",
+    "runInputDigest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "sourceHash": "sha256:33fae9a987da354ada0276ba5b5e8f295e5bc5d69a848fa383f950639a2374fb",
+    "target": { "kind": "workflow", "id": "run-plan-example" }
+  },
+  "executionEnvelopeDigest": "sha256:9b0ef530b4d69dad166670f0a3ee8da3e8c4d1fec9e67c0625661d8359dcb6e7",
+  "formatVersion": 1,
+  "inputDigest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "inputPolicy": "caller-must-reprovide",
+  "plan": {
+    "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/workflow-plan-v1.schema.json",
+    "formatVersion": 1,
+    "contractStatus": "contract-preview",
+    "id": "run-plan-example",
+    "definitionVersion": "2.0.0",
+    "definitionDigest": "sha256:33fae9a987da354ada0276ba5b5e8f295e5bc5d69a848fa383f950639a2374fb",
+    "revision": { "number": 0, "parentPlanDigest": null, "reason": "initial-compile", "activationPolicy": "drain" },
+    "policy": {
+      "workspace": "shared-read-only",
+      "mutation": "none",
+      "egress": { "web": "deny", "mcp": "deny", "provider": "allow" },
+      "tools": { "allow": ["read"], "deny": ["bash", "edit", "write"] }
+    },
+    "policyDigest": "sha256:1c18a210d7c69fadb5ad2dc19f4faa08114a3c0813c17222c007e10cd637c3d9",
+    "budget": {
+      "maxNodes": 4,
+      "maxParallel": 1,
+      "maxDepth": 2,
+      "maxAttemptsPerNode": 1,
+      "maxWallTimeMs": 10000,
+      "maxOutputBytes": 4096,
+      "maxAssignments": 2,
+      "maxTokens": null,
+      "maxCostUsd": null
+    },
+    "nodes": [{
+      "budget": { "maxAttempts": 1, "maxCostUsd": null, "maxOutputBytes": 4096, "maxTokens": null, "timeoutMs": 1000 },
+      "cache": { "keyInputs": [], "mode": "never" },
+      "gateId": "test-contract",
+      "id": "verify",
+      "idempotency": "receipt",
+      "kind": "gate",
+      "needs": [],
+      "policy": { "egress": { "mcp": "deny", "provider": "allow", "web": "deny" }, "mutation": "none", "tools": { "allow": [], "deny": [] }, "workspace": "shared-read-only" }
+    }],
+    "entryNodeIds": ["verify"],
+    "terminalNodeId": "verify",
+    "planDigest": "sha256:99020c26734242d2c001cae172d7d6f5d0f42bf36ed4b989a69881524882b121"
+  },
+  "planDigest": "sha256:99020c26734242d2c001cae172d7d6f5d0f42bf36ed4b989a69881524882b121",
+  "runId": "example-run",
+  "sourceHash": "sha256:33fae9a987da354ada0276ba5b5e8f295e5bc5d69a848fa383f950639a2374fb",
+  "updatedAt": "2026-08-19T00:00:00.000Z",
+  "digest": "sha256:f153928901f24ddee59e80c17756985c7d3958c9dc6113b1d3301b60a60bc862"
+}

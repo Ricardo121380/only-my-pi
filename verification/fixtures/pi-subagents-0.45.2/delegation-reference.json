@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "specifier": "pi-subagents/delegation",
-  "use": "contract-and-fixture-reference-only",
-  "activeRuntimeAdapter": false,
+  "use": "audited-read-only-foreground-runtime",
+  "activeRuntimeAdapter": true,
   "events": {
     "request": "prompt-template:subagent:request",
     "started": "prompt-template:subagent:started",

@@ -1,6 +1,13 @@
 # `pi-subagents@0.45.2` compatibility contract
 
-Status: **STATIC PASS; no live child was dispatched.**
+Status: **LIVE NO-MODEL CAPABILITY PASS; no prompt, Provider request, or child
+dispatch was performed.**
+
+The repository-level ownership probe is `npm run doctor:subagents-topology`.
+It independently verifies one exact physical package/owner, one public
+subagent command owner, a separate first-party logical resource owner, the RPC
+single-lane flags, and the digest-bound no-model evidence receipt. Running this
+doctor remains static: it does not start Pi or inspect the user's Pi home.
 
 only-my-pi delegates physical subagent execution to one installed
 `pi-subagents` extension. It does not register a competing subagent tool,
@@ -58,6 +65,32 @@ extension acknowledgement, and process-terminal proof with lifecycle artifact
 version `3`. Missing, additional, or version-mismatched required capability
 data fails closed.
 
+## Validated no-model live evidence
+
+On 2026-08-19 the repository ran the packaged probe against Pi `0.84.1` and the
+source-hash-verified `pi-subagents@0.45.2` artifact in a disposable explicit Pi
+root. The probe loaded the three actual only-my-pi extensions plus one
+observer-only extension and used only Pi's public event/tool/command APIs.
+
+It observed the exact `ready` envelope and a correlated `ping` reply. Active
+extension tools were exactly `intercom`, `subagent`, `subagent_supervisor`, and
+`subagent_wait`, all owned by the upstream package. `omp` and `omp-context`
+were registered by only-my-pi, while only-my-pi registered no model-facing
+tool. The low-sensitivity receipt is
+[`contracts/subagents/pi-subagents-live-no-model-evidence.json`](../../contracts/subagents/pi-subagents-live-no-model-evidence.json).
+
+The packaged manual command is `npm run probe:subagents-live -- ...`. It
+requires explicit absolute disposable, package, and optional only-my-pi roots;
+it never infers `~/.pi` and never downloads a package. Source identity and the
+two audited source hashes are checked before Pi starts. The observer emits no
+paths, cwd, or session identifier, and the checked-in receipt stores only
+bounded metadata and output digests.
+
+This proves startup, public RPC compatibility, and tool ownership only. The
+extension still has the invoking user's host filesystem and network authority.
+The run did not submit a prompt, send a Provider request, dispatch a child, or
+prove terminal, cancellation, worktree, metering, or writer behavior.
+
 ## Compiled workflow boundary
 
 RPC `spawn` is detached/async only. Public direct `agent`, `task`, or `step`
@@ -81,37 +114,42 @@ manifest through a fixed compiler. The RPC envelope records the source as:
 The compiler and live adapter are later-milestone work. M1 contains a static,
 non-executed request fixture solely to lock the boundary and its negative tests.
 
-## Exported delegation reference
+## Exported structured delegation
 
 `pi-subagents/delegation` is a genuine public package export. Its structured
 types and five `prompt-template:subagent:*` event names are useful as a
 compatibility reference for request identity, budget, context, result, update,
 cancel, and terminal-response concepts.
 
-For this harness version it is **reference-only**. It is not imported by the
-live adapter and must not become a parallel runtime lane beside RPC v1. This
-avoids two request protocols, two correlation models, and ambiguous ownership
-of cancellation or terminal state. Reconsidering that choice requires a new
-versioned contract, not an incidental import.
+M1 originally retained this surface as reference-only. S5 live validation then
+proved that a nested `workflowScript -> runs.run` can complete its inner child
+without closing the outer workflow runner or producing timely process-terminal
+proof. The successor therefore adopts the exact structured events as the
+read-only foreground Agent/Batch lane. It does not statically import the
+package implementation: event names, request fields, identity, exit-code and
+usage requirements are pinned in the local wire contract and tests. Extension
+RPC remains the async workflow/background/resume/control lane. Both are owned
+by the same physical package; no second scheduler or public subagent tool is
+introduced.
 
-## Promotion gate
+## Remaining promotion gate
 
-M1 inspected the pinned tarball and validated JSON fixtures only. It did not
-start Pi, load a provider, read credentials, contact a model, or dispatch a
-child. The live state therefore remains `NOT_RUN_BY_POLICY` until M5.
+The original M1 evidence was static. S1 has now completed the disposable
+no-model `ready`/`ping`/visibility portion without reading credentials or the
+real Pi home. A later live-child promotion must still, in order:
 
-M5 promotion must use a disposable Pi environment and, in order:
-
-1. observe RPC ready or issue a bounded `ping` with a newline-free request ID;
-2. require the exact protocol, method, event, and capability contract;
-3. fail closed before spawn on timeout or any mismatch;
-4. compile a schema-valid repository workflow into `workflowScript` without
+1. revalidate the exact protocol, method, event, capability, and ownership
+   contract before every spawn-capable session;
+2. fail closed before spawn on timeout or any mismatch;
+3. compile a schema-valid repository workflow into `workflowScript` without
    accepting raw command-line workflow source;
-5. correlate the reply only through `subagents:rpc:v1:reply:<requestId>`;
-6. verify async-complete and process-terminal evidence, including cancellation;
+4. correlate the spawn reply only through
+   `subagents:rpc:v1:reply:<requestId>`;
+5. verify async-complete and process-terminal evidence, including cancellation;
    and
-7. prove only `pi-subagents` owns the physical tool, scheduler, and child
+6. continue to prove only `pi-subagents` owns the physical tool, scheduler, and
+   child
    lifecycle.
 
-Until those checks pass, `contracts/pi-subagents-wire-v1.json` is a static
-compatibility contract, not a runtime-support claim.
+Until a separately authorized child terminal passes, this remains a no-model
+compatibility/ownership claim rather than evidence of live child execution.

@@ -114,3 +114,65 @@ test("M6 theme mutations use the same plan-confirm-apply boundary", async () => 
   });
   assert.equal((await approved.dispatch({ command: "theme", options: { subcommand: "use", themeId: "only-my-pi-dark", apply: true } })).status, "THEME_APPLIED");
 });
+
+test("Workflow and Swarm mutations use the shared plan-confirm-run boundary", async () => {
+  const workflowCalls = [];
+  const swarmCalls = [];
+  const workflows = { async dispatch(options) { workflowCalls.push(options); return options.apply ? { ok: true, status: "WORKFLOW_COMPLETED", mutation: true } : { ok: true, status: "WORKFLOW_PLAN", mutation: false, input: { reviewed: "workflow" }, plan: { planDigest: "sha256:workflow" } }; } };
+  const swarms = { async dispatch(options) { swarmCalls.push(options); return options.subcommand === "run" ? { ok: true, status: "SWARM_COMPLETED", mutation: true } : { ok: true, status: "SWARM_PLAN", mutation: false, input: { reviewed: "swarm" }, plan: { planDigest: "sha256:swarm" } }; } };
+  const bootstrap = { status: async () => ({ ok: true, status: "STATUS" }) };
+
+  const denied = createControlService({ bootstrap, doctor: { live: async () => ({ status: "UNAVAILABLE" }) }, workflows, swarms });
+  assert.equal((await denied.dispatch({ command: "workflow", options: { subcommand: "run", workflowId: "safe", apply: true, yes: false } })).status, "CONFIRMATION_REQUIRED");
+  assert.equal((await denied.dispatch({ command: "swarm", options: { subcommand: "run", recipeId: "research", yes: false } })).status, "CONFIRMATION_REQUIRED");
+
+  const approved = createControlService({ bootstrap, doctor: { live: async () => ({ status: "UNAVAILABLE" }) }, workflows, swarms, confirm: async () => true });
+  assert.equal((await approved.dispatch({ command: "workflow", options: { subcommand: "run", workflowId: "safe", inputFile: "/tmp/reviewed-workflow.json", apply: true, yes: false } })).status, "WORKFLOW_COMPLETED");
+  assert.equal((await approved.dispatch({ command: "swarm", options: { subcommand: "run", recipeId: "research", inputFile: "/tmp/reviewed-swarm.json", yes: false } })).status, "SWARM_COMPLETED");
+  assert.equal(workflowCalls.at(-1).yes, true);
+  assert.equal(workflowCalls.at(-1).expectedPlanDigest, "sha256:workflow");
+  assert.equal(workflowCalls.at(-1).inputFile, null);
+  assert.deepEqual(workflowCalls.at(-1).input, { reviewed: "workflow" });
+  assert.equal(swarmCalls.at(-1).yes, true);
+  assert.equal(swarmCalls.at(-1).expectedPlanDigest, "sha256:swarm");
+  assert.equal(swarmCalls.at(-1).inputFile, null);
+  assert.deepEqual(swarmCalls.at(-1).input, { reviewed: "swarm" });
+});
+
+test("BatchSwarm mutations use the shared plan-confirm-run boundary without becoming a legacy recipe", async () => {
+  const calls = [];
+  const swarms = {
+    async dispatch(options) {
+      calls.push(options);
+      return options.batchSubcommand === "run"
+        ? { ok: true, status: "BATCH_SWARM_COMPLETED", mutation: true }
+        : {
+          ok: true,
+          status: "BATCH_SWARM_PLAN",
+          mutation: false,
+          runId: "batch-run-1",
+          input: { artifacts: { items: [] } },
+          plan: { planDigest: "sha256:batch" },
+          executionEnvelope: { executionEnvelopeDigest: "sha256:envelope", conditions: [] },
+        };
+    },
+  };
+  const service = createControlService({
+    bootstrap: { status: async () => ({ ok: true, status: "STATUS" }) },
+    doctor: { live: async () => ({ status: "UNAVAILABLE" }) },
+    swarms,
+    confirm: async () => true,
+  });
+  const result = await service.dispatch({
+    command: "swarm",
+    options: { subcommand: "batch", batchSubcommand: "run", batchId: "review-items", yes: false },
+  });
+  assert.equal(result.status, "BATCH_SWARM_COMPLETED");
+  assert.equal(calls[0].subcommand, "batch");
+  assert.equal(calls[0].batchSubcommand, "plan");
+  assert.equal(calls[1].subcommand, "batch");
+  assert.equal(calls[1].batchSubcommand, "run");
+  assert.equal(calls[1].runId, "batch-run-1");
+  assert.equal(calls[1].expectedPlanDigest, "sha256:batch");
+  assert.equal(calls[1].expectedExecutionDigest, "sha256:envelope");
+});

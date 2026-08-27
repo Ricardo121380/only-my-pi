@@ -1,0 +1,40 @@
+{
+  "$schema": "../../schemas/subagents-protected-evidence-trust-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "id": "only-my-pi-subagents-protected-evidence-trust",
+  "algorithm": "ed25519",
+  "signers": [
+    {
+      "id": "local-alpha-20260824",
+      "status": "active",
+      "authorizationClass": "local-operator-protected-live",
+      "publicKeySpki": "MCowBQYDK2VwAyEAaHuIWI9d3SWdP/SjeFHm6bmD9IFNRBBgqX+kKrkUGuM=",
+      "publicKeyFingerprint": "sha256:d4bac6a9b21693578e377416fc4dd4f9a944ae374d32440d3b30827818d7be10",
+      "evidenceIds": [
+        "live-agent-cancel",
+        "live-agent-terminal",
+        "live-batch-terminal"
+      ],
+      "notBefore": "2026-08-23T16:35:00.000Z",
+      "notAfter": "2026-08-23T20:35:00.000Z"
+    },
+    {
+      "id": "local-beta-20260824",
+      "status": "active",
+      "authorizationClass": "local-operator-protected-live",
+      "publicKeySpki": "MCowBQYDK2VwAyEAaC3O/FrpKknrkKnHkRoCo+fee7XtPVb5KsP4Xg4b4BI=",
+      "publicKeyFingerprint": "sha256:2c94451b7555cdcacef59f347bad726fc10ac2d7e0b213a04f53583a9000b70e",
+      "evidenceIds": [
+        "background-resume",
+        "guarded-writer-integration",
+        "live-agent-cancel",
+        "live-agent-terminal",
+        "live-batch-terminal"
+      ],
+      "notBefore": "2026-08-24T01:30:00.000Z",
+      "notAfter": "2026-08-24T09:30:00.000Z"
+    }
+  ],
+  "policyDigest": "sha256:c6e709a93ed4f73c495a20e137fdba8c6ff12a827ca6332ba87f4306aac3e5ab"
+}

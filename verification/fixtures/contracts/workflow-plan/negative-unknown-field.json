@@ -1,0 +1,28 @@
+{
+  "$schema": "../../../../schemas/workflow-plan-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "id": "fixture-workflow-v2",
+  "definitionVersion": "2.0.0",
+  "definitionDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "revision": { "number": 0, "parentPlanDigest": null, "reason": "initial", "activationPolicy": "drain" },
+  "policy": { "workspace": "shared-read-only", "mutation": "none", "egress": { "web": "deny", "mcp": "deny", "provider": "allow" }, "tools": { "allow": [], "deny": [] } },
+  "policyDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "budget": { "maxNodes": 1, "maxParallel": 1, "maxDepth": 1, "maxAttemptsPerNode": 1, "maxWallTimeMs": 1, "maxOutputBytes": 1, "maxAssignments": 1, "maxTokens": null, "maxCostUsd": null },
+  "nodes": [
+    {
+      "id": "verify",
+      "kind": "gate",
+      "needs": [],
+      "policy": { "workspace": "shared-read-only", "mutation": "none", "egress": { "web": "deny", "mcp": "deny", "provider": "allow" }, "tools": { "allow": [], "deny": [] } },
+      "budget": { "maxAttempts": 1, "timeoutMs": 1, "maxOutputBytes": 1, "maxTokens": null, "maxCostUsd": null },
+      "cache": { "mode": "never", "keyInputs": [] },
+      "idempotency": "none",
+      "gateId": "test-contract"
+    }
+  ],
+  "entryNodeIds": ["verify"],
+  "terminalNodeId": "verify",
+  "planDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "runtimeScript": "not allowed"
+}

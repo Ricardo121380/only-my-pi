@@ -1,0 +1,35 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/task-assignment-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "kind": "task-assignment",
+  "assignmentId": "review-01",
+  "agentSpecId": "reviewer-resolved",
+  "agentSpecHash": "sha256:67c34f39722da8532f44baef50538dda372ffd2f228c71df2fe00c6d9705548b",
+  "task": {
+    "text": "Review the supplied artifact and return a verdict.",
+    "digest": "sha256:10089382571ecc923b36863af4d6ec022d4ba3520a7481bb8a3e8cd105278069"
+  },
+  "dependencies": [],
+  "ownership": {
+    "writer": false,
+    "workspace": "shared-read-only",
+    "allowedPaths": ["src/index.mjs"],
+    "fileClaims": []
+  },
+  "idempotency": { "class": "read-only" },
+  "context": {
+    "mode": "fresh",
+    "artifactRefs": ["artifact://source"]
+  },
+  "budget": {},
+  "output": {
+    "value": {
+      "type": "object",
+      "properties": { "verdict": { "type": "string" } },
+      "required": ["verdict"]
+    },
+    "hash": "sha256:49ea0bdb3df599272a62e340820afcba562adfe5ab84f305efb133c5525fea75"
+  },
+  "assignmentHash": "sha256:4ea941d8c9d97fa65b16a0035b4a0c355a7a611e15d669586b73967767b7ae38"
+}

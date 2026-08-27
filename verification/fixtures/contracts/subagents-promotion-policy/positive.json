@@ -1,0 +1,41 @@
+{
+  "$schema": "../../../../schemas/subagents-promotion-policy-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "id": "only-my-pi-subagents-promotion",
+  "channels": [
+    {
+      "id": "preview",
+      "rank": 0,
+      "inherits": null,
+      "requiredDeterministicGates": ["architecture-owner-check"],
+      "requiredCompatibilityScopes": ["noModelRpc", "repositoryContracts", "singleOwnerTopology"],
+      "requiredProtectedEvidence": []
+    },
+    {
+      "id": "alpha",
+      "rank": 1,
+      "inherits": "preview",
+      "requiredDeterministicGates": [],
+      "requiredCompatibilityScopes": ["liveAgentCancel", "liveAgentTerminal", "liveBatchTerminal"],
+      "requiredProtectedEvidence": ["live-agent-cancel", "live-agent-terminal", "live-batch-terminal"]
+    },
+    {
+      "id": "beta",
+      "rank": 2,
+      "inherits": "alpha",
+      "requiredDeterministicGates": [],
+      "requiredCompatibilityScopes": ["backgroundResume", "guardedWriterIntegration"],
+      "requiredProtectedEvidence": ["background-resume", "guarded-writer-integration"]
+    },
+    {
+      "id": "stable",
+      "rank": 3,
+      "inherits": "beta",
+      "requiredDeterministicGates": ["compatibility-matrix", "resource-leak-check"],
+      "requiredCompatibilityScopes": ["soakResourceLeak"],
+      "requiredProtectedEvidence": []
+    }
+  ],
+  "policyDigest": "sha256:9ba0a0b9de4dfea30494c09d7a4e1341bf9f19eef41bb8e845441c969f8a5adf"
+}

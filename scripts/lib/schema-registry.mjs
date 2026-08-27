@@ -6,6 +6,28 @@ import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 
 import { parsePackageSpec, validatePackageEntrySource } from "./package-source.mjs";
+import {
+  compileWorkflowDefinition,
+  digestWorkflowValue,
+  validateWorkflowPlan,
+} from "../../packages/subagents/workflow/plan-compiler/index.mjs";
+import {
+  approvalReceiptId,
+  approvalReceiptSemanticFindings,
+} from "../../packages/subagents/policy/approval-receipt.mjs";
+import { assignmentPathClaimCovered } from "../../packages/subagents/domain/assignment.mjs";
+import {
+  validateCompatibilityMatrix,
+  validatePromotionPolicy,
+} from "../../packages/subagents/release/compatibility.mjs";
+import {
+  validateProtectedEvidenceDocument,
+  validateProtectedEvidenceTrustPolicy,
+} from "../../packages/subagents/release/protected-evidence.mjs";
+import { validateLiveEvidenceAuthorization } from "../../packages/subagents/release/live-evidence-authorization.mjs";
+import { validateLiveEvidenceProviderDescriptor } from "../../packages/subagents/release/live-evidence-provider.mjs";
+import { validateBackgroundResumeAuthorization } from "../../packages/subagents/release/background-resume-authorization.mjs";
+import { sha256 as stateSha256, withoutKey } from "../../packages/subagents/state/codec.mjs";
 
 const DEFAULT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const DEFAULT_CATALOG = "contracts/schema-catalog.json";
@@ -309,6 +331,38 @@ function overlapErrors(value, instancePath = "") {
   return errors;
 }
 
+function budgetEnvelopeErrors(document) {
+  const errors = [];
+  const hard = document.hard ?? {};
+  const soft = document.soft ?? {};
+  for (const key of Object.keys(hard)) {
+    if (hard[key] !== null && soft[key] !== null && typeof hard[key] === "number" && typeof soft[key] === "number" && soft[key] > hard[key]) {
+      errors.push(error(`/soft/${key}`, "budget-envelope", `soft ${key} ${soft[key]} exceeds hard limit ${hard[key]}`, { key, soft: soft[key], hard: hard[key] }));
+    }
+  }
+  for (const [meter, key] of [["tokens", "maxTokens"], ["cost", "maxCost"]]) {
+    if (document.metering?.[meter] === "UNAVAILABLE" && hard[key] !== null) {
+      errors.push(error(`/hard/${key}`, "metering-unavailable", `hard ${key} cannot be enforced when ${meter} metering is unavailable`, { meter, key }));
+    }
+  }
+  for (const limitsName of ["hard", "soft"]) {
+    const limits = document[limitsName] ?? {};
+    if (limits.maxActiveChildren !== null && limits.maxTotalAssignments !== null && limits.maxActiveChildren > limits.maxTotalAssignments) {
+      errors.push(error(`/${limitsName}/maxActiveChildren`, "budget-envelope", "active children exceed total assignments", { limits: limitsName }));
+    }
+    if (limits.maxQueuedAssignments !== null && limits.maxTotalAssignments !== null && limits.maxQueuedAssignments > limits.maxTotalAssignments) {
+      errors.push(error(`/${limitsName}/maxQueuedAssignments`, "budget-envelope", "queued assignments exceed total assignments", { limits: limitsName }));
+    }
+    if (limits.maxWriterWorktrees !== null && limits.maxActiveChildren !== null && limits.maxWriterWorktrees > limits.maxActiveChildren) {
+      errors.push(error(`/${limitsName}/maxWriterWorktrees`, "budget-envelope", "writer worktrees exceed active children", { limits: limitsName }));
+    }
+    if (limits.noProgressWindow !== null && limits.maxIterations !== null && limits.noProgressWindow > limits.maxIterations) {
+      errors.push(error(`/${limitsName}/noProgressWindow`, "budget-envelope", "no-progress window exceeds maximum iterations", { limits: limitsName }));
+    }
+  }
+  return errors;
+}
+
 function buildIndex(documentsByKind, rootDir) {
   const values = (kind) => documentsByKind.get(kind) ?? [];
   const collect = (kind, field, nested) => new Set(values(kind).flatMap(({ document }) => nested ? (document[nested] ?? []).map((entry) => entry[field]) : [document[field]]).filter(Boolean));
@@ -329,7 +383,15 @@ function buildIndex(documentsByKind, rootDir) {
     agents: collect("agent", "id"),
     agentDefinitions: definitions("agent"),
     workflows: collect("workflow", "id"),
+    workflowDefinitionsV2: collect("workflowDefinitionV2", "id"),
     swarms: collect("swarmRecipe", "id"),
+    agentTemplates: new Set([...collect("agentTemplate", "id"), ...collect("agent", "id")]),
+    resolvedAgentSpecs: collect("resolvedAgentSpec", "id"),
+    resolvedAgentSpecDefinitions: definitions("resolvedAgentSpec"),
+    batchSwarms: collect("batchSwarm", "id"),
+    batchSwarmDefinitions: definitions("batchSwarm"),
+    budgetEnvelopes: collect("budgetEnvelope", "id"),
+    swarmGoals: collect("swarmGoal", "id"),
     releaseGates,
   };
 }
@@ -347,6 +409,57 @@ function promptPathErrors(document, sourcePath, rootDir) {
   } catch (cause) {
     return [error("/prompt/file", "path", cause.message, { sourcePath })];
   }
+}
+
+function durableWorkflowRecordErrors(document) {
+  const errors = [];
+  let checkedPlan;
+  try {
+    checkedPlan = validateWorkflowPlan(document.plan);
+  } catch (cause) {
+    errors.push(error("/plan", "runtime-parity", `durable plan cannot be validated: ${cause.message}`, { code: cause.code ?? "INVALID_PLAN" }));
+  }
+  if (checkedPlan && !checkedPlan.valid) {
+    for (const finding of checkedPlan.errors) {
+      errors.push(error("/plan", finding.code.toLowerCase().replaceAll("_", "-"), finding.message));
+    }
+  }
+  if (document.plan?.planDigest !== document.planDigest) {
+    errors.push(error("/planDigest", "digest-binding", "durable planDigest must equal plan.planDigest"));
+  }
+  const envelope = document.executionEnvelope;
+  if (envelope?.executionEnvelopeDigest !== document.executionEnvelopeDigest) {
+    errors.push(error("/executionEnvelopeDigest", "digest-binding", "top-level executionEnvelopeDigest must equal the embedded envelope digest"));
+  }
+  if (envelope) {
+    const sortedConditions = [...(envelope.conditions ?? [])].sort();
+    if (JSON.stringify(sortedConditions) !== JSON.stringify(envelope.conditions ?? [])
+      || (envelope.conditions ?? []).some((condition) => /[\0\r\n]/u.test(condition))) {
+      errors.push(error("/executionEnvelope/conditions", "canonical-order", "execution conditions must be sorted and contain no control-line characters"));
+    }
+    const expectedEnvelopeDigest = digestWorkflowValue(withoutKey(envelope, "executionEnvelopeDigest"));
+    if (envelope.executionEnvelopeDigest !== expectedEnvelopeDigest) {
+      errors.push(error("/executionEnvelope/executionEnvelopeDigest", "digest-authenticity", "execution envelope digest does not match its canonical payload"));
+    }
+    for (const [field, expected, pathName] of [
+      ["runId", document.runId, "/executionEnvelope/runId"],
+      ["planDigest", document.planDigest, "/executionEnvelope/planDigest"],
+      ["runInputDigest", document.inputDigest, "/executionEnvelope/runInputDigest"],
+      ["sourceHash", document.sourceHash, "/executionEnvelope/sourceHash"],
+    ]) {
+      if (envelope[field] !== expected) errors.push(error(pathName, "digest-binding", `execution envelope ${field} is not bound to the durable record`));
+    }
+  }
+  if (document.digest !== stateSha256(withoutKey(document, "digest"))) {
+    errors.push(error("/digest", "digest-authenticity", "durable workflow plan digest does not match its canonical record"));
+  }
+  return errors;
+}
+
+function durableCancelRecordErrors(document) {
+  return document.digest === stateSha256(withoutKey(document, "digest"))
+    ? []
+    : [error("/digest", "digest-authenticity", "cancel request digest does not match its canonical record")];
 }
 
 function semanticErrors(kind, document, { sourcePath, rootDir, index, documentsByKind }) {
@@ -487,6 +600,177 @@ function semanticErrors(kind, document, { sourcePath, rootDir, index, documentsB
     }
     if (document.fallback?.workflow) errors.push(...unknownRefs([document.fallback.workflow], index.workflows, "/fallback/workflow", "workflow"));
     if (document.fallback?.workflow === document.id) errors.push(error("/fallback/workflow", "cycle", "workflow fallback cannot reference itself", { id: document.id }));
+  } else if (kind === "workflowDefinitionV2") {
+    try {
+      compileWorkflowDefinition(document, {
+        resolveBatch: (id) => index.batchSwarmDefinitions.get(id),
+      });
+    } catch (cause) {
+      errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "workflow-definition", cause.message));
+    }
+  } else if (kind === "workflowPlan") {
+    const result = validateWorkflowPlan(document);
+    for (const finding of result.errors) {
+      errors.push(error("", finding.code.toLowerCase().replaceAll("_", "-"), finding.message));
+    }
+  } else if (kind === "workflowRunPlan") {
+    errors.push(...durableWorkflowRecordErrors(document));
+  } else if (kind === "workflowCancelRequest") {
+    errors.push(...durableCancelRecordErrors(document));
+  } else if (kind === "agentTemplate") {
+    errors.push(...policyBoundaryErrors({
+      tools: document.tools,
+      capabilities: document.requiredCapabilities,
+      policy: document.policyCeiling,
+      writer: document.writer,
+    }, index));
+  } else if (kind === "resolvedAgentSpec") {
+    errors.push(...unknownRefs([document.templateId], index.agentTemplates, "/templateId", "AgentTemplate"));
+    errors.push(...policyBoundaryErrors({
+      tools: document.tools,
+      capabilities: document.requiredCapabilities,
+      policy: document.effectivePolicy,
+      writer: document.writer,
+    }, index));
+  } else if (kind === "taskAssignment") {
+    errors.push(...unknownRefs([document.agentSpecId], index.resolvedAgentSpecs, "/agentSpecId", "ResolvedAgentSpec"));
+    const ownership = document.ownership ?? {};
+    if (ownership.writer && ["none", "shared-read-only"].includes(ownership.workspace)) {
+      errors.push(error("/ownership/workspace", "writer-policy", "writer assignment requires a guarded or managed-worktree workspace"));
+    }
+    if (ownership.writer && document.idempotency?.class === "read-only") {
+      errors.push(error("/idempotency/class", "writer-policy", "writer assignment cannot be classified read-only"));
+    }
+    for (const [position, claim] of (ownership.fileClaims ?? []).entries()) {
+      if (!assignmentPathClaimCovered(claim, ownership.allowedPaths ?? [])) errors.push(error(`/ownership/fileClaims/${position}`, "path-claim", `file claim is outside allowed paths: ${claim}`, { claim }));
+    }
+  } else if (kind === "batchSwarm") {
+    errors.push(...unknownRefs([document.agentSpecRef], index.resolvedAgentSpecs, "/agentSpecRef", "ResolvedAgentSpec"));
+    errors.push(...unknownRefs([document.budgetRef], index.budgetEnvelopes, "/budgetRef", "BudgetEnvelope"));
+    const resolvedAgentSpec = index.resolvedAgentSpecDefinitions.get(document.agentSpecRef);
+    if (resolvedAgentSpec) {
+      for (const [field, expected] of [
+        ["agentSpecHash", resolvedAgentSpec.specHash],
+        ["policyHash", resolvedAgentSpec.effectivePolicyHash],
+        ["outputSchemaHash", resolvedAgentSpec.outputSchema?.hash],
+      ]) {
+        if (document[field] !== expected) {
+          errors.push(error(`/${field}`, "correlation-digest", `${field} does not match ResolvedAgentSpec ${document.agentSpecRef}`, {
+            expected,
+            actual: document[field],
+            agentSpecRef: document.agentSpecRef,
+          }));
+        }
+      }
+    }
+    if (document.concurrency?.initial > document.concurrency?.max) errors.push(error("/concurrency/initial", "budget-envelope", "initial concurrency exceeds maximum concurrency"));
+    const thresholdKind = ["quorum", "minimum-success"].includes(document.failurePolicy?.kind);
+    if (!thresholdKind && document.failurePolicy?.threshold !== undefined) errors.push(error("/failurePolicy/threshold", "failure-policy", "threshold is only valid for quorum or minimum-success"));
+    if (thresholdKind && document.failurePolicy?.threshold > document.maxItems) errors.push(error("/failurePolicy/threshold", "budget-envelope", "success threshold exceeds maxItems"));
+    if (document.retryPolicy?.maxDelayMs > document.retryPolicy?.deadlineMs) errors.push(error("/retryPolicy/maxDelayMs", "budget-envelope", "retry delay exceeds the batch deadline"));
+    if (Number.isSafeInteger(document.maxItems)
+      && Number.isSafeInteger(document.retryPolicy?.maxAttempts)
+      && document.maxItems * document.retryPolicy.maxAttempts > 1000) {
+      errors.push(error("/retryPolicy/maxAttempts", "budget-envelope", "batch physical assignment envelope exceeds 1000"));
+    }
+  } else if (kind === "artifactRef") {
+    const expectedPrefix = `runs/${document.producer?.runId}/`;
+    if (typeof document.storage?.relativePath === "string" && !document.storage.relativePath.startsWith(expectedPrefix)) {
+      errors.push(error("/storage/relativePath", "provenance", `artifact storage must be scoped to producing run: ${expectedPrefix}`, { expectedPrefix }));
+    }
+  } else if (kind === "budgetEnvelope") {
+    errors.push(...budgetEnvelopeErrors(document));
+  } else if (kind === "approvalReceipt") {
+    for (const finding of approvalReceiptSemanticFindings(document)) {
+      errors.push(error(finding.instancePath, finding.keyword, finding.message, finding.params));
+    }
+    if (document.receiptId !== approvalReceiptId(document)) {
+      errors.push(error("/receiptId", "receipt-digest", "approval receipt digest does not match its content"));
+    }
+  } else if (kind === "swarmGoal") {
+    errors.push(...unknownRefs(document.authority?.allowedAgentTemplates, index.agentTemplates, "/authority/allowedAgentTemplates", "AgentTemplate"));
+    errors.push(...unknownRefs([document.authority?.budgetRef], index.budgetEnvelopes, "/authority/budgetRef", "BudgetEnvelope"));
+    errors.push(...unknownRefs([document.roles?.synthesizerTemplate, document.roles?.verifierTemplate], index.agentTemplates, "/roles", "AgentTemplate"));
+    if (document.roles?.synthesizerTemplate === document.roles?.verifierTemplate) errors.push(error("/roles", "role-conflict", "synthesizer and verifier templates must differ"));
+    if (document.roles?.minimumDistinctAgentSpecs > document.authority?.maxAgentSpecs) errors.push(error("/roles/minimumDistinctAgentSpecs", "budget-envelope", "minimum distinct AgentSpecs exceeds maxAgentSpecs"));
+    if (document.convergence?.noProgressWindow > document.authority?.maxPlanRevisions) errors.push(error("/convergence/noProgressWindow", "budget-envelope", "no-progress window exceeds maximum plan revisions"));
+  } else if (kind === "ultraRun") {
+    errors.push(...unknownRefs(document.workflowLibrary, index.workflowDefinitionsV2, "/workflowLibrary", "WorkflowDefinitionV2"));
+    errors.push(...unknownRefs(document.batchLibrary, index.batchSwarms, "/batchLibrary", "BatchSwarm"));
+    errors.push(...unknownRefs(document.goalLibrary, index.swarmGoals, "/goalLibrary", "SwarmGoal"));
+    errors.push(...unknownRefs([document.quality?.testGate, document.quality?.integrationGate], index.releaseGates, "/quality", "release gate"));
+    errors.push(...unknownRefs([document.budgetRef], index.budgetEnvelopes, "/budgetRef", "BudgetEnvelope"));
+  } else if (kind === "terminalReceipt") {
+    if (document.startedAt !== null && document.startedAt > document.settledAt) errors.push(error("/settledAt", "transition", "terminal receipt settles before it starts"));
+    if (document.authoritative && (!document.completion || !document.processTerminal)) errors.push(error("/authoritative", "terminal-proof", "authoritative receipt requires completion and process-terminal proof"));
+    if (document.outcome === "orphaned" && document.authoritative) errors.push(error("/authoritative", "terminal-proof", "orphaned receipt cannot be authoritative"));
+    for (const [field, projection] of [["completion", document.completion], ["processTerminal", document.processTerminal]]) {
+      if (projection && typeof projection === "object" && !Array.isArray(projection) && projection.runId !== undefined && projection.runId !== document.backendRunId) {
+        errors.push(error(`/${field}/runId`, "correlation", `${field} run id does not match backendRunId`, { expected: document.backendRunId, actual: projection.runId }));
+      }
+    }
+    if (document.authoritative && document.processTerminal?.state !== "observed") errors.push(error("/processTerminal/state", "terminal-proof", "authoritative receipt requires observed process-terminal proof"));
+    if (document.authoritative && Array.isArray(document.processTerminal?.instances)
+      && !document.processTerminal.instances.some((instance) => instance?.processInstanceId === document.processTerminal?.runnerProcessInstanceId)) {
+      errors.push(error("/processTerminal/instances", "terminal-proof", "process-terminal proof does not include the runner process instance"));
+    }
+  } else if (kind === "evaluationCorpus") {
+    errors.push(...duplicateIds(document.baselines ?? [], "/baselines"));
+    errors.push(...duplicateIds(document.metrics ?? [], "/metrics"));
+    errors.push(...duplicateIds(document.scenarios ?? [], "/scenarios"));
+    const metricIds = new Set((document.metrics ?? []).map((metric) => metric.id));
+    for (const [position, baseline] of (document.baselines ?? []).entries()) {
+      for (const metricId of Object.keys(baseline.metrics ?? {})) if (!metricIds.has(metricId)) errors.push(error(`/baselines/${position}/metrics/${metricId}`, "unknown-reference", `baseline references unknown metric: ${metricId}`, { metricId }));
+    }
+    const caseIds = new Set();
+    for (const [scenarioPosition, scenario] of (document.scenarios ?? []).entries()) {
+      for (const [casePosition, candidate] of (scenario.cases ?? []).entries()) {
+        if (caseIds.has(candidate.id)) errors.push(error(`/scenarios/${scenarioPosition}/cases/${casePosition}/id`, "duplicate-id", `duplicate evaluation case id: ${candidate.id}`, { id: candidate.id }));
+        caseIds.add(candidate.id);
+      }
+    }
+  } else if (kind === "subagentsCompatibility") {
+    try {
+      validateCompatibilityMatrix(document, { rootDir, verifyEvidencePaths: true });
+    } catch (cause) {
+      errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
+    }
+  } else if (kind === "subagentsPromotionPolicy") {
+    try {
+      validatePromotionPolicy(document);
+    } catch (cause) {
+      errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
+    }
+  } else if (kind === "subagentsProtectedEvidence") {
+    try {
+      validateProtectedEvidenceDocument(document, { allowContractExample: true });
+    } catch (cause) {
+      errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
+    }
+  } else if (kind === "subagentsProtectedEvidenceTrust") {
+    try {
+      validateProtectedEvidenceTrustPolicy(document);
+    } catch (cause) {
+      errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
+    }
+  } else if (kind === "subagentsLiveEvidenceAuthorization") {
+    try {
+      validateLiveEvidenceAuthorization(document, { allowTemplate: true });
+    } catch (cause) {
+      errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
+    }
+  } else if (kind === "subagentsLiveProvider") {
+    try {
+      validateLiveEvidenceProviderDescriptor(document);
+    } catch (cause) {
+      errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
+    }
+  } else if (kind === "subagentsBackgroundResumeAuthorization") {
+    try {
+      validateBackgroundResumeAuthorization(document, { allowTemplate: true });
+    } catch (cause) {
+      errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
+    }
   } else if (kind === "swarmRecipe") {
     const nodes = document.nodes ?? [];
     errors.push(...graphErrors(nodes, "/nodes"));

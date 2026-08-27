@@ -2,14 +2,18 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "formatVersion": 1,
   "id": "swarm-runtime-v1",
-  "status": "runtime-ready",
+  "status": "legacy-compatibility-only",
   "owner": "only-my-pi",
   "architecture": {
-    "compiler": "only-my-pi",
+    "compiler": "only-my-pi-legacy-reader",
     "physicalScheduler": "pi-subagents",
     "liveLane": "extension-rpc-v1",
     "negotiation": "ping-capability-handshake",
-    "execution": "spawn-with-compiled-workflowScript",
+    "execution": "translate-to-workflow-plan-v1-and-inject-unified-run-coordinator",
+    "publicControlOwner": "only-my-pi-control",
+    "orchestrationOwner": "@only-my-pi/subagents",
+    "legacyControllersUsedByPublicControlSurfaces": false,
+    "legacyDirectImportCompatibility": true,
     "secondScheduler": false,
     "secondSubagentTool": false,
     "delegationExportRuntimeActive": false
@@ -37,7 +41,7 @@
     "provenance": "bounded-ledger-vocabulary"
   },
   "verification": {
-    "staticContract": "PASS",
+    "staticContract": "PASS_LEGACY_TRANSLATION_ONLY",
     "liveRuntime": "NOT_RUN_BY_POLICY",
     "realProvider": "NOT_RUN_BY_POLICY",
     "realPiHome": "UNTOUCHED"

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/agent-template-v2.schema.json",
+  "formatVersion": 2,
+  "contractStatus": "contract-preview",
+  "kind": "agent-template",
+  "id": "reviewer",
+  "version": "1.0.0",
+  "backendAgentId": "omp-reviewer",
+  "sourceHash": "sha256:0d394be1dde925157ad633bbd12772ec2cdbdb265aadd516489658b63848ce0f",
+  "promptHash": "sha256:413e167b0dc40a30465a833a708c98b80839133c5e9dcbcaa93454f6cc252cd5",
+  "tools": {
+    "allow": ["grep", "read"],
+    "deny": ["bash", "edit", "write"]
+  },
+  "requiredCapabilities": ["workspace-read"],
+  "policyCeiling": {
+    "workspace": "shared-read-only",
+    "mutation": "none",
+    "approval": "ask",
+    "egress": {
+      "web": "deny",
+      "mcp": "deny",
+      "provider": "inherit",
+      "extension": "deny"
+    }
+  },
+  "modelRole": "review",
+  "inputSchema": null,
+  "outputSchema": {
+    "value": {
+      "type": "object",
+      "properties": { "verdict": { "type": "string" } },
+      "required": ["verdict"]
+    },
+    "hash": "sha256:49ea0bdb3df599272a62e340820afcba562adfe5ab84f305efb133c5525fea75"
+  },
+  "writer": false,
+  "continuable": true,
+  "resumable": true,
+  "timeoutMs": 60000,
+  "redaction": {
+    "rawPrompts": "omit",
+    "reasoning": "omit",
+    "secrets": "omit"
+  },
+  "templateHash": "sha256:6b7ff5adef565ebf017c71c6253530d726f34b80f64c9e5b8fef9297d3d6e82b"
+}

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/budget-envelope-v2.schema.json",
+  "title": "only-my-pi BudgetEnvelope v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "kind", "id", "hard", "soft", "metering", "budgetHash"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "budget-envelope-v2\\.schema\\.json$" },
+    "formatVersion": { "const": 2 },
+    "contractStatus": { "const": "contract-preview" },
+    "kind": { "const": "budget-envelope" },
+    "id": { "$ref": "#/$defs/id" },
+    "hard": { "$ref": "#/$defs/limits" },
+    "soft": { "$ref": "#/$defs/limits" },
+    "metering": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tokens", "cost"],
+      "properties": {
+        "tokens": { "enum": ["METERED", "UNAVAILABLE"] },
+        "cost": { "enum": ["METERED", "UNAVAILABLE"] }
+      }
+    },
+    "budgetHash": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "count": { "oneOf": [{ "type": "null" }, { "type": "integer", "minimum": 0 }] },
+    "cost": { "oneOf": [{ "type": "null" }, { "type": "number", "minimum": 0 }] },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxWorkflowRuns", "maxPhases", "maxPlanRevisions", "maxActiveChildren", "maxQueuedAssignments", "maxTotalAssignments", "maxPlanExpansionDepth", "maxIterations", "noProgressWindow", "maxRetries", "maxElapsedMs", "maxTurns", "maxToolCalls", "maxTokens", "maxCost", "maxRawOutputBytes", "maxArtifactBytes", "maxWriterWorktrees"],
+      "properties": {
+        "maxWorkflowRuns": { "$ref": "#/$defs/count" },
+        "maxPhases": { "$ref": "#/$defs/count" },
+        "maxPlanRevisions": { "$ref": "#/$defs/count" },
+        "maxActiveChildren": { "$ref": "#/$defs/count" },
+        "maxQueuedAssignments": { "$ref": "#/$defs/count" },
+        "maxTotalAssignments": { "$ref": "#/$defs/count" },
+        "maxPlanExpansionDepth": { "$ref": "#/$defs/count" },
+        "maxIterations": { "$ref": "#/$defs/count" },
+        "noProgressWindow": { "$ref": "#/$defs/count" },
+        "maxRetries": { "$ref": "#/$defs/count" },
+        "maxElapsedMs": { "$ref": "#/$defs/count" },
+        "maxTurns": { "$ref": "#/$defs/count" },
+        "maxToolCalls": { "$ref": "#/$defs/count" },
+        "maxTokens": { "$ref": "#/$defs/count" },
+        "maxCost": { "$ref": "#/$defs/cost" },
+        "maxRawOutputBytes": { "$ref": "#/$defs/count" },
+        "maxArtifactBytes": { "$ref": "#/$defs/count" },
+        "maxWriterWorktrees": { "$ref": "#/$defs/count" }
+      }
+    }
+  }
+}

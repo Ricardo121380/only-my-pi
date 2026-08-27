@@ -1,0 +1,9 @@
+{
+  "formatVersion": 1,
+  "id": "cancel-unproven",
+  "kind": "cancel",
+  "input": {
+    "activeAttemptIds": ["attempt-a", "attempt-b"],
+    "terminalProofs": [{ "attemptId": "attempt-a", "terminal": true }]
+  }
+}

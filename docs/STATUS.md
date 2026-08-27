@@ -1,6 +1,6 @@
 # only-my-pi status
 
-Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-16** · Merged
+Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-24** · Merged
 to `main`: **2026-08-17** · Pi **0.84.1** · Node **25.8.0** · macOS
 `darwin-arm64`
 
@@ -19,6 +19,288 @@ installation or compatibility evidence.
 This page is a checked-in handoff record. Exact package metadata and risk tags
 live in [`inventory/packages.lock.json`](../inventory/packages.lock.json); this
 summary intentionally contains no credentials, sessions, or host paths.
+
+## Successor roadmap — S0–S5 Beta achieved for source `6004e61`
+
+The M0–M7 Harness MVP described below remains the current released baseline.
+Development of its S0–S5 successor has started on the isolated
+`codex/subagents-ultrarun-v2` branch:
+
+- [`plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md`](plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
+- [`../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../codex/goals/develop-only-my-pi-subagents-ultrarun.md)
+- [`architecture/subagents-s5-release.md`](architecture/subagents-s5-release.md)
+
+The successor does **not** connect Pi to the Kimi runtime. It builds one Pi-native
+`@only-my-pi/subagents` facade while retaining `pi-subagents@0.45.2` as the sole
+physical child/session/worktree backend. Kimi Code and hosted Kimi Agent Swarm
+contribute audited source patterns and product concepts; Claude Code Dynamic
+Workflows contributes the UltraRun staging model.
+
+The approved semantic split is:
+
+- `Agent`: one bounded child assignment;
+- `BatchSwarm`: one resolved AgentSpec mapped over many homogeneous items;
+- `WorkflowPlan`: the only durable heterogeneous DAG and resume representation;
+- `SwarmGoal`: a dynamic planner that emits immutable WorkflowPlan revisions;
+- `UltraRun`: an upper-layer strategy that routes and chains multiple workflows,
+  with no separate scheduler or permission owner.
+
+S5 deterministic release governance, the protected-evidence importer, the
+S5-A Alpha capture producer, the separate S5-B background-resume producer, the
+S5-C protected guarded-writer producer, and the S5-D deterministic fault/
+recovery closure are now implemented on this branch.
+The versioned
+compatibility matrix, cumulative promotion policy, `release-gates-v2`
+manifest, protected-evidence and one-time authorization schemas, and Ed25519
+trust policy are strict, digest-bound contracts. The producer composes the
+read-only Agent terminal, correlated cancellation, and two-item BatchSwarm
+scenarios through the sole `pi-subagents` backend, with an empty disposable Pi
+root, a synthetic fixture workspace instead of the source checkout, a
+canonically recompiled and drift-checked read-only `omp-reviewer`, temporary
+upstream artifacts, cumulative capture budgets, pre/post clean-source checks,
+pairwise-disjoint roots, credential allowlist, exact runtime-row preflight,
+required token/cost metering, process-group wall deadlines, bounded
+low-sensitivity records, external digest-only signing, and review-only staging.
+S5-B adds a fixed two-parent-process scenario over one isolated persisted Pi
+session: process one performs a background launch and writes a private
+digest-bound handoff; process two reloads the same parent session and creates a
+new correlated binding through the public `resume` RPC. Session-scoped
+upstream artifacts allow restart recovery without writing into the source or
+fixture workspace. The final record requires two authoritative terminals plus
+parent-session-reload and backend-rebind proof digests and stores no session,
+backend, output, credential, or host-path values.
+S5-C adds a third, independently authorized path for exactly one canonical
+`omp-implementer` in a synthetic Git repository and an upstream-managed
+worktree. The ordinary compiler still rejects the backend's `DEGRADED`
+worktree capability; only the protected fixture path can opt into the recorded
+`protected-degraded-probe-v1` admission. After an authoritative child terminal,
+the parent ignores child path/patch assertions. When upstream removes its
+worktree after capturing the handoff patch, only-my-pi reconstructs a detached
+review worktree at the approved base and applies the patch there, then
+independently verifies the exact staged file claim, absence of untracked and
+unstaged changes, regular-file modes, bounded full diff, `git diff --check`,
+and fixture marker. The result is a handoff-only WriterHandoff and digest-only
+evidence; there is no commit, merge, push, source-checkout apply, or automatic
+integration.
+S5-D adds stable fail-closed coverage for a started parent with no terminal,
+truncated/missing handoff state, missing worktrees, parent Git failure,
+signer/staging interruption, and post-capture source drift. Its separate
+guarded-writer reconciliation planner derives exactly one authorization-bound
+disposable runtime target and emits a digest-bound review plan without host
+paths. It has no apply/delete surface: all existing targets remain
+`RETAIN_FOR_REVIEW`, including complete ones, because process liveness and
+evidence/handoff disposition are not inferred.
+Token/cost ceilings are signed reconciliation gates rather than a verified
+mid-child billing circuit breaker. The checked-in default remains inert. One
+external one-time Alpha authorization was used for three live cancel attempts on
+2026-08-22. The first exposed that upstream async workflows reject `interrupt`;
+the second exposed that the v2 adapter sent the undocumented `target` field
+instead of upstream's public `runId` field for management RPCs. The third proved
+that nested `workflowScript -> runs.run` completes its inner child but leaves
+the outer workflow runner without a timely process-terminal proof. All three
+failed closed, produced no signed/staged evidence, and left no live child. S5-A
+then moved to the same physical package's single-layer structured delegation
+transport, which emits a terminal response only after child exit. These are
+historical pre-Alpha failures; the later Alpha and Beta source-bound chains
+below supersede them without rewriting that audit history.
+
+The first structured-delegation attempt then reached correlated terminal and
+usage data but failed closed before signing because the capture reducer chose
+a redacted `totalTokens` projection ahead of the numeric `usage.total`
+fallback. The reducer now selects only finite numeric token/cost candidates and
+has a direct TerminalReceipt regression. No staged evidence was produced.
+
+The next bounded run completed the terminal and both Batch children but was
+rejected before signing because cumulative usage was about 40,588 tokens versus
+the 20,000-token authorization (cost was about $0.0094 versus the $1 ceiling).
+The lifecycle probe now blocks every external tool and permits exactly one
+internal `structured_output` call, so it cannot repeatedly spend cached context
+reviewing a synthetic fixture. The ceiling was not widened and no additional
+live run is authorized implicitly.
+
+After external tools were blocked and only `structured_output` remained, a
+source-bound run completed all four children at 8,351 tokens and about
+$0.00499. Import review then found that the staging writer persisted the
+validator's derived `scope` projection, making the otherwise valid signed JSON
+fail the strict schema. The files were not imported. The writer now persists
+the exact signed schema document, and the compatibility digest has an explicit
+protected-overlay projection so the next evidence-only child commit cannot
+create a matrix-digest cycle.
+
+The S0–S4 source slice now contains:
+
+- source dossiers, two ownership/state ADRs, and a dedicated 35-item subagents
+  threat model;
+- typed AgentTemplate v2, ResolvedAgentSpec, TaskAssignment, stable handle,
+  BackendCapabilityV2, and TerminalReceipt v2 contracts;
+- an exact `pi-subagents@0.45.2` extension-RPC backend using statement-body
+  compilation, explicit backend-ID mapping, and correlated terminal proof;
+- WorkflowDefinition v2 to immutable WorkflowPlan compilation, a single
+  RunCoordinator, writer lease/fencing, hash-chained events, atomic snapshots,
+  parent budget reservations, canonical run-input binding, a stable per-run
+  execution envelope, run-bound ApprovalReceipt validation, and fail-closed
+  mutation recovery. Long-running nodes renew the single writer lease, and
+  crash recovery charges any child that may have started against its full
+  reservation rather than refunding unknown work;
+- deterministic dual-read migration of all four heterogeneous legacy Swarm
+  recipes into WorkflowPlan rather than BatchSwarm;
+- a true homogeneous BatchSwarm runtime: one hash-bound ResolvedAgentSpec and
+  prompt template mapped over 0–300 stable item slots, with static progressive
+  ramp, capability-gated adaptive 429 backoff, finite retry, explicit failure
+  policies, bounded per-item output, deterministic input-order aggregation,
+  and item-level provenance;
+- a structured `pi-subagents` item adapter that creates an AgentRunHandle and
+  TaskAssignment for every admitted item. It never accepts caller-supplied
+  workflow source and requires correlated terminal/process proof from the sole
+  physical backend;
+- durable Batch events inside the same RunCoordinator journal and parent
+  reservation. Crash recovery reuses that reservation and skips an item only
+  after an authoritative terminal; a started item without terminal proof is
+  charged at worst case and is never replayed;
+- a strict registry plus `omp swarm batch` and `/omp swarm batch`
+  list/show/validate/plan/run/status/cancel/resume surfaces. Planning is offline
+  and reports `NOT_RUN_BY_POLICY`; live run still requires the explicitly
+  injected trusted Pi session runtime;
+- a bounded SwarmGoal controller that accepts only human-authorized governed
+  goals, derives at least three heterogeneous registered AgentSpecs, journals an
+  immutable WorkflowPlan proposal before execution, reserves the shared parent
+  budget, reuses only proved read-only content-addressed results, and requires a
+  fresh independent verifier before root success;
+- root-level crash recovery for the proposal/child-run/revision state, including
+  the settlement-to-terminal crash window, plus fail-closed worst-case charging
+  for a revision that reports usage above its reservation;
+- an UltraRun policy/router with explicit U0–U6 phase evidence and
+  `quick|standard|deep|critical` quality policies. It selects Agent,
+  homogeneous BatchSwarm, predefined Workflow, or explicit dynamic SwarmGoal
+  without owning scheduling or permissions;
+- a content-addressed, run-scoped immutable ArtifactStore and a writer handoff
+  contract that requires non-overlapping file claims, managed-worktree/base
+  commit evidence, parent diff verification, authoritative terminal proof, and
+  passing fixed gates. Automatic integration remains disabled;
+- strict `omp swarm goal`, `/omp swarm goal`, `omp ultra`, and `/omp ultra`
+  list/show/validate/plan/run/status surfaces. Offline planning returns exact
+  plan/authorization digests; standalone live execution remains unavailable;
+- public Workflow/Swarm compatibility facades that use the legacy catalogs as
+  readers, assign one stable run ID while planning, require the confirmed plan
+  and execution-envelope digests on execution, reuse the exact input snapshot,
+  and delegate all live lifecycle work to the one injected RunCoordinator;
+- a 15-case, fixed-seed, three-baseline offline evaluation corpus.
+
+This branch retains the source-bound Alpha promotion chain. Source commit
+`922b39bc1a8b2bc387cadf66dc366565c47a14f5` is followed by evidence-only
+commit `15f29159617d9374cff25136fead29d39e3488d0` and receipt-only commit
+`312fc2df97fe1d82da86e4d8d9a5374b6107a232`. The receipt proves 25/25
+deterministic gates plus the protected read-only gate. Its live capture used
+OpenCode Go `deepseek-v4-flash`: four children, 8,154 tokens, about $0.00474,
+and 75.0 seconds. No raw output, host path, credential or session identifier is
+stored in the evidence files. Earlier Preview receipts remain historical.
+
+The branch now also contains the cumulative Beta chain. Source commit
+`6004e6128dec76d8c301894c289a23d5dc855558` is followed directly by
+evidence-only commit `1d19b5c4a44da9b4abe2706c14cd7d3951b2fb71` and
+receipt-only commit `cb1a8db81300443002bba4bcff7e8bd4f02adac3`. The
+receipt reports `requested=beta`, `achieved=beta`, `eligible=true`, no findings,
+25/25 deterministic gates, and 4/4 protected gates. All five cumulative live
+documents bind the exact source, matrix, promotion policy, trust policy,
+runtime row, proof digests, and Beta signer.
+
+The final OpenCode Go `deepseek-v4-flash` captures used seven children and
+28,334 tokens for about $0.02074 in total: inherited Alpha classes 8,117 tokens
+and about $0.00391; two-process background/resume 13,067 tokens and about
+$0.01178; guarded writer 7,150 tokens and about $0.00506. The evidence stores
+no raw output, host path, credential, session identifier, patch byte, or
+changed path. The guarded writer modified only a synthetic fixture, and the
+parent reconstructed and retained a detached disposable review worktree;
+source `HEAD`, commit history, and worktree remained unchanged.
+
+The deterministic tests use
+injected transports and temporary roots. A separate disposable-root,
+no-model Pi probe now proves the public `pi-subagents@0.45.2` `ready`/correlated
+`ping` handshake and single physical tool ownership. It submitted no prompt,
+made no Provider/model request, dispatched no child, read no credential, made
+no global install, and did not read or mutate the real Pi home.
+All planned orchestration contracts plus the evaluation-corpus, durable
+run-control, compatibility, promotion, protected-evidence, and evidence-trust
+contracts are now registered in the strict catalog. The catalog validates 42
+kinds and 77 non-vacuous production documents, with positive,
+unknown-field/version, and
+targeted semantic negatives. Public Workflow/Swarm routing now converges on
+the v2 facade. Approval fails closed without a live evidence provider,
+revalidates repository/capability scope on resume and before every mutating
+node admission, and cannot be replayed for a second run. Unfinished
+content-addressed read-only attempts can be deterministically requeued, while
+unfinished mutation is settled as interrupted and is never silently replayed.
+Every node deadline and reported token/cost/output overrun is enforced against
+the reserved envelope. A local deadline without correlated process-terminal
+proof is non-authoritative and makes the run `orphaned`, never a forged
+`timed-out` terminal claim. Child output is depth/node/byte bounded before
+cloning or serialization. Mutating admission additionally requires an executor
+that explicitly advertises audited path enforcement; the current
+`pi-subagents` v1 wire does not itself prove a per-path allowlist, so the
+general live writer seam remains unavailable rather than being inferred from a
+worktree. S5-C does not widen that claim: it is a separately authorized
+synthetic-fixture evidence producer whose parent validates the staged handoff
+after execution.
+The immutable Plan Store now persists the exact run-ID-to-WorkflowPlan binding;
+fresh coordinators can re-project status, publish cross-process cancel intent,
+and resume read-only/recoverable runs after restart without persisting raw
+input. The static single-owner topology probe, packaged-artifact inclusion, and
+the separately authorized live no-model capability/visibility probe now pass.
+The digest-bound no-model receipt is
+[`../contracts/subagents/pi-subagents-live-no-model-evidence.json`](../contracts/subagents/pi-subagents-live-no-model-evidence.json).
+It proves startup, public RPC compatibility, and tool ownership only; it is not
+being reinterpreted as child evidence. Separate signed Beta documents now prove
+live Agent terminal/cancellation, two-item homogeneous BatchSwarm,
+two-parent-process background/resume with metering, and one guarded synthetic
+writer handoff. Dynamic SwarmGoal execution, general production-repository
+writer admission, and Stable soak/cross-platform closure remain deliberately
+unproved. Producer implementations and deterministic tests are still not live
+evidence by themselves; only the five imported, source-bound documents satisfy
+those protected claims.
+Historical M5 receipts must not be described as successor evidence.
+
+Current branch evidence and the Beta release receipt:
+
+- `npm test`: **581/581** pass in the source regression run;
+- `npm run test:subagents`: **198/198** pass;
+- `npm run test:contract`: **149/149** pass;
+- `npm run test:integration`: **182/182** pass;
+- `npm run schema:check`: **77 production documents / 42 schema kinds / 0 findings**;
+- `npm run pack:check`: **292 allowlisted files**, with no tests, receipts, or
+  Codex Goal in the tarball;
+- `npm run lint`: **737 tracked files / 0 findings** after evidence and receipt
+  import;
+- `npm run secret:scan`: **737 tracked files + 292 packed files / 0 findings**;
+- `npm run test:e2e`: fresh scripts-disabled offline tarball install, packaged
+  topology doctor, zero-write plan, bootstrap, idempotent second apply,
+  rollback, and final `NOT_INSTALLED` status pass. The verification used a
+  temporary credential-isolated cache warmed from the exact lockfile and
+  moved that temporary root to Trash after completion. The unified gate now
+  forwards an explicitly selected cache only to `test-e2e`, and only after it
+  resolves inside the actual user npm-cache root or the system temporary root;
+- `npm run doctor`, all six Profile doctors, Mode/Agent/Workflow/Swarm doctors,
+  BatchSwarm, SwarmGoal, and UltraRun doctors, `npm run typecheck`, and the
+  deterministic agent/profile generators: pass.
+  Static doctor retains only the two explicit inactive-candidate warnings.
+
+The S5 deterministic runner, protected importer, S5-A capture/signing path,
+S5-B two-process background-resume path, and S5-C guarded-writer path have now
+completed the exact source/evidence/receipt protocol above.
+All three capture plan commands currently report `CONFIGURED_UNAVAILABLE`,
+with Provider/child/signer all `NOT_STARTED`, because the three used external
+authorizations were deliberately downgraded to `operator-template` after
+capture. The
+source-pinned trust policy now includes an independent, time-bounded Beta
+public signer scoped to the cumulative five Alpha/Beta evidence classes; it
+does not authorize execution by itself. All three capture commands require a
+credential-free Provider descriptor whose digest is bound by their respective
+authorization. The commands'
+`declaredEndpointHosts` are auditable metadata, not OS network enforcement.
+The three authorization contracts remain non-interchangeable and cannot be
+reused to start another live capture. Beta closure is complete for the exact
+source/evidence/receipt chain above. Stable additionally requires its declared
+soak and compatibility gates; Beta and a checked-in public key do not imply
+Stable authorization or eligibility.
 
 ## Current external Pi baseline
 
@@ -97,9 +379,12 @@ Two version-locked compatibility spikes are also complete:
 - `pi-permission-modes@2.2.0` has no audited public cross-extension read or
   hot-switch API, so hard execution-state changes return `RESTART_REQUIRED`;
   its OS sandbox is conditional and limited to eligible Bash subprocesses.
-- `pi-subagents@0.45.2` remains the sole physical child runtime. The future
-  only-my-pi adapter must use its capability-gated extension RPC and compiled
-  `workflowScript`; exported delegation types are fixture/reference-only.
+- `pi-subagents@0.45.2` remains the sole physical child runtime. The runtime
+  now uses two upstream-owned, version-locked protocols without introducing a
+  second scheduler: structured delegation for read-only foreground Agent/
+  BatchSwarm children, and extension RPC for asynchronous workflow management,
+  background/resume, and control. Caller-supplied workflow source is still
+  forbidden.
 
 M2 now turns those governed inputs into an installable, transactional
 configuration runtime:
@@ -167,14 +452,20 @@ M4 now supplies the practical single-Agent harness layer:
 M5 now supplies the governed AgentSwarm layer without introducing a second
 child scheduler or subagent owner:
 
+> Successor note（2026-08-18）：下列 M5 controller/compiler 仍作为 direct-import
+> 兼容实现保留；公共 `omp workflow`、`omp swarm` 与 `/omp` 路由已经不再创建它们，
+> 而是把旧资源迁移为 WorkflowPlan 并交给 `packages/subagents/` 的统一
+> RunCoordinator。历史 M5 evidence 不能充当 successor live evidence。
+
 - `packages/swarm-core` discovers and validates four versioned recipes, applies
   Profile/Mode/role budget intersections, rejects recursive or unsafe writer
   topologies, compiles a JSON-safe `workflowScript`, and aggregates child
   results in stable recipe order;
-- `packages/pi-subagents-adapter` is the only live child seam. It pins the
-  audited `pi-subagents@0.45.2` extension-RPC v1 wire, performs capability ping
-  negotiation before spawn, maps stop/interrupt/status events, and refuses
-  private imports or the exported delegation surface as a runtime lane;
+- `packages/pi-subagents-adapter` remains the legacy RPC compatibility seam.
+  The successor runtime pins the same `pi-subagents@0.45.2` package and uses
+  extension RPC for async workflow/background/resume/control plus structured
+  delegation for read-only foreground Agent/Batch execution. Both refuse
+  private imports and caller-provided executable workflow source;
 - read-only research, review, and debug recipes never receive `bash`, `edit`,
   or `write`; tester/verifier evidence is supplied by the fixed Gate Runner;
   coding writers require a negotiated managed-worktree capability and shared
@@ -267,6 +558,8 @@ npm run test:acp
 npm run test:checkpoint
 npm run doctor
 npm run doctor:profiles
+npm run doctor:subagents-topology
+npm run doctor:batches
 npm run profile:check
 npm run schema:check
 npm run mcp:doctor -- --file verification/fixtures/mcp.safe.json --strict
@@ -334,12 +627,15 @@ invariant as the Harness MVP receipt.
 
 ## Next implementation boundary
 
-The repository now has a complete product roadmap and a Codex execution Goal.
-The Goal is an external development-orchestrator contract and is not exposed
-through the Pi package's `prompts/` resources:
+The completed M0–M7 roadmap remains the historical Harness MVP baseline. The
+approved S0–S5 plan and its Codex Goal now define the next implementation
+boundary. Both Goals are external development-orchestrator contracts and are
+not exposed through the Pi package's `prompts/` resources:
 
-- [`plans/2026-08-16-only-my-pi-development-plan.md`](plans/2026-08-16-only-my-pi-development-plan.md)
-- [`../codex/goals/develop-only-my-pi.md`](../codex/goals/develop-only-my-pi.md)
+- [`plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md`](plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md) — successor plan
+- [`../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../codex/goals/develop-only-my-pi-subagents-ultrarun.md) — successor Codex Goal
+- [`plans/2026-08-16-only-my-pi-development-plan.md`](plans/2026-08-16-only-my-pi-development-plan.md) — historical M0–M7 plan
+- [`../codex/goals/develop-only-my-pi.md`](../codex/goals/develop-only-my-pi.md) — historical M0–M7 Goal
 
 The roadmap target is a usable Pi-based Harness distribution. M0 established
 the product/Labs boundary, M1 established the strict configuration and
@@ -361,3 +657,19 @@ Labs/Experimental and remain disabled by default. Creator/self-modifying
 plugins, arbitrary JavaScript workflows, automatic marketplaces, remote
 UI/SSH/Cron, and un-sandboxed web fetch also remain outside the default
 profiles.
+
+The static single-owner topology probe, packaged-artifact inclusion, and
+digest-bound live no-model Pi RPC capability/visibility probe now pass. The
+probe used a disposable Pi root and submitted no prompt, called no Provider,
+and dispatched no child. The durable Plan Store, restart-safe
+status/resume and cross-process cancel intent are complete; cancel/stop remains
+non-authoritative without correlated backend terminal proof. The legacy direct
+imports remain one-release compatibility shims but no longer own public
+execution. S3 now supplies the true homogeneous BatchSwarm implementation,
+stable item ledger, bounded ramp/retry/failure semantics, exact AgentSpec and
+template binding, WorkflowPlan node, parent-budget recovery, and CLI/TUI
+control. The 1/8/20/64/300 logical simulations and injected adapter tests pass;
+the protected live read-only batch is `NOT_RUN_BY_POLICY`. S4 now supplies
+dynamic SwarmGoal plan revisions, UltraRun routing, quality policy, immutable
+artifacts, and guarded writer handoff without automatic integration. S5 adds
+promotion-specific live, fault, security, and compatibility evidence.

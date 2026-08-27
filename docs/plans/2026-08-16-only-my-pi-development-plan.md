@@ -5,6 +5,8 @@
 > 目标仓库：`only-my-pi`
 > 产品目标：把现有的 Pi 资源与安全治理仓库，开发成可安装、可切换模式、可编排 AgentSwarm、可诊断、可回滚的个人 Harness 发行版
 
+> **历史边界：** 本计划定义并记录已经完成的 M0–M7 Harness MVP。统一 Subagent、Workflow、Kimi-style SwarmGoal 与 Claude-style UltraRun 的后续 S0–S5 开发，以 [`2026-08-18-only-my-pi-subagents-ultrarun-plan.md`](2026-08-18-only-my-pi-subagents-ultrarun-plan.md) 为准；不得回写本计划或旧 receipt 来伪装后续能力已经实现。
+
 ## 1. 结论与开发方向
 
 `only-my-pi` 不应重写 Pi，也不应继续把 DeepSeek 协议、ACP 适配器或 workspace checkpoint 当作主产品。正确方向是：

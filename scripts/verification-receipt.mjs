@@ -4,6 +4,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -46,6 +47,43 @@ function boundedFailureDiagnostic(stderr) {
   return `${match[1]}:${message}`;
 }
 
+const TEST_GATE_IDS = new Set(["test-unit", "test-contract", "test-integration", "full-tests"]);
+
+function sanitizedTestLabel(value) {
+  return String(value)
+    .replace(/\x1b\[[0-?]*[ -\/]*[@-~]/gu, "")
+    .replace(/[\u0000-\u001f\u007f]/gu, " ")
+    .replace(/(?:[A-Za-z]:)?[\\/](?:[^\s\\/]+[\\/])+[^\s]*/gu, "<path>")
+    .replace(/\s+/gu, " ")
+    .trim()
+    .slice(0, 180);
+}
+
+export function boundedTestFailureDiagnostic(stdout, stderr) {
+  const lines = `${stdout}\n${stderr}`
+    .replace(/\x1b\[[0-?]*[ -\/]*[@-~]/gu, "")
+    .split(/\r?\n/u);
+  const failures = [];
+  const codes = [];
+  const remember = (target, value, maximum) => {
+    const sanitized = sanitizedTestLabel(value);
+    if (sanitized && !target.includes(sanitized) && target.length < maximum) target.push(sanitized);
+  };
+  for (const line of lines) {
+    const tap = /^\s*not ok \d+ - (.+)$/u.exec(line);
+    const spec = /^\s*✖\s+(.+?)(?:\s+\([\d.]+ms\))?$/u.exec(line);
+    if (tap?.[1]) remember(failures, tap[1], 16);
+    else if (spec?.[1] && spec[1] !== "failing tests:") remember(failures, spec[1], 16);
+    const code = /^\s*(?:code|failureType):\s*['"]?([A-Z][A-Z0-9_-]{1,127})['"]?\s*$/u.exec(line);
+    if (code?.[1]) remember(codes, code[1], 16);
+  }
+  const parts = [
+    failures.length > 0 ? `tests=${failures.join(" | ")}` : "tests=UNPARSEABLE",
+    ...(codes.length > 0 ? [`codes=${codes.join(",")}`] : []),
+  ];
+  return `TEST_FAILURE:${parts.join(";")}`.slice(0, 1200);
+}
+
 function exactKeys(value, allowed, label) {
   if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error(`${label} must be an object`);
   const unknown = Object.keys(value).filter((key) => !allowed.has(key));
@@ -64,6 +102,40 @@ function safeOutputPath(requested, rootDir = repositoryRoot) {
   return target;
 }
 
+function containedPath(root, candidate, { allowRoot = false } = {}) {
+  const relative = path.relative(root, candidate);
+  return (allowRoot && relative === "")
+    || (relative !== "" && relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
+}
+
+function inheritedNpmCache(gate, inherited) {
+  if (gate.id !== "test-e2e") return undefined;
+  const lower = inherited.npm_config_cache;
+  const upper = inherited.NPM_CONFIG_CACHE;
+  if (lower !== undefined && upper !== undefined && lower !== upper) {
+    throw new Error("test-e2e npm cache environment is ambiguous");
+  }
+  const requested = lower ?? upper;
+  if (requested === undefined) return undefined;
+  if (typeof requested !== "string" || requested.includes("\0") || !path.isAbsolute(requested)) {
+    throw new Error("test-e2e npm cache must be an absolute directory");
+  }
+
+  const cacheRoot = fs.realpathSync(requested);
+  if (!fs.statSync(cacheRoot).isDirectory()) throw new Error("test-e2e npm cache must be a directory");
+  const temporaryRoot = fs.realpathSync(os.tmpdir());
+  let insideHomeCache = false;
+  try {
+    insideHomeCache = containedPath(fs.realpathSync(path.join(os.homedir(), ".npm")), cacheRoot, { allowRoot: true });
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  if (!insideHomeCache && !containedPath(temporaryRoot, cacheRoot)) {
+    throw new Error("test-e2e npm cache must stay inside the user npm cache or system temporary root");
+  }
+  return cacheRoot;
+}
+
 function gateEnvironment(gate, inherited = process.env) {
   const output = {};
   for (const key of [
@@ -79,6 +151,8 @@ function gateEnvironment(gate, inherited = process.env) {
     npm_config_fund: "false",
     npm_config_update_notifier: "false",
   });
+  const cacheRoot = inheritedNpmCache(gate, inherited);
+  if (cacheRoot !== undefined) output.npm_config_cache = cacheRoot;
   return output;
 }
 
@@ -156,7 +230,11 @@ export function runCheck(check, {
       const out = Buffer.concat(stdout);
       const err = Buffer.concat(stderr);
       const freshEvidence = check.id === "test-e2e" ? extractFreshEvidence(out.toString("utf8")) : undefined;
-      const diagnostic = check.id === "test-e2e" ? boundedFailureDiagnostic(err.toString("utf8")) : undefined;
+      const diagnostic = check.id === "test-e2e"
+        ? boundedFailureDiagnostic(err.toString("utf8"))
+        : (code !== 0 && TEST_GATE_IDS.has(check.id)
+            ? boundedTestFailureDiagnostic(out.toString("utf8"), err.toString("utf8"))
+            : undefined);
       const emptyOutputPassed = check.expectStdout === "empty" ? out.toString("utf8").trim().length === 0 : true;
       const expectationPassed = emptyOutputPassed && (check.id !== "test-e2e" || freshEvidence !== null);
       const passed = code === 0 && !spawnError && !timedOut && !outputLimitExceeded && expectationPassed;

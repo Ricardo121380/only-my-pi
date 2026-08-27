@@ -1,0 +1,31 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/swarm-goal-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "runtime-ready",
+  "kind": "swarm-goal",
+  "id": "research-release-goal",
+  "version": "1.0.0",
+  "objective": {
+    "ref": "objectives/research-release.md",
+    "digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888"
+  },
+  "authority": {
+    "allowedAgentTemplates": ["researcher", "source-verifier", "synthesizer", "verifier"],
+    "budgetRef": "preview-read-only",
+    "maxPlanRevisions": 4,
+    "maxAgentSpecs": 8,
+    "mutation": "none",
+    "egress": "deny"
+  },
+  "roles": {
+    "synthesizerTemplate": "synthesizer",
+    "verifierTemplate": "verifier",
+    "minimumDistinctAgentSpecs": 3
+  },
+  "convergence": {
+    "coverageTarget": 0.9,
+    "noProgressWindow": 2,
+    "freshVerifierRequired": true
+  },
+  "outputSchemaRef": "research-result"
+}

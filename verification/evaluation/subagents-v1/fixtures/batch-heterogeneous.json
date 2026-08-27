@@ -1,0 +1,10 @@
+{
+  "formatVersion": 1,
+  "id": "batch-heterogeneous",
+  "kind": "batch-swarm",
+  "input": {
+    "agentSpecRefs": ["reviewer-v1", "writer-v1"],
+    "items": [{ "id": "item-a" }, { "id": "item-b" }],
+    "completions": [{ "itemId": "item-a", "value": "a" }, { "itemId": "item-b", "value": "b" }]
+  }
+}

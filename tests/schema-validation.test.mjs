@@ -186,6 +186,39 @@ test("Swarm DAG, agent and writer policies, and every budget envelope fail close
   ]) assertFixtureKeyword(registry, "swarmRecipe", name, keyword);
 });
 
+test("subagents v2 contracts reject authority, budget, reference, and terminal-proof drift", () => {
+  const registry = createSchemaRegistry({ rootDir: root });
+  for (const [kind, name, keyword] of [
+    ["agentTemplate", "negative-readonly-write.json", "capability-escalation"],
+    ["batchSwarm", "negative-concurrency-envelope.json", "budget-envelope"],
+    ["batchSwarm", "negative-agent-binding.json", "correlation-digest"],
+    ["batchSwarm", "negative-max-items.json", "maximum"],
+    ["batchSwarm", "negative-assignment-envelope.json", "budget-envelope"],
+    ["ultraRun", "negative-unknown-workflow.json", "unknown-reference"],
+    ["terminalReceipt", "negative-authoritative-without-proof.json", "terminal-proof"],
+  ]) assertFixtureKeyword(registry, kind, name, keyword);
+});
+
+test("TaskAssignment ownership fixtures reject unbound claims and incomplete writer evidence", () => {
+  const registry = createSchemaRegistry({ rootDir: root });
+  assertFixtureKeyword(registry, "taskAssignment", "negative-file-claim-outside-paths.json", "path-claim");
+  assertFixtureKeyword(registry, "taskAssignment", "negative-writer-empty-claims.json", "minItems");
+  assertFixtureKeyword(registry, "taskAssignment", "negative-writer-missing-base-commit.json", "required");
+});
+
+test("S4 dynamic goal and UltraRun references fail closed at the contract catalog", () => {
+  const registry = createSchemaRegistry({ rootDir: root });
+  for (const [kind, name, keyword] of [
+    ["swarmGoal", "negative-role-conflict.json", "role-conflict"],
+    ["swarmGoal", "negative-agent-envelope.json", "budget-envelope"],
+    ["ultraRun", "negative-unknown-workflow.json", "unknown-reference"],
+    ["ultraRun", "negative-unknown-batch.json", "unknown-reference"],
+    ["ultraRun", "negative-unknown-goal.json", "unknown-reference"],
+  ]) {
+    assertFixtureKeyword(registry, kind, name, keyword);
+  }
+});
+
 test("semantic graph rejects unknown references, cycles, duplicate owners, and escalation", () => {
   const registry = createSchemaRegistry({ rootDir: root });
   const cases = [
@@ -213,4 +246,21 @@ test("M5 promotes the inspect mode and research synthesis recipe; remaining seed
   for (const relativePath of ["agents/scout.json", "workflows/single-agent-safe.json"]) {
     assert.equal(read(relativePath).contractStatus, "contract-only", relativePath);
   }
+});
+
+test("durable run-plan and cancel contracts share runtime digest bindings", () => {
+  const registry = createSchemaRegistry({ rootDir: root });
+  const planFixture = fixture("workflowRunPlan", "positive.json");
+  const tamperedPlan = structuredClone(planFixture.document);
+  tamperedPlan.executionEnvelope.sourceHash = `sha256:${"a".repeat(64)}`;
+  const planResult = registry.validate("workflowRunPlan", tamperedPlan, { sourcePath: planFixture.sourcePath });
+  assert.equal(planResult.valid, false);
+  assert.ok(planResult.errors.some((entry) => ["digest-binding", "digest-authenticity"].includes(entry.keyword)), JSON.stringify(planResult.errors));
+
+  const cancelFixture = fixture("workflowCancelRequest", "positive.json");
+  const tamperedCancel = structuredClone(cancelFixture.document);
+  tamperedCancel.reason = "different operator intent";
+  const cancelResult = registry.validate("workflowCancelRequest", tamperedCancel, { sourcePath: cancelFixture.sourcePath });
+  assert.equal(cancelResult.valid, false);
+  assert.ok(cancelResult.errors.some((entry) => entry.keyword === "digest-authenticity"), JSON.stringify(cancelResult.errors));
 });

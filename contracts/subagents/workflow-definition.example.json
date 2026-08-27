@@ -1,0 +1,62 @@
+{
+  "$schema": "../../schemas/workflow-definition-v2.schema.json",
+  "formatVersion": 2,
+  "contractStatus": "contract-preview",
+  "id": "source-review-v2",
+  "version": "2.0.0",
+  "description": "A read-only parallel source review followed by a deterministic gate.",
+  "policy": {
+    "workspace": "shared-read-only",
+    "mutation": "none",
+    "egress": { "web": "deny", "mcp": "deny", "provider": "allow" },
+    "tools": { "allow": ["read"], "deny": ["bash", "edit", "write"] }
+  },
+  "budget": {
+    "maxNodes": 8,
+    "maxParallel": 2,
+    "maxDepth": 4,
+    "maxAttemptsPerNode": 1,
+    "maxWallTimeMs": 300000,
+    "maxOutputBytes": 262144,
+    "maxAssignments": 4,
+    "maxTokens": null,
+    "maxCostUsd": null
+  },
+  "flow": {
+    "kind": "sequence",
+    "steps": [
+      {
+        "kind": "parallel",
+        "branches": [
+          {
+            "kind": "agent",
+            "id": "source-a",
+            "agentTemplateRef": "source-verifier",
+            "assignment": { "taskTemplateRef": "audit-source" },
+            "policy": { "workspace": "shared-read-only", "mutation": "none", "tools": { "allow": ["read"] } },
+            "budget": { "maxAttempts": 1, "timeoutMs": 120000, "maxOutputBytes": 65536 },
+            "cache": { "mode": "content-addressed", "keyInputs": ["source-a"] },
+            "idempotency": "content-addressed"
+          },
+          {
+            "kind": "agent",
+            "id": "source-b",
+            "agentTemplateRef": "source-verifier",
+            "assignment": { "taskTemplateRef": "audit-source" },
+            "policy": { "workspace": "shared-read-only", "mutation": "none", "tools": { "allow": ["read"] } },
+            "budget": { "maxAttempts": 1, "timeoutMs": 120000, "maxOutputBytes": 65536 },
+            "cache": { "mode": "content-addressed", "keyInputs": ["source-b"] },
+            "idempotency": "content-addressed"
+          }
+        ]
+      },
+      {
+        "kind": "gate",
+        "id": "verify",
+        "gateId": "test-contract",
+        "policy": { "workspace": "shared-read-only", "mutation": "none" },
+        "budget": { "maxAttempts": 1, "timeoutMs": 60000, "maxOutputBytes": 65536 }
+      }
+    ]
+  }
+}

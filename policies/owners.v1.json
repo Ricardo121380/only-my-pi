@@ -63,9 +63,18 @@
       "id": "subagents",
       "description": "Sole owner of the physical child runtime, scheduler, and public subagent tool.",
       "exclusive": true,
-      "capabilities": ["subagent-runtime", "subagent-rpc-v1"],
+      "capabilities": ["subagent-delegation-v1", "subagent-rpc-v1", "subagent-runtime"],
       "surfaces": [],
       "status": "upstream"
+    },
+    {
+      "id": "only-my-pi-subagent-orchestration",
+      "description": "Sole first-party owner of typed Agent orchestration, WorkflowPlan coordination, journal, budget, and migration semantics; it never owns a second physical child runtime or public subagent tool.",
+      "exclusive": true,
+      "capabilities": [],
+      "surfaces": [],
+      "resourceIds": ["omp-subagents-v2-runtime"],
+      "status": "active"
     },
     {
       "id": "permission",

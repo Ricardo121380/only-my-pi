@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-background-resume-authorization-v1.schema.json",
+  "title": "only-my-pi Subagents background resume authorization v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "formatVersion",
+    "contractStatus",
+    "authorizationId",
+    "sourceCommit",
+    "matrixDigest",
+    "policyDigest",
+    "trustPolicyDigest",
+    "compatibilityRowId",
+    "evidenceIds",
+    "provider",
+    "limits",
+    "workspace",
+    "session",
+    "signer",
+    "approvedAt",
+    "expiresAt",
+    "authorizationDigest"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "pattern": "subagents-background-resume-authorization-v1\\.schema\\.json$"
+    },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "enum": ["operator-template", "operator-authorized-live"] },
+    "authorizationId": { "$ref": "#/$defs/id" },
+    "sourceCommit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "matrixDigest": { "$ref": "#/$defs/sha256" },
+    "policyDigest": { "$ref": "#/$defs/sha256" },
+    "trustPolicyDigest": { "$ref": "#/$defs/sha256" },
+    "compatibilityRowId": { "$ref": "#/$defs/id" },
+    "evidenceIds": {
+      "type": "array",
+      "prefixItems": [{ "const": "background-resume" }],
+      "items": false,
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "model", "configurationDigest", "credentialEnvironment", "declaredEndpointHosts"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000\\r\\n]+$"
+        },
+        "configurationDigest": { "$ref": "#/$defs/sha256" },
+        "credentialEnvironment": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,127}$" }
+        },
+        "declaredEndpointHosts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$",
+            "maxLength": 253
+          }
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxChildren", "maxConcurrency", "maxWallTimeMs", "maxOutputBytes", "maxTokens", "maxCostUsd"],
+      "properties": {
+        "maxChildren": { "const": 2 },
+        "maxConcurrency": { "const": 1 },
+        "maxWallTimeMs": { "type": "integer", "minimum": 2000, "maximum": 3600000 },
+        "maxOutputBytes": { "type": "integer", "minimum": 2048, "maximum": 1048576 },
+        "maxTokens": { "type": "integer", "minimum": 2, "maximum": 1000000 },
+        "maxCostUsd": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000 }
+      }
+    },
+    "workspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "realPiHome", "mutation", "web", "mcp", "projectTrust"],
+      "properties": {
+        "mode": { "const": "disposable-read-only" },
+        "realPiHome": { "const": "deny" },
+        "mutation": { "const": "deny" },
+        "web": { "const": "deny" },
+        "mcp": { "const": "deny" },
+        "projectTrust": { "const": "deny" }
+      }
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["persistence", "parentProcesses", "artifactScope", "resumeMode"],
+      "properties": {
+        "persistence": { "const": "isolated-parent-session" },
+        "parentProcesses": { "const": 2 },
+        "artifactScope": { "const": "session" },
+        "resumeMode": { "const": "new-backend-binding" }
+      }
+    },
+    "signer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["signerId", "publicKeyFingerprint", "protocol"],
+      "properties": {
+        "signerId": { "$ref": "#/$defs/id" },
+        "publicKeyFingerprint": { "$ref": "#/$defs/sha256" },
+        "protocol": { "const": "digest-stdin-signature-stdout-v1" }
+      }
+    },
+    "approvedAt": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "authorizationDigest": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

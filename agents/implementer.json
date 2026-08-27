@@ -4,8 +4,8 @@
   "contractStatus": "runtime-ready",
   "id": "implementer",
   "upstreamAgentId": "omp-implementer",
-  "version": "1.0.0",
-  "description": "Guarded workspace writer that implements an approved plan and reports exact changes.",
+  "version": "1.1.0",
+  "description": "Managed-worktree writer that implements an approved plan and reports exact changes for parent verification.",
   "prompt": { "file": "agents/prompts/implementer.md" },
   "tools": {
     "allow": ["read", "grep", "find", "ls", "edit", "write", "bash"],
@@ -14,10 +14,10 @@
   "allowedExecutionStates": ["build"],
   "requiredCapabilities": ["workspace-read", "file-tool-policy", "bash-sandbox-conditional"],
   "policyCeiling": {
-    "workspace": "guarded-write",
+    "workspace": "worktree-write",
     "egress": { "web": "deny", "mcp": "deny", "provider": "inherit", "extension": "deny" },
     "approval": "ask",
-    "mutation": "workspace"
+    "mutation": "isolated-worktree"
   },
   "modelRole": "balanced",
   "inputSchema": {

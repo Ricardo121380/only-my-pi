@@ -1,0 +1,86 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/workflow-plan-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "id": "source-review-v2",
+  "definitionVersion": "2.0.0",
+  "definitionDigest": "sha256:197ea83e8b19da24d5735b5177d7bb463c6af2341a61a17965a4b416a5b61d8e",
+  "revision": {
+    "number": 0,
+    "parentPlanDigest": null,
+    "reason": "initial-compile",
+    "activationPolicy": "drain"
+  },
+  "policy": {
+    "workspace": "shared-read-only",
+    "mutation": "none",
+    "egress": { "web": "deny", "mcp": "deny", "provider": "allow" },
+    "tools": { "allow": ["read"], "deny": ["bash", "edit", "write"] }
+  },
+  "policyDigest": "sha256:1c18a210d7c69fadb5ad2dc19f4faa08114a3c0813c17222c007e10cd637c3d9",
+  "budget": {
+    "maxNodes": 8,
+    "maxParallel": 2,
+    "maxDepth": 4,
+    "maxAttemptsPerNode": 1,
+    "maxWallTimeMs": 300000,
+    "maxOutputBytes": 262144,
+    "maxAssignments": 4,
+    "maxTokens": null,
+    "maxCostUsd": null
+  },
+  "nodes": [
+    {
+      "agentTemplateRef": "source-verifier",
+      "assignment": { "taskTemplateRef": "audit-source" },
+      "budget": { "maxAttempts": 1, "maxCostUsd": null, "maxOutputBytes": 65536, "maxTokens": null, "timeoutMs": 120000 },
+      "cache": { "keyInputs": ["source-a"], "mode": "content-addressed" },
+      "id": "source-a",
+      "idempotency": "content-addressed",
+      "kind": "agent",
+      "needs": [],
+      "outputSchemaRef": null,
+      "policy": {
+        "egress": { "mcp": "deny", "provider": "allow", "web": "deny" },
+        "mutation": "none",
+        "tools": { "allow": ["read"], "deny": [] },
+        "workspace": "shared-read-only"
+      }
+    },
+    {
+      "agentTemplateRef": "source-verifier",
+      "assignment": { "taskTemplateRef": "audit-source" },
+      "budget": { "maxAttempts": 1, "maxCostUsd": null, "maxOutputBytes": 65536, "maxTokens": null, "timeoutMs": 120000 },
+      "cache": { "keyInputs": ["source-b"], "mode": "content-addressed" },
+      "id": "source-b",
+      "idempotency": "content-addressed",
+      "kind": "agent",
+      "needs": [],
+      "outputSchemaRef": null,
+      "policy": {
+        "egress": { "mcp": "deny", "provider": "allow", "web": "deny" },
+        "mutation": "none",
+        "tools": { "allow": ["read"], "deny": [] },
+        "workspace": "shared-read-only"
+      }
+    },
+    {
+      "budget": { "maxAttempts": 1, "maxCostUsd": null, "maxOutputBytes": 65536, "maxTokens": null, "timeoutMs": 60000 },
+      "cache": { "keyInputs": [], "mode": "never" },
+      "gateId": "test-contract",
+      "id": "verify",
+      "idempotency": "none",
+      "kind": "gate",
+      "needs": ["source-a", "source-b"],
+      "policy": {
+        "egress": { "mcp": "deny", "provider": "allow", "web": "deny" },
+        "mutation": "none",
+        "tools": { "allow": [], "deny": [] },
+        "workspace": "shared-read-only"
+      }
+    }
+  ],
+  "entryNodeIds": ["source-a", "source-b"],
+  "terminalNodeId": "verify",
+  "planDigest": "sha256:db9e53cd56d72c0314a68353ba7558546ec87ec8b6ab9b71071df85e5a87bcbe"
+}

@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-guarded-writer-reconciliation-v1.schema.json",
+  "title": "only-my-pi guarded writer reconciliation plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "formatVersion", "contractStatus", "operation",
+    "authorizationId", "authorizationDigest", "sourceCommit", "observedAt",
+    "configRootFingerprint", "runtimeRelativePath", "runtimeState", "request",
+    "components", "blockers", "cleanup", "planDigest"
+  ],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "subagents-guarded-writer-reconciliation-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "const": "review-only" },
+    "operation": { "const": "guarded-writer-reconciliation-plan" },
+    "authorizationId": { "$ref": "#/$defs/id" },
+    "authorizationDigest": { "$ref": "#/$defs/sha256" },
+    "sourceCommit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "observedAt": { "type": "string", "format": "date-time" },
+    "configRootFingerprint": { "$ref": "#/$defs/sha256" },
+    "runtimeRelativePath": {
+      "type": "string",
+      "pattern": "^only-my-pi/subagents-guarded-writer/[a-z0-9][a-z0-9._:-]{0,127}$"
+    },
+    "runtimeState": { "enum": ["NOT_FOUND", "PARTIAL", "READY_FOR_REVIEW", "UNSAFE"] },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "digest", "findings"],
+      "properties": {
+        "state": { "enum": ["MISSING", "VALID", "INVALID", "UNSAFE"] },
+        "digest": { "anyOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+        "findings": {
+          "type": "array", "uniqueItems": true, "maxItems": 16,
+          "items": { "$ref": "#/$defs/finding" }
+        }
+      }
+    },
+    "components": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "prefixItems": [
+        { "$ref": "#/$defs/agentRoot" },
+        { "$ref": "#/$defs/sessionRoot" },
+        { "$ref": "#/$defs/artifactRoot" },
+        { "$ref": "#/$defs/fixtureRepository" },
+        { "$ref": "#/$defs/worktreeRoot" }
+      ],
+      "items": false
+    },
+    "blockers": {
+      "type": "array", "uniqueItems": true, "maxItems": 24,
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "automatic", "deleteAuthorized", "applyAvailable", "applyCommand", "exactTargetDigest"],
+      "properties": {
+        "disposition": { "enum": ["NO_TARGET", "RETAIN_FOR_REVIEW"] },
+        "automatic": { "const": false },
+        "deleteAuthorized": { "const": false },
+        "applyAvailable": { "const": false },
+        "applyCommand": { "type": "null" },
+        "exactTargetDigest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "planDigest": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "finding": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,127}$" },
+    "componentState": { "enum": ["MISSING", "PRESENT", "SYMLINK", "TYPE_MISMATCH", "UNREADABLE"] },
+    "componentBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "expectedType", "state"],
+      "properties": {
+        "id": { "type": "string" },
+        "expectedType": { "const": "directory" },
+        "state": { "$ref": "#/$defs/componentState" }
+      }
+    },
+    "agentRoot": {
+      "allOf": [
+        { "$ref": "#/$defs/componentBase" },
+        { "type": "object", "properties": { "id": { "const": "agent-root" } } }
+      ]
+    },
+    "sessionRoot": {
+      "allOf": [
+        { "$ref": "#/$defs/componentBase" },
+        { "type": "object", "properties": { "id": { "const": "session-root" } } }
+      ]
+    },
+    "artifactRoot": {
+      "allOf": [
+        { "$ref": "#/$defs/componentBase" },
+        { "type": "object", "properties": { "id": { "const": "artifact-root" } } }
+      ]
+    },
+    "fixtureRepository": {
+      "allOf": [
+        { "$ref": "#/$defs/componentBase" },
+        { "type": "object", "properties": { "id": { "const": "fixture-repository" } } }
+      ]
+    },
+    "worktreeRoot": {
+      "allOf": [
+        { "$ref": "#/$defs/componentBase" },
+        { "type": "object", "properties": { "id": { "const": "worktree-root" } } }
+      ]
+    }
+  }
+}

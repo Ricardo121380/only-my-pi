@@ -140,12 +140,13 @@ export async function restoreModeReceipt({ registry, entries, profile } = {}) {
  * It never invokes a shell and treats missing live services as an explicit
  * unavailable state rather than guessing a permission or sandbox state.
  */
-export function createOmpRuntime({ rootDir, configRoot, registry, modeService, workflowService, swarmService, themeService, statusService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
+export function createOmpRuntime({ rootDir, configRoot, registry, modeService, workflowService, swarmService, ultraService, subagentsOrchestration, themeService, statusService, sessionDriver, snapshotProvider, profile, onModeRestored, onModeStale, getModeRestoreStatus } = {}) {
   const derivedRoot = rootDir ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const derivedConfigRoot = configRoot ?? process.env.PI_CODING_AGENT_DIR ?? null;
   let modes = modeService;
   let workflows = workflowService;
   let swarms = swarmService;
+  let ultras = ultraService;
   let themes = themeService;
   let statuses = statusService;
   const getModes = async () => {
@@ -159,7 +160,7 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
       // startup path.  The dynamic import also makes a missing optional
       // workflow bundle an explicit command-time UNAVAILABLE result.
       const module = await import("../../packages/control-service/workflow-service.mjs");
-      workflows = module.createWorkflowControlService({ rootDir: derivedRoot });
+      workflows = module.createWorkflowControlService({ rootDir: derivedRoot, orchestration: subagentsOrchestration });
     }
     return workflows;
   };
@@ -168,9 +169,16 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
       // Swarm is an optional M5 surface.  Keep it out of minimal startup and
       // only load the adapter/control bundle when the user invokes /omp swarm.
       const module = await import("../../packages/control-service/swarm-service.mjs");
-      swarms = module.createSwarmControlService({ rootDir: derivedRoot });
+      swarms = module.createSwarmControlService({ rootDir: derivedRoot, orchestration: subagentsOrchestration });
     }
     return swarms;
+  };
+  const getUltras = async () => {
+    if (!ultras) {
+      const module = await import("../../packages/control-service/ultra-run-service.mjs");
+      ultras = module.createUltraRunControlService({ rootDir: derivedRoot });
+    }
+    return ultras;
   };
   const getThemes = async () => {
     if (!themes) {
@@ -214,7 +222,7 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
         return {
           ok: true,
           status: "HELP",
-          text: "/omp status|doctor|profile|mode|workflow|swarm|theme|tools|packages|context|verify|safe|help",
+          text: "/omp status|doctor|profile|mode|workflow|swarm|ultra|theme|tools|packages|context|verify|safe|help",
         };
       }
       if (command === "mode") {
@@ -231,24 +239,109 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, w
       }
       if (command === "workflow") {
         const subcommand = args[0] ?? "list";
-        const workflowId = args[1] ?? null;
-        const result = await (await getWorkflows()).dispatch({ subcommand, workflowId, runId: workflowId, apply: args.includes("--apply") && args.includes("--yes"), input: {}, conditions: ["profile-resolved", "mode-resolved", "session-idle"] });
+        const identifier = args[1] ?? null;
+        const inputFileIndex = args.indexOf("--input-file");
+        const inputFile = inputFileIndex >= 0 ? args[inputFileIndex + 1] : null;
+        const approved = args.includes("--apply") && args.includes("--yes");
+        const service = await getWorkflows();
+        const request = {
+          subcommand,
+          workflowId: ["status", "cancel", "resume"].includes(subcommand) ? null : identifier,
+          runId: ["status", "cancel", "resume"].includes(subcommand) ? identifier : null,
+          inputFile,
+          ...(inputFile ? {} : { input: {} }),
+          conditions: ["profile-resolved", "mode-resolved", "session-idle"],
+        };
+        let result;
+        if (subcommand === "run" && approved) {
+          const plan = await service.dispatch({ ...request, apply: false, yes: false });
+          result = plan?.ok === false
+            ? plan
+            : await service.dispatch({
+              ...request,
+              apply: true,
+              yes: true,
+              inputFile: null,
+              runId: plan.runId ?? request.runId,
+              input: plan.input,
+              conditions: plan.executionEnvelope?.conditions ?? request.conditions,
+              expectedPlanDigest: plan.plan?.planDigest ?? null,
+              expectedExecutionDigest: plan.executionEnvelope?.executionEnvelopeDigest ?? null,
+            });
+        } else {
+          result = await service.dispatch({ ...request, apply: false, yes: false });
+        }
         notify(ctx, result, result.ok === false ? "warning" : "info");
         return result;
       }
       if (command === "swarm") {
         const subcommand = args[0] ?? "list";
-        const identifier = args[1] ?? null;
+        const batch = subcommand === "batch";
+        const goal = subcommand === "goal";
+        const operation = batch || goal ? (args[1] ?? "list") : subcommand;
+        const identifier = batch || goal ? (args[2] ?? null) : (args[1] ?? null);
         const inputFileIndex = args.indexOf("--input-file");
         const inputFile = inputFileIndex >= 0 ? args[inputFileIndex + 1] : null;
-        const result = await (await getSwarms()).dispatch({
-          subcommand,
-          recipeId: ["status", "cancel"].includes(subcommand) ? null : identifier,
-          runId: ["status", "cancel"].includes(subcommand) ? identifier : null,
+        const service = await getSwarms();
+        const request = {
+          subcommand: batch ? "batch" : goal ? "goal" : subcommand,
+          ...(batch ? { batchSubcommand: operation } : {}),
+          ...(goal ? { goalSubcommand: operation } : {}),
+          recipeId: batch || goal || ["status", "cancel", "resume"].includes(operation) ? null : identifier,
+          ...(batch ? { batchId: !["status", "cancel", "resume"].includes(operation) ? identifier : null } : {}),
+          ...(goal ? { goalId: operation === "status" ? null : identifier } : {}),
+          runId: ["status", "cancel", "resume"].includes(operation) ? identifier : null,
           inputFile,
-          yes: args.includes("--yes"),
-          input: {},
-        });
+          ...(inputFile ? {} : { input: {} }),
+        };
+        const approved = args.includes("--yes");
+        let result;
+        if (operation === "run" && approved) {
+          const plan = await service.dispatch(batch
+            ? { ...request, batchSubcommand: "plan", yes: false }
+            : goal
+              ? { ...request, goalSubcommand: "plan", yes: false }
+              : { ...request, subcommand: "plan", yes: false });
+          result = plan?.ok === false
+            ? plan
+            : await service.dispatch({
+              ...request,
+              ...(batch ? { batchSubcommand: "run" } : goal ? { goalSubcommand: "run" } : { subcommand: "run" }),
+              yes: true,
+              inputFile: null,
+              runId: plan.runId ?? request.runId,
+              input: plan.input,
+              conditions: plan.executionEnvelope?.conditions,
+              expectedPlanDigest: plan.plan?.planDigest ?? null,
+              expectedExecutionDigest: plan.executionEnvelope?.executionEnvelopeDigest ?? null,
+              expectedAuthorizationDigest: plan.authorization?.authorizationDigest ?? null,
+            });
+        } else {
+          result = await service.dispatch({ ...request, yes: false });
+        }
+        notify(ctx, result, result.ok === false ? "warning" : "info");
+        return result;
+      }
+      if (command === "ultra") {
+        const subcommand = args[0] ?? "list";
+        const strategyId = args[1] && !args[1].startsWith("--") ? args[1] : null;
+        const inputFileIndex = args.indexOf("--input-file");
+        const inputFile = inputFileIndex >= 0 ? args[inputFileIndex + 1] : null;
+        const service = await getUltras();
+        const request = { subcommand, strategyId, inputFile, ...(inputFile ? {} : { input: {} }) };
+        let result;
+        if (subcommand === "run" && args.includes("--yes")) {
+          const plan = await service.dispatch({ ...request, subcommand: "plan", yes: false });
+          result = plan?.ok === false ? plan : await service.dispatch({
+            ...request,
+            subcommand: "run",
+            yes: true,
+            inputFile: null,
+            input: plan.request,
+            expectedPlanDigest: plan.plan?.planDigest ?? null,
+            expectedAuthorizationDigest: plan.authorization?.authorizationDigest ?? null,
+          });
+        } else result = await service.dispatch({ ...request, yes: false });
         notify(ctx, result, result.ok === false ? "warning" : "info");
         return result;
       }

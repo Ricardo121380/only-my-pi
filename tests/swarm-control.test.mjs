@@ -16,7 +16,8 @@ test("swarm control list/show/validate/plan are read-only and live run fails clo
   const plan = await service.dispatch({ subcommand: "plan", recipeId: "research-synthesis", input: { question: "Pi" } });
   assert.equal(plan.status, "SWARM_PLAN");
   assert.equal(plan.mutation, false);
-  assert.equal((await service.dispatch({ subcommand: "run", recipeId: "research-synthesis", yes: true })).status, "LIVE_SWARM_REQUIRES_PI_SESSION");
+  const runPlan = await service.dispatch({ subcommand: "plan", recipeId: "research-synthesis" });
+  assert.equal((await service.dispatch({ subcommand: "run", recipeId: "research-synthesis", runId: runPlan.runId, yes: true, expectedPlanDigest: runPlan.plan.planDigest, expectedExecutionDigest: runPlan.executionEnvelope.executionEnvelopeDigest, input: runPlan.input })).status, "LIVE_SWARM_REQUIRES_PI_SESSION");
 });
 
 test("swarm control input files are bounded and reject symlinks", async (t) => {
@@ -35,4 +36,39 @@ test("swarm control input files are bounded and reject symlinks", async (t) => {
   const blocked = await service.dispatch({ subcommand: "plan", recipeId: "research-synthesis", inputFile: link });
   assert.equal(blocked.status, "SWARM_PLAN_BLOCKED");
   assert.equal(blocked.code, "INVALID_INPUT_FILE");
+});
+
+test("plan-confirm-run reuses one frozen input-file snapshot without reopening the path", async (t) => {
+  const fs = await import("node:fs/promises");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "omp-swarm-snapshot-"));
+  t.after(() => fs.rm(dir, { recursive: true, force: true }));
+  const inputFile = path.join(dir, "input.json");
+  await fs.writeFile(inputFile, JSON.stringify({ question: "read exactly once" }));
+  let observedInput;
+  const orchestration = {
+    async execute(_plan, options) {
+      observedInput = options.input;
+      return { runId: "snapshot-run", status: "completed" };
+    },
+    async inspect() { return { projection: { status: "completed" } }; },
+    async cancel(runId) { return { status: "RUN_NOT_ACTIVE", runId }; },
+  };
+  const service = createSwarmControlService({ rootDir: root, orchestration });
+  const preview = await service.dispatch({ subcommand: "plan", recipeId: "research-synthesis", inputFile });
+  assert.equal(Object.isFrozen(preview.input), true);
+  await fs.rm(inputFile);
+  const result = await service.dispatch({
+    subcommand: "run",
+    recipeId: "research-synthesis",
+    runId: preview.runId,
+    inputFile,
+    input: preview.input,
+    yes: true,
+    expectedPlanDigest: preview.plan.planDigest,
+    expectedExecutionDigest: preview.executionEnvelope.executionEnvelopeDigest,
+  });
+  assert.equal(result.status, "SWARM_COMPLETED");
+  assert.equal(observedInput, preview.input);
 });

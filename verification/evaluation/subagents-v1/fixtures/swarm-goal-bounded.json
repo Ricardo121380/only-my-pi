@@ -1,0 +1,9 @@
+{
+  "formatVersion": 1,
+  "id": "swarm-goal-bounded",
+  "kind": "swarm-goal",
+  "input": {
+    "authority": { "allowedTemplates": ["scout", "reviewer"], "maxAssignments": 4, "maxRevisions": 2, "mutation": "none" },
+    "proposal": { "revision": 1, "mutation": "none", "assignments": [{ "agentTemplateRef": "scout" }, { "agentTemplateRef": "reviewer" }] }
+  }
+}

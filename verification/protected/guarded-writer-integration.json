@@ -1,0 +1,81 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-protected-evidence-v1.schema.json",
+  "attestation": {
+    "authorizationDigest": "sha256:87c9f5dd913206bf66cd3c9ea6618c4bc51b6d08cfbd74c7dcd5e9c6fbcfc91f",
+    "captureDigest": "sha256:6b6154dc91945096102ae2b55efcc8b3a10f6e8b36f6f341c20bcc8ce458da8f",
+    "class": "operator-authorized-live-import",
+    "publicKeyFingerprint": "sha256:2c94451b7555cdcacef59f347bad726fc10ac2d7e0b213a04f53583a9000b70e",
+    "signature": "KLJBxx+b0Y8XNV4SR5gTjfFLLPWVKA5MRL6I/NFoeUoOL+lr1N35eYWoA6nwTxaQgr9yv7w3OnP/aobsjbh/AQ==",
+    "signedPayloadDigest": "sha256:0b4bfa0ffbfd808b25e6c33ee74f39ef28db650a13d5cf0f2b461e559f002b2a",
+    "signerId": "local-beta-20260824"
+  },
+  "authorization": {
+    "disposableRoot": true,
+    "liveChildDispatch": "AUTHORIZED",
+    "liveWriter": "AUTHORIZED",
+    "providerRequests": "AUTHORIZED",
+    "realPiHome": "NOT_TOUCHED"
+  },
+  "claims": {
+    "authoritativeTerminals": 1,
+    "autoIntegrated": false,
+    "backgroundResume": false,
+    "batchItemCount": 0,
+    "cancelObserved": false,
+    "managedWorktree": true,
+    "parentDiffVerified": true
+  },
+  "compatibilityRowId": "darwin-arm64-node-25.8.0",
+  "contractStatus": "protected-live-evidence",
+  "environment": {
+    "backend": "pi-subagents@0.45.2",
+    "node": "25.8.0",
+    "pi": "0.84.1",
+    "platform": "darwin-arm64"
+  },
+  "evidenceDigest": "sha256:280120e232bc73baca4bbac2b767601598a74211a22f6836ae9447f39a4d7f74",
+  "formatVersion": 1,
+  "id": "guarded-writer-integration",
+  "matrixDigest": "sha256:8153d80fe216dae9d00508580429a43dc1465f40cda3b507c3598880d2e7e3a5",
+  "observedAt": "2026-08-24T03:52:37.391Z",
+  "policyDigest": "sha256:5e0b7ab53b3a2cd5e93ad69a6f53e93141509494094da66056a7bb517ce94e6d",
+  "privacy": {
+    "credentialsStored": false,
+    "hostPathsStored": false,
+    "rawOutputStored": false,
+    "sessionIdsStored": false
+  },
+  "proofs": [
+    {
+      "digest": "sha256:a37ff2646e45f4dceaf3d598caac429c9f7dd583ade9098156ecb3bfb7fd6097",
+      "kind": "approval-receipt"
+    },
+    {
+      "digest": "sha256:bb0888b88d366f64a5d51d842a093f14ffe535fedc7446660bcdabd97db4a74c",
+      "kind": "base-commit"
+    },
+    {
+      "digest": "sha256:a032fdd8f21b735f42cd24eecd2a4ec1d115069b82bfeeb1bc8c43cbcfe459ea",
+      "kind": "parent-diff-verification"
+    },
+    {
+      "digest": "sha256:03ac82bdbd930788b7e65a741da6bbd15db748baeb48551466529fe3df436efb",
+      "kind": "process-terminal"
+    },
+    {
+      "digest": "sha256:e3d1b304ca2af072b99f156c27975f7ca6d6325156418cfe07affb611492b22a",
+      "kind": "task-assignment"
+    },
+    {
+      "digest": "sha256:5a1a0d4759ff66741b07639ce7a72f7ccf2481f430237dbeda2e0b9cbed9f711",
+      "kind": "terminal-receipt"
+    },
+    {
+      "digest": "sha256:b0aa03378ca6d073297a48c00cca393169b09725215c46601807021a09ad2fcb",
+      "kind": "worktree-receipt"
+    }
+  ],
+  "sourceCommit": "6004e6128dec76d8c301894c289a23d5dc855558",
+  "status": "PASS",
+  "trustPolicyDigest": "sha256:c6e709a93ed4f73c495a20e137fdba8c6ff12a827ca6332ba87f4306aac3e5ab"
+}

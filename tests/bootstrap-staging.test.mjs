@@ -415,6 +415,48 @@ test("promoted minimal generation closes the /omp mode runtime import graph", as
   // richer Workflow resources are eligible for coding/research profiles and
   // are covered by the source-level registry suite.
   assert.ok(workflows.workflows.some((workflow) => workflow.id === "single-agent-safe"), JSON.stringify(workflows));
+  const workflowPlan = await runtime.execute("workflow run single-agent-safe");
+  assert.equal(workflowPlan.ok, false, JSON.stringify(workflowPlan));
+  assert.equal(workflowPlan.status, "WORKFLOW_PLAN_UNAVAILABLE");
+  assert.equal(workflowPlan.code, "WORKFLOW_V2_RUNTIME_UNAVAILABLE");
+});
+
+test("promoted orchestration resources close the Workflow v2 and Swarm planning import graph", async (t) => {
+  const configRoot = await temporaryDirectory(t);
+  const packageDocument = JSON.parse(await fs.readFile(path.join(repoRoot, "inventory", "packages.lock.json"), "utf8"));
+  const resourceDocument = JSON.parse(await fs.readFile(path.join(repoRoot, "inventory", "resources.lock.json"), "utf8"));
+  const plan = await planOwnedGraph({
+    packageInventory: { ...packageDocument, packages: [], candidates: [] },
+    resourceInventory: resourceDocument,
+    profile: { formatVersion: 1, id: "orchestration", packageIds: [] },
+    artifactRoot: repoRoot,
+  });
+  const generation = await stageAndPromoteGeneration({
+    plan,
+    configRoot,
+    transactionId: "s2-orchestration-closure",
+    artifactRoot: repoRoot,
+    runCommand: async () => { throw new Error("resource-only closure must not invoke npm"); },
+  });
+  const root = generation.layout.generationRoot;
+  for (const relative of [
+    "resources/extensions/omp-control/runtime.mjs",
+    "resources/packages/control-service/workflow-service.mjs",
+    "resources/packages/control-service/swarm-service.mjs",
+    "resources/packages/subagents/workflow/migration/index.mjs",
+    "resources/packages/subagents/workflow/plan-compiler/index.mjs",
+    "resources/packages/swarm-core/index.mjs",
+    "resources/swarm/recipes/research-synthesis.json",
+  ]) await fs.access(path.join(root, relative));
+
+  const runtimeModule = await import(`${pathToFileURL(path.join(root, "resources/extensions/omp-control/runtime.mjs"))}?s2=${Date.now()}`);
+  const runtime = runtimeModule.createOmpRuntime();
+  const workflowPlan = await runtime.execute("workflow run single-agent-safe");
+  assert.equal(workflowPlan.status, "WORKFLOW_PLAN", JSON.stringify(workflowPlan));
+  assert.match(workflowPlan.plan.planDigest, /^sha256:[a-f0-9]{64}$/u);
+  const swarmPlan = await runtime.execute("swarm plan research-synthesis");
+  assert.equal(swarmPlan.status, "SWARM_PLAN", JSON.stringify(swarmPlan));
+  assert.match(swarmPlan.plan.planDigest, /^sha256:[a-f0-9]{64}$/u);
 });
 
 test("integrity mismatch fails before install and before generation promotion", async (t) => {

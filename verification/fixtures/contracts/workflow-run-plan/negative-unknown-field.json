@@ -1,0 +1,17 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/workflow-run-plan-v1.schema.json",
+  "contractStatus": "contract-preview",
+  "createdAt": "2026-08-19T00:00:00.000Z",
+  "executionEnvelope": {},
+  "executionEnvelopeDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "formatVersion": 1,
+  "inputDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "inputPolicy": "caller-must-reprovide",
+  "plan": {},
+  "planDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "runId": "fixture-run",
+  "sourceHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "updatedAt": "2026-08-19T00:00:00.000Z",
+  "digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+  "unexpected": true
+}

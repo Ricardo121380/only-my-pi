@@ -2,6 +2,8 @@ import crypto from "node:crypto";
 import fsPromises from "node:fs/promises";
 import path from "node:path";
 
+export { compileAgentResource } from "./upstream-resource.mjs";
+
 const ID = /^[a-z0-9][a-z0-9-]{0,63}$/u;
 const SHA256 = /^sha256:[a-f0-9]{64}$/u;
 const TOOLS = new Set(["read", "grep", "find", "ls", "edit", "write", "bash", "web"]);

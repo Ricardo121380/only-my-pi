@@ -1,0 +1,32 @@
+{
+  "$schema": "backend-capability-v2.schema.json",
+  "formatVersion": 2,
+  "contractStatus": "contract-preview",
+  "kind": "backend-capability-matrix",
+  "backendId": "pi-subagents-rpc-v1",
+  "backendVersion": "0.45.2",
+  "protocol": { "name": "extension-rpc", "version": 1 },
+  "observedAt": 0,
+  "capabilities": {
+    "foreground": { "state": "DEGRADED", "reasonCode": "async-wait", "evidence": ["fixture"], "constraints": {} },
+    "background": { "state": "SUPPORTED", "reasonCode": "rpc", "evidence": ["fixture"], "constraints": {} },
+    "continuableResume": { "state": "SUPPORTED", "reasonCode": "rpc", "evidence": ["fixture"], "constraints": {} },
+    "status": { "state": "DEGRADED", "reasonCode": "summary", "evidence": ["fixture"], "constraints": {} },
+    "steer": { "state": "SUPPORTED", "reasonCode": "rpc", "evidence": ["fixture"], "constraints": {} },
+    "interrupt": { "state": "SUPPORTED", "reasonCode": "rpc", "evidence": ["fixture"], "constraints": {} },
+    "stop": { "state": "SUPPORTED", "reasonCode": "rpc", "evidence": ["fixture"], "constraints": {} },
+    "resume": { "state": "SUPPORTED", "reasonCode": "rpc", "evidence": ["fixture"], "constraints": {} },
+    "dispose": { "state": "SUPPORTED", "reasonCode": "local", "evidence": ["fixture"], "constraints": {} },
+    "terminalEvents": { "state": "SUPPORTED", "reasonCode": "event", "evidence": ["fixture"], "constraints": {} },
+    "processTerminalProof": { "state": "SUPPORTED", "reasonCode": "proof", "evidence": ["fixture"], "constraints": {} },
+    "worktree": { "state": "DEGRADED", "reasonCode": "negotiated", "evidence": ["fixture"], "constraints": {} },
+    "perItemResult": { "state": "DEGRADED", "reasonCode": "normalized", "evidence": ["fixture"], "constraints": {} },
+    "usageMeter": { "state": "UNAVAILABLE", "reasonCode": "not-advertised", "evidence": ["fixture"], "constraints": {} },
+    "rateLimitSignal": { "state": "UNAVAILABLE", "reasonCode": "not-advertised", "evidence": ["fixture"], "constraints": {} },
+    "dynamicConcurrency": { "state": "UNAVAILABLE", "reasonCode": "not-advertised", "evidence": ["fixture"], "constraints": {} },
+    "modelOverlay": { "state": "DEGRADED", "reasonCode": "registered-role", "evidence": ["fixture"], "constraints": {} },
+    "toolOverlay": { "state": "DEGRADED", "reasonCode": "registered-role", "evidence": ["fixture"], "constraints": {} },
+    "structuredOutput": { "state": "DEGRADED", "reasonCode": "post-validated", "evidence": ["fixture"], "constraints": {} }
+  },
+  "capabilityHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+}

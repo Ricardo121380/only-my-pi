@@ -1,0 +1,20 @@
+{
+  "$schema": "batch-swarm-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "kind": "batch-swarm",
+  "id": "review-files",
+  "agentSpecRef": "reviewer-resolved",
+  "agentSpecHash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+  "policyHash": "sha256:2674bfef0384ecdabf5455cf5f290b1dd216c0cda49fecf1952575348e62f139",
+  "promptTemplateRef": "review-file",
+  "promptTemplateHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "itemsFrom": "artifact://changed-files",
+  "maxItems": 300,
+  "concurrency": { "initial": 2, "max": 4, "rampEveryMs": 700, "adaptiveRateLimit": false },
+  "failurePolicy": { "kind": "all-required" },
+  "retryPolicy": { "maxAttempts": 2, "maxDelayMs": 1000, "deadlineMs": 60000 },
+  "outputSchemaRef": "review-result",
+  "outputSchemaHash": "sha256:49ea0bdb3df599272a62e340820afcba562adfe5ab84f305efb133c5525fea75",
+  "budgetRef": "preview-read-only"
+}

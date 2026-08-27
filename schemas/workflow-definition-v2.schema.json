@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/workflow-definition-v2.schema.json",
+  "title": "only-my-pi WorkflowDefinition v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "id", "version", "description", "policy", "budget", "flow"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "workflow-definition-v2\\.schema\\.json$" },
+    "formatVersion": { "const": 2 },
+    "contractStatus": { "enum": ["contract-preview", "runtime-ready"] },
+    "id": { "$ref": "#/$defs/id" },
+    "version": { "$ref": "#/$defs/semver" },
+    "description": { "type": "string", "minLength": 1, "maxLength": 1000 },
+    "policy": { "$ref": "#/$defs/policy" },
+    "budget": { "$ref": "#/$defs/planBudget" },
+    "flow": { "$ref": "#/$defs/flow" },
+    "terminalNodeId": { "$ref": "#/$defs/id" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "idSet": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "nullablePositiveNumber": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "workspace": { "enum": ["shared-read-only", "shared-guarded", "managed-worktree"] },
+        "mutation": { "enum": ["none", "guarded"] },
+        "egress": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "web": { "enum": ["allow", "deny", "ask"] },
+            "mcp": { "enum": ["allow", "deny", "ask"] },
+            "provider": { "enum": ["allow", "deny", "ask"] }
+          }
+        },
+        "tools": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "allow": { "$ref": "#/$defs/idSet" },
+            "deny": { "$ref": "#/$defs/idSet" }
+          }
+        }
+      }
+    },
+    "planBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxNodes", "maxParallel", "maxDepth", "maxAttemptsPerNode", "maxWallTimeMs", "maxOutputBytes", "maxAssignments", "maxTokens", "maxCostUsd"],
+      "properties": {
+        "maxNodes": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "maxParallel": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "maxDepth": { "type": "integer", "minimum": 1, "maximum": 128 },
+        "maxAttemptsPerNode": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "maxWallTimeMs": { "type": "integer", "minimum": 1, "maximum": 86400000 },
+        "maxOutputBytes": { "type": "integer", "minimum": 1, "maximum": 1073741824 },
+        "maxAssignments": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "maxTokens": { "$ref": "#/$defs/nullablePositiveNumber" },
+        "maxCostUsd": { "$ref": "#/$defs/nullablePositiveNumber" }
+      }
+    },
+    "nodeBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxAttempts": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "timeoutMs": { "type": "integer", "minimum": 1, "maximum": 86400000 },
+        "maxOutputBytes": { "type": "integer", "minimum": 1, "maximum": 1073741824 },
+        "maxTokens": { "$ref": "#/$defs/nullablePositiveNumber" },
+        "maxCostUsd": { "$ref": "#/$defs/nullablePositiveNumber" }
+      }
+    },
+    "cache": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "enum": ["never", "content-addressed"] },
+        "keyInputs": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 200 } }
+      }
+    },
+    "primitiveBase": {
+      "type": "object",
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": { "type": "string" },
+        "id": { "$ref": "#/$defs/id" },
+        "needs": { "$ref": "#/$defs/idSet" },
+        "policy": { "$ref": "#/$defs/policy" },
+        "budget": { "$ref": "#/$defs/nodeBudget" },
+        "cache": { "$ref": "#/$defs/cache" },
+        "idempotency": { "enum": ["none", "receipt", "content-addressed"] }
+      }
+    },
+    "agent": {
+      "allOf": [
+        { "$ref": "#/$defs/primitiveBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "id", "agentTemplateRef"],
+          "properties": {
+            "kind": { "const": "agent" },
+            "id": { "$ref": "#/$defs/id" },
+            "agentTemplateRef": { "$ref": "#/$defs/id" },
+            "assignment": { "type": "object" },
+            "outputSchemaRef": { "type": ["string", "null"], "minLength": 1, "maxLength": 200 },
+            "needs": { "$ref": "#/$defs/idSet" },
+            "policy": { "$ref": "#/$defs/policy" },
+            "budget": { "$ref": "#/$defs/nodeBudget" },
+            "cache": { "$ref": "#/$defs/cache" },
+            "idempotency": { "enum": ["none", "receipt", "content-addressed"] }
+          }
+        }
+      ]
+    },
+    "batch": {
+      "allOf": [
+        { "$ref": "#/$defs/primitiveBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "id", "batchRef"],
+          "properties": {
+            "kind": { "const": "batch-swarm" },
+            "id": { "$ref": "#/$defs/id" },
+            "batchRef": { "$ref": "#/$defs/id" },
+            "needs": { "$ref": "#/$defs/idSet" },
+            "policy": { "$ref": "#/$defs/policy" },
+            "budget": { "$ref": "#/$defs/nodeBudget" },
+            "cache": { "$ref": "#/$defs/cache" },
+            "idempotency": { "enum": ["none", "receipt", "content-addressed"] }
+          }
+        }
+      ]
+    },
+    "gate": {
+      "allOf": [
+        { "$ref": "#/$defs/primitiveBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "id", "gateId"],
+          "properties": {
+            "kind": { "const": "gate" },
+            "id": { "$ref": "#/$defs/id" },
+            "gateId": { "$ref": "#/$defs/id" },
+            "needs": { "$ref": "#/$defs/idSet" },
+            "policy": { "$ref": "#/$defs/policy" },
+            "budget": { "$ref": "#/$defs/nodeBudget" },
+            "cache": { "$ref": "#/$defs/cache" },
+            "idempotency": { "enum": ["none", "receipt", "content-addressed"] }
+          }
+        }
+      ]
+    },
+    "checkpoint": {
+      "allOf": [
+        { "$ref": "#/$defs/primitiveBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "id"],
+          "properties": {
+            "kind": { "const": "checkpoint" },
+            "id": { "$ref": "#/$defs/id" },
+            "checkpoint": { "type": "object" },
+            "needs": { "$ref": "#/$defs/idSet" },
+            "policy": { "$ref": "#/$defs/policy" },
+            "budget": { "$ref": "#/$defs/nodeBudget" },
+            "cache": { "$ref": "#/$defs/cache" },
+            "idempotency": { "enum": ["none", "receipt", "content-addressed"] }
+          }
+        }
+      ]
+    },
+    "approval": {
+      "allOf": [
+        { "$ref": "#/$defs/primitiveBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "id", "approval"],
+          "properties": {
+            "kind": { "const": "approval" },
+            "id": { "$ref": "#/$defs/id" },
+            "approval": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": ["scopeDigest"],
+              "properties": { "scopeDigest": { "$ref": "#/$defs/sha256" } }
+            },
+            "needs": { "$ref": "#/$defs/idSet" },
+            "policy": { "$ref": "#/$defs/policy" },
+            "budget": { "$ref": "#/$defs/nodeBudget" },
+            "cache": { "$ref": "#/$defs/cache" },
+            "idempotency": { "enum": ["none", "receipt", "content-addressed"] }
+          }
+        }
+      ]
+    },
+    "loop": {
+      "allOf": [
+        { "$ref": "#/$defs/primitiveBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "id", "loop"],
+          "properties": {
+            "kind": { "const": "loop-controller" },
+            "id": { "$ref": "#/$defs/id" },
+            "loop": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["maxIterations", "conditionRef", "bodyDefinitionDigest"],
+              "properties": {
+                "maxIterations": { "type": "integer", "minimum": 1, "maximum": 64 },
+                "conditionRef": { "$ref": "#/$defs/id" },
+                "bodyDefinitionDigest": { "$ref": "#/$defs/sha256" }
+              }
+            },
+            "needs": { "$ref": "#/$defs/idSet" },
+            "policy": { "$ref": "#/$defs/policy" },
+            "budget": { "$ref": "#/$defs/nodeBudget" },
+            "cache": { "$ref": "#/$defs/cache" },
+            "idempotency": { "enum": ["none", "receipt", "content-addressed"] }
+          }
+        }
+      ]
+    },
+    "composite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "enum": ["sequence", "pipeline", "parallel"] },
+        "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/flow" } },
+        "stages": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/flow" } },
+        "branches": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/flow" } }
+      },
+      "allOf": [
+        { "if": { "properties": { "kind": { "const": "sequence" } } }, "then": { "required": ["steps"] } },
+        { "if": { "properties": { "kind": { "const": "pipeline" } } }, "then": { "required": ["stages"] } },
+        { "if": { "properties": { "kind": { "const": "parallel" } } }, "then": { "required": ["branches"] } }
+      ]
+    },
+    "workflowRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "workflowRef"],
+      "properties": {
+        "kind": { "const": "workflow" },
+        "id": { "$ref": "#/$defs/id" },
+        "workflowRef": { "$ref": "#/$defs/id" }
+      }
+    },
+    "flow": {
+      "oneOf": [
+        { "$ref": "#/$defs/agent" },
+        { "$ref": "#/$defs/batch" },
+        { "$ref": "#/$defs/gate" },
+        { "$ref": "#/$defs/checkpoint" },
+        { "$ref": "#/$defs/approval" },
+        { "$ref": "#/$defs/loop" },
+        { "$ref": "#/$defs/composite" },
+        { "$ref": "#/$defs/workflowRef" }
+      ]
+    }
+  }
+}

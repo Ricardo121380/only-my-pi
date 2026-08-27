@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/task-assignment-v1.schema.json",
+  "title": "only-my-pi TaskAssignment v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "kind", "assignmentId", "agentSpecId", "agentSpecHash", "task", "dependencies", "ownership", "idempotency", "context", "budget", "output", "assignmentHash"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "task-assignment-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "enum": ["contract-preview", "runtime-ready"] },
+    "kind": { "const": "task-assignment" },
+    "assignmentId": { "$ref": "#/$defs/id" },
+    "agentSpecId": { "$ref": "#/$defs/id" },
+    "agentSpecHash": { "$ref": "#/$defs/sha256" },
+    "task": { "$ref": "#/$defs/task" },
+    "dependencies": { "$ref": "#/$defs/idSet" },
+    "ownership": { "$ref": "#/$defs/ownership" },
+    "idempotency": { "$ref": "#/$defs/idempotency" },
+    "context": { "$ref": "#/$defs/context" },
+    "budget": { "$ref": "#/$defs/budgetVector" },
+    "output": { "$ref": "#/$defs/nullableOutput" },
+    "assignmentHash": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "relativePath": { "type": "string", "pattern": "^(?!/)(?![A-Za-z]:/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[^\\u0000]+$", "maxLength": 1024 },
+    "idSet": { "type": "array", "maxItems": 256, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "digest"],
+      "properties": {
+        "text": { "type": "string", "minLength": 1, "maxLength": 131072 },
+        "digest": { "$ref": "#/$defs/sha256" },
+        "ref": { "type": "string", "minLength": 1, "maxLength": 512 }
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["writer", "workspace", "allowedPaths", "fileClaims"],
+      "properties": {
+        "writer": { "type": "boolean" },
+        "workspace": { "enum": ["none", "shared-read-only", "shared-guarded", "managed-worktree"] },
+        "allowedPaths": { "type": "array", "maxItems": 256, "uniqueItems": true, "items": { "$ref": "#/$defs/relativePath" } },
+        "fileClaims": { "type": "array", "maxItems": 256, "uniqueItems": true, "items": { "$ref": "#/$defs/relativePath" } },
+        "baseCommit": { "type": "string", "pattern": "^[a-f0-9]{40}$" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "writer": { "const": true } },
+            "required": ["writer"]
+          },
+          "then": {
+            "properties": {
+              "allowedPaths": { "type": "array", "minItems": 1 },
+              "fileClaims": { "type": "array", "minItems": 1 },
+              "baseCommit": {}
+            },
+            "required": ["baseCommit"]
+          }
+        }
+      ]
+    },
+    "idempotency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class"],
+      "properties": {
+        "class": { "enum": ["read-only", "idempotent", "side-effect"] },
+        "key": { "type": "string", "minLength": 1, "maxLength": 512 }
+      },
+      "allOf": [{ "if": { "properties": { "class": { "const": "idempotent" } }, "required": ["class"] }, "then": { "properties": { "key": {} }, "required": ["key"] } }]
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "artifactRefs"],
+      "properties": {
+        "mode": { "enum": ["fresh", "fork"] },
+        "artifactRefs": { "type": "array", "maxItems": 256, "uniqueItems": true, "items": { "type": "string", "pattern": "^artifact://[a-z0-9][a-z0-9._:/-]{0,511}$" } }
+      }
+    },
+    "budgetVector": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxTurns": { "type": "integer", "minimum": 0 },
+        "maxToolCalls": { "type": "integer", "minimum": 0 },
+        "maxTokens": { "type": "integer", "minimum": 0 },
+        "maxCostUsd": { "type": "number", "minimum": 0 },
+        "maxElapsedMs": { "type": "integer", "minimum": 0 },
+        "maxOutputBytes": { "type": "integer", "minimum": 0 },
+        "maxArtifactBytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hash"],
+      "properties": {
+        "ref": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "schema": {},
+        "value": {},
+        "hash": { "$ref": "#/$defs/sha256" }
+      },
+      "oneOf": [
+        { "properties": { "ref": {} }, "required": ["ref"], "not": { "anyOf": [{ "properties": { "schema": {} }, "required": ["schema"] }, { "properties": { "value": {} }, "required": ["value"] }] } },
+        { "properties": { "schema": {} }, "required": ["schema"], "not": { "anyOf": [{ "properties": { "ref": {} }, "required": ["ref"] }, { "properties": { "value": {} }, "required": ["value"] }] } },
+        { "properties": { "value": {} }, "required": ["value"], "not": { "anyOf": [{ "properties": { "ref": {} }, "required": ["ref"] }, { "properties": { "schema": {} }, "required": ["schema"] }] } }
+      ]
+    },
+    "nullableOutput": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/output" }] }
+  }
+}

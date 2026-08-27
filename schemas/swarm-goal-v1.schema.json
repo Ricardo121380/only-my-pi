@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/swarm-goal-v1.schema.json",
+  "title": "only-my-pi bounded dynamic SwarmGoal v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "kind", "id", "version", "objective", "authority", "roles", "convergence", "outputSchemaRef"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "swarm-goal-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "enum": ["contract-preview", "runtime-ready"] },
+    "kind": { "const": "swarm-goal" },
+    "id": { "$ref": "#/$defs/id" },
+    "version": { "$ref": "#/$defs/semver" },
+    "objective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "digest"],
+      "properties": {
+        "ref": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "digest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowedAgentTemplates", "budgetRef", "maxPlanRevisions", "maxAgentSpecs", "mutation", "egress"],
+      "properties": {
+        "allowedAgentTemplates": { "type": "array", "minItems": 3, "maxItems": 64, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "budgetRef": { "$ref": "#/$defs/id" },
+        "maxPlanRevisions": { "type": "integer", "minimum": 1, "maximum": 64 },
+        "maxAgentSpecs": { "type": "integer", "minimum": 3, "maximum": 64 },
+        "mutation": { "enum": ["none", "guarded"] },
+        "egress": { "enum": ["deny", "allow-listed"] }
+      }
+    },
+    "roles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["synthesizerTemplate", "verifierTemplate", "minimumDistinctAgentSpecs"],
+      "properties": {
+        "synthesizerTemplate": { "$ref": "#/$defs/id" },
+        "verifierTemplate": { "$ref": "#/$defs/id" },
+        "minimumDistinctAgentSpecs": { "type": "integer", "minimum": 3, "maximum": 64 }
+      }
+    },
+    "convergence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coverageTarget", "noProgressWindow", "freshVerifierRequired"],
+      "properties": {
+        "coverageTarget": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "noProgressWindow": { "type": "integer", "minimum": 1, "maximum": 64 },
+        "freshVerifierRequired": { "const": true }
+      }
+    },
+    "outputSchemaRef": { "$ref": "#/$defs/id" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/resolved-agent-spec-v1.schema.json",
+  "title": "only-my-pi ResolvedAgentSpec v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "kind", "id", "templateId", "templateHash", "backendAgentId", "sourceHash", "tools", "requiredCapabilities", "effectivePolicy", "effectivePolicyHash", "model", "inputSchema", "outputSchema", "writer", "continuable", "resumable", "timeoutMs", "runtimeMode", "overlayRequirements", "specialization", "specHash"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "resolved-agent-spec-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "enum": ["contract-preview", "runtime-ready"] },
+    "kind": { "const": "resolved-agent-spec" },
+    "id": { "$ref": "#/$defs/id" },
+    "templateId": { "$ref": "#/$defs/id" },
+    "templateHash": { "$ref": "#/$defs/sha256" },
+    "backendAgentId": { "$ref": "#/$defs/id" },
+    "sourceHash": { "$ref": "#/$defs/sha256" },
+    "tools": { "$ref": "#/$defs/tools" },
+    "requiredCapabilities": { "$ref": "#/$defs/idSet" },
+    "effectivePolicy": { "$ref": "#/$defs/policy" },
+    "effectivePolicyHash": { "$ref": "#/$defs/sha256" },
+    "model": { "$ref": "#/$defs/model" },
+    "inputSchema": { "$ref": "#/$defs/nullableSchemaBinding" },
+    "outputSchema": { "$ref": "#/$defs/nullableSchemaBinding" },
+    "writer": { "type": "boolean" },
+    "continuable": { "type": "boolean" },
+    "resumable": { "type": "boolean" },
+    "timeoutMs": { "type": "integer", "minimum": 1, "maximum": 86400000 },
+    "runtimeMode": { "enum": ["REGISTERED_ROLES_ONLY", "DYNAMIC_OVERLAY"] },
+    "overlayRequirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tools", "model"],
+      "properties": { "tools": { "type": "boolean" }, "model": { "type": "boolean" } }
+    },
+    "specialization": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["promptDigest"],
+          "properties": {
+            "promptDigest": { "$ref": "#/$defs/sha256" },
+            "promptRef": { "type": "string", "minLength": 1, "maxLength": 512 }
+          }
+        }
+      ]
+    },
+    "specHash": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "idSet": { "type": "array", "maxItems": 256, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "tools": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow", "deny"],
+      "properties": { "allow": { "$ref": "#/$defs/idSet" }, "deny": { "$ref": "#/$defs/idSet" } }
+    },
+    "egress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["web", "mcp", "provider", "extension"],
+      "properties": {
+        "web": { "enum": ["deny", "allow-listed", "inherit"] },
+        "mcp": { "enum": ["deny", "allow-listed", "inherit"] },
+        "provider": { "enum": ["deny", "allow-listed", "inherit"] },
+        "extension": { "enum": ["deny", "allow-listed", "inherit"] }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workspace", "mutation", "approval", "egress"],
+      "properties": {
+        "workspace": { "enum": ["none", "shared-read-only", "shared-guarded", "managed-worktree"] },
+        "mutation": { "enum": ["none", "guarded"] },
+        "approval": { "enum": ["deny", "ask", "inherit"] },
+        "egress": { "$ref": "#/$defs/egress" }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role"],
+      "properties": {
+        "role": { "$ref": "#/$defs/id" },
+        "provider": { "$ref": "#/$defs/id" },
+        "id": { "type": "string", "minLength": 1, "maxLength": 256 }
+      },
+      "dependentRequired": { "provider": ["id"] }
+    },
+    "schemaBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hash"],
+      "properties": { "ref": { "type": "string", "minLength": 1, "maxLength": 512 }, "value": {}, "hash": { "$ref": "#/$defs/sha256" } },
+      "oneOf": [
+        { "properties": { "ref": {} }, "required": ["ref"], "not": { "properties": { "value": {} }, "required": ["value"] } },
+        { "properties": { "value": {} }, "required": ["value"], "not": { "properties": { "ref": {} }, "required": ["ref"] } }
+      ]
+    },
+    "nullableSchemaBinding": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/schemaBinding" }] }
+  }
+}

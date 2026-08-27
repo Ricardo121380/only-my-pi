@@ -1,0 +1,25 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-guarded-writer-reconciliation-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "review-only",
+  "operation": "guarded-writer-reconciliation-plan",
+  "authorizationId": "fixture-guarded-writer-authorization",
+  "authorizationDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "sourceCommit": "2222222222222222222222222222222222222222",
+  "observedAt": "2026-08-22T03:00:00.000Z",
+  "configRootFingerprint": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "runtimeRelativePath": "only-my-pi/subagents-guarded-writer/fixture-guarded-writer-authorization",
+  "runtimeState": "NOT_FOUND",
+  "request": { "state": "MISSING", "digest": null, "findings": ["REQUEST_MISSING"] },
+  "components": [
+    { "id": "agent-root", "expectedType": "directory", "state": "MISSING" },
+    { "id": "session-root", "expectedType": "directory", "state": "MISSING" },
+    { "id": "artifact-root", "expectedType": "directory", "state": "MISSING" },
+    { "id": "fixture-repository", "expectedType": "directory", "state": "MISSING" },
+    { "id": "worktree-root", "expectedType": "directory", "state": "MISSING" }
+  ],
+  "blockers": ["RUNTIME_NOT_FOUND"],
+  "cleanup": { "disposition": "NO_TARGET", "automatic": false, "deleteAuthorized": false, "applyAvailable": false, "applyCommand": null, "exactTargetDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444" },
+  "planDigest": "sha256:0e2b0961c53406f12937109c9f0c886f4d4bf953ad2fc3e57f958af3aba3d980",
+  "deleteNow": true
+}

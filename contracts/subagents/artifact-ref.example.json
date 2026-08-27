@@ -1,0 +1,25 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/artifact-ref-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "kind": "artifact-ref",
+  "id": "review-report",
+  "mediaType": "application/json",
+  "byteLength": 512,
+  "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "producer": {
+    "runId": "run-01",
+    "revision": 0,
+    "nodeId": "review",
+    "attemptId": "attempt-01"
+  },
+  "storage": {
+    "scheme": "artifact",
+    "relativePath": "runs/run-01/review-report.json"
+  },
+  "provenance": {
+    "sourceDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "policyDigest": "sha256:2674bfef0384ecdabf5455cf5f290b1dd216c0cda49fecf1952575348e62f139",
+    "redaction": "bounded"
+  }
+}

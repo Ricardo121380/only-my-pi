@@ -1,0 +1,32 @@
+{
+  "$schema": "terminal-receipt-v2.schema.json",
+  "formatVersion": 2,
+  "contractStatus": "contract-preview",
+  "kind": "agent-terminal-receipt",
+  "handleId": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "runId": "run-01",
+  "nodeId": "review",
+  "attemptId": "attempt-01",
+  "assignmentId": "review-01",
+  "assignmentHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "agentSpecHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "backendId": "pi-subagents-rpc-v1",
+  "bindingId": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "backendRunId": "backend-run-01",
+  "outcome": "completed",
+  "authoritative": true,
+  "startedAt": 1,
+  "settledAt": 2,
+  "completion": { "runId": "backend-run-01", "state": "completed" },
+  "processTerminal": {
+    "version": 1,
+    "state": "observed",
+    "runId": "backend-run-01",
+    "runnerProcessInstanceId": "runner-01",
+    "observedAt": 2,
+    "instances": [{ "processInstanceId": "runner-01", "exitCode": 0 }]
+  },
+  "result": { "verdict": "pass" },
+  "error": null,
+  "receiptId": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+}

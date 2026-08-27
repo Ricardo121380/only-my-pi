@@ -242,6 +242,19 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT } = {}) {
     const installedManifest = JSON.parse(await fs.readFile(path.join(packageRoot, "package.json"), "utf8"));
     if (installedManifest.name !== "only-my-pi") fail("FRESH_PACKAGE_ID_MISMATCH", "installed tarball has the wrong package name");
 
+    const topologyResult = await runCommand(
+      process.execPath,
+      [path.join(packageRoot, "scripts", "subagents-topology-doctor.mjs")],
+      { cwd: packageRoot, env, label: "fresh subagents topology doctor" },
+    );
+    const topology = parseJsonOutput(topologyResult, "fresh subagents topology doctor");
+    if (topology?.status !== "STATIC_TOPOLOGY_PASS"
+      || topology?.liveRuntime !== "LIVE_NO_MODEL_CAPABILITY_PASS"
+      || !Array.isArray(topology?.findings)
+      || topology.findings.length !== 0) {
+      fail("FRESH_SUBAGENTS_TOPOLOGY_FAILED", "fresh tarball did not retain the validated subagents topology evidence");
+    }
+
     const help = await runCommand(ompBin, ["--help"], { cwd: workspace, env, label: "fresh omp help" });
     if (!help.stdout.includes("Usage:")) fail("FRESH_HELP_MISSING", "fresh omp binary did not render usage");
 
@@ -296,6 +309,11 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT } = {}) {
         global: false,
         checkoutRuntime: false,
         dependencySeed: "repository-lockfile-local-tarball",
+      }),
+      subagentsTopology: Object.freeze({
+        status: topology.status,
+        liveRuntime: topology.liveRuntime,
+        digest: topology.digest,
       }),
       bootstrap: Object.freeze({
         dryRun: "PLAN_READY_ZERO_WRITE",

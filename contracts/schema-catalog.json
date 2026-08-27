@@ -63,6 +63,162 @@
       "fixtureDir": "verification/fixtures/contracts/workflow"
     },
     {
+      "kind": "agentTemplate",
+      "schemaPath": "schemas/agent-template-v2.schema.json",
+      "productionGlobs": ["contracts/subagents/agent-template.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/agent-template-v2"
+    },
+    {
+      "kind": "resolvedAgentSpec",
+      "schemaPath": "schemas/resolved-agent-spec-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/resolved-agent-spec.example.json", "swarm/agent-specs/*.json"],
+      "fixtureDir": "verification/fixtures/contracts/resolved-agent-spec"
+    },
+    {
+      "kind": "taskAssignment",
+      "schemaPath": "schemas/task-assignment-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/task-assignment.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/task-assignment"
+    },
+    {
+      "kind": "batchSwarm",
+      "schemaPath": "schemas/batch-swarm-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/batch-swarm.example.json", "swarm/batches/*.json"],
+      "fixtureDir": "verification/fixtures/contracts/batch-swarm"
+    },
+    {
+      "kind": "workflowDefinitionV2",
+      "schemaPath": "schemas/workflow-definition-v2.schema.json",
+      "productionGlobs": ["contracts/subagents/workflow-definition.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/workflow-definition-v2"
+    },
+    {
+      "kind": "workflowPlan",
+      "schemaPath": "schemas/workflow-plan-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/workflow-plan.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/workflow-plan"
+    },
+    {
+      "kind": "workflowRunPlan",
+      "schemaPath": "schemas/workflow-run-plan-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/workflow-run-plan.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/workflow-run-plan"
+    },
+    {
+      "kind": "workflowCancelRequest",
+      "schemaPath": "schemas/workflow-cancel-request-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/workflow-cancel-request.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/workflow-cancel-request"
+    },
+    {
+      "kind": "workflowEvent",
+      "schemaPath": "schemas/workflow-event-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/workflow-event.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/workflow-event"
+    },
+    {
+      "kind": "artifactRef",
+      "schemaPath": "schemas/artifact-ref-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/artifact-ref.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/artifact-ref"
+    },
+    {
+      "kind": "budgetEnvelope",
+      "schemaPath": "schemas/budget-envelope-v2.schema.json",
+      "productionGlobs": ["contracts/subagents/budget-envelope.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/budget-envelope"
+    },
+    {
+      "kind": "approvalReceipt",
+      "schemaPath": "schemas/approval-receipt-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/approval-receipt.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/approval-receipt"
+    },
+    {
+      "kind": "swarmGoal",
+      "schemaPath": "schemas/swarm-goal-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/swarm-goal.example.json", "swarm/goals/*.json"],
+      "fixtureDir": "verification/fixtures/contracts/swarm-goal"
+    },
+    {
+      "kind": "ultraRun",
+      "schemaPath": "schemas/ultra-run-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/ultra-run.example.json", "ultra/strategies/*.json"],
+      "fixtureDir": "verification/fixtures/contracts/ultra-run"
+    },
+    {
+      "kind": "backendCapability",
+      "schemaPath": "schemas/backend-capability-v2.schema.json",
+      "productionGlobs": ["contracts/subagents/backend-capability.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/backend-capability"
+    },
+    {
+      "kind": "terminalReceipt",
+      "schemaPath": "schemas/terminal-receipt-v2.schema.json",
+      "productionGlobs": ["contracts/subagents/terminal-receipt.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/terminal-receipt"
+    },
+    {
+      "kind": "evaluationCorpus",
+      "schemaPath": "schemas/evaluation-corpus-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/evaluation-corpus.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/evaluation-corpus"
+    },
+    {
+      "kind": "subagentsCompatibility",
+      "schemaPath": "schemas/subagents-compatibility-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/compatibility-matrix.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-compatibility"
+    },
+    {
+      "kind": "subagentsPromotionPolicy",
+      "schemaPath": "schemas/subagents-promotion-policy-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/promotion-policy.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-promotion-policy"
+    },
+    {
+      "kind": "subagentsProtectedEvidence",
+      "schemaPath": "schemas/subagents-protected-evidence-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/protected-evidence.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-protected-evidence"
+    },
+    {
+      "kind": "subagentsProtectedEvidenceTrust",
+      "schemaPath": "schemas/subagents-protected-evidence-trust-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/protected-evidence-trust.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-protected-evidence-trust"
+    },
+    {
+      "kind": "subagentsLiveEvidenceAuthorization",
+      "schemaPath": "schemas/subagents-live-evidence-authorization-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/live-evidence-authorization.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-live-evidence-authorization"
+    },
+    {
+      "kind": "subagentsLiveProvider",
+      "schemaPath": "schemas/subagents-live-provider-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/live-provider.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-live-provider"
+    },
+    {
+      "kind": "subagentsBackgroundResumeAuthorization",
+      "schemaPath": "schemas/subagents-background-resume-authorization-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/background-resume-authorization.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-background-resume-authorization"
+    },
+    {
+      "kind": "subagentsGuardedWriterAuthorization",
+      "schemaPath": "schemas/subagents-guarded-writer-authorization-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/guarded-writer-authorization.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-guarded-writer-authorization"
+    },
+    {
+      "kind": "subagentsGuardedWriterReconciliation",
+      "schemaPath": "schemas/subagents-guarded-writer-reconciliation-v1.schema.json",
+      "productionGlobs": ["contracts/subagents/guarded-writer-reconciliation.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/subagents-guarded-writer-reconciliation"
+    },
+    {
       "kind": "swarmRecipe",
       "schemaPath": "schemas/swarm-recipe-v1.schema.json",
       "productionGlobs": ["swarm/recipes/*.json"],

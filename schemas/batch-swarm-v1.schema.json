@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/batch-swarm-v1.schema.json",
+  "title": "only-my-pi homogeneous BatchSwarm v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "kind", "id", "agentSpecRef", "agentSpecHash", "policyHash", "promptTemplateRef", "promptTemplateHash", "itemsFrom", "maxItems", "concurrency", "failurePolicy", "retryPolicy", "outputSchemaRef", "outputSchemaHash", "budgetRef"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "batch-swarm-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "enum": ["contract-preview", "runtime-ready"] },
+    "kind": { "const": "batch-swarm" },
+    "id": { "$ref": "#/$defs/id" },
+    "agentSpecRef": { "$ref": "#/$defs/id" },
+    "agentSpecHash": { "$ref": "#/$defs/sha256" },
+    "policyHash": { "$ref": "#/$defs/sha256" },
+    "promptTemplateRef": { "$ref": "#/$defs/id" },
+    "promptTemplateHash": { "$ref": "#/$defs/sha256" },
+    "itemsFrom": { "type": "string", "pattern": "^artifact://[a-z0-9][a-z0-9._:/-]{0,511}$" },
+    "maxItems": { "type": "integer", "minimum": 1, "maximum": 300 },
+    "concurrency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["initial", "max", "rampEveryMs", "adaptiveRateLimit"],
+      "properties": {
+        "initial": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "max": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "rampEveryMs": { "type": "integer", "minimum": 1, "maximum": 3600000 },
+        "adaptiveRateLimit": { "type": "boolean" }
+      }
+    },
+    "failurePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "enum": ["fail-fast", "continue", "quorum", "minimum-success", "all-required"] },
+        "threshold": { "type": "integer", "minimum": 1, "maximum": 1000 }
+      },
+      "allOf": [{ "if": { "properties": { "kind": { "enum": ["quorum", "minimum-success"] } }, "required": ["kind"] }, "then": { "properties": { "threshold": {} }, "required": ["threshold"] } }]
+    },
+    "retryPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxAttempts", "maxDelayMs", "deadlineMs"],
+      "properties": {
+        "maxAttempts": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "maxDelayMs": { "type": "integer", "minimum": 0, "maximum": 3600000 },
+        "deadlineMs": { "type": "integer", "minimum": 1, "maximum": 86400000 }
+      }
+    },
+    "outputSchemaRef": { "$ref": "#/$defs/id" },
+    "outputSchemaHash": { "$ref": "#/$defs/sha256" },
+    "budgetRef": { "$ref": "#/$defs/id" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

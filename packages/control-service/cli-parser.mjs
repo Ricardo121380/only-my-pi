@@ -41,14 +41,18 @@ const COMMANDS = new Set([
   "mode",
   "workflow",
   "swarm",
+  "ultra",
   "theme",
   "help",
 ]);
 
 const MODE_COMMANDS = new Set(["list", "show", "use", "reset", "doctor", "diff", "scaffold"]);
 const PROFILE_COMMANDS = new Set(["list", "show", "diff"]);
-const WORKFLOW_COMMANDS = new Set(["list", "show", "run", "status", "cancel"]);
-const SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel"]);
+const WORKFLOW_COMMANDS = new Set(["list", "show", "run", "status", "cancel", "resume"]);
+const SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume", "batch", "goal"]);
+const BATCH_SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status", "cancel", "resume"]);
+const GOAL_SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status"]);
+const ULTRA_COMMANDS = new Set(["list", "show", "validate", "plan", "run"]);
 const THEME_COMMANDS = new Set(["list", "show", "preview", "use", "reset", "doctor"]);
 const MODE_NAMESPACED_ID = /^(?:[a-z][a-z0-9-]{0,63}(?:\/[a-z][a-z0-9-]{0,63})?|(?:user|project|package):[a-z][a-z0-9-]{0,63})$/u;
 
@@ -124,7 +128,7 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   const { options, positionals } = parseOptions(argv.slice(1));
   const configRoot = resolveConfigRoot(options.configRoot, env, homedir);
 
-  if (command !== "swarm" && options.inputFile !== undefined) fail("--input-file is only valid for swarm commands");
+  if (!new Set(["swarm", "workflow", "ultra"]).has(command) && options.inputFile !== undefined) fail("--input-file is only valid for workflow, swarm, or ultra commands");
 
   if (options.profile !== undefined) assertIdentifier(options.profile, "profile");
   if (options.mode !== undefined) {
@@ -262,21 +266,30 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
     const subcommand = positionals[0] ?? "list";
     if (!WORKFLOW_COMMANDS.has(subcommand)) fail(`unknown workflow subcommand: ${subcommand}`);
     const workflowId = positionals[1] ?? null;
-    if (["show", "run", "status", "cancel"].includes(subcommand) && workflowId === null) fail(`workflow ${subcommand} requires an id`);
+    if (["show", "run", "status", "cancel", "resume"].includes(subcommand) && workflowId === null) fail(`workflow ${subcommand} requires an id`);
     if (positionals.length > 2) fail(`workflow ${subcommand} accepts at most one id`);
     if (workflowId !== null) assertIdentifier(workflowId, "workflow id");
+    if (options.inputFile !== undefined) {
+      if (!["run", "resume"].includes(subcommand)) fail("--input-file is only valid for workflow run or resume");
+      if (!path.isAbsolute(options.inputFile)) fail("--input-file must be an absolute path");
+    }
     const apply = options.apply === true;
     if (options.yes && !apply) fail("--yes is only valid with --apply");
     if (subcommand !== "run" && (apply || options.yes)) fail(`--apply/--yes are only valid for workflow run`);
     return {
       command,
-      mutation: subcommand === "run" && apply,
+      // Resume is a state-changing operation even though it does not accept
+      // the install-time --apply flag.  The coordinator still requires the
+      // original input/approval evidence and will fail closed when either is
+      // unavailable; the parser must not mislabel it as read-only.
+      mutation: ["cancel", "resume"].includes(subcommand) || (subcommand === "run" && apply),
       options: {
         configRoot,
         subcommand,
         workflowId,
-        runId: ["status", "cancel"].includes(subcommand) ? workflowId : null,
+        runId: ["status", "cancel", "resume"].includes(subcommand) ? workflowId : null,
         profile: options.profile ?? null,
+        inputFile: options.inputFile ?? null,
         apply,
         yes: options.yes === true,
         json: options.json === true,
@@ -288,26 +301,100 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
     reject(options, ["mode", "provider", "model", "scope", "apply", "dryRun", "plan", "static", "live", "resolved"], command);
     const subcommand = positionals[0] ?? "list";
     if (!SWARM_COMMANDS.has(subcommand)) fail(`unknown swarm subcommand: ${subcommand}`);
+    if (subcommand === "batch") {
+      const batchSubcommand = positionals[1] ?? "list";
+      if (!BATCH_SWARM_COMMANDS.has(batchSubcommand)) fail(`unknown swarm batch subcommand: ${batchSubcommand}`);
+      const identifier = positionals[2] ?? null;
+      if (["show", "validate", "plan", "run"].includes(batchSubcommand) && identifier === null) fail(`swarm batch ${batchSubcommand} requires a batch id`);
+      if (["status", "cancel", "resume"].includes(batchSubcommand) && identifier === null) fail(`swarm batch ${batchSubcommand} requires a run id`);
+      if (positionals.length > 3) fail(`swarm batch ${batchSubcommand} accepts at most one id`);
+      if (identifier !== null) assertIdentifier(identifier, ["status", "cancel", "resume"].includes(batchSubcommand) ? "run id" : "batch id");
+      if (options.inputFile !== undefined) {
+        if (!["plan", "run", "resume"].includes(batchSubcommand)) fail("--input-file is only valid for swarm batch plan, run, or resume");
+        if (!path.isAbsolute(options.inputFile)) fail("--input-file must be an absolute path");
+      }
+      if (options.yes && batchSubcommand !== "run") fail("--yes is only valid for swarm batch run");
+      return {
+        command,
+        mutation: ["run", "cancel", "resume"].includes(batchSubcommand),
+        options: {
+          configRoot,
+          subcommand: "batch",
+          batchSubcommand,
+          batchId: ["status", "cancel", "resume"].includes(batchSubcommand) ? null : identifier,
+          runId: ["status", "cancel", "resume"].includes(batchSubcommand) ? identifier : null,
+          inputFile: options.inputFile ?? null,
+          yes: options.yes === true,
+          json: options.json === true,
+        },
+      };
+    }
+    if (subcommand === "goal") {
+      const goalSubcommand = positionals[1] ?? "list";
+      if (!GOAL_SWARM_COMMANDS.has(goalSubcommand)) fail(`unknown swarm goal subcommand: ${goalSubcommand}`);
+      const identifier = positionals[2] ?? null;
+      if (["show", "validate", "plan", "run"].includes(goalSubcommand) && identifier === null) fail(`swarm goal ${goalSubcommand} requires a goal id`);
+      if (goalSubcommand === "status" && identifier === null) fail("swarm goal status requires a run id");
+      if (positionals.length > 3) fail(`swarm goal ${goalSubcommand} accepts at most one id`);
+      if (identifier !== null) assertIdentifier(identifier, goalSubcommand === "status" ? "run id" : "goal id");
+      if (options.inputFile !== undefined) {
+        if (!["plan", "run"].includes(goalSubcommand)) fail("--input-file is only valid for swarm goal plan or run");
+        if (!path.isAbsolute(options.inputFile)) fail("--input-file must be an absolute path");
+      }
+      if (options.yes && goalSubcommand !== "run") fail("--yes is only valid for swarm goal run");
+      return {
+        command,
+        mutation: goalSubcommand === "run",
+        options: {
+          configRoot,
+          subcommand: "goal",
+          goalSubcommand,
+          goalId: goalSubcommand === "status" ? null : identifier,
+          runId: goalSubcommand === "status" ? identifier : null,
+          inputFile: options.inputFile ?? null,
+          yes: options.yes === true,
+          json: options.json === true,
+        },
+      };
+    }
     const recipeId = positionals[1] ?? null;
     if (["show", "validate", "plan", "run"].includes(subcommand) && recipeId === null) fail(`swarm ${subcommand} requires a recipe id`);
-    if (["status", "cancel"].includes(subcommand) && recipeId === null) fail(`swarm ${subcommand} requires a run id`);
+    if (["status", "cancel", "resume"].includes(subcommand) && recipeId === null) fail(`swarm ${subcommand} requires a run id`);
     if (positionals.length > 2) fail(`swarm ${subcommand} accepts at most one id`);
-    if (recipeId !== null) assertIdentifier(recipeId, subcommand === "status" || subcommand === "cancel" ? "run id" : "recipe id");
+    if (recipeId !== null) assertIdentifier(recipeId, ["status", "cancel", "resume"].includes(subcommand) ? "run id" : "recipe id");
     if (options.inputFile !== undefined && !path.isAbsolute(options.inputFile)) fail("--input-file must be an absolute path");
     if (options.yes && subcommand !== "run") fail("--yes is only valid for swarm run");
     return {
       command,
-      mutation: subcommand === "run",
+      // A resume can append RunResumed/child/terminal events, so expose it as
+      // a mutation to callers that enforce confirmation and audit boundaries.
+      mutation: ["cancel", "resume"].includes(subcommand) || subcommand === "run",
       options: {
         configRoot,
         subcommand,
-        recipeId: ["status", "cancel"].includes(subcommand) ? null : recipeId,
-        runId: ["status", "cancel"].includes(subcommand) ? recipeId : null,
+        recipeId: ["status", "cancel", "resume"].includes(subcommand) ? null : recipeId,
+        runId: ["status", "cancel", "resume"].includes(subcommand) ? recipeId : null,
         inputFile: options.inputFile ?? null,
         yes: options.yes === true,
         json: options.json === true,
       },
     };
+  }
+
+  if (command === "ultra") {
+    reject(options, ["mode", "profile", "provider", "model", "scope", "apply", "dryRun", "plan", "static", "live", "resolved"], command);
+    const subcommand = positionals[0] ?? "list";
+    if (!ULTRA_COMMANDS.has(subcommand)) fail(`unknown ultra subcommand: ${subcommand}`);
+    const strategyId = positionals[1] ?? null;
+    if (["show", "validate", "plan", "run"].includes(subcommand) && strategyId === null) fail(`ultra ${subcommand} requires a strategy id`);
+    if (positionals.length > 2) fail(`ultra ${subcommand} accepts at most one strategy id`);
+    if (strategyId !== null) assertIdentifier(strategyId, "UltraRun strategy id");
+    if (options.inputFile !== undefined) {
+      if (!["plan", "run"].includes(subcommand)) fail("--input-file is only valid for ultra plan or run");
+      if (!path.isAbsolute(options.inputFile)) fail("--input-file must be an absolute path");
+    }
+    if (options.yes && subcommand !== "run") fail("--yes is only valid for ultra run");
+    return { command, mutation: subcommand === "run", options: { configRoot, subcommand, strategyId, inputFile: options.inputFile ?? null, yes: options.yes === true, json: options.json === true } };
   }
 
   if (command === "theme") {

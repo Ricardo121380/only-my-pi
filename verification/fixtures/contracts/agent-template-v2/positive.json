@@ -1,0 +1,28 @@
+{
+  "$schema": "agent-template-v2.schema.json",
+  "formatVersion": 2,
+  "contractStatus": "contract-preview",
+  "kind": "agent-template",
+  "id": "reviewer",
+  "version": "1.0.0",
+  "backendAgentId": "omp-reviewer",
+  "sourceHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "promptHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "tools": { "allow": ["read"], "deny": ["bash", "edit", "write"] },
+  "requiredCapabilities": ["workspace-read"],
+  "policyCeiling": {
+    "workspace": "shared-read-only",
+    "mutation": "none",
+    "approval": "deny",
+    "egress": { "web": "deny", "mcp": "deny", "provider": "allow-listed", "extension": "deny" }
+  },
+  "modelRole": "review",
+  "inputSchema": null,
+  "outputSchema": null,
+  "writer": false,
+  "continuable": true,
+  "resumable": true,
+  "timeoutMs": 60000,
+  "redaction": { "secrets": "omit" },
+  "templateHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+}

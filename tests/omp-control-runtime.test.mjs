@@ -124,6 +124,70 @@ test("/omp swarm routes through the injected control service without starting a 
   assert.deepEqual(calls, [{ subcommand: "plan", recipeId: "research-synthesis", runId: null, inputFile: null, yes: false, input: {} }]);
 });
 
+test("/omp swarm batch keeps the homogeneous namespace and offline planning boundary", async () => {
+  const calls = [];
+  const runtime = createOmpRuntime({
+    rootDir: "/tmp/only-my-pi",
+    swarmService: { async dispatch(options) { calls.push(options); return { ok: true, status: "BATCH_SWARM_PLAN", mutation: false }; } },
+  });
+  const result = await runtime.execute("swarm batch plan review-items", { ui: { notify() {} } });
+  assert.equal(result.status, "BATCH_SWARM_PLAN");
+  assert.deepEqual(calls, [{
+    subcommand: "batch",
+    batchSubcommand: "plan",
+    recipeId: null,
+    batchId: "review-items",
+    runId: null,
+    inputFile: null,
+    input: {},
+    yes: false,
+  }]);
+});
+
+test("/omp lazy Workflow and Swarm services share one injected unified coordinator", async () => {
+  const calls = [];
+  const subagentsOrchestration = {
+    async execute(plan, options) {
+      calls.push({ plan, options });
+      return { runId: options.runId ?? "generated-run", status: "completed", terminal: { status: "completed" } };
+    },
+    async inspect() { return { projection: { status: "completed" } }; },
+    async cancel(runId) { return { status: "RUN_NOT_ACTIVE", runId }; },
+  };
+  const runtime = createOmpRuntime({ rootDir: process.cwd(), subagentsOrchestration });
+  const ctx = { ui: { notify() {} } };
+  assert.equal((await runtime.execute("workflow run single-agent-safe --apply --yes", ctx)).status, "WORKFLOW_COMPLETED");
+  assert.equal((await runtime.execute("swarm run research-synthesis --yes", ctx)).status, "SWARM_COMPLETED");
+  assert.equal(calls.length, 2);
+  assert.equal(calls.every((entry) => Object.isFrozen(entry.plan)), true);
+});
+
+test("/omp plan-confirm-run passes the reviewed input snapshot instead of reopening inputFile", async () => {
+  const calls = [];
+  const workflowService = {
+    async dispatch(options) {
+      calls.push(options);
+      if (!options.apply) {
+        return {
+          ok: true,
+          status: "WORKFLOW_PLAN",
+          runId: "reviewed-run",
+          input: { reviewed: true },
+          plan: { planDigest: "sha256:reviewed" },
+          executionEnvelope: { executionEnvelopeDigest: "sha256:reviewed-envelope", conditions: [] },
+        };
+      }
+      return { ok: true, status: "WORKFLOW_COMPLETED" };
+    },
+  };
+  const runtime = createOmpRuntime({ rootDir: process.cwd(), workflowService });
+  const result = await runtime.execute("workflow run single-agent-safe --input-file /tmp/reviewed.json --apply --yes", { ui: { notify() {} } });
+  assert.equal(result.status, "WORKFLOW_COMPLETED");
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].inputFile, null);
+  assert.deepEqual(calls[1].input, { reviewed: true });
+});
+
 test("/omp theme routes public Pi UI theme methods and keeps apply explicit", async () => {
   const applied = [];
   const runtime = createOmpRuntime({

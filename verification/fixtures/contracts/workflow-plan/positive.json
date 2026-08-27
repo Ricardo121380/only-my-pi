@@ -1,0 +1,47 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/workflow-plan-v1.schema.json",
+  "formatVersion": 1,
+  "contractStatus": "contract-preview",
+  "id": "fixture-workflow-v2",
+  "definitionVersion": "2.0.0",
+  "definitionDigest": "sha256:3c94cd285cb8cabaa846b2ea0d9b0a387bdd2e04c6fa8fbd706957d6d3ae0438",
+  "revision": { "number": 0, "parentPlanDigest": null, "reason": "initial-compile", "activationPolicy": "drain" },
+  "policy": {
+    "workspace": "shared-read-only",
+    "mutation": "none",
+    "egress": { "web": "deny", "mcp": "deny", "provider": "allow" },
+    "tools": { "allow": [], "deny": [] }
+  },
+  "policyDigest": "sha256:14dc02f128daa550d9156db228f1d71f23c639db702a8b35c2bf19d1ad547b7c",
+  "budget": {
+    "maxNodes": 2,
+    "maxParallel": 1,
+    "maxDepth": 2,
+    "maxAttemptsPerNode": 1,
+    "maxWallTimeMs": 1000,
+    "maxOutputBytes": 4096,
+    "maxAssignments": 1,
+    "maxTokens": null,
+    "maxCostUsd": null
+  },
+  "nodes": [
+    {
+      "budget": { "maxAttempts": 1, "maxCostUsd": null, "maxOutputBytes": 4096, "maxTokens": null, "timeoutMs": 1000 },
+      "cache": { "keyInputs": [], "mode": "never" },
+      "gateId": "test-contract",
+      "id": "verify",
+      "idempotency": "none",
+      "kind": "gate",
+      "needs": [],
+      "policy": {
+        "egress": { "mcp": "deny", "provider": "allow", "web": "deny" },
+        "mutation": "none",
+        "tools": { "allow": [], "deny": [] },
+        "workspace": "shared-read-only"
+      }
+    }
+  ],
+  "entryNodeIds": ["verify"],
+  "terminalNodeId": "verify",
+  "planDigest": "sha256:33599fa0055d8613d780146877ec3698593729c7d1ea6d273d3309d473533778"
+}

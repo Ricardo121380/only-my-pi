@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-compatibility-v1.schema.json",
+  "title": "only-my-pi Subagents compatibility matrix v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "contractStatus", "id", "policy", "rows", "matrixDigest"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "subagents-compatibility-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "contractStatus": { "const": "contract-preview" },
+    "id": { "const": "only-my-pi-subagents-compatibility" },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nodeRange", "piVersion", "backend", "logicalRuntimeOwner", "physicalRuntimeOwner"],
+      "properties": {
+        "nodeRange": { "const": ">=22.19.0" },
+        "piVersion": { "const": "0.84.1" },
+        "backend": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["package", "version", "protocolVersion"],
+          "properties": {
+            "package": { "const": "pi-subagents" },
+            "version": { "const": "0.45.2" },
+            "protocolVersion": { "const": 1 }
+          }
+        },
+        "logicalRuntimeOwner": { "const": "@only-my-pi/subagents" },
+        "physicalRuntimeOwner": { "const": "pi-subagents" }
+      }
+    },
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": { "$ref": "#/$defs/row" }
+    },
+    "matrixDigest": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9.-]{0,95}$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "path": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[A-Za-z0-9._/-]+$" },
+    "status": { "enum": ["PASS", "CONFIGURED_UNVERIFIED", "NOT_RUN_BY_POLICY", "NOT_RUN_ENVIRONMENT", "UNAVAILABLE"] },
+    "scopes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repositoryContracts",
+        "noModelRpc",
+        "singleOwnerTopology",
+        "liveAgentTerminal",
+        "liveAgentCancel",
+        "liveBatchTerminal",
+        "backgroundResume",
+        "guardedWriterIntegration",
+        "soakResourceLeak",
+        "migrationRollback"
+      ],
+      "properties": {
+        "repositoryContracts": { "$ref": "#/$defs/status" },
+        "noModelRpc": { "$ref": "#/$defs/status" },
+        "singleOwnerTopology": { "$ref": "#/$defs/status" },
+        "liveAgentTerminal": { "$ref": "#/$defs/status" },
+        "liveAgentCancel": { "$ref": "#/$defs/status" },
+        "liveBatchTerminal": { "$ref": "#/$defs/status" },
+        "backgroundResume": { "$ref": "#/$defs/status" },
+        "guardedWriterIntegration": { "$ref": "#/$defs/status" },
+        "soakResourceLeak": { "$ref": "#/$defs/status" },
+        "migrationRollback": { "$ref": "#/$defs/status" }
+      }
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "environment", "scopes", "evidence"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "environment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["node", "pi", "backend", "platform"],
+          "properties": {
+            "node": { "type": "string", "minLength": 1, "maxLength": 32 },
+            "pi": { "const": "0.84.1" },
+            "backend": { "const": "pi-subagents@0.45.2" },
+            "platform": { "type": "string", "pattern": "^[a-z0-9]+-[a-z0-9_]+$", "maxLength": 64 }
+          }
+        },
+        "scopes": { "$ref": "#/$defs/scopes" },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/path" }
+        }
+      }
+    }
+  }
+}

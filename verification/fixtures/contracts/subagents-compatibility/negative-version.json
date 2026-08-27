@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../../schemas/subagents-compatibility-v1.schema.json",
+  "formatVersion": 2,
+  "contractStatus": "contract-preview",
+  "id": "only-my-pi-subagents-compatibility",
+  "policy": {
+    "nodeRange": ">=22.19.0",
+    "piVersion": "0.84.1",
+    "backend": { "package": "pi-subagents", "version": "0.45.2", "protocolVersion": 1 },
+    "logicalRuntimeOwner": "@only-my-pi/subagents",
+    "physicalRuntimeOwner": "pi-subagents"
+  },
+  "rows": [],
+  "matrixDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}

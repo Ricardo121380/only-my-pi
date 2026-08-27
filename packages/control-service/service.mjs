@@ -14,8 +14,11 @@ Usage:
   omp profile [list|show <id>|diff <from> <to>] [--config-root <absolute>] [--json]
   omp tools|packages|context|verify [--config-root <absolute>] [--json]
   omp mode [list|show|use|reset|doctor|diff|scaffold] [mode-id] [--profile <id>] [--resolved] [--config-root <absolute>] [--json]
-  omp workflow [list|show|run|status|cancel] [workflow-or-run-id] [--apply --yes] [--config-root <absolute>] [--json]
-  omp swarm [list|show|validate|plan|run|status|cancel] [recipe-or-run-id] [--input-file <absolute>] [--yes] [--config-root <absolute>] [--json]
+  omp workflow [list|show|run|status|cancel|resume] [workflow-or-run-id] [--input-file <absolute>] [--apply --yes] [--config-root <absolute>] [--json]
+  omp swarm [list|show|validate|plan|run|status|cancel|resume] [recipe-or-run-id] [--input-file <absolute>] [--yes] [--config-root <absolute>] [--json]
+  omp swarm batch [list|show|validate|plan|run|status|cancel|resume] [batch-or-run-id] [--input-file <absolute>] [--yes] [--config-root <absolute>] [--json]
+  omp swarm goal [list|show|validate|plan|run|status] [goal-or-run-id] [--input-file <absolute>] [--yes] [--config-root <absolute>] [--json]
+  omp ultra [list|show|validate|plan|run] [strategy-id] [--input-file <absolute>] [--yes] [--config-root <absolute>] [--json]
   omp theme [list|show|preview|use|reset|doctor] [theme-id] [--apply --yes] [--config-root <absolute>] [--json]
 
 Mutation is never implicit. bootstrap, update, and uninstall default to a zero-write plan.
@@ -38,7 +41,7 @@ async function approve(request, plan, confirm) {
 }
 
 export class ControlService {
-  constructor({ bootstrap, doctor, confirm, modes, workflows, swarms, themes, statusService, rootDir, configRoot } = {}) {
+  constructor({ bootstrap, doctor, confirm, modes, workflows, swarms, ultras, themes, statusService, rootDir, configRoot } = {}) {
     if (!bootstrap || !doctor) throw new TypeError("bootstrap and doctor services are required");
     this.bootstrap = bootstrap;
     this.doctor = doctor;
@@ -46,6 +49,7 @@ export class ControlService {
     this.modes = modes;
     this.workflows = workflows;
     this.swarms = swarms;
+    this.ultras = ultras;
     this.themes = themes;
     this.statusService = statusService;
     this.rootDir = rootDir;
@@ -182,13 +186,68 @@ export class ControlService {
         if (!this.workflows || typeof this.workflows.dispatch !== "function") {
           return { ok: false, status: "WORKFLOW_REGISTRY_UNAVAILABLE", mutation: false, code: "WORKFLOW_REGISTRY_UNAVAILABLE", next: "run omp doctor:modes and reinstall the promoted generation" };
         }
-        return this.workflows.dispatch(request.options);
+        const options = request.options ?? {};
+        if (options.subcommand === "resume") return this.workflows.dispatch(options);
+        if (options.subcommand !== "run" || options.apply !== true) return this.workflows.dispatch(options);
+        const plan = await this.workflows.dispatch({ ...options, apply: false, yes: false });
+        if (plan?.ok === false) return plan;
+        if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
+        return this.workflows.dispatch({
+          ...options,
+          apply: true,
+          yes: true,
+          inputFile: null,
+          runId: plan.runId ?? options.runId,
+          input: plan.input,
+          conditions: plan.executionEnvelope?.conditions ?? options.conditions,
+          expectedPlanDigest: plan.plan?.planDigest ?? null,
+          expectedExecutionDigest: plan.executionEnvelope?.executionEnvelopeDigest ?? null,
+        });
       }
       case "swarm": {
         if (!this.swarms || typeof this.swarms.dispatch !== "function") {
           return { ok: false, status: "SWARM_SERVICE_UNAVAILABLE", mutation: false, code: "SWARM_SERVICE_UNAVAILABLE", next: "run omp doctor and reinstall the promoted generation" };
         }
-        return this.swarms.dispatch(request.options);
+        const options = request.options ?? {};
+        const operation = options.subcommand === "batch" ? options.batchSubcommand : options.subcommand === "goal" ? options.goalSubcommand : options.subcommand;
+        if (operation === "resume") return this.swarms.dispatch(options);
+        if (operation !== "run") return this.swarms.dispatch(options);
+        const plan = await this.swarms.dispatch(options.subcommand === "batch"
+          ? { ...options, batchSubcommand: "plan", yes: false }
+          : options.subcommand === "goal"
+            ? { ...options, goalSubcommand: "plan", yes: false }
+            : { ...options, subcommand: "plan", yes: false });
+        if (plan?.ok === false) return plan;
+        if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
+        return this.swarms.dispatch({
+          ...options,
+          ...(options.subcommand === "batch" ? { batchSubcommand: "run" } : options.subcommand === "goal" ? { goalSubcommand: "run" } : { subcommand: "run" }),
+          yes: true,
+          inputFile: null,
+          runId: plan.runId ?? options.runId,
+          input: plan.input,
+          conditions: plan.executionEnvelope?.conditions ?? options.conditions,
+          expectedPlanDigest: plan.plan?.planDigest ?? null,
+          expectedExecutionDigest: plan.executionEnvelope?.executionEnvelopeDigest ?? null,
+          expectedAuthorizationDigest: plan.authorization?.authorizationDigest ?? null,
+        });
+      }
+      case "ultra": {
+        if (!this.ultras || typeof this.ultras.dispatch !== "function") return { ok: false, status: "ULTRA_RUN_SERVICE_UNAVAILABLE", mutation: false, code: "ULTRA_RUN_SERVICE_UNAVAILABLE" };
+        const options = request.options ?? {};
+        if (options.subcommand !== "run") return this.ultras.dispatch(options);
+        const plan = await this.ultras.dispatch({ ...options, subcommand: "plan", yes: false });
+        if (plan?.ok === false) return plan;
+        if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
+        return this.ultras.dispatch({
+          ...options,
+          subcommand: "run",
+          yes: true,
+          inputFile: null,
+          input: plan.request,
+          expectedPlanDigest: plan.plan?.planDigest ?? null,
+          expectedAuthorizationDigest: plan.authorization?.authorizationDigest ?? null,
+        });
       }
       case "theme": {
         if (!this.themes || typeof this.themes.dispatch !== "function") {

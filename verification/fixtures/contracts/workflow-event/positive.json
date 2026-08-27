@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "runId": "run-01",
+  "seq": 1,
+  "eventId": "run-planned",
+  "type": "RunPlanned",
+  "timestamp": "2026-08-18T00:00:00.000Z",
+  "revision": 0,
+  "nodeId": null,
+  "attemptId": null,
+  "swarmRunId": null,
+  "childId": null,
+  "writerId": "writer-01",
+  "fencingToken": 1,
+  "inputDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "prevEventDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "payload": {},
+  "eventDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+}

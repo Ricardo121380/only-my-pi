@@ -1,0 +1,11 @@
+{
+  "formatVersion": 1,
+  "id": "recovery-chain",
+  "kind": "recovery",
+  "input": {
+    "events": [
+      { "eventId": "event-a", "prevEventId": "GENESIS", "inputDigest": "sha256:a", "effectId": "effect-a", "observation": "first", "recordState": "complete" },
+      { "eventId": "event-b", "prevEventId": "event-a", "inputDigest": "sha256:b", "effectId": "effect-b", "observation": "second", "recordState": "complete" }
+    ]
+  }
+}

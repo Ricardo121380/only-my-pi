@@ -1,0 +1,69 @@
+{
+  "$schema": "https://github.com/Ricardo121380/only-my-pi/schemas/subagents-protected-evidence-v1.schema.json",
+  "attestation": {
+    "authorizationDigest": "sha256:0aaa4837343f8a3004f3b32d04f6786177677e88c2c7c6ee53f784adecc05943",
+    "captureDigest": "sha256:1d28d6c2a810ce48e8d058ca060edd6011e5c7e2e6479a54121e6654716cc745",
+    "class": "operator-authorized-live-import",
+    "publicKeyFingerprint": "sha256:2c94451b7555cdcacef59f347bad726fc10ac2d7e0b213a04f53583a9000b70e",
+    "signature": "uGfV4lnEoDhn/gmoYYX9+WYGop4dKNk86R9FXgemfWn3GRVbv0WA4u3qhoS72Y7sfDKL9Vl8s0jE7plmHogLAg==",
+    "signedPayloadDigest": "sha256:9efe10fe09c6537c5d60fd00094e4e8afa623e79c4c89cc0f98559f699e9ed4b",
+    "signerId": "local-beta-20260824"
+  },
+  "authorization": {
+    "disposableRoot": true,
+    "liveChildDispatch": "AUTHORIZED",
+    "liveWriter": "NOT_RUN_BY_POLICY",
+    "providerRequests": "AUTHORIZED",
+    "realPiHome": "NOT_TOUCHED"
+  },
+  "claims": {
+    "authoritativeTerminals": 1,
+    "autoIntegrated": false,
+    "backgroundResume": false,
+    "batchItemCount": 0,
+    "cancelObserved": true,
+    "managedWorktree": false,
+    "parentDiffVerified": false
+  },
+  "compatibilityRowId": "darwin-arm64-node-25.8.0",
+  "contractStatus": "protected-live-evidence",
+  "environment": {
+    "backend": "pi-subagents@0.45.2",
+    "node": "25.8.0",
+    "pi": "0.84.1",
+    "platform": "darwin-arm64"
+  },
+  "evidenceDigest": "sha256:194e1c7a2d4f13303e8ae40a48adadb8d452840a15a43ef6d0a687e21a8cc32b",
+  "formatVersion": 1,
+  "id": "live-agent-cancel",
+  "matrixDigest": "sha256:8153d80fe216dae9d00508580429a43dc1465f40cda3b507c3598880d2e7e3a5",
+  "observedAt": "2026-08-24T04:02:57.738Z",
+  "policyDigest": "sha256:5e0b7ab53b3a2cd5e93ad69a6f53e93141509494094da66056a7bb517ce94e6d",
+  "privacy": {
+    "credentialsStored": false,
+    "hostPathsStored": false,
+    "rawOutputStored": false,
+    "sessionIdsStored": false
+  },
+  "proofs": [
+    {
+      "digest": "sha256:07706fea3c880f5ad90ab3e82cb640822950fb6d23cfa080a802e50adb9311f0",
+      "kind": "cancel-request"
+    },
+    {
+      "digest": "sha256:906808f3d4926510337bf5cea6793975e665bdca53807b83a972e2c50aefb3f4",
+      "kind": "process-terminal"
+    },
+    {
+      "digest": "sha256:55041f52b8a98c36507f6284092945d3c1194b8ab0eab37195414cf4c1478400",
+      "kind": "terminal-receipt"
+    },
+    {
+      "digest": "sha256:5b9d1c18ee046f976e5f2eb6f20f0487ccda0b9b13f3650d3c35b56fb10f0ac4",
+      "kind": "usage-metering"
+    }
+  ],
+  "sourceCommit": "6004e6128dec76d8c301894c289a23d5dc855558",
+  "status": "PASS",
+  "trustPolicyDigest": "sha256:c6e709a93ed4f73c495a20e137fdba8c6ff12a827ca6332ba87f4306aac3e5ab"
+}
