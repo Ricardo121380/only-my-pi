@@ -1,0 +1,13 @@
+{
+  "name": "only-my-pi-agent-bundle",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "pi": {
+    "subagents": {
+      "agents": [
+        "../../agents/generated"
+      ]
+    }
+  }
+}

@@ -35,6 +35,7 @@ import {
   verifyPromotedGeneration,
 } from "./npm-stager.mjs";
 import { compileGenerationSettings } from "./settings-compiler.mjs";
+import { bindExistingPackages } from "./package-bindings.mjs";
 import {
   MANAGED_SETTING_FIELDS,
   compilePublishedSettings,
@@ -540,7 +541,19 @@ export class TransactionEngine {
       if (current.digest !== plan.sourceSettings.digest) {
         fail("PLAN_STALE", "settings changed after plan generation", { recovered });
       }
-      const freshGraph = await this.generation.buildPlan({ rootDir: this.rootDir, profileId: plan.profileId });
+      const freshBaseGraph = await this.generation.buildPlan({ rootDir: this.rootDir, profileId: plan.profileId });
+      // v2 bootstrap plans bind package ownership before entering the
+      // transaction. Recompute that read-only evidence while holding the
+      // mutation lock. Injected v1 graph seams used by recovery tests and old
+      // callers carry no packageBindings and retain their original digest.
+      const freshGraph = Array.isArray(plan.graphPlan?.packageBindings)
+        ? await bindExistingPackages({
+            configRoot,
+            settings: current.settings,
+            plan: freshBaseGraph,
+            priorBindings: plan.current?.metadata?.packageBindings,
+          })
+        : freshBaseGraph;
       if (freshGraph.graphDigest !== plan.graphPlan.graphDigest) {
         fail("PLAN_STALE", "inventory, profile, or first-party resources changed after plan generation", { recovered });
       }

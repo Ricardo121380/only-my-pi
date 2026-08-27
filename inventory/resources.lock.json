@@ -589,6 +589,36 @@
       "packaged": true
     },
     {
+      "id": "omp-generated-agent-resources",
+      "type": "library",
+      "path": "agents/generated",
+      "version": "1.0.0",
+      "provides": [],
+      "requires": ["subagent-runtime"],
+      "owners": ["only-my-pi-resource-registry"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["orchestration"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "only-my-pi-agent-bundle",
+      "type": "library",
+      "path": "bundles/only-my-pi-agent-bundle",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": ["subagent-runtime"],
+      "owners": ["only-my-pi-resource-registry"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["orchestration"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
       "id": "explorer-agent",
       "type": "agent",
       "path": "agents/explorer.json",

@@ -16,6 +16,7 @@ import {
   verifyPromotedGeneration,
 } from "./npm-stager.mjs";
 import { compileGenerationSettings } from "./settings-compiler.mjs";
+import { bindExistingPackages } from "./package-bindings.mjs";
 import { compileRollbackSettings } from "./transaction-engine.mjs";
 import {
   compilePublishedSettings,
@@ -79,6 +80,7 @@ function desiredMetadata({ profileId, graphPlan, providerSelection, initialMode 
     graphDigest: graphPlan.graphDigest,
     providerSelection,
     initialMode,
+    packageBindings: graphPlan.packageBindings ?? [],
   });
 }
 
@@ -87,6 +89,7 @@ function graphSummary(graphPlan) {
     graphDigest: graphPlan.graphDigest,
     generationKey: graphPlan.generationKey,
     packages: graphPlan.packages.map((entry) => Object.freeze({ id: entry.id, spec: entry.spec })),
+    packageBindings: (graphPlan.packageBindings ?? []).map((entry) => Object.freeze({ ...entry })),
     resources: graphPlan.resources.map((entry) => Object.freeze({
       id: entry.id,
       type: entry.type,
@@ -165,9 +168,15 @@ export class BootstrapService {
     const profileId = options.profile ?? "coding";
     const configRoot = path.resolve(options.configRoot);
     this.profiles.resolve(profileId);
-    const graphPlan = await buildGenerationPlan({ rootDir: this.rootDir, profileId });
     const current = await loadSettings(configRoot);
     const currentMetadata = extractManagedMetadata(current.settings);
+    const baseGraphPlan = await buildGenerationPlan({ rootDir: this.rootDir, profileId });
+    const graphPlan = await bindExistingPackages({
+      configRoot,
+      settings: current.settings,
+      plan: baseGraphPlan,
+      priorBindings: currentMetadata?.packageBindings,
+    });
     const providerSelection = options.provider === null || options.provider === undefined
       ? currentMetadata?.providerSelection ?? null
       : validateMetadataSelection({ provider: options.provider, model: options.model ?? null });
@@ -368,6 +377,7 @@ export class BootstrapService {
       profileId: metadata?.profileId ?? null,
       generationId: metadata?.generationId ?? null,
       providerSelection: metadata?.providerSelection ?? null,
+      packageBindings: metadata?.packageBindings ?? [],
       initialMode: metadata?.initialMode ?? null,
       modeResolution,
       lastKnownGood: lastKnownGood
@@ -388,9 +398,15 @@ export class BootstrapService {
     let generation = { status: status.profileId ? "UNVERIFIED" : "NOT_INSTALLED" };
     if (status.profileId) {
       try {
-        const graphPlan = await buildGenerationPlan({ rootDir: this.rootDir, profileId: status.profileId });
         const settings = await loadSettings(options.configRoot);
         const metadata = extractManagedMetadata(settings.settings);
+        const baseGraphPlan = await buildGenerationPlan({ rootDir: this.rootDir, profileId: status.profileId });
+        const graphPlan = await bindExistingPackages({
+          configRoot: path.resolve(options.configRoot),
+          settings: settings.settings,
+          plan: baseGraphPlan,
+          priorBindings: metadata?.packageBindings,
+        });
         generation = await probeInstalledGeneration({
           configRoot: path.resolve(options.configRoot),
           graphPlan,
