@@ -103,18 +103,9 @@ async function prepareWebAgentOverrides({ rootDir, managedRoot, sessionId, webEx
   const sessionDigest = crypto.createHash("sha256").update(sessionId).digest("hex").slice(0, 24);
   const runtimeRoot = path.join(managedRoot, "runtime", sessionDigest);
   const agentsRoot = path.join(runtimeRoot, "agents");
-  const webConfigRoot = path.join(runtimeRoot, "web-config");
   await ensurePrivateDirectory(managedRoot, path.join(managedRoot, "runtime"));
   await ensurePrivateDirectory(managedRoot, runtimeRoot);
   await ensurePrivateDirectory(managedRoot, agentsRoot);
-  await ensurePrivateDirectory(managedRoot, webConfigRoot);
-  await fs.writeFile(path.join(webConfigRoot, "web-search.json"), `${JSON.stringify({
-    allowBrowserCookies: false,
-    autoOpenBrowser: false,
-    curatorRemote: false,
-    workflow: "none",
-    ssrf: { allowRanges: [], trustEnvProxy: false },
-  }, null, 2)}\n`, { encoding: "utf8", mode: 0o600, flag: "w" });
   const packageManifestPath = path.join(path.dirname(webExtensionPath), "package.json");
   const wrapperPath = path.join(runtimeRoot, "safe-web-extension.mjs");
   const wrapper = [
@@ -123,7 +114,8 @@ async function prepareWebAgentOverrides({ rootDir, managedRoot, sessionId, webEx
     'const { createJiti } = require("jiti");',
     'const jiti = createJiti(import.meta.url, { moduleCache: true });',
     'export default async function onlyMyPiSafeWeb(pi) {',
-    `  process.env.PI_CODING_AGENT_DIR = ${JSON.stringify(webConfigRoot)};`,
+    '  delete process.env.PI_ALLOW_BROWSER_COOKIES;',
+    '  delete process.env.FEYNMAN_ALLOW_BROWSER_COOKIES;',
     `  const module = await jiti.import(${JSON.stringify(webExtensionPath)});`,
     '  return module.default(pi);',
     '}',
@@ -141,7 +133,7 @@ async function prepareWebAgentOverrides({ rootDir, managedRoot, sessionId, webEx
     await fs.writeFile(target, content, { encoding: "utf8", mode: 0o600, flag: "w" });
     await fs.chmod(target, 0o600);
   }
-  return { runtimeRoot, agentsRoot, webConfigRoot, wrapperPath };
+  return { runtimeRoot, agentsRoot, wrapperPath };
 }
 
 function packageSettingSource(value) {

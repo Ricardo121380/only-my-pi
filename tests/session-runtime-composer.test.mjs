@@ -133,10 +133,10 @@ test("session composer owns one read-only runtime, ceiling, private stores and W
   assert.match(researcher, /tools: .*web_search/u);
   assert.doesNotMatch(researcher, /^tools:.*(?:bash|edit|write)/mu);
   const runtimeRoot = path.dirname(extraRoot);
-  const webConfig = JSON.parse(await fs.readFile(path.join(runtimeRoot, "web-config", "web-search.json"), "utf8"));
-  assert.deepEqual(webConfig, { allowBrowserCookies: false, autoOpenBrowser: false, curatorRemote: false, workflow: "none", ssrf: { allowRanges: [], trustEnvProxy: false } });
   const wrapper = await fs.readFile(path.join(runtimeRoot, "safe-web-extension.mjs"), "utf8");
-  assert.match(wrapper, /process\.env\.PI_CODING_AGENT_DIR/u);
+  assert.doesNotMatch(wrapper, /process\.env\.PI_CODING_AGENT_DIR\s*=/u);
+  assert.match(wrapper, /delete process\.env\.PI_ALLOW_BROWSER_COOKIES/u);
+  assert.match(wrapper, /delete process\.env\.FEYNMAN_ALLOW_BROWSER_COOKIES/u);
   assert.equal((await fs.stat(path.join(configRoot, "only-my-pi", "runs"))).mode & 0o777, 0o700);
   await composer.dispose();
   assert.equal(ceilingDisposed(), true);
