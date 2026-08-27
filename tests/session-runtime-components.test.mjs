@@ -247,6 +247,30 @@ test("governed backend injects per-child limits and closes every terminal/contro
   await failing.dispose();
 });
 
+test("governed backend accepts only resolver ceilings that monotonically narrow the configured budget", async () => {
+  const launches = [];
+  const base = {
+    capabilityMatrix: {},
+    async launch(options) { launches.push(options); return { handle: options.handle, binding: { bindingId: "binding" } }; },
+    async awaitTerminal() { return { authoritative: true, outcome: "completed", receiptId: "receipt", completion: { usage: { total: 1, costUsd: 0.01 } } }; },
+    async dispose() {},
+  };
+  const handle = { handleId: "resolver-handle", local: { runId: "resolver-run" } };
+  const narrowed = createGovernedBackend(base, async () => configuration(), { toolCallLimitResolver: () => 0, turnLimitResolver: () => 2 });
+  const started = await narrowed.launch({ handle, agentSpec: { templateId: "reviewer" } });
+  assert.equal(launches[0].maximumToolCalls, 0);
+  assert.equal(launches[0].maximumTurns, 2);
+  await narrowed.awaitTerminal(started.handle);
+  await narrowed.dispose();
+
+  const toolsWidened = createGovernedBackend(base, async () => configuration(), { toolCallLimitResolver: ({ budget }) => budget.maxToolCallsPerChild + 1 });
+  await assert.rejects(toolsWidened.launch({ handle: { handleId: "bad-tools", local: { runId: "bad-tools" } } }), { code: "TOOL_BUDGET_RESOLVER_INVALID" });
+  await toolsWidened.dispose();
+  const turnsWidened = createGovernedBackend(base, async () => configuration(), { turnLimitResolver: ({ budget }) => budget.maxTurnsPerChild + 1 });
+  await assert.rejects(turnsWidened.launch({ handle: { handleId: "bad-turns", local: { runId: "bad-turns" } } }), { code: "TURN_BUDGET_RESOLVER_INVALID" });
+  await turnsWidened.dispose();
+});
+
 test("node executor enforces read-only agents, Web grants, artifact context, and BatchSwarm child ceilings", async () => {
   const agentRegistry = createAgentRegistry({ rootDir });
   const launches = [];
@@ -272,6 +296,8 @@ test("node executor enforces read-only agents, Web grants, artifact context, and
   assert.equal((await started.terminal).outcome, "completed");
   assert.match(launches[0].assignment.task.text, /Upstream artifacts/u);
   assert.deepEqual(launches[0].assignment.context.artifactRefs, ["art-one"]);
+  assert.equal(launches[0].assignment.budget.maxTokens, node.budget.maxTokens);
+  assert.equal(launches[0].assignment.budget.maxCostUsd, node.budget.maxCostUsd);
 
   await executor.startAgent({ ...node, id: "research", agentTemplateRef: "researcher" }, { ...context, runId: "web-run", artifactRefs: [] });
   assert.deepEqual(webCalls, [{ runId: "web-run", role: "researcher" }]);

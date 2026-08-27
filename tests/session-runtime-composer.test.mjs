@@ -150,6 +150,8 @@ test("single Agent live path uses the composer coordinator and publishes a priva
   const service = createAgentControlService({ rootDir, orchestration: composer.coordinator, configurationProvider: composer.configurationProvider });
   const planned = await service.dispatch({ subcommand: "plan", agentId: "reviewer", input: { task: "Review package metadata without changes." } });
   assert.equal(planned.status, "AGENT_PLAN");
+  assert.equal(planned.plan.nodes[0].budget.maxTokens, composer.configuration.budget.maxTotalTokens);
+  assert.equal(planned.plan.nodes[0].budget.maxCostUsd, composer.configuration.budget.maxCostUsd);
   const result = await service.dispatch({
     subcommand: "run",
     agentId: "reviewer",

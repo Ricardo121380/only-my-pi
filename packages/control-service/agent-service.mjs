@@ -34,8 +34,10 @@ function policyFromManifest(manifest) {
 function planDefinition(entry, budget) {
   if (entry.manifest.writer !== false) fail("WRITER_UNAVAILABLE_IN_READONLY_MILESTONE", `Agent ${entry.id} is a writer and is unavailable in M8`);
   const policy = policyFromManifest(entry.manifest);
-  const childTokenBudget = Math.max(1, Math.floor(budget.maxTotalTokens / budget.maxChildren));
-  const childCostBudget = budget.maxCostUsd / budget.maxChildren;
+  // A single-Agent run owns exactly one child. Give that child the full root
+  // token/cost envelope; the session governor still enforces aggregate spend.
+  const childTokenBudget = budget.maxTotalTokens;
+  const childCostBudget = budget.maxCostUsd;
   const timeoutMs = Math.min(entry.manifest.timeoutSeconds * 1000, budget.maxWallSeconds * 1000);
   return {
     $schema: "https://github.com/Ricardo121380/only-my-pi/schemas/workflow-definition-v2.schema.json",

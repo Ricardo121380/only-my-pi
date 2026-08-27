@@ -281,7 +281,7 @@ class SessionBudgetGovernor {
   }
 }
 
-function createGovernedBackend(base, configurationProvider) {
+function createGovernedBackend(base, configurationProvider, { toolCallLimitResolver, turnLimitResolver } = {}) {
   const governor = new SessionBudgetGovernor(configurationProvider);
   const reservations = new Map();
   return Object.freeze({
@@ -290,10 +290,18 @@ function createGovernedBackend(base, configurationProvider) {
     async launch(options) {
       const admission = await governor.acquire(options.handle.local.runId, options.signal);
       try {
+        const requestedToolCalls = typeof toolCallLimitResolver === "function"
+          ? toolCallLimitResolver({ ...options, budget: admission.budget, configuration: admission.configuration })
+          : admission.budget.maxToolCallsPerChild;
+        const requestedTurns = typeof turnLimitResolver === "function"
+          ? turnLimitResolver({ ...options, budget: admission.budget, configuration: admission.configuration })
+          : admission.budget.maxTurnsPerChild;
+        if (!Number.isSafeInteger(requestedToolCalls) || requestedToolCalls < 0 || requestedToolCalls > admission.budget.maxToolCallsPerChild) fail("TOOL_BUDGET_RESOLVER_INVALID", "resolved child tool-call ceiling is invalid");
+        if (!Number.isSafeInteger(requestedTurns) || requestedTurns < 1 || requestedTurns > admission.budget.maxTurnsPerChild) fail("TURN_BUDGET_RESOLVER_INVALID", "resolved child turn ceiling is invalid");
         const launched = await base.launch({
           ...options,
-          maximumTurns: admission.budget.maxTurnsPerChild,
-          maximumToolCalls: admission.budget.maxToolCallsPerChild,
+          maximumTurns: requestedTurns,
+          maximumToolCalls: requestedToolCalls,
         });
         reservations.set(launched.handle.handleId, admission);
         return launched;
@@ -383,8 +391,8 @@ function directAgentRunner({ agentRegistry, backend, configurationProvider, webA
       budget: {
         maxElapsedMs: Math.min(agentSpec.timeoutMs, configuration.budget.maxWallSeconds * 1000),
         maxOutputBytes: configuration.budget.maxOutputBytesPerChild,
-        maxTokens: Math.max(1, Math.floor(configuration.budget.maxTotalTokens / configuration.budget.maxChildren)),
-        maxCostUsd: configuration.budget.maxCostUsd / configuration.budget.maxChildren,
+        maxTokens: configuration.budget.maxTotalTokens,
+        maxCostUsd: configuration.budget.maxCostUsd,
       },
       ...(outputSchema === null ? {} : { output: { schema: outputSchema } }),
     });
@@ -531,8 +539,8 @@ async function createNodeExecutor({ agentRegistry, backend, batchRuntime, artifa
       budget: {
         maxElapsedMs: Math.min(node.budget.timeoutMs, budgetConfiguration.budget.maxWallSeconds * 1000),
         maxOutputBytes: Math.min(node.budget.maxOutputBytes, budgetConfiguration.budget.maxOutputBytesPerChild),
-        maxTokens: Math.max(1, Math.floor(budgetConfiguration.budget.maxTotalTokens / budgetConfiguration.budget.maxChildren)),
-        maxCostUsd: budgetConfiguration.budget.maxCostUsd / budgetConfiguration.budget.maxChildren,
+        maxTokens: Math.min(node.budget.maxTokens ?? budgetConfiguration.budget.maxTotalTokens, budgetConfiguration.budget.maxTotalTokens),
+        maxCostUsd: Math.min(node.budget.maxCostUsd ?? budgetConfiguration.budget.maxCostUsd, budgetConfiguration.budget.maxCostUsd),
       },
     });
     const handle = createAgentRunHandle({ runId: context.runId, nodeId: node.id, attemptId: context.attemptId, assignment, agentSpec });
@@ -642,7 +650,10 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
     maximumToolCalls: configuration.budget.maxToolCallsPerChild,
     modelResolver,
   });
-  const backend = dependencies.governedBackend ?? createGovernedBackend(baseBackend, configurationProvider);
+  const backend = dependencies.governedBackend ?? createGovernedBackend(baseBackend, configurationProvider, {
+    toolCallLimitResolver: dependencies.toolCallLimitResolver,
+    turnLimitResolver: dependencies.turnLimitResolver,
+  });
   const eventJournal = dependencies.eventJournal ?? createEventJournal({ rootDir: runsRoot, filesystem: fs, clock: () => new Date(), idFactory: (prefix) => `${prefix}-${crypto.randomUUID()}` });
   const planStore = dependencies.planStore ?? createPlanStore({ rootDir: runsRoot, filesystem: fs });
   const baseArtifactStore = dependencies.artifactStore ?? createArtifactStore({ filesystem: fs, rootDir: managedRoot, maxArtifactBytes: configuration.budget.maxOutputBytesPerChild });

@@ -301,7 +301,7 @@ export async function executeM8LiveAcceptance(args, { phaseRunner = runPiM8Phase
   if (typeof extensionEntry !== "string") fail("M8_LIVE_SUBAGENTS_ENTRY_INVALID", "pi-subagents extension entry is unavailable");
   const subagentsEntry = await fs.realpath(path.resolve(subagents.root, extensionEntry));
   if (!subagentsEntry.startsWith(`${subagents.root}${path.sep}`) || !(await fs.lstat(subagentsEntry)).isFile()) fail("M8_LIVE_SUBAGENTS_ENTRY_INVALID", "pi-subagents extension entry escaped its package");
-  const runNonce = sourceCommit.slice(0, 12);
+  const runNonce = `${sourceCommit.slice(0, 8)}-${crypto.randomBytes(4).toString("hex")}`;
   const request = { formatVersion: 1, phase: "main", sourceCommit, repositoryRoot: rootDir, configRoot, model: { provider: args.provider, id: args.model }, runNonce, webAuthorized: true };
   const main = await phaseRunner({ piCommand: args.piCommand, phase: "main", request, configRoot, subagentsEntry, timeoutMs: 30 * 60 * 1000 });
   const resume = await phaseRunner({ piCommand: args.piCommand, phase: "resume", request, configRoot, subagentsEntry, timeoutMs: 10 * 60 * 1000 });

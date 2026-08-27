@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { createAgentControlService } from "../../control-service/agent-service.mjs";
+import { createDailyConfigService } from "../../daily-config/index.mjs";
 import {
   agentTemplateFromRegistryEntry,
   createAgentRunHandle,
@@ -322,7 +323,32 @@ export default function m8LiveAcceptanceExtension(pi) {
     try {
       const request = readRequest();
       ensure(ctx?.model?.provider === request.model.provider && ctx?.model?.id === request.model.id, "M8_LIVE_MODEL_DRIFT", "active Pi model differs from the acceptance request");
-      composer = await createSessionRuntimeComposer({ pi, rootDir: request.repositoryRoot, configRoot: request.configRoot, getContext: () => ctx });
+      const dailyConfig = createDailyConfigService({ rootDir: request.repositoryRoot, configRoot: request.configRoot });
+      const protectedDailyConfig = {
+        async resolve(options) {
+          const configuration = await dailyConfig.resolve(options);
+          return Object.freeze({
+            ...configuration,
+            budget: Object.freeze({
+              ...configuration.budget,
+              maxTurnsPerChild: Math.min(2, configuration.budget.maxTurnsPerChild),
+              maxToolCallsPerChild: Math.min(2, configuration.budget.maxToolCallsPerChild),
+              maxTotalToolCalls: Math.min(16, configuration.budget.maxTotalToolCalls),
+            }),
+          });
+        },
+      };
+      composer = await createSessionRuntimeComposer({
+        pi,
+        rootDir: request.repositoryRoot,
+        configRoot: request.configRoot,
+        getContext: () => ctx,
+        dependencies: {
+          dailyConfig: protectedDailyConfig,
+          toolCallLimitResolver: ({ agentSpec }) => ["researcher", "source-verifier"].includes(agentSpec?.templateId) ? 2 : 0,
+          turnLimitResolver: () => 2,
+        },
+      });
       const result = request.phase === "main" ? await executeM8LiveMain(composer, request) : await executeM8LiveResume(composer, request);
       process.stdout.write(`${JSON.stringify({ formatVersion: 1, type: M8_LIVE_RECORD_TYPE, phase: request.phase, status: "PASS", sourceCommit: request.sourceCommit, model: request.model, assertions: result.assertions, usage: result.usage })}\n`);
     } catch (cause) {
