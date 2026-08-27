@@ -340,11 +340,11 @@ export async function executeM8LiveMain(composer, request) {
   const usage = usageAccumulator();
   const assertions = [];
   assertions.push(await runGoal(composer, request));
+  assertions.push(await runPublicWeb(composer, request, usage));
   assertions.push(...await runUltra(composer, request));
   assertions.push(await runAgent(composer, request));
   assertions.push(await runBatch(composer, request));
   assertions.push(await runWorkflow(composer, request));
-  assertions.push(await runPublicWeb(composer, request, usage));
   assertions.push(await runCancellation(composer, request, usage));
   assertions.push(...await runAdmissionDenials(composer, request));
   assertions.push(await prepareResume(composer, request));

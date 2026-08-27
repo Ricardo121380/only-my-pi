@@ -12,6 +12,7 @@ import {
   createGovernedBackend,
   createNodeExecutor,
   createSessionRuntimeComposer,
+  directAgentRunner,
   resolveBoundPackageRoot,
 } from "../packages/subagents/runtime/session-composer.mjs";
 import { agentTemplateFromRegistryEntry, createResolvedAgentSpec } from "../packages/subagents/domain/index.mjs";
@@ -343,6 +344,20 @@ test("node executor uses dynamic specs, default task bounds, explicit batch budg
   const writerRegistry = { async resolve() { return { manifest: { writer: true, tools: { allow: ["write"] } } }; } };
   const writerExecutor = await createNodeExecutor({ agentRegistry: writerRegistry, backend, batchRuntime, artifactStore: { async read() {} }, configurationProvider: async () => configuration(), dynamicSpecs: new Map(), webAuthorizer: { require() {} } });
   await assert.rejects(writerExecutor.startAgent({ ...node, agentTemplateRef: "writer" }, { runId: "writer", attemptId: "attempt", input: {}, artifactRefs: [] }), { code: "WRITER_UNAVAILABLE_IN_READONLY_MILESTONE" });
+});
+
+test("direct Agent runner preserves a safe backend terminal error code", async () => {
+  const agentRegistry = createAgentRegistry({ rootDir });
+  const runner = directAgentRunner({
+    agentRegistry,
+    backend: {
+      async launch({ handle }) { return { handle, binding: { bindingId: "binding" } }; },
+      async awaitTerminal() { return { authoritative: true, outcome: "failed", error: { code: "DELEGATION_CHILD_FAILED_TOOL" } }; },
+    },
+    configurationProvider: async () => configuration(),
+    webAuthorizer: { require() {} },
+  });
+  await assert.rejects(runner({ role: "reviewer", task: "bounded", runId: "direct-error", nodeId: "node" }), { code: "DELEGATION_CHILD_FAILED_TOOL" });
 });
 
 test("composer disables orchestration before package resolution when the hard overlay is absent", async (t) => {

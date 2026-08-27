@@ -398,7 +398,7 @@ function directAgentRunner({ agentRegistry, backend, configurationProvider, webA
     const handle = createAgentRunHandle({ runId, nodeId, attemptId, assignment, agentSpec });
     const launched = await backend.launch({ handle, agentSpec, assignment, mode: "background", signal });
     const terminal = await backend.awaitTerminal(launched.handle, { bindingId: launched.binding.bindingId, intent: "run", signal });
-    if (terminal.authoritative !== true || terminal.outcome !== "completed") fail("DIRECT_AGENT_FAILED", `direct Agent ${role} did not complete`, { terminal });
+    if (terminal.authoritative !== true || terminal.outcome !== "completed") fail(terminal.error?.code ?? "DIRECT_AGENT_FAILED", `direct Agent ${role} did not complete`, { terminal });
     return terminal;
   };
 }
@@ -962,4 +962,4 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
   });
 }
 
-export { READ_ONLY_AGENT_IDS, SessionBudgetGovernor, buildGoalProposal, createGovernedBackend, createNodeExecutor };
+export { READ_ONLY_AGENT_IDS, SessionBudgetGovernor, buildGoalProposal, createGovernedBackend, createNodeExecutor, directAgentRunner };
