@@ -75,7 +75,7 @@ test("delegation compiler binds read-only domain objects and exposes no raw work
   const lifecycleOnly = compileAgentAssignmentToPiDelegationRequest({ ...values, cwd: "/fixture", maximumToolCalls: 0 });
   assert.deepEqual(lifecycleOnly.request.toolBudget, {
     hard: 1,
-    block: ["bash", "edit", "find", "grep", "ls", "read", "web", "write"],
+    block: ["bash", "edit", "fetch_content", "find", "get_search_content", "grep", "ls", "read", "source_check", "web", "web_search", "write"],
   });
   assert.match(lifecycleOnly.request.task, /^Do not call file, network, shell, or delegation tools\./u);
   assert.match(lifecycleOnly.request.task, /only permitted tool call is the final structured_output/u);

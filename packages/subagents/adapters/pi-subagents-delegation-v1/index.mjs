@@ -124,7 +124,7 @@ export function compileAgentAssignmentToPiDelegationRequest({
     timeoutMs: assignment.budget.maxElapsedMs,
     ...(maximumTurns === undefined ? {} : { turnBudget: { maxTurns: maximumTurns } }),
     toolBudget: maximumToolCalls === 0
-      ? { hard: 1, block: ["bash", "edit", "find", "grep", "ls", "read", "web", "write"] }
+      ? { hard: 1, block: ["bash", "edit", "fetch_content", "find", "get_search_content", "grep", "ls", "read", "source_check", "web", "web_search", "write"] }
       : { hard: maximumToolCalls, block: blockedTools },
     artifacts: false,
     result: schema === null ? { kind: "text" } : { kind: "structured", schema },
