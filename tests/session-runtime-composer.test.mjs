@@ -298,6 +298,8 @@ test("Ultra Agent and Workflow routes use the same composer and fresh verifier",
   assert.equal(workflow.result.status, "completed", JSON.stringify(workflow));
   assert.equal(workflow.plan.route, "workflow");
   assert.equal(workflow.result.verification.verdict, "pass");
+  assert.ok(workflow.result.routeResult.artifactEvidence.length >= 1);
+  assert.ok(workflow.result.routeResult.artifactEvidence.every((entry) => typeof entry.digest === "string" && entry.result !== undefined));
 });
 
 test("Ultra dynamic Goal reuses the Goal fresh verifier and stays within eight children", async (t) => {
