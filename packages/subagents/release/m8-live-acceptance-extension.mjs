@@ -334,6 +334,7 @@ export default function m8LiveAcceptanceExtension(pi) {
               maxTurnsPerChild: Math.min(2, configuration.budget.maxTurnsPerChild),
               maxToolCallsPerChild: Math.min(2, configuration.budget.maxToolCallsPerChild),
               maxTotalToolCalls: Math.min(16, configuration.budget.maxTotalToolCalls),
+              maxGoalRevisions: Math.min(2, configuration.budget.maxGoalRevisions),
             }),
           });
         },

@@ -454,7 +454,7 @@ function goalAgentNode(id, specId, task, budget, web = false) {
     assignment: { taskTemplateRef: task },
     outputSchemaRef: "research-result",
     policy,
-    budget: { maxAttempts: 1, timeoutMs: Math.max(1_000, Math.floor((budget.maxWallSeconds * 1000) / budget.maxGoalRevisions / 3)), maxOutputBytes: Math.min(budget.maxOutputBytesPerChild, Math.floor(budget.maxTotalOutputBytes / budget.maxGoalRevisions / 4)), maxTokens: Math.max(1, Math.floor(budget.maxTotalTokens / budget.maxGoalRevisions / 4)), maxCostUsd: budget.maxCostUsd / budget.maxGoalRevisions / 4 },
+    budget: { maxAttempts: 1, timeoutMs: Math.max(1_000, Math.floor((budget.maxWallSeconds * 1000) / budget.maxGoalRevisions / 3)), maxOutputBytes: Math.min(budget.maxOutputBytesPerChild, Math.floor(budget.maxTotalOutputBytes / budget.maxGoalRevisions / 3)), maxTokens: Math.max(1, Math.floor(budget.maxTotalTokens / budget.maxGoalRevisions / 3)), maxCostUsd: budget.maxCostUsd / budget.maxGoalRevisions / 3 },
     cache: { mode: "content-addressed", keyInputs: ["assignment", "dependencies"] },
     idempotency: "content-addressed",
   };
