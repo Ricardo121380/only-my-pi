@@ -35,7 +35,7 @@
             "assignment": { "taskTemplateRef": "ultra-explore" },
             "outputSchemaRef": null,
             "policy": { "workspace": "shared-read-only", "mutation": "none", "tools": { "allow": ["read"], "deny": ["bash", "edit", "write", "web"] } },
-            "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 5000, "maxCostUsd": 0.025 },
+            "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 4500, "maxCostUsd": 0.0225 },
             "cache": { "mode": "content-addressed", "keyInputs": ["assignment", "dependencies"] },
             "idempotency": "content-addressed"
           },
@@ -46,7 +46,7 @@
             "assignment": { "taskTemplateRef": "ultra-review" },
             "outputSchemaRef": null,
             "policy": { "workspace": "shared-read-only", "mutation": "none", "tools": { "allow": ["read"], "deny": ["bash", "edit", "write", "web"] } },
-            "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 5000, "maxCostUsd": 0.025 },
+            "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 4000, "maxCostUsd": 0.02 },
             "cache": { "mode": "content-addressed", "keyInputs": ["assignment", "dependencies"] },
             "idempotency": "content-addressed"
           }
@@ -59,7 +59,7 @@
         "assignment": { "taskTemplateRef": "ultra-synthesize" },
         "outputSchemaRef": null,
         "policy": { "workspace": "shared-read-only", "mutation": "none", "tools": { "allow": ["read"], "deny": ["bash", "edit", "write", "web"] } },
-        "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 5000, "maxCostUsd": 0.025 },
+        "budget": { "maxAttempts": 1, "timeoutMs": 300000, "maxOutputBytes": 65536, "maxTokens": 6500, "maxCostUsd": 0.0325 },
         "cache": { "mode": "content-addressed", "keyInputs": ["assignment", "dependencies"] },
         "idempotency": "content-addressed"
       },
