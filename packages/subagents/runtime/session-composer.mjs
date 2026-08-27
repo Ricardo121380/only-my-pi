@@ -783,6 +783,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
         },
       });
     },
+    allowVerifiedReuseCompletion: dependencies.allowVerifiedReuseCompletion === true,
   });
   const goalController = dependencies.recordedGoalController ?? createRecordedGoalController({ controller: rawGoalController, recordStore, contextProvider });
   const workflowRegistry = dependencies.workflowRegistry ?? createWorkflowRegistry({ rootDir });

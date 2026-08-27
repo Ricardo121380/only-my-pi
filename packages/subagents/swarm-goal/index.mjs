@@ -485,6 +485,7 @@ export function createSwarmGoalController(options = {}) {
   const leaseRenewalIntervalMs = options.leaseRenewalIntervalMs ?? Math.floor(leaseTtlMs / 3);
   const scheduler = options.scheduler ?? { setTimeout, clearTimeout };
   const revisionAuthorizer = options.revisionAuthorizer ?? null;
+  const allowVerifiedReuseCompletion = options.allowVerifiedReuseCompletion === true;
   if (revisionAuthorizer !== null && typeof revisionAuthorizer !== "function" && (typeof revisionAuthorizer.assess !== "function" || typeof revisionAuthorizer.approve !== "function")) throw new TypeError("revisionAuthorizer must be a factory or implement assess() and approve()");
   if (!Number.isSafeInteger(leaseTtlMs) || leaseTtlMs < 1 || !Number.isSafeInteger(leaseRenewalIntervalMs) || leaseRenewalIntervalMs < 1 || leaseRenewalIntervalMs >= leaseTtlMs) throw new TypeError("SwarmGoal lease heartbeat must be positive and shorter than the lease TTL");
 
@@ -698,6 +699,41 @@ export function createSwarmGoalController(options = {}) {
               });
               return inspect(runId);
             }
+          }
+        }
+
+        if (allowVerifiedReuseCompletion && proposal.decision === "complete" && revision > 0) {
+          const priorVerifiedRevision = projection.revisions
+            .filter((entry) => entry.status === "settled" && entry.execution?.verification?.verdict === "pass" && entry.execution.verification.contextMode === "fresh" && SHA256.test(entry.execution.verification.receiptDigest ?? ""))
+            .at(-1);
+          const settledIds = [...settledNodes.keys()].sort();
+          const reuseIds = proposal.reuse.map((entry) => entry.nodeId).sort();
+          const exactVerifiedReuse = priorVerifiedRevision
+            && settledIds.length > 0
+            && JSON.stringify(reuseIds) === JSON.stringify(settledIds)
+            && proposal.reuse.every((entry) => entry.artifactRefs.length > 0)
+            && goal.authority.mutation === "none"
+            && proposal.plan.policy.mutation === "none"
+            && proposal.plan.nodes.every((node) => node.policy.mutation === "none");
+          if (exactVerifiedReuse) {
+            const reusableSettledNodes = immutable([...settledNodes.values()].sort((left, right) => left.nodeId.localeCompare(right.nodeId)));
+            const verification = priorVerifiedRevision.execution.verification;
+            await append(runId, leaseRef, {
+              eventId: `goal-revision-reused:${revision}`,
+              type: "GoalRevisionSettled",
+              revision,
+              payload: {
+                childRunId: revisionState.childRunId,
+                planDigest: proposal.plan.planDigest,
+                status: "completed-from-verified-reuse",
+                verification,
+                usage: {},
+                reusableSettledNodes,
+                reusedFromRevision: priorVerifiedRevision.revision,
+              },
+            });
+            revisionState = { ...revisionState, status: "settled", execution: { childRunId: revisionState.childRunId, planDigest: proposal.plan.planDigest, status: "completed-from-verified-reuse", verification, usage: {}, reusableSettledNodes, reusedFromRevision: priorVerifiedRevision.revision } };
+            return await terminalizeSettledRevision(runId, leaseRef, goal, revisionState, 0);
           }
         }
 

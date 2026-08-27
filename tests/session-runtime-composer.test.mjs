@@ -60,7 +60,7 @@ function automaticTransport(requests = []) {
   };
 }
 
-async function harness(t, { withoutWeb = false, inheritedExtraAgentDirs } = {}) {
+async function harness(t, { withoutWeb = false, inheritedExtraAgentDirs, allowVerifiedReuseCompletion = false } = {}) {
   const configRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-session-composer-"));
   t.after(() => fs.rm(configRoot, { recursive: true, force: true }));
   const webRoot = path.join(configRoot, "fake-web");
@@ -104,6 +104,7 @@ async function harness(t, { withoutWeb = false, inheritedExtraAgentDirs } = {}) 
     getContext: () => ctx,
     dependencies: {
       ...(dailyConfig ? { dailyConfig } : {}),
+      allowVerifiedReuseCompletion,
       transport: automaticTransport(requests),
       subagentsPackage: { root: configRoot, manifest: { name: "pi-subagents", version: "0.45.2" } },
       ...(withoutWeb ? {} : {
@@ -208,6 +209,23 @@ test("dynamic SwarmGoal uses an LLM planner concept but parent-compiles two immu
   assert.match(goalVerifierRequest.task, /Declared node assignment: Fresh Goal artifact verification with no GateReceipt manifest/u);
   assert.equal((await composer.recordStore.require("session-goal-run")).status, "completed");
   assert.equal((await composer.recordStore.require("session-goal-run:r0")).status, "completed");
+});
+
+test("verified read-only Goal reuse can complete a later proposal without duplicate child execution", async (t) => {
+  const { composer, requests } = await harness(t, { allowVerifiedReuseCompletion: true });
+  const entry = await createSwarmGoalRegistry({ rootDir }).resolve("research-release-goal");
+  const objective = { ref: entry.definition.objective.ref, digest: entry.definition.objective.digest, input: { task: "Verify the bounded goal then converge from reusable evidence." } };
+  const authorization = createHumanGoalAuthorization(entry.definition, { objective, nonce: "verified-reuse-test" });
+  const webPlan = await composer.webAuthorizer.plan({ runId: "verified-reuse-run", roles: ["researcher", "source-verifier"], objectiveDigest: objective.digest, budget: composer.configuration.budget });
+  await composer.webAuthorizer.grant(webPlan);
+  const result = await composer.goalController.run(entry.definition, { runId: "verified-reuse-run", objective, authorization, input: objective.input });
+  assert.equal(result.status, "completed", JSON.stringify(result));
+  assert.equal(result.revisions.length, 2);
+  assert.equal(result.revisions[0].execution.status, "completed");
+  assert.equal(result.revisions[1].execution.status, "completed-from-verified-reuse");
+  assert.equal(result.revisions[1].execution.reusedFromRevision, 0);
+  assert.equal(requests.filter((request) => request.ownerRunId.includes("verified-reuse-run:r1")).length, 0);
+  assert.equal(requests.filter((request) => request.ownerRunId.startsWith("verified-reuse-run")).length, 5);
 });
 
 test("composer executes a two-item BatchSwarm within concurrency two", async (t) => {

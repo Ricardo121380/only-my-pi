@@ -389,6 +389,7 @@ export default function m8LiveAcceptanceExtension(pi) {
           goalMakerTemplateSelector: () => "reviewer",
           goalPlannerResultPolicy: m8ProtectedGoalPlannerPolicy,
           goalWebEnabled: false,
+          allowVerifiedReuseCompletion: true,
           toolCallLimitResolver: m8ProtectedToolCallLimit,
           turnLimitResolver: m8ProtectedTurnLimit,
         },
