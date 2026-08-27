@@ -456,9 +456,13 @@ function goalAgentNode(id, specId, task, budget, web = false, shareDivisor = 3) 
   };
 }
 
-function buildGoalProposal(plannerResult, context, budget) {
+function buildGoalProposal(plannerResult, context, budget, { makerTemplateSelector } = {}) {
   const suffix = `r${context.revision}`;
-  const makerTemplate = context.revision % 2 === 0 ? "researcher" : "source-verifier";
+  const defaultMakerTemplate = context.revision % 2 === 0 ? "researcher" : "source-verifier";
+  const makerTemplate = typeof makerTemplateSelector === "function"
+    ? makerTemplateSelector({ revision: context.revision, plannerResult: clone(plannerResult), defaultMakerTemplate })
+    : defaultMakerTemplate;
+  if (!WEB_AGENT_IDS.has(makerTemplate)) fail("GOAL_MAKER_SELECTOR_INVALID", "Goal maker selector must return researcher or source-verifier");
   const ids = {
     maker: `maker-${suffix}`,
     synth: `synthesize-${suffix}`,
@@ -704,7 +708,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
       nodeId: `goal-planner-${plannerContext.revision}`,
     });
     const planned = normalizedPlannerResult(terminal.result, plannerContext.revision, plannerContext.priorCoverage);
-    return buildGoalProposal(planned, plannerContext, (await configurationProvider()).budget);
+    return buildGoalProposal(planned, plannerContext, (await configurationProvider()).budget, { makerTemplateSelector: dependencies.goalMakerTemplateSelector });
   });
   const resolveAgentTemplate = async (id) => agentTemplateFromRegistryEntry(await agentRegistry.resolve(id));
   const executeGoalRevision = dependencies.executeGoalRevision ?? (async ({ childRunId, plan, proposal, agentSpecs, approval, input, signal }) => {
@@ -924,4 +928,4 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
   });
 }
 
-export { READ_ONLY_AGENT_IDS, SessionBudgetGovernor, createGovernedBackend, createNodeExecutor };
+export { READ_ONLY_AGENT_IDS, SessionBudgetGovernor, buildGoalProposal, createGovernedBackend, createNodeExecutor };

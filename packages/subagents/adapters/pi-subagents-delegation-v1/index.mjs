@@ -212,7 +212,13 @@ function failedStatusCode(status, upstreamError) {
   const message = typeof upstreamError === "string" ? upstreamError.toLowerCase() : "";
   const category = [
     [/(?:structured|schema|json)/u, "STRUCTURED_OUTPUT"],
-    [/(?:provider|model|api|http|request)/u, "PROVIDER"],
+    [/(?:401|403|auth|credential|api.?key)/u, "AUTH"],
+    [/(?:429|rate.?limit)/u, "RATE_LIMIT"],
+    [/(?:timed? ?out|timeout)/u, "TIMEOUT"],
+    [/(?:provider)/u, "PROVIDER"],
+    [/(?:model)/u, "MODEL"],
+    [/(?:http)/u, "HTTP"],
+    [/(?:request)/u, "REQUEST"],
     [/(?:tool)/u, "TOOL"],
     [/(?:turn)/u, "TURN"],
     [/(?:agent)/u, "AGENT"],

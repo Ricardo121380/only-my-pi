@@ -356,6 +356,7 @@ export default function m8LiveAcceptanceExtension(pi) {
         getContext: () => ctx,
         dependencies: {
           dailyConfig: protectedDailyConfig,
+          goalMakerTemplateSelector: () => "source-verifier",
           toolCallLimitResolver: m8ProtectedToolCallLimit,
           turnLimitResolver: m8ProtectedTurnLimit,
         },

@@ -8,6 +8,7 @@ import { createAgentRegistry } from "../packages/agent-registry/index.mjs";
 import { hashResourcePath } from "../packages/bootstrap/graph-plan.mjs";
 import {
   SessionBudgetGovernor,
+  buildGoalProposal,
   createGovernedBackend,
   createNodeExecutor,
   createSessionRuntimeComposer,
@@ -364,6 +365,14 @@ test("composer validates construction arguments before touching disk", async () 
   await assert.rejects(createSessionRuntimeComposer({ rootDir: "relative", configRoot: "/tmp/config", getContext() {} }), TypeError);
   await assert.rejects(createSessionRuntimeComposer({ rootDir, configRoot: "relative", getContext() {} }), TypeError);
   await assert.rejects(createSessionRuntimeComposer({ rootDir, configRoot: "/tmp/config", getContext: null }), TypeError);
+});
+
+test("Goal maker selection is restricted to the two registered research roles", () => {
+  const plannerResult = { questions: ["one", "two"], coverage: 0.5, progress: 0.5, coveredDimensions: ["one"], remainingDimensions: ["two"], decision: "replan", reason: "bounded" };
+  const context = { revision: 0, settledNodes: [] };
+  const proposal = buildGoalProposal(plannerResult, context, configuration().budget, { makerTemplateSelector: () => "source-verifier" });
+  assert.equal(proposal.agentIntents[0].templateId, "source-verifier");
+  assert.throws(() => buildGoalProposal(plannerResult, context, configuration().budget, { makerTemplateSelector: () => "reviewer" }), { code: "GOAL_MAKER_SELECTOR_INVALID" });
 });
 
 test("composer accepts every injected session service and disposes their public handles once", async (t) => {
