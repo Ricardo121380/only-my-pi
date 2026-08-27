@@ -57,3 +57,10 @@ and the audited upstream wire is
 [`contracts/pi-subagents-wire-v1.json`](../../contracts/pi-subagents-wire-v1.json).
 The active first-party orchestration contract is documented in
 [`subagents-v2.md`](subagents-v2.md).
+
+M8 Daily Harness Closure completed this migration in the normal Pi session:
+BatchSwarm, static Workflow, dynamic SwarmGoal and Ultra share the single
+session composer, budget ledger, journal and ArtifactStore over the pinned
+`pi-subagents` physical runtime. The D13 protected live matrix and D14 real-root
+rollback/reapply rehearsal both passed; Kimi AgentSwarm remains a reviewed
+design/source reference only and is not a runtime dependency.

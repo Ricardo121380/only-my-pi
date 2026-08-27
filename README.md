@@ -40,16 +40,22 @@ scripts/      Repository checks and package governance tooling
 ## Current milestone
 
 The governed S0-S5 kernel reached Stable on 2026-08-27: its exact source,
-protected evidence, and receipt chain passed 31/31 required gates. The active
-M8 milestone is different: **Daily Harness Closure** connects that verified
-kernel to a normal interactive Pi session, introduces borrowed package
-ownership, Base + Overlay configuration, private run artifacts, and a
-read-only `/omp run` experience. M8.0-M8.6 and all 13 deterministic Daily gates
-are implemented and passing; D13 live-model evidence and D14 real-root
-rollback/reapply evidence remain protected and pending. Until those two
-evidence-only gates pass, Stable describes the pinned kernel evidence—not a
-claim that the current checkout is already installed as the user's daily
-Harness.
+protected evidence, and receipt chain passed 31/31 required gates. **M8 Daily
+Harness Closure is also complete.** Implementation source `1b7767f`, its direct
+evidence-only child `0c07509`, and receipt commit `d2c1400` passed D1-D15 with
+15/15 gates. D13 used the configured OpenCode Go / DeepSeek V4 Flash model for
+the protected Agent, BatchSwarm, Workflow, SwarmGoal, Ultra, public-Web,
+cancellation, resume, budget and writer-denial matrix. D14 applied the same
+commit-pinned artifact to the real Pi home, restored the exact pre-install
+nine-package baseline, verified it, and reapplied the artifact. The installed
+artifact SHA-256 is
+`4d3a95fc8dd56ca9e88c040430f71d60d087226745dc2f199e0427533dd58e11`;
+the installed generation is `sha256:ac9d2a1c...2533637c`, with all selected
+third-party runtime packages still borrowed as `external` user assets.
+
+- [M8 D13 protected live-model evidence](verification/protected/2026-08-27-m8-live-model-matrix.json)
+- [M8 D14 real-root rehearsal evidence](verification/protected/2026-08-27-m8-real-root-rehearsal.json)
+- [M8 D1-D15 completion receipt](verification/receipts/2026-08-27-m8-daily-harness.json)
 
 - [M8 Daily Harness Closure plan](docs/plans/2026-08-27-m8-daily-harness-closure.md)
 - [Current implementation status](docs/STATUS.md)
@@ -172,8 +178,8 @@ worst-case reservation after recovery. Deadlines and reported output/token/cost
 overruns fail closed. Without correlated process-terminal proof, a local timeout
 is non-authoritative and leaves the run orphaned. Mutating dispatch also requires
 an executor that advertises audited path enforcement; a worktree alone is not
-treated as a path allowlist. General daily-session execution remains an M8
-integration surface outside the separately governed protected fixtures.
+treated as a path allowlist. M8 now exposes the read-only daily-session path
+through the real session composer while keeping writer admission unavailable.
 Restart-safe plan lookup and durable status/cancel/resume are now implemented
 through the versioned Plan Store sidecar. S3 BatchSwarm also reuses the same
 event chain and parent reservation across crash recovery: proven completed
@@ -182,9 +188,9 @@ the run. S4 now adds a Pi-native SwarmGoal controller, UltraRun router,
 immutable artifact store, and writer handoff contract. These are logical layers
 over the same RunCoordinator and sole `pi-subagents` backend; they do not
 connect Pi to Kimi Code or add a second scheduler. The protected two-item
-homogeneous BatchSwarm check is now source-bound Stable evidence. Dynamic-goal
-live execution is implemented as a logical controller but is not exposed as a
-daily-session claim until M8 injects its real session composer. General live writer admission
+homogeneous BatchSwarm check is now source-bound Stable evidence. M8 exposes
+dynamic-goal live execution through the real daily session composer, including
+bounded replan and permission-expansion approval. General live writer admission
 remains `UNAVAILABLE`
 because the public backend cannot prove a per-path allowlist. S5-C now provides
 one separately authorized, synthetic-fixture producer for the protected

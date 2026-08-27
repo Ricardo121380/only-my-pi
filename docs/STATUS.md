@@ -4,15 +4,15 @@ Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-27** · Stable
 kernel merged to `main`: **2026-08-27** · Pi **0.84.1** · Node **25.8.0** · macOS
 `darwin-arm64`
 
-## Active milestone — M8 Daily Harness Closure
+## Completed milestone — M8 Daily Harness Closure
 
 The S0-S5 kernel is Stable for the pinned source/evidence/receipt chain below.
-M8.0-M8.6 are now implemented: the normal `/omp` extension composes the unified
+M8.0-M8.7 are now complete: the normal `/omp` extension composes the unified
 session runtime, all five read-only execution classes use the same
-`pi-subagents` backend, and artifact/run/config/Web/Gate/TUI paths are wired.
-The product is not yet claimed complete because protected live-model and
-real-root rollback/reapply evidence (D13/D14) is still pending. Its implementation branch is
-`codex/m8-daily-harness` and its gate map is
+`pi-subagents` backend, artifact/run/config/Web/Gate/TUI paths are wired, and
+the current user's real Pi home completed apply, smoke, exact pre-install
+rollback, verification and reapply. The source/evidence/receipt chain is
+`1b7767f` -> `0c07509` -> `d2c1400`; its gate map is
 [`../verification/daily-harness-gates-v1.json`](../verification/daily-harness-gates-v1.json).
 
 M8 starts from these explicit truths:
@@ -24,21 +24,34 @@ M8 starts from these explicit truths:
   stack over the sole `pi-subagents` physical runtime;
 - the production milestone is read-only; the historical protected writer is
   evidence for a synthetic fixture and is not a daily writer capability;
-- D1-D12 and D15 have passed as 13 fixed deterministic gates; D13/D14 remain
-  evidence-only and cannot be spawned by CI;
-- global coverage is above 85/69/85, the session composer is above 90/80/90,
-  and `omp-control` is above 85/70/85;
+- D1-D12 and D15 passed as 13 fixed deterministic gates; source-bound D13/D14
+  also passed as evidence-only gates and remain non-executable from ordinary CI;
+- final measured coverage is 85.65/70.46/86.78 globally,
+  94.20/80.05/91.67 for the session composer, and 94.43/73.69/85.14 for
+  `omp-control` (lines/branches/functions);
 - a scripts-disabled, offline, self-contained artifact installs successfully in
-  a shadow root; real Pi-home mutation follows the exact reviewed
-  apply/live/rollback/reapply sequence only.
+  both shadow and real roots; the final artifact SHA-256 is
+  `4d3a95fc8dd56ca9e88c040430f71d60d087226745dc2f199e0427533dd58e11`
+  and the installed/LKG generation is `sha256:ac9d2a1c...2533637c`;
+- the D13 matrix passed 14/14 assertions with 22,500 metered tokens, three
+  tool calls and no stored raw model output, host paths or credentials;
+- the D14 rehearsal passed 6/6 assertions and restored the authorized original
+  raw or semantic settings baseline before reapplying the same artifact;
+- the final Daily receipt reports `COMPLETE`, 13/13 deterministic gates and
+  2/2 protected gates with no protected gate left `NOT_RUN_BY_POLICY`.
 
-M8 protected acceptance is source-bound. `scripts/m8-live-acceptance.mjs`
-uses the configured Pi model without printing or copying credentials, runs the
+M8 protected acceptance is source-bound. `scripts/m8-live-acceptance.mjs` used
+the configured Pi model without printing or copying credentials, ran the
 Agent/BatchSwarm/Workflow/SwarmGoal/Ultra/Web/cancel/resume/budget/writer-denial
-matrix in two Pi processes, and stores digest-only D13 evidence.
-`scripts/m8-real-root-rehearsal.mjs` owns the D14 no-model
-apply/preservation/rollback/reapply sequence. Both scripts are plan-first and
-require explicit `--run --yes`; neither is callable from ordinary CI.
+matrix in two Pi processes, and produced
+[`2026-08-27-m8-live-model-matrix.json`](../verification/protected/2026-08-27-m8-live-model-matrix.json).
+`scripts/m8-real-root-rehearsal.mjs` produced the separately authorized D14
+apply/preservation/exact-rollback/reapply evidence in
+[`2026-08-27-m8-real-root-rehearsal.json`](../verification/protected/2026-08-27-m8-real-root-rehearsal.json).
+The combined D1-D15 report is
+[`2026-08-27-m8-daily-harness.json`](../verification/receipts/2026-08-27-m8-daily-harness.json).
+Both producers remain plan-first and require explicit `--run --yes`; neither is
+callable from ordinary CI.
 
 The Harness MVP was fast-forwarded to private repository `main` at
 `12b24b59980386683a90af8250a4de4ff738d67c`. The post-merge `main` workflow
@@ -745,8 +758,10 @@ imports remain one-release compatibility shims but no longer own public
 execution. S3 now supplies the true homogeneous BatchSwarm implementation,
 stable item ledger, bounded ramp/retry/failure semantics, exact AgentSpec and
 template binding, WorkflowPlan node, parent-budget recovery, and CLI/TUI
-control. The 1/8/20/64/300 logical simulations and injected adapter tests pass;
-the protected live read-only batch is `NOT_RUN_BY_POLICY`. S4 now supplies
+control. The 1/8/20/64/300 logical simulations and injected adapter tests pass.
+At the historical S3 boundary the protected live read-only batch was
+`NOT_RUN_BY_POLICY`; later S5 and M8 source-bound evidence supersedes that
+historical status. S4 now supplies
 dynamic SwarmGoal plan revisions, UltraRun routing, quality policy, immutable
 artifacts, and guarded writer handoff without automatic integration. S5 adds
 promotion-specific live, fault, security, and compatibility evidence.
