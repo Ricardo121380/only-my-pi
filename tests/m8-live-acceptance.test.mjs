@@ -11,7 +11,7 @@ import {
   parseM8LiveAcceptanceArgs,
   runPiM8Phase,
 } from "../scripts/m8-live-acceptance.mjs";
-import { M8_LIVE_RECORD_TYPE, m8ProtectedGoalPlannerPolicy, m8ProtectedToolCallLimit, m8ProtectedTurnLimit } from "../packages/subagents/release/m8-live-acceptance-extension.mjs";
+import { M8_LIVE_RECORD_TYPE, createM8ProtectedSequentialPlan, m8ProtectedGoalPlannerPolicy, m8ProtectedToolCallLimit, m8ProtectedTurnLimit } from "../packages/subagents/release/m8-live-acceptance-extension.mjs";
 import { protectedEvidenceDigest, validateDailyHarnessProtectedEvidence } from "../scripts/lib/daily-harness-gates.mjs";
 
 test("M8 live CLI is plan-first and run requires explicit artifact/output confirmation", () => {
@@ -114,4 +114,11 @@ test("protected Goal convergence requires a later revision plus verified reusabl
   assert.equal(completed.decision, "complete");
   assert.equal(completed.coverage, 1);
   assert.deepEqual(completed.remainingDimensions, []);
+});
+
+test("protected sequential Workflow reserves extra context for the final verifier without widening root budget", () => {
+  const plan = createM8ProtectedSequentialPlan("m8-budget-test", ["reviewer", "synthesizer", "verifier"]);
+  assert.deepEqual(plan.nodes.map((node) => node.budget.maxTokens), [6000, 6000, 12000]);
+  assert.equal(plan.nodes.reduce((sum, node) => sum + node.budget.maxTokens, 0), plan.budget.maxTokens);
+  assert.equal(plan.nodes.reduce((sum, node) => sum + node.budget.maxCostUsd, 0), plan.budget.maxCostUsd);
 });

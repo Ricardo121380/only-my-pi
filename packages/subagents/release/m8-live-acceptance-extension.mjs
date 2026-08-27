@@ -105,7 +105,7 @@ function ensure(condition, code, message) {
   if (!condition) fail(code, message);
 }
 
-function taskNode(id, role, needs = []) {
+function taskNode(id, role, needs = [], { maxTokens = 6_000, maxCostUsd = 0.03 } = {}) {
   const policy = {
     workspace: "shared-read-only",
     mutation: "none",
@@ -119,7 +119,7 @@ function taskNode(id, role, needs = []) {
     assignment: { taskTemplateRef: `m8-${id}` },
     outputSchemaRef: null,
     policy,
-    budget: { maxAttempts: 1, timeoutMs: 300_000, maxOutputBytes: 65_536, maxTokens: 6_000, maxCostUsd: 0.03 },
+    budget: { maxAttempts: 1, timeoutMs: 300_000, maxOutputBytes: 65_536, maxTokens, maxCostUsd },
     cache: { mode: "content-addressed", keyInputs: ["assignment", "dependencies"] },
     idempotency: "content-addressed",
     ...(needs.length ? { needs } : {}),
@@ -133,6 +133,9 @@ function sequentialPlan(id, roles) {
     egress: { web: "deny", mcp: "deny", provider: "allow" },
     tools: { allow: ["read"], deny: ["bash", "edit", "write", "web"] },
   };
+  const nodes = roles.map((role, index) => taskNode(`node-${index + 1}`, role, [], role === "verifier" ? { maxTokens: 12_000, maxCostUsd: 0.06 } : {}));
+  const maxTokens = nodes.reduce((sum, node) => sum + node.budget.maxTokens, 0);
+  const maxCostUsd = nodes.reduce((sum, node) => sum + node.budget.maxCostUsd, 0);
   return compileWorkflowDefinition({
     $schema: "https://github.com/Ricardo121380/only-my-pi/schemas/workflow-definition-v2.schema.json",
     formatVersion: 2,
@@ -141,8 +144,8 @@ function sequentialPlan(id, roles) {
     version: "2.0.0",
     description: "M8 protected live read-only acceptance workflow.",
     policy,
-    budget: { maxNodes: roles.length, maxParallel: 1, maxDepth: roles.length, maxAttemptsPerNode: 1, maxWallTimeMs: 900_000, maxOutputBytes: 65_536 * roles.length, maxAssignments: roles.length, maxTokens: 6_000 * roles.length, maxCostUsd: 0.03 * roles.length },
-    flow: { kind: "sequence", steps: roles.map((role, index) => taskNode(`node-${index + 1}`, role)) },
+    budget: { maxNodes: roles.length, maxParallel: 1, maxDepth: roles.length, maxAttemptsPerNode: 1, maxWallTimeMs: 900_000, maxOutputBytes: 65_536 * roles.length, maxAssignments: roles.length, maxTokens, maxCostUsd },
+    flow: { kind: "sequence", steps: nodes },
     terminalNodeId: `node-${roles.length}`,
   });
 }
@@ -340,6 +343,8 @@ export async function executeM8LiveResume(composer, request) {
   ensure(result.status === "RUN_COMPLETED" && result.projection?.status === "completed", result.code ?? "M8_RESUME_FAILED", "M8 run did not resume to completion in the new Pi session");
   return Object.freeze({ assertions: Object.freeze([assertion("resume-across-session", { runId, terminal: result.projection.terminal, artifactDigests: Object.values(result.projection.nodes).flatMap((node) => node.artifacts ?? []).map((ref) => ref.digest).sort() })]), usage: { tokens: 0, costUsd: 0, toolCalls: 0, meteredTerminals: 0 } });
 }
+
+export { sequentialPlan as createM8ProtectedSequentialPlan };
 
 export default function m8LiveAcceptanceExtension(pi) {
   let started = false;
