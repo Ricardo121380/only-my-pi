@@ -11,7 +11,7 @@ import {
   parseM8LiveAcceptanceArgs,
   runPiM8Phase,
 } from "../scripts/m8-live-acceptance.mjs";
-import { M8_LIVE_RECORD_TYPE, createM8ProtectedSequentialPlan, m8ProtectedGoalPlannerPolicy, m8ProtectedToolCallLimit, m8ProtectedTurnLimit } from "../packages/subagents/release/m8-live-acceptance-extension.mjs";
+import { M8_LIVE_RECORD_TYPE, createM8ProtectedSequentialPlan, m8ProtectedConfiguration, m8ProtectedGoalPlannerPolicy, m8ProtectedToolCallLimit, m8ProtectedTurnLimit } from "../packages/subagents/release/m8-live-acceptance-extension.mjs";
 import { protectedEvidenceDigest, validateDailyHarnessProtectedEvidence } from "../scripts/lib/daily-harness-gates.mjs";
 
 test("M8 live CLI is plan-first and run requires explicit artifact/output confirmation", () => {
@@ -121,4 +121,16 @@ test("protected sequential Workflow reserves extra context for the final verifie
   assert.deepEqual(plan.nodes.map((node) => node.budget.maxTokens), [6000, 6000, 12000]);
   assert.equal(plan.nodes.reduce((sum, node) => sum + node.budget.maxTokens, 0), plan.budget.maxTokens);
   assert.equal(plan.nodes.reduce((sum, node) => sum + node.budget.maxCostUsd, 0), plan.budget.maxCostUsd);
+});
+
+test("protected configuration pins low thinking and only narrows daily runtime budgets", () => {
+  const original = {
+    models: { default: { model: "inherit", thinking: "inherit", fallbackModels: [] }, roles: { reviewer: { model: "inherit", thinking: "inherit", fallbackModels: [] }, verifier: { model: "inherit", thinking: "high", fallbackModels: [] } } },
+    budget: { maxTurnsPerChild: 8, maxToolCallsPerChild: 16, maxTotalToolCalls: 64, maxGoalRevisions: 4 },
+  };
+  const protectedConfig = m8ProtectedConfiguration(original);
+  assert.equal(protectedConfig.models.roles.reviewer.thinking, "low");
+  assert.equal(protectedConfig.models.roles.verifier.thinking, "low");
+  assert.deepEqual(protectedConfig.budget, { maxTurnsPerChild: 4, maxToolCallsPerChild: 4, maxTotalToolCalls: 16, maxGoalRevisions: 2 });
+  assert.equal(original.models.roles.reviewer.thinking, "inherit");
 });

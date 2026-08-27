@@ -97,6 +97,21 @@ export function m8ProtectedGoalPlannerPolicy({ plannerResult, revision, settledN
   return plannerResult;
 }
 
+export function m8ProtectedConfiguration(configuration) {
+  const roles = Object.fromEntries(Object.entries(configuration.models?.roles ?? {}).map(([role, selection]) => [role, Object.freeze({ ...selection, thinking: "low" })]));
+  return Object.freeze({
+    ...configuration,
+    models: Object.freeze({ ...configuration.models, roles: Object.freeze(roles) }),
+    budget: Object.freeze({
+      ...configuration.budget,
+      maxTurnsPerChild: Math.min(4, configuration.budget.maxTurnsPerChild),
+      maxToolCallsPerChild: Math.min(4, configuration.budget.maxToolCallsPerChild),
+      maxTotalToolCalls: Math.min(16, configuration.budget.maxTotalToolCalls),
+      maxGoalRevisions: Math.min(2, configuration.budget.maxGoalRevisions),
+    }),
+  });
+}
+
 function assertion(id, value) {
   return Object.freeze({ id, status: "PASS", digest: digestValue(value) });
 }
@@ -360,16 +375,7 @@ export default function m8LiveAcceptanceExtension(pi) {
       const protectedDailyConfig = {
         async resolve(options) {
           const configuration = await dailyConfig.resolve(options);
-          return Object.freeze({
-            ...configuration,
-            budget: Object.freeze({
-              ...configuration.budget,
-              maxTurnsPerChild: Math.min(4, configuration.budget.maxTurnsPerChild),
-              maxToolCallsPerChild: Math.min(4, configuration.budget.maxToolCallsPerChild),
-              maxTotalToolCalls: Math.min(16, configuration.budget.maxTotalToolCalls),
-              maxGoalRevisions: Math.min(2, configuration.budget.maxGoalRevisions),
-            }),
-          });
+          return m8ProtectedConfiguration(configuration);
         },
       };
       composer = await createSessionRuntimeComposer({
