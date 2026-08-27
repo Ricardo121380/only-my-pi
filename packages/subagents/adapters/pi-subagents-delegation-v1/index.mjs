@@ -201,6 +201,16 @@ function terminalOutcome(status) {
   return "failed";
 }
 
+function failedStatusCode(status) {
+  return ({
+    acceptance_failed: "DELEGATION_ACCEPTANCE_FAILED",
+    duplicate_node: "DELEGATION_DUPLICATE_NODE",
+    failed: "DELEGATION_CHILD_FAILED",
+    invalid_request: "DELEGATION_INVALID_REQUEST",
+    structured_output_failed: "DELEGATION_STRUCTURED_OUTPUT_FAILED",
+  })[status] ?? "DELEGATION_CHILD_FAILED";
+}
+
 export class PiSubagentsDelegationV1Backend {
   constructor({ transport, cwd, model, thinking, modelResolver, clock = Date.now, timeoutMs = 120_000, maximumTurns, maximumToolCalls = 8, scheduler } = {}) {
     if (typeof transport?.subscribe !== "function" || typeof transport?.emit !== "function") throw new TypeError("delegation backend requires subscribe() and emit()");
@@ -394,7 +404,7 @@ export class PiSubagentsDelegationV1Backend {
       settledAt: observedAt,
       result,
       ...(outcome === "failed"
-        ? { error: new SubagentsError("delegated child failed", { code: "DELEGATION_CHILD_FAILED", category: "backend" }) }
+        ? { error: new SubagentsError("delegated child failed", { code: failedStatusCode(response.status), category: "backend" }) }
         : outcome === "budget-exhausted"
           ? { error: new SubagentsError("delegated child exhausted its upstream turn, tool, or usage budget", { code: "DELEGATION_CHILD_BUDGET_EXHAUSTED", category: "policy" }) }
           : {}),
