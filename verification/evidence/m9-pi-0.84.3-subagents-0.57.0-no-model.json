@@ -1,0 +1,107 @@
+{
+  "formatVersion": 1,
+  "status": "LIVE_NO_MODEL_CAPABILITY_PASS",
+  "boundary": "PI_RPC_EXTENSION_CAPABILITY_AND_VISIBILITY",
+  "observedAt": "2026-08-27T16:48:15.331Z",
+  "piVersion": "0.84.3",
+  "nodeVersion": "v25.8.0",
+  "platform": "darwin-arm64",
+  "upstream": {
+    "package": "pi-subagents",
+    "version": "0.57.0",
+    "packageJsonSha256": "aa2d3e8ed9aacf161b03354c65a93f58c977af47152ad23f698b360f65e6018b",
+    "rpcSourceSha256": "9e25af0a6c8f2657a721f425bf5408798abfaaffb4495a56a0c7d2959669b882"
+  },
+  "rpc": {
+    "ready": "PASS",
+    "correlatedPing": "PASS",
+    "protocolVersion": 1,
+    "methods": [
+      "ping",
+      "status",
+      "manage",
+      "spawn",
+      "steer",
+      "interrupt",
+      "stop",
+      "resume"
+    ],
+    "events": {
+      "ready": "subagents:rpc:v1:ready",
+      "request": "subagents:rpc:v1:request",
+      "replyPrefix": "subagents:rpc:v1:reply:",
+      "asyncComplete": "subagent:async-complete",
+      "childStatus": "subagent:child-status",
+      "processTerminal": "subagent:process-terminal"
+    },
+    "requiredCapabilities": {
+      "status": true,
+      "managementActions": [
+        "schedule.list",
+        "schedule.show",
+        "schedule.history",
+        "schedule.pause",
+        "schedule.resume",
+        "schedule.run",
+        "schedule.delete"
+      ],
+      "fleetStatus": {
+        "version": 1
+      },
+      "asyncStatusSnapshot": {
+        "kind": "pi-subagents.async-status-snapshot",
+        "version": 1
+      },
+      "asyncSpawn": true,
+      "steer": true,
+      "nonRecoveringSteer": true,
+      "interrupt": true,
+      "stop": true,
+      "resume": true,
+      "launchResolvedExtensions": {
+        "version": 1,
+        "source": "launch-resolved"
+      },
+      "runtimeAcknowledgedExtensions": {
+        "version": 1,
+        "source": "child-runtime",
+        "event": "subagent:acknowledge-extension"
+      },
+      "processTerminalProof": {
+        "version": 1,
+        "lifecycleArtifactVersion": 3
+      }
+    },
+    "capabilityDigest": "sha256:7ef9f3089890b7f40111885968c4a87f02eca4e49e10ef9cf1c2cabdd0754b37"
+  },
+  "visibility": {
+    "activeTools": [
+      "subagent",
+      "subagent_supervisor",
+      "subagent_wait"
+    ],
+    "primaryTool": "subagent",
+    "primaryToolOwner": "pi-subagents",
+    "onlyMyPiModelTools": [],
+    "expectedFirstPartyCommands": [
+      "omp",
+      "omp-context"
+    ],
+    "upstreamCommandCount": 18
+  },
+  "promptSubmitted": false,
+  "providerRequest": "NOT_RUN_BY_POLICY",
+  "childDispatch": "NOT_REQUESTED",
+  "sessionPersistence": false,
+  "credentialRoot": "ISOLATED_EMPTY",
+  "realPiHome": "NOT_TOUCHED",
+  "hostFilesystemIsolation": "NOT_ENFORCED",
+  "extensionNetworkIsolation": "NOT_ENFORCED",
+  "exitCode": 0,
+  "signal": null,
+  "durationMs": 3237,
+  "stdoutDigest": "sha256:f9da544e86b0cfe40f33df567ac441ea0f9c0fb3e868feaafaa5684696652efb",
+  "stderrDigest": "sha256:26711fb33e371a474916de6ca9d8ba49d18e522308a7a5fa282616fbc8fd1e29",
+  "outputTruncated": false,
+  "evidenceDigest": "sha256:33317fa4b1777c551bbb0edb00bbec371d0d30fbdb383783c9a0822c5fb2e50d"
+}

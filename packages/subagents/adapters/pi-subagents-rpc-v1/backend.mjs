@@ -27,8 +27,8 @@ import {
   createPiSubagentsRpcV1Envelope,
   PI_SUBAGENTS_RPC_V1_BACKEND_ID,
   PI_SUBAGENTS_RPC_V1_BACKEND_VERSION,
-  PI_SUBAGENTS_RPC_V1_EVENTS,
   PI_SUBAGENTS_RPC_V1_PROTOCOL_VERSION,
+  resolvePiSubagentsRpcV1Dialect,
 } from "./wire.mjs";
 
 const EXECUTION_MODES = new Set(["foreground", "background", "continuable"]);
@@ -195,6 +195,7 @@ export class PiSubagentsRpcV1Backend {
     clock = () => Date.now(),
     ownsTransport = false,
     scheduler,
+    backendVersion = PI_SUBAGENTS_RPC_V1_BACKEND_VERSION,
   } = {}) {
     if (!transport || typeof transport.request !== "function") {
       throw new SubagentsError("an injected public RPC request transport is required", {
@@ -206,7 +207,10 @@ export class PiSubagentsRpcV1Backend {
     if (!Number.isSafeInteger(terminalTimeoutMs) || terminalTimeoutMs < 1) throw new TypeError("terminalTimeoutMs must be a positive integer");
     if (typeof idFactory !== "function") throw new TypeError("idFactory must be a function");
     if (typeof clock !== "function") throw new TypeError("clock must be a function");
+    const dialect = resolvePiSubagentsRpcV1Dialect(backendVersion);
     this.transport = transport;
+    this.backendVersion = backendVersion;
+    this.events = dialect.events;
     this.timeoutMs = timeoutMs;
     this.terminalTimeoutMs = terminalTimeoutMs;
     this.idFactory = idFactory;
@@ -217,12 +221,13 @@ export class PiSubagentsRpcV1Backend {
     this.activeTerminalWaits = new Set();
     this.eventStore = new PiSubagentsTerminalEventStore({
       transport,
-      events: PI_SUBAGENTS_RPC_V1_EVENTS,
+      events: this.events,
       scheduler: this.scheduler,
     });
     this.capabilityMatrix = createPiSubagentsRpcV1CapabilityMatrix({
       observedAt: 0,
       terminalTransport: transportCanObserveTerminal(transport, this.eventStore),
+      backendVersion: this.backendVersion,
     });
     this.ping = null;
     this.ready = false;
@@ -262,7 +267,7 @@ export class PiSubagentsRpcV1Backend {
     if (this.disposed) throw adapterDisposedError();
     if (signal?.aborted) throw abortError();
     const id = this.idFactory(`omp-${method}`);
-    const envelope = createPiSubagentsRpcV1Envelope({ requestId: id, method, params, source });
+    const envelope = createPiSubagentsRpcV1Envelope({ requestId: id, method, params, source, backendVersion: this.backendVersion });
     const pending = Promise.resolve().then(() => this.transport.request(envelope));
     let resolveSettled;
     const settled = new Promise((resolve) => { resolveSettled = resolve; });
@@ -315,15 +320,16 @@ export class PiSubagentsRpcV1Backend {
       sourceExtension: "only-my-pi",
       protocolVersion: PI_SUBAGENTS_RPC_V1_PROTOCOL_VERSION,
     }, { signal });
-    this.ping = assertExactPiSubagentsRpcV1Ping(reply);
+    this.ping = assertExactPiSubagentsRpcV1Ping(reply, { backendVersion: this.backendVersion });
     this.capabilityMatrix = createPiSubagentsRpcV1CapabilityMatrix({
       observedAt: this.clock(),
       terminalTransport: transportCanObserveTerminal(this.transport, this.eventStore),
+      backendVersion: this.backendVersion,
     });
     this.ready = true;
     return immutable({
       backendId: PI_SUBAGENTS_RPC_V1_BACKEND_ID,
-      backendVersion: PI_SUBAGENTS_RPC_V1_BACKEND_VERSION,
+      backendVersion: this.backendVersion,
       protocolVersion: PI_SUBAGENTS_RPC_V1_PROTOCOL_VERSION,
       ping: this.ping,
       capabilityMatrix: this.capabilityMatrix,
@@ -335,7 +341,7 @@ export class PiSubagentsRpcV1Backend {
     if (!this.ready) return this.negotiate(options);
     return immutable({
       backendId: PI_SUBAGENTS_RPC_V1_BACKEND_ID,
-      backendVersion: PI_SUBAGENTS_RPC_V1_BACKEND_VERSION,
+      backendVersion: this.backendVersion,
       protocolVersion: PI_SUBAGENTS_RPC_V1_PROTOCOL_VERSION,
       ping: this.ping,
       capabilityMatrix: this.capabilityMatrix,
@@ -447,7 +453,7 @@ export class PiSubagentsRpcV1Backend {
     this.#assertMappingAvailable(handle.handleId, mapping);
     const boundHandle = bindBackendRun(handle, {
       backendId: PI_SUBAGENTS_RPC_V1_BACKEND_ID,
-      backendVersion: PI_SUBAGENTS_RPC_V1_BACKEND_VERSION,
+      backendVersion: this.backendVersion,
       protocolVersion: PI_SUBAGENTS_RPC_V1_PROTOCOL_VERSION,
       lifecycle: "launch",
       requestId: accepted.requestId,
@@ -544,7 +550,7 @@ export class PiSubagentsRpcV1Backend {
     };
     if (output !== undefined) {
       if (typeof output !== "string" || output.trim().length === 0) throw new TypeError("resume output must be a non-empty file path");
-      if (outputMode !== undefined && outputMode !== "file") throw new TypeError("pi-subagents@0.45.2 resume only supports outputMode:file");
+      if (outputMode !== undefined && outputMode !== "file") throw new TypeError(`pi-subagents@${this.backendVersion} resume only supports outputMode:file`);
       params.output = output;
       params.outputMode = "file";
     } else if (outputMode !== undefined) {
@@ -555,7 +561,7 @@ export class PiSubagentsRpcV1Backend {
     this.#assertMappingAvailable(handle.handleId, mapping);
     const reboundHandle = bindBackendRun(handle, {
       backendId: PI_SUBAGENTS_RPC_V1_BACKEND_ID,
-      backendVersion: PI_SUBAGENTS_RPC_V1_BACKEND_VERSION,
+      backendVersion: this.backendVersion,
       protocolVersion: PI_SUBAGENTS_RPC_V1_PROTOCOL_VERSION,
       lifecycle: "resume",
       parentBindingId: parent.bindingId,
@@ -605,7 +611,7 @@ export class PiSubagentsRpcV1Backend {
             backendAsyncId: binding.backendAsyncId ?? null,
             backendIdentifiers: identifiers,
             bindingId: binding.bindingId,
-            events: PI_SUBAGENTS_RPC_V1_EVENTS,
+            events: this.events,
             signal,
             timeoutMs,
           }), {

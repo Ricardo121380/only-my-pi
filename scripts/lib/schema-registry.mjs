@@ -28,6 +28,7 @@ import { validateLiveEvidenceAuthorization } from "../../packages/subagents/rele
 import { validateLiveEvidenceProviderDescriptor } from "../../packages/subagents/release/live-evidence-provider.mjs";
 import { validateBackgroundResumeAuthorization } from "../../packages/subagents/release/background-resume-authorization.mjs";
 import { sha256 as stateSha256, withoutKey } from "../../packages/subagents/state/codec.mjs";
+import { validateUpstreamCompatibility } from "../../packages/upstream-compatibility/index.mjs";
 
 const DEFAULT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const DEFAULT_CATALOG = "contracts/schema-catalog.json";
@@ -732,6 +733,12 @@ function semanticErrors(kind, document, { sourcePath, rootDir, index, documentsB
   } else if (kind === "subagentsCompatibility") {
     try {
       validateCompatibilityMatrix(document, { rootDir, verifyEvidencePaths: true });
+    } catch (cause) {
+      errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
+    }
+  } else if (kind === "upstreamCompatibility") {
+    try {
+      validateUpstreamCompatibility(document, { rootDir, verifyEvidencePaths: true });
     } catch (cause) {
       errors.push(error("", cause.code?.toLowerCase().replaceAll("_", "-") ?? "runtime-parity", cause.message));
     }

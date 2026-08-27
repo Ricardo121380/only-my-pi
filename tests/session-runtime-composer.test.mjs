@@ -60,7 +60,7 @@ function automaticTransport(requests = []) {
   };
 }
 
-async function harness(t, { withoutWeb = false, inheritedExtraAgentDirs, allowVerifiedReuseCompletion = false } = {}) {
+async function harness(t, { withoutWeb = false, inheritedExtraAgentDirs, allowVerifiedReuseCompletion = false, subagentsVersion = "0.45.2" } = {}) {
   const configRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-session-composer-"));
   t.after(() => fs.rm(configRoot, { recursive: true, force: true }));
   const webRoot = path.join(configRoot, "fake-web");
@@ -106,7 +106,7 @@ async function harness(t, { withoutWeb = false, inheritedExtraAgentDirs, allowVe
       ...(dailyConfig ? { dailyConfig } : {}),
       allowVerifiedReuseCompletion,
       transport: automaticTransport(requests),
-      subagentsPackage: { root: configRoot, manifest: { name: "pi-subagents", version: "0.45.2" } },
+      subagentsPackage: { root: configRoot, manifest: { name: "pi-subagents", version: subagentsVersion } },
       ...(withoutWeb ? {} : {
         webPackage: {
           root: webRoot,
@@ -126,6 +126,7 @@ test("session composer owns one read-only runtime, ceiling, private stores and W
   assert.equal(composer.status, "SESSION_RUNTIME_READY");
   assert.equal(composer.logicalRuntimeOwner, "@only-my-pi/subagents");
   assert.equal(composer.physicalRuntimeOwner, "pi-subagents");
+  assert.equal(composer.physicalRuntimeVersion, "0.45.2");
   assert.equal(ceilingCalls.length, 1);
   assert.ok(ceilingCalls[0].ceiling.allowedAgents.includes("omp-reviewer"));
   assert.equal(ceilingCalls[0].ceiling.allowedAgents.includes("omp-implementer"), false);
@@ -146,6 +147,128 @@ test("session composer owns one read-only runtime, ceiling, private stores and W
   await composer.dispose();
   assert.equal(ceilingDisposed(), true);
   assert.equal(process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS, inheritedExtraAgentDirs);
+});
+
+test("pi-subagents 0.57.0 composes the same Agent, BatchSwarm, Workflow, SwarmGoal, and Ultra read-only runtime", async (t) => {
+  const { composer, requests } = await harness(t, { subagentsVersion: "0.57.0" });
+  assert.equal(composer.physicalRuntimeVersion, "0.57.0");
+  const ready = await composer.backend.ensureReady();
+  assert.equal(ready.backendVersion, "0.57.0");
+  assert.equal(ready.capabilityMatrix.backendVersion, "0.57.0");
+
+  const agent = await composer.runDirectAgent({
+    role: "reviewer",
+    task: "Candidate runtime Agent parity probe.",
+    runId: "m9-candidate-agent",
+    nodeId: "review",
+  });
+  assert.equal(agent.outcome, "completed");
+  assert.equal(agent.artifactRef.kind, "artifact-ref");
+
+  const batchService = createBatchSwarmControlService({
+    rootDir,
+    registry: composer.batchRuntime.registry,
+    orchestration: composer.coordinator,
+    capabilityMatrix: composer.backend.capabilityMatrix,
+    configurationProvider: composer.configurationProvider,
+  });
+  const batchInput = { artifacts: { items: [
+    { itemId: "package", path: "package.json" },
+    { itemId: "readme", path: "README.md" },
+  ] } };
+  const batchPlan = await batchService.dispatch({ subcommand: "plan", batchId: "review-items", input: batchInput });
+  const batch = await batchService.dispatch({
+    subcommand: "run",
+    batchId: "review-items",
+    runId: batchPlan.runId,
+    input: batchPlan.input,
+    yes: true,
+    expectedPlanDigest: batchPlan.plan.planDigest,
+    expectedExecutionDigest: batchPlan.executionEnvelope.executionEnvelopeDigest,
+  });
+  assert.equal(batch.status, "BATCH_SWARM_COMPLETED", JSON.stringify(batch));
+
+  const policy = {
+    workspace: "shared-read-only",
+    mutation: "none",
+    egress: { web: "deny", mcp: "deny", provider: "allow" },
+    tools: { allow: ["read"], deny: ["bash", "edit", "write", "web"] },
+  };
+  const workflowNode = (id, role) => ({
+    kind: "agent",
+    id,
+    agentTemplateRef: role,
+    assignment: { taskTemplateRef: id },
+    outputSchemaRef: null,
+    policy,
+    budget: { maxAttempts: 1, timeoutMs: 300000, maxOutputBytes: 65536, maxTokens: 6250, maxCostUsd: 0.03 },
+    cache: { mode: "content-addressed", keyInputs: ["assignment", "dependencies"] },
+    idempotency: "content-addressed",
+  });
+  const workflowPlan = compileWorkflowDefinition({
+    $schema: "https://github.com/Ricardo121380/only-my-pi/schemas/workflow-definition-v2.schema.json",
+    formatVersion: 2,
+    contractStatus: "runtime-ready",
+    id: "m9-candidate-artifact-flow",
+    version: "2.0.0",
+    description: "M9 candidate two-node ArtifactRef parity.",
+    policy,
+    budget: { maxNodes: 2, maxParallel: 1, maxDepth: 2, maxAttemptsPerNode: 1, maxWallTimeMs: 600000, maxOutputBytes: 131072, maxAssignments: 2, maxTokens: 12500, maxCostUsd: 0.06 },
+    flow: { kind: "sequence", steps: [workflowNode("review", "reviewer"), workflowNode("synthesize", "synthesizer")] },
+    terminalNodeId: "synthesize",
+  });
+  const workflow = await composer.coordinator.execute(workflowPlan, {
+    runId: "m9-candidate-workflow",
+    input: { task: "Review then synthesize through ArtifactRef." },
+  });
+  assert.equal(workflow.status, "completed", JSON.stringify(workflow));
+  assert.equal(workflow.nodes.review.artifactRefs.length, 1);
+  assert.equal(workflow.nodes.synthesize.artifactRefs.length, 1);
+
+  const goalEntry = await createSwarmGoalRegistry({ rootDir }).resolve("research-release-goal");
+  const objective = {
+    ref: goalEntry.definition.objective.ref,
+    digest: goalEntry.definition.objective.digest,
+    input: { task: "Candidate runtime bounded goal parity." },
+  };
+  const goalAuthorization = createHumanGoalAuthorization(goalEntry.definition, { objective, nonce: "m9-candidate-goal" });
+  const webPlan = await composer.webAuthorizer.plan({
+    runId: "m9-candidate-goal",
+    roles: ["researcher", "source-verifier"],
+    objectiveDigest: objective.digest,
+    budget: composer.configuration.budget,
+  });
+  await composer.webAuthorizer.grant(webPlan);
+  const goal = await composer.goalController.run(goalEntry.definition, {
+    runId: "m9-candidate-goal",
+    objective,
+    authorization: goalAuthorization,
+    input: objective.input,
+  });
+  assert.equal(goal.status, "completed", JSON.stringify(goal));
+  assert.equal(goal.revisions.length, 2);
+
+  const strategy = (await createUltraRunRegistry({ rootDir }).resolve("ultra-deep")).definition;
+  const ultraRequest = {
+    id: "m9-candidate-ultra",
+    taskDigest: digestWorkflowValue("candidate light task"),
+    complexity: 10,
+    itemCount: 1,
+    homogeneous: false,
+    dynamicGoal: false,
+    mutation: "none",
+    risk: "low",
+    origin: { kind: "human", requestDigest: digestWorkflowValue("candidate human task") },
+  };
+  const ultra = await composer.ultraRouter.run(strategy, ultraRequest, {
+    input: { task: "Candidate runtime Ultra route parity." },
+  });
+  assert.equal(ultra.result.status, "completed", JSON.stringify(ultra));
+  assert.equal(ultra.plan.route, "agent");
+
+  assert.equal(requests.every((request) => request.toolBudget.block.includes("bash") && request.toolBudget.block.includes("edit") && request.toolBudget.block.includes("write")), true);
+  assert.equal(requests.some((request) => request.ownerRunId === "m9-candidate-agent"), true);
+  assert.equal(requests.some((request) => request.ownerRunId === "m9-candidate-workflow"), true);
 });
 
 test("single Agent live path uses the composer coordinator and publishes a private artifact", async (t) => {

@@ -1,0 +1,59 @@
+{
+  "formatVersion": 1,
+  "status": "PASS",
+  "boundary": "PI_WEB_ACCESS_NO_NETWORK_SSRF_BLACK_BOX",
+  "observedAt": "2026-08-27T16:55:20.118Z",
+  "artifact": {
+    "name": "pi-web-access",
+    "version": "0.25.0",
+    "integrity": "sha512-DYOEIMEPwpC6pHElexBy3XuaYPnfMxH0ZBaGrILFsLNQzhhHJ3kJLrCQU4fnKXYXV6OEwxsLt2pBP76koK4hHg=="
+  },
+  "policy": {
+    "allowBrowserCookies": false,
+    "authFetch": false,
+    "allowRanges": [],
+    "trustEnvProxy": false
+  },
+  "publicUrl": "PASS",
+  "cases": [
+    {
+      "id": "file-protocol",
+      "status": "PASS"
+    },
+    {
+      "id": "ipv6-loopback",
+      "status": "PASS"
+    },
+    {
+      "id": "link-local-metadata",
+      "status": "PASS"
+    },
+    {
+      "id": "localhost",
+      "status": "PASS"
+    },
+    {
+      "id": "metadata-hostname",
+      "status": "PASS"
+    },
+    {
+      "id": "private-10",
+      "status": "PASS"
+    },
+    {
+      "id": "private-172",
+      "status": "PASS"
+    },
+    {
+      "id": "private-192",
+      "status": "PASS"
+    },
+    {
+      "id": "redirect-to-private",
+      "status": "PASS"
+    }
+  ],
+  "fakeFetchCalls": 1,
+  "externalNetworkRequests": 0,
+  "evidenceDigest": "sha256:1701a4cd379d8719bfea3b9f0f917c3657bfef05deeb99b81a759938a2f4b135"
+}

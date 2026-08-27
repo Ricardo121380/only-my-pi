@@ -14,9 +14,7 @@ import {
 import {
   assertExactPiSubagentsRpcV1Ping,
   assertPiSubagentsRpcV1Reply,
-  PI_SUBAGENTS_RPC_V1_EVENTS,
-  PI_SUBAGENTS_RPC_V1_METHODS,
-  PI_SUBAGENTS_RPC_V1_REQUIRED_CAPABILITIES,
+  resolvePiSubagentsRpcV1Dialect,
 } from "./adapters/pi-subagents-rpc-v1/wire.mjs";
 import {
   PI_SUBAGENTS_LIVE_PROBE_FIRST_PARTY_ENV,
@@ -28,6 +26,7 @@ import {
 const execFile = promisify(execFileCallback);
 const MAX_CAPTURE_BYTES = 256 * 1024;
 const EXPECTED_ACTIVE_TOOLS = Object.freeze(["intercom", "subagent", "subagent_supervisor", "subagent_wait"]);
+const CANDIDATE_ACTIVE_TOOLS = Object.freeze(["subagent", "subagent_supervisor", "subagent_wait"]);
 const SUBAGENT_COMMAND = /^(?:prompt-workflow|run|subagents?(?:-|$))/u;
 
 export const PI_SUBAGENTS_LIVE_PROBE_ARTIFACT = Object.freeze({
@@ -37,8 +36,17 @@ export const PI_SUBAGENTS_LIVE_PROBE_ARTIFACT = Object.freeze({
   rpcSourceSha256: "5c0b683c8e7a59fd5fa730e10039ff8b9e84b465af6202c52405ec5798179a93",
 });
 
+export const PI_SUBAGENTS_LIVE_PROBE_CANDIDATE_ARTIFACT = Object.freeze({
+  package: "pi-subagents",
+  version: "0.57.0",
+  packageJsonSha256: "aa2d3e8ed9aacf161b03354c65a93f58c977af47152ad23f698b360f65e6018b",
+  rpcSourceSha256: "9e25af0a6c8f2657a721f425bf5408798abfaaffb4495a56a0c7d2959669b882",
+});
+
 export const PI_SUBAGENTS_LIVE_PROBE_EXPECTED_PI_VERSION = "0.84.1";
+export const PI_SUBAGENTS_LIVE_PROBE_CANDIDATE_PI_VERSION = "0.84.3";
 export const PI_SUBAGENTS_LIVE_PROBE_ACTIVE_TOOLS = EXPECTED_ACTIVE_TOOLS;
+export const PI_SUBAGENTS_LIVE_PROBE_CANDIDATE_ACTIVE_TOOLS = CANDIDATE_ACTIVE_TOOLS;
 
 function fail(code, message, details = {}) {
   const error = new Error(message);
@@ -181,13 +189,18 @@ function exactValue(actual, expected) {
   return JSON.stringify(canonical(actual)) === JSON.stringify(canonical(expected));
 }
 
-function assertProbeRecord(record, { expectedFirstPartyCommands = [] } = {}) {
+function assertProbeRecord(record, {
+  expectedFirstPartyCommands = [],
+  expectedBackendVersion = PI_SUBAGENTS_LIVE_PROBE_ARTIFACT.version,
+  expectedActiveTools = EXPECTED_ACTIVE_TOOLS,
+} = {}) {
+  const dialect = resolvePiSubagentsRpcV1Dialect(expectedBackendVersion);
   if (!isObject(record) || record.formatVersion !== 1 || record.type !== PI_SUBAGENTS_LIVE_PROBE_RECORD_TYPE) {
     fail("PI_SUBAGENTS_PROBE_SHAPE_INVALID", "live probe emitted an unsupported record");
   }
-  assertExactPiSubagentsRpcV1Ping(record.ready);
+  assertExactPiSubagentsRpcV1Ping(record.ready, { backendVersion: expectedBackendVersion });
   assertPiSubagentsRpcV1Reply(record.reply, PI_SUBAGENTS_LIVE_PROBE_REQUEST_ID);
-  assertExactPiSubagentsRpcV1Ping(record.reply);
+  assertExactPiSubagentsRpcV1Ping(record.reply, { backendVersion: expectedBackendVersion });
   if (record.sameSession !== true) fail("PI_SUBAGENTS_SESSION_MISMATCH", "ready and ping reply did not originate from one Pi session");
   for (const payload of [record.ready, record.reply.data]) {
     if (payload?.session?.cwdPresent !== true || payload?.session?.sessionIdPresent !== true || payload?.session?.sessionFilePresent !== false) {
@@ -198,9 +211,9 @@ function assertProbeRecord(record, { expectedFirstPartyCommands = [] } = {}) {
     fail("PI_SUBAGENTS_TOOL_VISIBILITY_INVALID", "live probe tool registry is malformed");
   }
   const toolNames = exactNames(record.activeTools);
-  if (JSON.stringify(toolNames) !== JSON.stringify([...EXPECTED_ACTIVE_TOOLS])) {
+  if (JSON.stringify(toolNames) !== JSON.stringify([...expectedActiveTools].sort())) {
     fail("PI_SUBAGENTS_TOOL_SET_DRIFT", "active pi-subagents tool set differs from the audited version", {
-      expectedTools: EXPECTED_ACTIVE_TOOLS,
+      expectedTools: expectedActiveTools,
       actualTools: toolNames,
     });
   }
@@ -243,6 +256,7 @@ function assertProbeRecord(record, { expectedFirstPartyCommands = [] } = {}) {
   };
   return Object.freeze({
     capabilityDigest: digestValue(stableHandshake),
+    dialect,
     activeTools: Object.freeze([...toolNames]),
     upstreamCommandCount: record.commands.filter((entry) => entry.owner === "pi-subagents").length,
     firstPartyCommands: Object.freeze(expectedFirstPartyCommands.slice().sort()),
@@ -252,7 +266,10 @@ function assertProbeRecord(record, { expectedFirstPartyCommands = [] } = {}) {
 export function assertPiSubagentsLiveProbeEvidence(evidence, {
   expectedArtifact = PI_SUBAGENTS_LIVE_PROBE_ARTIFACT,
   expectedPiVersion = PI_SUBAGENTS_LIVE_PROBE_EXPECTED_PI_VERSION,
+  expectedActiveTools = EXPECTED_ACTIVE_TOOLS,
+  expectedFirstPartyCommands = ["omp", "omp-context"],
 } = {}) {
+  const dialect = resolvePiSubagentsRpcV1Dialect(expectedArtifact.version);
   if (!isObject(evidence)
     || evidence.formatVersion !== 1
     || evidence.status !== "LIVE_NO_MODEL_CAPABILITY_PASS"
@@ -276,9 +293,9 @@ export function assertPiSubagentsLiveProbeEvidence(evidence, {
     || evidence.rpc.ready !== "PASS"
     || evidence.rpc.correlatedPing !== "PASS"
     || evidence.rpc.protocolVersion !== 1
-    || !exactValue(evidence.rpc.methods, PI_SUBAGENTS_RPC_V1_METHODS)
-    || !exactValue(evidence.rpc.events, PI_SUBAGENTS_RPC_V1_EVENTS)
-    || !exactValue(evidence.rpc.requiredCapabilities, PI_SUBAGENTS_RPC_V1_REQUIRED_CAPABILITIES)
+    || !exactValue(evidence.rpc.methods, dialect.methods)
+    || !exactValue(evidence.rpc.events, dialect.events)
+    || !exactValue(evidence.rpc.requiredCapabilities, dialect.capabilities)
     || !/^sha256:[a-f0-9]{64}$/u.test(evidence.rpc.capabilityDigest ?? "")) {
     fail("PI_SUBAGENTS_EVIDENCE_RPC_DRIFT", "live probe evidence RPC contract differs from the audited wire");
   }
@@ -292,11 +309,11 @@ export function assertPiSubagentsLiveProbeEvidence(evidence, {
     fail("PI_SUBAGENTS_EVIDENCE_RPC_DRIFT", "live probe evidence capability digest does not match the audited wire");
   }
   if (!isObject(evidence.visibility)
-    || !exactValue(evidence.visibility.activeTools, EXPECTED_ACTIVE_TOOLS)
+    || !exactValue(evidence.visibility.activeTools, expectedActiveTools)
     || evidence.visibility.primaryTool !== "subagent"
     || evidence.visibility.primaryToolOwner !== "pi-subagents"
     || !exactValue(evidence.visibility.onlyMyPiModelTools, [])
-    || !exactValue(evidence.visibility.expectedFirstPartyCommands, ["omp", "omp-context"])
+    || !exactValue(evidence.visibility.expectedFirstPartyCommands, [...expectedFirstPartyCommands].sort())
     || !Number.isSafeInteger(evidence.visibility.upstreamCommandCount)
     || evidence.visibility.upstreamCommandCount < 1) {
     fail("PI_SUBAGENTS_EVIDENCE_VISIBILITY_DRIFT", "live probe evidence does not prove one physical model-tool owner");
@@ -405,6 +422,7 @@ export function createPiSubagentsNoModelLiveProbe({
   timeoutMs = 15_000,
   expectedPiVersion = PI_SUBAGENTS_LIVE_PROBE_EXPECTED_PI_VERSION,
   expectedArtifact = PI_SUBAGENTS_LIVE_PROBE_ARTIFACT,
+  expectedActiveTools = EXPECTED_ACTIVE_TOOLS,
 } = {}) {
   if (typeof piCommand !== "string" || piCommand.length === 0 || /[\0\r\n]/u.test(piCommand)) {
     throw new TypeError("piCommand must be a bounded executable name or path");
@@ -541,7 +559,11 @@ export function createPiSubagentsNoModelLiveProbe({
           }
           const records = [...parseProbeRecords(stdout), ...parseProbeRecords(stderr)];
           if (records.length !== 1) fail("PI_SUBAGENTS_LIVE_PROBE_MISSING", "Pi did not emit exactly one live-probe record");
-          const verified = assertProbeRecord(records[0], { expectedFirstPartyCommands });
+          const verified = assertProbeRecord(records[0], {
+            expectedFirstPartyCommands,
+            expectedBackendVersion: expectedArtifact.version,
+            expectedActiveTools,
+          });
           const evidence = {
             formatVersion: 1,
             status: "LIVE_NO_MODEL_CAPABILITY_PASS",
@@ -560,9 +582,9 @@ export function createPiSubagentsNoModelLiveProbe({
               ready: "PASS",
               correlatedPing: "PASS",
               protocolVersion: 1,
-              methods: [...PI_SUBAGENTS_RPC_V1_METHODS],
-              events: { ...PI_SUBAGENTS_RPC_V1_EVENTS },
-              requiredCapabilities: structuredClone(PI_SUBAGENTS_RPC_V1_REQUIRED_CAPABILITIES),
+              methods: [...verified.dialect.methods],
+              events: { ...verified.dialect.events },
+              requiredCapabilities: structuredClone(verified.dialect.capabilities),
               capabilityDigest: verified.capabilityDigest,
             },
             visibility: {
@@ -589,7 +611,12 @@ export function createPiSubagentsNoModelLiveProbe({
             outputTruncated: stdoutState.truncated || stderrState.truncated,
           };
           evidence.evidenceDigest = digestValue(evidence);
-          resolve(assertPiSubagentsLiveProbeEvidence(evidence, { expectedArtifact, expectedPiVersion }));
+          resolve(assertPiSubagentsLiveProbeEvidence(evidence, {
+            expectedArtifact,
+            expectedPiVersion,
+            expectedActiveTools,
+            expectedFirstPartyCommands,
+          }));
         } catch (error) {
           error.stdoutDigest ??= digestValue(stdout);
           error.stderrDigest ??= digestValue(stderr);

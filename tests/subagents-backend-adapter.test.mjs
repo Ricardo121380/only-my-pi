@@ -19,8 +19,10 @@ import {
   createPiSubagentsRpcV1CapabilityMatrix,
   createPiSubagentsAdapterCompatibility,
   PI_SUBAGENTS_RPC_V1_EVENTS,
+  PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION,
   PI_SUBAGENTS_RPC_V1_METHODS,
   PI_SUBAGENTS_RPC_V1_REQUIRED_CAPABILITIES,
+  resolvePiSubagentsRpcV1Dialect,
 } from "../packages/subagents/adapters/pi-subagents-rpc-v1/index.mjs";
 import { createPiSubagentsBatchItemExecutor } from "../packages/subagents/batch-swarm/pi-item-executor.mjs";
 
@@ -74,12 +76,13 @@ function domainFixture({ taskText = "Read the requested files and return a verdi
   return { template, agentSpec, assignment, handle };
 }
 
-function pingData() {
+function pingData(backendVersion) {
+  const dialect = backendVersion === undefined ? null : resolvePiSubagentsRpcV1Dialect(backendVersion);
   return {
     version: 1,
-    methods: [...PI_SUBAGENTS_RPC_V1_METHODS],
-    capabilities: structuredClone(PI_SUBAGENTS_RPC_V1_REQUIRED_CAPABILITIES),
-    events: structuredClone(PI_SUBAGENTS_RPC_V1_EVENTS),
+    methods: [...(dialect?.methods ?? PI_SUBAGENTS_RPC_V1_METHODS)],
+    capabilities: structuredClone(dialect?.capabilities ?? PI_SUBAGENTS_RPC_V1_REQUIRED_CAPABILITIES),
+    events: structuredClone(dialect?.events ?? PI_SUBAGENTS_RPC_V1_EVENTS),
     session: { fixture: true },
   };
 }
@@ -112,6 +115,7 @@ function createFixtureTransport({
   runIds = ["backend-run-01", "backend-run-02"],
   waitForTerminal,
   spawnData,
+  backendVersion,
 } = {}) {
   const calls = [];
   let runIndex = 0;
@@ -119,7 +123,7 @@ function createFixtureTransport({
     calls,
     async request(envelope) {
       calls.push(structuredClone(envelope));
-      if (envelope.method === "ping") return reply(envelope, pingData());
+      if (envelope.method === "ping") return reply(envelope, pingData(backendVersion));
       if (envelope.method === "spawn" || envelope.method === "resume") {
         const runId = runIds[Math.min(runIndex++, runIds.length - 1)];
         return reply(envelope, envelope.method === "spawn" && spawnData !== undefined
@@ -167,6 +171,76 @@ test("exact 0.45.2 ping and BackendCapabilityV2 fail closed on drift", () => {
   assert.equal(blind.capabilities.foreground.state, "UNAVAILABLE");
   assert.equal(blind.capabilities.background.state, "UNAVAILABLE");
   assert.equal(blind.capabilities.processTerminalProof.state, "UNAVAILABLE");
+});
+
+test("exact 0.57.0 RPC dialect is version-selected and rejects supersets, reordering, and baseline confusion", () => {
+  const candidate = pingData(PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION);
+  const verified = assertExactPiSubagentsRpcV1Ping(candidate, {
+    backendVersion: PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION,
+  });
+  assert.equal(verified.backendVersion, PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION);
+  assert.equal(verified.methods.includes("manage"), true);
+  assert.equal(verified.events.childStatus, "subagent:child-status");
+  assert.deepEqual(verified.capabilities.asyncStatusSnapshot, {
+    kind: "pi-subagents.async-status-snapshot",
+    version: 1,
+  });
+
+  assert.throws(
+    () => assertExactPiSubagentsRpcV1Ping(candidate),
+    (error) => error instanceof SubagentsError && error.code === "PI_SUBAGENTS_METHOD_DRIFT",
+  );
+  const reordered = structuredClone(candidate);
+  reordered.capabilities.managementActions.reverse();
+  assert.throws(
+    () => assertExactPiSubagentsRpcV1Ping(reordered, {
+      backendVersion: PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION,
+    }),
+    (error) => error instanceof SubagentsError && error.code === "PI_SUBAGENTS_CAPABILITY_DRIFT",
+  );
+  const superset = structuredClone(candidate);
+  superset.events.unknown = "subagent:unknown";
+  assert.throws(
+    () => assertExactPiSubagentsRpcV1Ping(superset, {
+      backendVersion: PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION,
+    }),
+    (error) => error instanceof SubagentsError && error.code === "PI_SUBAGENTS_EVENT_DRIFT",
+  );
+  assert.throws(
+    () => resolvePiSubagentsRpcV1Dialect("0.58.0"),
+    (error) => error instanceof SubagentsError && error.code === "UNSUPPORTED_PI_SUBAGENTS_BACKEND_VERSION",
+  );
+});
+
+test("0.57.0 backend performs background control and resume with candidate-bound handles", async () => {
+  const fixture = domainFixture();
+  const transport = createFixtureTransport({
+    backendVersion: PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION,
+    waitForTerminal: async ({ runId }) => terminalEvidence(runId, { state: "stopped", success: false }),
+  });
+  const backend = createBackend(transport, { backendVersion: PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION });
+  const ready = await backend.ensureReady();
+  assert.equal(ready.backendVersion, PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION);
+  assert.equal(ready.capabilityMatrix.backendVersion, PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION);
+  assert.equal(ready.capabilityMatrix.capabilities.terminalEvents.constraints.childStatus, "subagent:child-status");
+
+  const launched = await backend.launch({ ...fixture, mode: "continuable" });
+  assert.equal(launched.binding.backendVersion, PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION);
+  await backend.status(launched.handle);
+  await backend.interrupt(launched.handle, { awaitTerminal: false });
+  const resumed = await backend.resume(launched.handle, {
+    message: "Continue the bounded read-only analysis.",
+    mode: "background",
+  });
+  assert.equal(resumed.binding.backendVersion, PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION);
+  const stopped = await backend.stop(resumed.handle);
+  assert.equal(stopped.terminal.authoritative, true);
+  assert.equal(stopped.terminal.outcome, "cancelled");
+  assert.deepEqual(transport.calls.map((entry) => entry.method), [
+    "ping", "spawn", "status", "interrupt", "resume", "stop",
+  ]);
+  assert.equal(transport.calls.every((entry) => entry.version === 1), true);
+  await backend.dispose();
 });
 
 test("compiler emits a statement body and JSON-safe invocation, never raw executable task text", async () => {

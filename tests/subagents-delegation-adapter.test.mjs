@@ -12,6 +12,8 @@ import {
 import {
   compileAgentAssignmentToPiDelegationRequest,
   createPiSubagentsDelegationV1Backend,
+  createPiSubagentsDelegationV1CapabilityMatrix,
+  PI_SUBAGENTS_DELEGATION_V1_CANDIDATE_BACKEND_VERSION,
   PI_SUBAGENTS_DELEGATION_V1_EVENTS,
 } from "../packages/subagents/adapters/pi-subagents-delegation-v1/index.mjs";
 import {
@@ -84,6 +86,35 @@ test("delegation compiler binds read-only domain objects and exposes no raw work
   assert.deepEqual(metered.request.turnBudget, { maxTurns: 8 });
   assert.equal(metered.request.toolBudget.hard, 16);
   assert.throws(() => compileAgentAssignmentToPiDelegationRequest({ ...values, cwd: "/fixture", assignment: { ...values.assignment, ownership: { ...values.assignment.ownership, writer: true } } }), /read-only/u);
+});
+
+test("0.57.0 reuses only the separately audited structured delegation v1 contract", async () => {
+  const matrix = createPiSubagentsDelegationV1CapabilityMatrix({
+    backendVersion: PI_SUBAGENTS_DELEGATION_V1_CANDIDATE_BACKEND_VERSION,
+    observedAt: 1,
+  });
+  assert.equal(matrix.backendVersion, PI_SUBAGENTS_DELEGATION_V1_CANDIDATE_BACKEND_VERSION);
+  assert.match(matrix.capabilities.foreground.evidence[0], /pi-subagents@0\.57\.0/u);
+  const wire = transport();
+  const backend = createPiSubagentsDelegationV1Backend({
+    transport: wire,
+    cwd: "/fixture",
+    backendVersion: PI_SUBAGENTS_DELEGATION_V1_CANDIDATE_BACKEND_VERSION,
+  });
+  const ready = await backend.ensureReady();
+  assert.equal(ready.backendVersion, PI_SUBAGENTS_DELEGATION_V1_CANDIDATE_BACKEND_VERSION);
+  assert.deepEqual(Object.values(PI_SUBAGENTS_DELEGATION_V1_EVENTS), [
+    "prompt-template:subagent:request",
+    "prompt-template:subagent:started",
+    "prompt-template:subagent:update",
+    "prompt-template:subagent:response",
+    "prompt-template:subagent:cancel",
+  ]);
+  await backend.dispose();
+  assert.throws(
+    () => createPiSubagentsDelegationV1CapabilityMatrix({ backendVersion: "0.58.0" }),
+    (error) => error.code === "UNSUPPORTED_PI_SUBAGENTS_BACKEND_VERSION",
+  );
 });
 
 test("delegation backend creates an authoritative terminal only from correlated exit and usage", async () => {
