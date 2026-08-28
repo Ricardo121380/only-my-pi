@@ -39,7 +39,7 @@ export const M10_DETERMINISTIC_CHECKS = Object.freeze([
 
 function controlledEnvironment(inherited = process.env) {
   const env = {};
-  for (const key of ["PATH", "TMPDIR", "TMP", "TEMP", "LANG", "LC_ALL", "SYSTEMROOT", "COMSPEC", "PATHEXT"]) {
+  for (const key of ["PATH", "HOME", "TMPDIR", "TMP", "TEMP", "LANG", "LC_ALL", "SYSTEMROOT", "COMSPEC", "PATHEXT"]) {
     if (typeof inherited[key] === "string") env[key] = inherited[key];
   }
   return {
