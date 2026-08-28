@@ -1,0 +1,285 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-m10-promotion-report",
+  "status": "COMPLETE",
+  "sourceCommit": "615695556f6ed699a901bef43e6fbb09f5aa663e",
+  "executionCommit": "1f95677a023388f62d5c183cd57a52487954790f",
+  "evidenceCommit": "9df5f44dd547234ceea40d12875defbfe67d653e",
+  "decision": "PROMOTE",
+  "completion": {
+    "promotionDecisionCommit": "61f0962b28211fc287bd14797e236ac29081f495",
+    "finalAlignmentSourceCommit": "7973a4e32e6271a3c266ef3845240bbcee073e31",
+    "finalInstallEvidenceCommit": "1f95677a023388f62d5c183cd57a52487954790f",
+    "finalInstallEvidence": {
+      "path": "verification/protected/2026-08-28-m10-final-promoted-install.json",
+      "digest": "sha256:05c9a24792f17625278b51d99e8d0be4c7f61049d190cdc50b5d02e27da8d996"
+    },
+    "artifacts": {
+      "migrationBundleSha256": "sha256:2c90b42cfb298e758aeaa4ab1359ac0136066b9242954d57421dd84a18d7f414",
+      "protectedOnlyMyPiArtifactSha256": "sha256:a9583eaa4c8f66dbf7c2f0fa2184c1459199a80edf1f857851638f743f3a35eb",
+      "finalOnlyMyPiArtifactSha256": "sha256:b718516f4e6abdea7c166dbb3eed126ae87d058e9a1e462da36d87700765dd27",
+      "installedGenerationId": "sha256:50caffbfdba4de051cb21072ce7e7d4f0dea6f108900daa35402ea26b4fc89df",
+      "candidateGraphDigest": "sha256:29c75bd86bdbd0287c1b48fe13ccb3f35173c9f82630ea9f1d34f5282889d86b",
+      "stableGraphDigest": "sha256:29c75bd86bdbd0287c1b48fe13ccb3f35173c9f82630ea9f1d34f5282889d86b"
+    },
+    "installed": {
+      "piVersion": "0.84.3",
+      "subagentsVersion": "0.57.0",
+      "cliRoot": "USER_LOCAL_IMMUTABLE_ARTIFACT",
+      "status": "INSTALLED",
+      "doctor": "PASS",
+      "generationAlignment": "MATCH",
+      "lastKnownGoodVerified": true,
+      "incompleteTransactionCount": 0,
+      "dailyExternalBindingCount": 7,
+      "userPackageCount": 9,
+      "duplicateRuntimeOwnerCount": 0
+    },
+    "rollback": {
+      "sequence": "M8_STABLE_TO_M10_CANDIDATE_TO_M8_EXACT_TO_M10_CANDIDATE_TO_PROMOTE_FINAL",
+      "pi": "PASS",
+      "externalTree": "PASS",
+      "settings": "PASS",
+      "generationAndLkg": "PASS",
+      "cliAbsence": "PASS",
+      "reapply": "PASS"
+    },
+    "coverage": {
+      "testsPassed": 815,
+      "testsFailed": 0,
+      "global": {
+        "lines": 85.11,
+        "branches": 71.18,
+        "functions": 86.28
+      },
+      "upstreamMigrationAggregate": {
+        "lines": 97.63,
+        "branches": 81.35,
+        "functions": 93.52
+      }
+    }
+  },
+  "manifest": {
+    "id": "m10-promotion-gates-v1",
+    "digest": "sha256:9f088c55fb42e7346ab6b5aa031fbe51b88d064536bd90f7e45d4ee7388672e6",
+    "gateIds": [
+      "P1",
+      "P2",
+      "P3",
+      "P4",
+      "P5",
+      "P6",
+      "P7",
+      "P8",
+      "P9",
+      "P10",
+      "P11",
+      "P12"
+    ]
+  },
+  "gates": [
+    {
+      "id": "P1",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "durationMs": 312,
+      "stdoutBytes": 201,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:bf2f8916b4873fe6abd72da16a8de986b9885928fa4f7f0866d45579d836a9d6",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "P2",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "durationMs": 479,
+      "stdoutBytes": 736,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:9e4c211ab1171b3eca8e1a22f98641fdab70d456ca230ac837e47f9afb75865a",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "P3",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "durationMs": 341,
+      "stdoutBytes": 1061,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:761d46356f4366d2412695fedfeb81d93222ed5fb9b2f14948612888333f0493",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "P4",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "durationMs": 834,
+      "stdoutBytes": 1237,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:40c268cab42ed27b134eed51e6ab7bd9b1a8c6d79285f48cabf3e24550b34ecf",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "P5",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "durationMs": 8005,
+      "stdoutBytes": 3006,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:aaa3fefb59ca9f350cc30c71170e9b4bcfce69b746b46766933ef2cd84fecb90",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "P6",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "durationMs": 177,
+      "stdoutBytes": 502,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:b3e97142017ee8cecffb6ce25ca02e0f34af00f95c1c1839e94017e8eb89110d",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "P7",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "durationMs": 306,
+      "stdoutBytes": 1121,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:ac1b2c38127de124583a4760cd93d5ef1e7ba3e3246688a8dd2df7f51b7e2099",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "P8",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "durationMs": 5748,
+      "stdoutBytes": 1895,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:b29312694c32dac0fe4867ff3533487b76762d101a487e4ffbde449b515c6e6e",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "P9",
+      "execution": "protected-evidence",
+      "status": "PASS",
+      "passed": true,
+      "durationMs": 0,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evidence": {
+        "evidenceId": "m10-real-root-migration",
+        "evidenceDigest": "sha256:901fcdf99fb9e0cee5983f56fb1fa0e8ee38a25e96085beda69f673381388478",
+        "assertionCount": 12
+      }
+    },
+    {
+      "id": "P10",
+      "execution": "protected-evidence",
+      "status": "PASS",
+      "passed": true,
+      "durationMs": 0,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evidence": {
+        "evidenceId": "m10-promoted-live-model-matrix",
+        "evidenceDigest": "sha256:3e4fdffbd63769bed80c8058d66f9d731b199312d1d3cb79a0ce3440c0485c12",
+        "assertionCount": 17
+      }
+    },
+    {
+      "id": "P11",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "durationMs": 243,
+      "stdoutBytes": 669,
+      "stderrBytes": 0,
+      "stdoutSha256": "sha256:4ccc710182da4c35c51c50241979a668267ee27e04a591fbe3dfc749182f179e",
+      "stderrSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "P12",
+      "execution": "deterministic",
+      "status": "PASS",
+      "passed": true,
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "outputLimitExceeded": false,
+      "durationMs": 72392,
+      "stdoutBytes": 118326,
+      "stderrBytes": 375,
+      "stdoutSha256": "sha256:02a539927dc001ffbceab2cd052c09be0d45ddda343bc54da771f5d30439c0cb",
+      "stderrSha256": "sha256:809711a56ad7fcf1a40ecc2814f1cbe9c2c1c4683ebf928150cf07e119d97dc7"
+    }
+  ],
+  "passed": true,
+  "deterministicPassed": true,
+  "summary": {
+    "required": 12,
+    "deterministic": 10,
+    "deterministicPassed": 10,
+    "protected": 2,
+    "protectedPassed": 2,
+    "protectedNotRunByPolicy": 0
+  },
+  "privacy": {
+    "rawOutputStored": false,
+    "hostPathsStored": false,
+    "secretsStored": false
+  },
+  "authorization": {
+    "providerRequests": "IMPORTED_PROTECTED_EVIDENCE",
+    "realRootMutation": "IMPORTED_PROTECTED_EVIDENCE",
+    "publish": "NOT_AUTHORIZED",
+    "release": "NOT_AUTHORIZED"
+  }
+}

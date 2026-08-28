@@ -71,6 +71,14 @@ local `omp` CLI is the immutable user-level entry for installation and diagnosis
 Agent execution remains exclusively inside Pi through `/omp`. M10 still does
 not publish npm or a GitHub Release, add a daemon, writer, or MCP surface.
 
+Final reconciliation built the promoted artifact from source `7973a4e` with
+SHA-256 `b718516f...65dd27` and installed generation
+`sha256:50caffbf...fc89df`. Local `omp status` is `INSTALLED`, `omp doctor` is
+`PASS`, generation alignment is `MATCH`, LKG is verified, and there are no
+incomplete transactions. The candidate and Stable graph digests match; all
+nine third-party packages remain user-owned, with six exact upgrades and three
+unchanged retained versions. The complete M10 receipt reports P1-P12 passing.
+
 - [M8 final D13 protected live-model evidence](verification/protected/2026-08-27-m8-live-model-matrix-final.json)
 - [M8 final D14 real-root rehearsal evidence](verification/protected/2026-08-27-m8-real-root-rehearsal-final.json)
 - [M8 final D1-D15 completion receipt](verification/receipts/2026-08-27-m8-daily-harness-final.json)
@@ -82,6 +90,8 @@ not publish npm or a GitHub Release, add a daemon, writer, or MCP surface.
 - [M10 promotion and migration boundary](docs/decisions/ADR-0011-m10-promotion-and-upstream-migration.md)
 - [M10 P9 real-root migration evidence](verification/protected/2026-08-28-m10-real-root-migration.json)
 - [M10 P10 promoted live-model evidence](verification/protected/2026-08-28-m10-promoted-live-model-matrix.json)
+- [M10 final promoted installation evidence](verification/protected/2026-08-28-m10-final-promoted-install.json)
+- [M10 P1-P12 completion receipt](verification/receipts/2026-08-28-m10-promotion.json)
 
 - [M8 Daily Harness Closure plan](docs/plans/2026-08-27-m8-daily-harness-closure.md)
 - [Current implementation status](docs/STATUS.md)

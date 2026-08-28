@@ -4,7 +4,7 @@ Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-28** · Stable
 kernel merged to `main`: **2026-08-27** · Pi **0.84.3** · Node **25.8.0** · macOS
 `darwin-arm64`
 
-## Active milestone — M10 final artifact reconciliation (`PROMOTE`)
+## Completed milestone — M10 Stable candidate promotion
 
 M9 was merged to `main` on 2026-08-28 by merge commit `510f11c`; the source and
 evidence commits remain intact. The post-merge `main` workflow passed on Node
@@ -25,14 +25,28 @@ installation, diagnosis and rollback, while `/omp` inside Pi remains the only
 Agent execution entry. The full boundary is versioned in
 [`ADR-0011`](decisions/ADR-0011-m10-promotion-and-upstream-migration.md).
 
-The local installation now reports Pi `0.84.3`, user CLI
-`~/.local/bin/omp`, generation `sha256:ee6ead54...cd3283`, verified LKG,
-`omp doctor` `PASS`, and no incomplete transaction. P9/P10 record 12/12 and
-17/17 protected assertions respectively; P10 directly measured 41,078 tokens,
-319 seconds and five tool calls under the configured fixed-subscription model,
-without storing raw output, credentials, sessions, PID or host paths. The
-remaining M10 work is the final decision-artifact update, local reconcile,
-completion receipt, and the deliberately deferred single GitHub PR/CI cycle.
+The final promoted artifact was built from alignment source `7973a4e` and has
+SHA-256 `b718516f...65dd27`. The local installation now reports Pi `0.84.3`,
+user CLI `~/.local/bin/omp`, generation `sha256:50caffbf...fc89df`, verified
+LKG, `omp status` `INSTALLED`, `omp doctor` `PASS` with generation alignment
+`MATCH`, and no incomplete transaction. The candidate and Stable target graph
+digests are identical. Six packages use the audited upgrade versions; the
+three retained packages remain unchanged, and all nine packages remain user
+owned.
+
+P1-P12 are complete: 10/10 deterministic gates and both imported protected
+gates passed. P9/P10 record 12/12 and 17/17 protected assertions respectively;
+P10 directly measured 41,078 tokens, 319 seconds and five tool calls under the
+configured fixed-subscription model, without storing raw output, credentials,
+sessions, PID or host paths. The final evidence is
+[`2026-08-28-m10-final-promoted-install.json`](../verification/protected/2026-08-28-m10-final-promoted-install.json),
+and the completion receipt is
+[`2026-08-28-m10-promotion.json`](../verification/receipts/2026-08-28-m10-promotion.json).
+
+Repository publication remains deliberately outside the local evidence chain:
+the M10 branch is pushed only after all local work is complete, followed by one
+Draft PR workflow and one post-merge `main` workflow. No npm package or GitHub
+Release is part of M10.
 
 ## Completed milestone — M9 upstream candidates (promoted by M10)
 
