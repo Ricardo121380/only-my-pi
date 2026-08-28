@@ -104,10 +104,10 @@
     }
   },
   "decision": {
-    "state": "HOLD",
-    "reasonCode": "CANDIDATE_PROMOTION_REVIEW_PENDING",
-    "defaultPiVersion": "0.84.1",
-    "defaultSubagentsVersion": "0.45.2"
+    "state": "PROMOTE",
+    "reasonCode": "M10_REAL_ROOT_AND_LIVE_ACCEPTANCE_PASSED",
+    "defaultPiVersion": "0.84.3",
+    "defaultSubagentsVersion": "0.57.0"
   },
-  "contractDigest": "sha256:0d12becabe3c4079bfdf742304127e2003500b1c397c6664335414adad9a5266"
+  "contractDigest": "sha256:317f2b9296bd72073ddaac6e4482c64928e8e152d932d94d3efb50f53f2a8958"
 }

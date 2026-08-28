@@ -58,17 +58,17 @@ async function fixtureInstallation(root, contract) {
   }, null, 2)}\n`);
 }
 
-test("M9 contract keeps Stable defaults and exact audited candidate provenance while promotion is held", () => {
+test("M9 contract preserves its baseline and exact candidate provenance after M10 promotion", () => {
   const contract = loadUpstreamCompatibility({ rootDir: ROOT });
   assert.equal(contract.contractDigest, upstreamCompatibilityDigest(contract));
   assert.deepEqual(contract.candidate.packages.map((entry) => entry.id), M9_EXPECTED_PACKAGES.map((entry) => entry.id));
   assert.deepEqual(Object.keys(contract.scopes).sort(), [...M9_REQUIRED_SCOPES].sort());
-  assert.equal(contract.decision.state, "HOLD");
-  assert.equal(contract.decision.defaultPiVersion, contract.baseline.piVersion);
-  assert.equal(contract.decision.defaultSubagentsVersion, contract.baseline.subagentsVersion);
+  assert.equal(contract.decision.state, "PROMOTE");
+  assert.equal(contract.decision.defaultPiVersion, contract.candidate.piVersion);
+  assert.equal(contract.decision.defaultSubagentsVersion, contract.candidate.subagentsVersion);
   assert.equal(contract.scopes.noModelRpc.status, "PASS");
   assert.equal(contract.scopes.liveReadOnlyMatrix.status, "PASS");
-  assert.equal(contract.decision.reasonCode, "CANDIDATE_PROMOTION_REVIEW_PENDING");
+  assert.equal(contract.decision.reasonCode, "M10_REAL_ROOT_AND_LIVE_ACCEPTANCE_PASSED");
   assert.doesNotThrow(() => validateUpstreamCompatibility(contract, { rootDir: ROOT, verifyEvidencePaths: true }));
 });
 
@@ -142,6 +142,8 @@ test("M9 contract rejects premature promotion, candidate package drift, and Stab
   );
 
   const defaultDrift = structuredClone(loadUpstreamCompatibility({ rootDir: ROOT }));
+  defaultDrift.decision.state = "HOLD";
+  defaultDrift.decision.reasonCode = "CANDIDATE_PROMOTION_REVIEW_PENDING";
   defaultDrift.decision.defaultPiVersion = defaultDrift.candidate.piVersion;
   defaultDrift.contractDigest = upstreamCompatibilityDigest(defaultDrift);
   assert.throws(

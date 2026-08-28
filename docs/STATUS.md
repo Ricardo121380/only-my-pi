@@ -1,22 +1,22 @@
 # only-my-pi status
 
 Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-28** · Stable
-kernel merged to `main`: **2026-08-27** · Pi **0.84.1** · Node **25.8.0** · macOS
+kernel merged to `main`: **2026-08-27** · Pi **0.84.3** · Node **25.8.0** · macOS
 `darwin-arm64`
 
-## Active milestone — M10 candidate promotion (`HOLD`)
+## Active milestone — M10 final artifact reconciliation (`PROMOTE`)
 
 M9 was merged to `main` on 2026-08-28 by merge commit `510f11c`; the source and
 evidence commits remain intact. The post-merge `main` workflow passed on Node
 22.19.0 and Node 24.19.0. M10 now owns the separate promotion boundary.
 
-M10 starts with no Stable-default or real-root upgrade. Its required sequence
-is historical-generation doctor repair, immutable user CLI installation,
-strict migration-bundle validation, shadow apply/rollback/reapply, protected
-real-root apply/rollback/reapply, and a source-bound live read-only matrix.
-Only after those checks pass may a later decision commit change the machine
-decision from `HOLD` to `PROMOTE` and align the repository Stable inventory,
-real Pi stack, generation, and CLI artifact.
+M10 source `6156955` and evidence-only child `9df5f44` completed the protected
+real-root and live-model boundary. The exact source-bound bundle applied the
+candidate, restored the M8 baseline exactly (including settings order, LKG and
+CLI absence), reapplied the candidate, and passed the protected live read-only
+matrix. The machine decision is now `PROMOTE`; Stable defaults and the real Pi
+stack use Pi `0.84.3`, `pi-subagents@0.57.0`, and the six audited companion
+upgrades, while permission-modes, memory and git-sync retain their prior versions.
 
 The migration authority is deliberately narrow: it covers the exact M9
 candidate and one confirmed transaction. The nine third-party packages remain
@@ -25,24 +25,23 @@ installation, diagnosis and rollback, while `/omp` inside Pi remains the only
 Agent execution entry. The full boundary is versioned in
 [`ADR-0011`](decisions/ADR-0011-m10-promotion-and-upstream-migration.md).
 
-The local M10 source implementation now includes historical-generation
-diagnosis, immutable CLI publication, the strict source-bound bundle,
-candidate target alignment, the cross-root journal and recovery engine,
-shadow migration/fault injection, P1-P12 gate wiring, and the protected P9/P10
-producer. The protected producer remains unexecuted at this point: the real Pi
-root is still on the M8 baseline, P9/P10 remain `NOT_RUN_BY_POLICY`, and the
-machine decision remains `HOLD`. The next boundary is to freeze source commit
-`S`, build bundle `B`, inspect its read-only plan, and only then perform the
-explicitly authorized real-root/live run.
+The local installation now reports Pi `0.84.3`, user CLI
+`~/.local/bin/omp`, generation `sha256:ee6ead54...cd3283`, verified LKG,
+`omp doctor` `PASS`, and no incomplete transaction. P9/P10 record 12/12 and
+17/17 protected assertions respectively; P10 directly measured 41,078 tokens,
+319 seconds and five tool calls under the configured fixed-subscription model,
+without storing raw output, credentials, sessions, PID or host paths. The
+remaining M10 work is the final decision-artifact update, local reconcile,
+completion receipt, and the deliberately deferred single GitHub PR/CI cycle.
 
-## Completed milestone — M9 upstream candidates (`HOLD`)
+## Completed milestone — M9 upstream candidates (promoted by M10)
 
 M9 now has a complete deterministic compatibility lane for Pi `0.84.3`,
 `pi-subagents@0.57.0`, `pi-agent-extensions@0.5.4`,
 `@narumitw/pi-plan-mode@0.55.2`, `pi-web-access@0.25.0`,
 `@narumitw/pi-lsp@0.49.6`, and `@sreetej510/pi-usage@0.7.1`. This is a
-candidate lane, not an installed-version or release promotion claim. The
-Stable defaults remain Pi `0.84.1` and `pi-subagents@0.45.2`.
+candidate lane, not by itself an installed-version claim. M10 later promoted
+the exact audited tuple; the historical M9 baseline remains unchanged.
 
 Completed M9 evidence and controls on the compatibility branch include:
 
@@ -73,11 +72,10 @@ Completed M9 evidence and controls on the compatibility branch include:
 - a complete U1-U9 receipt at
   [`2026-08-28-m9-upstream-compatibility.json`](../verification/receipts/2026-08-28-m9-upstream-compatibility.json).
 
-The machine-readable decision remains `HOLD` with reason
-`CANDIDATE_PROMOTION_REVIEW_PENDING`. U9 is complete, but completing evidence
-does not itself authorize promotion; neither the package inventory nor the real
-`~/.pi/agent` installation is upgraded. The exact scope decision and package
-provenance are in
+M9 closed with `HOLD` and did not itself authorize promotion. M10 subsequently
+completed the separate real-root/live acceptance and changed the current
+machine-readable decision to `PROMOTE`. The historical scope and package
+provenance remain in
 [`upstream-candidates.json`](../contracts/compatibility/upstream-candidates.json),
 with the human-readable compatibility record in
 [`compatibility/m9-upstream-candidates.md`](compatibility/m9-upstream-candidates.md).

@@ -54,11 +54,12 @@ function protectedEvidence(gateId) {
   return value;
 }
 
-test("repository M10 decision and Stable inventory are coherent in HOLD and PROMOTE states", async () => {
+test("repository M10 decision promotes the source-bound evidence and aligned Stable graph", async () => {
   const inspected = await inspectM10Promotion({ rootDir: ROOT });
-  assert.ok(["HOLD", "PROMOTE"].includes(inspected.state));
-  if (inspected.state === "HOLD") assert.equal(inspected.graph, null);
-  else assert.deepEqual(inspected.graph, { candidateGraphDigest: inspected.graph.candidateGraphDigest, stableGraphDigest: inspected.graph.candidateGraphDigest, alignment: "MATCH" });
+  assert.equal(inspected.state, "PROMOTE");
+  assert.equal(inspected.record.sourceCommit, "615695556f6ed699a901bef43e6fbb09f5aa663e");
+  assert.equal(inspected.record.evidenceCommit, "9df5f44dd547234ceea40d12875defbfe67d653e");
+  assert.deepEqual(inspected.graph, { candidateGraphDigest: inspected.graph.candidateGraphDigest, stableGraphDigest: inspected.graph.candidateGraphDigest, alignment: "MATCH" });
 });
 
 test("pure promotion contract requires exact promoted defaults and nine-package inventory", async () => {
@@ -124,18 +125,15 @@ test("promotion decision rejects state, runtime and record mismatches", async ()
   const invalidState = structuredClone(value.promotion);
   invalidState.state = "UNKNOWN";
   assert.throws(() => validateM10PromotionRecord(invalidState), { code: "M10_PROMOTION_RECORD_INVALID" });
-  const invalidPromote = structuredClone(value.promotion);
-  invalidPromote.state = "PROMOTE";
-  assert.throws(() => validateM10PromotionRecord(invalidPromote), { code: "M10_PROMOTION_RECORD_INVALID" });
+  const invalidHold = structuredClone(value.promotion);
+  invalidHold.state = "HOLD";
+  assert.throws(() => validateM10PromotionRecord(invalidHold), { code: "M10_PROMOTION_RECORD_INVALID" });
 
   const decisionMismatch = structuredClone(value);
-  decisionMismatch.promotion.state = "PROMOTE";
-  decisionMismatch.promotion.sourceCommit = "a".repeat(40);
-  decisionMismatch.promotion.evidenceCommit = "b".repeat(40);
-  decisionMismatch.promotion.protectedEvidence = { P9: "verification/protected/p9.json", P10: "verification/protected/p10.json" };
+  decisionMismatch.promotion = { formatVersion: 1, kind: "only-my-pi-m10-promotion", state: "HOLD", sourceCommit: null, evidenceCommit: null, protectedEvidence: { P9: null, P10: null } };
   assert.throws(() => validateM10StableDecision(decisionMismatch), { code: "M10_DECISION_DRIFT" });
 
   const runtimeMismatch = structuredClone(value);
-  runtimeMismatch.inventory.runtime.pi = "0.84.3";
+  runtimeMismatch.inventory.runtime.pi = "0.84.1";
   assert.throws(() => validateM10StableDecision(runtimeMismatch), { code: "M10_DECISION_DRIFT" });
 });

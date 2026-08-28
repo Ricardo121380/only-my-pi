@@ -1,6 +1,6 @@
 # M9 upstream candidate compatibility
 
-M9 evaluates a new upstream package set without changing the Stable defaults or the real `~/.pi/agent` installation. The Stable baseline remains Pi `0.84.1` plus `pi-subagents` `0.45.2`; the candidate is Pi `0.84.3` plus `pi-subagents` `0.57.0` and the exact companion versions recorded in [`contracts/compatibility/upstream-candidates.json`](../../contracts/compatibility/upstream-candidates.json).
+M9 evaluated a new upstream package set without itself changing the Stable defaults or the real `~/.pi/agent` installation. Its historical baseline remains Pi `0.84.1` plus `pi-subagents` `0.45.2`; the candidate was Pi `0.84.3` plus `pi-subagents` `0.57.0` and the exact companion versions recorded in [`contracts/compatibility/upstream-candidates.json`](../../contracts/compatibility/upstream-candidates.json). M10 later supplied the separate real-root authority and promoted that exact tuple.
 
 ## Safety boundary
 
@@ -51,17 +51,18 @@ The protected matrix passed all 17 assertions: single Agent, BatchSwarm, Workflo
 
 OpenCode Go is a fixed-fee subscription rather than a metered token-price Provider. The protected runner therefore records the verified billing mode explicitly: `$10` fixed fee, zero variable input/output price, and the fixed subscription fee excluded from the per-run `costUsd` subtotal. Pi's implicit zero-filled price metadata is not accepted as pricing authority. The recorded `24,960` tokens and three tool calls are a low-sensitivity subtotal from two directly metered terminal paths, not a claim that every nested child token was aggregated. No pricing override was written to the user's global preferences.
 
-## Current decision
+## M10 promotion outcome
 
-The current decision is `HOLD`. Manifest/source-surface, strict RPC,
+M9 closed at `HOLD` after manifest/source-surface, strict RPC,
 delegation, capability-ceiling, isolated session composition, all five
 read-only executor paths, background/cancel/resume adapter behavior, Web
 black-box security, 100-cycle-per-version resource disposal, and the complete
 repository regression now pass. The protected live read-only matrix also
-passed 17/17 assertions and was imported into a complete U1-U9 receipt. The
-remaining `HOLD` is a deliberate promotion-review boundary, not a missing-test
-state: the Stable defaults cannot change until a separate reviewed decision
-explicitly approves the candidate versions.
+passed 17/17 assertions and was imported into a complete U1-U9 receipt. That
+`HOLD` was a deliberate promotion-review boundary, not a missing-test state.
+M10 source `6156955` and evidence-only child `9df5f44` subsequently completed
+the distinct real-root apply/exact-rollback/reapply and live acceptance, so the
+current machine decision is `PROMOTE` with the same audited candidate defaults.
 
 The complete repository regression has since passed with 714/714 tests. M9 is
 now represented by a fixed U1-U9 gate contract:
@@ -80,7 +81,7 @@ now represented by a fixed U1-U9 gate contract:
 
 Ordinary CI executes U1-U8 with no credentials and `shell:false`. U9 has no
 command tuple and cannot be triggered by that runner. U9 is imported only from
-the exact source-bound evidence file and has now passed. The decision stays
-`HOLD` with reason `CANDIDATE_PROMOTION_REVIEW_PENDING`, the baseline versions
-remain the defaults, and the real Pi home is not changed until a separate
-promotion review says otherwise.
+the exact source-bound evidence file and passed. M10 preserves that historical
+U1-U9 evidence while recording the later reason
+`M10_REAL_ROOT_AND_LIVE_ACCEPTANCE_PASSED`; it does not rewrite the M9 baseline
+or the original evidence receipt.

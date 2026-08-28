@@ -54,27 +54,22 @@ the installed generation is `sha256:62ebd02c...d6ab3310`, with all selected
 third-party runtime packages still borrowed as `external` user assets.
 
 M9 has been merged to `main` with its source/evidence commit identities intact.
-It audits Pi `0.84.3`,
-`pi-subagents@0.57.0`, and the current companion extension set without changing
-the installed or Stable defaults. Its exact artifact audit, strict RPC dialect,
+M10 has now promoted its audited Pi `0.84.3`, `pi-subagents@0.57.0`, and exact
+companion extension set to the repository Stable defaults and the current local
+installation. The M9 exact artifact audit, strict RPC dialect,
 offline 13-extension load, five-executor adapter matrix, Web SSRF black-box
 checks, resource soak, package check, and protected 17-assertion live-model
-matrix pass. U1-U9 are complete, including the Agent, BatchSwarm, Workflow,
+matrix pass. U1-U9 remain complete, including the Agent, BatchSwarm, Workflow,
 SwarmGoal, Ultra, public-Web, cancellation, cross-session resume, budget, and
-writer-denial paths under OpenCode Go / DeepSeek V4 Flash. The decision remains
-**`HOLD`** pending a separate promotion review; no real Pi-home upgrade or
-default-version change is implied.
+writer-denial paths under OpenCode Go / DeepSeek V4 Flash.
 
-M10 is the active local milestone. It will first separate historical installed-
-generation health from current-target alignment, install an immutable user-level
-`omp` CLI, and add a manifest-bound, recoverable migration for the exact M9
-candidate stack. Only a protected real apply/rollback/reapply plus live-model
-acceptance may change the decision to `PROMOTE`. M10 does not publish npm or a
-GitHub Release, add a daemon, or make terminal `omp` an Agent execution entry.
-The local protected producer is deliberately plan-first: `npm run
-plan:m10:protected` performs no write and no Provider request. A real run is
-legal only from a clean frozen source with a matching immutable bundle and
-separate migration, Pi-termination, and public-Web authorization.
+M10 real-root acceptance passed on source `6156955`, with evidence-only child
+`9df5f44`: candidate apply, exact M8 rollback, candidate reapply, no-model smoke,
+and the protected 17-assertion live matrix all passed. The decision is now
+**`PROMOTE`** with Stable Pi `0.84.3` and `pi-subagents@0.57.0`. The current
+local `omp` CLI is the immutable user-level entry for installation and diagnosis;
+Agent execution remains exclusively inside Pi through `/omp`. M10 still does
+not publish npm or a GitHub Release, add a daemon, writer, or MCP surface.
 
 - [M8 final D13 protected live-model evidence](verification/protected/2026-08-27-m8-live-model-matrix-final.json)
 - [M8 final D14 real-root rehearsal evidence](verification/protected/2026-08-27-m8-real-root-rehearsal-final.json)
@@ -85,6 +80,8 @@ separate migration, Pi-termination, and public-Web authorization.
 - [M9 U9 protected live-model evidence](verification/protected/2026-08-28-m9-candidate-live-readonly-matrix.json)
 - [M9 U1-U9 completion receipt](verification/receipts/2026-08-28-m9-upstream-compatibility.json)
 - [M10 promotion and migration boundary](docs/decisions/ADR-0011-m10-promotion-and-upstream-migration.md)
+- [M10 P9 real-root migration evidence](verification/protected/2026-08-28-m10-real-root-migration.json)
+- [M10 P10 promoted live-model evidence](verification/protected/2026-08-28-m10-promoted-live-model-matrix.json)
 
 - [M8 Daily Harness Closure plan](docs/plans/2026-08-27-m8-daily-harness-closure.md)
 - [Current implementation status](docs/STATUS.md)

@@ -5,9 +5,9 @@ Status: Accepted, 2026-08-28.
 ## Context
 
 M9 proved the exact Pi `0.84.3`, `pi-subagents@0.57.0` and companion-extension
-candidate in isolated and protected read-only tests. Its machine decision is
-still `HOLD`; the Stable inventory and real installation remain on the M8
-baseline. The existing doctor also conflates an installed historical
+candidate in isolated and protected read-only tests. At M10 entry its machine
+decision was `HOLD`, and the Stable inventory and real installation remained on
+the M8 baseline. The existing doctor also conflated an installed historical
 generation with the target graph computed by a newer checkout.
 
 ## Decision
@@ -96,6 +96,13 @@ all pass for the same source and bundle identities. The promotion commit then
 changes Stable defaults to the audited candidate and preserves the M9 baseline
 as historical comparison data. A final artifact reconcile must prove that the
 candidate graph and promoted Stable graph are identical.
+
+This rule was satisfied by source `6156955`, evidence-only child `9df5f44`,
+and migration bundle digest `sha256:2c90b42c...d7f414`. The protected sequence
+passed candidate apply, no-model smoke, exact M8 rollback, candidate reapply,
+and the 17-assertion live matrix. The current governed decision is therefore
+`PROMOTE`; the M9 baseline remains historical comparison data rather than the
+current Stable default.
 
 ## Non-goals
 
