@@ -8,6 +8,7 @@ import test from "node:test";
 
 import {
   createPiSubagentsDelegationV1Backend,
+  PI_SUBAGENTS_DELEGATION_V1_CANDIDATE_BACKEND_VERSION,
   PI_SUBAGENTS_DELEGATION_V1_EVENTS,
 } from "../packages/subagents/adapters/pi-subagents-delegation-v1/index.mjs";
 import {
@@ -15,7 +16,11 @@ import {
   PiSubagentsTerminalEventStore,
 } from "../packages/subagents/adapters/pi-subagents-rpc-v1/index.mjs";
 import { createPiSubagentsRpcV1CapabilityMatrix } from "../packages/subagents/adapters/pi-subagents-rpc-v1/capabilities.mjs";
-import { PI_SUBAGENTS_RPC_V1_EVENTS } from "../packages/subagents/adapters/pi-subagents-rpc-v1/wire.mjs";
+import {
+  PI_SUBAGENTS_RPC_V1_BACKEND_VERSION,
+  PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION,
+  PI_SUBAGENTS_RPC_V1_EVENTS,
+} from "../packages/subagents/adapters/pi-subagents-rpc-v1/wire.mjs";
 import { createBatchSwarmNodeExecutor } from "../packages/subagents/batch-swarm/index.mjs";
 import {
   createAgentRunHandle,
@@ -222,7 +227,7 @@ function coordinatorHarness(rootDir, plan, scheduler, nodeExecutor) {
   return { coordinator, eventJournal };
 }
 
-test("100-cycle RPC adapter dispose settles hanging requests and releases listeners and timers", async () => {
+test("100-cycle per audited RPC version disposes hanging requests and releases listeners and timers", async () => {
   class Transport extends EventEmitter {
     async request() {
       return new Promise(() => {});
@@ -231,25 +236,28 @@ test("100-cycle RPC adapter dispose settles hanging requests and releases listen
   const transport = new Transport();
   transport.setMaxListeners(0);
   const timers = trackingScheduler();
-  for (let index = 0; index < ADAPTER_SOAK_ITERATIONS; index += 1) {
-    const backend = createPiSubagentsRpcV1Backend({
-      transport,
-      timeoutMs: 60_000,
-      terminalTimeoutMs: 60_000,
-      scheduler: timers.scheduler,
-    });
-    const pending = backend.ensureReady();
-    const rejection = assert.rejects(pending, { code: "ADAPTER_DISPOSED" });
-    await nextTurn();
-    assert.equal(transport.listenerCount(PI_SUBAGENTS_RPC_V1_EVENTS.asyncComplete), 1);
-    assert.equal(transport.listenerCount(PI_SUBAGENTS_RPC_V1_EVENTS.processTerminal), 1);
-    assert.equal(timers.active.size, 1);
-    assert.equal((await backend.dispose()).status, "DISPOSED");
-    await rejection;
-    assert.equal((await backend.dispose()).status, "DISPOSED");
-    assert.equal(transport.listenerCount(PI_SUBAGENTS_RPC_V1_EVENTS.asyncComplete), 0);
-    assert.equal(transport.listenerCount(PI_SUBAGENTS_RPC_V1_EVENTS.processTerminal), 0);
-    assert.equal(timers.active.size, 0);
+  for (const backendVersion of [PI_SUBAGENTS_RPC_V1_BACKEND_VERSION, PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION]) {
+    for (let index = 0; index < ADAPTER_SOAK_ITERATIONS; index += 1) {
+      const backend = createPiSubagentsRpcV1Backend({
+        transport,
+        backendVersion,
+        timeoutMs: 60_000,
+        terminalTimeoutMs: 60_000,
+        scheduler: timers.scheduler,
+      });
+      const pending = backend.ensureReady();
+      const rejection = assert.rejects(pending, { code: "ADAPTER_DISPOSED" });
+      await nextTurn();
+      assert.equal(transport.listenerCount(PI_SUBAGENTS_RPC_V1_EVENTS.asyncComplete), 1);
+      assert.equal(transport.listenerCount(PI_SUBAGENTS_RPC_V1_EVENTS.processTerminal), 1);
+      assert.equal(timers.active.size, 1);
+      assert.equal((await backend.dispose()).status, "DISPOSED");
+      await rejection;
+      assert.equal((await backend.dispose()).status, "DISPOSED");
+      assert.equal(transport.listenerCount(PI_SUBAGENTS_RPC_V1_EVENTS.asyncComplete), 0);
+      assert.equal(transport.listenerCount(PI_SUBAGENTS_RPC_V1_EVENTS.processTerminal), 0);
+      assert.equal(timers.active.size, 0);
+    }
   }
   assert.equal(transport.eventNames().length, 0);
   assert.ok(timers.peak() >= 1);
@@ -277,7 +285,7 @@ test("100-cycle terminal event store dispose rejects every waiter and clears its
   }
 });
 
-test("100-cycle structured delegation dispose settles start waiters and clears subscriptions and timers", async () => {
+test("100-cycle per audited structured delegation version settles start waiters and clears resources", async () => {
   const events = new EventEmitter();
   events.setMaxListeners(0);
   const transport = {
@@ -288,27 +296,30 @@ test("100-cycle structured delegation dispose settles start waiters and clears s
     emit() {},
   };
   const timers = trackingScheduler();
-  for (let index = 0; index < ADAPTER_SOAK_ITERATIONS; index += 1) {
-    const backend = createPiSubagentsDelegationV1Backend({
-      transport,
-      cwd: "/fixture",
-      timeoutMs: 60_000,
-      scheduler: timers.scheduler,
-    });
-    const launching = backend.launch({ ...delegationFixture(index), mode: "background" });
-    const rejection = assert.rejects(launching, { code: "ADAPTER_DISPOSED" });
-    await nextTurn();
-    for (const name of [
-      PI_SUBAGENTS_DELEGATION_V1_EVENTS.started,
-      PI_SUBAGENTS_DELEGATION_V1_EVENTS.update,
-      PI_SUBAGENTS_DELEGATION_V1_EVENTS.response,
-    ]) assert.equal(events.listenerCount(name), 1);
-    assert.equal(timers.active.size, 1);
-    assert.equal((await backend.dispose()).status, "DISPOSED");
-    await rejection;
-    assert.equal((await backend.dispose()).status, "DISPOSED");
-    assert.equal(timers.active.size, 0);
-    for (const name of events.eventNames()) assert.equal(events.listenerCount(name), 0);
+  for (const backendVersion of ["0.45.2", PI_SUBAGENTS_DELEGATION_V1_CANDIDATE_BACKEND_VERSION]) {
+    for (let index = 0; index < ADAPTER_SOAK_ITERATIONS; index += 1) {
+      const backend = createPiSubagentsDelegationV1Backend({
+        transport,
+        cwd: "/fixture",
+        backendVersion,
+        timeoutMs: 60_000,
+        scheduler: timers.scheduler,
+      });
+      const launching = backend.launch({ ...delegationFixture(index), mode: "background" });
+      const rejection = assert.rejects(launching, { code: "ADAPTER_DISPOSED" });
+      await nextTurn();
+      for (const name of [
+        PI_SUBAGENTS_DELEGATION_V1_EVENTS.started,
+        PI_SUBAGENTS_DELEGATION_V1_EVENTS.update,
+        PI_SUBAGENTS_DELEGATION_V1_EVENTS.response,
+      ]) assert.equal(events.listenerCount(name), 1);
+      assert.equal(timers.active.size, 1);
+      assert.equal((await backend.dispose()).status, "DISPOSED");
+      await rejection;
+      assert.equal((await backend.dispose()).status, "DISPOSED");
+      assert.equal(timers.active.size, 0);
+      for (const name of events.eventNames()) assert.equal(events.listenerCount(name), 0);
+    }
   }
   assert.equal(events.eventNames().length, 0);
 });

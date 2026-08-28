@@ -5,7 +5,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 
 const SENSITIVE_HEADER_KEY = /(?:header|authorization|cookie)/iu;
-const CONFIG_FORBIDDEN_KEYS = new Set(["chromeProfile", "curatorRemote"]);
+const CONFIG_FORBIDDEN_KEYS = new Set(["authFetch", "chromeProfile", "curatorRemote"]);
 
 function fail(code, message, details = {}) { const error = new Error(message); error.code = code; Object.assign(error, details); throw error; }
 function object(value) { return value !== null && typeof value === "object" && !Array.isArray(value); }

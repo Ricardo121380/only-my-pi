@@ -10,6 +10,11 @@ import {
 
 export const PI_SUBAGENTS_DELEGATION_V1_BACKEND_ID = "pi-subagents-delegation-v1";
 export const PI_SUBAGENTS_DELEGATION_V1_BACKEND_VERSION = "0.45.2";
+export const PI_SUBAGENTS_DELEGATION_V1_CANDIDATE_BACKEND_VERSION = "0.57.0";
+export const PI_SUBAGENTS_DELEGATION_V1_SUPPORTED_BACKEND_VERSIONS = Object.freeze([
+  PI_SUBAGENTS_DELEGATION_V1_BACKEND_VERSION,
+  PI_SUBAGENTS_DELEGATION_V1_CANDIDATE_BACKEND_VERSION,
+]);
 export const PI_SUBAGENTS_DELEGATION_V1_PROTOCOL_VERSION = 1;
 export const PI_SUBAGENTS_DELEGATION_V1_EVENTS = Object.freeze({
   request: "prompt-template:subagent:request",
@@ -31,11 +36,25 @@ function entry(state, reasonCode, evidence, constraints = {}) {
   return { state, reasonCode, evidence, constraints };
 }
 
-export function createPiSubagentsDelegationV1CapabilityMatrix({ observedAt = 0 } = {}) {
-  const wire = "pi-subagents@0.45.2 exported structured delegation events";
+function assertDelegationBackendVersion(backendVersion) {
+  if (!PI_SUBAGENTS_DELEGATION_V1_SUPPORTED_BACKEND_VERSIONS.includes(backendVersion)) {
+    fail("pi-subagents backend version has no audited structured delegation contract", "UNSUPPORTED_PI_SUBAGENTS_BACKEND_VERSION", "capability", {
+      backendVersion,
+      supportedVersions: PI_SUBAGENTS_DELEGATION_V1_SUPPORTED_BACKEND_VERSIONS,
+    });
+  }
+  return backendVersion;
+}
+
+export function createPiSubagentsDelegationV1CapabilityMatrix({
+  observedAt = 0,
+  backendVersion = PI_SUBAGENTS_DELEGATION_V1_BACKEND_VERSION,
+} = {}) {
+  assertDelegationBackendVersion(backendVersion);
+  const wire = `pi-subagents@${backendVersion} audited structured delegation events`;
   return createBackendCapabilityV2({
     backendId: PI_SUBAGENTS_DELEGATION_V1_BACKEND_ID,
-    backendVersion: PI_SUBAGENTS_DELEGATION_V1_BACKEND_VERSION,
+    backendVersion,
     protocol: { name: "pi-subagents-structured-delegation", version: 1 },
     observedAt,
     capabilities: {
@@ -227,10 +246,12 @@ function failedStatusCode(status, upstreamError) {
 }
 
 export class PiSubagentsDelegationV1Backend {
-  constructor({ transport, cwd, model, thinking, modelResolver, clock = Date.now, timeoutMs = 120_000, maximumTurns, maximumToolCalls = 8, scheduler } = {}) {
+  constructor({ transport, cwd, model, thinking, modelResolver, clock = Date.now, timeoutMs = 120_000, maximumTurns, maximumToolCalls = 8, scheduler, backendVersion = PI_SUBAGENTS_DELEGATION_V1_BACKEND_VERSION } = {}) {
     if (typeof transport?.subscribe !== "function" || typeof transport?.emit !== "function") throw new TypeError("delegation backend requires subscribe() and emit()");
     if (typeof cwd !== "string" || cwd.length === 0) throw new TypeError("delegation backend requires cwd");
+    assertDelegationBackendVersion(backendVersion);
     this.transport = transport;
+    this.backendVersion = backendVersion;
     this.cwd = cwd;
     this.model = model;
     this.thinking = thinking;
@@ -240,7 +261,7 @@ export class PiSubagentsDelegationV1Backend {
     this.timeoutMs = timeoutMs;
     this.maximumToolCalls = maximumToolCalls;
     this.scheduler = normalizeScheduler(scheduler);
-    this.capabilityMatrix = createPiSubagentsDelegationV1CapabilityMatrix({ observedAt: clock() });
+    this.capabilityMatrix = createPiSubagentsDelegationV1CapabilityMatrix({ observedAt: clock(), backendVersion });
     this.attempts = new Map();
     this.disposed = false;
     this.unsubscribers = [
@@ -279,7 +300,12 @@ export class PiSubagentsDelegationV1Backend {
 
   async ensureReady() {
     if (this.disposed) fail("delegation backend is disposed", "ADAPTER_DISPOSED", "unavailable");
-    return immutable({ capabilityMatrix: this.capabilityMatrix });
+    return immutable({
+      backendId: PI_SUBAGENTS_DELEGATION_V1_BACKEND_ID,
+      backendVersion: this.backendVersion,
+      protocolVersion: PI_SUBAGENTS_DELEGATION_V1_PROTOCOL_VERSION,
+      capabilityMatrix: this.capabilityMatrix,
+    });
   }
 
   async launch({ handle, agentSpec, assignment, model, thinking, maximumTurns, maximumToolCalls, mode = "background", signal } = {}) {
@@ -330,7 +356,7 @@ export class PiSubagentsDelegationV1Backend {
     }
     const boundHandle = bindBackendRun(handle, {
       backendId: PI_SUBAGENTS_DELEGATION_V1_BACKEND_ID,
-      backendVersion: PI_SUBAGENTS_DELEGATION_V1_BACKEND_VERSION,
+      backendVersion: this.backendVersion,
       protocolVersion: PI_SUBAGENTS_DELEGATION_V1_PROTOCOL_VERSION,
       lifecycle: "launch",
       requestId: compiled.request.requestId,

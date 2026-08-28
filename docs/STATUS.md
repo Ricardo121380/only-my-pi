@@ -4,6 +4,53 @@ Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-27** · Stable
 kernel merged to `main`: **2026-08-27** · Pi **0.84.1** · Node **25.8.0** · macOS
 `darwin-arm64`
 
+## Active compatibility branch — M9 upstream candidates (`HOLD`)
+
+M9 now has a complete deterministic compatibility lane for Pi `0.84.3`,
+`pi-subagents@0.57.0`, `pi-agent-extensions@0.5.4`,
+`@narumitw/pi-plan-mode@0.55.2`, `pi-web-access@0.25.0`,
+`@narumitw/pi-lsp@0.49.6`, and `@sreetej510/pi-usage@0.7.1`. This is a
+candidate lane, not an installed-version or release promotion claim. The
+Stable defaults remain Pi `0.84.1` and `pi-subagents@0.45.2`.
+
+Completed M9 evidence and controls on the compatibility branch include:
+
+- exact npm SRI, lockfile, disk manifest, required-entrypoint, lifecycle-script,
+  containment, and full symlink-ancestry validation for all seven candidates;
+- a version-selected strict RPC v1 dialect for `pi-subagents@0.45.2` and
+  `0.57.0`, including the candidate `manage`, management-actions,
+  async-status-snapshot, and child-status surfaces;
+- an offline candidate Pi probe and a complete 13-entry extension-stack load
+  with unique command/tool ownership, no prompt, no child dispatch, no model
+  request, and no access to the real Pi home;
+- the same session composer driving Agent, BatchSwarm, Workflow ArtifactRef
+  flow, SwarmGoal, and Ultra under the `0.57.0` adapter;
+- candidate background/status/cancel/resume/stop correlation and 100-cycle
+  per-version disposal checks;
+- a black-box `pi-web-access@0.25.0` SSRF suite, including redirect-to-private
+  rejection, with cookies and `authFetch` denied by only-my-pi;
+- the fixed [`upstream-compatibility-gates-v1.json`](../verification/upstream-compatibility-gates-v1.json)
+  contract: U1-U8 are credential-free, no-shell deterministic gates; U9 is a
+  non-executable protected live candidate matrix;
+- the source-bound U9 protected matrix on source `a5a71b5`, recorded by the
+  evidence-only child `2af92de`: 17/17 assertions passed for Agent, BatchSwarm,
+  Workflow ArtifactRef flow, SwarmGoal replan, Ultra Agent/Workflow routing,
+  public Web, cancellation, cross-session resume, budget denial, writer denial,
+  exact candidate identity, and explicit subscription-pricing authority;
+- a clean full repository regression of **714/714 tests** after the protected
+  runner and pricing fail-closed change;
+- a complete U1-U9 receipt at
+  [`2026-08-28-m9-upstream-compatibility.json`](../verification/receipts/2026-08-28-m9-upstream-compatibility.json).
+
+The machine-readable decision remains `HOLD` with reason
+`CANDIDATE_PROMOTION_REVIEW_PENDING`. U9 is complete, but completing evidence
+does not itself authorize promotion; neither the package inventory nor the real
+`~/.pi/agent` installation is upgraded. The exact scope decision and package
+provenance are in
+[`upstream-candidates.json`](../contracts/compatibility/upstream-candidates.json),
+with the human-readable compatibility record in
+[`compatibility/m9-upstream-candidates.md`](compatibility/m9-upstream-candidates.md).
+
 ## Completed milestone — M8 Daily Harness Closure
 
 The S0-S5 kernel is Stable for the pinned source/evidence/receipt chain below.

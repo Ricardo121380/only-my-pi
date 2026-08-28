@@ -53,9 +53,25 @@ artifact SHA-256 is
 the installed generation is `sha256:62ebd02c...d6ab3310`, with all selected
 third-party runtime packages still borrowed as `external` user assets.
 
+An M9 compatibility branch now audits Pi `0.84.3`,
+`pi-subagents@0.57.0`, and the current companion extension set without changing
+the installed or Stable defaults. Its exact artifact audit, strict RPC dialect,
+offline 13-extension load, five-executor adapter matrix, Web SSRF black-box
+checks, resource soak, package check, and protected 17-assertion live-model
+matrix pass. U1-U9 are complete, including the Agent, BatchSwarm, Workflow,
+SwarmGoal, Ultra, public-Web, cancellation, cross-session resume, budget, and
+writer-denial paths under OpenCode Go / DeepSeek V4 Flash. The decision remains
+**`HOLD`** pending a separate promotion review; no real Pi-home upgrade or
+default-version change is implied.
+
 - [M8 final D13 protected live-model evidence](verification/protected/2026-08-27-m8-live-model-matrix-final.json)
 - [M8 final D14 real-root rehearsal evidence](verification/protected/2026-08-27-m8-real-root-rehearsal-final.json)
 - [M8 final D1-D15 completion receipt](verification/receipts/2026-08-27-m8-daily-harness-final.json)
+- [M9 upstream candidate compatibility record](docs/compatibility/m9-upstream-candidates.md)
+- [M9 machine-readable compatibility decision](contracts/compatibility/upstream-candidates.json)
+- [M9 U1-U9 gate contract](verification/upstream-compatibility-gates-v1.json)
+- [M9 U9 protected live-model evidence](verification/protected/2026-08-28-m9-candidate-live-readonly-matrix.json)
+- [M9 U1-U9 completion receipt](verification/receipts/2026-08-28-m9-upstream-compatibility.json)
 
 - [M8 Daily Harness Closure plan](docs/plans/2026-08-27-m8-daily-harness-closure.md)
 - [Current implementation status](docs/STATUS.md)

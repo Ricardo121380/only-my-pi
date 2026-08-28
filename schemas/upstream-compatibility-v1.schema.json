@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/upstream-compatibility-v1.schema.json",
+  "title": "only-my-pi upstream compatibility candidate v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "id", "baseline", "candidate", "scopes", "decision", "contractDigest"],
+  "properties": {
+    "$schema": { "type": "string", "pattern": "upstream-compatibility-v1\\.schema\\.json$" },
+    "formatVersion": { "const": 1 },
+    "id": { "const": "only-my-pi-m9-upstream-compatibility" },
+    "baseline": { "$ref": "#/$defs/runtime" },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["piVersion", "subagentsVersion", "installPolicy", "packages"],
+      "properties": {
+        "piVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "subagentsVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "installPolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ignoreScripts", "allowLifecycleScripts", "networkDuringProbe", "mutateRealPiHome"],
+          "properties": {
+            "ignoreScripts": { "const": true },
+            "allowLifecycleScripts": { "const": false },
+            "networkDuringProbe": { "const": false },
+            "mutateRealPiHome": { "const": false }
+          }
+        },
+        "packages": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "items": { "$ref": "#/$defs/package" }
+        }
+      }
+    },
+    "scopes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifactAudit", "extensionSurface", "noModelRpc", "delegationContract",
+        "capabilityCeiling", "sessionRuntimeComposition", "fiveExecutorMatrix",
+        "backgroundCancelResume", "webSafety", "planModeBehavior", "resourceSoak",
+        "fullRegression", "liveReadOnlyMatrix"
+      ],
+      "properties": {
+        "artifactAudit": { "$ref": "#/$defs/scope" },
+        "extensionSurface": { "$ref": "#/$defs/scope" },
+        "noModelRpc": { "$ref": "#/$defs/scope" },
+        "delegationContract": { "$ref": "#/$defs/scope" },
+        "capabilityCeiling": { "$ref": "#/$defs/scope" },
+        "sessionRuntimeComposition": { "$ref": "#/$defs/scope" },
+        "fiveExecutorMatrix": { "$ref": "#/$defs/scope" },
+        "backgroundCancelResume": { "$ref": "#/$defs/scope" },
+        "webSafety": { "$ref": "#/$defs/scope" },
+        "planModeBehavior": { "$ref": "#/$defs/scope" },
+        "resourceSoak": { "$ref": "#/$defs/scope" },
+        "fullRegression": { "$ref": "#/$defs/scope" },
+        "liveReadOnlyMatrix": { "$ref": "#/$defs/scope" }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "reasonCode", "defaultPiVersion", "defaultSubagentsVersion"],
+      "properties": {
+        "state": { "enum": ["HOLD", "PROMOTE", "REJECT"] },
+        "reasonCode": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,95}$" },
+        "defaultPiVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "defaultSubagentsVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }
+      }
+    },
+    "contractDigest": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "path": { "type": "string", "minLength": 1, "maxLength": 240, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[A-Za-z0-9._/-]+$" },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["piVersion", "subagentsVersion"],
+      "properties": {
+        "piVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "subagentsVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" }
+      }
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "version", "sourceSpec", "integrity", "installLifecycleScripts", "requiredEntrypoints"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,47}$" },
+        "name": { "type": "string", "pattern": "^(?:@[a-z0-9._-]+/)?[a-z0-9._-]+$", "maxLength": 128 },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "sourceSpec": { "type": "string", "minLength": 3, "maxLength": 192, "pattern": "^[^\\s\\0\\r\\n]+$" },
+        "integrity": { "type": "string", "pattern": "^sha512-[A-Za-z0-9+/]+={0,2}$" },
+        "installLifecycleScripts": { "type": "array", "maxItems": 0 },
+        "requiredEntrypoints": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/path" }
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidence"],
+      "properties": {
+        "status": { "enum": ["PASS", "CONFIGURED_UNVERIFIED", "NOT_RUN_BY_POLICY", "NOT_RUN_ENVIRONMENT", "FAIL"] },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/path" }
+        }
+      }
+    }
+  }
+}

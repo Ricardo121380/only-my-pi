@@ -20,11 +20,12 @@ test("safe missing or explicit Web config resolves PUBLIC_WEB_SSRF_GUARDED", asy
   assert.equal(result.status, "PUBLIC_WEB_SSRF_GUARDED");
 });
 
-test("cookies, browser launch, proxy bypass, allow ranges and custom headers block Web runs", async (t) => {
-  const configRoot = await root(t, { allowBrowserCookies: true, autoOpenBrowser: true, ssrf: { allowRanges: ["198.18.0.0/15"], trustEnvProxy: true }, searxngHeaders: { Authorization: "secret" } });
+test("cookies, authFetch, browser launch, proxy bypass, allow ranges and custom headers block Web runs", async (t) => {
+  const configRoot = await root(t, { allowBrowserCookies: true, authFetch: { docs: ["docs.example.com"] }, autoOpenBrowser: true, ssrf: { allowRanges: ["198.18.0.0/15"], trustEnvProxy: true }, searxngHeaders: { Authorization: "secret" } });
   const result = await inspectPublicWebPolicy({ configRoot, environment: {} });
   assert.equal(result.ok, false);
-  assert.deepEqual(new Set(result.findings.map((finding) => finding.code)), new Set(["BROWSER_COOKIES_FORBIDDEN", "AUTO_OPEN_BROWSER_FORBIDDEN", "SSRF_PROXY_BYPASS_FORBIDDEN", "SSRF_ALLOW_RANGES_FORBIDDEN", "CUSTOM_HEADERS_FORBIDDEN"]));
+  assert.deepEqual(new Set(result.findings.map((finding) => finding.code)), new Set(["BROWSER_COOKIES_FORBIDDEN", "WEB_CONFIG_FIELD_FORBIDDEN", "AUTO_OPEN_BROWSER_FORBIDDEN", "SSRF_PROXY_BYPASS_FORBIDDEN", "SSRF_ALLOW_RANGES_FORBIDDEN", "CUSTOM_HEADERS_FORBIDDEN"]));
+  assert.ok(result.findings.some((finding) => finding.path === "web-search.authFetch"));
 });
 
 test("public URL guard blocks loopback private link-local metadata and redirect-to-private", () => {

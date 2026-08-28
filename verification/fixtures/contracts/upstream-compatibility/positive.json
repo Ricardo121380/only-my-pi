@@ -1,0 +1,209 @@
+{
+  "$schema": "../../../../schemas/upstream-compatibility-v1.schema.json",
+  "formatVersion": 1,
+  "id": "only-my-pi-m9-upstream-compatibility",
+  "baseline": {
+    "piVersion": "0.84.1",
+    "subagentsVersion": "0.45.2"
+  },
+  "candidate": {
+    "piVersion": "0.84.3",
+    "subagentsVersion": "0.57.0",
+    "installPolicy": {
+      "ignoreScripts": true,
+      "allowLifecycleScripts": false,
+      "networkDuringProbe": false,
+      "mutateRealPiHome": false
+    },
+    "packages": [
+      {
+        "id": "agent-extensions",
+        "name": "pi-agent-extensions",
+        "version": "0.5.4",
+        "sourceSpec": "pi-agent-extensions@0.5.4",
+        "integrity": "sha512-sMosSp4VHLldOJUxYvcDIThNgx1y0swtqM0vV7kld8nj7T4a0JgUVfS1ticsDZoBcKVLxD+POHFrzlxQ5gDsGQ==",
+        "installLifecycleScripts": [],
+        "requiredEntrypoints": [
+          "extensions/context/index.ts",
+          "extensions/notify/index.ts",
+          "extensions/review/index.ts",
+          "extensions/sessions/index.ts"
+        ]
+      },
+      {
+        "id": "lsp",
+        "name": "@narumitw/pi-lsp",
+        "version": "0.49.6",
+        "sourceSpec": "@narumitw/pi-lsp@0.49.6",
+        "integrity": "sha512-ElqBaVyOCF8U4nkdOAxqvU560DsHZwwCm9Riy7He3bFhTsAzjuuXEGaoMYS0fdZCL16Y8heu2L5O1Cgv8SpDFw==",
+        "installLifecycleScripts": [],
+        "requiredEntrypoints": [
+          "dist/index.ts"
+        ]
+      },
+      {
+        "id": "pi",
+        "name": "@earendil-works/pi-coding-agent",
+        "version": "0.84.3",
+        "sourceSpec": "@earendil-works/pi-coding-agent@0.84.3",
+        "integrity": "sha512-Yr2p9PubrbFZmYEPYI+C8KmZP9xlFuLDnAG64RtU0ZDgrdiXYWa+y7WGyJO5OlqPliOkVCMd9IzVszO3/t0D0w==",
+        "installLifecycleScripts": [],
+        "requiredEntrypoints": [
+          "dist/bundle/cli.js",
+          "dist/index.js"
+        ]
+      },
+      {
+        "id": "plan-mode",
+        "name": "@narumitw/pi-plan-mode",
+        "version": "0.55.2",
+        "sourceSpec": "@narumitw/pi-plan-mode@0.55.2",
+        "integrity": "sha512-JRovIOp8tYMj4WpqMyLVrNaL9oyvE0hlaTSPjAHF1HUN17fmne3dch854FVyUR5LVe9jVoIpERTrs4ZP5vcUzQ==",
+        "installLifecycleScripts": [],
+        "requiredEntrypoints": [
+          "dist/index.ts"
+        ]
+      },
+      {
+        "id": "subagents",
+        "name": "pi-subagents",
+        "version": "0.57.0",
+        "sourceSpec": "pi-subagents@0.57.0",
+        "integrity": "sha512-CvsOBp61dZU+HV3kHdfFc+iBuO9DOI5nvTiGrSaFVpH7XK5/22QbBAdjcrhOjcSzA5Ev3l0Qr/JC1I8VLES9Bw==",
+        "installLifecycleScripts": [],
+        "requiredEntrypoints": [
+          "index.ts",
+          "src/api/agents.ts",
+          "src/api/capability-ceiling.ts",
+          "src/api/delegation.ts",
+          "src/extension/rpc.ts"
+        ]
+      },
+      {
+        "id": "usage",
+        "name": "@sreetej510/pi-usage",
+        "version": "0.7.1",
+        "sourceSpec": "@sreetej510/pi-usage@0.7.1",
+        "integrity": "sha512-EtVHgahbFL+LcpFve7Ln+RfR9kbm4Wv9YjQsGtfbz67n1pzPa+gMZ4u88YCZ7Lp04/OuHnZNKdmxlzjlrQ3Jig==",
+        "installLifecycleScripts": [],
+        "requiredEntrypoints": [
+          "dist/index.js"
+        ]
+      },
+      {
+        "id": "web-access",
+        "name": "pi-web-access",
+        "version": "0.25.0",
+        "sourceSpec": "pi-web-access@0.25.0",
+        "integrity": "sha512-DYOEIMEPwpC6pHElexBy3XuaYPnfMxH0ZBaGrILFsLNQzhhHJ3kJLrCQU4fnKXYXV6OEwxsLt2pBP76koK4hHg==",
+        "installLifecycleScripts": [],
+        "requiredEntrypoints": [
+          "auth-fetch.ts",
+          "index.ts",
+          "ssrf-protection.ts"
+        ]
+      }
+    ]
+  },
+  "scopes": {
+    "artifactAudit": {
+      "status": "PASS",
+      "evidence": [
+        "tests/upstream-compatibility.test.mjs"
+      ]
+    },
+    "extensionSurface": {
+      "status": "PASS",
+      "evidence": [
+        "docs/compatibility/m9-upstream-candidates.md",
+        "tests/upstream-compatibility.test.mjs",
+        "verification/evidence/m9-pi-0.84.3-full-stack-no-model.json"
+      ]
+    },
+    "noModelRpc": {
+      "status": "PASS",
+      "evidence": [
+        "tests/subagents-live-probe.test.mjs",
+        "tests/upstream-compatibility.test.mjs",
+        "verification/evidence/m9-pi-0.84.3-subagents-0.57.0-no-model.json"
+      ]
+    },
+    "delegationContract": {
+      "status": "PASS",
+      "evidence": [
+        "tests/subagents-delegation-adapter.test.mjs",
+        "tests/subagents-backend-adapter.test.mjs"
+      ]
+    },
+    "capabilityCeiling": {
+      "status": "PASS",
+      "evidence": [
+        "tests/session-runtime-composer.test.mjs",
+        "tests/upstream-compatibility.test.mjs"
+      ]
+    },
+    "sessionRuntimeComposition": {
+      "status": "PASS",
+      "evidence": [
+        "packages/subagents/runtime/session-composer.mjs",
+        "tests/session-runtime-composer.test.mjs"
+      ]
+    },
+    "fiveExecutorMatrix": {
+      "status": "PASS",
+      "evidence": [
+        "tests/session-runtime-composer.test.mjs"
+      ]
+    },
+    "backgroundCancelResume": {
+      "status": "PASS",
+      "evidence": [
+        "tests/subagents-backend-adapter.test.mjs"
+      ]
+    },
+    "webSafety": {
+      "status": "PASS",
+      "evidence": [
+        "docs/compatibility/m9-upstream-candidates.md",
+        "tests/upstream-compatibility.test.mjs",
+        "tests/web-policy.test.mjs",
+        "verification/evidence/m9-pi-web-access-0.25.0-ssrf.json"
+      ]
+    },
+    "planModeBehavior": {
+      "status": "PASS",
+      "evidence": [
+        "docs/compatibility/m9-upstream-candidates.md",
+        "tests/upstream-compatibility.test.mjs",
+        "verification/evidence/m9-pi-0.84.3-full-stack-no-model.json"
+      ]
+    },
+    "resourceSoak": {
+      "status": "PASS",
+      "evidence": [
+        "tests/subagents-resource-leak.test.mjs"
+      ]
+    },
+    "fullRegression": {
+      "status": "PASS",
+      "evidence": [
+        ".github/workflows/ci.yml",
+        "tests/upstream-compatibility-gates.test.mjs",
+        "verification/upstream-compatibility-gates-v1.json"
+      ]
+    },
+    "liveReadOnlyMatrix": {
+      "status": "NOT_RUN_BY_POLICY",
+      "evidence": [
+        "docs/compatibility/m9-upstream-candidates.md"
+      ]
+    }
+  },
+  "decision": {
+    "state": "HOLD",
+    "reasonCode": "CANDIDATE_PROTECTED_MATRIX_PENDING",
+    "defaultPiVersion": "0.84.1",
+    "defaultSubagentsVersion": "0.45.2"
+  },
+  "contractDigest": "sha256:32879d3b5ec460f77a32a66c1faf218c0fda1f4867bbd87660b24b0617a6db87"
+}

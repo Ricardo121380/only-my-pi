@@ -201,6 +201,12 @@
       "fixtureDir": "verification/fixtures/contracts/subagents-compatibility"
     },
     {
+      "kind": "upstreamCompatibility",
+      "schemaPath": "schemas/upstream-compatibility-v1.schema.json",
+      "productionGlobs": ["contracts/compatibility/upstream-candidates.json"],
+      "fixtureDir": "verification/fixtures/contracts/upstream-compatibility"
+    },
+    {
       "kind": "subagentsPromotionPolicy",
       "schemaPath": "schemas/subagents-promotion-policy-v1.schema.json",
       "productionGlobs": ["contracts/subagents/promotion-policy.json"],

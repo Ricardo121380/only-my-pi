@@ -12,6 +12,8 @@ import {
   createPiSubagentsNoModelLiveProbe,
   inspectAuditedPiSubagentsPackage,
   PI_SUBAGENTS_LIVE_PROBE_ACTIVE_TOOLS,
+  PI_SUBAGENTS_LIVE_PROBE_CANDIDATE_ACTIVE_TOOLS,
+  PI_SUBAGENTS_LIVE_PROBE_CANDIDATE_PI_VERSION,
   PI_SUBAGENTS_LIVE_PROBE_EXPECTED_PI_VERSION,
 } from "../packages/subagents/live-probe.mjs";
 import {
@@ -21,8 +23,10 @@ import {
 } from "../packages/subagents/live-probe-extension.mjs";
 import {
   PI_SUBAGENTS_RPC_V1_EVENTS,
+  PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION,
   PI_SUBAGENTS_RPC_V1_METHODS,
   PI_SUBAGENTS_RPC_V1_REQUIRED_CAPABILITIES,
+  resolvePiSubagentsRpcV1Dialect,
 } from "../packages/subagents/adapters/pi-subagents-rpc-v1/wire.mjs";
 import { parseSubagentsLiveProbeArgs } from "../scripts/subagents-live-probe.mjs";
 
@@ -30,9 +34,9 @@ function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
-async function fixturePackage(root) {
+async function fixturePackage(root, { version = "0.45.2" } = {}) {
   const packageRoot = path.join(root, "node_modules", "pi-subagents");
-  const packageJson = `${JSON.stringify({ name: "pi-subagents", version: "0.45.2" }, null, 2)}\n`;
+  const packageJson = `${JSON.stringify({ name: "pi-subagents", version }, null, 2)}\n`;
   const rpcSource = "export const protocolVersion = 1;\n";
   await fs.mkdir(path.join(packageRoot, "src", "extension"), { recursive: true });
   await fs.writeFile(path.join(packageRoot, "package.json"), packageJson);
@@ -42,37 +46,41 @@ async function fixturePackage(root) {
     packageRoot,
     expected: {
       package: "pi-subagents",
-      version: "0.45.2",
+      version,
       packageJsonSha256: sha256(packageJson),
       rpcSourceSha256: sha256(rpcSource),
     },
   };
 }
 
-function pingData() {
+function pingData(backendVersion) {
+  const dialect = backendVersion === undefined ? null : resolvePiSubagentsRpcV1Dialect(backendVersion);
   return {
     version: 1,
-    methods: [...PI_SUBAGENTS_RPC_V1_METHODS],
-    capabilities: structuredClone(PI_SUBAGENTS_RPC_V1_REQUIRED_CAPABILITIES),
-    events: { ...PI_SUBAGENTS_RPC_V1_EVENTS },
+    methods: [...(dialect?.methods ?? PI_SUBAGENTS_RPC_V1_METHODS)],
+    capabilities: structuredClone(dialect?.capabilities ?? PI_SUBAGENTS_RPC_V1_REQUIRED_CAPABILITIES),
+    events: structuredClone(dialect?.events ?? PI_SUBAGENTS_RPC_V1_EVENTS),
     session: { cwdPresent: true, sessionIdPresent: true, sessionFilePresent: false },
   };
 }
 
-function validRecord() {
+function validRecord({
+  backendVersion,
+  activeTools = PI_SUBAGENTS_LIVE_PROBE_ACTIVE_TOOLS,
+} = {}) {
   return {
     formatVersion: 1,
     type: PI_SUBAGENTS_LIVE_PROBE_RECORD_TYPE,
-    ready: pingData(),
+    ready: pingData(backendVersion),
     reply: {
       version: 1,
       requestId: PI_SUBAGENTS_LIVE_PROBE_REQUEST_ID,
       method: "ping",
       success: true,
-      data: pingData(),
+      data: pingData(backendVersion),
     },
     sameSession: true,
-    activeTools: PI_SUBAGENTS_LIVE_PROBE_ACTIVE_TOOLS.map((name) => ({ name, owner: "pi-subagents" })),
+    activeTools: activeTools.map((name) => ({ name, owner: "pi-subagents" })),
     commands: [
       { name: "omp", owner: "only-my-pi" },
       { name: "omp-context", owner: "only-my-pi" },
@@ -183,6 +191,67 @@ test("no-model live probe verifies ready, correlated ping, visibility, and one p
   ]);
   assert.deepEqual(settings.packages, []);
   assert.deepEqual(settings.skills, []);
+});
+
+test("0.57.0 candidate no-model probe binds the audited dialect and reduced active tool set", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-subagents-candidate-probe-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const configRoot = path.join(root, "config");
+  const firstPartyRoot = path.join(root, "only-my-pi");
+  await fs.mkdir(configRoot, { recursive: true });
+  await fs.mkdir(path.join(firstPartyRoot, "extensions"), { recursive: true });
+  const firstPartyExtension = path.join(firstPartyRoot, "extensions", "control.ts");
+  await fs.writeFile(firstPartyExtension, "export default function control() {}\n");
+  const fixture = await fixturePackage(root, { version: PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION });
+  const invocation = {};
+  const record = validRecord({
+    backendVersion: PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION,
+    activeTools: PI_SUBAGENTS_LIVE_PROBE_CANDIDATE_ACTIVE_TOOLS,
+  });
+  const probe = createPiSubagentsNoModelLiveProbe({
+    piCommand: "/test/pi-0.84.3",
+    spawnImpl(command, argv, options) {
+      Object.assign(invocation, { command, argv, options });
+      return fakeChild(record, invocation);
+    },
+    versionProbe: async () => PI_SUBAGENTS_LIVE_PROBE_CANDIDATE_PI_VERSION,
+    expectedPiVersion: PI_SUBAGENTS_LIVE_PROBE_CANDIDATE_PI_VERSION,
+    expectedArtifact: fixture.expected,
+    expectedActiveTools: PI_SUBAGENTS_LIVE_PROBE_CANDIDATE_ACTIVE_TOOLS,
+    timeoutMs: 1_000,
+  });
+  const result = await probe({
+    configRoot,
+    packageRoot: fixture.packageRoot,
+    firstPartyRoot,
+    firstPartyExtensions: [firstPartyExtension],
+    expectedFirstPartyCommands: ["omp", "omp-context"],
+  });
+
+  assert.equal(result.piVersion, PI_SUBAGENTS_LIVE_PROBE_CANDIDATE_PI_VERSION);
+  assert.equal(result.upstream.version, PI_SUBAGENTS_RPC_V1_CANDIDATE_BACKEND_VERSION);
+  assert.equal(result.rpc.methods.includes("manage"), true);
+  assert.equal(result.rpc.events.childStatus, "subagent:child-status");
+  assert.deepEqual(result.visibility.activeTools, [...PI_SUBAGENTS_LIVE_PROBE_CANDIDATE_ACTIVE_TOOLS]);
+  assert.equal(assertPiSubagentsLiveProbeEvidence(result, {
+    expectedArtifact: fixture.expected,
+    expectedPiVersion: PI_SUBAGENTS_LIVE_PROBE_CANDIDATE_PI_VERSION,
+    expectedActiveTools: PI_SUBAGENTS_LIVE_PROBE_CANDIDATE_ACTIVE_TOOLS,
+  }).evidenceDigest, result.evidenceDigest);
+
+  const baselineConfusion = structuredClone(result);
+  baselineConfusion.visibility.activeTools = [...PI_SUBAGENTS_LIVE_PROBE_ACTIVE_TOOLS];
+  const digestInput = structuredClone(baselineConfusion);
+  delete digestInput.evidenceDigest;
+  baselineConfusion.evidenceDigest = `sha256:${sha256(JSON.stringify(digestInput))}`;
+  assert.throws(
+    () => assertPiSubagentsLiveProbeEvidence(baselineConfusion, {
+      expectedArtifact: fixture.expected,
+      expectedPiVersion: PI_SUBAGENTS_LIVE_PROBE_CANDIDATE_PI_VERSION,
+      expectedActiveTools: PI_SUBAGENTS_LIVE_PROBE_CANDIDATE_ACTIVE_TOOLS,
+    }),
+    (error) => error.code === "PI_SUBAGENTS_EVIDENCE_VISIBILITY_DRIFT",
+  );
 });
 
 test("probe extension emits only bounded ownership and session-presence data", async (t) => {

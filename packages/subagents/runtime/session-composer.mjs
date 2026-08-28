@@ -683,6 +683,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
   };
   const baseBackend = dependencies.backend ?? createPiSubagentsDelegationV1Backend({
     transport,
+    backendVersion: subagentsPackage.manifest.version,
     cwd: getContext()?.cwd ?? process.cwd(),
     timeoutMs: configuration.budget.maxWallSeconds * 1000,
     maximumTurns: configuration.budget.maxTurnsPerChild,
@@ -951,6 +952,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
     enabled: true,
     status: "SESSION_RUNTIME_READY",
     physicalRuntimeOwner: "pi-subagents",
+    physicalRuntimeVersion: subagentsPackage.manifest.version,
     logicalRuntimeOwner: "@only-my-pi/subagents",
     configuration,
     webPolicy,

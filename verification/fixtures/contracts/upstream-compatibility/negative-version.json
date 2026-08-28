@@ -1,0 +1,10 @@
+{
+  "$schema": "../../../../schemas/upstream-compatibility-v1.schema.json",
+  "formatVersion": 2,
+  "id": "only-my-pi-m9-upstream-compatibility",
+  "baseline": { "piVersion": "0.84.1", "subagentsVersion": "0.45.2" },
+  "candidate": { "piVersion": "0.84.3", "subagentsVersion": "0.57.0", "installPolicy": { "ignoreScripts": true, "allowLifecycleScripts": false, "networkDuringProbe": false, "mutateRealPiHome": false }, "packages": [] },
+  "scopes": {},
+  "decision": { "state": "HOLD", "reasonCode": "CANDIDATE_TESTS_PENDING", "defaultPiVersion": "0.84.1", "defaultSubagentsVersion": "0.45.2" },
+  "contractDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}

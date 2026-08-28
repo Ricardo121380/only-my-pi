@@ -1,0 +1,246 @@
+{
+  "formatVersion": 1,
+  "status": "PASS",
+  "boundary": "PI_0_84_3_FULL_EXTENSION_STACK_NO_MODEL",
+  "observedAt": "2026-08-27T16:59:50.031Z",
+  "piVersion": "0.84.3",
+  "subagentsVersion": "0.57.0",
+  "extensionCount": 13,
+  "commands": [
+    {
+      "name": "context-simple",
+      "owner": "agent-extensions"
+    },
+    {
+      "name": "curator",
+      "owner": "web-access"
+    },
+    {
+      "name": "end-review",
+      "owner": "agent-extensions"
+    },
+    {
+      "name": "google-account",
+      "owner": "web-access"
+    },
+    {
+      "name": "llama",
+      "owner": "other"
+    },
+    {
+      "name": "lsp",
+      "owner": "lsp"
+    },
+    {
+      "name": "omp",
+      "owner": "only-my-pi"
+    },
+    {
+      "name": "omp-context",
+      "owner": "only-my-pi"
+    },
+    {
+      "name": "plan",
+      "owner": "plan-mode"
+    },
+    {
+      "name": "prompt-workflow",
+      "owner": "subagents"
+    },
+    {
+      "name": "review",
+      "owner": "agent-extensions"
+    },
+    {
+      "name": "run",
+      "owner": "subagents"
+    },
+    {
+      "name": "search",
+      "owner": "web-access"
+    },
+    {
+      "name": "sessions",
+      "owner": "agent-extensions"
+    },
+    {
+      "name": "subagent-cost",
+      "owner": "subagents"
+    },
+    {
+      "name": "subagents",
+      "owner": "subagents"
+    },
+    {
+      "name": "subagents-check-profile",
+      "owner": "subagents"
+    },
+    {
+      "name": "subagents-detach",
+      "owner": "subagents"
+    },
+    {
+      "name": "subagents-doctor",
+      "owner": "subagents"
+    },
+    {
+      "name": "subagents-fleet",
+      "owner": "subagents"
+    },
+    {
+      "name": "subagents-generate-profiles",
+      "owner": "subagents"
+    },
+    {
+      "name": "subagents-guide",
+      "owner": "subagents"
+    },
+    {
+      "name": "subagents-inspect-rpc",
+      "owner": "subagents"
+    },
+    {
+      "name": "subagents-load-profile",
+      "owner": "subagents"
+    },
+    {
+      "name": "subagents-models",
+      "owner": "subagents"
+    },
+    {
+      "name": "subagents-profiles",
+      "owner": "subagents"
+    },
+    {
+      "name": "subagents-refine",
+      "owner": "subagents"
+    },
+    {
+      "name": "subagents-refresh-provider-models",
+      "owner": "subagents"
+    },
+    {
+      "name": "subagents-stop",
+      "owner": "subagents"
+    },
+    {
+      "name": "subagents-watchdog",
+      "owner": "subagents"
+    },
+    {
+      "name": "usage",
+      "owner": "usage"
+    },
+    {
+      "name": "websearch",
+      "owner": "web-access"
+    }
+  ],
+  "tools": [
+    {
+      "name": "bash",
+      "owner": "other",
+      "active": false
+    },
+    {
+      "name": "edit",
+      "owner": "other",
+      "active": false
+    },
+    {
+      "name": "fetch_content",
+      "owner": "web-access",
+      "active": true
+    },
+    {
+      "name": "find",
+      "owner": "other",
+      "active": false
+    },
+    {
+      "name": "get_search_content",
+      "owner": "web-access",
+      "active": true
+    },
+    {
+      "name": "grep",
+      "owner": "other",
+      "active": false
+    },
+    {
+      "name": "ls",
+      "owner": "other",
+      "active": false
+    },
+    {
+      "name": "lsp_diagnostics",
+      "owner": "lsp",
+      "active": true
+    },
+    {
+      "name": "lsp_fix",
+      "owner": "lsp",
+      "active": true
+    },
+    {
+      "name": "plan_mode_complete",
+      "owner": "plan-mode",
+      "active": true
+    },
+    {
+      "name": "plan_mode_question",
+      "owner": "plan-mode",
+      "active": true
+    },
+    {
+      "name": "powershell",
+      "owner": "other",
+      "active": false
+    },
+    {
+      "name": "read",
+      "owner": "other",
+      "active": false
+    },
+    {
+      "name": "source_check",
+      "owner": "web-access",
+      "active": true
+    },
+    {
+      "name": "subagent",
+      "owner": "subagents",
+      "active": true
+    },
+    {
+      "name": "subagent_supervisor",
+      "owner": "subagents",
+      "active": true
+    },
+    {
+      "name": "subagent_wait",
+      "owner": "subagents",
+      "active": true
+    },
+    {
+      "name": "web_search",
+      "owner": "web-access",
+      "active": true
+    },
+    {
+      "name": "write",
+      "owner": "other",
+      "active": false
+    }
+  ],
+  "promptSubmitted": false,
+  "providerRequest": "NOT_RUN_BY_POLICY",
+  "childDispatch": "NOT_REQUESTED",
+  "realPiHome": "NOT_TOUCHED",
+  "exitCode": 0,
+  "signal": null,
+  "outputTruncated": false,
+  "stdoutDigest": "sha256:2797bd82bf6fdad29ca50259e6bd47b60e0a528b852f335c9a4aa8cfa068335f",
+  "stderrDigest": "sha256:79ade5ab05c461dff9370509673760cdff14187eb32aa4a7de2163ef77e7000b",
+  "evidenceDigest": "sha256:6c93954700aa1aa5cb81b618606b619cc4898aaf9af1f99a1b0f154e3289f5d1"
+}

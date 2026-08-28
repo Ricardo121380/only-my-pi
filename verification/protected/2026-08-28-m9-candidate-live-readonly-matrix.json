@@ -1,0 +1,134 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-upstream-compatibility-protected-evidence",
+  "gateId": "U9",
+  "evidenceId": "m9-candidate-live-readonly-matrix",
+  "sourceCommit": "a5a71b596e8983ffbba8075f02bc2b39ba19a72b",
+  "status": "PASS",
+  "createdAt": "2026-08-27T18:34:32.981Z",
+  "candidate": {
+    "piVersion": "0.84.3",
+    "subagentsVersion": "0.57.0",
+    "webAccessVersion": "0.25.0",
+    "provider": "cc-switch-open-code-go",
+    "model": "deepseek-v4-flash"
+  },
+  "pricing": {
+    "mode": "subscription-fixed-fee",
+    "inputPerMillion": 0,
+    "outputPerMillion": 0,
+    "fixedFeeUsd": 10,
+    "fixedFeeIncludedInRunCost": false,
+    "source": "https://opencode.ai/docs/go/"
+  },
+  "artifacts": {
+    "sourceArtifactSha256": "sha256:746d171f580a0c58d6f58a5a4c600ecd0487d59c1b341909a99a5e7842da7877",
+    "candidateAuditDigest": "sha256:980428dfddfdd51df40ac5b5b5845c8e6eb42ed15ad3085a466b4d8986a8de27",
+    "contractDigest": "sha256:32879d3b5ec460f77a32a66c1faf218c0fda1f4867bbd87660b24b0617a6db87"
+  },
+  "assertions": [
+    {
+      "id": "agent-terminal",
+      "status": "PASS",
+      "digest": "sha256:6e8301bbd3b885a7f365f02cd34f84a86d58d348f7ba9f6808c3750d7aee48c3"
+    },
+    {
+      "id": "artifact-identity",
+      "status": "PASS",
+      "digest": "sha256:3b7a76dea2199ad17fb79436fb05d8bb049d2aec6beea06f193527c493917ac9"
+    },
+    {
+      "id": "batch-swarm-terminal",
+      "status": "PASS",
+      "digest": "sha256:5fb0ce0a8db703789ca5af7d36e9d58a155455e743fbd9f6543845e81e290324"
+    },
+    {
+      "id": "budget-boundary",
+      "status": "PASS",
+      "digest": "sha256:5df564190337b6cd0217c72c5ae86aaf75e75c17c308254610ef3b573df6ab05"
+    },
+    {
+      "id": "cancellation",
+      "status": "PASS",
+      "digest": "sha256:abb764bfe72bb1e03a7312c6add55989f56d04dd57cf486e82841eed134f6e15"
+    },
+    {
+      "id": "candidate-artifact-audit",
+      "status": "PASS",
+      "digest": "sha256:556c9cde6ef992524625977757fdb612ff787a364ea79228efb1f88bfa6225fd"
+    },
+    {
+      "id": "candidate-runtime-identity",
+      "status": "PASS",
+      "digest": "sha256:aa207ad8c4ef9d0e6f1eda84e43ae1a7da2d4256be6ce78359dbad57477a7663"
+    },
+    {
+      "id": "pricing-authority",
+      "status": "PASS",
+      "digest": "sha256:caeaca3ecd2781184402a52c1c6040251351285019f0c84d8252711dc9c9e8ce"
+    },
+    {
+      "id": "public-web",
+      "status": "PASS",
+      "digest": "sha256:e3e71cebab7fa901f0f76abdf82913ba2c5c6c5ae93fa7bf066f733a0d2fc496"
+    },
+    {
+      "id": "resume-across-session",
+      "status": "PASS",
+      "digest": "sha256:6e43ddf1d871cd0c42027d437f131788784d23d75792bc51ee46038641e5437b"
+    },
+    {
+      "id": "resume-prepared",
+      "status": "PASS",
+      "digest": "sha256:768285a77f0cd919127f51db725591b8d8592a66fa0920e86a0325545f58ceb5"
+    },
+    {
+      "id": "swarm-goal-replan",
+      "status": "PASS",
+      "digest": "sha256:affdd524bb3df652eed88fbc342e31f57d1facf0e0e994f5c12fb446d8595478"
+    },
+    {
+      "id": "ultra-agent-route",
+      "status": "PASS",
+      "digest": "sha256:1a08ce7812d6c9b2d926a8dc409afe746fa29164fe29f41189937fd793dd6bbd"
+    },
+    {
+      "id": "ultra-workflow-route",
+      "status": "PASS",
+      "digest": "sha256:ba8d164e64629477c384b93aba55803faf1c9dd232af5352e06ac951a593acea"
+    },
+    {
+      "id": "usage-metering",
+      "status": "PASS",
+      "digest": "sha256:4f363aee75513e0e9f940dd4d2a101b804e42fcd64fd59ad73e4d856d1435465"
+    },
+    {
+      "id": "workflow-artifact-flow",
+      "status": "PASS",
+      "digest": "sha256:f28f2f0a4bca1eee63025e933f7a764af9b7665f2a2fb5da32de4c2fd4dd4857"
+    },
+    {
+      "id": "writer-denial",
+      "status": "PASS",
+      "digest": "sha256:576920187547e6420eceab68846c451e6d374cec6ccdd395cb2a1b21bae3b063"
+    }
+  ],
+  "usage": {
+    "tokens": 24960,
+    "costUsd": 0,
+    "toolCalls": 3,
+    "meteredTerminals": 2
+  },
+  "privacy": {
+    "rawOutputStored": false,
+    "hostPathsStored": false,
+    "secretsStored": false
+  },
+  "authorization": {
+    "providerRequests": "AUTHORIZED",
+    "realPiHome": "AUTH_AND_PRIVATE_RUN_STATE_ONLY",
+    "credentials": "PI_RUNTIME_ONLY",
+    "writer": "DENIED"
+  },
+  "evidenceDigest": "sha256:ec6b8b70a397471a79279aab5634bd1ceb213b157cf1e368928afa12ca07e5a4"
+}

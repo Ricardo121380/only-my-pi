@@ -152,6 +152,28 @@ test("model validation resolves ordered candidates, auth and explicit pricing", 
   assert.equal((await validateResolvedModels(configuration)).code, "MODEL_REGISTRY_UNAVAILABLE");
 });
 
+test("implicit Pi 0/0 pricing is unknown until an explicit override names the billing policy", async (t) => {
+  const { configRoot } = await roots(t);
+  const preferences = defaultPreferences();
+  const configuration = await resolveDailyConfiguration({ rootDir, configRoot });
+  const registry = {
+    async find() { return null; },
+    async hasConfiguredAuth() { return true; },
+  };
+  const currentModel = { provider: "subscription", id: "model", cost: { input: 0, output: 0 } };
+  const blocked = await validateResolvedModels(configuration, { modelRegistry: registry, currentModel });
+  assert.equal(blocked.ok, false);
+  assert.ok(blocked.roles.every((entry) => entry.status === "PRICING_UNAVAILABLE"));
+
+  const explicit = {
+    ...preferences,
+    pricingOverrides: { "subscription/model": { inputPerMillion: 0, outputPerMillion: 0 } },
+  };
+  await saveGlobalPreferences({ configRoot, preferences: explicit });
+  const allowed = await validateResolvedModels(await resolveDailyConfiguration({ rootDir, configRoot }), { modelRegistry: registry, currentModel });
+  assert.equal(allowed.ok, true);
+});
+
 test("global preferences are mode-protected, atomically replaceable and explicitly reset", async (t) => {
   const { configRoot } = await roots(t);
   const saved = await saveGlobalPreferences({ configRoot, preferences: defaultPreferences() });
