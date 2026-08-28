@@ -140,10 +140,12 @@ export function createProductionControlService({
     smokeRunner,
     doctorService: doctor,
   });
+  const candidateTarget = wired.createCandidateTargetResolver({ rootDir: resolvedRoot });
   const bootstrap = new wired.BootstrapService({
     rootDir: resolvedRoot,
     doctorService: doctor,
     transactionEngine,
+    alternativeTargetResolver: (options) => candidateTarget.alignInstalled(options),
   });
   const workflows = wired.createWorkflowControlService({ rootDir: resolvedRoot });
   const swarms = createSwarmControlService({ rootDir: resolvedRoot });
@@ -161,7 +163,6 @@ export function createProductionControlService({
     piPackageRoot: "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent",
     piBinPath: "/opt/homebrew/bin/pi",
   });
-  const candidateTarget = wired.createCandidateTargetResolver({ rootDir: resolvedRoot });
   const migrationPlatform = wired.createFilesystemMigrationPlatform({
     rootDir: resolvedRoot,
     configRoot: resolvedConfigRoot,

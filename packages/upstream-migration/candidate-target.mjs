@@ -6,6 +6,7 @@ import {
   generationKeyFromDigest,
   planOwnedGraph,
 } from "../bootstrap/graph-plan.mjs";
+import { bindExistingPackages } from "../bootstrap/package-bindings.mjs";
 import { M10_EXACT_PACKAGE_TARGET } from "./contract.mjs";
 
 async function readJson(root, relative) {
@@ -113,6 +114,16 @@ export function createCandidateTargetResolver({ rootDir } = {}) {
         throw Object.assign(new Error("migration manifest candidate graph differs from the artifact-contained target"), { code: "CANDIDATE_GRAPH_DIGEST_DRIFT" });
       }
       return Object.freeze({ graphDigest: plan.graphDigest, generationKey: plan.generationKey, profileId: plan.profileId, externalBindings: plan.packageBindings.length });
+    },
+    async alignInstalled({ configRoot, settings, metadata, profileId = "daily" } = {}) {
+      if (profileId !== "daily") throw new TypeError("candidate alignment is available only for the daily profile");
+      const plan = await buildCandidateGenerationPlan({ rootDir, profileId });
+      return bindExistingPackages({
+        configRoot,
+        settings,
+        plan,
+        priorBindings: metadata?.packageBindings,
+      });
     },
   });
 }

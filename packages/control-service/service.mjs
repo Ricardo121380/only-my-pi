@@ -74,7 +74,7 @@ export class ControlService {
   }
 
   async dispatch(request) {
-    if (request.mutation === true && request.command !== "upstream" && this.upstreamMigration?.recoverPending) {
+    if (request.mutation === true && this.upstreamMigration?.recoverPending) {
       await this.upstreamMigration.recoverPending();
     }
     switch (request.command) {

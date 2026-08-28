@@ -156,7 +156,7 @@ function assertPlan(plan, operation, configRoot) {
 }
 
 export class BootstrapService {
-  constructor({ rootDir, profileService, doctorService, transactionEngine } = {}) {
+  constructor({ rootDir, profileService, doctorService, transactionEngine, alternativeTargetResolver } = {}) {
     if (typeof rootDir !== "string" || !path.isAbsolute(rootDir)) {
       throw new TypeError("BootstrapService requires an absolute rootDir");
     }
@@ -164,6 +164,10 @@ export class BootstrapService {
     this.profiles = profileService ?? createProfileService({ rootDir: this.rootDir });
     this.doctors = doctorService ?? createDoctorService({ rootDir: this.rootDir });
     this.transaction = transactionEngine ?? null;
+    if (alternativeTargetResolver !== undefined && typeof alternativeTargetResolver !== "function") {
+      throw new TypeError("alternativeTargetResolver must be a function");
+    }
+    this.alternativeTargetResolver = alternativeTargetResolver ?? null;
   }
 
   async planBootstrap(options = {}) {
@@ -439,6 +443,24 @@ export class BootstrapService {
           targetGenerationId = graphPlan.graphDigest;
         } catch (error) {
           targetErrorCode = error?.code ?? "TARGET_GRAPH_UNAVAILABLE";
+        }
+        if (targetGenerationId !== metadata.generationId && this.alternativeTargetResolver !== null) {
+          try {
+            const alternative = await this.alternativeTargetResolver({
+              configRoot,
+              settings: settings.settings,
+              metadata,
+              profileId: status.profileId,
+            });
+            if (alternative?.graphDigest === metadata.generationId) {
+              targetGenerationId = alternative.graphDigest;
+              targetErrorCode = null;
+            }
+          } catch {
+            // A candidate target is advisory during HOLD. It can establish a
+            // MATCH only when its exact graph equals the verified installed
+            // generation; otherwise the Stable target result remains intact.
+          }
         }
         generation = {
           status: "VERIFIED",

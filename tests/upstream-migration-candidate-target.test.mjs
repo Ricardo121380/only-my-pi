@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   buildCandidateBoundGraphPlan,
   buildCandidateGenerationPlan,
+  createCandidateTargetResolver,
   M10_EXACT_PACKAGE_TARGET,
 } from "../packages/upstream-migration/index.mjs";
 
@@ -41,7 +42,7 @@ test("candidate target rejects unsupported profile, package evidence drift, and 
   const drifted = manifestTarget();
   drifted.externalPackages.find((entry) => entry.id === "subagents").toVersion = "0.57.1";
   await assert.rejects(buildCandidateBoundGraphPlan({ rootDir, manifest: drifted }), { code: "CANDIDATE_BINDING_DRIFT" });
-  const { createCandidateTargetResolver } = await import("../packages/upstream-migration/index.mjs");
   const resolver = createCandidateTargetResolver({ rootDir });
   await assert.rejects(resolver.inspect({ manifest: { ...manifestTarget(), candidateGraphDigest: digest("f") } }), { code: "CANDIDATE_GRAPH_DIGEST_DRIFT" });
+  await assert.rejects(resolver.alignInstalled({ profileId: "coding" }), TypeError);
 });

@@ -16,7 +16,7 @@ import {
   writeLastKnownGood,
 } from "../packages/config-runtime/index.mjs";
 
-async function fixture(t) {
+async function fixture(t, { alternativeTargetResolver } = {}) {
   const parent = await fs.mkdtemp(path.join(os.tmpdir(), "omp-historical-doctor-"));
   t.after(() => fs.rm(parent, { recursive: true, force: true }));
   const rootDir = path.join(parent, "artifact");
@@ -86,6 +86,7 @@ async function fixture(t) {
     rootDir,
     profileService: { resolve() {}, list() { return []; } },
     doctorService: { static() { return { ok: true, errors: 0, warnings: 0 }; } },
+    alternativeTargetResolver,
   });
   return { rootDir, configRoot, generation, service };
 }
@@ -106,6 +107,21 @@ test("doctor verifies a historical generation before reporting target alignment"
   });
   assert.match(result.generation.targetGenerationId, /^sha256:[a-f0-9]{64}$/u);
   assert.notEqual(result.generation.targetGenerationId, result.generation.installedGenerationId);
+});
+
+test("doctor accepts an exact governed alternative target without hiding other drift", async (t) => {
+  let installedGenerationId;
+  const { rootDir, configRoot, generation, service } = await fixture(t, {
+    alternativeTargetResolver: async () => ({ graphDigest: installedGenerationId }),
+  });
+  installedGenerationId = generation.manifest.graphDigest;
+  await fs.writeFile(path.join(rootDir, "prompts", "fixture.md"), "new stable target\n", "utf8");
+  const result = await service.doctor({ configRoot });
+  assert.equal(result.status, "PASS");
+  assert.equal(result.generation.alignment, "MATCH");
+  assert.equal(result.generation.targetGenerationId, installedGenerationId);
+
+  assert.throws(() => createBootstrapService({ rootDir, alternativeTargetResolver: true }), TypeError);
 });
 
 test("doctor fails when an installed historical resource drifts", async (t) => {
