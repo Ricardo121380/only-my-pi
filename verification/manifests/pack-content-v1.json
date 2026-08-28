@@ -66,6 +66,7 @@
     "packages/web-policy/",
     "packages/upstream-compatibility/",
     "packages/upstream-migration/",
+    "packages/release-stack/",
     "packages/mode-registry/",
     "packages/agent-registry/",
     "packages/workflow-core/",

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/release-index-v1.schema.json",
+  "title": "only-my-pi release index v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "kind", "version", "channel", "tag", "sourceCommit", "repository", "platform", "stackManifestSha256", "bootstrap", "assets", "protectedEvidenceDigest", "supportedStack", "status"],
+  "properties": {
+    "$schema": { "const": "../../schemas/release-index-v1.schema.json" },
+    "formatVersion": { "const": 1 },
+    "kind": { "const": "only-my-pi-release-index" },
+    "version": { "$ref": "#/$defs/previewVersion" },
+    "channel": { "const": "preview" },
+    "tag": { "type": "string", "pattern": "^v0\\.2\\.0-preview\\.[1-9][0-9]*$" },
+    "sourceCommit": { "$ref": "#/$defs/commit" },
+    "repository": { "const": "Ricardo121380/only-my-pi" },
+    "platform": { "$ref": "#/$defs/platform" },
+    "stackManifestSha256": { "$ref": "#/$defs/sha256" },
+    "bootstrap": {
+      "type": "object", "additionalProperties": false, "required": ["asset", "sha256"],
+      "properties": { "asset": { "const": "install.sh" }, "sha256": { "$ref": "#/$defs/sha256" } }
+    },
+    "assets": {
+      "type": "object", "additionalProperties": false,
+      "required": ["full", "thin", "sbom", "notices", "checksums", "receipt"],
+      "properties": {
+        "full": { "$ref": "#/$defs/asset" },
+        "thin": { "$ref": "#/$defs/asset" },
+        "sbom": { "$ref": "#/$defs/asset" },
+        "notices": { "$ref": "#/$defs/asset" },
+        "checksums": { "$ref": "#/$defs/asset" },
+        "receipt": { "$ref": "#/$defs/asset" }
+      }
+    },
+    "protectedEvidenceDigest": { "$ref": "#/$defs/sha256" },
+    "supportedStack": {
+      "type": "object", "additionalProperties": false,
+      "required": ["nodeVersion", "piVersion", "packageTupleDigest"],
+      "properties": {
+        "nodeVersion": { "const": "24.19.0" },
+        "piVersion": { "const": "0.84.3" },
+        "packageTupleDigest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "status": { "enum": ["RC", "PUBLISHED"] }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "previewVersion": { "type": "string", "pattern": "^0\\.2\\.0-preview\\.[1-9][0-9]*$" },
+    "platform": {
+      "type": "object", "additionalProperties": false, "required": ["os", "arch", "minimumMacOS"],
+      "properties": { "os": { "const": "darwin" }, "arch": { "const": "arm64" }, "minimumMacOS": { "const": "14.0" } }
+    },
+    "asset": {
+      "type": "object", "additionalProperties": false, "required": ["name", "bytes", "sha256"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+        "bytes": { "type": "integer", "minimum": 1, "maximum": 2147483648 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

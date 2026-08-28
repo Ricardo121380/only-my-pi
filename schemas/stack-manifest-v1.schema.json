@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/stack-manifest-v1.schema.json",
+  "title": "only-my-pi canonical stack manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "kind", "stackId", "sourceCommit", "onlyMyPi", "platform", "runtime", "externalPackages", "transitiveLedgerSha256", "generationTargetGraphDigest", "defaultPreset", "overlays", "capabilityCeiling", "policy", "removalPolicy"],
+  "properties": {
+    "$schema": { "const": "../../schemas/stack-manifest-v1.schema.json" },
+    "formatVersion": { "const": 1 },
+    "kind": { "const": "only-my-pi-stack-manifest" },
+    "stackId": { "$ref": "#/$defs/sha256" },
+    "sourceCommit": { "$ref": "#/$defs/commit" },
+    "onlyMyPi": {
+      "type": "object", "additionalProperties": false, "required": ["version", "artifactSha256"],
+      "properties": { "version": { "const": "0.2.0-preview.1" }, "artifactSha256": { "$ref": "#/$defs/sha256" } }
+    },
+    "platform": {
+      "type": "object", "additionalProperties": false, "required": ["os", "arch", "minimumMacOS"],
+      "properties": { "os": { "const": "darwin" }, "arch": { "const": "arm64" }, "minimumMacOS": { "const": "14.0" } }
+    },
+    "runtime": {
+      "type": "object", "additionalProperties": false, "required": ["node", "pi"],
+      "properties": {
+        "node": {
+          "type": "object", "additionalProperties": false, "required": ["version", "archiveName", "archiveSha256", "license", "treeDigest"],
+          "properties": {
+            "version": { "const": "24.19.0" },
+            "archiveName": { "const": "node-v24.19.0-darwin-arm64.tar.gz" },
+            "archiveSha256": { "$ref": "#/$defs/sha256" },
+            "license": { "const": "MIT" },
+            "treeDigest": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "pi": {
+          "type": "object", "additionalProperties": false, "required": ["name", "version", "integrity", "treeDigest", "entry"],
+          "properties": {
+            "name": { "const": "@earendil-works/pi-coding-agent" },
+            "version": { "const": "0.84.3" },
+            "integrity": { "$ref": "#/$defs/sri" },
+            "treeDigest": { "$ref": "#/$defs/sha256" },
+            "entry": { "const": "dist/bundle/cli.js" }
+          }
+        }
+      }
+    },
+    "externalPackages": { "type": "array", "minItems": 9, "maxItems": 9, "items": { "$ref": "#/$defs/externalPackage" } },
+    "transitiveLedgerSha256": { "$ref": "#/$defs/sha256" },
+    "generationTargetGraphDigest": { "$ref": "#/$defs/sha256" },
+    "defaultPreset": { "const": "daily" },
+    "overlays": {
+      "type": "object", "additionalProperties": false, "required": ["enabled", "disabled"],
+      "properties": {
+        "enabled": { "const": ["web", "orchestration-readonly", "ui-terminal"] },
+        "disabled": { "const": ["memory", "sync", "mcp", "experimental"] }
+      }
+    },
+    "capabilityCeiling": {
+      "type": "object", "additionalProperties": false, "required": ["mode", "maxDepth", "writer", "bash", "mcp"],
+      "properties": {
+        "mode": { "const": "READ_ONLY" }, "maxDepth": { "const": 1 }, "writer": { "const": false }, "bash": { "const": false }, "mcp": { "const": false }
+      }
+    },
+    "policy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["lifecycleScriptsDisabled", "networkDuringApply", "externalOwner", "webConfirmation", "browserCookies"],
+      "properties": {
+        "lifecycleScriptsDisabled": { "const": true }, "networkDuringApply": { "const": false }, "externalOwner": { "const": "user" },
+        "webConfirmation": { "const": "PER_RUN" }, "browserCookies": { "const": false }
+      }
+    },
+    "removalPolicy": {
+      "type": "object", "additionalProperties": false, "required": ["preservePreexisting", "removeOnlyVerifiedProvisioned", "preserveUserData"],
+      "properties": {
+        "preservePreexisting": { "const": true }, "removeOnlyVerifiedProvisioned": { "const": true }, "preserveUserData": { "const": true }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "sri": { "type": "string", "pattern": "^sha512-[A-Za-z0-9+/]+={0,2}$" },
+    "externalPackage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "version", "integrity", "license", "treeDigest", "binding", "owner", "lifecycleScripts"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$" },
+        "name": { "type": "string", "pattern": "^(?:@[a-z0-9._-]+/[a-z0-9._-]+|[a-z0-9._-]+)$" },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "integrity": { "$ref": "#/$defs/sri" },
+        "license": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9.+-]{0,63}$" },
+        "treeDigest": { "$ref": "#/$defs/sha256" },
+        "binding": { "const": "external" }, "owner": { "const": "user" }, "lifecycleScripts": { "const": [] }
+      }
+    }
+  }
+}

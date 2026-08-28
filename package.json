@@ -1,6 +1,6 @@
 {
   "name": "only-my-pi",
-  "version": "0.1.0",
+  "version": "0.2.0-preview.1",
   "type": "module",
   "private": true,
   "description": "Governed, reproducible Pi Harness distribution with Profiles, Modes, Workflows, and AgentSwarm",
@@ -95,6 +95,7 @@
     "packages/subagents/",
     "packages/upstream-compatibility/",
     "packages/upstream-migration/",
+    "packages/release-stack/",
     "packages/adapters/"
   ],
   "scripts": {

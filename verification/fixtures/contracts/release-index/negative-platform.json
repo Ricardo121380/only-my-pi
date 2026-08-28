@@ -1,0 +1,59 @@
+{
+  "$schema": "../../schemas/release-index-v1.schema.json",
+  "formatVersion": 1,
+  "kind": "only-my-pi-release-index",
+  "version": "0.2.0-preview.1",
+  "channel": "preview",
+  "tag": "v0.2.0-preview.1",
+  "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "repository": "Ricardo121380/only-my-pi",
+  "platform": {
+    "os": "darwin",
+    "arch": "x64",
+    "minimumMacOS": "14.0"
+  },
+  "stackManifestSha256": "sha256:8d2e1861e7bd9546441b6b345eaca71acaeffd4663cf56c5d404661a564a75f0",
+  "bootstrap": {
+    "asset": "install.sh",
+    "sha256": "sha256:043df5bdbf6639d7a77e1d44c5226fd7371e5259a1e4df3a0dd5d64c30dca44f"
+  },
+  "assets": {
+    "full": {
+      "name": "only-my-pi-0.2.0-preview.1-darwin-arm64-full.tar.gz",
+      "bytes": 1,
+      "sha256": "sha256:514bd916fe582ed592f97eb4c825d79fd1074f997bb7ffd52a75132e55140f61"
+    },
+    "thin": {
+      "name": "only-my-pi-0.2.0-preview.1-darwin-arm64-thin.tar.gz",
+      "bytes": 2,
+      "sha256": "sha256:e521adde0b75f66c7737e451b1098e87bb035eaebadaa6612374a1692bd8b2c0"
+    },
+    "sbom": {
+      "name": "only-my-pi-0.2.0-preview.1.spdx.json",
+      "bytes": 3,
+      "sha256": "sha256:15f9b289fa56c6028a92dc6c49ec81861f0d66ff583bc71b996e86ef0ae9ac29"
+    },
+    "notices": {
+      "name": "THIRD_PARTY_NOTICES.txt",
+      "bytes": 4,
+      "sha256": "sha256:f1582543f015f61f079b8bd706d3a765a40347f39d9722c91a9559df87dbae97"
+    },
+    "checksums": {
+      "name": "SHA256SUMS",
+      "bytes": 5,
+      "sha256": "sha256:f30d997ef5736785bbbed1c3d0b708cd317d48f501d5c66f496f12d957cdca4a"
+    },
+    "receipt": {
+      "name": "only-my-pi-0.2.0-preview.1-protected-receipt.json",
+      "bytes": 6,
+      "sha256": "sha256:5f15ff51c545c5563ea7f2dfde797e36018c66203798bb1d75097ad0fd983f5c"
+    }
+  },
+  "protectedEvidenceDigest": "sha256:1052871ca23b1c3b6e02930b25200f7177c72a6eed3918ef295547524aac5858",
+  "supportedStack": {
+    "nodeVersion": "24.19.0",
+    "piVersion": "0.84.3",
+    "packageTupleDigest": "sha256:27dcb60cf0c562d3780cb6cf7b5abc519bcd35d248bab4716dada23c88552eb7"
+  },
+  "status": "RC"
+}
