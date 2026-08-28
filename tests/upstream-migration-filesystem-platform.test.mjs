@@ -233,6 +233,7 @@ async function fixture(t) {
     doctor: { static: () => ({ ok: true, errors: 0 }) },
     smokeRunner: async () => ({ ok: true, status: "NO_MODEL_STARTUP_PASS" }),
     bootstrapTransaction: { reconcileLastKnownGood: async () => ({ status: "REBUILT", generationId: candidatePlan.graphDigest }) },
+    piVersionProbe: async () => "0.84.3",
   });
   const plan = {
     formatVersion: 1,
@@ -275,6 +276,256 @@ test("filesystem platform performs shadow apply and exact old-stack rollback", a
   assert.equal((await readJson(path.join(value.piPackageRoot, "package.json"))).version, "0.84.3");
   assert.equal((await loadSettings(value.configRoot)).settings.onlyMyPi.generationId, value.candidatePlan.graphDigest);
   assert.equal(await fs.realpath(value.cliBin).then(() => true, () => false), true);
+});
+
+test("filesystem preflight rejects insufficient disk before creating any staging", async (t) => {
+  const value = await fixture(t);
+  value.platform.spaceInspector = async () => 1;
+  const engine = createCrossRootTransactionEngine({
+    configRoot: value.configRoot,
+    platform: value.platform,
+    transactionIdFactory: () => "33333333-3333-4333-8333-333333333333",
+  });
+  await assert.rejects(engine.apply({ plan: value.plan, inspected: value.inspected, bundle: value.bundlePath }), { code: "MIGRATION_INSUFFICIENT_DISK" });
+  assert.equal((await readJson(path.join(value.piPackageRoot, "package.json"))).version, "0.84.1");
+  assert.deepEqual((await loadSettings(value.configRoot)).settings, value.settings);
+});
+
+test("crash before settings publication preserves a concurrent unrelated setting during recovery", async (t) => {
+  const value = await fixture(t);
+  const transactionId = "44444444-4444-4444-8444-444444444444";
+  const crash = Object.assign(new Error("fault after external publication"), { code: "SIMULATED_CRASH", simulateCrash: true });
+  const first = createCrossRootTransactionEngine({
+    configRoot: value.configRoot,
+    platform: value.platform,
+    transactionIdFactory: () => transactionId,
+    onBoundary: async (phase) => { if (phase === "EXTERNAL_NEW_RENAMED") throw crash; },
+  });
+  await assert.rejects(first.apply({ plan: value.plan, inspected: value.inspected, bundle: value.bundlePath }), { code: "SIMULATED_CRASH" });
+  const current = await loadSettings(value.configRoot);
+  await fs.writeFile(path.join(value.configRoot, "settings.json"), `${JSON.stringify({ ...current.settings, unrelatedUserSetting: "preserve-me" }, null, 2)}\n`);
+  const recovered = await createCrossRootTransactionEngine({ configRoot: value.configRoot, platform: value.platform }).recoverPending();
+  assert.equal(recovered[0].status, "ROLLED_BACK");
+  const restored = (await loadSettings(value.configRoot)).settings;
+  assert.equal(restored.unrelatedUserSetting, "preserve-me");
+  assert.equal((await readJson(path.join(value.piPackageRoot, "package.json"))).version, "0.84.1");
+});
+
+test("filesystem preflight fails closed on reviewed identity and path drift", async (t) => {
+  const cases = [
+    {
+      name: "reviewed plan",
+      code: "MIGRATION_PLAN_DRIFT",
+      mutate: async (value) => {
+        value.plan.preflight = { ...value.plan.preflight, settings: { ...value.plan.preflight.settings, digest: sha("changed settings") } };
+      },
+    },
+    {
+      name: "source artifact",
+      code: "MIGRATION_SOURCE_IDENTITY_DRIFT",
+      mutate: async (value) => {
+        await fs.writeFile(path.join(value.platform.rootDir, "artifact-identity.json"), JSON.stringify({
+          formatVersion: 1,
+          kind: "only-my-pi-source-identity",
+          sourceCommit: "b".repeat(40),
+        }));
+      },
+    },
+    {
+      name: "writable ancestor",
+      code: "MIGRATION_PATH_UNSAFE",
+      mutate: async (value) => {
+        const localRoot = path.join(value.root, "local");
+        await fs.rm(localRoot, { recursive: true, force: true });
+        await fs.symlink(value.root, localRoot);
+      },
+    },
+  ];
+  for (const [index, scenario] of cases.entries()) {
+    await t.test(scenario.name, async (subtest) => {
+      const value = await fixture(subtest);
+      await scenario.mutate(value);
+      const id = `5000000${index}-5555-4555-8555-55555555555${index}`;
+      const engine = createCrossRootTransactionEngine({ configRoot: value.configRoot, platform: value.platform, transactionIdFactory: () => id });
+      await assert.rejects(engine.apply({ plan: value.plan, inspected: value.inspected, bundle: value.bundlePath }), { code: scenario.code });
+      assert.equal((await readJson(path.join(value.piPackageRoot, "package.json"))).version, "0.84.1");
+      assert.deepEqual((await loadSettings(value.configRoot)).settings, value.settings);
+    });
+  }
+});
+
+test("filesystem staging rejects unsafe archives and sibling collisions", async (t) => {
+  await t.test("unsafe archive path", async (subtest) => {
+    const value = await fixture(subtest);
+    value.platform.runCommand = async () => ({ exitCode: 0, signal: null, stdout: "../escape\n", stderr: "", stdoutTruncated: false, stderrTruncated: false });
+    const engine = createCrossRootTransactionEngine({
+      configRoot: value.configRoot,
+      platform: value.platform,
+      transactionIdFactory: () => "60000000-6666-4666-8666-666666666666",
+    });
+    await assert.rejects(engine.apply({ plan: value.plan, inspected: value.inspected, bundle: value.bundlePath }), { code: "MIGRATION_ARCHIVE_PATH_UNSAFE" });
+  });
+
+  await t.test("tar listing failure", async (subtest) => {
+    const value = await fixture(subtest);
+    value.platform.runCommand = async () => ({ exitCode: 2, signal: null, stdout: "", stderr: "bad archive", stdoutTruncated: false, stderrTruncated: false });
+    const engine = createCrossRootTransactionEngine({
+      configRoot: value.configRoot,
+      platform: value.platform,
+      transactionIdFactory: () => "61000000-6666-4666-8666-666666666666",
+    });
+    await assert.rejects(engine.apply({ plan: value.plan, inspected: value.inspected, bundle: value.bundlePath }), { code: "MIGRATION_ARCHIVE_LIST_FAILED" });
+  });
+
+  await t.test("sibling collision", async (subtest) => {
+    const value = await fixture(subtest);
+    const id = "62000000-6666-4666-8666-666666666666";
+    await fs.mkdir(path.join(path.dirname(value.piPackageRoot), `.only-my-pi-stage-${id}`));
+    const engine = createCrossRootTransactionEngine({ configRoot: value.configRoot, platform: value.platform, transactionIdFactory: () => id });
+    await assert.rejects(engine.apply({ plan: value.plan, inspected: value.inspected, bundle: value.bundlePath }), { code: "MIGRATION_STAGING_COLLISION" });
+  });
+
+  const archiveCases = [
+    ["empty archive", "", "MIGRATION_ARCHIVE_INVALID"],
+    ["absolute archive path", "/package/file\n", "MIGRATION_ARCHIVE_PATH_UNSAFE"],
+    ["non-normal archive path", "package/../escape\n", "MIGRATION_ARCHIVE_PATH_UNSAFE"],
+    ["unexpected top-level directory", "other/file\n", "MIGRATION_ARCHIVE_LAYOUT_INVALID"],
+  ];
+  for (const [index, [name, listing, code]] of archiveCases.entries()) {
+    await t.test(name, async (subtest) => {
+      const value = await fixture(subtest);
+      value.platform.runCommand = async () => ({ exitCode: 0, signal: null, stdout: listing, stderr: "", stdoutTruncated: false, stderrTruncated: false });
+      const engine = createCrossRootTransactionEngine({
+        configRoot: value.configRoot,
+        platform: value.platform,
+        transactionIdFactory: () => `6300000${index}-6666-4666-8666-66666666666${index}`,
+      });
+      await assert.rejects(engine.apply({ plan: value.plan, inspected: value.inspected, bundle: value.bundlePath }), { code });
+    });
+  }
+
+  await t.test("archive link entry", async (subtest) => {
+    const value = await fixture(subtest);
+    let call = 0;
+    value.platform.runCommand = async () => ({
+      exitCode: 0,
+      signal: null,
+      stdout: call++ === 0 ? "package/file\n" : "lrwxr-xr-x  0 user group 0 Jan 1 00:00 package/file -> /tmp/escape\n",
+      stderr: "",
+      stdoutTruncated: false,
+      stderrTruncated: false,
+    });
+    const engine = createCrossRootTransactionEngine({
+      configRoot: value.configRoot,
+      platform: value.platform,
+      transactionIdFactory: () => "64000000-6666-4666-8666-666666666666",
+    });
+    await assert.rejects(engine.apply({ plan: value.plan, inspected: value.inspected, bundle: value.bundlePath }), { code: "MIGRATION_ARCHIVE_LINK_UNSAFE" });
+  });
+});
+
+test("filesystem switch failures restore the exact old stack", async (t) => {
+  const cases = [
+    {
+      name: "Pi version probe",
+      code: "MIGRATION_PI_VERSION_DRIFT",
+      mutate: async (value) => { value.platform.piVersionProbe = async () => "0.84.2"; },
+    },
+    {
+      name: "static doctor",
+      code: "STATIC_DOCTOR_FAILED",
+      mutate: async (value) => { value.platform.doctor = { static: async () => ({ ok: false, errors: 1 }) }; },
+    },
+    {
+      name: "no-model smoke",
+      code: "NO_MODEL_SMOKE_FAILED",
+      mutate: async (value) => { value.platform.smokeRunner = async () => ({ ok: false, status: "FAILED" }); },
+    },
+    {
+      name: "LKG recording",
+      code: "MIGRATION_LKG_RECORD_FAILED",
+      mutate: async (value) => { value.platform.bootstrapTransaction = { reconcileLastKnownGood: async () => ({ status: "PRESERVED", generationId: "wrong" }) }; },
+    },
+    {
+      name: "CLI identity",
+      code: "MIGRATION_CLI_IDENTITY_DRIFT",
+      mutate: async (value) => { value.platform.userCli.inspectActive = async () => ({ manifest: { installedGenerationId: "wrong", artifactSha256: "wrong" } }); },
+    },
+  ];
+  for (const [index, scenario] of cases.entries()) {
+    await t.test(scenario.name, async (subtest) => {
+      const value = await fixture(subtest);
+      await scenario.mutate(value);
+      const id = `7000000${index}-7777-4777-8777-77777777777${index}`;
+      const engine = createCrossRootTransactionEngine({ configRoot: value.configRoot, platform: value.platform, transactionIdFactory: () => id });
+      await assert.rejects(engine.apply({ plan: value.plan, inspected: value.inspected, bundle: value.bundlePath }), { code: scenario.code });
+      assert.equal((await readJson(path.join(value.piPackageRoot, "package.json"))).version, "0.84.1");
+      assert.deepEqual((await loadSettings(value.configRoot)).settings, value.settings);
+      assert.equal(await fs.lstat(value.cliBin).then(() => true, () => false), false);
+    });
+  }
+});
+
+test("filesystem recovery handles pre-publication and post-publication crash boundaries", async (t) => {
+  await t.test("Pi old root renamed but candidate not published", async (subtest) => {
+    const value = await fixture(subtest);
+    const id = "80000000-8888-4888-8888-888888888888";
+    const crash = Object.assign(new Error("crash after old Pi rename"), { code: "SIMULATED_CRASH", simulateCrash: true });
+    const engine = createCrossRootTransactionEngine({
+      configRoot: value.configRoot,
+      platform: value.platform,
+      transactionIdFactory: () => id,
+      onBoundary: async (phase) => { if (phase === "PI_OLD_RENAMED") throw crash; },
+    });
+    await assert.rejects(engine.apply({ plan: value.plan, inspected: value.inspected, bundle: value.bundlePath }), { code: "SIMULATED_CRASH" });
+    const recovered = await createCrossRootTransactionEngine({ configRoot: value.configRoot, platform: value.platform }).recoverPending();
+    assert.equal(recovered[0].status, "ROLLED_BACK");
+    assert.equal((await readJson(path.join(value.piPackageRoot, "package.json"))).version, "0.84.1");
+  });
+
+  await t.test("unrelated settings mutation after settings publication", async (subtest) => {
+    const value = await fixture(subtest);
+    const id = "81000000-8888-4888-8888-888888888888";
+    const crash = Object.assign(new Error("crash after settings publication"), { code: "SIMULATED_CRASH", simulateCrash: true });
+    const engine = createCrossRootTransactionEngine({
+      configRoot: value.configRoot,
+      platform: value.platform,
+      transactionIdFactory: () => id,
+      onBoundary: async (phase) => {
+        if (phase !== "SETTINGS_PUBLISHED") return;
+        const current = await loadSettings(value.configRoot);
+        await fs.writeFile(path.join(value.configRoot, "settings.json"), `${JSON.stringify({ ...current.settings, unrelatedUserSetting: "preserve-after-publish" }, null, 2)}\n`);
+        throw crash;
+      },
+    });
+    await assert.rejects(engine.apply({ plan: value.plan, inspected: value.inspected, bundle: value.bundlePath }), { code: "SIMULATED_CRASH" });
+    const recovered = await createCrossRootTransactionEngine({ configRoot: value.configRoot, platform: value.platform }).recoverPending();
+    assert.equal(recovered[0].status, "ROLLED_BACK");
+    const restored = (await loadSettings(value.configRoot)).settings;
+    assert.equal(restored.unrelatedUserSetting, "preserve-after-publish");
+    assert.deepEqual({ ...restored, unrelatedUserSetting: undefined }, { ...value.settings, unrelatedUserSetting: undefined });
+  });
+
+  await t.test("targeted package mutation requires manual reconciliation", async (subtest) => {
+    const value = await fixture(subtest);
+    const id = "82000000-8888-4888-8888-888888888888";
+    const crash = Object.assign(new Error("crash after targeted mutation"), { code: "SIMULATED_CRASH", simulateCrash: true });
+    const engine = createCrossRootTransactionEngine({
+      configRoot: value.configRoot,
+      platform: value.platform,
+      transactionIdFactory: () => id,
+      onBoundary: async (phase) => {
+        if (phase !== "EXTERNAL_NEW_RENAMED") return;
+        const current = await loadSettings(value.configRoot);
+        current.settings.packages[0] = "npm:pi-agent-extensions@9.9.9";
+        await fs.writeFile(path.join(value.configRoot, "settings.json"), `${JSON.stringify(current.settings, null, 2)}\n`);
+        throw crash;
+      },
+    });
+    await assert.rejects(engine.apply({ plan: value.plan, inspected: value.inspected, bundle: value.bundlePath }), { code: "SIMULATED_CRASH" });
+    await assert.rejects(createCrossRootTransactionEngine({ configRoot: value.configRoot, platform: value.platform }).recoverPending(), { code: "MANUAL_RECONCILIATION_REQUIRED" });
+    assert.equal((await readJson(path.join(value.piPackageRoot, "package.json"))).version, "0.84.1");
+  });
 });
 
 async function readJson(target) {

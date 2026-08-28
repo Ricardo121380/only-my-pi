@@ -35,3 +35,13 @@ test("M10 candidate graph uses the exact future Stable package target without ch
   assert.ok(bound.packageBindings.every((entry) => entry.binding === "external" && entry.owner === "user"));
   assert.match(bound.graphDigest, /^sha256:[a-f0-9]{64}$/u);
 });
+
+test("candidate target rejects unsupported profile, package evidence drift, and graph drift", async () => {
+  await assert.rejects(buildCandidateGenerationPlan({ rootDir, profileId: "coding" }), TypeError);
+  const drifted = manifestTarget();
+  drifted.externalPackages.find((entry) => entry.id === "subagents").toVersion = "0.57.1";
+  await assert.rejects(buildCandidateBoundGraphPlan({ rootDir, manifest: drifted }), { code: "CANDIDATE_BINDING_DRIFT" });
+  const { createCandidateTargetResolver } = await import("../packages/upstream-migration/index.mjs");
+  const resolver = createCandidateTargetResolver({ rootDir });
+  await assert.rejects(resolver.inspect({ manifest: { ...manifestTarget(), candidateGraphDigest: digest("f") } }), { code: "CANDIDATE_GRAPH_DIGEST_DRIFT" });
+});

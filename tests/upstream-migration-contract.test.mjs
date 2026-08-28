@@ -139,3 +139,61 @@ test("upstream service binds apply to the exact reviewed immutable plan", async 
   const tampered = { ...plan, sourceCommit: "b".repeat(40) };
   await assert.rejects(service.apply({ bundle: value.target, plan: tampered, yes: true }), { code: "MIGRATION_PLAN_INVALID" });
 });
+
+test("manifest rejects runtime, Pi artifact, package set, policy and digest drift independently", async () => {
+  const cases = [
+    ["MIGRATION_RUNTIME_DRIFT", (value) => { value.to.piVersion = "0.84.4"; }],
+    ["MIGRATION_PI_ARTIFACT_DRIFT", (value) => { value.piArtifact.version = "0.84.4"; }],
+    ["MIGRATION_BUNDLE_ARTIFACT_DRIFT", (value) => { value.piArtifact.sha256 = hash("e"); }],
+    ["MIGRATION_PACKAGE_SET_DRIFT", (value) => { value.externalPackages.reverse(); }],
+    ["MIGRATION_SCHEMA_INVALID", (value) => { value.externalPackages[0].owner = "only-my-pi"; }],
+    ["MIGRATION_SCHEMA_INVALID", (value) => { value.policy.networkDuringApply = true; }],
+  ];
+  for (const [code, mutate] of cases) {
+    const value = manifest();
+    mutate(value);
+    value.manifestDigest = createMigrationManifest(value).manifestDigest;
+    await assert.rejects(validateMigrationManifest(value, { rootDir }), { code });
+  }
+  const badDigest = manifest();
+  badDigest.manifestDigest = hash("f");
+  await assert.rejects(validateMigrationManifest(badDigest, { rootDir }), { code: "MIGRATION_MANIFEST_DIGEST_DRIFT" });
+});
+
+test("upstream service fails closed when the transaction engine is absent", async (t) => {
+  const value = await bundleFixture(t);
+  const service = createUpstreamMigrationService({ rootDir, configRoot: "/tmp/omp-config" });
+  const plan = await service.plan({ bundle: value.target });
+  await assert.rejects(service.apply({ bundle: value.target, plan }), { code: "UPSTREAM_TRANSACTION_ENGINE_UNAVAILABLE" });
+  await assert.rejects(service.rollback({ transactionId: "tx-1" }), { code: "UPSTREAM_TRANSACTION_ENGINE_UNAVAILABLE" });
+  assert.equal((await service.status()).status, "UPSTREAM_TRANSACTION_ENGINE_UNAVAILABLE");
+  assert.deepEqual(await service.recoverPending(), []);
+});
+
+test("upstream service invokes every optional authority and detects post-plan bundle replacement", async (t) => {
+  assert.throws(() => createUpstreamMigrationService({ rootDir: "relative", configRoot: "/tmp/omp-config" }), TypeError);
+  assert.throws(() => createUpstreamMigrationService({ rootDir, configRoot: "relative" }), TypeError);
+  const first = await bundleFixture(t);
+  const second = await bundleFixture(t);
+  await fs.appendFile(second.target, "\n");
+  const calls = [];
+  const service = createUpstreamMigrationService({
+    rootDir,
+    configRoot: "/tmp/omp-config",
+    planner: { inspect: async () => { calls.push("planner"); return { status: "PREFLIGHT" }; } },
+    candidateTarget: { inspect: async () => { calls.push("candidate"); return { graphDigest: hash("a") }; } },
+    processAdmission: { plan: async () => { calls.push("processes"); return [{ pid: 1 }]; } },
+    engine: {
+      apply: async () => ({ status: "COMMITTED" }),
+      status: async () => ({ status: "STATUS" }),
+      rollback: async () => ({ status: "ROLLED_BACK" }),
+      recoverPending: async () => [{ status: "ROLLED_BACK" }],
+    },
+  });
+  const plan = await service.plan({ bundle: first.target });
+  assert.deepEqual(calls.sort(), ["candidate", "planner", "processes"]);
+  assert.equal(plan.piProcesses.length, 1);
+  assert.equal((await service.status()).status, "STATUS");
+  assert.equal((await service.recoverPending())[0].status, "ROLLED_BACK");
+  await assert.rejects(service.apply({ bundle: second.target, plan }), { code: "MIGRATION_BUNDLE_CHANGED_AFTER_PLAN" });
+});

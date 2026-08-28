@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -42,6 +43,19 @@ async function assertRealDirectory(target, label) {
   const stat = await lstatOrNull(target);
   if (!stat || !stat.isDirectory() || stat.isSymbolicLink()) fail("MIGRATION_PATH_UNSAFE", `${label} must be a real directory`);
   return path.resolve(target);
+}
+
+async function nearestExistingDirectory(target) {
+  let current = path.resolve(target);
+  while (current !== path.parse(current).root) {
+    const stat = await lstatOrNull(current);
+    if (stat) {
+      if (!stat.isDirectory() || stat.isSymbolicLink()) fail("MIGRATION_PATH_UNSAFE", `${current} must be a real directory`);
+      return current;
+    }
+    current = path.dirname(current);
+  }
+  fail("MIGRATION_PATH_UNSAFE", `no writable ancestor exists for ${target}`);
 }
 
 async function readJsonFile(target, label) {
@@ -209,7 +223,7 @@ function restoreAuthorizedSettings(current, baseline, packageNames) {
 }
 
 export class FilesystemMigrationPlatform {
-  constructor({ rootDir, configRoot, piPackageRoot, piBinPath, planner, candidateTarget, userCli, doctor, smokeRunner, bootstrapTransaction, runCommand } = {}) {
+  constructor({ rootDir, configRoot, piPackageRoot, piBinPath, planner, candidateTarget, userCli, doctor, smokeRunner, bootstrapTransaction, runCommand, piVersionProbe, spaceInspector } = {}) {
     for (const [label, value] of Object.entries({ rootDir, configRoot, piPackageRoot, piBinPath })) if (typeof value !== "string" || !path.isAbsolute(value)) throw new TypeError(`${label} must be an absolute path`);
     this.rootDir = path.resolve(rootDir);
     this.configRoot = path.resolve(configRoot);
@@ -222,6 +236,14 @@ export class FilesystemMigrationPlatform {
     this.smokeRunner = smokeRunner;
     this.bootstrapTransaction = bootstrapTransaction;
     this.runCommand = runCommand ?? createArtifactProcessRunner();
+    this.piVersionProbe = piVersionProbe ?? (async () => {
+      const result = await runChecked(this.runCommand, this.piBinPath, ["--version"], { cwd: path.dirname(this.piBinPath), env: { PATH: process.env.PATH ?? "/usr/bin:/bin", LC_ALL: "C", NO_COLOR: "1" }, label: "candidate Pi version probe" }, "MIGRATION_PI_VERSION_PROBE_FAILED");
+      return result.stdout.trim();
+    });
+    this.spaceInspector = spaceInspector ?? (async (target) => {
+      const stat = await fs.statfs(target);
+      return Number(stat.bavail) * Number(stat.bsize);
+    });
   }
 
   async rollbackManifest(context) {
@@ -248,6 +270,13 @@ export class FilesystemMigrationPlatform {
     }
     const identity = await readJsonFile(path.join(this.rootDir, "artifact-identity.json"), "only-my-pi source identity");
     if (identity?.formatVersion !== 1 || identity.kind !== "only-my-pi-source-identity" || identity.sourceCommit !== context.plan.sourceCommit || !FULL_SHA.test(identity.sourceCommit)) fail("MIGRATION_SOURCE_IDENTITY_DRIFT", "executing artifact does not match the migration source commit");
+    const roots = [path.dirname(this.piPackageRoot), this.configRoot, path.dirname(this.userCli.cliRoot)];
+    const minimumFreeBytes = Math.max(512 * 1024 * 1024, context.plan.bundle.bytes * 2);
+    for (const root of roots) {
+      const existing = await nearestExistingDirectory(root);
+      await fs.access(existing, fsConstants.W_OK);
+      if (await this.spaceInspector(existing) < minimumFreeBytes) fail("MIGRATION_INSUFFICIENT_DISK", "migration requires space for one candidate tree and one durable old-tree backup", { rootType: root === this.configRoot ? "PI_CONFIG" : root === path.dirname(this.piPackageRoot) ? "PI_GLOBAL" : "USER_CLI", requiredBytes: minimumFreeBytes });
+    }
   }
 
   async backup(context) {
@@ -370,6 +399,7 @@ export class FilesystemMigrationPlatform {
     const real = await fs.realpath(this.piBinPath);
     const root = await fs.realpath(this.piPackageRoot);
     if (!real.startsWith(`${root}${path.sep}`)) fail("MIGRATION_PI_BINARY_ESCAPE", "Pi binary no longer resolves inside the candidate package");
+    if (await this.piVersionProbe() !== context.inspected.manifest.to.piVersion) fail("MIGRATION_PI_VERSION_DRIFT", "published Pi binary did not report the exact candidate version");
   }
 
   async renameExternalOld(context) {
@@ -489,7 +519,11 @@ export class FilesystemMigrationPlatform {
     const current = await loadSettings(this.configRoot);
     if (current.digest !== rollback.settings.digest) {
       const signature = targetedSignature(current.settings, names);
-      if (signature !== rollback.targetSettingsSignature) {
+      const baselineSignature = targetedSignature(rollback.settings.value, names);
+      if (rollback.targetSettingsSignature === null && signature === baselineSignature) {
+        // Only unrelated settings changed before settings publication. Preserve
+        // them and leave the authorized fields at their proven baseline.
+      } else if (signature !== rollback.targetSettingsSignature) {
         manual = true;
         code = "CONCURRENT_EXTERNAL_PACKAGE_CHANGE";
       } else {

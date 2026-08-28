@@ -47,3 +47,21 @@ test("recovery status is terminal and cannot be silently advanced", async (t) =>
   assert.equal((await listUpstreamJournals(configRoot, { incompleteOnly: true })).length, 0);
   await assert.rejects(advanceUpstreamJournal(configRoot, transactionId, "PREFLIGHT_VERIFIED"), { code: "UPSTREAM_TRANSACTION_TERMINAL" });
 });
+
+test("journal rejects duplicate creation, invalid transitions, and unknown identifiers", async (t) => {
+  const configRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-upstream-invalid-"));
+  t.after(() => fs.rm(configRoot, { recursive: true, force: true }));
+  await assert.rejects(createUpstreamJournal(configRoot, { transactionId: "bad" }), { code: "UPSTREAM_TRANSACTION_ID_INVALID" });
+  await createUpstreamJournal(configRoot, {
+    transactionId,
+    planDigest: `sha256:${"1".repeat(64)}`,
+    bundleDigest: `sha256:${"2".repeat(64)}`,
+    sourceCommit: "a".repeat(40),
+  });
+  await assert.rejects(createUpstreamJournal(configRoot, { transactionId }), { code: "UPSTREAM_TRANSACTION_EXISTS" });
+  assert.equal((await advanceUpstreamJournal(configRoot, transactionId, "PREPARED")).phase, "PREPARED");
+  await assert.rejects(advanceUpstreamJournal(configRoot, transactionId, "UNKNOWN"), { code: "UPSTREAM_PHASE_INVALID" });
+  await assert.rejects(markUpstreamRecovery(configRoot, transactionId, { status: "UNKNOWN" }), { code: "UPSTREAM_RECOVERY_STATUS_INVALID" });
+  await fs.mkdir(path.join(configRoot, "only-my-pi", "upstream-transactions", "not-a-transaction"));
+  assert.equal((await listUpstreamJournals(configRoot)).length, 1);
+});
