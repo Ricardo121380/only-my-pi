@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "kind": "only-my-pi-public-baseline",
-  "state": "PUBLIC_BASELINE_PENDING",
+  "state": "PUBLIC_BASELINE_VERIFIED",
   "legacyAuthority": {
     "path": "verification/legacy-authority-v1.json",
     "registryDigest": "sha256:1e4822add74367bc58a4fcf792cfd2c53e7fbac86f28c543b5156259eb5306be",
@@ -14,8 +14,8 @@
     "profile": "daily",
     "capability": "READ_ONLY"
   },
-  "sourceCommit": null,
-  "evidenceCommit": null,
-  "protectedEvidence": null,
-  "completionReceipt": null
+  "sourceCommit": "73c1c005e274fbe954fc433a42638221b509439f",
+  "evidenceCommit": "d2e45ef92faa4ed30145957470be91b76269e965",
+  "protectedEvidence": "verification/protected/2026-08-29-public-baseline-live-matrix.json",
+  "completionReceipt": "verification/receipts/public-baseline-v1-completion.json"
 }
