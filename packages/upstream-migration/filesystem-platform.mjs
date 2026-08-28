@@ -6,7 +6,7 @@ import path from "node:path";
 import { createArtifactProcessRunner } from "../bootstrap/artifact-installer.mjs";
 import { hashResourcePath } from "../bootstrap/graph-plan.mjs";
 import { compileGenerationSettings } from "../bootstrap/settings-compiler.mjs";
-import { compilePublishedSettings, compileUninstalledSettings } from "../bootstrap/settings-merge.mjs";
+import { compilePublishedSettings, compileUninstalledSettings, MANAGED_SETTING_FIELDS } from "../bootstrap/settings-merge.mjs";
 import { stageAndPromoteGeneration, verifyPromotedGeneration } from "../bootstrap/npm-stager.mjs";
 import {
   atomicWriteJson,
@@ -214,6 +214,21 @@ function targetSettingsBase(current, manifest) {
 }
 
 function restoreAuthorizedSettings(current, baseline, packageNames) {
+  const unownedListsUnchanged = MANAGED_SETTING_FIELDS.every((field) => {
+    const currentOwned = new Set((current.onlyMyPi?.managedSettings?.[field] ?? []).map(canonicalJson));
+    const baselineOwned = new Set((baseline.onlyMyPi?.managedSettings?.[field] ?? []).map(canonicalJson));
+    const selectUnowned = (settings, owned) => (settings[field] ?? []).filter((entry) => (
+      !owned.has(canonicalJson(entry))
+      && !(field === "packages" && packageNames.has(packageNameFromSetting(entry)))
+    ));
+    return canonicalJson(selectUnowned(current, currentOwned)) === canonicalJson(selectUnowned(baseline, baselineOwned));
+  });
+  if (unownedListsUnchanged) {
+    const output = structuredClone(current);
+    for (const field of MANAGED_SETTING_FIELDS) output[field] = structuredClone(baseline[field] ?? []);
+    output.onlyMyPi = structuredClone(baseline.onlyMyPi);
+    return output;
+  }
   const withoutCandidateManaged = compileUninstalledSettings(current);
   let output = compilePublishedSettings(withoutCandidateManaged, baseline.onlyMyPi.managedSettings, baseline.onlyMyPi);
   const baselinePackages = (baseline.packages ?? []).filter((entry) => packageNames.has(packageNameFromSetting(entry)));
@@ -518,17 +533,21 @@ export class FilesystemMigrationPlatform {
     const names = new Set((await this.readRecordedPlan(context.transactionId)).packages.map((entry) => entry.name));
     const current = await loadSettings(this.configRoot);
     if (current.digest !== rollback.settings.digest) {
-      const signature = targetedSignature(current.settings, names);
-      const baselineSignature = targetedSignature(rollback.settings.value, names);
-      if (rollback.targetSettingsSignature === null && signature === baselineSignature) {
+      if (rollback.targetSettingsDigest !== null && current.digest === rollback.targetSettingsDigest) {
+        await compareAndSaveSettings(this.configRoot, rollback.settings.value, { expectedCurrent: { exists: current.exists, digest: current.digest } });
+      } else {
+        const signature = targetedSignature(current.settings, names);
+        const baselineSignature = targetedSignature(rollback.settings.value, names);
+        if (rollback.targetSettingsSignature === null && signature === baselineSignature) {
         // Only unrelated settings changed before settings publication. Preserve
         // them and leave the authorized fields at their proven baseline.
-      } else if (signature !== rollback.targetSettingsSignature) {
-        manual = true;
-        code = "CONCURRENT_EXTERNAL_PACKAGE_CHANGE";
-      } else {
-        const restored = restoreAuthorizedSettings(current.settings, rollback.settings.value, names);
-        await compareAndSaveSettings(this.configRoot, restored, { expectedCurrent: { exists: current.exists, digest: current.digest } });
+        } else if (signature !== rollback.targetSettingsSignature) {
+          manual = true;
+          code = "CONCURRENT_EXTERNAL_PACKAGE_CHANGE";
+        } else {
+          const restored = restoreAuthorizedSettings(current.settings, rollback.settings.value, names);
+          await compareAndSaveSettings(this.configRoot, restored, { expectedCurrent: { exists: current.exists, digest: current.digest } });
+        }
       }
     }
     await this.userCli.restore(rollback.cliSnapshot);

@@ -202,8 +202,9 @@ async function fixture(t) {
   const inspected = await inspectMigrationBundle({ bundlePath, rootDir: repoRoot });
 
   const oldGenerationId = `sha256:${"1".repeat(64)}`;
+  const oldManagedBundle = "./only-my-pi/generations/old/resources/bundles/only-my-pi-agent-bundle";
   const settings = {
-    packages: externalEntries.map((entry) => `npm:${entry.name}@${entry.fromVersion}`),
+    packages: [...externalEntries.map((entry) => `npm:${entry.name}@${entry.fromVersion}`), oldManagedBundle],
     extensions: [], skills: [], prompts: [], themes: [],
     onlyMyPi: {
       formatVersion: 2,
@@ -212,7 +213,7 @@ async function fixture(t) {
       graphDigest: oldGenerationId,
       providerSelection: null,
       initialMode: null,
-      managedSettings: { packages: [], extensions: [], skills: [], prompts: [], themes: [] },
+      managedSettings: { packages: [oldManagedBundle], extensions: [], skills: [], prompts: [], themes: [] },
       packageBindings: bindings(externalEntries, "from"),
     },
   };
