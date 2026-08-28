@@ -140,7 +140,7 @@ async function captureIdentity() {
     runOmp(["status"]),
     runOmp(["doctor"]),
     fileDigest(path.join(CONFIG_ROOT, "npm", "package-lock.json")),
-    fileDigest(path.join(CONFIG_ROOT, "only-my-pi", "lkg.json")),
+    fileDigest(path.join(CONFIG_ROOT, "only-my-pi", "state", "last-known-good.json")),
     fs.readlink(path.join(os.homedir(), ".local", "share", "only-my-pi", "current")),
   ]);
   if (version.piVersion !== "0.84.3" || version.subagentsVersion !== "0.57.0" || status.status !== "INSTALLED"
