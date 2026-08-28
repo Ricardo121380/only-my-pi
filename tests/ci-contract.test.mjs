@@ -27,6 +27,7 @@ test("CI executes the same manifest-backed verify runner without credentials", (
     "historical receipts cannot require the current feature HEAD to be their receipt-only commit",
   );
   assert.match(workflow, /persist-credentials: false/);
+  assert.match(workflow, /fetch-depth: 0/u, "history-bound promotion gates require the complete commit graph");
   assert.match(workflow, /actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7\.0\.1/);
   assert.match(workflow, /actions\/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7\.0\.0/);
   assert.doesNotMatch(workflow, /actions\/(?:checkout|setup-node)@v4/u);
