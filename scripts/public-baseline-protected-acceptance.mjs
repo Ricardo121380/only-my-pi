@@ -10,6 +10,7 @@ import { promisify } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { loadSettings } from "../packages/config-runtime/index.mjs";
+import { createUserCliInstaller } from "../packages/bootstrap/user-cli-installer.mjs";
 import {
   PUBLIC_BASELINE_ASSERTION_IDS,
   publicBaselineDigest,
@@ -278,6 +279,19 @@ async function rollbackTransaction(transactionId) {
   await runOmp(["rollback", `before-${transactionId}`, "--yes"]);
 }
 
+async function rollbackAppliedArtifact({ transactionId, cliSnapshot }) {
+  if (transactionId !== null) {
+    await rollbackTransaction(transactionId);
+    return;
+  }
+  if (!cliSnapshot || typeof cliSnapshot !== "object") fail("PUBLIC_BASELINE_PROTECTED_ROLLBACK_UNAVAILABLE", "artifact apply exposed neither a bootstrap transaction nor a CLI snapshot");
+  const installer = createUserCliInstaller({
+    cliRoot: path.join(os.homedir(), ".local", "share", "only-my-pi"),
+    binPath: CLI_BIN,
+  });
+  await installer.restore(cliSnapshot);
+}
+
 export async function executePublicBaselineProtected(args, { now = () => new Date() } = {}) {
   const head = await git(["rev-parse", "HEAD"]);
   const clean = await git(["status", "--porcelain=v1", "--untracked-files=all"]) === "";
@@ -295,21 +309,21 @@ export async function executePublicBaselineProtected(args, { now = () => new Dat
   if (!clean || head !== args.sourceCommit) fail("PUBLIC_BASELINE_PROTECTED_SOURCE_INVALID", "protected run requires the exact clean B source commit");
   const artifact = await inspectArtifact(args.artifact, head);
   const before = await captureIdentity();
-  let activeTransaction = null;
+  let activeRollback = null;
   let intermediate = null;
   try {
     const firstApply = await runOmp(["update", "--artifact", args.artifact, "--apply", "--yes"]);
-    activeTransaction = firstApply.receipt?.transactionId ?? null;
-    if (!activeTransaction || firstApply.status !== "ARTIFACT_APPLIED") fail("PUBLIC_BASELINE_PROTECTED_APPLY_INVALID", "sanitized baseline artifact did not commit");
+    activeRollback = { transactionId: firstApply.receipt?.transactionId ?? null, cliSnapshot: firstApply.cli?.snapshot ?? null };
+    if (firstApply.status !== "ARTIFACT_APPLIED") fail("PUBLIC_BASELINE_PROTECTED_APPLY_INVALID", "sanitized baseline artifact did not commit");
     const firstInstalled = await captureIdentity();
     if (firstInstalled.version.sourceCommit !== head || firstInstalled.version.artifactSha256 !== artifact.sha256) fail("PUBLIC_BASELINE_PROTECTED_APPLY_INVALID", "installed CLI does not match sanitized B artifact");
-    await rollbackTransaction(activeTransaction);
-    activeTransaction = null;
+    await rollbackAppliedArtifact(activeRollback);
+    activeRollback = null;
     const restored = await captureIdentity();
     if (JSON.stringify(canonical(restored)) !== JSON.stringify(canonical(before))) fail("PUBLIC_BASELINE_PROTECTED_ROLLBACK_DRIFT", "rollback did not exactly restore the M10 private baseline identity");
     const reapply = await runOmp(["update", "--artifact", args.artifact, "--apply", "--yes"]);
-    activeTransaction = reapply.receipt?.transactionId ?? null;
-    if (!activeTransaction || reapply.status !== "ARTIFACT_APPLIED") fail("PUBLIC_BASELINE_PROTECTED_REAPPLY_INVALID", "sanitized baseline artifact reapply did not commit");
+    activeRollback = { transactionId: reapply.receipt?.transactionId ?? null, cliSnapshot: reapply.cli?.snapshot ?? null };
+    if (reapply.status !== "ARTIFACT_APPLIED") fail("PUBLIC_BASELINE_PROTECTED_REAPPLY_INVALID", "sanitized baseline artifact reapply did not commit");
     const installed = await captureIdentity();
     if (installed.version.sourceCommit !== head || installed.version.artifactSha256 !== artifact.sha256) fail("PUBLIC_BASELINE_PROTECTED_REAPPLY_INVALID", "reapplied CLI does not match sanitized B artifact");
     intermediate = path.join(ROOT, "verification", "protected", `.public-baseline-intermediate-${crypto.randomUUID()}.json`);
@@ -339,11 +353,11 @@ export async function executePublicBaselineProtected(args, { now = () => new Dat
       createdAt: now().toISOString(),
     });
     await writeEvidence(args.output, evidence);
-    activeTransaction = null;
+    activeRollback = null;
     return { ok: true, status: "PUBLIC_BASELINE_PROTECTED_COMPLETE", sourceCommit: head, artifactSha256: artifact.sha256, evidenceDigest: evidence.evidenceDigest, assertionCount: evidence.assertions.length, output: path.relative(ROOT, args.output), exitCode: 0 };
   } catch (error) {
-    if (activeTransaction !== null) {
-      try { await rollbackTransaction(activeTransaction); }
+    if (activeRollback !== null) {
+      try { await rollbackAppliedArtifact(activeRollback); }
       catch (rollbackError) { fail("PUBLIC_BASELINE_PROTECTED_AUTOMATIC_ROLLBACK_FAILED", "protected failure could not restore the M10 private baseline", { cause: error, rollbackError }); }
     }
     throw error;
