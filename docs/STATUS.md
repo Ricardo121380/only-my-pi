@@ -1,10 +1,31 @@
 # only-my-pi status
 
-Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-27** · Stable
+Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-28** · Stable
 kernel merged to `main`: **2026-08-27** · Pi **0.84.1** · Node **25.8.0** · macOS
 `darwin-arm64`
 
-## Active compatibility branch — M9 upstream candidates (`HOLD`)
+## Active milestone — M10 candidate promotion (`HOLD`)
+
+M9 was merged to `main` on 2026-08-28 by merge commit `510f11c`; the source and
+evidence commits remain intact. The post-merge `main` workflow passed on Node
+22.19.0 and Node 24.19.0. M10 now owns the separate promotion boundary.
+
+M10 starts with no Stable-default or real-root upgrade. Its required sequence
+is historical-generation doctor repair, immutable user CLI installation,
+strict migration-bundle validation, shadow apply/rollback/reapply, protected
+real-root apply/rollback/reapply, and a source-bound live read-only matrix.
+Only after those checks pass may a later decision commit change the machine
+decision from `HOLD` to `PROMOTE` and align the repository Stable inventory,
+real Pi stack, generation, and CLI artifact.
+
+The migration authority is deliberately narrow: it covers the exact M9
+candidate and one confirmed transaction. The nine third-party packages remain
+`external/owner=user`; migration is not adoption. Terminal `omp` manages
+installation, diagnosis and rollback, while `/omp` inside Pi remains the only
+Agent execution entry. The full boundary is versioned in
+[`ADR-0011`](decisions/ADR-0011-m10-promotion-and-upstream-migration.md).
+
+## Completed milestone — M9 upstream candidates (`HOLD`)
 
 M9 now has a complete deterministic compatibility lane for Pi `0.84.3`,
 `pi-subagents@0.57.0`, `pi-agent-extensions@0.5.4`,

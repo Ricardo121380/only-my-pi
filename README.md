@@ -53,7 +53,8 @@ artifact SHA-256 is
 the installed generation is `sha256:62ebd02c...d6ab3310`, with all selected
 third-party runtime packages still borrowed as `external` user assets.
 
-An M9 compatibility branch now audits Pi `0.84.3`,
+M9 has been merged to `main` with its source/evidence commit identities intact.
+It audits Pi `0.84.3`,
 `pi-subagents@0.57.0`, and the current companion extension set without changing
 the installed or Stable defaults. Its exact artifact audit, strict RPC dialect,
 offline 13-extension load, five-executor adapter matrix, Web SSRF black-box
@@ -64,6 +65,13 @@ writer-denial paths under OpenCode Go / DeepSeek V4 Flash. The decision remains
 **`HOLD`** pending a separate promotion review; no real Pi-home upgrade or
 default-version change is implied.
 
+M10 is the active local milestone. It will first separate historical installed-
+generation health from current-target alignment, install an immutable user-level
+`omp` CLI, and add a manifest-bound, recoverable migration for the exact M9
+candidate stack. Only a protected real apply/rollback/reapply plus live-model
+acceptance may change the decision to `PROMOTE`. M10 does not publish npm or a
+GitHub Release, add a daemon, or make terminal `omp` an Agent execution entry.
+
 - [M8 final D13 protected live-model evidence](verification/protected/2026-08-27-m8-live-model-matrix-final.json)
 - [M8 final D14 real-root rehearsal evidence](verification/protected/2026-08-27-m8-real-root-rehearsal-final.json)
 - [M8 final D1-D15 completion receipt](verification/receipts/2026-08-27-m8-daily-harness-final.json)
@@ -72,6 +80,7 @@ default-version change is implied.
 - [M9 U1-U9 gate contract](verification/upstream-compatibility-gates-v1.json)
 - [M9 U9 protected live-model evidence](verification/protected/2026-08-28-m9-candidate-live-readonly-matrix.json)
 - [M9 U1-U9 completion receipt](verification/receipts/2026-08-28-m9-upstream-compatibility.json)
+- [M10 promotion and migration boundary](docs/decisions/ADR-0011-m10-promotion-and-upstream-migration.md)
 
 - [M8 Daily Harness Closure plan](docs/plans/2026-08-27-m8-daily-harness-closure.md)
 - [Current implementation status](docs/STATUS.md)
