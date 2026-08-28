@@ -52,6 +52,33 @@ explicit migration grants one-transaction mutation authority but never
 ownership. Uninstall, generation garbage collection and CLI removal cannot
 delete the external package tree.
 
+The protected producer is plan-first. Its run mode requires four separate,
+machine-visible grants: `--run`, migration approval via `--yes`, Pi process
+termination via `--terminate-pi`, and public-Web authority via
+`--authorize-web`. It accepts only a source-bound regular-file bundle and
+distinct P9/P10 paths under `verification/protected/`. The run executes from
+the immutable only-my-pi artifact embedded in that bundle, not from the
+mutable checkout. It rechecks the clean source commit before publishing the
+low-sensitivity evidence pair. Any failure attempts journal-driven rollback;
+an unprovable recovery is reported as `MANUAL_RECONCILIATION_REQUIRED`.
+
+The exact protected sequence is:
+
+```text
+preflight -> apply -> no-model smoke -> rollback -> exact verify
+          -> reapply -> no-model smoke -> live matrix -> evidence pair
+```
+
+Plan mode performs no write and no Provider request:
+
+```sh
+npm run plan:m10:protected
+```
+
+The bundle is built only after the source commit is frozen. Run mode is not a
+CI command and is invoked locally with the full source SHA, absolute bundle
+path, and explicit evidence destinations.
+
 ## Promotion rule
 
 The machine decision may become `PROMOTE` only when deterministic M10 gates,

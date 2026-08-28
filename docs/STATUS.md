@@ -25,6 +25,16 @@ installation, diagnosis and rollback, while `/omp` inside Pi remains the only
 Agent execution entry. The full boundary is versioned in
 [`ADR-0011`](decisions/ADR-0011-m10-promotion-and-upstream-migration.md).
 
+The local M10 source implementation now includes historical-generation
+diagnosis, immutable CLI publication, the strict source-bound bundle,
+candidate target alignment, the cross-root journal and recovery engine,
+shadow migration/fault injection, P1-P12 gate wiring, and the protected P9/P10
+producer. The protected producer remains unexecuted at this point: the real Pi
+root is still on the M8 baseline, P9/P10 remain `NOT_RUN_BY_POLICY`, and the
+machine decision remains `HOLD`. The next boundary is to freeze source commit
+`S`, build bundle `B`, inspect its read-only plan, and only then perform the
+explicitly authorized real-root/live run.
+
 ## Completed milestone — M9 upstream candidates (`HOLD`)
 
 M9 now has a complete deterministic compatibility lane for Pi `0.84.3`,

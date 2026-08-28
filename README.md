@@ -71,6 +71,10 @@ generation health from current-target alignment, install an immutable user-level
 candidate stack. Only a protected real apply/rollback/reapply plus live-model
 acceptance may change the decision to `PROMOTE`. M10 does not publish npm or a
 GitHub Release, add a daemon, or make terminal `omp` an Agent execution entry.
+The local protected producer is deliberately plan-first: `npm run
+plan:m10:protected` performs no write and no Provider request. A real run is
+legal only from a clean frozen source with a matching immutable bundle and
+separate migration, Pi-termination, and public-Web authorization.
 
 - [M8 final D13 protected live-model evidence](verification/protected/2026-08-27-m8-live-model-matrix-final.json)
 - [M8 final D14 real-root rehearsal evidence](verification/protected/2026-08-27-m8-real-root-rehearsal-final.json)
