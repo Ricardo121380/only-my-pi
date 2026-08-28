@@ -24,16 +24,18 @@ function assertPlan(plan, configRoot) {
 }
 
 export class UpstreamMigrationService {
-  constructor({ rootDir, configRoot, engine } = {}) {
+  constructor({ rootDir, configRoot, planner, engine } = {}) {
     if (typeof rootDir !== "string" || !path.isAbsolute(rootDir)) throw new TypeError("UpstreamMigrationService requires an absolute rootDir");
     if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("UpstreamMigrationService requires an absolute configRoot");
     this.rootDir = path.resolve(rootDir);
     this.configRoot = path.resolve(configRoot);
+    this.planner = planner ?? null;
     this.engine = engine ?? null;
   }
 
   async plan({ bundle } = {}) {
     const inspected = await inspectMigrationBundle({ bundlePath: bundle, rootDir: this.rootDir });
+    const preflight = this.planner?.inspect ? await this.planner.inspect({ manifest: inspected.manifest }) : null;
     const plan = {
       formatVersion: 1,
       kind: "only-my-pi-upstream-migration-plan",
@@ -49,6 +51,7 @@ export class UpstreamMigrationService {
       to: inspected.manifest.to,
       packages: inspected.manifest.externalPackages.map((entry) => ({ id: entry.id, name: entry.name, fromVersion: entry.fromVersion, toVersion: entry.toVersion, action: entry.action, binding: "external", owner: "user" })),
       processPolicy: { requirePiStopped: true, signal: "SIGTERM", timeoutSeconds: 15, forceKill: false },
+      preflight,
       zeroWriteEvidence: inspected.zeroWriteEvidence,
     };
     return Object.freeze({ ...plan, planDigest: digestPlan(plan) });

@@ -178,6 +178,7 @@
     "packages/upstream-compatibility/web-safety.mjs",
     "packages/upstream-migration/index.mjs",
     "packages/upstream-migration/contract.mjs",
+    "packages/upstream-migration/planner.mjs",
     "packages/upstream-migration/service.mjs",
     "packages/subagents/domain/index.mjs",
     "packages/subagents/domain/agent.mjs",
