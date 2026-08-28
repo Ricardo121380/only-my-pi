@@ -127,7 +127,7 @@ export function createProductionControlService({
     binPath: path.join(os.homedir(), ".local", "bin", "omp"),
   });
   const artifactInstaller = new wired.ArtifactInstaller({
-    runCommand: wired.createArtifactProcessRunner({ ...artifactProcessOptions, maxOutputBytes: 8 * 1024 * 1024 }),
+    runCommand: wired.createArtifactProcessRunner(artifactProcessOptions),
     userCli,
   });
   const doctor = new wired.DoctorService({ rootDir: resolvedRoot });
@@ -174,7 +174,7 @@ export function createProductionControlService({
     doctor,
     smokeRunner,
     bootstrapTransaction: transactionEngine,
-    runCommand: wired.createArtifactProcessRunner(artifactProcessOptions),
+    runCommand: wired.createArtifactProcessRunner({ ...artifactProcessOptions, maxOutputBytes: 8 * 1024 * 1024 }),
   });
   const upstreamEngine = wired.createCrossRootTransactionEngine({
     configRoot: resolvedConfigRoot,

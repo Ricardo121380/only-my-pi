@@ -262,6 +262,7 @@ test("status, doctor, live doctor, and safe route through their bounded services
 
 test("production factory wires every runtime dependency without invoking runners", () => {
   const calls = [];
+  const artifactProcessOptions = [];
   const npmRunner = async () => ({ exitCode: 0 });
   const smokeRunner = async () => ({ ok: true });
   const fakeSpawn = () => {
@@ -305,6 +306,10 @@ test("production factory wires every runtime dependency without invoking runners
       ControlService: FakeControlService,
       DoctorService: FakeDoctorService,
       TransactionEngine: FakeTransactionEngine,
+      createArtifactProcessRunner(options) {
+        artifactProcessOptions.push(options);
+        return async () => ({ exitCode: 0, signal: null, stdout: "", stderr: "", stdoutTruncated: false, stderrTruncated: false });
+      },
       createNpmCommandRunner(options) {
         calls.push({ name: "createNpmCommandRunner", options });
         return npmRunner;
@@ -336,6 +341,10 @@ test("production factory wires every runtime dependency without invoking runners
   assert.equal(service.options.bootstrap, calls[4].instance);
   assert.equal(service.options.doctor, calls[0].instance);
   assert.equal(service.options.confirm, confirm);
+  assert.deepEqual(artifactProcessOptions, [
+    { spawnImpl: fakeSpawn },
+    { spawnImpl: fakeSpawn, maxOutputBytes: 8 * 1024 * 1024 },
+  ]);
 });
 
 test("the production bootstrap plan is read-only and never invokes the injected Pi spawn", async (t) => {
