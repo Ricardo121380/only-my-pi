@@ -16,7 +16,7 @@
     "node": {
       "version": "24.19.0",
       "archiveName": "node-v24.19.0-darwin-arm64.tar.gz",
-      "archiveSha256": "sha256:87bd07abf60792874291d5bc465a8453603e74e8ffdfb6ee62cc949442d5f471",
+      "archiveSha256": "sha256:8294b7aa9b03997481c06babf1e8b270c859358f27da57a11509afe537ac381d",
       "license": "MIT",
       "treeDigest": "sha256:b35ac8e304b78d2c286a520b017dc89dadaf4d569100c383309e29926a15eb66"
     },
@@ -129,6 +129,7 @@
       "lifecycleScripts": []
     }
   ],
+  "externalTreeDigest": "sha256:19215c20c6a4e65363cdeab6382ea03d8078aac4f488a2fc86d959b926c40c45",
   "transitiveLedgerSha256": "sha256:fedf220728d8c3b524ff2e8fa1f23964b1a9f550fc90fef67810f82efd2fe129",
   "generationTargetGraphDigest": "sha256:42984308fe2574e5ba4c527e8e970633bc9a8f8d9b30986564224ae5f75a61c4",
   "defaultPreset": "daily",
@@ -164,6 +165,6 @@
     "removeOnlyVerifiedProvisioned": true,
     "preserveUserData": true
   },
-  "stackId": "sha256:2eb50b12edeeae421b704360ddfd3b854adc508f0b2ff46e7aa9b7456eacb8f1",
+  "stackId": "sha256:79257ccf74b8338ef3d788e1a9b92d685d53b35491803eba46fffeb560cf44de",
   "payloadMode": "full"
 }

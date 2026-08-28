@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { canonicalJson } from "../packages/config-runtime/index.mjs";
 import {
   CONTROLLED_PI_VERSION,
+  EMBEDDED_NODE_ARCHIVE_SHA256,
   EMBEDDED_NODE_VERSION,
   PREVIEW_TAG,
   PREVIEW_VERSION,
@@ -72,7 +73,7 @@ function manifest(artifactLedger) {
       node: {
         version: EMBEDDED_NODE_VERSION,
         archiveName: "node-v24.19.0-darwin-arm64.tar.gz",
-        archiveSha256: digest("node-archive"),
+        archiveSha256: EMBEDDED_NODE_ARCHIVE_SHA256,
         license: "MIT",
         treeDigest: digest("node-tree"),
       },
@@ -95,6 +96,7 @@ function manifest(artifactLedger) {
       owner: "user",
       lifecycleScripts: [],
     })),
+    externalTreeDigest: digest("external-npm-tree"),
     transitiveLedgerSha256: artifactLedger.ledgerDigest,
     generationTargetGraphDigest: digest("generation-target-graph"),
     defaultPreset: "daily",

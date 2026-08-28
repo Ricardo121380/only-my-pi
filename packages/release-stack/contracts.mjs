@@ -6,6 +6,7 @@ export const PREVIEW_VERSION = "0.2.0-preview.1";
 export const PREVIEW_TAG = `v${PREVIEW_VERSION}`;
 export const PUBLIC_REPOSITORY = "Ricardo121380/only-my-pi";
 export const EMBEDDED_NODE_VERSION = "24.19.0";
+export const EMBEDDED_NODE_ARCHIVE_SHA256 = "sha256:8294b7aa9b03997481c06babf1e8b270c859358f27da57a11509afe537ac381d";
 export const CONTROLLED_PI_VERSION = "0.84.3";
 
 export const PUBLIC_STACK_PACKAGES = Object.freeze([
@@ -103,7 +104,7 @@ function assertPackageTuple(packages, { code = "STACK_MANIFEST_PACKAGE_TUPLE_INV
 
 export function validateStackManifest(input) {
   rejectSensitiveShape(input);
-  exactKeys(input, ["$schema", "formatVersion", "kind", "stackId", "sourceCommit", "onlyMyPi", "platform", "runtime", "externalPackages", "transitiveLedgerSha256", "generationTargetGraphDigest", "defaultPreset", "overlays", "capabilityCeiling", "policy", "removalPolicy"], "stack manifest", "STACK_MANIFEST_SCHEMA_INVALID");
+  exactKeys(input, ["$schema", "formatVersion", "kind", "stackId", "sourceCommit", "onlyMyPi", "platform", "runtime", "externalPackages", "externalTreeDigest", "transitiveLedgerSha256", "generationTargetGraphDigest", "defaultPreset", "overlays", "capabilityCeiling", "policy", "removalPolicy"], "stack manifest", "STACK_MANIFEST_SCHEMA_INVALID");
   if (input.$schema !== "../../schemas/stack-manifest-v1.schema.json" || input.formatVersion !== 1 || input.kind !== "only-my-pi-stack-manifest") fail("STACK_MANIFEST_IDENTITY_INVALID", "stack manifest identity is invalid");
   if (!COMMIT.test(input.sourceCommit ?? "") || !SHA256.test(input.stackId ?? "") || input.stackId !== stackManifestDigest(input)) fail("STACK_MANIFEST_DIGEST_INVALID", "stack manifest digest is invalid");
   exactKeys(input.onlyMyPi, ["version", "artifactSha256"], "only-my-pi identity", "STACK_MANIFEST_SCHEMA_INVALID");
@@ -112,11 +113,11 @@ export function validateStackManifest(input) {
   if (input.platform.os !== "darwin" || input.platform.arch !== "arm64" || input.platform.minimumMacOS !== "14.0") fail("STACK_PLATFORM_UNSUPPORTED", "stack supports only macOS 14+ arm64");
   exactKeys(input.runtime, ["node", "pi"], "runtime", "STACK_MANIFEST_SCHEMA_INVALID");
   exactKeys(input.runtime.node, ["version", "archiveName", "archiveSha256", "license", "treeDigest"], "Node runtime", "STACK_MANIFEST_SCHEMA_INVALID");
-  if (input.runtime.node.version !== EMBEDDED_NODE_VERSION || input.runtime.node.archiveName !== "node-v24.19.0-darwin-arm64.tar.gz" || !SHA256.test(input.runtime.node.archiveSha256 ?? "") || input.runtime.node.license !== "MIT" || !SHA256.test(input.runtime.node.treeDigest ?? "")) fail("STACK_NODE_IDENTITY_INVALID", "embedded Node identity is invalid");
+  if (input.runtime.node.version !== EMBEDDED_NODE_VERSION || input.runtime.node.archiveName !== "node-v24.19.0-darwin-arm64.tar.gz" || input.runtime.node.archiveSha256 !== EMBEDDED_NODE_ARCHIVE_SHA256 || input.runtime.node.license !== "MIT" || !SHA256.test(input.runtime.node.treeDigest ?? "")) fail("STACK_NODE_IDENTITY_INVALID", "embedded Node identity is invalid");
   exactKeys(input.runtime.pi, ["name", "version", "integrity", "treeDigest", "entry"], "Pi runtime", "STACK_MANIFEST_SCHEMA_INVALID");
   if (input.runtime.pi.name !== "@earendil-works/pi-coding-agent" || input.runtime.pi.version !== CONTROLLED_PI_VERSION || !SRI.test(input.runtime.pi.integrity ?? "") || !SHA256.test(input.runtime.pi.treeDigest ?? "") || input.runtime.pi.entry !== "dist/bundle/cli.js") fail("STACK_PI_IDENTITY_INVALID", "controlled Pi identity is invalid");
   assertPackageTuple(input.externalPackages);
-  if (![input.transitiveLedgerSha256, input.generationTargetGraphDigest].every((value) => SHA256.test(value ?? ""))) fail("STACK_MANIFEST_EVIDENCE_INVALID", "stack manifest evidence digest is invalid");
+  if (![input.externalTreeDigest, input.transitiveLedgerSha256, input.generationTargetGraphDigest].every((value) => SHA256.test(value ?? ""))) fail("STACK_MANIFEST_EVIDENCE_INVALID", "stack manifest evidence digest is invalid");
   if (input.defaultPreset !== "daily" || canonicalJson(input.overlays) !== canonicalJson({ enabled: ["web", "orchestration-readonly", "ui-terminal"], disabled: ["memory", "sync", "mcp", "experimental"] })) fail("STACK_PROFILE_INVALID", "public stack profile or overlays drifted");
   if (canonicalJson(input.capabilityCeiling) !== canonicalJson({ mode: "READ_ONLY", maxDepth: 1, writer: false, bash: false, mcp: false })) fail("STACK_CAPABILITY_INVALID", "public stack is not read-only");
   if (canonicalJson(input.policy) !== canonicalJson({ lifecycleScriptsDisabled: true, networkDuringApply: false, externalOwner: "user", webConfirmation: "PER_RUN", browserCookies: false })) fail("STACK_POLICY_INVALID", "stack security policy drifted");

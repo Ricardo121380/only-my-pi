@@ -4,7 +4,7 @@
   "title": "only-my-pi canonical stack manifest v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["$schema", "formatVersion", "kind", "stackId", "sourceCommit", "onlyMyPi", "platform", "runtime", "externalPackages", "transitiveLedgerSha256", "generationTargetGraphDigest", "defaultPreset", "overlays", "capabilityCeiling", "policy", "removalPolicy"],
+  "required": ["$schema", "formatVersion", "kind", "stackId", "sourceCommit", "onlyMyPi", "platform", "runtime", "externalPackages", "externalTreeDigest", "transitiveLedgerSha256", "generationTargetGraphDigest", "defaultPreset", "overlays", "capabilityCeiling", "policy", "removalPolicy"],
   "properties": {
     "$schema": { "const": "../../schemas/stack-manifest-v1.schema.json" },
     "formatVersion": { "const": 1 },
@@ -27,7 +27,7 @@
           "properties": {
             "version": { "const": "24.19.0" },
             "archiveName": { "const": "node-v24.19.0-darwin-arm64.tar.gz" },
-            "archiveSha256": { "$ref": "#/$defs/sha256" },
+            "archiveSha256": { "const": "sha256:8294b7aa9b03997481c06babf1e8b270c859358f27da57a11509afe537ac381d" },
             "license": { "const": "MIT" },
             "treeDigest": { "$ref": "#/$defs/sha256" }
           }
@@ -45,6 +45,7 @@
       }
     },
     "externalPackages": { "type": "array", "minItems": 9, "maxItems": 9, "items": { "$ref": "#/$defs/externalPackage" } },
+    "externalTreeDigest": { "$ref": "#/$defs/sha256" },
     "transitiveLedgerSha256": { "$ref": "#/$defs/sha256" },
     "generationTargetGraphDigest": { "$ref": "#/$defs/sha256" },
     "defaultPreset": { "const": "daily" },
