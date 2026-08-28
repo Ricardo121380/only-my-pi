@@ -33,7 +33,10 @@ session remains the sole Agent execution entry.
 An `upstream-migration-v1` bundle may name only the exact audited Pi and
 nine-package target. It contains no command language, arbitrary script,
 credential, host target path, floating version or mutable URL. Lifecycle
-scripts are disabled. Normal apply is offline.
+scripts are disabled. The published `prepack` declarations in the exact
+`pi-lsp@0.49.6` and `pi-plan-mode@0.55.2` manifests are digest-audited as
+not required and are never executed by build or apply. Normal apply is
+offline.
 
 Pi, the complete external npm tree, only-my-pi generation and CLI are four
 publication units coordinated by a durable journal. Each unit is staged and

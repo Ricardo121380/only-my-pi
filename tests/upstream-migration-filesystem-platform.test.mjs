@@ -27,6 +27,10 @@ const lifecycleCommands = new Map([
   ["pi-memory", "node scripts/postinstall.cjs"],
   ["pi-permission-modes", "echo 'permission-mode: dependencies installed.'"],
 ]);
+const candidateLifecycleCommands = new Map([
+  ["@narumitw/pi-lsp", { prepack: "npm run build" }],
+  ["@narumitw/pi-plan-mode", { prepack: "npm run build" }],
+]);
 
 const sha = (value) => `sha256:${crypto.createHash("sha256").update(value).digest("hex")}`;
 const resolved = (name, version) => `https://registry.npmjs.org/${name}/-/${name.split("/").at(-1)}-${version}.tgz`;
@@ -47,7 +51,10 @@ async function writePackageTree(npmRoot, versions, manifestEntries) {
     const packageRoot = path.join(npmRoot, ...relative.split("/"));
     await fs.mkdir(packageRoot, { recursive: true });
     const command = lifecycleCommands.get(entry.name);
-    await fs.writeFile(path.join(packageRoot, "package.json"), JSON.stringify({ name: entry.name, version, scripts: command ? { postinstall: command } : {} }));
+    const scripts = versions === "to" && candidateLifecycleCommands.has(entry.name)
+      ? candidateLifecycleCommands.get(entry.name)
+      : command ? { postinstall: command } : {};
+    await fs.writeFile(path.join(packageRoot, "package.json"), JSON.stringify({ name: entry.name, version, scripts }));
     await fs.writeFile(path.join(packageRoot, "index.js"), `export default ${JSON.stringify(`${entry.id}:${version}`)};\n`);
     const url = resolved(entry.name, version);
     lock.packages[relative] = { version, integrity, resolved: url };

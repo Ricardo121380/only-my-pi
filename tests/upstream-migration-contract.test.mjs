@@ -83,6 +83,13 @@ test("migration manifest accepts only the exact M9 candidate and nine external p
   assert.equal(checked.externalPackages.length, 9);
   assert.equal(checked.externalPackages.filter((entry) => entry.action === "upgrade").length, 6);
   assert.equal(checked.externalPackages.filter((entry) => entry.action === "retain").length, 3);
+  for (const id of ["lsp", "plan-mode"]) {
+    assert.deepEqual(checked.externalPackages.find((entry) => entry.id === id).lifecycleScripts, [{
+      name: "prepack",
+      commandSha256: "sha256:16c0e4305ac213dff39fc82b69b6e08aeeb8758e33cd72d7c409752a70e9f054",
+      necessity: "not-required",
+    }]);
+  }
   const drift = structuredClone(checked);
   drift.externalPackages[0].toVersion = "9.9.9";
   drift.manifestDigest = createMigrationManifest(drift).manifestDigest;
