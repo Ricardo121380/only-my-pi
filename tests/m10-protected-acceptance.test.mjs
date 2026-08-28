@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
@@ -8,6 +10,7 @@ import {
   createM10P9Evidence,
   executeM10ProtectedAcceptance,
   m10ProtectedCliEnvironment,
+  m10ProtectedRealpathContained,
   parseM10ProtectedAcceptanceArgs,
   validateM10ArtifactArchiveListing,
 } from "../scripts/m10-protected-acceptance.mjs";
@@ -73,6 +76,18 @@ test("M10 protected artifact extraction accepts only regular package-relative ar
   assert.throws(() => validateM10ArtifactArchiveListing(""), { code: "M10_PROTECTED_ARTIFACT_INVALID" });
   assert.throws(() => validateM10ArtifactArchiveListing("../outside\n"), { code: "M10_PROTECTED_ARTIFACT_INVALID" });
   assert.throws(() => validateM10ArtifactArchiveListing("package/../outside\n"), { code: "M10_PROTECTED_ARTIFACT_INVALID" });
+});
+
+test("M10 protected artifact containment resolves a symlinked temporary-root alias", async (t) => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "omp-m10-contained-"));
+  t.after(() => fs.rm(temporary, { recursive: true, force: true }));
+  const realRoot = path.join(temporary, "real");
+  const packageRoot = path.join(realRoot, "package");
+  const alias = path.join(temporary, "alias");
+  await fs.mkdir(packageRoot, { recursive: true });
+  await fs.symlink(realRoot, alias);
+  assert.equal(await m10ProtectedRealpathContained(alias, packageRoot), true);
+  assert.equal(await m10ProtectedRealpathContained(alias, temporary), false);
 });
 
 test("P9 evidence binds exact rollback and reapply without exposing local values", () => {

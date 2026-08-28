@@ -163,6 +163,12 @@ export function validateM10ArtifactArchiveListing(listing) {
   }
 }
 
+export async function m10ProtectedRealpathContained(root, target) {
+  const [realRoot, realTarget] = await Promise.all([fs.realpath(root), fs.realpath(target)]);
+  const relative = path.relative(realRoot, realTarget);
+  return relative !== "" && !relative.startsWith("..") && !path.isAbsolute(relative);
+}
+
 async function extractOnlyMyPi(bundle, inspected) {
   const loaded = await loadMigrationArtifactBytes({ bundlePath: bundle, rootDir: ROOT, expectedBundleSha256: inspected.bundle.sha256 });
   const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-m10-protected-"));
@@ -178,7 +184,7 @@ async function extractOnlyMyPi(bundle, inspected) {
     if (verbose.split(/\r?\n/gu).filter(Boolean).some((line) => !["-", "d"].includes(line[0]))) fail("M10_PROTECTED_ARTIFACT_INVALID", "only-my-pi archive contains a non-regular entry");
     await execFile("tar", ["-xzf", archive, "-C", destination, "--no-same-owner", "--no-same-permissions"], { cwd: temporaryRoot, maxBuffer: 1024 * 1024 });
     const packageRoot = await fs.realpath(path.join(destination, "package"));
-    if (!packageRoot.startsWith(`${destination}${path.sep}`)) fail("M10_PROTECTED_ARTIFACT_INVALID", "only-my-pi artifact escaped its extraction root");
+    if (!await m10ProtectedRealpathContained(destination, packageRoot)) fail("M10_PROTECTED_ARTIFACT_INVALID", "only-my-pi artifact escaped its extraction root");
     const [manifest, identity] = await Promise.all([
       fs.readFile(path.join(packageRoot, "package.json"), "utf8").then(JSON.parse),
       fs.readFile(path.join(packageRoot, "artifact-identity.json"), "utf8").then(JSON.parse),
