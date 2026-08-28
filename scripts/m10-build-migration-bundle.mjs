@@ -204,7 +204,12 @@ async function targetExternalTree(root, env, manifestEntries) {
 
 export async function validateM10PiRuntimeLayout(packageRoot) {
   const manifest = JSON.parse(await fs.readFile(path.join(packageRoot, "package.json"), "utf8"));
-  const lockBytes = await fs.readFile(path.join(packageRoot, "package-lock.json"));
+  const lockFile = await fs.lstat(path.join(packageRoot, "npm-shrinkwrap.json")).then(
+    (stat) => stat.isFile() && !stat.isSymbolicLink() ? "npm-shrinkwrap.json" : null,
+    (error) => { if (error?.code === "ENOENT") return "package-lock.json"; throw error; },
+  );
+  if (lockFile === null) fail("M10_BUILD_PI_RUNTIME_LOCK_DRIFT", "candidate Pi shrinkwrap must be a regular file");
+  const lockBytes = await fs.readFile(path.join(packageRoot, lockFile));
   const lock = JSON.parse(lockBytes.toString("utf8"));
   if (manifest.name !== "@earendil-works/pi-coding-agent" || manifest.version !== "0.84.3"
     || lock.lockfileVersion !== 3 || lock.packages?.[""]?.name !== manifest.name || lock.packages[""].version !== manifest.version) {
@@ -230,7 +235,7 @@ export async function validateM10PiRuntimeLayout(packageRoot) {
   for (const name of REQUIRED_PI_RUNTIME_PACKAGES) {
     if (lock.packages[`node_modules/${name}`].version !== "0.84.3") fail("M10_BUILD_PI_RUNTIME_DEPENDENCY_DRIFT", `candidate Pi internal dependency drifted for ${name}`);
   }
-  return Object.freeze({ lockDigest: digest(lockBytes), directDependencyCount: direct.length });
+  return Object.freeze({ lockFile, lockDigest: digest(lockBytes), directDependencyCount: direct.length });
 }
 
 async function build({ output, sourceCommit }) {
@@ -303,7 +308,7 @@ async function build({ output, sourceCommit }) {
       candidateGraphDigest: candidateGraph.graphDigest,
       artifacts: preliminaryDigests,
       packages: entries.map((entry) => ({ id: entry.id, fromVersion: entry.fromVersion, toVersion: entry.toVersion, action: entry.action })),
-      piRuntime: { lockDigest: normalizedPi.lockDigest, directDependencyCount: normalizedPi.directDependencyCount },
+      piRuntime: { lockFile: normalizedPi.lockFile, lockDigest: normalizedPi.lockDigest, directDependencyCount: normalizedPi.directDependencyCount },
       lifecycleScriptsExecuted: false,
       applyNetworkRequired: false,
       secretMaterialRecorded: false,

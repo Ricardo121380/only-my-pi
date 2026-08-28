@@ -60,7 +60,10 @@ test("M10 Pi candidate runtime requires a complete exact dependency lock and phy
   await fs.writeFile(path.join(root, "package-lock.json"), JSON.stringify(lock));
   const verified = await validateM10PiRuntimeLayout(root);
   assert.equal(verified.directDependencyCount, 5);
+  assert.equal(verified.lockFile, "package-lock.json");
   assert.match(verified.lockDigest, /^sha256:[a-f0-9]{64}$/u);
+  await fs.rename(path.join(root, "package-lock.json"), path.join(root, "npm-shrinkwrap.json"));
+  assert.equal((await validateM10PiRuntimeLayout(root)).lockFile, "npm-shrinkwrap.json");
   await fs.rm(path.join(root, "node_modules", ...piDependencies[0].split("/")), { recursive: true });
   await assert.rejects(validateM10PiRuntimeLayout(root), { code: "M10_BUILD_PI_RUNTIME_DEPENDENCY_DRIFT" });
 });
