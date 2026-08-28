@@ -35,6 +35,7 @@ const REQUIRED_PI_RUNTIME_PACKAGES = Object.freeze([
   "@earendil-works/pi-protocol",
   "@earendil-works/pi-tui",
 ]);
+const REQUIRED_PI_RUNTIME_PACKAGE_SET = new Set(REQUIRED_PI_RUNTIME_PACKAGES);
 
 function fail(code, message, details = {}) {
   const error = new Error(message);
@@ -69,6 +70,10 @@ function urlDigest(value) {
   const url = new URL(value);
   if (url.protocol !== "https:" || url.username || url.password || url.hash) fail("M10_BUILD_LOCK_URL_UNSAFE", "package lock URL must be credential-free HTTPS");
   return digest(url.href);
+}
+
+function expectedNpmTarballUrl(name, version) {
+  return `https://registry.npmjs.org/${name}/-/${name.split("/").at(-1)}-${version}.tgz`;
 }
 
 function sourceFromSetting(setting) {
@@ -220,12 +225,21 @@ export async function validateM10PiRuntimeLayout(packageRoot) {
     if (dependencies[name] !== "^0.84.3") fail("M10_BUILD_PI_RUNTIME_DEPENDENCY_DRIFT", `candidate Pi dependency declaration drifted for ${name}`);
   }
   const direct = Object.keys(dependencies).sort();
+  const integrityExceptions = [];
   for (const name of direct) {
     const locked = lock.packages?.[`node_modules/${name}`];
-    if (!locked || typeof locked.version !== "string" || !SRI.test(locked.integrity ?? "") || typeof locked.resolved !== "string") {
+    if (!locked || typeof locked.version !== "string" || typeof locked.resolved !== "string") {
       fail("M10_BUILD_PI_RUNTIME_DEPENDENCY_DRIFT", `candidate Pi direct dependency is not locked for ${name}`);
     }
     urlDigest(locked.resolved);
+    if (!SRI.test(locked.integrity ?? "")) {
+      if (!REQUIRED_PI_RUNTIME_PACKAGE_SET.has(name)
+        || locked.version !== "0.84.3"
+        || locked.resolved !== expectedNpmTarballUrl(name, locked.version)) {
+        fail("M10_BUILD_PI_RUNTIME_DEPENDENCY_DRIFT", `candidate Pi direct dependency integrity drifted for ${name}`);
+      }
+      integrityExceptions.push(name);
+    }
     let installed;
     try { installed = JSON.parse(await fs.readFile(path.join(packageRoot, "node_modules", ...name.split("/"), "package.json"), "utf8")); } catch {
       fail("M10_BUILD_PI_RUNTIME_DEPENDENCY_DRIFT", `candidate Pi direct dependency is missing for ${name}`);
@@ -235,7 +249,12 @@ export async function validateM10PiRuntimeLayout(packageRoot) {
   for (const name of REQUIRED_PI_RUNTIME_PACKAGES) {
     if (lock.packages[`node_modules/${name}`].version !== "0.84.3") fail("M10_BUILD_PI_RUNTIME_DEPENDENCY_DRIFT", `candidate Pi internal dependency drifted for ${name}`);
   }
-  return Object.freeze({ lockFile, lockDigest: digest(lockBytes), directDependencyCount: direct.length });
+  return Object.freeze({
+    lockFile,
+    lockDigest: digest(lockBytes),
+    directDependencyCount: direct.length,
+    integrityExceptions: Object.freeze(integrityExceptions),
+  });
 }
 
 async function build({ output, sourceCommit }) {
@@ -308,7 +327,12 @@ async function build({ output, sourceCommit }) {
       candidateGraphDigest: candidateGraph.graphDigest,
       artifacts: preliminaryDigests,
       packages: entries.map((entry) => ({ id: entry.id, fromVersion: entry.fromVersion, toVersion: entry.toVersion, action: entry.action })),
-      piRuntime: { lockFile: normalizedPi.lockFile, lockDigest: normalizedPi.lockDigest, directDependencyCount: normalizedPi.directDependencyCount },
+      piRuntime: {
+        lockFile: normalizedPi.lockFile,
+        lockDigest: normalizedPi.lockDigest,
+        directDependencyCount: normalizedPi.directDependencyCount,
+        integrityExceptions: normalizedPi.integrityExceptions,
+      },
       lifecycleScriptsExecuted: false,
       applyNetworkRequired: false,
       secretMaterialRecorded: false,
