@@ -7,16 +7,18 @@ import {
   loadSettings,
   readState,
   sha256,
+  verifyLastKnownGood,
 } from "../config-runtime/index.mjs";
 import { createDoctorService } from "./doctor-service.mjs";
 import { buildGenerationPlan } from "./index.mjs";
 import { createProfileService } from "./profile-service.mjs";
 import {
   createGenerationLayout,
+  verifyGenerationByManifest,
   verifyPromotedGeneration,
 } from "./npm-stager.mjs";
 import { compileGenerationSettings } from "./settings-compiler.mjs";
-import { bindExistingPackages } from "./package-bindings.mjs";
+import { bindExistingPackages, verifyRecordedExternalBindings } from "./package-bindings.mjs";
 import { compileRollbackSettings } from "./transaction-engine.mjs";
 import {
   compilePublishedSettings,
@@ -395,34 +397,73 @@ export class BootstrapService {
   async doctor(options = {}) {
     const status = await this.status(options);
     const staticResult = this.doctors.static({ profileId: status.profileId, strict: false });
-    let generation = { status: status.profileId ? "UNVERIFIED" : "NOT_INSTALLED" };
+    let generation = {
+      status: status.profileId ? "UNVERIFIED" : "NOT_INSTALLED",
+      verificationBasis: status.profileId ? "installed-generation-manifest" : null,
+      installedGenerationId: status.generationId,
+      targetGenerationId: null,
+      alignment: status.profileId ? null : "MATCH",
+      errorCode: null,
+    };
     if (status.profileId) {
       try {
+        const configRoot = path.resolve(options.configRoot);
         const settings = await loadSettings(options.configRoot);
         const metadata = extractManagedMetadata(settings.settings);
+        const installedLayout = createGenerationLayout({
+          configRoot,
+          graphDigest: metadata.generationId,
+          transactionId: "doctor-installed",
+        });
+        await verifyGenerationByManifest({ layout: installedLayout });
+        const lkg = await verifyLastKnownGood(configRoot);
+        if (lkg.state.generationId !== metadata.generationId) {
+          fail("LKG_GENERATION_DRIFT", "last-known-good generation differs from current settings");
+        }
+        await verifyRecordedExternalBindings({
+          configRoot,
+          settings: settings.settings,
+          bindings: metadata.packageBindings ?? [],
+        });
+
+        let targetGenerationId = null;
+        let targetErrorCode = null;
         const baseGraphPlan = await buildGenerationPlan({ rootDir: this.rootDir, profileId: status.profileId });
-        const graphPlan = await bindExistingPackages({
-          configRoot: path.resolve(options.configRoot),
-          settings: settings.settings,
-          plan: baseGraphPlan,
-          priorBindings: metadata?.packageBindings,
-        });
-        generation = await probeInstalledGeneration({
-          configRoot: path.resolve(options.configRoot),
-          graphPlan,
-          settings: settings.settings,
-          metadata,
-        });
-        generation = { status: generation.status, errorCode: generation.errorCode ?? null };
+        try {
+          const graphPlan = await bindExistingPackages({
+            configRoot,
+            settings: settings.settings,
+            plan: baseGraphPlan,
+            priorBindings: metadata.packageBindings,
+          });
+          targetGenerationId = graphPlan.graphDigest;
+        } catch (error) {
+          targetErrorCode = error?.code ?? "TARGET_GRAPH_UNAVAILABLE";
+        }
+        generation = {
+          status: "VERIFIED",
+          verificationBasis: "installed-generation-manifest",
+          installedGenerationId: metadata.generationId,
+          targetGenerationId,
+          alignment: targetGenerationId === metadata.generationId ? "MATCH" : "UPDATE_AVAILABLE",
+          errorCode: null,
+          ...(targetErrorCode ? { targetErrorCode } : {}),
+        };
       } catch (error) {
-        generation = { status: "UNAVAILABLE_OR_DRIFTED", errorCode: error?.code ?? "DOCTOR_FAILED" };
+        generation = {
+          ...generation,
+          status: "UNAVAILABLE_OR_DRIFTED",
+          alignment: null,
+          errorCode: error?.code ?? "DOCTOR_FAILED",
+        };
       }
     }
     const ok = staticResult.ok === true && status.incompleteTransactions.length === 0
       && ["VERIFIED", "NOT_INSTALLED"].includes(generation.status);
+    const updateAvailable = ok && generation.alignment === "UPDATE_AVAILABLE";
     return {
       ok,
-      status: ok ? "PASS" : "FAIL",
+      status: ok ? (updateAvailable ? "PASS_WITH_UPDATE_AVAILABLE" : "PASS") : "FAIL",
       mutation: false,
       scope: "static-and-local-generation",
       repository: staticResult,
