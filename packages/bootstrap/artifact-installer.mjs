@@ -106,22 +106,25 @@ async function readVerifiedArtifact(artifactPath, { maxArtifactBytes = MAX_ARTIF
   }
 }
 
-function boundedAppend(state, chunk) {
+function boundedAppend(state, chunk, maximum) {
   const buffer = Buffer.from(chunk);
-  if (state.bytes >= MAX_OUTPUT_BYTES) {
+  if (state.bytes >= maximum) {
     state.truncated = true;
     return;
   }
-  const remaining = MAX_OUTPUT_BYTES - state.bytes;
+  const remaining = maximum - state.bytes;
   state.parts.push(buffer.subarray(0, remaining));
   state.bytes += Math.min(buffer.length, remaining);
   if (buffer.length > remaining) state.truncated = true;
 }
 
-export function createArtifactProcessRunner({ spawnImpl = spawn, timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+export function createArtifactProcessRunner({ spawnImpl = spawn, timeoutMs = DEFAULT_TIMEOUT_MS, maxOutputBytes = MAX_OUTPUT_BYTES } = {}) {
   if (typeof spawnImpl !== "function") throw new TypeError("spawnImpl must be a function");
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1_000 || timeoutMs > 30 * 60 * 1000) {
     throw new TypeError("timeoutMs must be between 1000 and 1800000 milliseconds");
+  }
+  if (!Number.isSafeInteger(maxOutputBytes) || maxOutputBytes < 1_024 || maxOutputBytes > 8 * 1024 * 1024) {
+    throw new TypeError("maxOutputBytes must be between 1024 and 8388608 bytes");
   }
   return async function runCommand(command, argv, { cwd, env, label } = {}) {
     if (typeof command !== "string" || command.length === 0 || /[\0\r\n]/u.test(command)) fail("ARTIFACT_COMMAND_INVALID", "artifact subprocess command is invalid");
@@ -154,8 +157,8 @@ export function createArtifactProcessRunner({ spawnImpl = spawn, timeoutMs = DEF
         finishError(new Error("subprocess timed out"), "ARTIFACT_SUBPROCESS_TIMEOUT");
       }, timeoutMs);
       timer.unref?.();
-      child.stdout?.on("data", (chunk) => boundedAppend(stdout, chunk));
-      child.stderr?.on("data", (chunk) => boundedAppend(stderr, chunk));
+      child.stdout?.on("data", (chunk) => boundedAppend(stdout, chunk, maxOutputBytes));
+      child.stderr?.on("data", (chunk) => boundedAppend(stderr, chunk, maxOutputBytes));
       child.once("error", (cause) => finishError(cause));
       child.once("exit", (exitCode, signal) => {
         if (settled) return;

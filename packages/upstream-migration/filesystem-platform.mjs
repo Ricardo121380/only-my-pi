@@ -21,7 +21,7 @@ import { buildCandidateBoundGraphPlan } from "./candidate-target.mjs";
 import { loadMigrationArtifactBytes, M10_ARTIFACT_NAMES } from "./contract.mjs";
 
 const FULL_SHA = /^[a-f0-9]{40}$/u;
-const MAX_TAR_OUTPUT = 4 * 1024 * 1024;
+const MAX_TAR_OUTPUT = 8 * 1024 * 1024;
 const LIFECYCLE_NAMES = new Set(["preinstall", "install", "postinstall", "prepublish", "preprepare", "prepare", "postprepare", "prepack", "postpack"]);
 
 function fail(code, message, details = {}) {
@@ -235,7 +235,7 @@ export class FilesystemMigrationPlatform {
     this.doctor = doctor;
     this.smokeRunner = smokeRunner;
     this.bootstrapTransaction = bootstrapTransaction;
-    this.runCommand = runCommand ?? createArtifactProcessRunner();
+    this.runCommand = runCommand ?? createArtifactProcessRunner({ maxOutputBytes: MAX_TAR_OUTPUT });
     this.piVersionProbe = piVersionProbe ?? (async () => {
       const result = await runChecked(this.runCommand, this.piBinPath, ["--version"], { cwd: path.dirname(this.piBinPath), env: { PATH: process.env.PATH ?? "/usr/bin:/bin", LC_ALL: "C", NO_COLOR: "1" }, label: "candidate Pi version probe" }, "MIGRATION_PI_VERSION_PROBE_FAILED");
       return result.stdout.trim();

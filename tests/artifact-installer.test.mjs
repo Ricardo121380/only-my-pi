@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-import { ArtifactInstaller } from "../packages/bootstrap/artifact-installer.mjs";
+import { ArtifactInstaller, createArtifactProcessRunner } from "../packages/bootstrap/artifact-installer.mjs";
 
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-artifact-installer-test-"));
@@ -131,4 +131,15 @@ test("artifact plan rejects symlinks before hashing", async (t) => {
   await assert.rejects(installer.plan({ artifact: link, profile: "daily", configRoot: paths.configRoot }), {
     code: "ARTIFACT_SYMLINK_REJECTED",
   });
+});
+
+test("artifact process output remains bounded and permits an explicit migration-sized ceiling", async () => {
+  const command = ["-e", "process.stdout.write('x'.repeat(3 * 1024 * 1024))"];
+  const options = { cwd: process.cwd(), env: { PATH: process.env.PATH ?? "" }, label: "bounded output fixture" };
+  const defaultResult = await createArtifactProcessRunner()(process.execPath, command, options);
+  assert.equal(defaultResult.stdoutTruncated, true);
+  const migrationResult = await createArtifactProcessRunner({ maxOutputBytes: 8 * 1024 * 1024 })(process.execPath, command, options);
+  assert.equal(migrationResult.stdoutTruncated, false);
+  assert.equal(Buffer.byteLength(migrationResult.stdout), 3 * 1024 * 1024);
+  assert.throws(() => createArtifactProcessRunner({ maxOutputBytes: 8 * 1024 * 1024 + 1 }), TypeError);
 });
