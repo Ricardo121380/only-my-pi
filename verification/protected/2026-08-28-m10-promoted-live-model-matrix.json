@@ -1,0 +1,134 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-m10-protected-evidence",
+  "gateId": "P10",
+  "evidenceId": "m10-promoted-live-model-matrix",
+  "sourceCommit": "615695556f6ed699a901bef43e6fbb09f5aa663e",
+  "status": "PASS",
+  "createdAt": "2026-08-28T08:23:46.475Z",
+  "artifacts": {
+    "migrationBundleSha256": "sha256:2c90b42cfb298e758aeaa4ab1359ac0136066b9242954d57421dd84a18d7f414",
+    "onlyMyPiArtifactSha256": "sha256:a9583eaa4c8f66dbf7c2f0fa2184c1459199a80edf1f857851638f743f3a35eb",
+    "candidateGraphDigest": "sha256:ee6ead54a8979d8b9370aed5bc5356f1605d644e0ac8b2ff81100cd123cd3283"
+  },
+  "runtime": {
+    "piVersion": "0.84.3",
+    "subagentsVersion": "0.57.0",
+    "provider": "cc-switch-open-code-go",
+    "model": "deepseek-v4-flash"
+  },
+  "pricing": {
+    "mode": "subscription-fixed-fee",
+    "inputPerMillion": 0,
+    "outputPerMillion": 0,
+    "fixedFeeUsd": 10,
+    "fixedFeeIncludedInRunCost": false
+  },
+  "usage": {
+    "directlyMeteredTokens": 41078,
+    "variableCostUsd": 0,
+    "wallSeconds": 319,
+    "toolCalls": 5,
+    "meteredTerminals": 2
+  },
+  "assertions": [
+    {
+      "id": "agent-terminal",
+      "status": "PASS",
+      "digest": "sha256:f62281796c3cc81d8a46cedfe9da424aa5e09f2e99b8ee13eb3ad7a0ee9dedf9"
+    },
+    {
+      "id": "batch-swarm",
+      "status": "PASS",
+      "digest": "sha256:49a70206252153f29f0c3cf43216b6c5e0e6583de57882b7348e0d5a7d0d4fd6"
+    },
+    {
+      "id": "workflow-artifact-flow",
+      "status": "PASS",
+      "digest": "sha256:a03a11f5e4b383c94b59bb5f0c0e95cecff55ba40fa3d3ab4f2d666b4c283769"
+    },
+    {
+      "id": "swarm-goal-replan",
+      "status": "PASS",
+      "digest": "sha256:f84141b208ff368ef93e461823a80c53e22c84b904c21574d9528ca339f593ca"
+    },
+    {
+      "id": "ultra-agent-route",
+      "status": "PASS",
+      "digest": "sha256:b85dc1a52de8f0cf23584e18a33ced32323e6d73dca616a1ca699a623cb32aec"
+    },
+    {
+      "id": "ultra-workflow-route",
+      "status": "PASS",
+      "digest": "sha256:9d6bf082d22657f84e73d3a407326b82e2e179c170f8e6f2113be569880f6f3a"
+    },
+    {
+      "id": "public-web",
+      "status": "PASS",
+      "digest": "sha256:a7c7bef99bafe044922c122585863f88c86a3849bf995c837eee7f459837a4eb"
+    },
+    {
+      "id": "cancellation",
+      "status": "PASS",
+      "digest": "sha256:bd5cb19a14c12df99577f8e634b86ab9f1f091d60a11c4cc9b007205db455049"
+    },
+    {
+      "id": "cross-session-resume",
+      "status": "PASS",
+      "digest": "sha256:9807cd24394f0bcbf254586bc11766b6ac28f9f812f660a0cfa3cb0185f1437b"
+    },
+    {
+      "id": "budget-denial",
+      "status": "PASS",
+      "digest": "sha256:8b62f277b38ec86abdaae4bf6e2d8b487c067a9c5c57cb43a3b1c61ff5192ea0"
+    },
+    {
+      "id": "writer-denial",
+      "status": "PASS",
+      "digest": "sha256:e1a78e3932bd2c0652dcc87003c353ba43e74e66c38778e7d64eb3f36f565470"
+    },
+    {
+      "id": "candidate-runtime-identity",
+      "status": "PASS",
+      "digest": "sha256:77e30f03aa382f67eb8313d516123c93b1e275698c8568cfedaa32fc48a5b2d9"
+    },
+    {
+      "id": "installed-generation-identity",
+      "status": "PASS",
+      "digest": "sha256:3f01c8192ab85f6ec0ecd63788524cde63645aa1cbd0400cb181e98c545f7b44"
+    },
+    {
+      "id": "cli-generation-artifact-identity",
+      "status": "PASS",
+      "digest": "sha256:9f422c323d9f654c30d091ef167a5cf003a0c3ad0926e1f63449a6833c5a9b84"
+    },
+    {
+      "id": "external-ownership-preservation",
+      "status": "PASS",
+      "digest": "sha256:f59b73c1e54cbd03550a5c94a0c9d5eb0e3cfd1fa4052e39228134076b7bc445"
+    },
+    {
+      "id": "usage-metering",
+      "status": "PASS",
+      "digest": "sha256:fbfc8e3eb608909c03299e39ab9e15e409ee13f09e418c0da650ae113e00091e"
+    },
+    {
+      "id": "no-duplicate-runtime-ownership",
+      "status": "PASS",
+      "digest": "sha256:62905ff4c3d47da310775e3fd9e67d7cf344ab5a1dab1b3ee2272a0872464c8e"
+    }
+  ],
+  "privacy": {
+    "rawOutputStored": false,
+    "hostPathsStored": false,
+    "secretsStored": false,
+    "sessionsStored": false
+  },
+  "authorization": {
+    "realRoots": "AUTH_AND_PRIVATE_RUN_STATE_ONLY",
+    "providerRequests": "AUTHORIZED",
+    "credentials": "PI_RUNTIME_ONLY",
+    "writer": "DENIED"
+  },
+  "evidenceDigest": "sha256:3e4fdffbd63769bed80c8058d66f9d731b199312d1d3cb79a0ce3440c0485c12"
+}

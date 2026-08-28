@@ -1,0 +1,89 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-m10-protected-evidence",
+  "gateId": "P9",
+  "evidenceId": "m10-real-root-migration",
+  "sourceCommit": "615695556f6ed699a901bef43e6fbb09f5aa663e",
+  "status": "PASS",
+  "createdAt": "2026-08-28T08:23:46.475Z",
+  "artifacts": {
+    "migrationBundleSha256": "sha256:2c90b42cfb298e758aeaa4ab1359ac0136066b9242954d57421dd84a18d7f414",
+    "onlyMyPiArtifactSha256": "sha256:a9583eaa4c8f66dbf7c2f0fa2184c1459199a80edf1f857851638f743f3a35eb",
+    "candidateGraphDigest": "sha256:ee6ead54a8979d8b9370aed5bc5356f1605d644e0ac8b2ff81100cd123cd3283"
+  },
+  "assertions": [
+    {
+      "id": "bundle-provenance",
+      "status": "PASS",
+      "digest": "sha256:00875577c6d23b1dfa0d0f3cb5ab4796c7292e1da8cd4932f0b1183a1bc555ca"
+    },
+    {
+      "id": "preflight-old-stack",
+      "status": "PASS",
+      "digest": "sha256:01005c65f815707a9062d415b501520759ef1902ad1a655d0054fcf8fef3679e"
+    },
+    {
+      "id": "pi-process-policy",
+      "status": "PASS",
+      "digest": "sha256:681d2426a1af6ccd5957198fef0d63afe8dd72f7121dc8bf4dfc90bfb68650fe"
+    },
+    {
+      "id": "candidate-apply",
+      "status": "PASS",
+      "digest": "sha256:c87a1683c6d8f984e1f4cb747f47dbabf3da806ec0ca36d7dc82980ae28353bd"
+    },
+    {
+      "id": "no-model-smoke",
+      "status": "PASS",
+      "digest": "sha256:1e53f4eee1d1422b4ba2ecc7dbc48705303b57eda8eb988e255f55343f07147e"
+    },
+    {
+      "id": "rollback-pi",
+      "status": "PASS",
+      "digest": "sha256:69d019b15e572bfe45f3a1924c76384f1d5709467fbef1add7438535ecdba94c"
+    },
+    {
+      "id": "rollback-external-tree",
+      "status": "PASS",
+      "digest": "sha256:a3e67af090ae10e737a0c680eaba81c7ce7f08b23161b313ed75695feb77671d"
+    },
+    {
+      "id": "rollback-settings",
+      "status": "PASS",
+      "digest": "sha256:0598b505c92c6aff9b854f4664c8df03b9635d19fa5eb30df9170b9a7d92743a"
+    },
+    {
+      "id": "rollback-generation-lkg",
+      "status": "PASS",
+      "digest": "sha256:f579e6711e95ed376be9b0959595de5791af88c6c9c4a130ed136e245d3fb1d3"
+    },
+    {
+      "id": "rollback-cli-absence",
+      "status": "PASS",
+      "digest": "sha256:1fd2e73cd896a8dc11165bec83c3d32ef5ed66b505212987f768c37b191add88"
+    },
+    {
+      "id": "candidate-reapply",
+      "status": "PASS",
+      "digest": "sha256:afc8e7b1b26c9f60ed2b96877870f77a678c4a1d3bf6e2cdc1b3969e3184bcb9"
+    },
+    {
+      "id": "transaction-terminal",
+      "status": "PASS",
+      "digest": "sha256:65628c74a207ce695495f17a2a116b80fab43c21c708912432ef4a5e69f1198c"
+    }
+  ],
+  "privacy": {
+    "rawOutputStored": false,
+    "hostPathsStored": false,
+    "secretsStored": false,
+    "sessionsStored": false
+  },
+  "authorization": {
+    "realRoots": "EXPLICIT",
+    "piTermination": "SIGTERM_ONLY",
+    "providerRequests": "NOT_RUN_BY_POLICY",
+    "writer": "DENIED"
+  },
+  "evidenceDigest": "sha256:901fcdf99fb9e0cee5983f56fb1fa0e8ee38a25e96085beda69f673381388478"
+}
