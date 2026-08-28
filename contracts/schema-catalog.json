@@ -295,6 +295,12 @@
       "schemaPath": "schemas/legacy-authority-v1.schema.json",
       "productionGlobs": ["verification/legacy-authority-v1.json"],
       "fixtureDir": "verification/fixtures/contracts/legacy-authority"
+    },
+    {
+      "kind": "publicBaseline",
+      "schemaPath": "schemas/public-baseline-v1.schema.json",
+      "productionGlobs": ["contracts/release/public-baseline.json"],
+      "fixtureDir": "verification/fixtures/contracts/public-baseline"
     }
   ]
 }
