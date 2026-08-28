@@ -57,7 +57,8 @@ test("M9 runner defaults to inspection and accepts only explicit source-bound pr
   const inspection = inspectUpstreamCompatibilityGates(["--json"]);
   assert.equal(inspection.executable, false);
   assert.deepEqual(inspection.protectedGateIds, ["U9"]);
-  assert.equal(inspection.decision.state, "HOLD");
+  assert.equal(inspection.decision.state, "PROMOTE");
+  assert.equal(inspection.decision.reasonCode, "M10_REAL_ROOT_AND_LIVE_ACCEPTANCE_PASSED");
   assert.equal(parseUpstreamCompatibilityGateArgs(["--run", "--json"]).run, true);
   assert.throws(() => parseUpstreamCompatibilityGateArgs(["--protected-evidence", "U9=verification/protected/u9.json"]), /requires --run/u);
   const protectedArgs = parseUpstreamCompatibilityGateArgs([

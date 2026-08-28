@@ -84,6 +84,19 @@ test("rollback also requires parent confirmation", async () => {
   assert.deepEqual(calls.map((entry) => entry.method), ["planRollback"]);
 });
 
+test("every mutating command recovers an incomplete upstream transaction before planning", async () => {
+  const calls = [];
+  const upstreamMigration = {
+    async recoverPending() { calls.push("recover"); return [{ status: "ROLLED_BACK" }]; },
+    async plan() { calls.push("plan"); return { kind: "plan" }; },
+    async apply() { calls.push("apply"); return { ok: true, status: "COMMITTED" }; },
+  };
+  const service = createControlService({ bootstrap: {}, doctor: {}, upstreamMigration });
+  const result = await service.dispatch({ command: "upstream", mutation: true, options: { subcommand: "apply", apply: true, yes: true } });
+  assert.equal(result.status, "COMMITTED");
+  assert.deepEqual(calls, ["recover", "plan", "apply"]);
+});
+
 test("live doctor remains separate from repository static doctor", async () => {
   const { service, calls } = harness();
   assert.equal((await service.dispatch({ command: "doctor", options: { live: false } })).status, "doctor");

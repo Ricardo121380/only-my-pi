@@ -13,9 +13,10 @@ Kimi Code, Claude Code, DeepSeek Harness, or any other agent harness.
 
 The first release has one non-negotiable runtime boundary:
 
-> Exact `pi-subagents@0.45.2` is the only physical child-session, process, and
-> worktree runtime. `@only-my-pi/subagents` is the logical orchestration facade
-> and never creates a second physical worker pool.
+> Exact Stable `pi-subagents@0.57.0` is the only physical child-session,
+> process, and worktree runtime. `@only-my-pi/subagents` is the logical
+> orchestration facade and never creates a second physical worker pool. The
+> earlier `0.45.2` audit remains a versioned legacy-dialect regression contract.
 
 Evidence is classified as follows:
 
@@ -45,7 +46,7 @@ Rules for consuming the table and dossiers below:
 
 | Source | Tier | Audited identity | License / availability | Normative use in only-my-pi | Integration status |
 | --- | --- | --- | --- | --- | --- |
-| [`pi-subagents`](https://github.com/nicobailon/pi-subagents) | A | npm `pi-subagents@0.45.2`; package `gitHead` `7836c0f5ef642a00ae0572c910dec7a56216c74d`; SRI `sha512-VEvBF6vrpi+eLEjhgwqutSnaH/aw58+Um9vdJUc6Td1asH22bAKahrgD3AafaRNsROgiaukw4DRdmlRjEhBxQA==`; tarball SHA-256 `fb247e0d45f130d0f3f53efb63a95c56e417d8579af5ba2ba2f211b322701374` | MIT | Sole physical backend and public RPC v1 compatibility target | Required runtime dependency; adapter only |
+| [`pi-subagents`](https://github.com/nicobailon/pi-subagents) | A | Stable npm `pi-subagents@0.57.0`; SRI `sha512-CvsOBp61dZU+HV3kHdfFc+iBuO9DOI5nvTiGrSaFVpH7XK5/22QbBAdjcrhOjcSzA5Ev3l0Qr/JC1I8VLES9Bw==`; package JSON SHA-256 `aa2d3e8ed9aacf161b03354c65a93f58c977af47152ad23f698b360f65e6018b`; RPC source SHA-256 `9e25af0a6c8f2657a721f425bf5408798abfaaffb4495a56a0c7d2959669b882`; legacy npm `pi-subagents@0.45.2`, package `gitHead` `7836c0f5ef642a00ae0572c910dec7a56216c74d`, SRI `sha512-VEvBF6vrpi+eLEjhgwqutSnaH/aw58+Um9vdJUc6Td1asH22bAKahrgD3AafaRNsROgiaukw4DRdmlRjEhBxQA==`, tarball SHA-256 `fb247e0d45f130d0f3f53efb63a95c56e417d8579af5ba2ba2f211b322701374` | MIT | Sole physical backend with strict version-selected RPC v1 dialects | Required runtime dependency; adapter only |
 | [Kimi Code](https://github.com/MoonshotAI/kimi-code/tree/13d86f8b7bb2443a3b8222e7d94deb0a66429f8e) | A | npm `@moonshot-ai/kimi-code@0.36.1`; tag commit `13d86f8b7bb2443a3b8222e7d94deb0a66429f8e`; SRI `sha512-dAYvA0qIZ/nPOtf+8X0axRP3Supa06oP9xK/JlY/DsrID5IVmDRc2fKTdASNBvSs1XPUbPFwD1cDNXMoEDQfEA==` | MIT | Homogeneous BatchSwarm schema, ordered aggregation, cancellation, rate-limit-aware queue behavior | Reference only; no Kimi runtime or package dependency |
 | [Kimi hosted Agent Swarm](https://www.kimi.ai/help/agent/agent-swarm) | B | Mutable official help page, retrieved 2026-08-18 | Hosted product; production scheduler source not established as published | UX and goal-level dynamic swarm vocabulary only | Reference only |
 | [Kimi K2.5 technical report v2](https://arxiv.org/abs/2602.02276) | A for the report's claims | arXiv `2602.02276`, version 2, retrieved 2026-08-18 | Paper and released model artifacts do not expose the hosted production scheduler | Dynamic heterogeneous decomposition, specialist assignment, context sharding, critical-path reasoning | Clean-room concept adoption only |
@@ -58,9 +59,11 @@ Rules for consuming the table and dossiers below:
 | [Codex](https://github.com/openai/codex/tree/ede5247893a50297a47c9aa5038e6ab28312ff50) | A | commit `ede5247893a50297a47c9aa5038e6ab28312ff50` | Apache-2.0 | Typed thread/turn handles, approval, interrupt, and usage-accounting reference | Reference only |
 | [Goose](https://github.com/block/goose/tree/7c4ba2219166700becb68d6db35989ebcaa52f69) | A | commit `7c4ba2219166700becb68d6db35989ebcaa52f69` | Apache-2.0 | Recipe manifest, subagent task configuration, permission, and session UX reference | Reference only |
 
-The exact `pi-subagents` byte and wire audit is recorded separately in
-[`pi-subagents-0.45.2.md`](../compatibility/pi-subagents-0.45.2.md). That record,
-not repository HEAD, is the release compatibility authority.
+The legacy byte and wire audit is recorded separately in
+[`pi-subagents-0.45.2.md`](../compatibility/pi-subagents-0.45.2.md). The Stable
+`0.57.0` artifact and its changed RPC dialect are bound by the M9 no-model
+evidence and [M9 compatibility record](../compatibility/m9-upstream-candidates.md).
+Those versioned records, not repository HEAD, are the compatibility authority.
 
 ## 3. Kimi: two distinct meanings of "Agent Swarm"
 
@@ -222,11 +225,13 @@ Do not adopt:
 - worker-thread or Node `vm` as a security boundary;
 - preview implementation details without versioned local contracts.
 
-## 6. Physical runtime dossier: `pi-subagents@0.45.2`
+## 6. Physical runtime dossier: `pi-subagents@0.57.0` Stable and `0.45.2` legacy
 
-The exact package exposes extension RPC v1 methods `ping`, `status`, `spawn`,
-`steer`, `interrupt`, `stop`, and `resume`, plus request/reply, async completion,
-and process-terminal events. The adapter must use that public wire only.
+Stable `0.57.0` exposes extension RPC v1 methods `ping`, `status`, `manage`,
+`spawn`, `steer`, `interrupt`, `stop`, and `resume`, including the child-status
+event and management capability metadata. Legacy `0.45.2` lacks `manage` and
+child-status. The adapter selects the exact audited dialect from the verified
+physical package version and must use public wire/export surfaces only.
 
 Normative consequences:
 
@@ -299,7 +304,7 @@ workspaces without calling worktree isolation a sandbox.
 | Automatic multi-workflow policy | Claude official docs | Implement `UltraRun` as routing and total-budget policy | Multiple approved runs, no second scheduler, no model/mode conflation |
 | Executable JavaScript workflow | Claude docs + community Pi source | Reject for S0-S5 | Canonical declarative JSON IR only; unknown constructs fail closed |
 | Capability seam | DeepSeek source | Implement versioned backend capability negotiation | Fail before reservation/dispatch when required capability is absent |
-| Physical child/session lifecycle | `pi-subagents@0.45.2` | Reuse through exact RPC adapter | One runtime owner, correlation proof, no private imports |
+| Physical child/session lifecycle | Stable `pi-subagents@0.57.0`; legacy `0.45.2` regression | Reuse through exact version-selected RPC adapter | One runtime owner, correlation proof, no private imports |
 | Durable orchestration state | DeepSeek/OpenHands/Codex references | Implement hash-chained event ledger and atomic snapshot | Single writer, fencing token, monotonic sequence, deterministic replay |
 | Writer isolation | Pi backend + Cline/OpenHands/community references | Managed worktree required for parallel writers | No shared-cwd parallel writer; no silent fallback |
 | Adaptive Provider retry | Kimi Code source | Implement only when public backend/usage signals support it | Otherwise advertise degraded/unavailable; never infer hidden telemetry |
@@ -329,8 +334,9 @@ They support prose-level design claims only.
 
 S1 cannot declare the facade runtime-ready until all of the following pass:
 
-1. exact `pi-subagents@0.45.2` package identity and public RPC fixture match the
-   compatibility record;
+1. exact Stable `pi-subagents@0.57.0` package identity and public RPC fixture
+   match the M9 compatibility record, while the `0.45.2` fixture remains a
+   passing legacy-dialect regression;
 2. tool-visibility topology proves that only one public model-facing owner can
    trigger physical delegation;
 3. backend capability negotiation is recorded as

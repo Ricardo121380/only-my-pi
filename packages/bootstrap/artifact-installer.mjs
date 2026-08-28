@@ -5,12 +5,15 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
+import { createUserCliInstaller } from "./user-cli-installer.mjs";
+
 const FORMAT_VERSION = 1;
 const MAX_ARTIFACT_BYTES = 128 * 1024 * 1024;
 const MAX_OUTPUT_BYTES = 2 * 1024 * 1024;
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
 const PROFILE_ID = /^[a-z][a-z0-9-]{0,63}$/u;
 const SHA256 = /^sha256:[a-f0-9]{64}$/u;
+const FULL_SHA = /^[a-f0-9]{40}$/u;
 
 function fail(code, message, details = {}) {
   const error = new Error(message);
@@ -103,22 +106,25 @@ async function readVerifiedArtifact(artifactPath, { maxArtifactBytes = MAX_ARTIF
   }
 }
 
-function boundedAppend(state, chunk) {
+function boundedAppend(state, chunk, maximum) {
   const buffer = Buffer.from(chunk);
-  if (state.bytes >= MAX_OUTPUT_BYTES) {
+  if (state.bytes >= maximum) {
     state.truncated = true;
     return;
   }
-  const remaining = MAX_OUTPUT_BYTES - state.bytes;
+  const remaining = maximum - state.bytes;
   state.parts.push(buffer.subarray(0, remaining));
   state.bytes += Math.min(buffer.length, remaining);
   if (buffer.length > remaining) state.truncated = true;
 }
 
-export function createArtifactProcessRunner({ spawnImpl = spawn, timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+export function createArtifactProcessRunner({ spawnImpl = spawn, timeoutMs = DEFAULT_TIMEOUT_MS, maxOutputBytes = MAX_OUTPUT_BYTES } = {}) {
   if (typeof spawnImpl !== "function") throw new TypeError("spawnImpl must be a function");
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1_000 || timeoutMs > 30 * 60 * 1000) {
     throw new TypeError("timeoutMs must be between 1000 and 1800000 milliseconds");
+  }
+  if (!Number.isSafeInteger(maxOutputBytes) || maxOutputBytes < 1_024 || maxOutputBytes > 8 * 1024 * 1024) {
+    throw new TypeError("maxOutputBytes must be between 1024 and 8388608 bytes");
   }
   return async function runCommand(command, argv, { cwd, env, label } = {}) {
     if (typeof command !== "string" || command.length === 0 || /[\0\r\n]/u.test(command)) fail("ARTIFACT_COMMAND_INVALID", "artifact subprocess command is invalid");
@@ -151,8 +157,8 @@ export function createArtifactProcessRunner({ spawnImpl = spawn, timeoutMs = DEF
         finishError(new Error("subprocess timed out"), "ARTIFACT_SUBPROCESS_TIMEOUT");
       }, timeoutMs);
       timer.unref?.();
-      child.stdout?.on("data", (chunk) => boundedAppend(stdout, chunk));
-      child.stderr?.on("data", (chunk) => boundedAppend(stderr, chunk));
+      child.stdout?.on("data", (chunk) => boundedAppend(stdout, chunk, maxOutputBytes));
+      child.stderr?.on("data", (chunk) => boundedAppend(stderr, chunk, maxOutputBytes));
       child.once("error", (cause) => finishError(cause));
       child.once("exit", (exitCode, signal) => {
         if (settled) return;
@@ -236,7 +242,20 @@ async function assertInstalledPackage(installRoot) {
   if (manifest?.name !== "only-my-pi" || typeof manifest?.version !== "string" || manifest.version.length > 64) {
     fail("ARTIFACT_PACKAGE_INVALID", "artifact must install package only-my-pi with a bounded version");
   }
-  return Object.freeze({ packageRoot, binPath, name: manifest.name, version: manifest.version });
+  let sourceCommit = null;
+  try {
+    const identityPath = path.join(packageRoot, "artifact-identity.json");
+    const identityStat = await fs.lstat(identityPath);
+    if (!identityStat.isFile() || identityStat.isSymbolicLink() || identityStat.size > 4096) fail("ARTIFACT_IDENTITY_INVALID", "artifact identity must be a bounded regular file");
+    const identity = JSON.parse(await fs.readFile(identityPath, "utf8"));
+    if (identity?.formatVersion !== 1 || identity.kind !== "only-my-pi-source-identity" || !FULL_SHA.test(identity.sourceCommit ?? "")) {
+      fail("ARTIFACT_IDENTITY_INVALID", "artifact source identity is invalid");
+    }
+    sourceCommit = identity.sourceCommit;
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  return Object.freeze({ packageRoot, binPath, name: manifest.name, version: manifest.version, sourceCommit });
 }
 
 function parseNestedReceipt(result) {
@@ -285,6 +304,9 @@ export class ArtifactInstaller {
     temporaryRoot = os.tmpdir(),
     npmCache = process.env.npm_config_cache ?? path.join(os.homedir(), ".npm"),
     maxArtifactBytes = MAX_ARTIFACT_BYTES,
+    cliRoot = path.join(os.homedir(), ".local", "share", "only-my-pi"),
+    cliBin = path.join(os.homedir(), ".local", "bin", "omp"),
+    userCli,
   } = {}) {
     if (typeof runCommand !== "function") throw new TypeError("runCommand must be a function");
     if (![npmCommand, nodeCommand].every((value) => typeof value === "string" && value.length > 0 && !/[\0\r\n]/u.test(value))) {
@@ -296,6 +318,7 @@ export class ArtifactInstaller {
     this.temporaryRoot = assertAbsoluteSafePath(temporaryRoot, "temporaryRoot");
     this.npmCache = assertAbsoluteSafePath(npmCache, "npmCache");
     this.maxArtifactBytes = maxArtifactBytes;
+    this.userCli = userCli ?? createUserCliInstaller({ cliRoot, binPath: cliBin });
   }
 
   async plan({ operation = "install", artifact, profile = "daily", configRoot } = {}) {
@@ -315,6 +338,7 @@ export class ArtifactInstaller {
       profileId,
       configRoot: resolvedConfigRoot,
       execution: Object.freeze({ lifecycleScripts: "DISABLED", network: "OFFLINE_CACHE_ONLY", nestedCommand: "bootstrap" }),
+      cli: this.userCli.describe(verified.descriptor.sha256),
       zeroWriteEvidence: Object.freeze({ writes: 0, subprocesses: 0, providerRequests: 0 }),
     };
     return Object.freeze({ ...plan, planDigest: digestValue(plan) });
@@ -364,6 +388,12 @@ export class ArtifactInstaller {
         });
       }
       const installed = await assertInstalledPackage(installRoot);
+      let stagedCli = await this.userCli.stage({
+        packageRoot: installed.packageRoot,
+        artifactSha256: verified.descriptor.sha256,
+        sourceCommit: installed.sourceCommit,
+        packageVersion: installed.version,
+      });
       const nestedArgs = [installed.binPath, "bootstrap", "--profile", profileId];
       nestedArgs.push("--config-root", resolvedConfigRoot, "--apply", "--yes", "--json");
       const nestedResult = await this.runCommand(this.nodeCommand, nestedArgs, {
@@ -372,6 +402,38 @@ export class ArtifactInstaller {
         label: "artifact-contained omp",
       });
       const receipt = parseNestedReceipt(nestedResult);
+      let cli;
+      try {
+        const statusResult = await this.runCommand(this.nodeCommand, [
+          installed.binPath,
+          "status",
+          "--config-root",
+          resolvedConfigRoot,
+          "--json",
+        ], { cwd: installed.packageRoot, env: runtime.env, label: "artifact generation identity" });
+        const installedStatus = parseNestedReceipt(statusResult);
+        if (installedStatus.status !== "INSTALLED" || !SHA256.test(installedStatus.generationId ?? "")) {
+          fail("ARTIFACT_GENERATION_IDENTITY_INVALID", "artifact-contained status did not report one installed generation");
+        }
+        stagedCli = await this.userCli.bindGeneration(stagedCli, installedStatus.generationId);
+        cli = await this.userCli.activate(stagedCli);
+        if (typeof receipt.transactionId === "string") await this.userCli.recordTransactionSnapshot(receipt.transactionId, cli.snapshot);
+      } catch (cause) {
+        if (cli?.snapshot) await this.userCli.restore(cli.snapshot);
+        if (typeof receipt.transactionId === "string") {
+          const rollbackResult = await this.runCommand(this.nodeCommand, [
+            installed.binPath,
+            "rollback",
+            `before-${receipt.transactionId}`,
+            "--config-root",
+            resolvedConfigRoot,
+            "--yes",
+            "--json",
+          ], { cwd: installed.packageRoot, env: runtime.env, label: "artifact CLI activation rollback" });
+          parseNestedReceipt(rollbackResult);
+        }
+        fail("CLI_ACTIVATION_FAILED", "artifact generation was rolled back after user CLI activation failed", { cause });
+      }
       return Object.freeze({
         ok: true,
         status: "ARTIFACT_APPLIED",
@@ -382,6 +444,7 @@ export class ArtifactInstaller {
         artifact: Object.freeze({ path: artifactPath, bytes: verified.descriptor.bytes, sha256: verified.descriptor.sha256, packageName: installed.name, packageVersion: installed.version }),
         planDigest: plan.planDigest,
         receipt,
+        cli,
       });
     } finally {
       await fs.rm(runtimeRoot, { recursive: true, force: true });

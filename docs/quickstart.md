@@ -9,7 +9,7 @@ plan.
 
 - Node.js 22.19.0 or newer (Node 22.19.0 and 24.x are the CI matrix);
 - a compatible Pi host, validated here against
-  `@earendil-works/pi-coding-agent@0.84.1`;
+  `@earendil-works/pi-coding-agent@0.84.3`;
 - a clean checkout and no credentials in the repository.
 
 Install dependencies without executing package lifecycle scripts:
@@ -55,6 +55,23 @@ last, runs the static doctor, and starts Pi in an isolated no-model RPC smoke.
 It does not submit a prompt or read a Provider key. Extension code still has
 the invoking OS user's authority; this smoke is startup evidence, not a
 whole-session sandbox.
+
+## Daily local installation
+
+After the protected M10 promotion, the current user-level CLI is available as
+`~/.local/bin/omp`. It manages installation, status, diagnosis and rollback;
+it never executes Agent tasks. Use `/omp` inside Pi for Agent, BatchSwarm,
+Workflow, SwarmGoal and Ultra runs.
+
+```bash
+omp version --json
+omp status --json
+omp doctor --json
+```
+
+The expected Stable identities are Pi `0.84.3`, `pi-subagents@0.57.0`, an
+`INSTALLED` status, generation alignment `MATCH`, and seven daily bindings
+that remain `external/owner=user`.
 
 ## Inspect the product surfaces
 

@@ -31,7 +31,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 2
+          # M10 P1 verifies the preserved M9 source/evidence/merge chain.
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Node
@@ -66,3 +67,6 @@ jobs:
 
       - name: Execute the M9 upstream compatibility deterministic gates
         run: npm run verify:m9:run
+
+      - name: Execute the M10 promotion deterministic gates
+        run: npm run verify:m10:run

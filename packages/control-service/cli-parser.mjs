@@ -14,6 +14,7 @@ const VALUE_OPTIONS = new Map([
   ["--input-file", "inputFile"],
   ["--project", "projectRoot"],
   ["--artifact", "artifact"],
+  ["--bundle", "bundle"],
 ]);
 
 const BOOLEAN_OPTIONS = new Map([
@@ -25,6 +26,7 @@ const BOOLEAN_OPTIONS = new Map([
   ["--static", "static"],
   ["--live", "live"],
   ["--resolved", "resolved"],
+  ["--terminate-pi", "terminatePi"],
 ]);
 
 const COMMANDS = new Set([
@@ -32,6 +34,8 @@ const COMMANDS = new Set([
   "install",
   "doctor",
   "status",
+  "version",
+  "upstream",
   "update",
   "rollback",
   "uninstall",
@@ -65,6 +69,7 @@ const BATCH_SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run",
 const GOAL_SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", "status"]);
 const ULTRA_COMMANDS = new Set(["list", "show", "validate", "plan", "run"]);
 const THEME_COMMANDS = new Set(["list", "show", "preview", "use", "reset", "doctor"]);
+const UPSTREAM_COMMANDS = new Set(["plan", "apply", "status", "rollback"]);
 const MODE_NAMESPACED_ID = /^(?:[a-z][a-z0-9-]{0,63}(?:\/[a-z][a-z0-9-]{0,63})?|(?:user|project|package):[a-z][a-z0-9-]{0,63})$/u;
 
 function fail(message, code = "INVALID_ARGUMENT") {
@@ -142,6 +147,8 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   if (!new Set(["swarm", "workflow", "ultra"]).has(command) && options.inputFile !== undefined) fail("--input-file is only valid for workflow, swarm, or ultra commands");
   if (!["models", "gate"].includes(command) && options.projectRoot !== undefined) fail("--project is only valid for models or gate validate");
   if (!["install", "update"].includes(command) && options.artifact !== undefined) fail("--artifact is only valid for install or update");
+  if (command !== "upstream" && options.bundle !== undefined) fail("--bundle is only valid for upstream plan or apply");
+  if (command !== "upstream" && options.terminatePi !== undefined) fail("--terminate-pi is only valid for upstream apply or rollback");
 
   if (options.profile !== undefined) assertIdentifier(options.profile, "profile");
   if (options.mode !== undefined) {
@@ -152,6 +159,7 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   if (options.scope !== undefined && !SCOPES.has(options.scope)) fail("scope must be global or project");
   if (options.projectRoot !== undefined && !path.isAbsolute(options.projectRoot)) fail("--project must be an absolute path");
   if (options.artifact !== undefined && !path.isAbsolute(options.artifact)) fail("--artifact must be an absolute path");
+  if (options.bundle !== undefined && !path.isAbsolute(options.bundle)) fail("--bundle must be an absolute path");
   if (options.model !== undefined && !/^[A-Za-z0-9][A-Za-z0-9._:/+-]{0,127}$/.test(options.model)) {
     fail("model must be a bounded non-secret identifier");
   }
@@ -202,10 +210,46 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
     return { command, mutation: false, options: { configRoot, live: options.live === true, json: options.json === true } };
   }
 
-  if (command === "status") {
-    if (positionals.length) fail("status accepts no positional arguments");
+  if (command === "status" || command === "version") {
+    if (positionals.length) fail(`${command} accepts no positional arguments`);
     reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live", "resolved"], command);
     return { command, mutation: false, options: { configRoot, json: options.json === true } };
+  }
+
+  if (command === "upstream") {
+    reject(options, ["profile", "mode", "provider", "model", "scope", "dryRun", "static", "live", "resolved", "projectRoot", "artifact", "inputFile"], command);
+    const subcommand = positionals[0] ?? null;
+    if (!UPSTREAM_COMMANDS.has(subcommand)) fail("upstream requires plan, apply, status, or rollback");
+    const transactionId = positionals[1] ?? null;
+    if (positionals.length > 2) fail(`upstream ${subcommand} accepts at most one transaction id`);
+    if (transactionId !== null && !/^[a-z0-9][a-z0-9-]{0,127}$/u.test(transactionId)) fail("upstream transaction id is invalid");
+    if (["plan", "apply"].includes(subcommand) && !options.bundle) fail(`upstream ${subcommand} requires --bundle <absolute-path>`);
+    if (["status", "rollback"].includes(subcommand) && options.bundle !== undefined) fail(`--bundle is not valid for upstream ${subcommand}`);
+    if (subcommand === "status") {
+      if (options.apply || options.plan || options.yes || options.terminatePi) fail("upstream status is read-only");
+    } else if (subcommand === "plan") {
+      if (transactionId !== null || options.apply || options.plan || options.yes || options.terminatePi) fail("upstream plan accepts only --bundle and --json");
+    } else if (subcommand === "apply") {
+      if (transactionId !== null || options.apply !== true || options.yes !== true) fail("upstream apply requires --apply --yes and no transaction id");
+      if (options.plan) fail("--plan is not valid for upstream apply");
+    } else {
+      if (transactionId === null || options.yes !== true) fail("upstream rollback requires a transaction id and --yes");
+      if (options.apply || options.plan) fail("--apply/--plan are not valid for upstream rollback");
+    }
+    return {
+      command,
+      mutation: ["apply", "rollback"].includes(subcommand),
+      options: {
+        configRoot,
+        subcommand,
+        transactionId,
+        bundle: options.bundle ? path.resolve(options.bundle) : null,
+        apply: options.apply === true,
+        yes: options.yes === true,
+        terminatePi: options.terminatePi === true,
+        json: options.json === true,
+      },
+    };
   }
 
   if (command === "update" || command === "uninstall") {

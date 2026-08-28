@@ -164,7 +164,7 @@ function terminate(child) {
   child?.kill?.("SIGTERM");
 }
 
-function safeEnvironment({ temporaryRoot, configRoot, requestFile }) {
+function safeEnvironment({ temporaryRoot, configRoot, requestFile, repositoryRoot }) {
   return {
     PATH: process.env.PATH ?? "",
     HOME: path.join(temporaryRoot, "home"),
@@ -173,7 +173,7 @@ function safeEnvironment({ temporaryRoot, configRoot, requestFile }) {
     XDG_CONFIG_HOME: path.join(temporaryRoot, "xdg-config"),
     XDG_DATA_HOME: path.join(temporaryRoot, "xdg-data"),
     PI_CODING_AGENT_DIR: configRoot,
-    PI_SUBAGENT_EXTRA_AGENT_DIRS: path.join(rootDir, "bundles", "only-my-pi-agent-bundle", "agents"),
+    PI_SUBAGENT_EXTRA_AGENT_DIRS: path.join(repositoryRoot, "bundles", "only-my-pi-agent-bundle", "agents"),
     PI_SUBAGENT_MAX_DEPTH: "1",
     PI_SUBAGENT_MAX_SPAWNS_PER_SESSION: "64",
     PI_SUBAGENT_WAIT_TOOL_ENABLED: "false",
@@ -190,12 +190,12 @@ async function writeRequest(temporaryRoot, request) {
   return requestFile;
 }
 
-export async function runPiM9Phase({ piCommand, phase, request, configRoot, subagentsEntry, spawnImpl = spawn, timeoutMs }) {
+export async function runPiM9Phase({ piCommand, phase, request, configRoot, subagentsEntry, acceptanceExtension, spawnImpl = spawn, timeoutMs }) {
   const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), `only-my-pi-m9-live-${phase}-`));
   await Promise.all(["home", "tmp", "xdg-cache", "xdg-config", "xdg-data"].map((name) => fs.mkdir(path.join(temporaryRoot, name), { mode: 0o700 })));
   const requestFile = await writeRequest(temporaryRoot, { ...request, phase });
-  const extension = fileURLToPath(new URL("../packages/subagents/release/m9-live-acceptance-extension.mjs", import.meta.url));
-  const env = safeEnvironment({ temporaryRoot, configRoot, requestFile });
+  const extension = acceptanceExtension ?? fileURLToPath(new URL("../packages/subagents/release/m9-live-acceptance-extension.mjs", import.meta.url));
+  const env = safeEnvironment({ temporaryRoot, configRoot, requestFile, repositoryRoot: request.repositoryRoot });
   const workspaceRoot = path.join(configRoot, "only-my-pi", "live-workspaces", request.runNonce);
   await fs.mkdir(workspaceRoot, { recursive: true, mode: 0o700 });
   const argv = [

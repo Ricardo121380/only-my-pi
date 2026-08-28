@@ -31,6 +31,26 @@ unknown/user-owned fields, discard the stale plan, and generate a fresh plan.
 The transactional publisher intentionally refuses to overwrite concurrent
 settings.
 
+## `PASS_WITH_UPDATE_AVAILABLE`
+
+The installed historical generation is healthy, but the current checkout has a
+different target. This is not installation corruption. Review an update or
+upstream migration plan; do not delete the verified generation or LKG.
+
+## `CURRENT_SETTINGS_NOT_LAST_KNOWN_GOOD`
+
+The active generation may exist, but current settings no longer match the
+hash-bound LKG snapshot. Stop mutating operations and use the transaction/LKG
+recovery plan. Do not manually reorder package entries or rewrite LKG metadata.
+
+## Incomplete upstream transaction
+
+Mutating `omp` commands recover an incomplete upstream journal before starting
+new work. Inspect with `omp upstream status --json`. If recovery reports
+`MANUAL_RECONCILIATION_REQUIRED`, preserve the journal and follow its exact
+root/settings reconciliation plan; never delete backup siblings or transaction
+records by hand.
+
 ## `PI_EXTENSION_REGISTRATION_UNVERIFIED`
 
 The no-model smoke started Pi but did not observe the expected `omp` command.

@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { BootstrapService } from "../packages/bootstrap/bootstrap-service.mjs";
 import { ArtifactInstaller, createArtifactProcessRunner } from "../packages/bootstrap/artifact-installer.mjs";
+import { createUserCliInstaller } from "../packages/bootstrap/user-cli-installer.mjs";
 import { createNpmCommandRunner } from "../packages/bootstrap/command-runner.mjs";
 import { DoctorService } from "../packages/bootstrap/doctor-service.mjs";
 import { createNoModelSmokeRunner } from "../packages/bootstrap/smoke-runner.mjs";
@@ -16,12 +17,21 @@ import { createWorkflowControlService } from "../packages/control-service/workfl
 import { createSwarmControlService } from "../packages/control-service/swarm-service.mjs";
 import { createThemeControlService } from "../packages/control-service/theme-service.mjs";
 import { createStatusService } from "../packages/control-service/status-service.mjs";
+import { createVersionService } from "../packages/control-service/version-service.mjs";
 import { createUltraRunControlService } from "../packages/control-service/ultra-run-service.mjs";
 import { parseOmpArgs } from "../packages/control-service/cli-parser.mjs";
 import { ControlService, OMP_USAGE } from "../packages/control-service/service.mjs";
 import { DailyConfigService } from "../packages/daily-config/index.mjs";
 import { ProjectGateService, createNodeExecAdapter } from "../packages/project-gates/index.mjs";
 import { RunManagementService, createRunRecordStore } from "../packages/run-management/index.mjs";
+import {
+  createCandidateTargetResolver,
+  createCrossRootTransactionEngine,
+  createExternalMigrationPlanner,
+  createFilesystemMigrationPlatform,
+  createPiProcessAdmission,
+  createUpstreamMigrationService,
+} from "../packages/upstream-migration/index.mjs";
 
 const THIS_FILE = fileURLToPath(import.meta.url);
 const DEFAULT_ROOT = path.resolve(path.dirname(THIS_FILE), "..");
@@ -54,6 +64,14 @@ const DEFAULT_DEPENDENCIES = Object.freeze({
   createNpmCommandRunner,
   createNoModelSmokeRunner,
   createArtifactProcessRunner,
+  createUserCliInstaller,
+  createExternalMigrationPlanner,
+  createFilesystemMigrationPlatform,
+  createCrossRootTransactionEngine,
+  createCandidateTargetResolver,
+  createPiProcessAdmission,
+  createUpstreamMigrationService,
+  createVersionService,
   createWorkflowControlService,
 });
 
@@ -104,8 +122,13 @@ export function createProductionControlService({
   const resolvedConfigRoot = assertAbsolutePath(configRoot, "configRoot");
   const wired = dependenciesWithDefaults(dependencies);
   const artifactProcessOptions = spawnImpl === undefined ? {} : { spawnImpl };
+  const userCli = wired.createUserCliInstaller({
+    cliRoot: path.join(os.homedir(), ".local", "share", "only-my-pi"),
+    binPath: path.join(os.homedir(), ".local", "bin", "omp"),
+  });
   const artifactInstaller = new wired.ArtifactInstaller({
     runCommand: wired.createArtifactProcessRunner(artifactProcessOptions),
+    userCli,
   });
   const doctor = new wired.DoctorService({ rootDir: resolvedRoot });
   const runner = wired.createNpmCommandRunner({ configRoot: resolvedConfigRoot });
@@ -117,16 +140,55 @@ export function createProductionControlService({
     smokeRunner,
     doctorService: doctor,
   });
+  const candidateTarget = wired.createCandidateTargetResolver({ rootDir: resolvedRoot });
   const bootstrap = new wired.BootstrapService({
     rootDir: resolvedRoot,
     doctorService: doctor,
     transactionEngine,
+    alternativeTargetResolver: (options) => candidateTarget.alignInstalled(options),
   });
   const workflows = wired.createWorkflowControlService({ rootDir: resolvedRoot });
   const swarms = createSwarmControlService({ rootDir: resolvedRoot });
   const ultras = createUltraRunControlService({ rootDir: resolvedRoot });
   const themes = createThemeControlService({ rootDir: resolvedRoot });
   const statusService = createStatusService();
+  const versionService = wired.createVersionService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot, userCli });
+  const migrationPlanner = wired.createExternalMigrationPlanner({
+    configRoot: resolvedConfigRoot,
+    piPackageRoot: "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent",
+    piBinPath: "/opt/homebrew/bin/pi",
+    bootstrap,
+  });
+  const processAdmission = wired.createPiProcessAdmission({
+    piPackageRoot: "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent",
+    piBinPath: "/opt/homebrew/bin/pi",
+  });
+  const migrationPlatform = wired.createFilesystemMigrationPlatform({
+    rootDir: resolvedRoot,
+    configRoot: resolvedConfigRoot,
+    piPackageRoot: "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent",
+    piBinPath: "/opt/homebrew/bin/pi",
+    planner: migrationPlanner,
+    candidateTarget,
+    userCli,
+    doctor,
+    smokeRunner,
+    bootstrapTransaction: transactionEngine,
+    runCommand: wired.createArtifactProcessRunner({ ...artifactProcessOptions, maxOutputBytes: 8 * 1024 * 1024 }),
+  });
+  const upstreamEngine = wired.createCrossRootTransactionEngine({
+    configRoot: resolvedConfigRoot,
+    platform: migrationPlatform,
+    processAdmission,
+  });
+  const upstreamMigration = wired.createUpstreamMigrationService({
+    rootDir: resolvedRoot,
+    configRoot: resolvedConfigRoot,
+    planner: migrationPlanner,
+    candidateTarget,
+    processAdmission,
+    engine: upstreamEngine,
+  });
   const dailyConfig = new wired.DailyConfigService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot });
   const projectGates = new wired.ProjectGateService({
     configRoot: resolvedConfigRoot,
@@ -137,6 +199,7 @@ export function createProductionControlService({
   const runManagement = new wired.RunManagementService({ recordStore: runRecordStore });
   return new wired.ControlService({
     artifactInstaller,
+    userCli,
     bootstrap,
     doctor,
     confirm,
@@ -150,6 +213,8 @@ export function createProductionControlService({
     projectGates,
     runManagement,
     statusService,
+    versionService,
+    upstreamMigration,
   });
 }
 
@@ -251,6 +316,13 @@ export function formatOmpHuman(result) {
   addField(lines, "themeId", details.themeId ?? details.theme?.id);
   addField(lines, "piThemeName", details.piThemeName ?? details.theme?.piThemeName);
   addField(lines, "harnessStatus", details.harnessStatus ? details.harnessStatus.status : undefined);
+  addField(lines, "packageVersion", details.packageVersion);
+  addField(lines, "sourceCommit", details.sourceCommit);
+  addField(lines, "artifactSha256", details.artifactSha256);
+  addField(lines, "cliRoot", details.cliRoot);
+  addField(lines, "piVersion", details.piVersion);
+  addField(lines, "subagentsVersion", details.subagentsVersion);
+  addField(lines, "decision", details.decision);
   if (details.harnessStatus?.provenance) addField(lines, "provenance", details.harnessStatus.provenance);
 
   const providerSelection = details.providerSelection ?? details.desired?.metadata?.providerSelection;

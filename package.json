@@ -59,11 +59,15 @@
     "scripts/subagents-release-gates.mjs",
     "scripts/daily-harness-gates.mjs",
     "scripts/upstream-compatibility-gates.mjs",
+    "scripts/m10-promotion-gates.mjs",
     "scripts/m8-deterministic-acceptance.mjs",
     "scripts/m8-live-acceptance.mjs",
     "scripts/m8-real-root-rehearsal.mjs",
     "scripts/m9-upstream-compatibility.mjs",
     "scripts/m9-live-acceptance.mjs",
+    "scripts/m10-build-migration-bundle.mjs",
+    "scripts/m10-protected-acceptance.mjs",
+    "scripts/m10-deterministic-acceptance.mjs",
     "scripts/subagents-compatibility.mjs",
     "scripts/verification-receipt.mjs",
     "scripts/mode-doctor.mjs",
@@ -90,6 +94,7 @@
     "packages/pi-subagents-adapter/",
     "packages/subagents/",
     "packages/upstream-compatibility/",
+    "packages/upstream-migration/",
     "packages/adapters/"
   ],
   "scripts": {
@@ -134,11 +139,15 @@
     "verify:m8:run": "node scripts/daily-harness-gates.mjs --run --json",
     "verify:m9": "node scripts/upstream-compatibility-gates.mjs --json",
     "verify:m9:run": "node scripts/upstream-compatibility-gates.mjs --run --json",
+    "verify:m10": "node scripts/m10-promotion-gates.mjs --json",
+    "verify:m10:run": "node scripts/m10-promotion-gates.mjs --run --json",
     "compatibility:m9": "node scripts/m9-upstream-compatibility.mjs --plan --json",
     "probe:m9": "node scripts/m9-upstream-compatibility.mjs --probe --json",
     "plan:m9:live": "node scripts/m9-live-acceptance.mjs --plan --json",
     "plan:m8:live": "node scripts/m8-live-acceptance.mjs --plan --json",
     "plan:m8:real-root": "node scripts/m8-real-root-rehearsal.mjs --plan --json",
+    "plan:m10:bundle": "node scripts/m10-build-migration-bundle.mjs --json",
+    "plan:m10:protected": "node scripts/m10-protected-acceptance.mjs --plan --json",
     "test:coverage:m8": "node scripts/m8-deterministic-acceptance.mjs",
     "compatibility:subagents": "node scripts/subagents-compatibility.mjs --requested preview --json",
     "test:deepseek": "node packages/deepseek-conformance/test.mjs",
@@ -169,7 +178,7 @@
     "@earendil-works/pi-coding-agent": "*"
   },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "0.84.1",
+    "@earendil-works/pi-coding-agent": "0.84.3",
     "typescript": "5.9.3"
   },
   "pi": {

@@ -15,6 +15,7 @@ export * from "./graph-plan.mjs";
 export * from "./npm-stager.mjs";
 export * from "./settings-compiler.mjs";
 export * from "./package-bindings.mjs";
+export * from "./user-cli-installer.mjs";
 
 const SAFE_PROFILE_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const COMMIT_SHA = /^[a-f0-9]{40}$/;

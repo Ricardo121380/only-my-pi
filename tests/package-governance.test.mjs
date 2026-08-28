@@ -125,6 +125,14 @@ test("every promoted package has an exact disabled lifecycle audit", () => {
   const packages = loadGovernance(root).inventory.packages;
   const expectedScripts = new Map([
     [
+      "lsp",
+      [{
+        name: "prepack",
+        commandSha256: "sha256:16c0e4305ac213dff39fc82b69b6e08aeeb8758e33cd72d7c409752a70e9f054",
+        necessity: "not-required",
+      }],
+    ],
+    [
       "permission-modes",
       [{
         name: "postinstall",
@@ -137,6 +145,14 @@ test("every promoted package has an exact disabled lifecycle audit", () => {
       [{
         name: "postinstall",
         commandSha256: "sha256:9fb2978bb4dfeb2719e77a68d657788c06408485f81390b06d29dcb33176994f",
+        necessity: "not-required",
+      }],
+    ],
+    [
+      "plan-mode",
+      [{
+        name: "prepack",
+        commandSha256: "sha256:16c0e4305ac213dff39fc82b69b6e08aeeb8758e33cd72d7c409752a70e9f054",
         necessity: "not-required",
       }],
     ],

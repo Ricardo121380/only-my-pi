@@ -22,6 +22,26 @@ Direct tarball integrity and the realized tree are rechecked. A changed
 settings digest produces `PLAN_STALE`/`CONCURRENT_SETTINGS_CHANGE` rather than
 silently dropping user fields.
 
+## Governed upstream migration
+
+Pi and the complete nine-package external tree use the separate `upstream`
+transaction namespace. Always review the immutable bundle first:
+
+```bash
+omp upstream plan --bundle /absolute/migration-bundle.json --json
+omp upstream apply --bundle /absolute/migration-bundle.json \
+  --apply --yes --terminate-pi --json
+```
+
+The apply step is offline, requires a source-bound bundle, accepts only the
+exact package matrix in its manifest, stops reviewed Pi processes with bounded
+`SIGTERM` only, and journals every cross-root boundary. It does not adopt the
+nine packages: their binding remains `external/owner=user`. Use
+`omp upstream status --json` to inspect terminal or incomplete transactions,
+and `omp upstream rollback <transaction-id> --yes --terminate-pi --json` for a
+reviewed upstream rollback. Ordinary `omp rollback` only handles only-my-pi
+generation/CLI state.
+
 ## Rollback
 
 List a reviewable rollback plan first:

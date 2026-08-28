@@ -88,7 +88,9 @@ test("candidate Pi M9 phase is shell-free, scrubbed, and loads only candidate su
   const installationRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-m9-phase-candidate-"));
   t.after(() => fs.rm(installationRoot, { recursive: true, force: true }));
   const subagentsEntry = path.join(installationRoot, "subagents.ts");
+  const acceptanceExtension = path.join(installationRoot, "acceptance.ts");
   await fs.writeFile(subagentsEntry, "// fixture\n");
+  await fs.writeFile(acceptanceExtension, "// fixture\n");
   let invocation;
   const record = {
     formatVersion: 1,
@@ -123,6 +125,7 @@ test("candidate Pi M9 phase is shell-free, scrubbed, and loads only candidate su
     },
     configRoot,
     subagentsEntry,
+    acceptanceExtension,
     timeoutMs: 10_000,
     spawnImpl(command, args, options) {
       const child = new EventEmitter();
@@ -147,6 +150,7 @@ test("candidate Pi M9 phase is shell-free, scrubbed, and loads only candidate su
   assert.equal(invocation.options.env.CODEX_API_KEY, undefined);
   assert.ok(invocation.args.includes("--no-extensions"));
   assert.equal(invocation.args.filter((entry) => entry === "--extension").length, 2);
+  assert.ok(invocation.args.includes(acceptanceExtension));
   assert.equal(invocation.args.includes("--api-key"), false);
 });
 

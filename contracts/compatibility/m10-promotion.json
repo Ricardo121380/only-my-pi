@@ -1,0 +1,11 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-m10-promotion",
+  "state": "PROMOTE",
+  "sourceCommit": "615695556f6ed699a901bef43e6fbb09f5aa663e",
+  "evidenceCommit": "9df5f44dd547234ceea40d12875defbfe67d653e",
+  "protectedEvidence": {
+    "P9": "verification/protected/2026-08-28-m10-real-root-migration.json",
+    "P10": "verification/protected/2026-08-28-m10-promoted-live-model-matrix.json"
+  }
+}

@@ -61,6 +61,15 @@ test("doctor defaults to static and live is explicit", () => {
   assert.throws(() => parseOmpArgs(["doctor", "--static", "--live"], context), /mutually exclusive/);
 });
 
+test("version is read-only and accepts only config-root and JSON", () => {
+  const parsed = parseOmpArgs(["version", "--json"], context);
+  assert.equal(parsed.command, "version");
+  assert.equal(parsed.mutation, false);
+  assert.equal(parsed.options.configRoot, "/tmp/omp-home/.pi/agent");
+  assert.throws(() => parseOmpArgs(["version", "extra"], context), /accepts no positional/u);
+  assert.throws(() => parseOmpArgs(["version", "--apply"], context), /not valid/u);
+});
+
 test("rollback accepts only a canonical snapshot id", () => {
   assert.equal(parseOmpArgs(["rollback", "snap-1", "--yes"], context).options.snapshotId, "snap-1");
   assert.throws(() => parseOmpArgs(["rollback", "../escape"], context), /invalid snapshot/);
@@ -215,4 +224,37 @@ test("M8 terminal runs surface is management-only and GC remains plan-first", ()
   assert.equal(apply.options.apply, true);
   assert.throws(() => parseOmpArgs(["runs", "show", "run-one", "--apply"]), /only valid for runs gc/u);
   assert.throws(() => parseOmpArgs(["runs", "gc", "--yes"]), /only valid with --apply/u);
+});
+
+test("M10 upstream grammar separates zero-write planning from explicit migration authority", () => {
+  const bundle = "/tmp/m10-upstream.bundle.json";
+  const plan = parseOmpArgs(["upstream", "plan", "--bundle", bundle, "--json"], context);
+  assert.equal(plan.command, "upstream");
+  assert.equal(plan.mutation, false);
+  assert.equal(plan.options.subcommand, "plan");
+  assert.equal(plan.options.bundle, bundle);
+
+  const apply = parseOmpArgs(["upstream", "apply", "--bundle", bundle, "--apply", "--yes", "--terminate-pi"], context);
+  assert.equal(apply.mutation, true);
+  assert.equal(apply.options.apply, true);
+  assert.equal(apply.options.yes, true);
+  assert.equal(apply.options.terminatePi, true);
+
+  const status = parseOmpArgs(["upstream", "status", "tx-123", "--json"], context);
+  assert.equal(status.mutation, false);
+  assert.equal(status.options.transactionId, "tx-123");
+
+  const rollback = parseOmpArgs(["upstream", "rollback", "tx-123", "--yes", "--terminate-pi"], context);
+  assert.equal(rollback.mutation, true);
+  assert.equal(rollback.options.terminatePi, true);
+
+  for (const argv of [
+    ["upstream", "plan"],
+    ["upstream", "plan", "--bundle", "relative.bundle"],
+    ["upstream", "plan", "--bundle", bundle, "--yes"],
+    ["upstream", "apply", "--bundle", bundle, "--yes"],
+    ["upstream", "apply", "--bundle", bundle, "--apply"],
+    ["upstream", "rollback", "tx-123"],
+    ["upstream", "status", "tx-123", "--terminate-pi"],
+  ]) assert.throws(() => parseOmpArgs(argv, context), Error, argv.join(" "));
 });

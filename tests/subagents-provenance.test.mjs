@@ -16,6 +16,9 @@ function json(relativePath) {
 test("source dossier pins every implementation reference to an identity and license boundary", () => {
   const dossier = text("docs/research/2026-08-18-subagents-source-dossiers.md");
   for (const required of [
+    "pi-subagents@0.57.0",
+    "aa2d3e8ed9aacf161b03354c65a93f58c977af47152ad23f698b360f65e6018b",
+    "9e25af0a6c8f2657a721f425bf5408798abfaaffb4495a56a0c7d2959669b882",
     "pi-subagents@0.45.2",
     "7836c0f5ef642a00ae0572c910dec7a56216c74d",
     "@moonshot-ai/kimi-code@0.36.1",
@@ -48,8 +51,8 @@ test("runtime dependencies contain no referenced harness or second scheduler pac
 test("the sole physical backend inventory pin matches the audited dossier byte identity", () => {
   const inventory = json("inventory/packages.lock.json");
   const backend = inventory.packages.find((entry) => entry.id === "subagents");
-  assert.equal(backend.spec, "npm:pi-subagents@0.45.2");
-  assert.equal(backend.audit.integrity, "sha512-VEvBF6vrpi+eLEjhgwqutSnaH/aw58+Um9vdJUc6Td1asH22bAKahrgD3AafaRNsROgiaukw4DRdmlRjEhBxQA==");
+  assert.equal(backend.spec, "npm:pi-subagents@0.57.0");
+  assert.equal(backend.audit.integrity, "sha512-CvsOBp61dZU+HV3kHdfFc+iBuO9DOI5nvTiGrSaFVpH7XK5/22QbBAdjcrhOjcSzA5Ev3l0Qr/JC1I8VLES9Bw==");
   assert.deepEqual(backend.owners, ["subagents"]);
   const source = text("packages/subagents/adapters/pi-subagents-rpc-v1/compiler.mjs");
   assert.equal(source.includes("@moonshot-ai"), false);

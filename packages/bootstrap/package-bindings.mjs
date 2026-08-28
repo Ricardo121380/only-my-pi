@@ -243,3 +243,60 @@ export async function bindExistingPackages({ configRoot, settings, plan, priorBi
     generationKey: generationKeyFromDigest(graphDigest),
   });
 }
+
+/**
+ * Re-verify recorded borrowed packages without consulting the current source
+ * inventory. Historical generations remain diagnosable after Stable advances,
+ * while the recorded settings/lock/disk identities still fail closed.
+ */
+export async function verifyRecordedExternalBindings({ configRoot, settings, bindings } = {}) {
+  if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("verifyRecordedExternalBindings requires an absolute configRoot");
+  if (!settings || typeof settings !== "object" || Array.isArray(settings)) throw new TypeError("settings must be an object");
+  if (!Array.isArray(bindings)) fail("EXTERNAL_PACKAGE_BINDING_INVALID", "recorded package bindings must be an array");
+  const externalBindings = bindings.filter((entry) => entry.binding === "external");
+  if (externalBindings.length === 0) return Object.freeze([]);
+  const selectedSettings = Array.isArray(settings.packages) ? settings.packages : [];
+  if (settings.packages !== undefined && !Array.isArray(settings.packages)) fail("SETTINGS_FIELD_CONFLICT", "Pi setting packages must be an array");
+  const root = path.resolve(configRoot);
+  const npmRoot = path.join(root, "npm");
+  const lockfile = await readJsonNoFollow(path.join(npmRoot, "package-lock.json"), { missing: null });
+  if (!lockfile || lockfile.lockfileVersion !== 3 || !lockfile.packages || typeof lockfile.packages !== "object") {
+    fail("EXTERNAL_PACKAGE_LOCK_DRIFT", "npm/package-lock.json v3 is required to verify recorded packages");
+  }
+  await assertRealDirectory(root, "EXTERNAL_PACKAGE_PATH_UNSAFE", "Pi config root");
+  await assertRealDirectory(npmRoot, "EXTERNAL_PACKAGE_PATH_UNSAFE", "Pi npm root");
+  await assertRealDirectory(path.join(npmRoot, "node_modules"), "EXTERNAL_PACKAGE_PATH_UNSAFE", "Pi node_modules root");
+
+  const verified = [];
+  for (const binding of externalBindings) {
+    const parsed = parsePackageSpec(binding.sourceSpec);
+    if (parsed.type !== "npm" || parsed.name !== binding.name || parsed.version !== binding.resolvedVersion) {
+      fail("EXTERNAL_PACKAGE_BINDING_INVALID", `recorded package identity is invalid for ${binding.id}`);
+    }
+    const matches = selectedSettings.filter((setting) => packageSettingSource(setting) === binding.sourceSpec);
+    if (matches.length !== 1 || !externalSettingMatches({ spec: binding.sourceSpec, resourceFilter: binding.resourceFilter }, matches[0])) {
+      fail("EXTERNAL_PACKAGE_SETTINGS_DRIFT", `settings activation differs from the recorded package binding for ${binding.id}`);
+    }
+    const relativePackagePath = `node_modules/${binding.name}`;
+    const locked = lockfile.packages[relativePackagePath];
+    if (!locked || locked.version !== binding.resolvedVersion || locked.integrity !== binding.integrity || typeof locked.resolved !== "string") {
+      fail("EXTERNAL_PACKAGE_LOCK_DRIFT", `lockfile identity or integrity differs for ${binding.id}`);
+    }
+    if (resolvedUrlDigest(locked.resolved) !== binding.resolvedUrlDigest) {
+      fail("EXTERNAL_PACKAGE_LOCK_DRIFT", `lockfile resolved URL differs for ${binding.id}`);
+    }
+    const physicalRoot = path.join(npmRoot, ...relativePackagePath.split("/"));
+    await assertRealDirectory(physicalRoot, "EXTERNAL_PACKAGE_MISSING", `external package ${binding.id}`);
+    const manifest = await readJsonNoFollow(path.join(physicalRoot, "package.json"));
+    if (manifest?.name !== binding.name || manifest?.version !== binding.resolvedVersion) {
+      fail("EXTERNAL_PACKAGE_IDENTITY_DRIFT", `physical package identity differs for ${binding.id}`);
+    }
+    lifecycleEvidence(manifest);
+    const physicalRootDigest = `sha256:${await hashResourcePath({ artifactRoot: npmRoot, relativePath: relativePackagePath, allowContainedSymlinks: true })}`;
+    if (physicalRootDigest !== binding.physicalRootDigest) {
+      fail("EXTERNAL_PACKAGE_BINDING_DRIFT", `physical package content drifted for ${binding.id}`);
+    }
+    verified.push({ id: binding.id, binding: "external", owner: "user", resolvedVersion: binding.resolvedVersion, physicalRootDigest });
+  }
+  return Object.freeze(verified.sort((left, right) => left.id.localeCompare(right.id)));
+}

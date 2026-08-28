@@ -1,0 +1,165 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-m10-final-install-evidence",
+  "evidenceId": "m10-final-promoted-install",
+  "status": "PASS",
+  "createdAt": "2026-08-28T08:52:36Z",
+  "chain": {
+    "implementationSourceCommit": "615695556f6ed699a901bef43e6fbb09f5aa663e",
+    "protectedEvidenceCommit": "9df5f44dd547234ceea40d12875defbfe67d653e",
+    "promotionDecisionCommit": "61f0962b28211fc287bd14797e236ac29081f495",
+    "finalAlignmentSourceCommit": "7973a4e32e6271a3c266ef3845240bbcee073e31"
+  },
+  "artifacts": {
+    "migrationBundleSha256": "sha256:2c90b42cfb298e758aeaa4ab1359ac0136066b9242954d57421dd84a18d7f414",
+    "protectedOnlyMyPiArtifactSha256": "sha256:a9583eaa4c8f66dbf7c2f0fa2184c1459199a80edf1f857851638f743f3a35eb",
+    "finalOnlyMyPiArtifactSha256": "sha256:b718516f4e6abdea7c166dbb3eed126ae87d058e9a1e462da36d87700765dd27",
+    "installedGenerationId": "sha256:50caffbfdba4de051cb21072ce7e7d4f0dea6f108900daa35402ea26b4fc89df",
+    "candidateGraphDigest": "sha256:29c75bd86bdbd0287c1b48fe13ccb3f35173c9f82630ea9f1d34f5282889d86b",
+    "stableGraphDigest": "sha256:29c75bd86bdbd0287c1b48fe13ccb3f35173c9f82630ea9f1d34f5282889d86b"
+  },
+  "runtime": {
+    "decision": "PROMOTE",
+    "piVersion": "0.84.3",
+    "subagentsVersion": "0.57.0",
+    "cliRoot": "USER_LOCAL_IMMUTABLE_ARTIFACT",
+    "status": "INSTALLED",
+    "doctor": "PASS",
+    "generationAlignment": "MATCH",
+    "incompleteTransactionCount": 0,
+    "dailyExternalBindingCount": 7,
+    "userPackageCount": 9,
+    "firstPartyBundleCount": 1,
+    "duplicateRuntimeOwnerCount": 0
+  },
+  "cli": {
+    "currentArtifactSha256": "sha256:b718516f4e6abdea7c166dbb3eed126ae87d058e9a1e462da36d87700765dd27",
+    "lastKnownGoodArtifactSha256": "sha256:a9583eaa4c8f66dbf7c2f0fa2184c1459199a80edf1f857851638f743f3a35eb",
+    "finalInstallTransactionStatus": "COMMITTED",
+    "upstreamMigrationTransactionStatus": "COMMITTED"
+  },
+  "packages": [
+    {
+      "name": "pi-agent-extensions",
+      "version": "0.5.4",
+      "action": "upgrade",
+      "binding": "external",
+      "owner": "user"
+    },
+    {
+      "name": "@narumitw/pi-plan-mode",
+      "version": "0.55.2",
+      "action": "upgrade",
+      "binding": "external",
+      "owner": "user"
+    },
+    {
+      "name": "pi-web-access",
+      "version": "0.25.0",
+      "action": "upgrade",
+      "binding": "external",
+      "owner": "user"
+    },
+    {
+      "name": "pi-subagents",
+      "version": "0.57.0",
+      "action": "upgrade",
+      "binding": "external",
+      "owner": "user"
+    },
+    {
+      "name": "@narumitw/pi-lsp",
+      "version": "0.49.6",
+      "action": "upgrade",
+      "binding": "external",
+      "owner": "user"
+    },
+    {
+      "name": "@sreetej510/pi-usage",
+      "version": "0.7.1",
+      "action": "upgrade",
+      "binding": "external",
+      "owner": "user"
+    },
+    {
+      "name": "pi-permission-modes",
+      "version": "2.2.0",
+      "action": "retain",
+      "binding": "external",
+      "owner": "user"
+    },
+    {
+      "name": "pi-memory",
+      "version": "0.4.1",
+      "action": "retain",
+      "binding": "external",
+      "owner": "user"
+    },
+    {
+      "name": "pi-git-sync",
+      "version": "0.1.3",
+      "action": "retain",
+      "binding": "external",
+      "owner": "user"
+    }
+  ],
+  "assertions": [
+    {
+      "id": "final-artifact-source-identity",
+      "status": "PASS"
+    },
+    {
+      "id": "candidate-stable-graph-alignment",
+      "status": "PASS"
+    },
+    {
+      "id": "cli-generation-artifact-identity",
+      "status": "PASS"
+    },
+    {
+      "id": "historical-generation-doctor",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-nine-package-matrix",
+      "status": "PASS"
+    },
+    {
+      "id": "external-ownership-preservation",
+      "status": "PASS"
+    },
+    {
+      "id": "no-duplicate-package-or-runtime-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "no-incomplete-transaction",
+      "status": "PASS"
+    },
+    {
+      "id": "verified-generation-and-lkg",
+      "status": "PASS"
+    },
+    {
+      "id": "final-no-model-smoke",
+      "status": "PASS"
+    }
+  ],
+  "privacy": {
+    "rawPromptStored": false,
+    "rawModelOutputStored": false,
+    "reasoningStored": false,
+    "hostAbsolutePathsStored": false,
+    "processIdentifiersStored": false,
+    "secretsStored": false,
+    "sessionsStored": false
+  },
+  "authorization": {
+    "providerRequests": "NOT_RUN_BY_FINAL_RECONCILIATION",
+    "externalMigration": "EXPLICIT_ONE_TRANSACTION",
+    "publish": "NOT_AUTHORIZED",
+    "release": "NOT_AUTHORIZED",
+    "writer": "DENIED"
+  },
+  "evidenceDigest": "sha256:05c9a24792f17625278b51d99e8d0be4c7f61049d190cdc50b5d02e27da8d996"
+}

@@ -8,15 +8,17 @@ import {
   runM9Compatibility,
 } from "../scripts/m9-upstream-compatibility.mjs";
 
-test("M9 CLI plan is non-mutating and preserves the Stable decision", async () => {
+test("M9 CLI plan is non-mutating and reports the later M10 promotion", async () => {
   const args = parseM9CompatibilityArgs(["--plan", "--json"]);
   const result = await runM9Compatibility(args);
   assert.equal(result.status, "PLAN_ONLY");
   assert.equal(result.action, "VALIDATE_CONTRACT");
   assert.equal(result.realPiHome, "NOT_TOUCHED");
   assert.equal(result.promptSubmitted, false);
-  assert.equal(result.decision.state, "HOLD");
-  assert.equal(result.decision.defaultPiVersion, "0.84.1");
+  assert.equal(result.decision.state, "PROMOTE");
+  assert.equal(result.decision.reasonCode, "M10_REAL_ROOT_AND_LIVE_ACCEPTANCE_PASSED");
+  assert.equal(result.decision.defaultPiVersion, "0.84.3");
+  assert.equal(result.decision.defaultSubagentsVersion, "0.57.0");
 });
 
 test("M9 CLI requires explicit disposable roots and rejects ambiguous probe input", () => {
