@@ -9,6 +9,7 @@ const DEFAULT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
 const PHYSICAL_OWNER = "subagents";
 const FIRST_PARTY_OWNER = "only-my-pi-subagent-orchestration";
 const PHYSICAL_PACKAGE_ID = "subagents";
+const STABLE_PHYSICAL_PACKAGE_SPEC = "npm:pi-subagents@0.57.0";
 const FIRST_PARTY_RESOURCE_ID = "omp-subagents-v2-runtime";
 const PUBLIC_SUBAGENT_COMMAND = "subagent";
 
@@ -122,7 +123,7 @@ export function inspectSubagentsTopology({
     report,
     "one-pinned-physical-package",
     physicalPackageEntries.length === 1
-      && physicalPackageEntries[0]?.spec === "npm:pi-subagents@0.45.2"
+      && physicalPackageEntries[0]?.spec === STABLE_PHYSICAL_PACKAGE_SPEC
       && physicalPackageEntries[0]?.installed === true
       && Array.isArray(physicalPackageEntries[0]?.owners)
       && physicalPackageEntries[0].owners.length === 1
@@ -131,6 +132,7 @@ export function inspectSubagentsTopology({
     {
       packageIds: physicalPackageEntries.map((entry) => entry.id),
       specs: physicalPackageEntries.map((entry) => entry.spec),
+      expectedSpec: STABLE_PHYSICAL_PACKAGE_SPEC,
     },
   );
 

@@ -17,9 +17,9 @@ test("coding profile resolves exact package settings", () => {
   const resolved = resolveProfileData(inventory, profile("coding"));
   assert.equal(resolved.profile.id, "coding");
   assert.equal(resolved.packages.length, 7);
-  assert.ok(resolved.piSettings.packages.includes("npm:@narumitw/pi-plan-mode@0.49.3"));
+  assert.ok(resolved.piSettings.packages.includes("npm:@narumitw/pi-plan-mode@0.55.2"));
   const filtered = resolved.piSettings.packages.find((entry) => typeof entry === "object");
-  assert.equal(filtered.source, "npm:pi-agent-extensions@0.5.2");
+  assert.equal(filtered.source, "npm:pi-agent-extensions@0.5.4");
   assert.deepEqual(filtered.extensions, [
     "extensions/sessions/index.ts",
     "extensions/context/index.ts",

@@ -44,7 +44,7 @@ test("M10 gate arguments require both protected evidence files and an exact sour
   assert.throws(() => parseM10GateArgs(["--run", "--gate", "P1"]), { code: "M10_GATE_ARGUMENT_INVALID" });
 });
 
-test("ordinary M10 verification never executes protected gates", async () => {
+test("ordinary M10 verification imports promoted evidence without executing protected gates", async () => {
   const executed = [];
   const { report } = await runM10PromotionVerification({
     rootDir: ROOT,
@@ -53,8 +53,9 @@ test("ordinary M10 verification never executes protected gates", async () => {
     runCheckImpl: async (gate) => { executed.push(gate.id); assert.equal(gate.sensitiveOutput, false); return fakeResult(gate); },
   });
   assert.deepEqual(executed, ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P11", "P12"]);
-  assert.equal(report.status, "HOLD_PROTECTED_EVIDENCE");
+  assert.equal(report.status, "COMPLETE");
   assert.equal(report.deterministicPassed, true);
-  assert.equal(report.summary.protectedNotRunByPolicy, 2);
-  assert.equal(report.authorization.providerRequests, "NOT_RUN_BY_POLICY");
+  assert.equal(report.summary.protectedPassed, 2);
+  assert.equal(report.summary.protectedNotRunByPolicy, 0);
+  assert.equal(report.authorization.providerRequests, "IMPORTED_PROTECTED_EVIDENCE");
 });

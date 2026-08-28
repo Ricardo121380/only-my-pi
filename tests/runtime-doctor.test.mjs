@@ -16,7 +16,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 function safeMetadata() {
   return {
     formatVersion: 1,
-    piVersion: "0.84.1",
+    piVersion: "0.84.3",
     loadedResourceIds: [...expected.resourceIds],
     registeredCommandIds: [...expected.commandIds],
     capabilitySnapshots: expected.capabilitySnapshots.map((entry) => ({ ...entry, state: "ACTIVE" })),
@@ -53,7 +53,7 @@ test("live metadata rejects secret-shaped and unknown fields", () => {
 });
 
 test("repository expectation fixes Pi version and all governed runtime sets", () => {
-  assert.equal(expected.piVersion, "0.84.1");
+  assert.equal(expected.piVersion, "0.84.3");
   assert.equal(expected.enforcementSurfaces.length, 7);
   assert.ok(expected.resourceIds.includes("context-doctor"));
   assert.ok(expected.resourceIds.includes("permission-modes"));
