@@ -23,10 +23,18 @@ import { parsePackageSpec } from "./lib/package-source.mjs";
 const exec = promisify(execFile);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const FULL_SHA = /^[a-f0-9]{40}$/u;
+const SRI = /^sha512-[A-Za-z0-9+/]+={0,2}$/u;
 const PI_ROOT = "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent";
 const CONFIG_ROOT = path.join(os.homedir(), ".pi", "agent");
 const PI_INTEGRITY = "sha512-Yr2p9PubrbFZmYEPYI+C8KmZP9xlFuLDnAG64RtU0ZDgrdiXYWa+y7WGyJO5OlqPliOkVCMd9IzVszO3/t0D0w==";
 const LIFECYCLE_NAMES = new Set(["preinstall", "install", "postinstall", "prepublish", "preprepare", "prepare", "postprepare", "prepack", "postpack"]);
+const REQUIRED_PI_RUNTIME_PACKAGES = Object.freeze([
+  "@earendil-works/pi-agent-core",
+  "@earendil-works/pi-ai",
+  "@earendil-works/pi-client",
+  "@earendil-works/pi-protocol",
+  "@earendil-works/pi-tui",
+]);
 
 function fail(code, message, details = {}) {
   const error = new Error(message);
@@ -194,6 +202,37 @@ async function targetExternalTree(root, env, manifestEntries) {
   return { archive: normalizedArchive, lockBytes: normalized.lockBytes };
 }
 
+export async function validateM10PiRuntimeLayout(packageRoot) {
+  const manifest = JSON.parse(await fs.readFile(path.join(packageRoot, "package.json"), "utf8"));
+  const lockBytes = await fs.readFile(path.join(packageRoot, "package-lock.json"));
+  const lock = JSON.parse(lockBytes.toString("utf8"));
+  if (manifest.name !== "@earendil-works/pi-coding-agent" || manifest.version !== "0.84.3"
+    || lock.lockfileVersion !== 3 || lock.packages?.[""]?.name !== manifest.name || lock.packages[""].version !== manifest.version) {
+    fail("M10_BUILD_PI_RUNTIME_LOCK_DRIFT", "candidate Pi runtime lock identity drifted");
+  }
+  const dependencies = manifest.dependencies ?? {};
+  for (const name of REQUIRED_PI_RUNTIME_PACKAGES) {
+    if (dependencies[name] !== "^0.84.3") fail("M10_BUILD_PI_RUNTIME_DEPENDENCY_DRIFT", `candidate Pi dependency declaration drifted for ${name}`);
+  }
+  const direct = Object.keys(dependencies).sort();
+  for (const name of direct) {
+    const locked = lock.packages?.[`node_modules/${name}`];
+    if (!locked || typeof locked.version !== "string" || !SRI.test(locked.integrity ?? "") || typeof locked.resolved !== "string") {
+      fail("M10_BUILD_PI_RUNTIME_DEPENDENCY_DRIFT", `candidate Pi direct dependency is not locked for ${name}`);
+    }
+    urlDigest(locked.resolved);
+    let installed;
+    try { installed = JSON.parse(await fs.readFile(path.join(packageRoot, "node_modules", ...name.split("/"), "package.json"), "utf8")); } catch {
+      fail("M10_BUILD_PI_RUNTIME_DEPENDENCY_DRIFT", `candidate Pi direct dependency is missing for ${name}`);
+    }
+    if (installed.name !== name || installed.version !== locked.version) fail("M10_BUILD_PI_RUNTIME_DEPENDENCY_DRIFT", `candidate Pi direct dependency identity drifted for ${name}`);
+  }
+  for (const name of REQUIRED_PI_RUNTIME_PACKAGES) {
+    if (lock.packages[`node_modules/${name}`].version !== "0.84.3") fail("M10_BUILD_PI_RUNTIME_DEPENDENCY_DRIFT", `candidate Pi internal dependency drifted for ${name}`);
+  }
+  return Object.freeze({ lockDigest: digest(lockBytes), directDependencyCount: direct.length });
+}
+
 async function build({ output, sourceCommit }) {
   if (!FULL_SHA.test(sourceCommit)) fail("M10_BUILD_SOURCE_INVALID", "--source-commit must be a full lowercase SHA");
   const head = (await run("git", ["rev-parse", "HEAD"], { cwd: ROOT })).stdout.trim();
@@ -238,10 +277,13 @@ async function build({ output, sourceCommit }) {
       input: rawPi,
       output: piArchive,
       topLevel: "package",
+      mutate: async (packageRoot) => {
+        await run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev", "--package-lock=true"], { cwd: packageRoot, env });
+        await validateM10PiRuntimeLayout(packageRoot);
+      },
       inspect: async (packageRoot) => {
-        const piManifest = JSON.parse(await fs.readFile(path.join(packageRoot, "package.json"), "utf8"));
-        if (piManifest.name !== "@earendil-works/pi-coding-agent" || piManifest.version !== "0.84.3") fail("M10_BUILD_PI_IDENTITY_DRIFT", "candidate Pi identity drifted");
-        return { treeDigest: await hashResourcePath({ artifactRoot: path.dirname(packageRoot), relativePath: "package", allowContainedSymlinks: true }) };
+        const runtime = await validateM10PiRuntimeLayout(packageRoot);
+        return { ...runtime, treeDigest: await hashResourcePath({ artifactRoot: path.dirname(packageRoot), relativePath: "package", allowContainedSymlinks: true }) };
       },
     });
 
@@ -261,6 +303,7 @@ async function build({ output, sourceCommit }) {
       candidateGraphDigest: candidateGraph.graphDigest,
       artifacts: preliminaryDigests,
       packages: entries.map((entry) => ({ id: entry.id, fromVersion: entry.fromVersion, toVersion: entry.toVersion, action: entry.action })),
+      piRuntime: { lockDigest: normalizedPi.lockDigest, directDependencyCount: normalizedPi.directDependencyCount },
       lifecycleScriptsExecuted: false,
       applyNetworkRequired: false,
       secretMaterialRecorded: false,
