@@ -24,6 +24,7 @@
     "SECURITY.md",
     "LICENSE",
     "CHANGELOG.md",
+    "THIRD_PARTY_NOTICES.md",
     "bin/",
     "extensions/context-doctor/index.ts",
     "extensions/context-doctor/metrics.mjs",

@@ -6,6 +6,7 @@
     "SECURITY.md",
     "LICENSE",
     "CHANGELOG.md",
+    "THIRD_PARTY_NOTICES.md",
     "scripts/package-doctor.mjs",
     "scripts/lib/package-source.mjs",
     "scripts/lib/profile-resolver.mjs",

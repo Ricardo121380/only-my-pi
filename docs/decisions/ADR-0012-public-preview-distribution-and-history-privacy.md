@@ -79,6 +79,16 @@ artifact.
 ### Release integrity
 
 - Full and Thin are reproducible normalized archives.
+- `release-index-v1` binds the public tag, source, platform, bootstrap and
+  named assets; it is not the stack identity.
+- `stack-manifest-v1` is acquisition-independent. Its canonical digest is the
+  `stackId`; neither `full` nor `thin` appears in that digest.
+- `transitive-artifact-ledger-v1` requires credential-free registry URLs,
+  SHA-512 SRI, SHA-256 of downloaded bytes, installed tree identities,
+  lifecycle-script digests and a license conclusion for every artifact.
+- `stack-state-v1` is private mutable state. It separately records the payload
+  mode, the installed generation and whether physical bytes were pre-existing
+  or provisioned for the user; this does not change external ownership.
 - A release carries SHA-256 checksums, an SPDX 2.3 SBOM, third-party notices,
   GitHub build provenance and SBOM attestations.
 - The tag and all action dependencies are exact identities. Publishing requires
@@ -108,3 +118,8 @@ Publishing is fail-closed: history/privacy inventory, current public baseline,
 deterministic gates, macOS arm64 acceptance, protected live evidence and GitHub
 repository controls must all pass before the repository becomes public or a
 release tag is created.
+
+The canonical target graph digest in a stack manifest and the installed
+generation identity in stack state are intentionally separate. The latter may
+bind verified physical package-tree evidence; neither value may be substituted
+for the other in a receipt.
