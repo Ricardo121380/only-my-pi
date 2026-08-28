@@ -17,7 +17,13 @@ import {
   validatePublicBaselineEvidence,
 } from "../packages/release-authority/index.mjs";
 import { M10_EXACT_PACKAGE_TARGET } from "../packages/upstream-migration/index.mjs";
-import { executeM8LiveAcceptance } from "./m8-live-acceptance.mjs";
+import {
+  M9_LIVE_CANDIDATE,
+  M9_LIVE_PRICING,
+  M9_LIVE_RECORD_TYPE,
+} from "../packages/subagents/release/m9-live-acceptance-extension.mjs";
+import { M8_LIVE_EXPECTED_ASSERTIONS } from "./m8-live-acceptance.mjs";
+import { runPiM9Phase } from "./m9-live-acceptance.mjs";
 
 const execFile = promisify(execFileCallback);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -204,6 +210,57 @@ function liveById(evidence) {
   return new Map(evidence.assertions.map((entry) => [entry.id, entry]));
 }
 
+async function runLiveMatrix({ sourceCommit, installed }) {
+  const auth = await runJson(PI_COMMAND, ["auth", "check", "--provider", PROVIDER, "--model", MODEL, "--json", "--no-refresh"], { timeout: 30_000 });
+  if (auth.status !== "ready" || auth.provider !== PROVIDER) fail("PUBLIC_BASELINE_PROTECTED_AUTH_UNAVAILABLE", "Pi authentication is not ready for the approved model");
+  const npmRoot = path.join(CONFIG_ROOT, "npm");
+  const subagentsRoot = await fs.realpath(path.join(npmRoot, "node_modules", "pi-subagents"));
+  const manifest = JSON.parse(await fs.readFile(path.join(subagentsRoot, "package.json"), "utf8"));
+  const extensionEntry = manifest?.pi?.extensions?.[0];
+  if (manifest.version !== "0.57.0" || typeof extensionEntry !== "string") fail("PUBLIC_BASELINE_PROTECTED_SUBAGENTS_INVALID", "pi-subagents runtime identity is invalid");
+  const subagentsEntry = await fs.realpath(path.resolve(subagentsRoot, extensionEntry));
+  if (!subagentsEntry.startsWith(`${subagentsRoot}${path.sep}`) || !(await fs.lstat(subagentsEntry)).isFile()) fail("PUBLIC_BASELINE_PROTECTED_SUBAGENTS_INVALID", "pi-subagents entry escaped its package root");
+  const request = {
+    formatVersion: 1,
+    phase: "main",
+    sourceCommit,
+    repositoryRoot: ROOT,
+    configRoot: CONFIG_ROOT,
+    candidateInstallationRoot: npmRoot,
+    candidateAuditDigest: digest({ sourceCommit, installed }),
+    candidateContractDigest: installed.generationId,
+    model: { provider: PROVIDER, id: MODEL },
+    pricing: M9_LIVE_PRICING,
+    runNonce: `${sourceCommit.slice(0, 8)}-${crypto.randomBytes(4).toString("hex")}`,
+    webAuthorized: true,
+  };
+  const acceptanceExtension = path.join(ROOT, "packages", "subagents", "release", "m9-live-acceptance-extension.mjs");
+  const started = Date.now();
+  const main = await runPiM9Phase({ piCommand: PI_COMMAND, phase: "main", request, configRoot: CONFIG_ROOT, subagentsEntry, acceptanceExtension, timeoutMs: 30 * 60 * 1000 });
+  const resume = await runPiM9Phase({ piCommand: PI_COMMAND, phase: "resume", request, configRoot: CONFIG_ROOT, subagentsEntry, acceptanceExtension, timeoutMs: 10 * 60 * 1000 });
+  for (const record of [main, resume]) {
+    if (record?.type !== M9_LIVE_RECORD_TYPE || record.status !== "PASS" || record.sourceCommit !== sourceCommit
+      || JSON.stringify(record.candidate) !== JSON.stringify(M9_LIVE_CANDIDATE)
+      || JSON.stringify(record.pricing) !== JSON.stringify(M9_LIVE_PRICING)) {
+      fail("PUBLIC_BASELINE_PROTECTED_LIVE_RECORD_INVALID", "protected live record identity is invalid");
+    }
+  }
+  const assertions = [...main.assertions, ...resume.assertions];
+  const ids = assertions.map((entry) => entry.id).sort();
+  const expected = M8_LIVE_EXPECTED_ASSERTIONS.filter((id) => id !== "artifact-identity").sort();
+  if (new Set(ids).size !== ids.length || JSON.stringify(ids) !== JSON.stringify(expected)) fail("PUBLIC_BASELINE_PROTECTED_LIVE_ASSERTIONS_INVALID", "protected live assertion set is incomplete or duplicated");
+  return Object.freeze({
+    assertions,
+    usage: {
+      tokens: main.usage.tokens + resume.usage.tokens,
+      costUsd: Number((main.usage.costUsd + resume.usage.costUsd).toFixed(12)),
+      toolCalls: main.usage.toolCalls + resume.usage.toolCalls,
+      meteredTerminals: main.usage.meteredTerminals + resume.usage.meteredTerminals,
+    },
+    wallSeconds: Math.ceil((Date.now() - started) / 1000),
+  });
+}
+
 function createEvidence({ sourceCommit, artifact, before, installed, live, usage, piList, wallSeconds, createdAt }) {
   const records = liveById(live);
   const values = {
@@ -310,7 +367,6 @@ export async function executePublicBaselineProtected(args, { now = () => new Dat
   const artifact = await inspectArtifact(args.artifact, head);
   const before = await captureIdentity();
   let activeRollback = null;
-  let intermediate = null;
   try {
     const firstApply = await runOmp(["update", "--artifact", args.artifact, "--apply", "--yes"]);
     activeRollback = { transactionId: firstApply.receipt?.transactionId ?? null, cliSnapshot: firstApply.cli?.snapshot ?? null };
@@ -326,20 +382,7 @@ export async function executePublicBaselineProtected(args, { now = () => new Dat
     if (reapply.status !== "ARTIFACT_APPLIED") fail("PUBLIC_BASELINE_PROTECTED_REAPPLY_INVALID", "sanitized baseline artifact reapply did not commit");
     const installed = await captureIdentity();
     if (installed.version.sourceCommit !== head || installed.version.artifactSha256 !== artifact.sha256) fail("PUBLIC_BASELINE_PROTECTED_REAPPLY_INVALID", "reapplied CLI does not match sanitized B artifact");
-    intermediate = path.join(ROOT, "verification", "protected", `.public-baseline-intermediate-${crypto.randomUUID()}.json`);
-    const started = Date.now();
-    const liveResult = await executeM8LiveAcceptance({
-      operation: "run",
-      yes: true,
-      json: true,
-      configRoot: CONFIG_ROOT,
-      provider: PROVIDER,
-      model: MODEL,
-      artifactSha256: artifact.sha256.slice(7),
-      output: intermediate,
-      piCommand: PI_COMMAND,
-    });
-    const live = JSON.parse(await fs.readFile(intermediate, "utf8"));
+    const live = await runLiveMatrix({ sourceCommit: head, installed });
     const piList = await verifyPiList();
     const evidence = createEvidence({
       sourceCommit: head,
@@ -347,9 +390,9 @@ export async function executePublicBaselineProtected(args, { now = () => new Dat
       before,
       installed,
       live,
-      usage: liveResult.usage,
+      usage: live.usage,
       piList,
-      wallSeconds: Math.ceil((Date.now() - started) / 1000),
+      wallSeconds: live.wallSeconds,
       createdAt: now().toISOString(),
     });
     await writeEvidence(args.output, evidence);
@@ -361,8 +404,6 @@ export async function executePublicBaselineProtected(args, { now = () => new Dat
       catch (rollbackError) { fail("PUBLIC_BASELINE_PROTECTED_AUTOMATIC_ROLLBACK_FAILED", "protected failure could not restore the M10 private baseline", { cause: error, rollbackError }); }
     }
     throw error;
-  } finally {
-    if (intermediate !== null) await fs.rm(intermediate, { force: true });
   }
 }
 
