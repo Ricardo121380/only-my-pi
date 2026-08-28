@@ -13,10 +13,12 @@ async function fixture(t) {
   const configRoot = path.join(root, "agent");
   const temporaryRoot = path.join(root, "runtime");
   const npmCache = path.join(root, "npm-cache");
+  const cliRoot = path.join(root, "local", "share", "only-my-pi");
+  const cliBin = path.join(root, "local", "bin", "omp");
   await fs.writeFile(artifact, "fixture-artifact", { mode: 0o600 });
   await fs.mkdir(temporaryRoot, { mode: 0o700 });
   await fs.mkdir(npmCache, { mode: 0o700 });
-  return { root, artifact, configRoot, temporaryRoot, npmCache };
+  return { root, artifact, configRoot, temporaryRoot, npmCache, cliRoot, cliBin };
 }
 
 async function installFakePackage(argv) {
@@ -35,10 +37,20 @@ function successfulRunner(calls) {
       await installFakePackage(argv);
       return { exitCode: 0, signal: null, stdout: "", stderr: "", stdoutTruncated: false, stderrTruncated: false };
     }
+    if (argv[1] === "status") {
+      return {
+        exitCode: 0,
+        signal: null,
+        stdout: `${JSON.stringify({ ok: true, status: "INSTALLED", mutation: false, generationId: `sha256:${"a".repeat(64)}` })}\n`,
+        stderr: "",
+        stdoutTruncated: false,
+        stderrTruncated: false,
+      };
+    }
     return {
       exitCode: 0,
       signal: null,
-      stdout: `${JSON.stringify({ ok: true, status: "COMMITTED", mutation: true, transactionId: "tx-fixture" })}\n`,
+      stdout: `${JSON.stringify({ ok: true, status: "COMMITTED", mutation: true, transactionId: "11111111-1111-4111-8111-111111111111" })}\n`,
       stderr: "",
       stdoutTruncated: false,
       stderrTruncated: false,
@@ -52,6 +64,8 @@ test("artifact install plan verifies identity and digest without writes or subpr
   const installer = new ArtifactInstaller({
     temporaryRoot: paths.temporaryRoot,
     npmCache: paths.npmCache,
+    cliRoot: paths.cliRoot,
+    cliBin: paths.cliBin,
     runCommand: async () => { calls += 1; throw new Error("must not run"); },
   });
   const before = await fs.readdir(paths.temporaryRoot);
@@ -71,13 +85,15 @@ test("artifact apply revalidates, extracts with scripts disabled, and runs only 
   const installer = new ArtifactInstaller({
     temporaryRoot: paths.temporaryRoot,
     npmCache: paths.npmCache,
+    cliRoot: paths.cliRoot,
+    cliBin: paths.cliBin,
     runCommand: successfulRunner(calls),
   });
   const plan = await installer.plan({ operation: "install", artifact: paths.artifact, profile: "daily", configRoot: paths.configRoot });
   const result = await installer.apply({ operation: "install", artifact: paths.artifact, profile: "daily", configRoot: paths.configRoot, plan });
   assert.equal(result.status, "ARTIFACT_APPLIED");
-  assert.equal(result.receipt.transactionId, "tx-fixture");
-  assert.equal(calls.length, 2);
+  assert.equal(result.receipt.transactionId, "11111111-1111-4111-8111-111111111111");
+  assert.equal(calls.length, 3);
   assert.equal(calls[0].command, "npm");
   assert.deepEqual(calls[0].argv.slice(0, 10), [
     "install", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev",
@@ -89,12 +105,15 @@ test("artifact apply revalidates, extracts with scripts disabled, and runs only 
   assert.equal(Object.hasOwn(calls[0].options.env, "NPM_TOKEN"), false);
   assert.equal(calls[1].command, process.execPath);
   assert.deepEqual(calls[1].argv.slice(1), ["bootstrap", "--profile", "daily", "--config-root", paths.configRoot, "--apply", "--yes", "--json"]);
+  assert.deepEqual(calls[2].argv.slice(1), ["status", "--config-root", paths.configRoot, "--json"]);
+  assert.equal(await fs.realpath(paths.cliBin), await fs.realpath(path.join(paths.cliRoot, "artifacts", result.artifact.sha256.slice(7), "package", "bin", "omp.mjs")));
+  assert.equal(result.cli.installedGenerationId, `sha256:${"a".repeat(64)}`);
   assert.deepEqual(await fs.readdir(paths.temporaryRoot), []);
 });
 
 test("artifact apply fails closed when the reviewed artifact changes", async (t) => {
   const paths = await fixture(t);
-  const installer = new ArtifactInstaller({ temporaryRoot: paths.temporaryRoot, npmCache: paths.npmCache, runCommand: async () => assert.fail("must not spawn") });
+  const installer = new ArtifactInstaller({ temporaryRoot: paths.temporaryRoot, npmCache: paths.npmCache, cliRoot: paths.cliRoot, cliBin: paths.cliBin, runCommand: async () => assert.fail("must not spawn") });
   const plan = await installer.plan({ artifact: paths.artifact, profile: "daily", configRoot: paths.configRoot });
   await fs.writeFile(paths.artifact, "changed-artifact", { mode: 0o600 });
   await assert.rejects(
@@ -108,7 +127,7 @@ test("artifact plan rejects symlinks before hashing", async (t) => {
   const paths = await fixture(t);
   const link = path.join(paths.root, "linked.tgz");
   await fs.symlink(paths.artifact, link);
-  const installer = new ArtifactInstaller({ temporaryRoot: paths.temporaryRoot, npmCache: paths.npmCache });
+  const installer = new ArtifactInstaller({ temporaryRoot: paths.temporaryRoot, npmCache: paths.npmCache, cliRoot: paths.cliRoot, cliBin: paths.cliBin });
   await assert.rejects(installer.plan({ artifact: link, profile: "daily", configRoot: paths.configRoot }), {
     code: "ARTIFACT_SYMLINK_REJECTED",
   });

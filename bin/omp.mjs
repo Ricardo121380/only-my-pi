@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { BootstrapService } from "../packages/bootstrap/bootstrap-service.mjs";
 import { ArtifactInstaller, createArtifactProcessRunner } from "../packages/bootstrap/artifact-installer.mjs";
+import { createUserCliInstaller } from "../packages/bootstrap/user-cli-installer.mjs";
 import { createNpmCommandRunner } from "../packages/bootstrap/command-runner.mjs";
 import { DoctorService } from "../packages/bootstrap/doctor-service.mjs";
 import { createNoModelSmokeRunner } from "../packages/bootstrap/smoke-runner.mjs";
@@ -16,6 +17,7 @@ import { createWorkflowControlService } from "../packages/control-service/workfl
 import { createSwarmControlService } from "../packages/control-service/swarm-service.mjs";
 import { createThemeControlService } from "../packages/control-service/theme-service.mjs";
 import { createStatusService } from "../packages/control-service/status-service.mjs";
+import { createVersionService } from "../packages/control-service/version-service.mjs";
 import { createUltraRunControlService } from "../packages/control-service/ultra-run-service.mjs";
 import { parseOmpArgs } from "../packages/control-service/cli-parser.mjs";
 import { ControlService, OMP_USAGE } from "../packages/control-service/service.mjs";
@@ -54,6 +56,8 @@ const DEFAULT_DEPENDENCIES = Object.freeze({
   createNpmCommandRunner,
   createNoModelSmokeRunner,
   createArtifactProcessRunner,
+  createUserCliInstaller,
+  createVersionService,
   createWorkflowControlService,
 });
 
@@ -104,8 +108,13 @@ export function createProductionControlService({
   const resolvedConfigRoot = assertAbsolutePath(configRoot, "configRoot");
   const wired = dependenciesWithDefaults(dependencies);
   const artifactProcessOptions = spawnImpl === undefined ? {} : { spawnImpl };
+  const userCli = wired.createUserCliInstaller({
+    cliRoot: path.join(os.homedir(), ".local", "share", "only-my-pi"),
+    binPath: path.join(os.homedir(), ".local", "bin", "omp"),
+  });
   const artifactInstaller = new wired.ArtifactInstaller({
     runCommand: wired.createArtifactProcessRunner(artifactProcessOptions),
+    userCli,
   });
   const doctor = new wired.DoctorService({ rootDir: resolvedRoot });
   const runner = wired.createNpmCommandRunner({ configRoot: resolvedConfigRoot });
@@ -127,6 +136,7 @@ export function createProductionControlService({
   const ultras = createUltraRunControlService({ rootDir: resolvedRoot });
   const themes = createThemeControlService({ rootDir: resolvedRoot });
   const statusService = createStatusService();
+  const versionService = wired.createVersionService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot, userCli });
   const dailyConfig = new wired.DailyConfigService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot });
   const projectGates = new wired.ProjectGateService({
     configRoot: resolvedConfigRoot,
@@ -137,6 +147,7 @@ export function createProductionControlService({
   const runManagement = new wired.RunManagementService({ recordStore: runRecordStore });
   return new wired.ControlService({
     artifactInstaller,
+    userCli,
     bootstrap,
     doctor,
     confirm,
@@ -150,6 +161,7 @@ export function createProductionControlService({
     projectGates,
     runManagement,
     statusService,
+    versionService,
   });
 }
 
@@ -251,6 +263,13 @@ export function formatOmpHuman(result) {
   addField(lines, "themeId", details.themeId ?? details.theme?.id);
   addField(lines, "piThemeName", details.piThemeName ?? details.theme?.piThemeName);
   addField(lines, "harnessStatus", details.harnessStatus ? details.harnessStatus.status : undefined);
+  addField(lines, "packageVersion", details.packageVersion);
+  addField(lines, "sourceCommit", details.sourceCommit);
+  addField(lines, "artifactSha256", details.artifactSha256);
+  addField(lines, "cliRoot", details.cliRoot);
+  addField(lines, "piVersion", details.piVersion);
+  addField(lines, "subagentsVersion", details.subagentsVersion);
+  addField(lines, "decision", details.decision);
   if (details.harnessStatus?.provenance) addField(lines, "provenance", details.harnessStatus.provenance);
 
   const providerSelection = details.providerSelection ?? details.desired?.metadata?.providerSelection;

@@ -32,6 +32,7 @@ const COMMANDS = new Set([
   "install",
   "doctor",
   "status",
+  "version",
   "update",
   "rollback",
   "uninstall",
@@ -202,8 +203,8 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
     return { command, mutation: false, options: { configRoot, live: options.live === true, json: options.json === true } };
   }
 
-  if (command === "status") {
-    if (positionals.length) fail("status accepts no positional arguments");
+  if (command === "status" || command === "version") {
+    if (positionals.length) fail(`${command} accepts no positional arguments`);
     reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live", "resolved"], command);
     return { command, mutation: false, options: { configRoot, json: options.json === true } };
   }

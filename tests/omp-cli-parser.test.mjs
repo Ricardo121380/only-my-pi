@@ -61,6 +61,15 @@ test("doctor defaults to static and live is explicit", () => {
   assert.throws(() => parseOmpArgs(["doctor", "--static", "--live"], context), /mutually exclusive/);
 });
 
+test("version is read-only and accepts only config-root and JSON", () => {
+  const parsed = parseOmpArgs(["version", "--json"], context);
+  assert.equal(parsed.command, "version");
+  assert.equal(parsed.mutation, false);
+  assert.equal(parsed.options.configRoot, "/tmp/omp-home/.pi/agent");
+  assert.throws(() => parseOmpArgs(["version", "extra"], context), /accepts no positional/u);
+  assert.throws(() => parseOmpArgs(["version", "--apply"], context), /not valid/u);
+});
+
 test("rollback accepts only a canonical snapshot id", () => {
   assert.equal(parseOmpArgs(["rollback", "snap-1", "--yes"], context).options.snapshotId, "snap-1");
   assert.throws(() => parseOmpArgs(["rollback", "../escape"], context), /invalid snapshot/);

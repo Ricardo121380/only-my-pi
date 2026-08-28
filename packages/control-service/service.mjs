@@ -8,6 +8,7 @@ Usage:
   omp install --artifact <absolute-tarball> [--profile <id>] [--plan|--apply] [--yes] [--config-root <absolute>] [--json]
   omp doctor [--static|--live] [--config-root <absolute>] [--json]
   omp status [--config-root <absolute>] [--json]
+  omp version [--config-root <absolute>] [--json]
   omp update [--artifact <absolute-tarball> [--profile <id>]] [--plan|--apply] [--yes] [--config-root <absolute>] [--json]
   omp rollback [snapshot-id] [--yes] [--config-root <absolute>] [--json]
   omp uninstall [--plan|--apply] [--yes] [--config-root <absolute>] [--json]
@@ -46,12 +47,13 @@ async function approve(request, plan, confirm) {
 }
 
 export class ControlService {
-  constructor({ bootstrap, doctor, confirm, artifactInstaller, modes, workflows, swarms, ultras, themes, dailyConfig, projectGates, runManagement, statusService, rootDir, configRoot } = {}) {
+  constructor({ bootstrap, doctor, confirm, artifactInstaller, userCli, modes, workflows, swarms, ultras, themes, dailyConfig, projectGates, runManagement, statusService, versionService, rootDir, configRoot } = {}) {
     if (!bootstrap || !doctor) throw new TypeError("bootstrap and doctor services are required");
     this.bootstrap = bootstrap;
     this.doctor = doctor;
     this.confirm = confirm;
     this.artifactInstaller = artifactInstaller;
+    this.userCli = userCli;
     this.modes = modes;
     this.workflows = workflows;
     this.swarms = swarms;
@@ -61,6 +63,7 @@ export class ControlService {
     this.projectGates = projectGates;
     this.runManagement = runManagement;
     this.statusService = statusService;
+    this.versionService = versionService;
     this.rootDir = rootDir;
     this.configRoot = configRoot;
   }
@@ -99,12 +102,19 @@ export class ControlService {
         const plan = await this.bootstrap.planUninstall(request.options);
         if (!request.options.apply) return plan;
         if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
-        return this.bootstrap.applyUninstall({ ...request.options, plan });
+        const result = await this.bootstrap.applyUninstall({ ...request.options, plan });
+        if (result?.ok === true && this.userCli?.deactivate) return { ...result, cli: await this.userCli.deactivate() };
+        return result;
       }
       case "rollback": {
         const plan = await this.bootstrap.planRollback(request.options);
         if (!(await approve(request, plan, this.confirm))) return confirmationRequired(request.command, plan);
-        return this.bootstrap.rollback({ ...request.options, plan });
+        const result = await this.bootstrap.rollback({ ...request.options, plan });
+        const match = /^before-([0-9a-f-]{36})$/u.exec(plan.snapshotId ?? "");
+        if (result?.ok === true && match && this.userCli?.restoreTransaction) {
+          return { ...result, cli: await this.userCli.restoreTransaction(match[1]) };
+        }
+        return result;
       }
       case "doctor":
         return request.options.live ? this.doctor.live(request.options) : this.bootstrap.doctor(request.options);
@@ -124,6 +134,8 @@ export class ControlService {
         });
         return { ...base, harnessStatus };
       }
+      case "version":
+        return this.versionService?.inspect?.() ?? { ok: false, status: "VERSION_SERVICE_UNAVAILABLE", mutation: false };
       case "safe":
         return this.bootstrap.safe(request.options);
       case "profile": {
