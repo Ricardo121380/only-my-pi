@@ -1,0 +1,27 @@
+{
+  "formatVersion": 1,
+  "id": "m10-promotion-gates-v1",
+  "description": "Fixed no-shell M10 promotion gate contract. P1-P8, P11 and P12 are deterministic; P9 and P10 are protected evidence-only.",
+  "policy": {
+    "cwd": "repository-root",
+    "network": "deny",
+    "shell": false,
+    "protectedExecution": "evidence-only",
+    "maxGateCount": 12,
+    "maxOutputBytes": 8388608
+  },
+  "gates": [
+    { "id": "P1", "description": "M9 evidence history and HOLD/PROMOTE boundary preservation.", "command": "node", "args": ["--test", "tests/m10-promotion-history.test.mjs"], "timeoutMs": 120000, "maxOutputBytes": 2097152, "execution": "deterministic" },
+    { "id": "P2", "description": "Historical installed-generation doctor and version identity semantics.", "command": "node", "args": ["--test", "tests/bootstrap-historical-doctor.test.mjs", "tests/version-service.test.mjs"], "timeoutMs": 180000, "maxOutputBytes": 4194304, "execution": "deterministic" },
+    { "id": "P3", "description": "Migration bundle provenance, schema, immutable plan, and build authority.", "command": "node", "args": ["--test", "tests/m10-bundle-builder.test.mjs", "tests/upstream-migration-contract.test.mjs"], "timeoutMs": 180000, "maxOutputBytes": 4194304, "execution": "deterministic" },
+    { "id": "P4", "description": "External ownership and exact nine-package candidate target.", "command": "node", "args": ["--test", "tests/upstream-migration-candidate-target.test.mjs", "tests/upstream-migration-planner.test.mjs"], "timeoutMs": 180000, "maxOutputBytes": 4194304, "execution": "deterministic" },
+    { "id": "P5", "description": "Cross-root transaction, settings CAS, durable journal, and crash recovery.", "command": "node", "args": ["--test", "tests/upstream-migration-journal.test.mjs", "tests/upstream-migration-transaction-engine.test.mjs", "tests/upstream-migration-filesystem-platform.test.mjs"], "timeoutMs": 300000, "maxOutputBytes": 8388608, "execution": "deterministic" },
+    { "id": "P6", "description": "Pi process detection, PID reuse defense, bounded SIGTERM, and no SIGKILL.", "command": "node", "args": ["--test", "tests/upstream-migration-process.test.mjs"], "timeoutMs": 120000, "maxOutputBytes": 2097152, "execution": "deterministic" },
+    { "id": "P7", "description": "Immutable user CLI identity, activation, rollback, and CLI-absent restore.", "command": "node", "args": ["--test", "tests/user-cli-installer.test.mjs", "tests/artifact-installer.test.mjs", "tests/version-service.test.mjs"], "timeoutMs": 180000, "maxOutputBytes": 4194304, "execution": "deterministic" },
+    { "id": "P8", "description": "Shadow old-to-new apply, exact rollback, reapply, and fault boundaries.", "command": "node", "args": ["--test", "tests/upstream-migration-filesystem-platform.test.mjs"], "timeoutMs": 300000, "maxOutputBytes": 8388608, "execution": "deterministic" },
+    { "id": "P9", "description": "Protected real-root full-stack apply, exact rollback, and reapply evidence.", "command": null, "args": [], "timeoutMs": 1, "maxOutputBytes": 1024, "execution": "protected-evidence", "defaultStatus": "NOT_RUN_BY_POLICY", "evidenceId": "m10-real-root-migration" },
+    { "id": "P10", "description": "Protected promoted DeepSeek V4 Flash live-model matrix evidence.", "command": null, "args": [], "timeoutMs": 1, "maxOutputBytes": 1024, "execution": "protected-evidence", "defaultStatus": "NOT_RUN_BY_POLICY", "evidenceId": "m10-promoted-live-model-matrix" },
+    { "id": "P11", "description": "Machine decision, Stable inventory, evidence and graph consistency.", "command": "node", "args": ["--test", "tests/m10-promotion-contract.test.mjs"], "timeoutMs": 180000, "maxOutputBytes": 4194304, "execution": "deterministic" },
+    { "id": "P12", "description": "Documentation, pack, schemas, CI, regression, and M10 coverage consistency.", "command": "node", "args": ["scripts/m10-deterministic-acceptance.mjs"], "timeoutMs": 600000, "maxOutputBytes": 8388608, "execution": "deterministic" }
+  ]
+}

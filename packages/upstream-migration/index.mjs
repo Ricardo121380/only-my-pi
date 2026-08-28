@@ -4,5 +4,6 @@ export * from "./filesystem-platform.mjs";
 export * from "./journal.mjs";
 export * from "./planner.mjs";
 export * from "./process-admission.mjs";
+export * from "./promotion-contract.mjs";
 export * from "./service.mjs";
 export * from "./transaction-engine.mjs";

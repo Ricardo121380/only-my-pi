@@ -45,8 +45,15 @@ function candidatePackageInventory(stable, contract) {
 
 function assertExactContract(contract) {
   const candidate = contract?.candidate;
-  if (candidate?.piVersion !== "0.84.3" || candidate?.subagentsVersion !== "0.57.0" || contract?.decision?.state !== "HOLD") {
-    throw Object.assign(new Error("candidate target requires the audited M9 HOLD contract"), { code: "CANDIDATE_CONTRACT_DRIFT" });
+  const decision = contract?.decision;
+  const decisionValid = decision?.state === "HOLD"
+    ? decision.defaultPiVersion === "0.84.1" && decision.defaultSubagentsVersion === "0.45.2"
+    : decision?.state === "PROMOTE"
+      && decision.reasonCode === "M10_REAL_ROOT_AND_LIVE_ACCEPTANCE_PASSED"
+      && decision.defaultPiVersion === "0.84.3"
+      && decision.defaultSubagentsVersion === "0.57.0";
+  if (candidate?.piVersion !== "0.84.3" || candidate?.subagentsVersion !== "0.57.0" || !decisionValid) {
+    throw Object.assign(new Error("candidate target requires the exact audited M9 tuple and a governed M10 decision"), { code: "CANDIDATE_CONTRACT_DRIFT" });
   }
   const expected = new Map(M10_EXACT_PACKAGE_TARGET.filter((entry) => entry.action === "upgrade").map((entry) => [entry.id, entry]));
   const actual = candidate.packages.filter((entry) => entry.id !== "pi");
