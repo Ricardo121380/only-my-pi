@@ -1,8 +1,38 @@
 # only-my-pi status
 
-Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-28** · Stable
+Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-29** · Stable
 kernel merged to `main`: **2026-08-27** · Pi **0.84.3** · Node **25.8.0** · macOS
 `darwin-arm64`
+
+## Active milestone — M11 public Preview distribution
+
+M11 is converting the locally accepted M10 installation into a macOS 14+
+Apple Silicon Preview distributed only through GitHub Releases. The target is
+`0.2.0-preview.1` with embedded Node `24.19.0`, controlled user-local Pi
+`0.84.3`, the exact nine-package M10 tuple, Full and Thin payloads, reproducible
+archives, SPDX 2.3 SBOM, GitHub attestations, rollback and explicit full-stack
+removal.
+
+H0 passed before any visibility change: a private mirror, all-ref bundle and
+compressed mirror were created; the current tree, full history and all 50
+historical Actions logs were scanned with the repository scanner and fixed
+Gitleaks `8.30.1`; no real secret, auth/session file, LFS object, submodule,
+historical archive or oversized blob was found. Exact false-positive
+fingerprints and the old-to-new commit mapping remain private.
+
+H1 is complete. The original repository is now the private
+`only-my-pi-private-archive`; its original `main`, five historical PRs, 50
+Actions runs and feature branches remain intact. The new private
+`Ricardo121380/only-my-pi` has one rewritten `main`, no tags and no inherited
+PR/Actions refs. All 219 commits map one-to-one; trees, parents, messages,
+names, timestamps and file modes are unchanged, while the personal QQ
+author/committer email is absent. The new repository remains private.
+
+H2 is now establishing `public-baseline-v1`. Until its source/evidence/receipt
+chain closes, historical M8-M10 evidence is legacy inspection material, not
+current public-release authority. No repository publication, tag or Preview
+Release is authorized at this point. The complete boundary is in
+[`ADR-0012`](decisions/ADR-0012-public-preview-distribution-and-history-privacy.md).
 
 ## Completed milestone — M10 Stable candidate promotion
 

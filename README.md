@@ -39,6 +39,18 @@ scripts/      Repository checks and package governance tooling
 
 ## Current milestone
 
+M11 Public Preview distribution is in progress. The original GitHub repository
+has been renamed to the private `only-my-pi-private-archive`; a new private
+`Ricardo121380/only-my-pi` contains the same 219 trees, messages, timestamps and
+merge topology with only the historical personal commit email rewritten to the
+GitHub noreply identity. The new repository remains private while the public
+baseline, Full/Thin installers, SBOM, recovery matrix and Q1-Q12 gates are
+built and audited. There is no public Release yet, and the old evidence below
+must not be interpreted as authority for a future public artifact.
+
+The frozen M11 boundary is recorded in
+[ADR-0012](docs/decisions/ADR-0012-public-preview-distribution-and-history-privacy.md).
+
 The governed S0-S5 kernel reached Stable on 2026-08-27: its exact source,
 protected evidence, and receipt chain passed 31/31 required gates. **M8 Daily
 Harness Closure is also complete.** Final implementation source `6f77bb6`, its
