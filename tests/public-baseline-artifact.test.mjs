@@ -24,7 +24,9 @@ test("public baseline artifact embeds the reviewed source identity without lifec
     assert.match(built.sha256, /^sha256:[a-f0-9]{64}$/u);
     const extracted = path.join(root, "unpacked");
     await fs.mkdir(extracted);
-    await execFile("tar", ["-xzf", output, "-C", extracted]);
+    const listing = (await execFile("tar", ["-tzf", output])).stdout.split(/\r?\n/gu).filter(Boolean);
+    assert.equal(listing.some((entry) => entry.split("/").some((segment) => segment.startsWith("._"))), false);
+    await execFile("tar", ["-xzf", output, "-C", extracted], { env: { ...process.env, COPYFILE_DISABLE: "1" } });
     const identity = JSON.parse(await fs.readFile(path.join(extracted, "package", "artifact-identity.json"), "utf8"));
     assert.deepEqual(identity, { formatVersion: 1, kind: "only-my-pi-source-identity", sourceCommit });
   } finally {

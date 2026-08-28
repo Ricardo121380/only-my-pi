@@ -52,6 +52,8 @@ async function privateEnvironment(temporaryRoot) {
     TMPDIR: temporaryRoot,
     LC_ALL: "C",
     NO_COLOR: "1",
+    COPYFILE_DISABLE: "1",
+    COPY_EXTENDED_ATTRIBUTES_DISABLE: "1",
     npm_config_cache: cache,
     npm_config_userconfig: userconfig,
     npm_config_globalconfig: globalconfig,
@@ -91,7 +93,7 @@ export async function buildCommitPinnedSourceArtifact({ rootDir, sourceCommit, o
       sourceCommit,
     }, null, 2)}\n`, { mode: 0o600, flag: "wx" });
     const temporaryOutput = path.join(temporaryRoot, "only-my-pi-commit-pinned.tgz");
-    await run("tar", ["-czf", temporaryOutput, "-C", extracted, "package"], { cwd: temporaryRoot, env });
+    await run("tar", ["--no-xattrs", "-czf", temporaryOutput, "-C", extracted, "package"], { cwd: temporaryRoot, env });
     const bytes = await fs.readFile(temporaryOutput);
     const sha256 = `sha256:${crypto.createHash("sha256").update(bytes).digest("hex")}`;
     await fs.writeFile(target, bytes, { mode: 0o600, flag: "wx" });
