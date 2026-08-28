@@ -9,6 +9,10 @@ Usage:
   omp doctor [--static|--live] [--config-root <absolute>] [--json]
   omp status [--config-root <absolute>] [--json]
   omp version [--config-root <absolute>] [--json]
+  omp upstream plan --bundle <absolute> [--config-root <absolute>] [--json]
+  omp upstream apply --bundle <absolute> --apply --yes [--terminate-pi] [--config-root <absolute>] [--json]
+  omp upstream status [transaction-id] [--config-root <absolute>] [--json]
+  omp upstream rollback <transaction-id> --yes [--terminate-pi] [--config-root <absolute>] [--json]
   omp update [--artifact <absolute-tarball> [--profile <id>]] [--plan|--apply] [--yes] [--config-root <absolute>] [--json]
   omp rollback [snapshot-id] [--yes] [--config-root <absolute>] [--json]
   omp uninstall [--plan|--apply] [--yes] [--config-root <absolute>] [--json]
@@ -47,13 +51,14 @@ async function approve(request, plan, confirm) {
 }
 
 export class ControlService {
-  constructor({ bootstrap, doctor, confirm, artifactInstaller, userCli, modes, workflows, swarms, ultras, themes, dailyConfig, projectGates, runManagement, statusService, versionService, rootDir, configRoot } = {}) {
+  constructor({ bootstrap, doctor, confirm, artifactInstaller, userCli, upstreamMigration, modes, workflows, swarms, ultras, themes, dailyConfig, projectGates, runManagement, statusService, versionService, rootDir, configRoot } = {}) {
     if (!bootstrap || !doctor) throw new TypeError("bootstrap and doctor services are required");
     this.bootstrap = bootstrap;
     this.doctor = doctor;
     this.confirm = confirm;
     this.artifactInstaller = artifactInstaller;
     this.userCli = userCli;
+    this.upstreamMigration = upstreamMigration;
     this.modes = modes;
     this.workflows = workflows;
     this.swarms = swarms;
@@ -136,6 +141,16 @@ export class ControlService {
       }
       case "version":
         return this.versionService?.inspect?.() ?? { ok: false, status: "VERSION_SERVICE_UNAVAILABLE", mutation: false };
+      case "upstream": {
+        if (!this.upstreamMigration) return { ok: false, status: "UPSTREAM_MIGRATION_UNAVAILABLE", mutation: false };
+        if (request.options.subcommand === "plan") return this.upstreamMigration.plan(request.options);
+        if (request.options.subcommand === "apply") {
+          const plan = await this.upstreamMigration.plan(request.options);
+          return this.upstreamMigration.apply({ ...request.options, plan });
+        }
+        if (request.options.subcommand === "status") return this.upstreamMigration.status(request.options.transactionId);
+        return this.upstreamMigration.rollback(request.options);
+      }
       case "safe":
         return this.bootstrap.safe(request.options);
       case "profile": {

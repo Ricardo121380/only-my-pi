@@ -90,6 +90,7 @@
     "packages/pi-subagents-adapter/",
     "packages/subagents/",
     "packages/upstream-compatibility/",
+    "packages/upstream-migration/",
     "packages/adapters/"
   ],
   "scripts": {

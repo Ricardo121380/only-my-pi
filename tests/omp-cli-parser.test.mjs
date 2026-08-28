@@ -225,3 +225,36 @@ test("M8 terminal runs surface is management-only and GC remains plan-first", ()
   assert.throws(() => parseOmpArgs(["runs", "show", "run-one", "--apply"]), /only valid for runs gc/u);
   assert.throws(() => parseOmpArgs(["runs", "gc", "--yes"]), /only valid with --apply/u);
 });
+
+test("M10 upstream grammar separates zero-write planning from explicit migration authority", () => {
+  const bundle = "/tmp/m10-upstream.bundle.json";
+  const plan = parseOmpArgs(["upstream", "plan", "--bundle", bundle, "--json"], context);
+  assert.equal(plan.command, "upstream");
+  assert.equal(plan.mutation, false);
+  assert.equal(plan.options.subcommand, "plan");
+  assert.equal(plan.options.bundle, bundle);
+
+  const apply = parseOmpArgs(["upstream", "apply", "--bundle", bundle, "--apply", "--yes", "--terminate-pi"], context);
+  assert.equal(apply.mutation, true);
+  assert.equal(apply.options.apply, true);
+  assert.equal(apply.options.yes, true);
+  assert.equal(apply.options.terminatePi, true);
+
+  const status = parseOmpArgs(["upstream", "status", "tx-123", "--json"], context);
+  assert.equal(status.mutation, false);
+  assert.equal(status.options.transactionId, "tx-123");
+
+  const rollback = parseOmpArgs(["upstream", "rollback", "tx-123", "--yes", "--terminate-pi"], context);
+  assert.equal(rollback.mutation, true);
+  assert.equal(rollback.options.terminatePi, true);
+
+  for (const argv of [
+    ["upstream", "plan"],
+    ["upstream", "plan", "--bundle", "relative.bundle"],
+    ["upstream", "plan", "--bundle", bundle, "--yes"],
+    ["upstream", "apply", "--bundle", bundle, "--yes"],
+    ["upstream", "apply", "--bundle", bundle, "--apply"],
+    ["upstream", "rollback", "tx-123"],
+    ["upstream", "status", "tx-123", "--terminate-pi"],
+  ]) assert.throws(() => parseOmpArgs(argv, context), Error, argv.join(" "));
+});

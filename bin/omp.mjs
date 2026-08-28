@@ -24,6 +24,7 @@ import { ControlService, OMP_USAGE } from "../packages/control-service/service.m
 import { DailyConfigService } from "../packages/daily-config/index.mjs";
 import { ProjectGateService, createNodeExecAdapter } from "../packages/project-gates/index.mjs";
 import { RunManagementService, createRunRecordStore } from "../packages/run-management/index.mjs";
+import { createUpstreamMigrationService } from "../packages/upstream-migration/index.mjs";
 
 const THIS_FILE = fileURLToPath(import.meta.url);
 const DEFAULT_ROOT = path.resolve(path.dirname(THIS_FILE), "..");
@@ -57,6 +58,7 @@ const DEFAULT_DEPENDENCIES = Object.freeze({
   createNoModelSmokeRunner,
   createArtifactProcessRunner,
   createUserCliInstaller,
+  createUpstreamMigrationService,
   createVersionService,
   createWorkflowControlService,
 });
@@ -137,6 +139,7 @@ export function createProductionControlService({
   const themes = createThemeControlService({ rootDir: resolvedRoot });
   const statusService = createStatusService();
   const versionService = wired.createVersionService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot, userCli });
+  const upstreamMigration = wired.createUpstreamMigrationService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot });
   const dailyConfig = new wired.DailyConfigService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot });
   const projectGates = new wired.ProjectGateService({
     configRoot: resolvedConfigRoot,
@@ -162,6 +165,7 @@ export function createProductionControlService({
     runManagement,
     statusService,
     versionService,
+    upstreamMigration,
   });
 }
 
