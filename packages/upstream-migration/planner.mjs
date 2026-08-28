@@ -136,7 +136,7 @@ async function inspectExternalTree({ configRoot, settingsState, manifest }) {
     const physicalRoot = await assertRealDirectory(path.join(npmRoot, ...relative.split("/")), `external package ${expected.id}`);
     const packageManifest = await readRegularJson(path.join(physicalRoot, "package.json"), `external package manifest ${expected.id}`);
     if (packageManifest.value?.name !== expected.name || packageManifest.value?.version !== expected.fromVersion) fail("MIGRATION_PACKAGE_IDENTITY_DRIFT", `external package identity drifted for ${expected.id}`);
-    if (canonicalJson(lifecycleEvidence(packageManifest.value)) !== canonicalJson(expected.lifecycleScripts)) fail("MIGRATION_PACKAGE_LIFECYCLE_DRIFT", `external package lifecycle drifted for ${expected.id}`);
+    if (canonicalJson(lifecycleEvidence(packageManifest.value)) !== canonicalJson(expected.fromLifecycleScripts)) fail("MIGRATION_PACKAGE_LIFECYCLE_DRIFT", `external package lifecycle drifted for ${expected.id}`);
     const treeDigest = `sha256:${await hashResourcePath({ artifactRoot: npmRoot, relativePath: relative, allowContainedSymlinks: true })}`;
     if (treeDigest !== expected.fromTreeDigest) fail("MIGRATION_PACKAGE_TREE_DRIFT", `external package tree drifted for ${expected.id}`);
     packages.push(Object.freeze({ id: expected.id, name: expected.name, version: expected.fromVersion, treeDigest, binding: "external", owner: "user" }));

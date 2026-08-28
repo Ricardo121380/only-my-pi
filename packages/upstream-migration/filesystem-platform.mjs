@@ -189,7 +189,7 @@ async function verifyTargetExternalTree(npmRoot, manifest, expectedLockDigest) {
     const packageRoot = path.join(npmRoot, ...relative.split("/"));
     const packageManifest = await readJsonFile(path.join(packageRoot, "package.json"), `candidate package ${expected.id}`);
     if (packageManifest.name !== expected.name || packageManifest.version !== expected.toVersion) fail("MIGRATION_TARGET_PACKAGE_DRIFT", `candidate package identity drifted for ${expected.id}`);
-    if (canonicalJson(lifecycleEvidence(packageManifest)) !== canonicalJson(expected.lifecycleScripts)) fail("MIGRATION_PACKAGE_LIFECYCLE_DRIFT", `candidate lifecycle drifted for ${expected.id}`);
+    if (canonicalJson(lifecycleEvidence(packageManifest)) !== canonicalJson(expected.toLifecycleScripts)) fail("MIGRATION_PACKAGE_LIFECYCLE_DRIFT", `candidate lifecycle drifted for ${expected.id}`);
     if (`sha256:${await hashResourcePath({ artifactRoot: npmRoot, relativePath: relative, allowContainedSymlinks: true })}` !== expected.toTreeDigest) fail("MIGRATION_TARGET_PACKAGE_TREE_DRIFT", `candidate tree drifted for ${expected.id}`);
   }
   return Object.freeze({ lockDigest: expectedLockDigest, npmTreeDigest: await hashTree(npmRoot) });

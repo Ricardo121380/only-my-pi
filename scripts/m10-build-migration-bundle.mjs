@@ -149,7 +149,7 @@ async function currentExternalEvidence(manifestEntries) {
     const packageRoot = path.join(npmRoot, ...relative.split("/"));
     const packageManifest = JSON.parse(await fs.readFile(path.join(packageRoot, "package.json"), "utf8"));
     if (packageManifest.name !== entry.name || packageManifest.version !== entry.fromVersion) fail("M10_BUILD_PACKAGE_DRIFT", `current physical package identity drifted for ${entry.id}`);
-    if (JSON.stringify(lifecycleEvidence(packageManifest)) !== JSON.stringify(entry.lifecycleScripts)) fail("M10_BUILD_LIFECYCLE_DRIFT", `current lifecycle drifted for ${entry.id}`);
+    if (JSON.stringify(lifecycleEvidence(packageManifest)) !== JSON.stringify(entry.fromLifecycleScripts)) fail("M10_BUILD_LIFECYCLE_DRIFT", `current lifecycle drifted for ${entry.id}`);
     entry.fromResolvedUrlDigest = urlDigest(locked.resolved);
     entry.fromTreeDigest = `sha256:${await hashResourcePath({ artifactRoot: npmRoot, relativePath: relative, allowContainedSymlinks: true })}`;
   }
@@ -172,7 +172,7 @@ async function targetExternalTree(root, env, manifestEntries) {
     const locked = lock.packages?.[relative];
     if (!locked || locked.version !== entry.toVersion || locked.integrity !== entry.toIntegrity) fail("M10_BUILD_TARGET_LOCK_DRIFT", `target lock drifted for ${entry.id}`);
     const packageManifest = JSON.parse(await fs.readFile(path.join(npmRoot, ...relative.split("/"), "package.json"), "utf8"));
-    if (JSON.stringify(lifecycleEvidence(packageManifest)) !== JSON.stringify(entry.lifecycleScripts)) fail("M10_BUILD_TARGET_LIFECYCLE_DRIFT", `target lifecycle drifted for ${entry.id}`);
+    if (JSON.stringify(lifecycleEvidence(packageManifest)) !== JSON.stringify(entry.toLifecycleScripts)) fail("M10_BUILD_TARGET_LIFECYCLE_DRIFT", `target lifecycle drifted for ${entry.id}`);
     entry.toResolvedUrlDigest = urlDigest(locked.resolved);
   }
   const rawArchive = path.join(root, "external-raw.tgz");

@@ -20,9 +20,12 @@ async function readJson(root, relative) {
 
 function candidatePackageInventory(stable, contract) {
   const candidates = new Map(contract.candidate.packages.filter((entry) => entry.id !== "pi").map((entry) => [entry.id, entry]));
+  const exactTargets = new Map(M10_EXACT_PACKAGE_TARGET.map((entry) => [entry.id, entry]));
   const packages = stable.packages.map((entry) => {
     const candidate = candidates.get(entry.id);
     if (!candidate) return structuredClone(entry);
+    const exactTarget = exactTargets.get(entry.id);
+    if (!exactTarget) throw Object.assign(new Error(`candidate lifecycle target is missing for ${entry.id}`), { code: "CANDIDATE_PACKAGE_DRIFT" });
     return {
       ...structuredClone(entry),
       spec: `npm:${candidate.sourceSpec}`,
@@ -32,7 +35,7 @@ function candidatePackageInventory(stable, contract) {
         integrity: candidate.integrity,
         lifecycle: {
           execution: "disabled",
-          scripts: candidate.installLifecycleScripts,
+          scripts: exactTarget.toLifecycleScripts,
         },
       },
     };

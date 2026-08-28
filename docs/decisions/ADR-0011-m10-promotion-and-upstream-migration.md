@@ -38,6 +38,12 @@ scripts are disabled. The published `prepack` declarations in the exact
 not required and are never executed by build or apply. Normal apply is
 offline.
 
+Each package records separate `fromLifecycleScripts` and
+`toLifecycleScripts` evidence. A single lifecycle field is insufficient for
+an upgrade because the installed and candidate manifests can legitimately
+differ; preflight verifies only the former and candidate staging verifies only
+the latter.
+
 Pi, the complete external npm tree, only-my-pi generation and CLI are four
 publication units coordinated by a durable journal. Each unit is staged and
 verified before publication. Settings are published with compare-and-swap and

@@ -67,7 +67,7 @@
     },
     "externalPackage": {
       "type": "object", "additionalProperties": false,
-      "required": ["id", "name", "fromVersion", "toVersion", "sourceSpec", "fromIntegrity", "toIntegrity", "fromResolvedUrlDigest", "toResolvedUrlDigest", "fromTreeDigest", "toTreeDigest", "binding", "owner", "action", "lifecycleScripts"],
+      "required": ["id", "name", "fromVersion", "toVersion", "sourceSpec", "fromIntegrity", "toIntegrity", "fromResolvedUrlDigest", "toResolvedUrlDigest", "fromTreeDigest", "toTreeDigest", "binding", "owner", "action", "fromLifecycleScripts", "toLifecycleScripts"],
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$" },
         "name": { "type": "string", "pattern": "^(?:@[a-z0-9._-]+/[a-z0-9._-]+|[a-z0-9._-]+)$" },
@@ -83,17 +83,19 @@
         "binding": { "const": "external" },
         "owner": { "const": "user" },
         "action": { "enum": ["upgrade", "retain"] },
-        "lifecycleScripts": {
-          "type": "array", "maxItems": 8,
-          "items": {
-            "type": "object", "additionalProperties": false,
-            "required": ["name", "commandSha256", "necessity"],
-            "properties": {
-              "name": { "enum": ["preinstall", "install", "postinstall", "prepare", "prepack", "postpack"] },
-              "commandSha256": { "$ref": "#/$defs/sha256" },
-              "necessity": { "const": "not-required" }
-            }
-          }
+        "fromLifecycleScripts": { "$ref": "#/$defs/lifecycleScripts" },
+        "toLifecycleScripts": { "$ref": "#/$defs/lifecycleScripts" }
+      }
+    },
+    "lifecycleScripts": {
+      "type": "array", "maxItems": 8,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["name", "commandSha256", "necessity"],
+        "properties": {
+          "name": { "enum": ["preinstall", "install", "postinstall", "prepare", "prepack", "postpack"] },
+          "commandSha256": { "$ref": "#/$defs/sha256" },
+          "necessity": { "const": "not-required" }
         }
       }
     }
