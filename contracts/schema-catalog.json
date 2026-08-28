@@ -289,6 +289,12 @@
       "schemaPath": "schemas/bootstrap-snapshot-v1.schema.json",
       "productionGlobs": ["contracts/bootstrap/snapshot.example.json"],
       "fixtureDir": "verification/fixtures/bootstrap/contracts/snapshot"
+    },
+    {
+      "kind": "legacyAuthority",
+      "schemaPath": "schemas/legacy-authority-v1.schema.json",
+      "productionGlobs": ["verification/legacy-authority-v1.json"],
+      "fixtureDir": "verification/fixtures/contracts/legacy-authority"
     }
   ]
 }
