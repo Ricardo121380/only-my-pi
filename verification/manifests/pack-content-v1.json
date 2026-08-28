@@ -177,6 +177,7 @@
     "packages/upstream-compatibility/stack-probe.mjs",
     "packages/upstream-compatibility/web-safety.mjs",
     "packages/upstream-migration/index.mjs",
+    "packages/upstream-migration/candidate-target.mjs",
     "packages/upstream-migration/contract.mjs",
     "packages/upstream-migration/journal.mjs",
     "packages/upstream-migration/planner.mjs",

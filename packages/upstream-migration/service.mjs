@@ -24,20 +24,22 @@ function assertPlan(plan, configRoot) {
 }
 
 export class UpstreamMigrationService {
-  constructor({ rootDir, configRoot, planner, processAdmission, engine } = {}) {
+  constructor({ rootDir, configRoot, planner, candidateTarget, processAdmission, engine } = {}) {
     if (typeof rootDir !== "string" || !path.isAbsolute(rootDir)) throw new TypeError("UpstreamMigrationService requires an absolute rootDir");
     if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("UpstreamMigrationService requires an absolute configRoot");
     this.rootDir = path.resolve(rootDir);
     this.configRoot = path.resolve(configRoot);
     this.planner = planner ?? null;
+    this.candidateTarget = candidateTarget ?? null;
     this.processAdmission = processAdmission ?? null;
     this.engine = engine ?? null;
   }
 
   async plan({ bundle } = {}) {
     const inspected = await inspectMigrationBundle({ bundlePath: bundle, rootDir: this.rootDir });
-    const [preflight, piProcesses] = await Promise.all([
+    const [preflight, candidateTarget, piProcesses] = await Promise.all([
       this.planner?.inspect ? this.planner.inspect({ manifest: inspected.manifest }) : null,
+      this.candidateTarget?.inspect ? this.candidateTarget.inspect({ manifest: inspected.manifest }) : null,
       this.processAdmission?.plan ? this.processAdmission.plan() : [],
     ]);
     const plan = {
@@ -51,6 +53,7 @@ export class UpstreamMigrationService {
       manifestDigest: inspected.manifest.manifestDigest,
       sourceCommit: inspected.manifest.sourceCommit,
       candidateGraphDigest: inspected.manifest.candidateGraphDigest,
+      candidateTarget,
       from: inspected.manifest.from,
       to: inspected.manifest.to,
       packages: inspected.manifest.externalPackages.map((entry) => ({ id: entry.id, name: entry.name, fromVersion: entry.fromVersion, toVersion: entry.toVersion, action: entry.action, binding: "external", owner: "user" })),

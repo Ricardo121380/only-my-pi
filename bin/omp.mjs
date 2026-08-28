@@ -24,7 +24,7 @@ import { ControlService, OMP_USAGE } from "../packages/control-service/service.m
 import { DailyConfigService } from "../packages/daily-config/index.mjs";
 import { ProjectGateService, createNodeExecAdapter } from "../packages/project-gates/index.mjs";
 import { RunManagementService, createRunRecordStore } from "../packages/run-management/index.mjs";
-import { createExternalMigrationPlanner, createPiProcessAdmission, createUpstreamMigrationService } from "../packages/upstream-migration/index.mjs";
+import { createCandidateTargetResolver, createExternalMigrationPlanner, createPiProcessAdmission, createUpstreamMigrationService } from "../packages/upstream-migration/index.mjs";
 
 const THIS_FILE = fileURLToPath(import.meta.url);
 const DEFAULT_ROOT = path.resolve(path.dirname(THIS_FILE), "..");
@@ -59,6 +59,7 @@ const DEFAULT_DEPENDENCIES = Object.freeze({
   createArtifactProcessRunner,
   createUserCliInstaller,
   createExternalMigrationPlanner,
+  createCandidateTargetResolver,
   createPiProcessAdmission,
   createUpstreamMigrationService,
   createVersionService,
@@ -151,7 +152,8 @@ export function createProductionControlService({
     piPackageRoot: "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent",
     piBinPath: "/opt/homebrew/bin/pi",
   });
-  const upstreamMigration = wired.createUpstreamMigrationService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot, planner: migrationPlanner, processAdmission });
+  const candidateTarget = wired.createCandidateTargetResolver({ rootDir: resolvedRoot });
+  const upstreamMigration = wired.createUpstreamMigrationService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot, planner: migrationPlanner, candidateTarget, processAdmission });
   const dailyConfig = new wired.DailyConfigService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot });
   const projectGates = new wired.ProjectGateService({
     configRoot: resolvedConfigRoot,
