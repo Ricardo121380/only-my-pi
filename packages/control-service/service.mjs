@@ -74,6 +74,9 @@ export class ControlService {
   }
 
   async dispatch(request) {
+    if (request.mutation === true && request.command !== "upstream" && this.upstreamMigration?.recoverPending) {
+      await this.upstreamMigration.recoverPending();
+    }
     switch (request.command) {
       case "help":
         return { ok: true, status: "HELP", mutation: false, text: OMP_USAGE };

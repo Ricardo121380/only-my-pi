@@ -84,6 +84,11 @@ export class UpstreamMigrationService {
     if (!this.engine?.rollback) fail("UPSTREAM_TRANSACTION_ENGINE_UNAVAILABLE", "upstream migration transaction engine is unavailable");
     return this.engine.rollback(options);
   }
+
+  async recoverPending() {
+    if (!this.engine?.recoverPending) return [];
+    return this.engine.recoverPending();
+  }
 }
 
 export function createUpstreamMigrationService(options) {

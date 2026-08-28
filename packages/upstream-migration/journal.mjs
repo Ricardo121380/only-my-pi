@@ -119,7 +119,7 @@ export async function markUpstreamRecovery(configRoot, transactionId, { status, 
   if (!new Set(["RECOVERING", "ROLLED_BACK", "FAILED", "MANUAL_RECONCILIATION_REQUIRED"]).has(status)) fail("UPSTREAM_RECOVERY_STATUS_INVALID", "invalid upstream recovery status");
   const paths = upstreamTransactionPaths(configRoot, transactionId);
   const current = await loadUpstreamJournal(configRoot, transactionId);
-  if (TERMINAL.has(current.status)) return current;
+  if (TERMINAL.has(current.status) && current.status !== "COMMITTED") return current;
   const timestamp = now();
   const journal = validateJournal({ ...current, status, failureCode: failureCode ?? current.failureCode, recovery, updatedAt: timestamp });
   await atomicWriteJson(configRoot, paths.journal, journal, { mode: 0o600 });

@@ -170,6 +170,32 @@ export async function inspectMigrationBundle({ bundlePath, rootDir, maxBundleByt
   });
 }
 
+/**
+ * Load verified artifact bytes for the mutating transaction after the reviewed
+ * bundle digest has been rechecked. Plan callers intentionally use the
+ * metadata-only inspector above so artifact contents cannot leak into CLI
+ * output or receipts.
+ */
+export async function loadMigrationArtifactBytes({ bundlePath, rootDir, expectedBundleSha256, maxBundleBytes = MAX_BUNDLE_BYTES } = {}) {
+  const inspected = await inspectMigrationBundle({ bundlePath, rootDir, maxBundleBytes });
+  if (expectedBundleSha256 !== undefined && inspected.bundle.sha256 !== expectedBundleSha256) {
+    fail("bundle changed after the reviewed plan", "MIGRATION_BUNDLE_CHANGED_AFTER_PLAN");
+  }
+  const file = await readBundleFile(bundlePath, maxBundleBytes);
+  if (file.sha256 !== inspected.bundle.sha256) fail("bundle changed between verification reads", "MIGRATION_BUNDLE_CHANGED");
+  const parsed = JSON.parse(file.bytes.toString("utf8"));
+  const artifactBytes = new Map();
+  for (const entry of parsed.artifacts) {
+    const bytes = Buffer.from(entry.base64, "base64");
+    const verified = inspected.artifacts.find((artifact) => artifact.name === entry.name);
+    if (!verified || bytes.length !== verified.bytes || bytesDigest(bytes) !== verified.sha256) {
+      fail(`bundle artifact ${entry.name} changed after verification`, "MIGRATION_BUNDLE_ARTIFACT_DRIFT");
+    }
+    artifactBytes.set(entry.name, bytes);
+  }
+  return { inspected, artifactBytes };
+}
+
 export function createMigrationManifest(input) {
   const manifest = structuredClone(input);
   delete manifest.manifestDigest;
