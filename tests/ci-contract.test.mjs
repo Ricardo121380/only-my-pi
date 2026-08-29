@@ -17,7 +17,8 @@ test("CI executes the same manifest-backed verify runner without credentials", (
   assert.match(workflow, /npm run verify:m8:run/u);
   assert.match(workflow, /npm run verify:m9:run/u);
   assert.match(workflow, /npm run verify:m11:run/u);
-  assert.match(workflow, /runs-on: macos-14-xlarge/u);
+  assert.match(workflow, /runs-on: macos-14/u);
+  assert.doesNotMatch(workflow, /runs-on: macos-14-xlarge/u);
   assert.match(workflow, /npm run verify:m11:q10:ci/u);
   assert.match(workflow, /receipt:check/);
   assert.match(
@@ -51,7 +52,8 @@ test("M11 RC workflow is exact-source, attest-only and cannot publish", () => {
   const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-rc.yml"), "utf8");
   assert.match(workflow, /workflow_dispatch:/u);
   assert.match(workflow, /ref: \$\{\{ inputs\.source_commit \}\}/u);
-  assert.match(workflow, /runs-on: macos-14-xlarge/u);
+  assert.match(workflow, /runs-on: macos-14/u);
+  assert.doesNotMatch(workflow, /runs-on: macos-14-xlarge/u);
   assert.match(workflow, /node scripts\/m11-workflow-build\.mjs --source-commit/u);
   assert.equal((workflow.match(/actions\/attest@59d89421af93a897026c735860bf21b6eb4f7b26/gu) ?? []).length, 2);
   assert.match(workflow, /actions\/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6\.0\.0/u);
@@ -63,6 +65,8 @@ test("M11 RC workflow is exact-source, attest-only and cannot publish", () => {
 
 test("M11 publication verifies E and RC before Draft, then requires environment approval", () => {
   const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-publish.yml"), "utf8");
+  assert.match(workflow, /runs-on: macos-14/u);
+  assert.doesNotMatch(workflow, /runs-on: macos-14-xlarge/u);
   assert.match(workflow, /needs: validate-inputs/u);
   assert.match(workflow, /ref: \$\{\{ needs\.validate-inputs\.outputs\.evidence_commit \}\}/u);
   assert.match(workflow, /actions\/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7\.0\.0/u);

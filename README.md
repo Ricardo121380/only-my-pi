@@ -52,10 +52,15 @@ source now contains canonical Full/Thin release contracts, a complete
 transitive ledger and SPDX SBOM, reproducible builders, the unified stack
 transaction, controlled shims, checksum-first bootstrap, Q1-Q12 gate contract,
 macOS arm64 Q10 workflow, and exact-source RC/final attestation workflows.
-Q1-Q9 and Q12 pass locally; an isolated real Apple Silicon Full/Thin rehearsal
-also converged and removed cleanly, but Q10 still requires its GitHub-hosted
-arm64 run and Q11 remains `NOT_RUN_BY_POLICY`. There is no public tag or Release
-yet, and no current claim treats protected publication evidence as complete.
+Q1-Q9 and Q12 pass locally. An isolated real Apple Silicon Q10 run installed,
+verified and removed both Full and Thin payloads with one stack identity, and
+the protected local Q11 release matrix passed all 20 assertions. GitHub-hosted
+PR authority is currently blocked because the private repository exhausted its
+Actions allowance before either Linux job started; this is recorded as
+`GITHUB_HOSTED_CI_BLOCKED_BY_ACTIONS_QUOTA`, not as a source or test failure.
+Publication remains `HOLD_PUBLICATION`: there is no public tag or Release, and
+the hosted checks, attestations and immutable publication workflow must still
+pass before release.
 
 The frozen M11 boundary is recorded in
 [ADR-0012](docs/decisions/ADR-0012-public-preview-distribution-and-history-privacy.md).

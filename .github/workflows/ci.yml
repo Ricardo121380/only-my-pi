@@ -77,7 +77,7 @@ jobs:
   m11-q10:
     name: M11 Q10 macOS arm64 clean-home
     needs: release-gates
-    runs-on: macos-14-xlarge
+    runs-on: macos-14
     timeout-minutes: 45
     env:
       CI: "1"

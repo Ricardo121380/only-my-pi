@@ -39,16 +39,22 @@ complete transitive SRI ledger, SPDX 2.3 SBOM/notices, reproducible Full/Thin
 builder, verified acquisition, unified user-local stack transaction, embedded
 Node/Pi shims, release/update/rollback/remove CLI, fixed-SHA POSIX bootstrap,
 Q1-Q12 manifest, macOS arm64 Q10 workflow and exact-source RC/final attestation
-workflows. A real local Apple Silicon Q10 rehearsal installed and removed both
-payloads under isolated homes with one `stackId` and generation, zero Provider
-requests, external/user package ownership and no Homebrew mutation. This is
-pre-CI rehearsal evidence, not a substitute for the required GitHub-hosted Q10.
+workflows. Q1-Q9 and Q12 pass locally. A real local Apple Silicon Q10 run
+installed, verified and removed both payloads under isolated homes with one
+`stackId` and generation, zero Provider requests, external/user package
+ownership and no Homebrew mutation. The protected local Q11 release matrix
+also passed all 20 assertions within its token, time and privacy bounds.
 
-The clean deterministic runner currently passes Q1-Q9 and Q12. Q10 remains
-`NOT_RUN_PLATFORM` in the ordinary runner and Q11 remains
-`NOT_RUN_BY_POLICY`; therefore the aggregate decision is
-`HOLD_PLATFORM_AND_PROTECTED`. No repository publication, public tag or Preview
-Release is authorized at this point. The complete boundary is in
+The first private Draft PR workflow was blocked before either Linux job started
+because the account's GitHub Actions allowance was exhausted; Q10 was skipped
+only because it depends on those jobs. This is
+`GITHUB_HOSTED_CI_BLOCKED_BY_ACTIONS_QUOTA`, not a source or test failure. M11
+therefore remains `HOLD_PUBLICATION`: local release-candidate authority is
+verified, but hosted PR checks, GitHub attestations, repository protections and
+immutable publication are still pending. The three macOS workflows use the
+standard Apple Silicon `macos-14` runner; no M11 workflow requires a billed
+larger runner. No repository publication, public tag or Preview Release is
+authorized at this point. The complete boundary is in
 [`ADR-0012`](decisions/ADR-0012-public-preview-distribution-and-history-privacy.md).
 
 ## Completed milestone — M10 Stable candidate promotion

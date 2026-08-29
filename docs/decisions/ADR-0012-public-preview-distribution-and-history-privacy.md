@@ -119,6 +119,18 @@ deterministic gates, macOS arm64 acceptance, protected live evidence and GitHub
 repository controls must all pass before the repository becomes public or a
 release tag is created.
 
+The private Draft PR attempted on 2026-08-29 was blocked before its Linux jobs
+started because the account's Actions allowance was exhausted. This condition
+is recorded as `GITHUB_HOSTED_CI_BLOCKED_BY_ACTIONS_QUOTA`; it is not a source
+or test failure and does not authorize publication. Local deterministic, real
+Apple Silicon Q10 and protected Q11 evidence may establish a verified release
+candidate, but GitHub-hosted checks, attestations and immutable publication
+remain mandatory release authority. The M11 workflows use the standard
+Apple Silicon `macos-14` runner. If the repository is made public before the
+hosted checks run, that deviation must be recorded as
+`PRIVATE_HOSTED_CI_SKIPPED_DUE_TO_ACTIONS_QUOTA`, and a passing public standard-
+runner PR workflow is required before merge or release.
+
 The canonical target graph digest in a stack manifest and the installed
 generation identity in stack state are intentionally separate. The latter may
 bind verified physical package-tree evidence; neither value may be substituted

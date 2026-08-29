@@ -56,7 +56,7 @@ jobs:
   build-draft:
     name: Rebuild, compare, attest and create Draft
     needs: validate-inputs
-    runs-on: macos-14-xlarge
+    runs-on: macos-14
     timeout-minutes: 45
     permissions:
       contents: write
