@@ -78,6 +78,19 @@ async function localizeLock(lockPath, downloadedArtifacts) {
   return original;
 }
 
+async function restoreCanonicalInstalledLock(installedLockPath, sourceLockBytes) {
+  const installed = JSON.parse(await fs.readFile(installedLockPath, "utf8"));
+  const source = JSON.parse(sourceLockBytes.toString("utf8"));
+  if (installed.lockfileVersion !== 3 || source.lockfileVersion !== 3 || !installed.packages || !source.packages) fail("THIN_INSTALLED_LOCK_INVALID", "Thin npm install did not produce a canonical lockfileVersion 3 installed lock");
+  for (const [relativePath, entry] of Object.entries(installed.packages)) {
+    const canonical = source.packages[relativePath];
+    if (!canonical || canonical.version !== entry.version || canonical.integrity !== entry.integrity) fail("THIN_INSTALLED_LOCK_DRIFT", `Thin installed lock differs from its verified source lock: ${relativePath}`);
+    if (canonical.resolved === undefined) delete entry.resolved;
+    else entry.resolved = canonical.resolved;
+  }
+  await fs.writeFile(installedLockPath, `${JSON.stringify(installed, null, 2)}\n`);
+}
+
 export function scrubbedEnvironment(root, nodeBin, { offline = true } = {}) {
   const home = path.join(root, "home");
   const tmp = path.join(root, "tmp");
@@ -160,6 +173,7 @@ export class ThinPayloadResolver {
       const externalLockBytes = await localizeLock(externalLockPath, downloadedArtifacts);
       try {
         await this.run(node, [npm, "ci", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev", "--omit=peer", "--legacy-peer-deps"], { cwd: external, env: environment.env, spawnImpl: this.spawnImpl });
+        await restoreCanonicalInstalledLock(path.join(external, "node_modules", ".package-lock.json"), externalLockBytes);
       } finally {
         await fs.writeFile(externalLockPath, externalLockBytes, { mode: 0o600 });
       }
@@ -181,6 +195,7 @@ export class ThinPayloadResolver {
       await fs.writeFile(manifestPath, `${JSON.stringify(productionManifest, null, 2)}\n`, { mode: 0o600 });
       try {
         await this.run(node, [npm, "ci", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev", "--omit=peer"], { cwd: pi, env: environment.env, spawnImpl: this.spawnImpl });
+        await restoreCanonicalInstalledLock(path.join(pi, "node_modules", ".package-lock.json"), piLockBytes);
       } finally {
         await Promise.all([
           fs.writeFile(manifestPath, manifestBytes, { mode: 0o600 }),

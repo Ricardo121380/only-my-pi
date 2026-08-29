@@ -46,6 +46,8 @@ test("Thin resolver downloads every exact artifact, disables scripts, and conver
   await fs.writeFile(path.join(expected, "pi", "dist", "bundle", "cli.js"), "fixture Pi\n");
   await fs.writeFile(path.join(expected, "pi", "package.json"), `${JSON.stringify({ name: "@earendil-works/pi-coding-agent", version: "0.84.3", devDependencies: { fixture: "1.0.0" } }, null, 2)}\n`);
   await fs.writeFile(path.join(expected, "pi", "npm-shrinkwrap.json"), `${JSON.stringify({ name: "@earendil-works/pi-coding-agent", version: "0.84.3", lockfileVersion: 3, packages: { "": { name: "@earendil-works/pi-coding-agent", version: "0.84.3" } } }, null, 2)}\n`);
+  await fs.mkdir(path.join(expected, "pi", "node_modules"), { recursive: true });
+  await fs.writeFile(path.join(expected, "pi", "node_modules", ".package-lock.json"), `${JSON.stringify({ name: "@earendil-works/pi-coding-agent", version: "0.84.3", lockfileVersion: 3, requires: true, packages: {} }, null, 2)}\n`);
 
   const base = JSON.parse(await fs.readFile(path.join(ROOT, "contracts", "release", "stack-manifest.example.json"), "utf8"));
   await fs.mkdir(path.join(expected, "external-npm"), { recursive: true });
@@ -61,6 +63,7 @@ test("Thin resolver downloads every exact artifact, disables scripts, and conver
   await fs.writeFile(path.join(expected, "external-npm", "package.json"), `${JSON.stringify(packageDocument, null, 2)}\n`);
   await fs.writeFile(path.join(expected, "external-npm", "package-lock.json"), `${JSON.stringify(lock, null, 2)}\n`);
   await packageTree(path.join(expected, "external-npm"), base);
+  await fs.writeFile(path.join(expected, "external-npm", "node_modules", ".package-lock.json"), `${JSON.stringify({ name: packageDocument.name, version: packageDocument.version, lockfileVersion: 3, requires: true, packages: Object.fromEntries(Object.entries(lock.packages).filter(([relative]) => relative !== "")) }, null, 2)}\n`);
   await fs.writeFile(path.join(expected, "only-my-pi.tgz"), "fixture OMP\n");
   base.runtime.node.treeDigest = await tree(expected, "node");
   base.runtime.pi.treeDigest = await tree(expected, "pi");
@@ -88,7 +91,17 @@ test("Thin resolver downloads every exact artifact, disables scripts, and conver
     },
     async run(_node, argv, options) {
       commands.push({ argv, env: options.env });
-      if (argv[1] === "ci" && options.cwd.endsWith("external-npm")) await packageTree(options.cwd, stackManifest);
+      if (argv[1] === "ci" && options.cwd.endsWith("external-npm")) {
+        await packageTree(options.cwd, stackManifest);
+        const localized = JSON.parse(await fs.readFile(path.join(options.cwd, "package-lock.json"), "utf8"));
+        const packages = Object.fromEntries(Object.entries(localized.packages).filter(([relative]) => relative !== ""));
+        await fs.writeFile(path.join(options.cwd, "node_modules", ".package-lock.json"), `${JSON.stringify({ name: packageDocument.name, version: packageDocument.version, lockfileVersion: 3, requires: true, packages }, null, 2)}\n`);
+      }
+      if (argv[1] === "ci" && options.cwd.endsWith("pi")) {
+        const localized = JSON.parse(await fs.readFile(path.join(options.cwd, "npm-shrinkwrap.json"), "utf8"));
+        const packages = Object.fromEntries(Object.entries(localized.packages).filter(([relative]) => relative !== ""));
+        await fs.writeFile(path.join(options.cwd, "node_modules", ".package-lock.json"), `${JSON.stringify({ name: localized.name, version: localized.version, lockfileVersion: 3, requires: true, packages }, null, 2)}\n`);
+      }
       return { ok: true };
     },
   });
