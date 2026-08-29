@@ -25,7 +25,7 @@ async function boundedFile(file, maxBytes) {
   return file;
 }
 
-async function runNode(node, argv, { cwd, env, spawnImpl = spawn } = {}) {
+export async function runNode(node, argv, { cwd, env, spawnImpl = spawn } = {}) {
   if (!Array.isArray(argv) || argv.some((entry) => typeof entry !== "string" || /[\0\r\n]/u.test(entry))) fail("THIN_COMMAND_INVALID", "Thin resolver command arguments are invalid");
   return await new Promise((resolve, reject) => {
     const child = spawnImpl(node, argv, { cwd, env, shell: false, stdio: ["ignore", "pipe", "pipe"] });
@@ -53,7 +53,7 @@ async function singleDirectory(root, expectedName) {
   return path.join(root, expectedName);
 }
 
-function scrubbedEnvironment(root, nodeBin) {
+export function scrubbedEnvironment(root, nodeBin, { offline = true } = {}) {
   const home = path.join(root, "home");
   const tmp = path.join(root, "tmp");
   const cache = path.join(root, "npm-cache");
@@ -80,14 +80,14 @@ function scrubbedEnvironment(root, nodeBin) {
       npm_config_audit: "false",
       npm_config_fund: "false",
       npm_config_update_notifier: "false",
-      npm_config_offline: "true",
+      npm_config_offline: String(offline),
     },
   };
 }
 
-async function prepareEnvironment(environment) {
+export async function prepareEnvironment(environment) {
   await Promise.all([...environment.directories, environment.env.XDG_CACHE_HOME, environment.env.XDG_CONFIG_HOME, environment.env.XDG_DATA_HOME].map((directory) => fs.mkdir(directory, { recursive: true, mode: 0o700 })));
-  const npmrc = "audit=false\nfund=false\nignore-scripts=true\noffline=true\nregistry=https://registry.npmjs.org/\nupdate-notifier=false\n";
+  const npmrc = `audit=false\nfund=false\nignore-scripts=true\noffline=${environment.env.npm_config_offline}\nregistry=https://registry.npmjs.org/\nupdate-notifier=false\n`;
   await Promise.all(environment.configFiles.map((file) => fs.writeFile(file, npmrc, { mode: 0o600, flag: "wx" })));
 }
 

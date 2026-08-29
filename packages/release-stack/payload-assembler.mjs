@@ -85,6 +85,7 @@ export async function assembleReleasePayloads({
   piIntegrity,
   artifactBytes,
   artifactTreeRoots,
+  integrityOverrides = {},
   installScriptPath,
   licensesRoot,
   licenseOverrides = {},
@@ -96,7 +97,7 @@ export async function assembleReleasePayloads({
   await realDirectory(licensesRoot, "PAYLOAD_LICENSES_UNSAFE");
   if (await fs.lstat(outputRoot).then(() => true, (error) => error?.code === "ENOENT" ? false : Promise.reject(error))) fail("PAYLOAD_ASSEMBLY_OUTPUT_EXISTS", "payload assembly output already exists");
   const piLock = await fs.lstat(path.join(resolved, "pi", "npm-shrinkwrap.json")).then(() => path.join(resolved, "pi", "npm-shrinkwrap.json"), () => path.join(resolved, "pi", "package-lock.json"));
-  const common = { sourceCommit, artifactBytes, artifactTreeRoots, licenseOverrides };
+  const common = { sourceCommit, artifactBytes, artifactTreeRoots, integrityOverrides, licenseOverrides };
   const [externalLedger, piLedger] = await Promise.all([
     buildArtifactLedger({ ...common, npmRoot: path.join(resolved, "external-npm"), topLevelNames: PUBLIC_STACK_PACKAGES.map((entry) => entry.name) }),
     buildArtifactLedger({

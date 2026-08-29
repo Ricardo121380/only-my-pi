@@ -120,7 +120,11 @@ export async function buildArtifactLedger({
     const absolute = path.resolve(root, ...relativePath.split("/"));
     const relative = path.relative(root, absolute);
     if (relative.startsWith("..") || path.isAbsolute(relative)) fail("LEDGER_PACKAGE_PATH_UNSAFE", `package path escapes npm root: ${relativePath}`);
-    const real = await fs.realpath(absolute);
+    const real = await fs.realpath(absolute).catch((error) => {
+      if (error?.code === "ENOENT" && locked.optional === true) return null;
+      throw error;
+    });
+    if (real === null) continue;
     if (real !== absolute || (real !== root && !real.startsWith(`${root}${path.sep}`))) fail("LEDGER_PACKAGE_PATH_UNSAFE", `package path is a symlink or escape: ${relativePath}`);
     const stat = await fs.lstat(path.join(real, "package.json"));
     if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 4 * 1024 * 1024) fail("LEDGER_PACKAGE_PATH_UNSAFE", `package manifest is unsafe: ${relativePath}`);
