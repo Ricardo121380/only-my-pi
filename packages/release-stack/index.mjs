@@ -4,6 +4,7 @@ export * from "./sbom.mjs";
 export * from "./deterministic-archive.mjs";
 export * from "./release-builder.mjs";
 export * from "./release-build-controller.mjs";
+export * from "./payload-assembler.mjs";
 export * from "./downloader.mjs";
 export * from "./layout.mjs";
 export * from "./stack-journal.mjs";

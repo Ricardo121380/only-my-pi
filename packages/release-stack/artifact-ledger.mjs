@@ -101,6 +101,7 @@ export async function buildArtifactLedger({
   integrityOverrides = {},
   licenseOverrides = {},
   topLevelNames = [],
+  rootArtifact = null,
 } = {}) {
   if (typeof npmRoot !== "string" || !path.isAbsolute(npmRoot)) throw new TypeError("buildArtifactLedger requires an absolute npmRoot");
   const root = await fs.realpath(npmRoot);
@@ -132,6 +133,14 @@ export async function buildArtifactLedger({
     entries.push(entry);
     entriesByPath.set(relativePath, entry);
   }
+  if (rootArtifact !== null) {
+    const manifest = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
+    const identity = packageIdentity(manifest);
+    if (rootArtifact?.version !== manifest.version || typeof rootArtifact?.tarballUrl !== "string" || typeof rootArtifact?.integrity !== "string") fail("LEDGER_ROOT_ARTIFACT_INVALID", "root artifact evidence is incomplete");
+    const entry = { relativePath: "", locked: { version: manifest.version }, manifest, identity, url: normalizeUrl(rootArtifact.tarballUrl), integrity: rootArtifact.integrity, real: root };
+    entries.push(entry);
+    entriesByPath.set("", entry);
+  }
   if (entries.length === 0) fail("LEDGER_EMPTY", "installed package tree is empty");
 
   const topLevel = new Set(topLevelNames);
@@ -158,13 +167,20 @@ export async function buildArtifactLedger({
         artifactTreeRoots,
         entry.identity,
         entry.manifest,
-        async () => `sha256:${await hashResourcePath({ artifactRoot: root, relativePath: entry.relativePath, allowContainedSymlinks: false })}`,
+        async () => entry.relativePath === ""
+          ? `sha256:${await hashResourcePath({ artifactRoot: path.dirname(root), relativePath: path.basename(root), allowContainedSymlinks: false })}`
+          : `sha256:${await hashResourcePath({ artifactRoot: root, relativePath: entry.relativePath, allowContainedSymlinks: false })}`,
       ),
       topLevel: topLevel.has(entry.manifest.name),
     };
     const existing = artifactsByIdentity.get(entry.identity);
-    if (existing && canonicalJson(existing) !== canonicalJson(artifact)) fail("LEDGER_DUPLICATE_IDENTITY_DRIFT", `same package identity has different evidence: ${entry.identity}`);
-    artifactsByIdentity.set(entry.identity, artifact);
+    if (existing) {
+      const left = { ...existing, dependencies: [], topLevel: false };
+      const right = { ...artifact, dependencies: [], topLevel: false };
+      if (canonicalJson(left) !== canonicalJson(right)) fail("LEDGER_DUPLICATE_IDENTITY_DRIFT", `same package identity has different evidence: ${entry.identity}`);
+      existing.dependencies = [...new Set([...existing.dependencies, ...artifact.dependencies])].sort();
+      existing.topLevel ||= artifact.topLevel;
+    } else artifactsByIdentity.set(entry.identity, artifact);
   }
 
   return finalizeArtifactLedger({
