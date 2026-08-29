@@ -6,6 +6,7 @@ import test from "node:test";
 
 import {
   CONTROLLED_PI_VERSION,
+  CONTROLLED_PI_INTEGRITY,
   PUBLIC_STACK_PACKAGES,
   assembleReleasePayloads,
   buildFullThinPayloads,
@@ -69,7 +70,7 @@ test("payload assembler derives one canonical manifest, ledger, SBOM, and Full/T
     outputRoot: path.join(root, "payloads"),
     sourceCommit: SOURCE,
     generationTargetGraphDigest: sha256("generation"),
-    piIntegrity: SRI,
+    piIntegrity: CONTROLLED_PI_INTEGRITY,
     artifactBytes,
     artifactTreeRoots,
     installScriptPath: install,

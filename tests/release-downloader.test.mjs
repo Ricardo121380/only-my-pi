@@ -42,6 +42,23 @@ test("verified downloader streams exact bytes to an atomic destination", async (
   assert.deepEqual(requests[0].options, { method: "GET", redirect: "manual", headers: {} });
 });
 
+test("build-time acquisition can establish SHA-256 from registry SRI without weakening runtime checks", async (t) => {
+  const root = await temporary(t);
+  const bytes = Buffer.from("registry artifact");
+  const result = await downloadVerified({
+    url: "https://registry.npmjs.org/example/-/example-1.0.0.tgz",
+    destination: path.join(root, "artifact.tgz"),
+    expectedSri: sri(bytes),
+    fetchImpl: async () => new Response(bytes, { status: 200 }),
+  });
+  assert.equal(result.sha256, sha256(bytes));
+  await assert.rejects(downloadVerified({
+    url: "https://registry.npmjs.org/example/-/example-1.0.0.tgz",
+    destination: path.join(root, "unverified.tgz"),
+    fetchImpl: async () => new Response(bytes, { status: 200 }),
+  }), { code: "DOWNLOAD_EXPECTATION_INVALID" });
+});
+
 test("redirects are manually revalidated against the exact host allowlist", async (t) => {
   const root = await temporary(t);
   const bytes = Buffer.from("redirected");

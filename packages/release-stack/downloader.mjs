@@ -85,7 +85,7 @@ export async function fetchReleaseJson({
 export async function downloadVerified({
   url,
   destination,
-  expectedSha256,
+  expectedSha256 = null,
   expectedSri = null,
   maxBytes = 1024 * 1024 * 1024,
   maxRedirects = 5,
@@ -93,7 +93,8 @@ export async function downloadVerified({
   fetchImpl = globalThis.fetch,
 } = {}) {
   if (typeof destination !== "string" || !path.isAbsolute(destination)) throw new TypeError("download destination must be absolute");
-  if (!SHA256.test(expectedSha256 ?? "") || (expectedSri !== null && !SRI.test(expectedSri))) fail("DOWNLOAD_EXPECTATION_INVALID", "download requires exact SHA-256 and optional SHA-512 SRI");
+  if ((expectedSha256 !== null && !SHA256.test(expectedSha256)) || (expectedSri !== null && !SRI.test(expectedSri))
+    || (expectedSha256 === null && expectedSri === null)) fail("DOWNLOAD_EXPECTATION_INVALID", "download requires an exact SHA-256 or SHA-512 SRI expectation");
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > 2 * 1024 * 1024 * 1024) fail("DOWNLOAD_SIZE_BOUND_INVALID", "download size bound is invalid");
   if (typeof fetchImpl !== "function") throw new TypeError("download requires fetch");
   const parent = await fsp.realpath(path.dirname(destination));
@@ -117,7 +118,7 @@ export async function downloadVerified({
     await new Promise((resolve, reject) => { output.end(resolve); output.once("error", reject); });
     const actualSha256 = `sha256:${sha256Hash.digest("hex")}`;
     const actualSri = `sha512-${sha512Hash.digest("base64")}`;
-    if (actualSha256 !== expectedSha256 || (expectedSri !== null && actualSri !== expectedSri)) fail("DOWNLOAD_DIGEST_MISMATCH", "download bytes differ from the declared digest");
+    if ((expectedSha256 !== null && actualSha256 !== expectedSha256) || (expectedSri !== null && actualSri !== expectedSri)) fail("DOWNLOAD_DIGEST_MISMATCH", "download bytes differ from the declared digest");
     await fsp.rename(temporary, destination);
     return Object.freeze({ path: destination, bytes, sha256: actualSha256, integrity: actualSri, finalHost: new URL(finalUrl).hostname, redirects });
   } catch (error) {

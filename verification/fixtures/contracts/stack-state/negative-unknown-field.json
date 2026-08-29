@@ -3,9 +3,9 @@
   "formatVersion": 1,
   "kind": "only-my-pi-stack-state",
   "status": "INSTALLED",
-  "activeStack": "sha256:79257ccf74b8338ef3d788e1a9b92d685d53b35491803eba46fffeb560cf44de",
+  "activeStack": "sha256:89d1dfd03bd655f89e3ea906b3ad7ee3709a8c5204c4f42dc204db0a41d7422d",
   "lkgStack": "sha256:de6b2c654dd0fab4362a8de0f935bdc43f60bf5687116871e0e6c76d7db3b13c",
-  "manifestDigest": "sha256:79257ccf74b8338ef3d788e1a9b92d685d53b35491803eba46fffeb560cf44de",
+  "manifestDigest": "sha256:89d1dfd03bd655f89e3ea906b3ad7ee3709a8c5204c4f42dc204db0a41d7422d",
   "payloadMode": "thin",
   "node": {
     "version": "24.19.0",
@@ -119,6 +119,6 @@
     "externalTree": true,
     "reasonCodes": []
   },
-  "stateDigest": "sha256:09392f49d52369c24754c0753c954503f9ede328aa0d65a4f0ba9b8314be5349",
+  "stateDigest": "sha256:9196a7bd80e1d9ee5a08a10a89077e36b468e445648f5cb6ee39c5e18c888810",
   "hostPath": "/private/example"
 }

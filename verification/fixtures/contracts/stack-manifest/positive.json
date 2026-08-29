@@ -23,7 +23,7 @@
     "pi": {
       "name": "@earendil-works/pi-coding-agent",
       "version": "0.84.3",
-      "integrity": "sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      "integrity": "sha512-Yr2p9PubrbFZmYEPYI+C8KmZP9xlFuLDnAG64RtU0ZDgrdiXYWa+y7WGyJO5OlqPliOkVCMd9IzVszO3/t0D0w==",
       "treeDigest": "sha256:a8052436555f6b0e36899dd1485c4b6fc8fbd1d009686d112ca3902fcc0e9214",
       "entry": "dist/bundle/cli.js"
     }
@@ -130,7 +130,7 @@
     }
   ],
   "externalTreeDigest": "sha256:19215c20c6a4e65363cdeab6382ea03d8078aac4f488a2fc86d959b926c40c45",
-  "transitiveLedgerSha256": "sha256:fedf220728d8c3b524ff2e8fa1f23964b1a9f550fc90fef67810f82efd2fe129",
+  "transitiveLedgerSha256": "sha256:34d7586f540c135c0632b5471bc077d71600e4314aa35f0dfefa6c59ab59ad2e",
   "generationTargetGraphDigest": "sha256:42984308fe2574e5ba4c527e8e970633bc9a8f8d9b30986564224ae5f75a61c4",
   "defaultPreset": "daily",
   "overlays": {
@@ -165,5 +165,5 @@
     "removeOnlyVerifiedProvisioned": true,
     "preserveUserData": true
   },
-  "stackId": "sha256:79257ccf74b8338ef3d788e1a9b92d685d53b35491803eba46fffeb560cf44de"
+  "stackId": "sha256:89d1dfd03bd655f89e3ea906b3ad7ee3709a8c5204c4f42dc204db0a41d7422d"
 }

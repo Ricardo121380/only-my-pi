@@ -8,6 +8,7 @@ export const PUBLIC_REPOSITORY = "Ricardo121380/only-my-pi";
 export const EMBEDDED_NODE_VERSION = "24.19.0";
 export const EMBEDDED_NODE_ARCHIVE_SHA256 = "sha256:8294b7aa9b03997481c06babf1e8b270c859358f27da57a11509afe537ac381d";
 export const CONTROLLED_PI_VERSION = "0.84.3";
+export const CONTROLLED_PI_INTEGRITY = "sha512-Yr2p9PubrbFZmYEPYI+C8KmZP9xlFuLDnAG64RtU0ZDgrdiXYWa+y7WGyJO5OlqPliOkVCMd9IzVszO3/t0D0w==";
 
 export const PUBLIC_STACK_PACKAGES = Object.freeze([
   ["@narumitw/pi-plan-mode", "0.55.2"],
@@ -123,7 +124,7 @@ export function validateStackManifest(input) {
   exactKeys(input.runtime.node, ["version", "archiveName", "archiveSha256", "license", "treeDigest"], "Node runtime", "STACK_MANIFEST_SCHEMA_INVALID");
   if (input.runtime.node.version !== EMBEDDED_NODE_VERSION || input.runtime.node.archiveName !== "node-v24.19.0-darwin-arm64.tar.gz" || input.runtime.node.archiveSha256 !== EMBEDDED_NODE_ARCHIVE_SHA256 || input.runtime.node.license !== "MIT" || !SHA256.test(input.runtime.node.treeDigest ?? "")) fail("STACK_NODE_IDENTITY_INVALID", "embedded Node identity is invalid");
   exactKeys(input.runtime.pi, ["name", "version", "integrity", "treeDigest", "entry"], "Pi runtime", "STACK_MANIFEST_SCHEMA_INVALID");
-  if (input.runtime.pi.name !== "@earendil-works/pi-coding-agent" || input.runtime.pi.version !== CONTROLLED_PI_VERSION || !SRI.test(input.runtime.pi.integrity ?? "") || !SHA256.test(input.runtime.pi.treeDigest ?? "") || input.runtime.pi.entry !== "dist/bundle/cli.js") fail("STACK_PI_IDENTITY_INVALID", "controlled Pi identity is invalid");
+  if (input.runtime.pi.name !== "@earendil-works/pi-coding-agent" || input.runtime.pi.version !== CONTROLLED_PI_VERSION || input.runtime.pi.integrity !== CONTROLLED_PI_INTEGRITY || !SHA256.test(input.runtime.pi.treeDigest ?? "") || input.runtime.pi.entry !== "dist/bundle/cli.js") fail("STACK_PI_IDENTITY_INVALID", "controlled Pi identity is invalid");
   assertPackageTuple(input.externalPackages);
   if (![input.externalTreeDigest, input.transitiveLedgerSha256, input.generationTargetGraphDigest].every((value) => SHA256.test(value ?? ""))) fail("STACK_MANIFEST_EVIDENCE_INVALID", "stack manifest evidence digest is invalid");
   if (input.defaultPreset !== "daily" || canonicalJson(input.overlays) !== canonicalJson({ enabled: ["web", "orchestration-readonly", "ui-terminal"], disabled: ["memory", "sync", "mcp", "experimental"] })) fail("STACK_PROFILE_INVALID", "public stack profile or overlays drifted");

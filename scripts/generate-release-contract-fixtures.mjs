@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { canonicalJson } from "../packages/config-runtime/index.mjs";
 import {
   CONTROLLED_PI_VERSION,
+  CONTROLLED_PI_INTEGRITY,
   EMBEDDED_NODE_ARCHIVE_SHA256,
   EMBEDDED_NODE_VERSION,
   PREVIEW_TAG,
@@ -49,7 +50,7 @@ function ledger() {
       name,
       version,
       tarballUrl: registryUrl(name, version),
-      integrity: SRI,
+      integrity: name === "@earendil-works/pi-coding-agent" ? CONTROLLED_PI_INTEGRITY : SRI,
       sha256: digest(`tarball:${name}@${version}`),
       license: "MIT",
       packageManifestDigest: digest(`manifest:${name}@${version}`),
@@ -80,7 +81,7 @@ function manifest(artifactLedger) {
       pi: {
         name: "@earendil-works/pi-coding-agent",
         version: CONTROLLED_PI_VERSION,
-        integrity: SRI,
+        integrity: CONTROLLED_PI_INTEGRITY,
         treeDigest: digest("pi-tree"),
         entry: "dist/bundle/cli.js",
       },

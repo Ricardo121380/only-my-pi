@@ -70,12 +70,13 @@ function resolveDependencyIdentity({ packagePath, dependencyName, entriesByPath 
   return null;
 }
 
-function bytesFor(artifactBytes, identity, url) {
+function shaFor(artifactBytes, identity, url) {
   const value = artifactBytes instanceof Map
     ? artifactBytes.get(identity) ?? artifactBytes.get(url)
     : artifactBytes?.[identity] ?? artifactBytes?.[url];
-  if (!Buffer.isBuffer(value) && !(value instanceof Uint8Array)) fail("LEDGER_ARTIFACT_BYTES_REQUIRED", `verified tarball bytes are required for ${identity}`);
-  return Buffer.from(value);
+  if (Buffer.isBuffer(value) || value instanceof Uint8Array) return sha256(Buffer.from(value));
+  if (value && typeof value === "object" && /^sha256:[a-f0-9]{64}$/u.test(value.sha256 ?? "")) return value.sha256;
+  fail("LEDGER_ARTIFACT_BYTES_REQUIRED", `verified tarball evidence is required for ${identity}`);
 }
 
 async function artifactTreeDigest(artifactTreeRoots, identity, installedManifest, fallback) {
@@ -152,13 +153,12 @@ export async function buildArtifactLedger({
       if (!resolved) fail("LEDGER_DEPENDENCY_UNRESOLVED", `installed dependency is missing: ${entry.identity} -> ${dependencyName}`);
       dependencies.push(resolved);
     }
-    const tarballBytes = bytesFor(artifactBytes, entry.identity, entry.url);
     const artifact = {
       name: entry.manifest.name,
       version: entry.manifest.version,
       tarballUrl: entry.url,
       integrity: entry.integrity,
-      sha256: sha256(tarballBytes),
+      sha256: shaFor(artifactBytes, entry.identity, entry.url),
       license: licenseConclusion(entry.manifest, licenseOverrides),
       packageManifestDigest: sha256(canonicalJson(entry.manifest)),
       lifecycleScripts: lifecycleScripts(entry.manifest),

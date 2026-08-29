@@ -12,7 +12,7 @@
     "arch": "x64",
     "minimumMacOS": "14.0"
   },
-  "stackManifestSha256": "sha256:395afa1ca198c49eb45c775f3afa1c6da0f8d203d3bdbe9f1294b47e784fc12d",
+  "stackManifestSha256": "sha256:00bb988c60052e1fb9089a8d91cc1a34e1490b57e63c9534516d2b2158231871",
   "bootstrap": {
     "asset": "install.sh",
     "sha256": "sha256:043df5bdbf6639d7a77e1d44c5226fd7371e5259a1e4df3a0dd5d64c30dca44f"

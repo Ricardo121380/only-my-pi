@@ -8,7 +8,7 @@
       "name": "@earendil-works/pi-coding-agent",
       "version": "0.84.3",
       "tarballUrl": "https://registry.npmjs.org/@earendil-works%2fpi-coding-agent/-/pi-coding-agent-0.84.3.tgz",
-      "integrity": "sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      "integrity": "sha512-Yr2p9PubrbFZmYEPYI+C8KmZP9xlFuLDnAG64RtU0ZDgrdiXYWa+y7WGyJO5OlqPliOkVCMd9IzVszO3/t0D0w==",
       "sha256": "sha256:b12adcd7685b35d1668d28cca207f8bb72ebdc7ce40c733fb46701f04cba95cf",
       "license": "MIT",
       "packageManifestDigest": "sha256:38e8c4bd169688ee7531c38c17920fd9df8af6d921f3d45f24dde70cc7b60a2c",
@@ -135,5 +135,5 @@
       "topLevel": true
     }
   ],
-  "ledgerDigest": "sha256:fedf220728d8c3b524ff2e8fa1f23964b1a9f550fc90fef67810f82efd2fe129"
+  "ledgerDigest": "sha256:34d7586f540c135c0632b5471bc077d71600e4314aa35f0dfefa6c59ab59ad2e"
 }
