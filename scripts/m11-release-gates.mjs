@@ -143,6 +143,23 @@ function safeOutput(requested, rootDir) {
   return target;
 }
 
+export function resolveM11PlatformReleaseRoot(inherited, rootDir = ROOT) {
+  const requested = inherited?.M11_Q10_RELEASE_ROOT;
+  if (typeof requested !== "string" || !path.isAbsolute(requested) || /[\0\r\n]/u.test(requested)) fail("M11_GATE_PLATFORM_ROOT_REQUIRED", "Q10 requires M11_Q10_RELEASE_ROOT as an absolute RC directory");
+  let stat;
+  let real;
+  try {
+    stat = fs.lstatSync(requested);
+    real = fs.realpathSync(requested);
+  } catch {
+    fail("M11_GATE_PLATFORM_ROOT_UNSAFE", "Q10 RC directory is missing or unsafe");
+  }
+  const repository = fs.realpathSync(rootDir);
+  const relative = path.relative(repository, real);
+  if (!stat.isDirectory() || stat.isSymbolicLink() || real !== path.resolve(requested) || relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative))) fail("M11_GATE_PLATFORM_ROOT_UNSAFE", "Q10 RC directory must be a real directory outside the repository");
+  return real;
+}
+
 function publicResult(raw, execution = "deterministic") {
   return Object.freeze({ id: raw.id, execution, status: raw.status, passed: raw.passed, exitCode: raw.exitCode, signal: raw.signal, timedOut: raw.timedOut, outputLimitExceeded: raw.outputLimitExceeded, durationMs: raw.durationMs, stdoutBytes: raw.stdoutBytes, stderrBytes: raw.stderrBytes, stdoutSha256: `sha256:${raw.stdoutSha256}`, stderrSha256: `sha256:${raw.stderrSha256}` });
 }
@@ -228,7 +245,10 @@ export async function runM11ReleaseVerification({ rootDir = repositoryRoot, outp
     let result;
     if (gate.id === PROTECTED_ID) result = evidence ? Object.freeze({ ...skippedResult(gate.id, gate.execution, "PASS"), passed: true, evidence: { evidenceId: evidence.evidenceId, evidenceDigest: evidence.evidenceDigest, assertionCount: evidence.assertions.length } }) : skippedResult(gate.id, gate.execution, gate.defaultStatus);
     else if (gate.id === PLATFORM_ID && !includePlatform) result = skippedResult(gate.id, gate.execution, gate.defaultStatus);
-    else result = publicResult(await runCheckImpl({ ...gate, cwd: "repository-root", env: { CI: "1", NO_COLOR: "1", PI_TELEMETRY: "0" }, sensitiveOutput: false, required: true }, { cwd: resolvedRoot, maxOutputBytes: Math.min(gate.maxOutputBytes, manifest.policy.maxOutputBytes), env }), gate.execution);
+    else {
+      const gateEnv = { CI: "1", NO_COLOR: "1", PI_TELEMETRY: "0", ...(gate.id === PLATFORM_ID ? { M11_Q10_RELEASE_ROOT: resolveM11PlatformReleaseRoot(env, resolvedRoot) } : {}) };
+      result = publicResult(await runCheckImpl({ ...gate, cwd: "repository-root", env: gateEnv, sensitiveOutput: false, required: true }, { cwd: resolvedRoot, maxOutputBytes: Math.min(gate.maxOutputBytes, manifest.policy.maxOutputBytes), env }), gate.execution);
+    }
     results.push(result);
     onGate(result);
   }

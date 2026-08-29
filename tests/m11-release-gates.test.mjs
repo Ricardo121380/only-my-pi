@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { M11_PROTECTED_ASSERTION_IDS, inspectM11Gates, parseM11GateArgs, runM11ReleaseVerification, validateM11GateManifest } from "../scripts/m11-release-gates.mjs";
+import { M11_PROTECTED_ASSERTION_IDS, inspectM11Gates, parseM11GateArgs, resolveM11PlatformReleaseRoot, runM11ReleaseVerification, validateM11GateManifest } from "../scripts/m11-release-gates.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -40,11 +42,16 @@ test("ordinary M11 verification executes only deterministic gates", async () => 
   assert.equal(report.authorization.release, "NOT_AUTHORIZED");
 });
 
-test("explicit platform mode adds Q10 without executing Q11", async () => {
+test("explicit platform mode adds Q10 with one validated RC root and never executes Q11", async (t) => {
+  const releaseRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-m11-gate-rc-")));
+  t.after(() => fs.rm(releaseRoot, { recursive: true, force: true }));
   const executed = [];
-  const { report } = await runM11ReleaseVerification({ rootDir: ROOT, includePlatform: true, requireCleanSource: false, verifyGit: false, runCheckImpl: async (gate) => { executed.push(gate.id); return fakeResult(gate); } });
+  const { report } = await runM11ReleaseVerification({ rootDir: ROOT, includePlatform: true, requireCleanSource: false, verifyGit: false, env: { M11_Q10_RELEASE_ROOT: releaseRoot }, runCheckImpl: async (gate) => { executed.push(gate.id); if (gate.id === "Q10") assert.equal(gate.env.M11_Q10_RELEASE_ROOT, releaseRoot); return fakeResult(gate); } });
   assert.deepEqual(executed, ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9", "Q10", "Q12"]);
   assert.equal(report.status, "HOLD_PROTECTED_EVIDENCE");
   assert.equal(report.summary.platformPassed, 1);
   assert.equal(report.summary.protectedNotRunByPolicy, 1);
+  assert.equal(resolveM11PlatformReleaseRoot({ M11_Q10_RELEASE_ROOT: releaseRoot }, ROOT), releaseRoot);
+  assert.throws(() => resolveM11PlatformReleaseRoot({}, ROOT), { code: "M11_GATE_PLATFORM_ROOT_REQUIRED" });
+  assert.throws(() => resolveM11PlatformReleaseRoot({ M11_Q10_RELEASE_ROOT: path.join(releaseRoot, "missing") }, ROOT), { code: "M11_GATE_PLATFORM_ROOT_UNSAFE" });
 });
