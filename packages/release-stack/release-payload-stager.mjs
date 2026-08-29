@@ -151,13 +151,15 @@ async function copyLicense(source, destination) {
 async function collectLicenses({ resolved, artifacts, output }) {
   await fs.mkdir(output, { mode: 0o700 });
   await copyLicense(path.join(resolved, "node", "LICENSE"), path.join(output, `Node-${EMBEDDED_NODE_VERSION}-LICENSE.txt`));
+  const missingIdentities = [];
   for (const [identity, root] of [...artifacts.artifactTreeRoots].sort(([left], [right]) => left.localeCompare(right))) {
     const names = await fs.readdir(root);
     const candidate = names.sort().find((name) => /^(licen[cs]e|copying)(\.[A-Za-z0-9._-]+)?$/iu.test(name));
-    if (!candidate) fail("RELEASE_LICENSE_TEXT_MISSING", `registry artifact has no root license text: ${identity}`);
+    if (!candidate) { missingIdentities.push(identity); continue; }
     const filename = `${sha256(identity).slice("sha256:".length, "sha256:".length + 16)}-${identity.replaceAll(/[^A-Za-z0-9._-]/gu, "-")}-LICENSE.txt`;
     await copyLicense(path.join(root, candidate), path.join(output, filename));
   }
+  if (missingIdentities.length > 0) fail("RELEASE_LICENSE_TEXTS_MISSING", "registry artifacts without root license texts require exact reviewed license sources", { missingIdentities: Object.freeze(missingIdentities) });
   return output;
 }
 
