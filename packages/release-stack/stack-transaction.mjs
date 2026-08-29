@@ -183,11 +183,12 @@ function receipt(context, status, failureCode = null) {
 }
 
 export class StackTransactionEngine {
-  constructor({ layout, processAdmission = null, harness = null, doctor = null, smoke = null, transactionIdFactory = () => crypto.randomUUID(), onBoundary = null } = {}) {
+  constructor({ layout, processAdmission = null, harness = null, shellProfile = null, doctor = null, smoke = null, transactionIdFactory = () => crypto.randomUUID(), onBoundary = null } = {}) {
     if (!layout?.shareRoot) throw new TypeError("StackTransactionEngine requires a stack layout");
     this.layout = layout;
     this.processAdmission = processAdmission;
     this.harness = harness;
+    this.shellProfile = shellProfile;
     this.doctor = doctor;
     this.smoke = smoke;
     this.transactionIdFactory = transactionIdFactory;
@@ -240,6 +241,11 @@ export class StackTransactionEngine {
       await this.activateStack(context);
       await this.advance(context, "SHIMS_ACTIVATED");
       await this.activateShims(context);
+      await this.advance(context, "SHELL_PROFILE_CONFIGURED");
+      if (plan.shellProfile?.status === "SHELL_PROFILE_CHANGE_PLANNED") {
+        if (!this.shellProfile) fail("SHELL_PROFILE_UNAVAILABLE", "shell configuration service is unavailable");
+        await this.shellProfile.apply(plan.shellProfile);
+      }
       await this.advance(context, "STATIC_DOCTOR_PASSED");
       const doctor = await this.doctor?.({ context }) ?? { ok: true, status: "NOT_CONFIGURED" };
       if (doctor.ok !== true) fail("STACK_STATIC_DOCTOR_FAILED", "installed stack failed static doctor", { doctor });
@@ -286,6 +292,7 @@ export class StackTransactionEngine {
       targetSettingsDigest: null,
       targetSettingsContentBase64: null,
       authorizedPackageNames: context.stack.externalPackages.map((entry) => entry.name).sort(),
+      shellProfile: context.plan.shellProfile,
     };
     await writeStackJson(context.paths.rollback, rollback);
     context.rollback = rollback;
@@ -425,6 +432,18 @@ export class StackTransactionEngine {
       return Object.freeze({ ok: false, status: "MANUAL_RECONCILIATION_REQUIRED", transactionId });
     }
     const currentSettings = await readFileSnapshot(this.layout.settingsFile);
+    let shellRemovalPlan = null;
+    if (rollback.shellProfile?.status === "SHELL_PROFILE_CHANGE_PLANNED") {
+      if (!this.shellProfile) {
+        await markStackJournal(this.layout, transactionId, { status: "MANUAL_RECONCILIATION_REQUIRED", failureCode: "SHELL_PROFILE_UNAVAILABLE" });
+        return Object.freeze({ ok: false, status: "MANUAL_RECONCILIATION_REQUIRED", transactionId });
+      }
+      try { shellRemovalPlan = await this.shellProfile.planRemoval(rollback.shellProfile); }
+      catch {
+        await markStackJournal(this.layout, transactionId, { status: "MANUAL_RECONCILIATION_REQUIRED", failureCode: "SHELL_PROFILE_MARKER_DRIFT" });
+        return Object.freeze({ ok: false, status: "MANUAL_RECONCILIATION_REQUIRED", transactionId });
+      }
+    }
     let restoredSettings = rollback.settings.exists ? Buffer.from(rollback.settings.contentBase64, "base64") : null;
     if (rollback.targetSettingsDigest && currentSettings.digest !== rollback.targetSettingsDigest && currentSettings.digest !== rollback.settings.digest) {
       try {
@@ -435,6 +454,7 @@ export class StackTransactionEngine {
         return Object.freeze({ ok: false, status: "MANUAL_RECONCILIATION_REQUIRED", transactionId });
       }
     }
+    if (shellRemovalPlan) await this.shellProfile.remove(shellRemovalPlan, rollback.shellProfile);
     await restoreLink(this.layout.ompShim, rollback.ompShim);
     await restoreLink(this.layout.piShim, rollback.piShim);
     await restoreLink(this.layout.currentStack, rollback.currentStack);

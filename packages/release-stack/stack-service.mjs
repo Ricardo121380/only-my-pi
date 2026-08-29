@@ -71,7 +71,7 @@ async function verifyInstalled(layout, state) {
   return Object.freeze({ root, manifest, identities });
 }
 
-function bindSourcePlan(base, inspection) {
+function bindSourcePlan(base, inspection, shellProfile = null) {
   const plan = {
     ...base,
     source: {
@@ -83,6 +83,7 @@ function bindSourcePlan(base, inspection) {
       asset: inspection.asset,
       stackManifestSha256: inspection.stackManifestSha256,
     },
+    shellProfile,
   };
   delete plan.planDigest;
   plan.planDigest = sha256(canonicalJson(plan));
@@ -132,7 +133,12 @@ export class StackService {
       platform: await this.platformInspector(),
       pathValue: this.pathValue(),
     });
-    return bindSourcePlan(base, inspection);
+    let shellProfile = null;
+    if (options.configureShell === true && base.path.actionRequired) {
+      if (!this.shellProfile) fail("SHELL_PROFILE_UNAVAILABLE", "shell configuration service is unavailable");
+      shellProfile = await this.shellProfile.plan();
+    }
+    return bindSourcePlan(base, inspection, shellProfile);
   }
 
   async applyInstall(options = {}, reviewedPlan) {
@@ -142,17 +148,7 @@ export class StackService {
     const prepared = await this.source(options).prepare(options);
     if (prepared.stackId !== currentPlan.stackId || prepared.asset.sha256 !== currentPlan.source.asset.sha256) fail("STACK_PAYLOAD_DRIFT", "prepared payload differs from the reviewed source");
     try {
-      const result = await this.engine.apply({ plan: currentPlan, stackManifest: prepared.stackManifest, resolvedRoot: prepared.resolvedRoot, terminatePi: options.terminatePi === true });
-      if (options.configureShell === true && currentPlan.path.actionRequired) {
-        if (!this.shellProfile) fail("SHELL_PROFILE_UNAVAILABLE", "shell configuration service is unavailable");
-        const shellPlan = await this.shellProfile.plan();
-        try { return Object.freeze({ ...result, shell: await this.shellProfile.apply(shellPlan) }); }
-        catch (error) {
-          await this.engine.rollbackCommitted([result.transactionId], { terminatePi: options.terminatePi === true, failureCode: "SHELL_PROFILE_CONFIGURATION_FAILED" });
-          throw error;
-        }
-      }
-      return result;
+      return await this.engine.apply({ plan: currentPlan, stackManifest: prepared.stackManifest, resolvedRoot: prepared.resolvedRoot, terminatePi: options.terminatePi === true });
     } finally {
       await prepared.cleanup();
     }

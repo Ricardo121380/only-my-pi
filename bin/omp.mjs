@@ -225,10 +225,12 @@ export function createProductionControlService({
     piBinPath: stackLayout.piShim,
   });
   const stackSmoke = wired.createNoModelSmokeRunner({ ...smokeOptions, piCommand: stackLayout.piShim });
+  const shellProfile = wired.createShellProfileService({ homeDir: os.homedir() });
   const stackEngine = wired.createStackTransactionEngine({
     layout: stackLayout,
     processAdmission: stackProcessAdmission,
     harness: stackHarness,
+    shellProfile,
     doctor: async () => {
       const result = await bootstrap.doctor({ configRoot: resolvedConfigRoot });
       return { ok: result?.ok === true, status: result?.status ?? "FAIL" };
@@ -245,7 +247,7 @@ export function createProductionControlService({
     localSource: wired.createLocalReleasePayloadSource({ cacheRoot: stackLayout.releaseCache, thinResolver }),
     releaseSource: wired.createGitHubReleasePayloadSource({ cacheRoot: stackLayout.releaseCache, thinResolver }),
     engine: stackEngine,
-    shellProfile: wired.createShellProfileService({ homeDir: os.homedir() }),
+    shellProfile,
     platformInspector: async () => inspectPublicPlatform(),
   });
   const dailyConfig = new wired.DailyConfigService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot });

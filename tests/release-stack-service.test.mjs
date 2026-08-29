@@ -87,8 +87,32 @@ test("shell PATH marker is explicit, idempotent, backed up, and symlink-safe", a
   assert.equal((text.match(/>>> only-my-pi PATH >>>/gu) ?? []).length, 1);
   assert.equal((await service.plan()).status, "NO_CHANGES");
 
+  await fs.writeFile(profile, `${text}export AFTER_INSTALL=1\n`);
+  const removal = await service.planRemoval(plan);
+  assert.equal(removal.status, "SHELL_PROFILE_REMOVAL_PLANNED");
+  assert.equal((await service.remove(removal, plan)).status, "SHELL_PROFILE_REMOVED");
+  assert.equal(await fs.readFile(profile, "utf8"), "export EXISTING=1\nexport AFTER_INSTALL=1\n");
+
   const linkedHome = await temporary(t, "omp-shell-profile-link-");
   await fs.symlink(profile, path.join(linkedHome, ".zprofile"));
   const linked = createShellProfileService({ homeDir: linkedHome, shellPath: "/bin/zsh" });
   await assert.rejects(linked.plan(), { code: "SHELL_PROFILE_UNSAFE" });
+});
+
+test("shell marker removal restores profile absence and fails closed on marker drift", async (t) => {
+  const home = await temporary(t, "omp-shell-profile-removal-");
+  const profile = path.join(home, ".zprofile");
+  const service = createShellProfileService({ homeDir: home, shellPath: "/bin/zsh" });
+  const addition = await service.plan();
+  assert.equal(addition.sourceExists, false);
+  await service.apply(addition);
+  const removal = await service.planRemoval(addition);
+  assert.equal(removal.removeFile, true);
+  await service.remove(removal, addition);
+  await assert.rejects(fs.lstat(profile), { code: "ENOENT" });
+
+  const second = await service.plan();
+  await service.apply(second);
+  await fs.writeFile(profile, (await fs.readFile(profile, "utf8")).replace("only-my-pi PATH", "modified PATH"));
+  await assert.rejects(service.planRemoval(second), { code: "SHELL_PROFILE_MARKER_DRIFT" });
 });

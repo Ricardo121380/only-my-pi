@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { hashResourcePath } from "../packages/bootstrap/graph-plan.mjs";
 import {
   STACK_TRANSACTION_PHASES,
+  createShellProfileService,
   createStackLayout,
   createStackTransactionEngine,
   createStackService,
@@ -200,6 +201,30 @@ test("explicit stack remove reverses the committed install and restores CLI abse
     await assert.rejects(fs.lstat(target), { code: "ENOENT" });
   }
   assert.equal((await readStackJournal(value.layout, transactionId(5))).status, "ROLLED_BACK");
+});
+
+test("stack transaction journals explicit shell configuration and removes only its exact marker", async (t) => {
+  const value = await fixture(t);
+  const shellProfile = createShellProfileService({ homeDir: value.home, shellPath: "/bin/zsh" });
+  await fs.writeFile(path.join(value.home, ".zprofile"), "export BEFORE=1", { mode: 0o600 });
+  const shellPlan = await shellProfile.plan();
+  const plan = { ...value.plan, shellProfile: shellPlan };
+  const engine = createStackTransactionEngine({
+    layout: value.layout,
+    harness: value.harness,
+    shellProfile,
+    transactionIdFactory: () => transactionId(8),
+    processAdmission: { async plan() { return []; } },
+  });
+  await engine.apply({ plan, stackManifest: value.stack, resolvedRoot: value.resolved });
+  const configured = await fs.readFile(path.join(value.home, ".zprofile"), "utf8");
+  assert.match(configured, /only-my-pi PATH/u);
+  await fs.writeFile(path.join(value.home, ".zprofile"), `${configured}export AFTER=1\n`);
+
+  const service = createStackService({ layout: value.layout, localSource: {}, releaseSource: {}, engine });
+  const removal = await service.planLifecycle({ subcommand: "remove" });
+  await service.applyLifecycle({ subcommand: "remove" }, removal);
+  assert.equal(await fs.readFile(path.join(value.home, ".zprofile"), "utf8"), "export BEFORE=1\nexport AFTER=1\n");
 });
 
 test("stack remove never deletes an exact preexisting external package tree", async (t) => {
