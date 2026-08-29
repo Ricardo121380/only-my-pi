@@ -87,6 +87,21 @@ test("safe extractor rejects path traversal, absolute paths, duplicate entries, 
   }
 });
 
+test("safe extractor canonicalizes npm dot segments before duplicate and containment checks", async (t) => {
+  const root = await temporary(t, "omp-extract-dot-segment-");
+  const bytes = maliciousArchive([{ name: "package/./dist/index.js", content: "export default true;\n" }]);
+  const archive = path.join(root, "archive.tgz");
+  const destination = path.join(root, "out");
+  await fs.writeFile(archive, bytes);
+  await extractVerifiedTarGzip({ archivePath: archive, destination, expectedSha256: sha256(bytes) });
+  assert.equal(await fs.readFile(path.join(destination, "package", "dist", "index.js"), "utf8"), "export default true;\n");
+
+  const duplicate = maliciousArchive([{ name: "package/./same", content: "one" }, { name: "package/same", content: "two" }]);
+  const duplicateArchive = path.join(root, "duplicate.tgz");
+  await fs.writeFile(duplicateArchive, duplicate);
+  await assert.rejects(extractVerifiedTarGzip({ archivePath: duplicateArchive, destination: path.join(root, "duplicate"), expectedSha256: sha256(duplicate) }), { code: "ARCHIVE_DUPLICATE_ENTRY" });
+});
+
 test("safe extractor rejects digest drift, destination reuse, and expansion limits", async (t) => {
   const root = await temporary(t, "omp-extract-bounds-");
   const bytes = maliciousArchive([{ name: "file", content: "0123456789" }]);

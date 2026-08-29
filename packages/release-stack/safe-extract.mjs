@@ -26,10 +26,13 @@ function octal(buffer, start, length) {
 }
 
 function safeRelative(raw) {
-  const normalized = raw.replaceAll("\\", "/").replace(/\/+$/u, "");
-  if (!normalized || normalized.startsWith("/") || normalized.includes("\0") || normalized.split("/").some((segment) => segment === "" || segment === "." || segment === "..")) {
+  const portable = raw.replaceAll("\\", "/").replace(/\/+$/u, "");
+  const segments = portable.split("/");
+  if (!portable || portable.startsWith("/") || portable.includes("\0") || segments.some((segment) => segment === "" || segment === "..")) {
     fail("ARCHIVE_PATH_TRAVERSAL", `tar entry path is unsafe: ${raw}`);
   }
+  const normalized = segments.filter((segment) => segment !== ".").join("/");
+  if (!normalized) fail("ARCHIVE_PATH_TRAVERSAL", `tar entry path is unsafe: ${raw}`);
   return normalized;
 }
 
