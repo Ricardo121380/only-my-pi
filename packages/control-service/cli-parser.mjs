@@ -15,6 +15,10 @@ const VALUE_OPTIONS = new Map([
   ["--project", "projectRoot"],
   ["--artifact", "artifact"],
   ["--bundle", "bundle"],
+  ["--release", "release"],
+  ["--payload", "payload"],
+  ["--channel", "channel"],
+  ["--to", "to"],
 ]);
 
 const BOOLEAN_OPTIONS = new Map([
@@ -27,6 +31,7 @@ const BOOLEAN_OPTIONS = new Map([
   ["--live", "live"],
   ["--resolved", "resolved"],
   ["--terminate-pi", "terminatePi"],
+  ["--configure-shell", "configureShell"],
 ]);
 
 const COMMANDS = new Set([
@@ -35,6 +40,8 @@ const COMMANDS = new Set([
   "doctor",
   "status",
   "version",
+  "release",
+  "stack",
   "upstream",
   "update",
   "rollback",
@@ -70,6 +77,9 @@ const GOAL_SWARM_COMMANDS = new Set(["list", "show", "validate", "plan", "run", 
 const ULTRA_COMMANDS = new Set(["list", "show", "validate", "plan", "run"]);
 const THEME_COMMANDS = new Set(["list", "show", "preview", "use", "reset", "doctor"]);
 const UPSTREAM_COMMANDS = new Set(["plan", "apply", "status", "rollback"]);
+const RELEASE_COMMANDS = new Set(["check"]);
+const STACK_COMMANDS = new Set(["install", "update", "status", "rollback", "remove"]);
+const STACK_SOURCE_COMMANDS = new Set(["install", "update"]);
 const MODE_NAMESPACED_ID = /^(?:[a-z][a-z0-9-]{0,63}(?:\/[a-z][a-z0-9-]{0,63})?|(?:user|project|package):[a-z][a-z0-9-]{0,63})$/u;
 
 function fail(message, code = "INVALID_ARGUMENT") {
@@ -147,8 +157,10 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   if (!new Set(["swarm", "workflow", "ultra"]).has(command) && options.inputFile !== undefined) fail("--input-file is only valid for workflow, swarm, or ultra commands");
   if (!["models", "gate"].includes(command) && options.projectRoot !== undefined) fail("--project is only valid for models or gate validate");
   if (!["install", "update"].includes(command) && options.artifact !== undefined) fail("--artifact is only valid for install or update");
-  if (command !== "upstream" && options.bundle !== undefined) fail("--bundle is only valid for upstream plan or apply");
-  if (command !== "upstream" && options.terminatePi !== undefined) fail("--terminate-pi is only valid for upstream apply or rollback");
+  if (!["upstream", "stack"].includes(command) && options.bundle !== undefined) fail("--bundle is only valid for upstream or stack commands");
+  if (!["upstream", "stack"].includes(command) && options.terminatePi !== undefined) fail("--terminate-pi is only valid for upstream or stack mutations");
+  if (command !== "stack" && [options.release, options.payload, options.to, options.configureShell].some((value) => value !== undefined)) fail("--release/--payload/--to/--configure-shell are only valid for stack commands");
+  if (command !== "release" && options.channel !== undefined) fail("--channel is only valid for release check");
 
   if (options.profile !== undefined) assertIdentifier(options.profile, "profile");
   if (options.mode !== undefined) {
@@ -160,6 +172,10 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   if (options.projectRoot !== undefined && !path.isAbsolute(options.projectRoot)) fail("--project must be an absolute path");
   if (options.artifact !== undefined && !path.isAbsolute(options.artifact)) fail("--artifact must be an absolute path");
   if (options.bundle !== undefined && !path.isAbsolute(options.bundle)) fail("--bundle must be an absolute path");
+  if (options.release !== undefined && !/^0\.2\.0-preview\.[1-9][0-9]*$/u.test(options.release)) fail("--release must be an exact 0.2.0-preview.N version");
+  if (options.payload !== undefined && !["thin", "full"].includes(options.payload)) fail("--payload must be thin or full");
+  if (options.channel !== undefined && options.channel !== "preview") fail("--channel must be preview in this milestone");
+  if (options.to !== undefined && !/^sha256:[a-f0-9]{64}$/u.test(options.to)) fail("--to must be an exact stack id");
   if (options.model !== undefined && !/^[A-Za-z0-9][A-Za-z0-9._:/+-]{0,127}$/.test(options.model)) {
     fail("model must be a bounded non-secret identifier");
   }
@@ -167,6 +183,55 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   if (command === "help") {
     if (positionals.length || Object.keys(options).length) fail("help accepts no options or arguments");
     return { command, mutation: false, options: { json: false } };
+  }
+
+  if (command === "release") {
+    const subcommand = positionals[0] ?? null;
+    if (!RELEASE_COMMANDS.has(subcommand) || positionals.length !== 1) fail("release accepts only the check subcommand");
+    reject(options, ["profile", "mode", "provider", "model", "scope", "apply", "dryRun", "plan", "yes", "static", "live", "resolved", "projectRoot", "artifact", "bundle", "inputFile"], command);
+    return { command, mutation: false, options: { configRoot, subcommand, channel: options.channel ?? "preview", json: options.json === true } };
+  }
+
+  if (command === "stack") {
+    reject(options, ["profile", "mode", "provider", "model", "scope", "dryRun", "static", "live", "resolved", "projectRoot", "artifact", "inputFile", "channel"], command);
+    const subcommand = positionals[0] ?? null;
+    if (!STACK_COMMANDS.has(subcommand) || positionals.length !== 1) fail("stack requires install, update, status, rollback, or remove");
+    if (STACK_SOURCE_COMMANDS.has(subcommand)) {
+      if ((options.release === undefined) === (options.bundle === undefined)) fail(`stack ${subcommand} requires exactly one of --release or --bundle`);
+      if (options.bundle !== undefined && options.payload !== undefined) fail("--payload is selected by a local bundle and cannot be overridden");
+      if (options.to !== undefined) fail(`--to is not valid for stack ${subcommand}`);
+    } else {
+      if ([options.release, options.bundle, options.payload, options.configureShell].some((value) => value !== undefined)) fail(`release source and shell options are not valid for stack ${subcommand}`);
+      if (subcommand !== "rollback" && options.to !== undefined) fail(`--to is not valid for stack ${subcommand}`);
+    }
+    if (subcommand === "status") {
+      if ([options.apply, options.plan, options.yes, options.terminatePi, options.to].some((value) => value !== undefined)) fail("stack status is read-only");
+      return { command, mutation: false, options: { configRoot, subcommand, json: options.json === true } };
+    }
+    if (options.apply && options.plan) fail("--apply and --plan are mutually exclusive");
+    const apply = options.apply === true;
+    if (apply && options.yes !== true) fail(`stack ${subcommand} --apply requires --yes`);
+    if (!apply && options.yes) fail("--yes is only valid with --apply");
+    if (!apply && options.terminatePi) fail("--terminate-pi is only valid with --apply");
+    if (!apply && options.configureShell) fail("--configure-shell is only valid with --apply");
+    return {
+      command,
+      mutation: apply,
+      options: {
+        configRoot,
+        subcommand,
+        release: options.release ?? null,
+        bundle: options.bundle ? path.resolve(options.bundle) : null,
+        payload: options.release ? options.payload ?? "thin" : null,
+        to: options.to ?? null,
+        apply,
+        plan: !apply,
+        yes: options.yes === true,
+        terminatePi: options.terminatePi === true,
+        configureShell: options.configureShell === true,
+        json: options.json === true,
+      },
+    };
   }
 
   if (command === "bootstrap") {

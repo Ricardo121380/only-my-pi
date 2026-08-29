@@ -24,6 +24,16 @@ import { ControlService, OMP_USAGE } from "../packages/control-service/service.m
 import { DailyConfigService } from "../packages/daily-config/index.mjs";
 import { ProjectGateService, createNodeExecAdapter } from "../packages/project-gates/index.mjs";
 import { RunManagementService, createRunRecordStore } from "../packages/run-management/index.mjs";
+import { loadSettings } from "../packages/config-runtime/index.mjs";
+import {
+  createGitHubReleasePayloadSource,
+  createLocalReleasePayloadSource,
+  createShellProfileService,
+  createStackHarnessAdapter,
+  createStackLayout,
+  createStackService,
+  createStackTransactionEngine,
+} from "../packages/release-stack/index.mjs";
 import {
   createCandidateTargetResolver,
   createCrossRootTransactionEngine,
@@ -73,6 +83,13 @@ const DEFAULT_DEPENDENCIES = Object.freeze({
   createUpstreamMigrationService,
   createVersionService,
   createWorkflowControlService,
+  createGitHubReleasePayloadSource,
+  createLocalReleasePayloadSource,
+  createShellProfileService,
+  createStackHarnessAdapter,
+  createStackLayout,
+  createStackService,
+  createStackTransactionEngine,
 });
 
 function fail(code, message) {
@@ -104,6 +121,16 @@ function dependenciesWithDefaults(overrides = {}) {
   const dependencies = { ...DEFAULT_DEPENDENCIES, ...overrides };
   for (const key of allowed) assertFunction(dependencies[key], key);
   return dependencies;
+}
+
+function inspectPublicPlatform() {
+  const darwinMajor = process.platform === "darwin" ? Number.parseInt(os.release().split(".")[0], 10) : 0;
+  return Object.freeze({
+    os: process.platform,
+    arch: process.arch,
+    minimumMacOSSatisfied: process.platform === "darwin" && Number.isInteger(darwinMajor) && darwinMajor >= 23,
+    rosetta: process.platform === "darwin" && process.arch !== "arm64",
+  });
 }
 
 /**
@@ -189,6 +216,36 @@ export function createProductionControlService({
     processAdmission,
     engine: upstreamEngine,
   });
+  const stackLayout = wired.createStackLayout({ homeDir: os.homedir(), configRoot: resolvedConfigRoot });
+  const stackHarness = wired.createStackHarnessAdapter({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot, spawnImpl });
+  const stackProcessAdmission = wired.createPiProcessAdmission({
+    piPackageRoot: path.join(stackLayout.currentStack, "pi"),
+    piBinPath: stackLayout.piShim,
+  });
+  const stackSmoke = wired.createNoModelSmokeRunner({ ...smokeOptions, piCommand: stackLayout.piShim });
+  const stackEngine = wired.createStackTransactionEngine({
+    layout: stackLayout,
+    processAdmission: stackProcessAdmission,
+    harness: stackHarness,
+    doctor: async () => {
+      const result = await bootstrap.doctor({ configRoot: resolvedConfigRoot });
+      return { ok: result?.ok === true, status: result?.status ?? "FAIL" };
+    },
+    smoke: async () => {
+      const settings = await loadSettings(resolvedConfigRoot);
+      const result = await stackSmoke({ configRoot: resolvedConfigRoot, settings: settings.settings });
+      return { ok: result?.status === "PASS" || result?.ok === true, status: result?.status ?? "FAIL" };
+    },
+  });
+  const thinResolver = null;
+  const stackService = wired.createStackService({
+    layout: stackLayout,
+    localSource: wired.createLocalReleasePayloadSource({ cacheRoot: stackLayout.releaseCache, thinResolver }),
+    releaseSource: wired.createGitHubReleasePayloadSource({ cacheRoot: stackLayout.releaseCache, thinResolver }),
+    engine: stackEngine,
+    shellProfile: wired.createShellProfileService({ homeDir: os.homedir() }),
+    platformInspector: async () => inspectPublicPlatform(),
+  });
   const dailyConfig = new wired.DailyConfigService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot });
   const projectGates = new wired.ProjectGateService({
     configRoot: resolvedConfigRoot,
@@ -215,6 +272,7 @@ export function createProductionControlService({
     statusService,
     versionService,
     upstreamMigration,
+    stackService,
   });
 }
 
@@ -323,6 +381,9 @@ export function formatOmpHuman(result) {
   addField(lines, "piVersion", details.piVersion);
   addField(lines, "subagentsVersion", details.subagentsVersion);
   addField(lines, "decision", details.decision);
+  addField(lines, "stackId", details.stackId ?? details.activeStackId);
+  addField(lines, "payloadMode", details.payloadMode);
+  addField(lines, "nodeVersion", details.nodeVersion ?? details.embeddedNodeVersion);
   if (details.harnessStatus?.provenance) addField(lines, "provenance", details.harnessStatus.provenance);
 
   const providerSelection = details.providerSelection ?? details.desired?.metadata?.providerSelection;

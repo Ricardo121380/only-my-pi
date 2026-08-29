@@ -97,6 +97,26 @@ test("every mutating command recovers an incomplete upstream transaction before 
   assert.deepEqual(calls, ["recover", "plan", "apply"]);
 });
 
+test("M11 release and stack routes keep status read-only and every mutation plan-first", async () => {
+  const calls = [];
+  const stackService = {
+    async releaseCheck(options) { calls.push(["releaseCheck", options]); return { ok: true, status: "CURRENT", mutation: false }; },
+    async status() { calls.push(["status"]); return { ok: true, status: "INSTALLED", mutation: false }; },
+    async planInstall(options) { calls.push(["planInstall", options]); return { kind: "install-plan", planDigest: "sha256:plan", mutation: false }; },
+    async applyInstall(options, plan) { calls.push(["applyInstall", options, plan]); return { ok: true, status: "COMMITTED", mutation: true }; },
+    async planLifecycle(options) { calls.push(["planLifecycle", options]); return { kind: "lifecycle-plan", planDigest: "sha256:lifecycle", mutation: false }; },
+    async applyLifecycle(options, plan) { calls.push(["applyLifecycle", options, plan]); return { ok: true, status: "REMOVED", mutation: true }; },
+  };
+  const service = createControlService({ bootstrap: {}, doctor: {}, stackService });
+  assert.equal((await service.dispatch({ command: "release", options: { channel: "preview" } })).status, "CURRENT");
+  assert.equal((await service.dispatch({ command: "stack", mutation: false, options: { subcommand: "status" } })).status, "INSTALLED");
+  assert.equal((await service.dispatch({ command: "stack", mutation: false, options: { subcommand: "install", apply: false } })).kind, "install-plan");
+  assert.equal((await service.dispatch({ command: "stack", mutation: true, options: { subcommand: "install", apply: true, yes: true } })).status, "COMMITTED");
+  assert.equal((await service.dispatch({ command: "stack", mutation: false, options: { subcommand: "remove", apply: false } })).kind, "lifecycle-plan");
+  assert.equal((await service.dispatch({ command: "stack", mutation: true, options: { subcommand: "remove", apply: true, yes: true } })).status, "REMOVED");
+  assert.deepEqual(calls.map(([method]) => method), ["releaseCheck", "status", "planInstall", "planInstall", "applyInstall", "planLifecycle", "planLifecycle", "applyLifecycle"]);
+});
+
 test("live doctor remains separate from repository static doctor", async () => {
   const { service, calls } = harness();
   assert.equal((await service.dispatch({ command: "doctor", options: { live: false } })).status, "doctor");

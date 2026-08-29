@@ -9,3 +9,7 @@ export * from "./stack-journal.mjs";
 export * from "./environment-planner.mjs";
 export * from "./stack-transaction.mjs";
 export * from "./safe-extract.mjs";
+export * from "./payload-source.mjs";
+export * from "./shell-profile.mjs";
+export * from "./stack-service.mjs";
+export * from "./stack-harness.mjs";

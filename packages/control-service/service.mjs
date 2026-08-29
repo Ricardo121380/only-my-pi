@@ -9,6 +9,12 @@ Usage:
   omp doctor [--static|--live] [--config-root <absolute>] [--json]
   omp status [--config-root <absolute>] [--json]
   omp version [--config-root <absolute>] [--json]
+  omp release check [--channel preview] [--json]
+  omp stack install (--release <exact-preview> [--payload thin|full] | --bundle <absolute>) [--plan|--apply --yes] [--terminate-pi] [--configure-shell] [--config-root <absolute>] [--json]
+  omp stack update (--release <exact-preview> [--payload thin|full] | --bundle <absolute>) [--plan|--apply --yes] [--terminate-pi] [--configure-shell] [--config-root <absolute>] [--json]
+  omp stack status [--config-root <absolute>] [--json]
+  omp stack rollback [--to <stack-id>] [--plan|--apply --yes] [--terminate-pi] [--config-root <absolute>] [--json]
+  omp stack remove [--plan|--apply --yes] [--terminate-pi] [--config-root <absolute>] [--json]
   omp upstream plan --bundle <absolute> [--config-root <absolute>] [--json]
   omp upstream apply --bundle <absolute> --apply --yes [--terminate-pi] [--config-root <absolute>] [--json]
   omp upstream status [transaction-id] [--config-root <absolute>] [--json]
@@ -51,7 +57,7 @@ async function approve(request, plan, confirm) {
 }
 
 export class ControlService {
-  constructor({ bootstrap, doctor, confirm, artifactInstaller, userCli, upstreamMigration, modes, workflows, swarms, ultras, themes, dailyConfig, projectGates, runManagement, statusService, versionService, rootDir, configRoot } = {}) {
+  constructor({ bootstrap, doctor, confirm, artifactInstaller, userCli, upstreamMigration, stackService, modes, workflows, swarms, ultras, themes, dailyConfig, projectGates, runManagement, statusService, versionService, rootDir, configRoot } = {}) {
     if (!bootstrap || !doctor) throw new TypeError("bootstrap and doctor services are required");
     this.bootstrap = bootstrap;
     this.doctor = doctor;
@@ -59,6 +65,7 @@ export class ControlService {
     this.artifactInstaller = artifactInstaller;
     this.userCli = userCli;
     this.upstreamMigration = upstreamMigration;
+    this.stackService = stackService;
     this.modes = modes;
     this.workflows = workflows;
     this.swarms = swarms;
@@ -144,6 +151,20 @@ export class ControlService {
       }
       case "version":
         return this.versionService?.inspect?.() ?? { ok: false, status: "VERSION_SERVICE_UNAVAILABLE", mutation: false };
+      case "release":
+        return this.stackService?.releaseCheck?.(request.options) ?? { ok: false, status: "RELEASE_SERVICE_UNAVAILABLE", code: "RELEASE_SERVICE_UNAVAILABLE", mutation: false };
+      case "stack": {
+        if (!this.stackService) return { ok: false, status: "STACK_SERVICE_UNAVAILABLE", code: "STACK_SERVICE_UNAVAILABLE", mutation: false };
+        if (request.options.subcommand === "status") return this.stackService.status();
+        if (["install", "update"].includes(request.options.subcommand)) {
+          const plan = await this.stackService.planInstall(request.options);
+          if (!request.options.apply) return plan;
+          return this.stackService.applyInstall(request.options, plan);
+        }
+        const plan = await this.stackService.planLifecycle(request.options);
+        if (!request.options.apply) return plan;
+        return this.stackService.applyLifecycle(request.options, plan);
+      }
       case "upstream": {
         if (!this.upstreamMigration) return { ok: false, status: "UPSTREAM_MIGRATION_UNAVAILABLE", mutation: false };
         if (request.options.subcommand === "plan") return this.upstreamMigration.plan(request.options);

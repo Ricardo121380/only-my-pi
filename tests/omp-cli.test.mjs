@@ -328,6 +328,7 @@ test("production factory wires every runtime dependency without invoking runners
     "createNoModelSmokeRunner",
     "TransactionEngine",
     "BootstrapService",
+    "createNoModelSmokeRunner",
     "ControlService",
   ]);
   assert.equal(calls[1].options.configRoot, configRoot);

@@ -12,6 +12,7 @@ import {
   finalizeArtifactLedger,
   finalizeStackManifest,
   inspectResolvedStack,
+  createLocalReleasePayloadSource,
   renderThirdPartyNotices,
   sha256,
 } from "../packages/release-stack/index.mjs";
@@ -146,4 +147,28 @@ test("Full/Thin metadata divergence is rejected before archive publication", asy
     outputRoot: output,
     protectedEvidenceDigest: sha256("protected-evidence"),
   }), { code: "LEDGER_DIGEST_INVALID" });
+});
+
+test("local Full source uses sibling release authority and remains zero-write until prepare", async (t) => {
+  const fixture = await releaseFixture(t);
+  const output = await temporary(t, "omp-release-output-source-");
+  const cache = await temporary(t, "omp-release-cache-source-");
+  const built = await buildFullThinPayloads({
+    fullPayloadRoot: fixture.full,
+    thinPayloadRoot: fixture.thin,
+    thinResolvedRoot: fixture.thinResolved,
+    outputRoot: output,
+    protectedEvidenceDigest: sha256("protected-evidence"),
+  });
+  const source = createLocalReleasePayloadSource({ cacheRoot: cache });
+  const before = await fs.readdir(cache);
+  const inspection = await source.inspect({ bundle: built.assets.full.path });
+  assert.equal(inspection.payloadMode, "full");
+  assert.equal(inspection.stackId, fixture.stackManifest.stackId);
+  assert.deepEqual(await fs.readdir(cache), before);
+  const prepared = await source.prepare({ bundle: built.assets.full.path });
+  assert.equal(prepared.stackId, fixture.stackManifest.stackId);
+  assert.equal(await fs.readFile(path.join(prepared.resolvedRoot, "only-my-pi.tgz"), "utf8"), "fixture only-my-pi artifact\n");
+  await prepared.cleanup();
+  assert.deepEqual(await fs.readdir(cache), []);
 });

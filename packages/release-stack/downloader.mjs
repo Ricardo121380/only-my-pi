@@ -57,6 +57,31 @@ function asNodeStream(body) {
   fail("DOWNLOAD_BODY_INVALID", "download response body is not streamable");
 }
 
+export async function fetchReleaseJson({
+  url,
+  maxBytes = 4 * 1024 * 1024,
+  maxRedirects = 5,
+  allowedHosts = RELEASE_DOWNLOAD_HOSTS,
+  fetchImpl = globalThis.fetch,
+} = {}) {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > 16 * 1024 * 1024) fail("DOWNLOAD_SIZE_BOUND_INVALID", "JSON response size bound is invalid");
+  if (typeof fetchImpl !== "function") throw new TypeError("JSON fetch requires fetch");
+  const { response, finalUrl, redirects } = await responseWithRedirects(url, { fetchImpl, allowedHosts, maxRedirects });
+  const chunks = [];
+  let bytes = 0;
+  for await (const chunkValue of asNodeStream(response.body)) {
+    const chunk = Buffer.from(chunkValue);
+    bytes += chunk.length;
+    if (bytes > maxBytes) fail("DOWNLOAD_TOO_LARGE", "JSON response exceeds the declared byte bound");
+    chunks.push(chunk);
+  }
+  const body = Buffer.concat(chunks);
+  let document;
+  try { document = JSON.parse(body.toString("utf8")); }
+  catch { fail("DOWNLOAD_JSON_INVALID", "downloaded release metadata is not valid JSON"); }
+  return Object.freeze({ document, bytes, sha256: `sha256:${crypto.createHash("sha256").update(body).digest("hex")}`, finalHost: new URL(finalUrl).hostname, redirects });
+}
+
 export async function downloadVerified({
   url,
   destination,

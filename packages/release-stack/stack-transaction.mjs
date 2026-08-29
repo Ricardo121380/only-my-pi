@@ -176,11 +176,11 @@ export class StackTransactionEngine {
       await this.advance(context, "EXTERNAL_TREE_STAGED");
       if (plan.external.switchRequired) await fs.cp(path.join(resolvedRoot, "external-npm"), paths.externalStage, { recursive: true, errorOnExist: true, force: false, preserveTimestamps: false });
       await this.advance(context, "OMP_ARTIFACT_STAGED");
-      await fs.mkdir(path.join(paths.stage, "only-my-pi"), { recursive: true, mode: 0o700 });
-      await fs.cp(path.join(resolvedRoot, "only-my-pi.tgz"), path.join(paths.stage, "only-my-pi", "only-my-pi.tgz"), { force: false, errorOnExist: true });
+      await fs.cp(path.join(resolvedRoot, "only-my-pi.tgz"), path.join(paths.stage, "only-my-pi.tgz"), { force: false, errorOnExist: true });
       await this.advance(context, "GENERATION_STAGED");
-      await this.harness?.stage?.({ context, artifact: path.join(paths.stage, "only-my-pi", "only-my-pi.tgz") });
+      await this.harness?.stage?.({ context, artifact: path.join(paths.stage, "only-my-pi.tgz") });
       await this.advance(context, "SHIMS_STAGED");
+      await fs.writeFile(path.join(paths.stage, "stack-manifest.json"), `${JSON.stringify(stack, null, 2)}\n`, { mode: 0o600, flag: "wx" });
       await writeStackBins(paths.stage);
       await this.advance(context, "PI_PROCESSES_STOPPED");
       const processes = await this.processAdmission?.plan?.() ?? [];
@@ -261,8 +261,11 @@ export class StackTransactionEngine {
     if (current.digest !== context.rollback.settings.digest) fail("CONCURRENT_TARGETED_SETTINGS_CHANGE", "settings changed after the reviewed plan");
     const original = current.exists ? JSON.parse(Buffer.from(current.contentBase64, "base64").toString("utf8")) : {};
     const published = publishPackageSettings(original, context.stack);
-    await this.harness?.publish?.({ context, settings: published });
-    const bytes = Buffer.from(`${JSON.stringify(published, null, 2)}\n`);
+    const harnessResult = await this.harness?.publish?.({ context, settings: published });
+    const finalSettings = harnessResult?.settings ?? published;
+    context.harnessGenerationId = harnessResult?.generationId ?? null;
+    context.rollback.harness = harnessResult?.rollbackIdentity ?? null;
+    const bytes = Buffer.from(`${JSON.stringify(finalSettings, null, 2)}\n`);
     await atomicWriteBytes(this.layout.settingsFile, bytes);
     context.publishedSettingsDigest = sha256(bytes);
     context.rollback.targetSettingsDigest = context.publishedSettingsDigest;
@@ -282,8 +285,14 @@ export class StackTransactionEngine {
   }
 
   async recordState(context) {
-    const previousTarget = context.rollback.currentStack.exists ? context.rollback.currentStack.relativeTarget : path.relative(path.dirname(this.layout.lkgStack), context.activeStackPath);
-    await restoreLink(this.layout.lkgStack, { exists: true, relativeTarget: previousTarget });
+    const priorState = context.rollback.state.exists
+      ? JSON.parse(Buffer.from(context.rollback.state.contentBase64, "base64").toString("utf8"))
+      : null;
+    if (context.rollback.currentStack.exists) {
+      await restoreLink(this.layout.lkgStack, context.rollback.currentStack);
+    } else {
+      await restoreLink(this.layout.lkgStack, { exists: false, relativeTarget: null });
+    }
     const dispositions = new Map(context.plan.external.existing.map((entry) => [entry.name, "PREEXISTING_EXTERNAL"]));
     const state = finalizeStackState({
       $schema: "../../schemas/stack-state-v1.schema.json",
@@ -291,7 +300,7 @@ export class StackTransactionEngine {
       kind: "only-my-pi-stack-state",
       status: "INSTALLED",
       activeStack: context.stack.stackId,
-      lkgStack: context.rollback.currentStack.exists ? sha256(context.rollback.currentStack.relativeTarget) : context.stack.stackId,
+      lkgStack: priorState?.activeStack ?? null,
       manifestDigest: context.stack.stackId,
       payloadMode: context.plan.payloadMode,
       node: { version: context.stack.runtime.node.version, digest: context.stack.runtime.node.treeDigest },
@@ -311,7 +320,7 @@ export class StackTransactionEngine {
         assetDisposition: dispositions.get(entry.name) ?? "PROVISIONED_FOR_USER",
         treeDigest: entry.treeDigest,
       })),
-      transactionIds: [context.transactionId],
+      transactionIds: [...(priorState?.transactionIds ?? []), context.transactionId],
       removalEligibility: {
         stack: true,
         externalTree: context.plan.external.classification === "EMPTY",
@@ -330,6 +339,27 @@ export class StackTransactionEngine {
       if (result.status === "MANUAL_RECONCILIATION_REQUIRED") fail("MANUAL_RECONCILIATION_REQUIRED", "an incomplete stack transaction requires manual reconciliation");
     }
     return Object.freeze(results);
+  }
+
+  async rollbackCommitted(transactionIds, { terminatePi = false, failureCode = "EXPLICIT_STACK_ROLLBACK" } = {}) {
+    if (!Array.isArray(transactionIds) || transactionIds.length === 0 || transactionIds.some((value) => typeof value !== "string")) {
+      fail("STACK_ROLLBACK_PLAN_INVALID", "stack rollback requires at least one reviewed transaction id");
+    }
+    await this.recoverPending();
+    const processes = await this.processAdmission?.plan?.() ?? [];
+    if (processes.length > 0) {
+      if (!terminatePi) fail("PI_TERMINATION_AUTHORITY_REQUIRED", "running Pi processes require explicit --terminate-pi authority");
+      await this.processAdmission.terminate(processes, { authorized: true });
+    }
+    const results = [];
+    for (const transactionId of transactionIds) {
+      const journal = await readStackJournal(this.layout, transactionId);
+      if (journal.status !== "COMMITTED") fail("STACK_ROLLBACK_TRANSACTION_INVALID", "reviewed stack transaction is not committed");
+      const result = await this.recoverTransaction(transactionId, { failureCode });
+      if (result.status !== "ROLLED_BACK") fail("MANUAL_RECONCILIATION_REQUIRED", "stack rollback did not reach a verified terminal state");
+      results.push(result);
+    }
+    return Object.freeze({ ok: true, status: "ROLLED_BACK", mutation: true, transactionIds: Object.freeze([...transactionIds]), results: Object.freeze(results) });
   }
 
   async recoverTransaction(transactionId, { failureCode = "AUTOMATIC_RECOVERY" } = {}) {
