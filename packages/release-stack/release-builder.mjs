@@ -119,6 +119,32 @@ async function validatePayloadMetadata(payloadRoot) {
   return Object.freeze({ root, stackManifest: stack, ledger: artifacts, sbom });
 }
 
+async function validateThinResolutionInputs(root, stack, ledger) {
+  const [artifact, packageDocument, lock] = await Promise.all([
+    boundedFile(root, "only-my-pi.tgz", { maxBytes: 512 * 1024 * 1024 }),
+    jsonFile(root, "resolution/external/package.json", { maxBytes: 1024 * 1024 }),
+    jsonFile(root, "resolution/external/package-lock.json", { maxBytes: 64 * 1024 * 1024 }),
+  ]);
+  if (await hashFile(artifact) !== stack.onlyMyPi.artifactSha256) fail("THIN_OMP_ARTIFACT_MISMATCH", "Thin only-my-pi artifact differs from the stack manifest");
+  const expectedDependencies = Object.fromEntries(stack.externalPackages.map((entry) => [entry.name, entry.version]).sort(([left], [right]) => left.localeCompare(right)));
+  if (packageDocument?.private !== true || packageDocument.name !== "only-my-pi-external-stack" || canonicalJson(packageDocument.dependencies) !== canonicalJson(expectedDependencies)) fail("THIN_PACKAGE_MANIFEST_INVALID", "Thin external package manifest does not select the exact nine-package tuple");
+  if (lock?.lockfileVersion !== 3 || !lock.packages || canonicalJson(lock.packages[""]?.dependencies) !== canonicalJson(expectedDependencies)) fail("THIN_PACKAGE_LOCK_INVALID", "Thin external package lock is invalid or not bound to the exact direct tuple");
+  const artifacts = new Map(ledger.artifacts.map((entry) => [`${entry.name}@${entry.version}`, entry]));
+  for (const [relative, entry] of Object.entries(lock.packages)) {
+    if (relative === "") continue;
+    if (!relative.startsWith("node_modules/") || entry?.link === true || typeof entry?.version !== "string" || typeof entry?.integrity !== "string") fail("THIN_PACKAGE_LOCK_INVALID", "Thin lock contains an unsupported package entry");
+    const pieces = relative.split("node_modules/").at(-1).split("/");
+    const name = pieces[0].startsWith("@") ? `${pieces[0]}/${pieces[1]}` : pieces[0];
+    const artifactEntry = artifacts.get(`${name}@${entry.version}`);
+    if (!artifactEntry || artifactEntry.integrity !== entry.integrity || artifactEntry.tarballUrl !== entry.resolved) fail("THIN_LEDGER_LOCK_MISMATCH", `Thin lock entry is not bound to its artifact ledger: ${name}`);
+  }
+  for (const direct of stack.externalPackages) {
+    const locked = lock.packages[`node_modules/${direct.name}`];
+    if (!locked || locked.version !== direct.version || locked.integrity !== direct.integrity) fail("THIN_PACKAGE_LOCK_INVALID", `Thin lock is missing direct package evidence: ${direct.name}`);
+  }
+  return Object.freeze({ artifact, packageDocument, lock });
+}
+
 async function copyAsset(source, outputRoot, name, mode = 0o600) {
   const target = path.join(outputRoot, name);
   await fs.copyFile(source, target);
@@ -150,6 +176,7 @@ export async function buildFullThinPayloads({
     fail("PAYLOAD_METADATA_DIVERGENCE", "Full and Thin metadata differs");
   }
   const stack = fullMetadata.stackManifest;
+  await validateThinResolutionInputs(thinMetadata.root, stack, thinMetadata.ledger);
   const convergence = await assertPayloadConvergence({ fullResolvedRoot: fullPayloadRoot, thinResolvedRoot, stackManifest: stack });
   await fs.mkdir(outputRoot, { recursive: true, mode: 0o700 });
   const fullName = `only-my-pi-${PREVIEW_VERSION}-darwin-arm64-full.tar.gz`;

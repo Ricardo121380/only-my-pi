@@ -33,6 +33,7 @@ import {
   createStackLayout,
   createStackService,
   createStackTransactionEngine,
+  createThinPayloadResolver,
 } from "../packages/release-stack/index.mjs";
 import {
   createCandidateTargetResolver,
@@ -90,6 +91,7 @@ const DEFAULT_DEPENDENCIES = Object.freeze({
   createStackLayout,
   createStackService,
   createStackTransactionEngine,
+  createThinPayloadResolver,
 });
 
 function fail(code, message) {
@@ -237,7 +239,7 @@ export function createProductionControlService({
       return { ok: result?.status === "PASS" || result?.ok === true, status: result?.status ?? "FAIL" };
     },
   });
-  const thinResolver = null;
+  const thinResolver = wired.createThinPayloadResolver(spawnImpl === undefined ? {} : { spawnImpl });
   const stackService = wired.createStackService({
     layout: stackLayout,
     localSource: wired.createLocalReleasePayloadSource({ cacheRoot: stackLayout.releaseCache, thinResolver }),

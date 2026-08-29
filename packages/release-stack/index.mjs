@@ -13,3 +13,4 @@ export * from "./payload-source.mjs";
 export * from "./shell-profile.mjs";
 export * from "./stack-service.mjs";
 export * from "./stack-harness.mjs";
+export * from "./thin-resolver.mjs";

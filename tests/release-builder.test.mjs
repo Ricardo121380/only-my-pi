@@ -60,6 +60,22 @@ async function writeMetadata(root, { stackManifest, ledger, sbom, notices }) {
   await fs.writeFile(path.join(root, "LICENSES", "MIT.txt"), "MIT fixture license\n");
 }
 
+async function writeThinResolutionInputs(root, { stackManifest, ledger, artifactSource }) {
+  await fs.copyFile(artifactSource, path.join(root, "only-my-pi.tgz"));
+  const dependencies = Object.fromEntries(stackManifest.externalPackages.map((entry) => [entry.name, entry.version]).sort(([left], [right]) => left.localeCompare(right)));
+  const packageDocument = { name: "only-my-pi-external-stack", private: true, version: "0.0.0", dependencies };
+  const lock = { name: packageDocument.name, version: packageDocument.version, lockfileVersion: 3, requires: true, packages: { "": packageDocument } };
+  const artifacts = new Map(ledger.artifacts.map((entry) => [`${entry.name}@${entry.version}`, entry]));
+  for (const entry of stackManifest.externalPackages) {
+    const artifact = artifacts.get(`${entry.name}@${entry.version}`);
+    lock.packages[`node_modules/${entry.name}`] = { version: entry.version, resolved: artifact.tarballUrl, integrity: artifact.integrity, license: artifact.license };
+  }
+  const resolution = path.join(root, "resolution", "external");
+  await fs.mkdir(resolution, { recursive: true });
+  await fs.writeFile(path.join(resolution, "package.json"), `${JSON.stringify(packageDocument, null, 2)}\n`);
+  await fs.writeFile(path.join(resolution, "package-lock.json"), `${JSON.stringify(lock, null, 2)}\n`);
+}
+
 async function releaseFixture(t) {
   const full = await temporary(t, "omp-release-full-");
   const thin = await temporary(t, "omp-release-thin-");
@@ -89,6 +105,7 @@ async function releaseFixture(t) {
   const notices = renderThirdPartyNotices({ stackManifest, ledger });
   await writeMetadata(full, { stackManifest, ledger, sbom, notices });
   await writeMetadata(thin, { stackManifest, ledger, sbom, notices });
+  await writeThinResolutionInputs(thin, { stackManifest, ledger, artifactSource: path.join(full, "only-my-pi.tgz") });
   return { full, thin, thinResolved, stackManifest, ledger };
 }
 
