@@ -78,8 +78,8 @@ function resolutionEvidence(entry) {
 
 async function packageRoot(extracted, expected) {
   const entries = await fs.readdir(extracted, { withFileTypes: true });
-  if (entries.length !== 1 || entries[0].name !== "package" || !entries[0].isDirectory() || entries[0].isSymbolicLink()) fail("RELEASE_ARTIFACT_LAYOUT_INVALID", `registry artifact has an unexpected layout: ${expected.identity}`);
-  const root = path.join(extracted, "package");
+  if (entries.length !== 1 || !entries[0].isDirectory() || entries[0].isSymbolicLink()) fail("RELEASE_ARTIFACT_LAYOUT_INVALID", `registry artifact has an unexpected layout: ${expected.identity}`);
+  const root = path.join(extracted, entries[0].name);
   const manifest = await readJsonFile(path.join(root, "package.json"), "RELEASE_ARTIFACT_MANIFEST_INVALID");
   if (identity(manifest) !== expected.identity || canonicalJson(manifest) !== canonicalJson(expected.manifest)) fail("RELEASE_ARTIFACT_CONTENT_DRIFT", `registry artifact content differs from installed package: ${expected.identity}`);
   return root;

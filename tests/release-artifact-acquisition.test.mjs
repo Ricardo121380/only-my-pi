@@ -64,8 +64,9 @@ test("artifact acquisition completes missing SRI from exact metadata and binds d
     },
     async extract({ destination, archivePath }) {
       const archiveName = (await fs.readFile(archivePath, "utf8")).includes("package-a") ? "package-a@1.0.0" : "package-b@2.0.0";
-      await fs.mkdir(path.join(destination, "package"), { recursive: true });
-      await fs.writeFile(path.join(destination, "package", "package.json"), `${JSON.stringify(manifests[archiveName])}\n`);
+      const rootName = archiveName.startsWith("package-a") ? "package" : "package-b-content";
+      await fs.mkdir(path.join(destination, rootName), { recursive: true });
+      await fs.writeFile(path.join(destination, rootName, "package.json"), `${JSON.stringify(manifests[archiveName])}\n`);
     },
   });
   assert.equal(metadata.length, 2);
