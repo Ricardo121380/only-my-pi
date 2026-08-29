@@ -44,6 +44,8 @@ test("Thin resolver downloads every exact artifact, disables scripts, and conver
   await fs.writeFile(path.join(expected, "node", "lib", "node_modules", "npm", "bin", "npm-cli.js"), "fixture npm\n");
   await fs.mkdir(path.join(expected, "pi", "dist", "bundle"), { recursive: true });
   await fs.writeFile(path.join(expected, "pi", "dist", "bundle", "cli.js"), "fixture Pi\n");
+  await fs.writeFile(path.join(expected, "pi", "package.json"), `${JSON.stringify({ name: "@earendil-works/pi-coding-agent", version: "0.84.3", devDependencies: { fixture: "1.0.0" } }, null, 2)}\n`);
+  await fs.writeFile(path.join(expected, "pi", "npm-shrinkwrap.json"), `${JSON.stringify({ name: "@earendil-works/pi-coding-agent", version: "0.84.3", lockfileVersion: 3, packages: { "": { name: "@earendil-works/pi-coding-agent", version: "0.84.3" } } }, null, 2)}\n`);
 
   const base = JSON.parse(await fs.readFile(path.join(ROOT, "contracts", "release", "stack-manifest.example.json"), "utf8"));
   await fs.mkdir(path.join(expected, "external-npm"), { recursive: true });
@@ -78,18 +80,15 @@ test("Thin resolver downloads every exact artifact, disables scripts, and conver
   const resolver = createThinPayloadResolver({
     async download(options) { downloads.push(options); await fs.writeFile(options.destination, "verified fixture bytes\n"); },
     async extract({ destination }) {
-      const nodeRoot = path.join(destination, "node-v24.19.0-darwin-arm64");
-      await fs.cp(path.join(expected, "node"), nodeRoot, { recursive: true });
+      if (destination.endsWith("pi-artifact")) await fs.cp(path.join(expected, "pi"), path.join(destination, "package"), { recursive: true });
+      else {
+        const nodeRoot = path.join(destination, "node-v24.19.0-darwin-arm64");
+        await fs.cp(path.join(expected, "node"), nodeRoot, { recursive: true });
+      }
     },
     async run(_node, argv, options) {
       commands.push({ argv, env: options.env });
-      if (argv[1] === "ci") await packageTree(options.cwd, stackManifest);
-      if (argv[1] === "install") {
-        const prefix = argv[argv.indexOf("--prefix") + 1];
-        const target = path.join(prefix, "lib", "node_modules", ...stackManifest.runtime.pi.name.split("/"));
-        await fs.mkdir(path.dirname(target), { recursive: true });
-        await fs.cp(path.join(expected, "pi"), target, { recursive: true });
-      }
+      if (argv[1] === "ci" && options.cwd.endsWith("external-npm")) await packageTree(options.cwd, stackManifest);
       return { ok: true };
     },
   });
@@ -99,6 +98,8 @@ test("Thin resolver downloads every exact artifact, disables scripts, and conver
   assert.equal(await tree(resolved, "external-npm"), stackManifest.externalTreeDigest);
   assert.equal(downloads.length, ledger.artifacts.length + 1);
   assert.equal(commands.filter((entry) => entry.argv[1] === "cache").length, ledger.artifacts.length);
+  assert.equal(commands.filter((entry) => entry.argv[1] === "ci").length, 2);
+  assert.equal(commands.some((entry) => entry.argv[1] === "install"), false);
   assert.equal(commands.some((entry) => entry.argv.includes("--ignore-scripts") && entry.argv.includes("--offline")), true);
   assert.ok(commands.every((entry) => entry.env.npm_config_ignore_scripts === "true" && entry.env.npm_config_offline === "true"));
   assert.ok(commands.every((entry) => !Object.keys(entry.env).some((key) => /TOKEN|AUTH|PASSWORD|COOKIE|SECRET|KEY/iu.test(key))));

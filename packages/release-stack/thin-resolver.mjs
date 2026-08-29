@@ -122,7 +122,7 @@ export class ThinPayloadResolver {
       for (const artifact of metadata.ledger.artifacts) {
         const target = path.join(downloads, `${artifact.sha256.slice("sha256:".length)}.tgz`);
         await this.download({ url: artifact.tarballUrl, destination: target, expectedSha256: artifact.sha256, expectedSri: artifact.integrity, maxBytes: 512 * 1024 * 1024 });
-        downloadedArtifacts.set(`${artifact.name}@${artifact.version}`, target);
+        downloadedArtifacts.set(`${artifact.name}@${artifact.version}`, { target, artifact });
         await this.run(node, [npm, "cache", "add", target, "--cache", environment.cache, "--ignore-scripts", "--no-audit", "--no-fund"], { cwd: work, env: environment.env, spawnImpl: this.spawnImpl });
       }
 
@@ -135,13 +135,23 @@ export class ThinPayloadResolver {
       await this.run(node, [npm, "ci", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev", "--omit=peer", "--legacy-peer-deps"], { cwd: external, env: environment.env, spawnImpl: this.spawnImpl });
 
       const piIdentity = `${inspection.stackManifest.runtime.pi.name}@${inspection.stackManifest.runtime.pi.version}`;
-      const piTarball = downloadedArtifacts.get(piIdentity);
-      if (!piTarball) fail("THIN_PI_ARTIFACT_MISSING", "Thin artifact ledger does not contain the controlled Pi package");
-      const piPrefix = path.join(work, "pi-prefix");
-      await fs.mkdir(piPrefix, { recursive: true, mode: 0o700 });
-      await this.run(node, [npm, "install", "--global", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev", "--omit=peer", "--prefix", piPrefix, "--", piTarball], { cwd: work, env: environment.env, spawnImpl: this.spawnImpl });
-      const piPackage = path.join(piPrefix, "lib", "node_modules", ...inspection.stackManifest.runtime.pi.name.split("/"));
-      await fs.rename(piPackage, path.join(resolved, "pi"));
+      const piArtifact = downloadedArtifacts.get(piIdentity);
+      if (!piArtifact) fail("THIN_PI_ARTIFACT_MISSING", "Thin artifact ledger does not contain the controlled Pi package");
+      const piArchiveRoot = path.join(work, "pi-artifact");
+      await this.extract({ archivePath: piArtifact.target, destination: piArchiveRoot, expectedSha256: piArtifact.artifact.sha256, maxEntries: 100_000, maxExtractedBytes: 1024 * 1024 * 1024 });
+      const piPackage = await singleDirectory(piArchiveRoot, "package");
+      const pi = path.join(resolved, "pi");
+      await fs.rename(piPackage, pi);
+      const manifestPath = path.join(pi, "package.json");
+      const manifestBytes = await fs.readFile(manifestPath);
+      const productionManifest = JSON.parse(manifestBytes.toString("utf8"));
+      delete productionManifest.devDependencies;
+      await fs.writeFile(manifestPath, `${JSON.stringify(productionManifest, null, 2)}\n`, { mode: 0o600 });
+      try {
+        await this.run(node, [npm, "ci", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev", "--omit=peer"], { cwd: pi, env: environment.env, spawnImpl: this.spawnImpl });
+      } finally {
+        await fs.writeFile(manifestPath, manifestBytes, { mode: 0o600 });
+      }
       await fs.copyFile(await boundedFile(path.join(payloadRoot, "only-my-pi.tgz"), 512 * 1024 * 1024), path.join(resolved, "only-my-pi.tgz"));
       await inspectResolvedStack({ resolvedRoot: resolved, stackManifest: inspection.stackManifest });
       return resolved;
