@@ -172,12 +172,15 @@ async function defaultPrepare({ rootDir, sourceCommit, outputRoot, download, ext
   const external = await installExternal({ rootDir, resolved, node: runtime.node, npm: runtime.npm, env: environment.env, run });
   const pi = await installPi({ work, resolved, node: runtime.node, npm: runtime.npm, env: environment.env, run, download, extract });
   await buildOnlyMyPi({ rootDir, sourceCommit, work, resolved, node: runtime.node, npm: runtime.npm, env: environment.env, run, extract });
+  const exceptionDocument = JSON.parse(await fs.readFile(path.join(rootDir, "contracts", "release", "artifact-extraction-exceptions.json"), "utf8"));
+  if (exceptionDocument?.formatVersion !== 1 || exceptionDocument.kind !== "only-my-pi-artifact-extraction-exceptions" || !Array.isArray(exceptionDocument.exceptions)) fail("RELEASE_ARTIFACT_EXCEPTION_INVALID", "artifact extraction exception contract is invalid");
   const artifacts = await acquire({
     roots: [
       { npmRoot: external, lockPath: path.join(external, "package-lock.json") },
       { npmRoot: pi.pi, lockPath: path.join(pi.pi, "npm-shrinkwrap.json"), rootArtifact: { name: PI_NAME, version: CONTROLLED_PI_VERSION, tarballUrl: PI_URL, integrity: CONTROLLED_PI_INTEGRITY } },
     ],
     outputRoot: path.join(work, "artifacts"),
+    duplicateExceptions: exceptionDocument.exceptions,
     download,
     extract,
   });

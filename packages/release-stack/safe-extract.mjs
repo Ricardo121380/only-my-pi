@@ -100,6 +100,25 @@ class ChunkReader {
       position += count;
     }
   }
+
+  async compareExactly(length, handle) {
+    let remaining = length;
+    let position = 0;
+    while (remaining > 0) {
+      if (this.buffer.length === 0) {
+        const next = await this.iterator.next();
+        if (next.done) fail("ARCHIVE_TRUNCATED", "tar file content ended unexpectedly");
+        this.buffer = Buffer.from(next.value);
+      }
+      const count = Math.min(remaining, this.buffer.length);
+      const existing = Buffer.allocUnsafe(count);
+      const { bytesRead } = await handle.read(existing, 0, count, position);
+      if (bytesRead !== count || !existing.equals(this.buffer.subarray(0, count))) fail("ARCHIVE_DUPLICATE_ENTRY_MISMATCH", "audited duplicate tar entries have different bytes");
+      this.buffer = this.buffer.subarray(count);
+      remaining -= count;
+      position += count;
+    }
+  }
 }
 
 async function validateParents(root, target) {
@@ -118,8 +137,12 @@ export async function extractVerifiedTarGzip({
   expectedSha256,
   maxEntries = 100_000,
   maxExtractedBytes = 2 * 1024 * 1024 * 1024,
+  allowedDuplicateFiles = [],
 } = {}) {
   if (![archivePath, destination].every((value) => typeof value === "string" && path.isAbsolute(value))) throw new TypeError("archive and destination paths must be absolute");
+  if (!Array.isArray(allowedDuplicateFiles)) throw new TypeError("allowedDuplicateFiles must be an array");
+  const allowedDuplicates = new Set(allowedDuplicateFiles.map((entry) => safeRelative(entry)));
+  if (allowedDuplicates.size !== allowedDuplicateFiles.length) fail("ARCHIVE_DUPLICATE_POLICY_INVALID", "audited duplicate paths must be unique");
   const archiveStat = await fsp.lstat(archivePath);
   if (!archiveStat.isFile() || archiveStat.isSymbolicLink()) fail("ARCHIVE_SOURCE_UNSAFE", "archive source must be a regular file");
   if (await hashFile(archivePath) !== expectedSha256) fail("ARCHIVE_DIGEST_MISMATCH", "archive SHA-256 differs from the declared value");
@@ -127,7 +150,8 @@ export async function extractVerifiedTarGzip({
   await fsp.mkdir(destination, { recursive: false, mode: 0o700 });
   const root = await fsp.realpath(destination);
   const reader = new ChunkReader(fs.createReadStream(archivePath).pipe(zlib.createGunzip()));
-  const seen = new Set();
+  const seen = new Map();
+  const usedDuplicateExceptions = new Set();
   let entries = 0;
   let totalBytes = 0;
   let pendingPax = {};
@@ -155,8 +179,6 @@ export async function extractVerifiedTarGzip({
       const relative = safeRelative(pendingPax.path ?? headerName);
       const link = pendingPax.linkpath ?? linkHeader;
       pendingPax = {};
-      if (seen.has(relative)) fail("ARCHIVE_DUPLICATE_ENTRY", `duplicate tar entry: ${relative}`);
-      seen.add(relative);
       entries += 1;
       if (entries > maxEntries) fail("ARCHIVE_ENTRY_LIMIT", "tar archive contains too many entries");
       totalBytes += size;
@@ -164,6 +186,19 @@ export async function extractVerifiedTarGzip({
       const target = path.resolve(root, ...relative.split("/"));
       if (target === root || !target.startsWith(`${root}${path.sep}`)) fail("ARCHIVE_PATH_TRAVERSAL", `tar entry escapes destination: ${relative}`);
       await validateParents(root, target);
+      const prior = seen.get(relative);
+      if (prior) {
+        if (!allowedDuplicates.has(relative)) fail("ARCHIVE_DUPLICATE_ENTRY", `duplicate tar entry: ${relative}`);
+        const appliedMode = mode & 0o111 ? 0o755 : 0o644;
+        if (!["0", "7"].includes(type) || prior.type !== type || prior.size !== size || prior.appliedMode !== appliedMode) fail("ARCHIVE_DUPLICATE_ENTRY_MISMATCH", `audited duplicate tar entry metadata differs: ${relative}`);
+        const handle = await fsp.open(target, "r");
+        try { await reader.compareExactly(size, handle); } finally { await handle.close(); }
+        usedDuplicateExceptions.add(relative);
+        const pad = (BLOCK - (size % BLOCK)) % BLOCK;
+        if (pad) await reader.readExactly(pad);
+        continue;
+      }
+      seen.set(relative, { type, size, appliedMode: mode & 0o111 ? 0o755 : 0o644 });
       if (type === "5") {
         if (size !== 0) fail("ARCHIVE_HEADER_INVALID", "directory entry has non-zero size");
         await fsp.mkdir(target, { recursive: true, mode: 0o755 });
@@ -185,7 +220,7 @@ export async function extractVerifiedTarGzip({
       if (pad) await reader.readExactly(pad);
     }
     if (Object.keys(pendingPax).length > 0) fail("ARCHIVE_PAX_INVALID", "dangling PAX header");
-    return Object.freeze({ ok: true, status: "ARCHIVE_EXTRACTED", entries, extractedBytes: totalBytes, destination: root });
+    return Object.freeze({ ok: true, status: "ARCHIVE_EXTRACTED", entries, extractedBytes: totalBytes, destination: root, allowedDuplicates: Object.freeze([...usedDuplicateExceptions].sort()) });
   } catch (error) {
     await fsp.rm(root, { recursive: true, force: true });
     throw error;

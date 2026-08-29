@@ -88,11 +88,18 @@ async function packageRoot(extracted, expected) {
 export async function acquireInstalledArtifacts({
   roots,
   outputRoot,
+  duplicateExceptions = [],
   download = downloadVerified,
   fetchMetadata = fetchReleaseJson,
   extract = extractVerifiedTarGzip,
 } = {}) {
-  if (!Array.isArray(roots) || roots.length === 0 || typeof outputRoot !== "string" || !path.isAbsolute(outputRoot)) throw new TypeError("artifact acquisition requires installed roots and an absolute outputRoot");
+  if (!Array.isArray(roots) || roots.length === 0 || typeof outputRoot !== "string" || !path.isAbsolute(outputRoot) || !Array.isArray(duplicateExceptions)) throw new TypeError("artifact acquisition requires installed roots, duplicate policy, and an absolute outputRoot");
+  const exceptions = new Map();
+  for (const entry of duplicateExceptions) {
+    if (entry?.reasonCode !== "UPSTREAM_BYTE_IDENTICAL_CANONICAL_DUPLICATE" || typeof entry.identity !== "string" || !SRI.test(entry.integrity ?? "") || !Array.isArray(entry.paths) || entry.paths.length === 0 || entry.paths.some((value) => typeof value !== "string")) fail("RELEASE_ARTIFACT_EXCEPTION_INVALID", "artifact extraction exception is invalid");
+    if (exceptions.has(entry.identity)) fail("RELEASE_ARTIFACT_EXCEPTION_INVALID", "artifact extraction exceptions must have unique identities");
+    exceptions.set(entry.identity, entry);
+  }
   if (await fs.lstat(outputRoot).then(() => true, (error) => error?.code === "ENOENT" ? false : Promise.reject(error))) fail("RELEASE_ARTIFACT_OUTPUT_EXISTS", "artifact acquisition output must not exist");
   await fs.mkdir(path.join(outputRoot, "downloads"), { recursive: true, mode: 0o700 });
   await fs.mkdir(path.join(outputRoot, "trees"), { recursive: true, mode: 0o700 });
@@ -113,8 +120,11 @@ export async function acquireInstalledArtifacts({
     const archive = path.join(outputRoot, "downloads", `${key}.tgz`);
     const verified = await download({ url: entry.tarballUrl, destination: archive, expectedSri: entry.integrity, maxBytes: MAX_PACKAGE_BYTES, allowedHosts: ["registry.npmjs.org"] });
     const extracted = path.join(outputRoot, "trees", key);
+    const exception = exceptions.get(entry.identity);
+    if (exception && exception.integrity !== entry.integrity) fail("RELEASE_ARTIFACT_EXCEPTION_DRIFT", `artifact extraction exception integrity drifted: ${entry.identity}`);
     try {
-      await extract({ archivePath: archive, destination: extracted, expectedSha256: verified.sha256, maxEntries: 100_000, maxExtractedBytes: 1024 * 1024 * 1024 });
+      const result = await extract({ archivePath: archive, destination: extracted, expectedSha256: verified.sha256, maxEntries: 100_000, maxExtractedBytes: 1024 * 1024 * 1024, allowedDuplicateFiles: exception?.paths ?? [] });
+      if (exception && canonicalJson(result?.allowedDuplicates ?? []) !== canonicalJson([...exception.paths].sort())) fail("RELEASE_ARTIFACT_EXCEPTION_UNUSED", `artifact extraction exception did not match exact duplicate paths: ${entry.identity}`);
     } catch (error) {
       if (error && typeof error === "object") {
         error.artifactIdentity = entry.identity;

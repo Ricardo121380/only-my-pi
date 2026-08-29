@@ -1,0 +1,14 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-artifact-extraction-exceptions",
+  "exceptions": [
+    {
+      "identity": "agent-base@7.1.4",
+      "integrity": "sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==",
+      "paths": [
+        "package/dist/index.js"
+      ],
+      "reasonCode": "UPSTREAM_BYTE_IDENTICAL_CANONICAL_DUPLICATE"
+    }
+  ]
+}
