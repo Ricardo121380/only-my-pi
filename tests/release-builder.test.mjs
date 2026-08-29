@@ -13,6 +13,7 @@ import {
   finalizeStackManifest,
   inspectResolvedStack,
   createLocalReleasePayloadSource,
+  createReleaseBuildController,
   renderThirdPartyNotices,
   sha256,
 } from "../packages/release-stack/index.mjs";
@@ -21,7 +22,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE = "c".repeat(40);
 
 async function temporary(t, prefix) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), prefix)));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   return root;
 }
@@ -55,7 +56,6 @@ async function writeMetadata(root, { stackManifest, ledger, sbom, notices }) {
   await fs.writeFile(path.join(root, "sbom.spdx.json"), `${JSON.stringify(sbom, null, 2)}\n`);
   await fs.writeFile(path.join(root, "THIRD_PARTY_NOTICES.txt"), notices);
   await fs.writeFile(path.join(root, "install.sh"), "#!/bin/sh\nset -eu\nexit 0\n", { mode: 0o755 });
-  await fs.writeFile(path.join(root, "protected-receipt.json"), `${JSON.stringify({ formatVersion: 1, status: "FIXTURE_PASS", digest: sha256("fixture-receipt") })}\n`);
   await fs.mkdir(path.join(root, "LICENSES"));
   await fs.writeFile(path.join(root, "LICENSES", "MIT.txt"), "MIT fixture license\n");
 }
@@ -106,7 +106,9 @@ async function releaseFixture(t) {
   await writeMetadata(full, { stackManifest, ledger, sbom, notices });
   await writeMetadata(thin, { stackManifest, ledger, sbom, notices });
   await writeThinResolutionInputs(thin, { stackManifest, ledger, artifactSource: path.join(full, "only-my-pi.tgz") });
-  return { full, thin, thinResolved, stackManifest, ledger };
+  const protectedReceiptPath = path.join(await temporary(t, "omp-release-receipt-"), "protected-receipt.json");
+  await fs.writeFile(protectedReceiptPath, `${JSON.stringify({ formatVersion: 1, status: "FIXTURE_PASS", digest: sha256("fixture-receipt") })}\n`);
+  return { full, thin, thinResolved, stackManifest, ledger, protectedReceiptPath, protectedEvidenceDigest: sha256(await fs.readFile(protectedReceiptPath)) };
 }
 
 test("release builder creates reproducible Full and Thin assets with one stack identity", async (t) => {
@@ -117,7 +119,8 @@ test("release builder creates reproducible Full and Thin assets with one stack i
     fullPayloadRoot: fixture.full,
     thinPayloadRoot: fixture.thin,
     thinResolvedRoot: fixture.thinResolved,
-    protectedEvidenceDigest: sha256("protected-evidence"),
+    protectedReceiptPath: fixture.protectedReceiptPath,
+    protectedEvidenceDigest: fixture.protectedEvidenceDigest,
   };
   const left = await buildFullThinPayloads({ ...options, outputRoot: leftOutput });
   const right = await buildFullThinPayloads({ ...options, outputRoot: rightOutput });
@@ -147,7 +150,8 @@ test("Full/Thin convergence fails closed on one changed staged package", async (
     thinPayloadRoot: fixture.thin,
     thinResolvedRoot: fixture.thinResolved,
     outputRoot: output,
-    protectedEvidenceDigest: sha256("protected-evidence"),
+    protectedReceiptPath: fixture.protectedReceiptPath,
+    protectedEvidenceDigest: fixture.protectedEvidenceDigest,
   }), { code: "RESOLVED_STACK_IDENTITY_MISMATCH" });
 });
 
@@ -162,7 +166,8 @@ test("Full/Thin metadata divergence is rejected before archive publication", asy
     thinPayloadRoot: fixture.thin,
     thinResolvedRoot: fixture.thinResolved,
     outputRoot: output,
-    protectedEvidenceDigest: sha256("protected-evidence"),
+    protectedReceiptPath: fixture.protectedReceiptPath,
+    protectedEvidenceDigest: fixture.protectedEvidenceDigest,
   }), { code: "LEDGER_DIGEST_INVALID" });
 });
 
@@ -175,7 +180,8 @@ test("local Full source uses sibling release authority and remains zero-write un
     thinPayloadRoot: fixture.thin,
     thinResolvedRoot: fixture.thinResolved,
     outputRoot: output,
-    protectedEvidenceDigest: sha256("protected-evidence"),
+    protectedReceiptPath: fixture.protectedReceiptPath,
+    protectedEvidenceDigest: fixture.protectedEvidenceDigest,
   });
   const source = createLocalReleasePayloadSource({ cacheRoot: cache });
   const before = await fs.readdir(cache);
@@ -188,4 +194,55 @@ test("local Full source uses sibling release authority and remains zero-write un
   assert.equal(await fs.readFile(path.join(prepared.resolvedRoot, "only-my-pi.tgz"), "utf8"), "fixture only-my-pi artifact\n");
   await prepared.cleanup();
   assert.deepEqual(await fs.readdir(cache), []);
+});
+
+test("release build controller performs two byte-identical builds before atomic publication", async (t) => {
+  const fixture = await releaseFixture(t);
+  const outputParent = await temporary(t, "omp-release-controller-");
+  const outputRoot = path.join(outputParent, "release");
+  const controller = createReleaseBuildController({
+    rootDir: ROOT,
+    sourceInspector: async () => ({ head: SOURCE, clean: true }),
+  });
+  const options = {
+    fullPayloadRoot: fixture.full,
+    thinPayloadRoot: fixture.thin,
+    thinResolvedRoot: fixture.thinResolved,
+    protectedReceiptPath: fixture.protectedReceiptPath,
+    protectedEvidenceDigest: fixture.protectedEvidenceDigest,
+    outputRoot,
+    sourceCommit: SOURCE,
+    status: "RC",
+  };
+  const plan = await controller.plan(options);
+  assert.equal(plan.mutation, false);
+  await assert.rejects(fs.lstat(outputRoot), { code: "ENOENT" });
+  const result = await controller.apply(options, plan);
+  assert.equal(result.status, "RELEASE_BUILD_COMMITTED");
+  assert.equal(result.reproducible, true);
+  assert.equal(result.stackId, fixture.stackManifest.stackId);
+  assert.equal(JSON.parse(await fs.readFile(path.join(outputRoot, "release-index.json"), "utf8")).status, "RC");
+});
+
+test("release build controller rejects receipt or source drift before writing output", async (t) => {
+  const fixture = await releaseFixture(t);
+  const outputParent = await temporary(t, "omp-release-controller-drift-");
+  const options = {
+    fullPayloadRoot: fixture.full,
+    thinPayloadRoot: fixture.thin,
+    thinResolvedRoot: fixture.thinResolved,
+    protectedReceiptPath: fixture.protectedReceiptPath,
+    protectedEvidenceDigest: fixture.protectedEvidenceDigest,
+    outputRoot: path.join(outputParent, "release"),
+    sourceCommit: SOURCE,
+    status: "RC",
+  };
+  const wrongSource = createReleaseBuildController({ rootDir: ROOT, sourceInspector: async () => ({ head: "d".repeat(40), clean: true }) });
+  await assert.rejects(wrongSource.plan(options), { code: "RELEASE_BUILD_SOURCE_NOT_CLEAN" });
+
+  const controller = createReleaseBuildController({ rootDir: ROOT, sourceInspector: async () => ({ head: SOURCE, clean: true }) });
+  const plan = await controller.plan(options);
+  await fs.appendFile(fixture.protectedReceiptPath, "\n");
+  await assert.rejects(controller.apply(options, plan), { code: "PROTECTED_EVIDENCE_DIGEST_MISMATCH" });
+  await assert.rejects(fs.lstat(options.outputRoot), { code: "ENOENT" });
 });

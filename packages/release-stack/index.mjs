@@ -3,6 +3,7 @@ export * from "./artifact-ledger.mjs";
 export * from "./sbom.mjs";
 export * from "./deterministic-archive.mjs";
 export * from "./release-builder.mjs";
+export * from "./release-build-controller.mjs";
 export * from "./downloader.mjs";
 export * from "./layout.mjs";
 export * from "./stack-journal.mjs";

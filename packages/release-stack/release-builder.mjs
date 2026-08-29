@@ -23,7 +23,6 @@ const REQUIRED_METADATA = Object.freeze([
   "sbom.spdx.json",
   "THIRD_PARTY_NOTICES.txt",
   "install.sh",
-  "protected-receipt.json",
 ]);
 
 function fail(code, message, details = {}) {
@@ -103,6 +102,22 @@ export async function assertPayloadConvergence({ fullResolvedRoot, thinResolvedR
   return Object.freeze({ ok: true, status: "PAYLOADS_CONVERGED", stackId: full.stackId, identities: full });
 }
 
+export async function inspectFullThinPayloadInputs({ fullPayloadRoot, thinPayloadRoot, thinResolvedRoot } = {}) {
+  if (![fullPayloadRoot, thinPayloadRoot, thinResolvedRoot].every((value) => typeof value === "string" && path.isAbsolute(value))) throw new TypeError("release payload input paths must be absolute");
+  const [fullMetadata, thinMetadata] = await Promise.all([
+    validatePayloadMetadata(fullPayloadRoot),
+    validatePayloadMetadata(thinPayloadRoot),
+  ]);
+  if (canonicalJson(fullMetadata.stackManifest) !== canonicalJson(thinMetadata.stackManifest)
+    || canonicalJson(fullMetadata.ledger) !== canonicalJson(thinMetadata.ledger)
+    || canonicalJson(fullMetadata.sbom) !== canonicalJson(thinMetadata.sbom)) {
+    fail("PAYLOAD_METADATA_DIVERGENCE", "Full and Thin metadata differs");
+  }
+  await validateThinResolutionInputs(thinMetadata.root, fullMetadata.stackManifest, thinMetadata.ledger);
+  const convergence = await assertPayloadConvergence({ fullResolvedRoot: fullMetadata.root, thinResolvedRoot, stackManifest: fullMetadata.stackManifest });
+  return Object.freeze({ fullMetadata, thinMetadata, convergence });
+}
+
 async function validatePayloadMetadata(payloadRoot) {
   const root = await realDirectory(path.resolve(payloadRoot), "RELEASE_PAYLOAD_ROOT_UNSAFE");
   for (const relative of REQUIRED_METADATA) await boundedFile(root, relative);
@@ -153,6 +168,15 @@ async function copyAsset(source, outputRoot, name, mode = 0o600) {
   return Object.freeze({ name, bytes: stat.size, sha256: await hashFile(target), path: target });
 }
 
+async function boundedExternalFile(file, { maxBytes = 16 * 1024 * 1024 } = {}) {
+  if (typeof file !== "string" || !path.isAbsolute(file)) throw new TypeError("release asset path must be absolute");
+  const stat = await fs.lstat(file).catch(() => null);
+  if (!stat?.isFile() || stat.isSymbolicLink() || stat.size < 1 || stat.size > maxBytes || await fs.realpath(file) !== path.resolve(file)) {
+    fail("RELEASE_EXTERNAL_ASSET_UNSAFE", `release asset is not a bounded regular file: ${path.basename(file)}`);
+  }
+  return file;
+}
+
 function publicAsset(asset) {
   return { name: asset.name, bytes: asset.bytes, sha256: asset.sha256 };
 }
@@ -162,22 +186,13 @@ export async function buildFullThinPayloads({
   thinPayloadRoot,
   thinResolvedRoot,
   outputRoot,
+  protectedReceiptPath,
   protectedEvidenceDigest,
   status = "RC",
 } = {}) {
-  if (![fullPayloadRoot, thinPayloadRoot, thinResolvedRoot, outputRoot].every((value) => typeof value === "string" && path.isAbsolute(value))) throw new TypeError("release builder paths must be absolute");
-  const [fullMetadata, thinMetadata] = await Promise.all([
-    validatePayloadMetadata(fullPayloadRoot),
-    validatePayloadMetadata(thinPayloadRoot),
-  ]);
-  if (canonicalJson(fullMetadata.stackManifest) !== canonicalJson(thinMetadata.stackManifest)
-    || canonicalJson(fullMetadata.ledger) !== canonicalJson(thinMetadata.ledger)
-    || canonicalJson(fullMetadata.sbom) !== canonicalJson(thinMetadata.sbom)) {
-    fail("PAYLOAD_METADATA_DIVERGENCE", "Full and Thin metadata differs");
-  }
+  if (![fullPayloadRoot, thinPayloadRoot, thinResolvedRoot, outputRoot, protectedReceiptPath].every((value) => typeof value === "string" && path.isAbsolute(value))) throw new TypeError("release builder paths must be absolute");
+  const { fullMetadata, thinMetadata, convergence } = await inspectFullThinPayloadInputs({ fullPayloadRoot, thinPayloadRoot, thinResolvedRoot });
   const stack = fullMetadata.stackManifest;
-  await validateThinResolutionInputs(thinMetadata.root, stack, thinMetadata.ledger);
-  const convergence = await assertPayloadConvergence({ fullResolvedRoot: fullPayloadRoot, thinResolvedRoot, stackManifest: stack });
   await fs.mkdir(outputRoot, { recursive: true, mode: 0o700 });
   const fullName = `only-my-pi-${PREVIEW_VERSION}-darwin-arm64-full.tar.gz`;
   const thinName = `only-my-pi-${PREVIEW_VERSION}-darwin-arm64-thin.tar.gz`;
@@ -188,7 +203,9 @@ export async function buildFullThinPayloads({
   const install = await copyAsset(path.join(thinMetadata.root, "install.sh"), outputRoot, "install.sh", 0o700);
   const sbom = await copyAsset(path.join(thinMetadata.root, "sbom.spdx.json"), outputRoot, `only-my-pi-${PREVIEW_VERSION}.spdx.json`);
   const notices = await copyAsset(path.join(thinMetadata.root, "THIRD_PARTY_NOTICES.txt"), outputRoot, "THIRD_PARTY_NOTICES.txt");
-  const receipt = await copyAsset(path.join(thinMetadata.root, "protected-receipt.json"), outputRoot, `only-my-pi-${PREVIEW_VERSION}-protected-receipt.json`);
+  const receiptSource = await boundedExternalFile(protectedReceiptPath);
+  if (await hashFile(receiptSource) !== protectedEvidenceDigest) fail("PROTECTED_EVIDENCE_DIGEST_MISMATCH", "protected receipt bytes differ from the release evidence digest");
+  const receipt = await copyAsset(receiptSource, outputRoot, `only-my-pi-${PREVIEW_VERSION}-protected-receipt.json`);
   const standaloneManifest = await copyAsset(path.join(thinMetadata.root, "stack-manifest.json"), outputRoot, "stack-manifest.json");
   const ledger = await copyAsset(path.join(thinMetadata.root, "transitive-artifact-ledger.json"), outputRoot, "transitive-artifact-ledger.json");
   const archiveAssets = [
