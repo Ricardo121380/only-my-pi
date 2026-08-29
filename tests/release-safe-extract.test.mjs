@@ -116,6 +116,9 @@ test("safe extractor canonicalizes npm dot segments before duplicate and contain
   assert.equal(await fs.readFile(path.join(root, "identical", "package", "same"), "utf8"), "same");
 
   await assert.rejects(extractVerifiedTarGzip({ archivePath: duplicateArchive, destination: path.join(root, "different"), expectedSha256: sha256(duplicate), allowedDuplicateFiles: ["package/same"] }), { code: "ARCHIVE_DUPLICATE_ENTRY_MISMATCH" });
+
+  const audited = await extractVerifiedTarGzip({ archivePath: identicalArchive, destination: path.join(root, "audited-duplicate"), expectedSha256: sha256(identical), auditIdenticalDuplicateFiles: true });
+  assert.deepEqual(audited.allowedDuplicates, ["package/same"]);
 });
 
 test("safe extractor rejects digest drift, destination reuse, and expansion limits", async (t) => {

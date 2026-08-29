@@ -115,6 +115,7 @@ export async function acquireInstalledArtifacts({
   const artifactTreeRoots = new Map();
   const integrityOverrides = {};
   const artifacts = [];
+  const requiredExceptions = [];
   for (const entry of [...byIdentity.values()].sort((left, right) => left.identity.localeCompare(right.identity))) {
     const key = sha256(entry.identity).slice("sha256:".length);
     const archive = path.join(outputRoot, "downloads", `${key}.tgz`);
@@ -123,8 +124,10 @@ export async function acquireInstalledArtifacts({
     const exception = exceptions.get(entry.identity);
     if (exception && exception.integrity !== entry.integrity) fail("RELEASE_ARTIFACT_EXCEPTION_DRIFT", `artifact extraction exception integrity drifted: ${entry.identity}`);
     try {
-      const result = await extract({ archivePath: archive, destination: extracted, expectedSha256: verified.sha256, maxEntries: 100_000, maxExtractedBytes: 1024 * 1024 * 1024, allowedDuplicateFiles: exception?.paths ?? [] });
-      if (exception && canonicalJson(result?.allowedDuplicates ?? []) !== canonicalJson([...exception.paths].sort())) fail("RELEASE_ARTIFACT_EXCEPTION_UNUSED", `artifact extraction exception did not match exact duplicate paths: ${entry.identity}`);
+      const result = await extract({ archivePath: archive, destination: extracted, expectedSha256: verified.sha256, maxEntries: 100_000, maxExtractedBytes: 1024 * 1024 * 1024, allowedDuplicateFiles: exception?.paths ?? [], auditIdenticalDuplicateFiles: true });
+      const duplicates = result?.allowedDuplicates ?? [];
+      if (exception && canonicalJson(duplicates) !== canonicalJson([...exception.paths].sort())) fail("RELEASE_ARTIFACT_EXCEPTION_UNUSED", `artifact extraction exception did not match exact duplicate paths: ${entry.identity}`);
+      if (!exception && duplicates.length > 0) requiredExceptions.push({ identity: entry.identity, integrity: entry.integrity, paths: duplicates, reasonCode: "UPSTREAM_BYTE_IDENTICAL_CANONICAL_DUPLICATE" });
     } catch (error) {
       if (error && typeof error === "object") {
         error.artifactIdentity = entry.identity;
@@ -138,5 +141,6 @@ export async function acquireInstalledArtifacts({
     integrityOverrides[entry.identity] = entry.integrity;
     artifacts.push({ identity: entry.identity, sha256: verified.sha256, integrity: entry.integrity, tarballUrl: entry.tarballUrl, treeRoot: tree });
   }
+  if (requiredExceptions.length > 0) fail("RELEASE_ARTIFACT_EXCEPTIONS_REQUIRED", "unreviewed byte-identical duplicate entries require exact versioned exceptions", { requiredExceptions: Object.freeze(requiredExceptions) });
   return Object.freeze({ artifactBytes, artifactTreeRoots, integrityOverrides: Object.freeze(integrityOverrides), artifacts: Object.freeze(artifacts) });
 }

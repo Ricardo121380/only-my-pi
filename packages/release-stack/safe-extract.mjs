@@ -138,6 +138,7 @@ export async function extractVerifiedTarGzip({
   maxEntries = 100_000,
   maxExtractedBytes = 2 * 1024 * 1024 * 1024,
   allowedDuplicateFiles = [],
+  auditIdenticalDuplicateFiles = false,
 } = {}) {
   if (![archivePath, destination].every((value) => typeof value === "string" && path.isAbsolute(value))) throw new TypeError("archive and destination paths must be absolute");
   if (!Array.isArray(allowedDuplicateFiles)) throw new TypeError("allowedDuplicateFiles must be an array");
@@ -188,7 +189,7 @@ export async function extractVerifiedTarGzip({
       await validateParents(root, target);
       const prior = seen.get(relative);
       if (prior) {
-        if (!allowedDuplicates.has(relative)) fail("ARCHIVE_DUPLICATE_ENTRY", `duplicate tar entry: ${relative}`);
+        if (!allowedDuplicates.has(relative) && auditIdenticalDuplicateFiles !== true) fail("ARCHIVE_DUPLICATE_ENTRY", `duplicate tar entry: ${relative}`);
         const appliedMode = mode & 0o111 ? 0o755 : 0o644;
         if (!["0", "7"].includes(type) || prior.type !== type || prior.size !== size || prior.appliedMode !== appliedMode) fail("ARCHIVE_DUPLICATE_ENTRY_MISMATCH", `audited duplicate tar entry metadata differs: ${relative}`);
         const handle = await fsp.open(target, "r");
