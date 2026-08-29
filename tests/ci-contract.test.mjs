@@ -46,3 +46,17 @@ test("CI executes the same manifest-backed verify runner without credentials", (
   assert.equal((workflow.match(/uses: actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1/gu) ?? []).length, 2);
   assert.equal((workflow.match(/uses: actions\/setup-node@820762786026740c76f36085b0efc47a31fe5020/gu) ?? []).length, 2);
 });
+
+test("M11 RC workflow is exact-source, attest-only and cannot publish", () => {
+  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-rc.yml"), "utf8");
+  assert.match(workflow, /workflow_dispatch:/u);
+  assert.match(workflow, /ref: \$\{\{ inputs\.source_commit \}\}/u);
+  assert.match(workflow, /runs-on: macos-14-xlarge/u);
+  assert.match(workflow, /node scripts\/m11-workflow-build\.mjs --source-commit/u);
+  assert.equal((workflow.match(/actions\/attest@59d89421af93a897026c735860bf21b6eb4f7b26/gu) ?? []).length, 2);
+  assert.match(workflow, /actions\/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6\.0\.0/u);
+  assert.match(workflow, /id-token: write/u);
+  assert.match(workflow, /attestations: write/u);
+  assert.match(workflow, /artifact-metadata: write/u);
+  assert.doesNotMatch(workflow, /contents: write|gh release|git push|secrets\./u);
+});

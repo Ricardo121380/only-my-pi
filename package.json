@@ -149,6 +149,7 @@
     "verify:m11:run": "node scripts/m11-release-gates.mjs --run --json",
     "verify:m11:platform": "node scripts/m11-release-gates.mjs --run --include-platform --json",
     "verify:m11:q10:ci": "node scripts/m11-q10-ci.mjs --json",
+    "build:m11:workflow": "node scripts/m11-workflow-build.mjs --json",
     "plan:public-baseline:protected": "node scripts/public-baseline-protected-acceptance.mjs --plan --json",
     "compatibility:m9": "node scripts/m9-upstream-compatibility.mjs --plan --json",
     "probe:m9": "node scripts/m9-upstream-compatibility.mjs --probe --json",
