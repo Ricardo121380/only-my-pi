@@ -58,8 +58,8 @@ function parsePax(bytes) {
     const equals = body.indexOf("=");
     if (equals < 1) fail("ARCHIVE_PAX_INVALID", "PAX record is malformed");
     const key = body.slice(0, equals);
-    if (!["path", "linkpath"].includes(key)) fail("ARCHIVE_PAX_UNSUPPORTED", `unsupported PAX key: ${key}`);
-    values[key] = body.slice(equals + 1);
+    if (["path", "linkpath"].includes(key)) values[key] = body.slice(equals + 1);
+    else if (!/^(NODETAR\.|SCHILY\.)/u.test(key) && !["uid", "gid", "size"].includes(key)) fail("ARCHIVE_PAX_UNSUPPORTED", `unsupported PAX key: ${key}`);
     offset += length;
   }
   return values;

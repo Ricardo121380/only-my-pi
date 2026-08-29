@@ -51,6 +51,13 @@ function maliciousArchive(entries) {
   return zlib.gzipSync(Buffer.concat(blocks), { level: 9, mtime: 0 });
 }
 
+function paxRecord(key, value) {
+  const body = ` ${key}=${value}\n`;
+  let length = Buffer.byteLength(body) + 1;
+  while (Buffer.byteLength(`${length}${body}`) !== length) length = Buffer.byteLength(`${length}${body}`);
+  return Buffer.from(`${length}${body}`);
+}
+
 test("safe extractor restores normalized archives and executable modes", async (t) => {
   const source = await temporary(t, "omp-extract-source-");
   const output = await temporary(t, "omp-extract-output-");
@@ -120,4 +127,23 @@ test("safe extractor rejects digest drift, destination reuse, and expansion limi
   await assert.rejects(extractVerifiedTarGzip({ archivePath: archive, destination: path.join(root, "limit"), expectedSha256: sha256(bytes), maxExtractedBytes: 4 }), { code: "ARCHIVE_EXPANDED_SIZE_LIMIT" });
   await fs.mkdir(path.join(root, "exists"));
   await assert.rejects(extractVerifiedTarGzip({ archivePath: archive, destination: path.join(root, "exists"), expectedSha256: sha256(bytes) }), { code: "ARCHIVE_DESTINATION_EXISTS" });
+});
+
+test("safe extractor ignores audited npm PAX metadata but rejects unknown namespaces", async (t) => {
+  const root = await temporary(t, "omp-extract-pax-");
+  const content = Buffer.from("payload");
+  const metadata = Buffer.concat([paxRecord("NODETAR.depth", "1"), paxRecord("SCHILY.nlink", "1"), paxRecord("uid", "123")]);
+  const bytes = zlib.gzipSync(Buffer.concat([
+    header("PaxHeader/package/file", { type: "x", size: metadata.length }), metadata, Buffer.alloc((BLOCK - (metadata.length % BLOCK)) % BLOCK),
+    header("package/file", { size: content.length }), content, Buffer.alloc((BLOCK - (content.length % BLOCK)) % BLOCK), Buffer.alloc(BLOCK * 2),
+  ]), { level: 9, mtime: 0 });
+  const archive = path.join(root, "audited.tgz");
+  await fs.writeFile(archive, bytes);
+  await extractVerifiedTarGzip({ archivePath: archive, destination: path.join(root, "audited"), expectedSha256: sha256(bytes) });
+
+  const unsafeMetadata = paxRecord("UNTRUSTED.owner", "root");
+  const unsafe = zlib.gzipSync(Buffer.concat([header("PaxHeader/file", { type: "x", size: unsafeMetadata.length }), unsafeMetadata, Buffer.alloc((BLOCK - (unsafeMetadata.length % BLOCK)) % BLOCK), Buffer.alloc(BLOCK * 2)]), { level: 9, mtime: 0 });
+  const unsafeArchive = path.join(root, "unsafe.tgz");
+  await fs.writeFile(unsafeArchive, unsafe);
+  await assert.rejects(extractVerifiedTarGzip({ archivePath: unsafeArchive, destination: path.join(root, "unsafe"), expectedSha256: sha256(unsafe) }), { code: "ARCHIVE_PAX_UNSUPPORTED" });
 });
