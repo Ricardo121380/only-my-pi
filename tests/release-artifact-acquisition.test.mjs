@@ -98,3 +98,17 @@ test("artifact acquisition fails closed on metadata URL drift and missing non-op
     outputRoot: path.join(base, "missing-required"),
   }), { code: "ENOENT" });
 });
+
+test("artifact acquisition attributes archive failures to the exact package identity", async (t) => {
+  const base = await temporary(t);
+  const npmRoot = path.join(base, "npm");
+  await fs.mkdir(npmRoot);
+  await fixtureRoot(npmRoot);
+  await assert.rejects(acquireInstalledArtifacts({
+    roots: [{ npmRoot, lockPath: path.join(npmRoot, "package-lock.json") }],
+    outputRoot: path.join(base, "archive-failure"),
+    async fetchMetadata() { return { document: { dist: { tarball: "https://registry.npmjs.org/package-b/-/package-b-2.0.0.tgz", integrity: SRI_B } } }; },
+    async download(options) { await fs.writeFile(options.destination, "fixture"); return { sha256: sha256("fixture"), integrity: options.expectedSri }; },
+    async extract() { throw Object.assign(new Error("duplicate entry"), { code: "ARCHIVE_DUPLICATE_ENTRY" }); },
+  }), (error) => error.code === "ARCHIVE_DUPLICATE_ENTRY" && error.artifactIdentity === "package-a@1.0.0" && /package-a@1\.0\.0/u.test(error.message));
+});

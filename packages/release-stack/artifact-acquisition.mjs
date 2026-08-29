@@ -113,7 +113,15 @@ export async function acquireInstalledArtifacts({
     const archive = path.join(outputRoot, "downloads", `${key}.tgz`);
     const verified = await download({ url: entry.tarballUrl, destination: archive, expectedSri: entry.integrity, maxBytes: MAX_PACKAGE_BYTES, allowedHosts: ["registry.npmjs.org"] });
     const extracted = path.join(outputRoot, "trees", key);
-    await extract({ archivePath: archive, destination: extracted, expectedSha256: verified.sha256, maxEntries: 100_000, maxExtractedBytes: 1024 * 1024 * 1024 });
+    try {
+      await extract({ archivePath: archive, destination: extracted, expectedSha256: verified.sha256, maxEntries: 100_000, maxExtractedBytes: 1024 * 1024 * 1024 });
+    } catch (error) {
+      if (error && typeof error === "object") {
+        error.artifactIdentity = entry.identity;
+        error.message = `${error.message} (${entry.identity})`;
+      }
+      throw error;
+    }
     const tree = await packageRoot(extracted, entry);
     artifactBytes.set(entry.identity, { sha256: verified.sha256 });
     artifactTreeRoots.set(entry.identity, tree);
