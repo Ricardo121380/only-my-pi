@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { pathToFileURL } from "node:url";
 
 import { EMBEDDED_NODE_ARCHIVE_SHA256, EMBEDDED_NODE_VERSION } from "./contracts.mjs";
 import { downloadVerified } from "./downloader.mjs";
@@ -51,6 +52,30 @@ async function singleDirectory(root, expectedName) {
   const entries = await fs.readdir(root, { withFileTypes: true });
   if (entries.length !== 1 || entries[0].name !== expectedName || !entries[0].isDirectory() || entries[0].isSymbolicLink()) fail("NODE_ARCHIVE_LAYOUT_INVALID", "official Node archive has an unexpected root layout");
   return path.join(root, expectedName);
+}
+
+function lockPackageName(relativePath) {
+  const tail = relativePath.slice(relativePath.lastIndexOf("node_modules/") + "node_modules/".length);
+  const segments = tail.split("/");
+  return segments[0].startsWith("@") ? segments.slice(0, 2).join("/") : segments[0];
+}
+
+async function localizeLock(lockPath, downloadedArtifacts) {
+  const original = await fs.readFile(lockPath);
+  const lock = JSON.parse(original.toString("utf8"));
+  if (lock.lockfileVersion !== 3 || !lock.packages || typeof lock.packages !== "object") fail("THIN_LOCK_INVALID", "Thin package lock must use lockfileVersion 3");
+  for (const [relativePath, entry] of Object.entries(lock.packages)) {
+    if (!relativePath.includes("node_modules/")) continue;
+    const identity = `${lockPackageName(relativePath)}@${entry.version}`;
+    const artifact = downloadedArtifacts.get(identity);
+    if (!artifact) {
+      if (entry.optional === true) continue;
+      fail("THIN_ARTIFACT_MISSING_FOR_LOCK", `Thin ledger is missing a non-optional lock artifact: ${identity}`);
+    }
+    entry.resolved = pathToFileURL(artifact.target).href;
+  }
+  await fs.writeFile(lockPath, `${JSON.stringify(lock, null, 2)}\n`, { mode: 0o600 });
+  return original;
 }
 
 export function scrubbedEnvironment(root, nodeBin, { offline = true } = {}) {
@@ -123,7 +148,6 @@ export class ThinPayloadResolver {
         const target = path.join(downloads, `${artifact.sha256.slice("sha256:".length)}.tgz`);
         await this.download({ url: artifact.tarballUrl, destination: target, expectedSha256: artifact.sha256, expectedSri: artifact.integrity, maxBytes: 512 * 1024 * 1024 });
         downloadedArtifacts.set(`${artifact.name}@${artifact.version}`, { target, artifact });
-        await this.run(node, [npm, "cache", "add", target, "--cache", environment.cache, "--ignore-scripts", "--no-audit", "--no-fund"], { cwd: work, env: environment.env, spawnImpl: this.spawnImpl });
       }
 
       const external = path.join(resolved, "external-npm");
@@ -132,7 +156,13 @@ export class ThinPayloadResolver {
         fs.copyFile(await boundedFile(path.join(payloadRoot, "resolution", "external", "package.json"), 1024 * 1024), path.join(external, "package.json")),
         fs.copyFile(await boundedFile(path.join(payloadRoot, "resolution", "external", "package-lock.json"), 64 * 1024 * 1024), path.join(external, "package-lock.json")),
       ]);
-      await this.run(node, [npm, "ci", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev", "--omit=peer", "--legacy-peer-deps"], { cwd: external, env: environment.env, spawnImpl: this.spawnImpl });
+      const externalLockPath = path.join(external, "package-lock.json");
+      const externalLockBytes = await localizeLock(externalLockPath, downloadedArtifacts);
+      try {
+        await this.run(node, [npm, "ci", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev", "--omit=peer", "--legacy-peer-deps"], { cwd: external, env: environment.env, spawnImpl: this.spawnImpl });
+      } finally {
+        await fs.writeFile(externalLockPath, externalLockBytes, { mode: 0o600 });
+      }
 
       const piIdentity = `${inspection.stackManifest.runtime.pi.name}@${inspection.stackManifest.runtime.pi.version}`;
       const piArtifact = downloadedArtifacts.get(piIdentity);
@@ -143,14 +173,19 @@ export class ThinPayloadResolver {
       const pi = path.join(resolved, "pi");
       await fs.rename(piPackage, pi);
       const manifestPath = path.join(pi, "package.json");
+      const piLockPath = path.join(pi, "npm-shrinkwrap.json");
       const manifestBytes = await fs.readFile(manifestPath);
+      const piLockBytes = await localizeLock(piLockPath, downloadedArtifacts);
       const productionManifest = JSON.parse(manifestBytes.toString("utf8"));
       delete productionManifest.devDependencies;
       await fs.writeFile(manifestPath, `${JSON.stringify(productionManifest, null, 2)}\n`, { mode: 0o600 });
       try {
         await this.run(node, [npm, "ci", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev", "--omit=peer"], { cwd: pi, env: environment.env, spawnImpl: this.spawnImpl });
       } finally {
-        await fs.writeFile(manifestPath, manifestBytes, { mode: 0o600 });
+        await Promise.all([
+          fs.writeFile(manifestPath, manifestBytes, { mode: 0o600 }),
+          fs.writeFile(piLockPath, piLockBytes, { mode: 0o600 }),
+        ]);
       }
       await fs.copyFile(await boundedFile(path.join(payloadRoot, "only-my-pi.tgz"), 512 * 1024 * 1024), path.join(resolved, "only-my-pi.tgz"));
       await inspectResolvedStack({ resolvedRoot: resolved, stackManifest: inspection.stackManifest });

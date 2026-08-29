@@ -97,7 +97,7 @@ test("Thin resolver downloads every exact artifact, disables scripts, and conver
   assert.equal(await tree(resolved, "pi"), stackManifest.runtime.pi.treeDigest);
   assert.equal(await tree(resolved, "external-npm"), stackManifest.externalTreeDigest);
   assert.equal(downloads.length, ledger.artifacts.length + 1);
-  assert.equal(commands.filter((entry) => entry.argv[1] === "cache").length, ledger.artifacts.length);
+  assert.equal(commands.filter((entry) => entry.argv[1] === "cache").length, 0);
   assert.equal(commands.filter((entry) => entry.argv[1] === "ci").length, 2);
   assert.equal(commands.some((entry) => entry.argv[1] === "install"), false);
   assert.equal(commands.some((entry) => entry.argv.includes("--ignore-scripts") && entry.argv.includes("--offline")), true);
