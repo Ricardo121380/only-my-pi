@@ -219,7 +219,7 @@ export class StackTransactionEngine {
       await this.advance(context, "PI_STAGED");
       await this.stageDirectory(context, "pi");
       await this.advance(context, "EXTERNAL_TREE_STAGED");
-      if (plan.external.switchRequired) await fs.cp(path.join(resolvedRoot, "external-npm"), paths.externalStage, { recursive: true, errorOnExist: true, force: false, preserveTimestamps: false });
+      if (plan.external.switchRequired) await fs.cp(path.join(resolvedRoot, "external-npm"), paths.externalStage, { recursive: true, errorOnExist: true, force: false, preserveTimestamps: false, verbatimSymlinks: true });
       await this.advance(context, "OMP_ARTIFACT_STAGED");
       await fs.cp(path.join(resolvedRoot, "only-my-pi.tgz"), path.join(paths.stage, "only-my-pi.tgz"), { force: false, errorOnExist: true });
       await this.advance(context, "GENERATION_STAGED");
@@ -300,7 +300,7 @@ export class StackTransactionEngine {
 
   async stageDirectory(context, name) {
     await fs.mkdir(context.paths.stage, { recursive: true, mode: 0o700 });
-    await fs.cp(path.join(context.resolvedRoot, name), path.join(context.paths.stage, name), { recursive: true, errorOnExist: true, force: false, preserveTimestamps: false });
+    await fs.cp(path.join(context.resolvedRoot, name), path.join(context.paths.stage, name), { recursive: true, errorOnExist: true, force: false, preserveTimestamps: false, verbatimSymlinks: true });
   }
 
   async switchExternal(context) {

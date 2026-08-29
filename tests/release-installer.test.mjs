@@ -3,7 +3,8 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
-import { createStackHarnessAdapter, hashFile } from "../packages/release-stack/index.mjs";
+import { buildGenerationPlan } from "../packages/bootstrap/index.mjs";
+import { compileStackPackageSettings, createStackHarnessAdapter, hashFile } from "../packages/release-stack/index.mjs";
 
 const INSTALLER = path.join(process.cwd(), "distribution", "install.sh");
 
@@ -73,4 +74,15 @@ test("stack harness safely extracts the dependency-closed artifact and its CLI s
   const result = spawnSync(process.execPath, [cli, "help"], { cwd: path.dirname(cli), encoding: "utf8", shell: false, env: { PATH: process.env.PATH ?? "", HOME: root } });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /omp stack install/u);
+});
+
+test("stack harness compiles exact package filters before borrowing the public package tree", async () => {
+  const plan = await buildGenerationPlan({ rootDir: process.cwd(), profileId: "daily" });
+  const settings = { packages: plan.packages.map((entry) => entry.spec).concat(["npm:pi-memory@0.4.1", "npm:pi-git-sync@0.1.3"]) };
+  const compiled = compileStackPackageSettings(settings, plan);
+  const filtered = compiled.packages.find((entry) => typeof entry === "object" && entry.source === "npm:pi-agent-extensions@0.5.4");
+  assert.deepEqual(filtered.extensions, ["extensions/context/index.ts", "extensions/notify/index.ts", "extensions/review/index.ts", "extensions/sessions/index.ts"]);
+  assert.deepEqual(filtered.skills, []);
+  assert.ok(compiled.packages.includes("npm:pi-memory@0.4.1"));
+  assert.equal(settings.packages.every((entry) => typeof entry === "string"), true);
 });

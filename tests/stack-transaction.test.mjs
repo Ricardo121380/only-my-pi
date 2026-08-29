@@ -38,6 +38,7 @@ async function fixture(t) {
   const manifest = JSON.parse(await fs.readFile(path.join(ROOT, "contracts", "release", "stack-manifest.example.json"), "utf8"));
   await fs.mkdir(path.join(resolved, "node", "bin"), { recursive: true });
   await fs.writeFile(path.join(resolved, "node", "bin", "node"), "fixture node\n", { mode: 0o755 });
+  await fs.symlink("node", path.join(resolved, "node", "bin", "node-alias"));
   await fs.mkdir(path.join(resolved, "pi", "dist", "bundle"), { recursive: true });
   await fs.writeFile(path.join(resolved, "pi", "dist", "bundle", "cli.js"), "fixture Pi\n", { mode: 0o755 });
   await fs.mkdir(path.join(resolved, "external-npm", "node_modules"), { recursive: true });
@@ -50,6 +51,8 @@ async function fixture(t) {
     lock.packages[`node_modules/${entry.name}`] = { version: entry.version, integrity: entry.integrity, resolved: `https://registry.npmjs.org/${entry.name}/-/${entry.name.split("/").at(-1)}-${entry.version}.tgz` };
     entry.treeDigest = await digestTree(resolved, `external-npm/node_modules/${entry.name}`);
   }
+  await fs.mkdir(path.join(resolved, "external-npm", "node_modules", ".bin"));
+  await fs.symlink("../pi-subagents/index.js", path.join(resolved, "external-npm", "node_modules", ".bin", "pi-subagents"));
   await fs.writeFile(path.join(resolved, "external-npm", "package-lock.json"), `${JSON.stringify(lock, null, 2)}\n`);
   await fs.writeFile(path.join(resolved, "only-my-pi.tgz"), "fixture artifact\n");
   manifest.sourceCommit = "d".repeat(40);
@@ -97,6 +100,8 @@ test("stack transaction installs one complete user-local stack and preserves ext
   assert.equal(state.activeStack, value.stack.stackId);
   assert.ok(state.externalPackages.every((entry) => entry.binding === "external" && entry.owner === "user" && entry.assetDisposition === "PROVISIONED_FOR_USER"));
   assert.equal(Boolean(await fs.lstat(value.layout.npmRoot)), true);
+  assert.equal(await fs.readlink(path.join(await fs.realpath(value.layout.currentStack), "node", "bin", "node-alias")), "node");
+  assert.equal(await fs.readlink(path.join(value.layout.npmRoot, "node_modules", ".bin", "pi-subagents")), "../pi-subagents/index.js");
   const journal = await readStackJournal(value.layout, transactionId());
   assert.equal(journal.status, "COMMITTED");
   assert.deepEqual(journal.history.map((entry) => entry.phase), STACK_TRANSACTION_PHASES);
@@ -230,7 +235,7 @@ test("stack transaction journals explicit shell configuration and removes only i
 test("stack remove never deletes an exact preexisting external package tree", async (t) => {
   const value = await fixture(t);
   await fs.mkdir(value.layout.configRoot, { recursive: true });
-  await fs.cp(path.join(value.resolved, "external-npm"), value.layout.npmRoot, { recursive: true });
+  await fs.cp(path.join(value.resolved, "external-npm"), value.layout.npmRoot, { recursive: true, verbatimSymlinks: true });
   const packages = value.stack.externalPackages.map((entry) => `npm:${entry.name}@${entry.version}`);
   await fs.writeFile(value.layout.settingsFile, `${JSON.stringify({ packages, user: { retained: true } }, null, 2)}\n`);
   const originalTree = await digestTree(value.layout.configRoot, "npm");

@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { BootstrapService } from "../bootstrap/bootstrap-service.mjs";
+import { buildGenerationPlan } from "../bootstrap/index.mjs";
 import { createNpmCommandRunner } from "../bootstrap/command-runner.mjs";
 import { DoctorService } from "../bootstrap/doctor-service.mjs";
 import { createNoModelSmokeRunner } from "../bootstrap/smoke-runner.mjs";
@@ -15,6 +16,21 @@ function fail(code, message, details = {}) {
   error.code = code;
   Object.assign(error, details);
   throw error;
+}
+
+function settingSource(value) {
+  return typeof value === "string" ? value : value && typeof value === "object" && !Array.isArray(value) ? value.source : null;
+}
+
+export function compileStackPackageSettings(settings, graphPlan) {
+  if (!settings || typeof settings !== "object" || Array.isArray(settings) || !Array.isArray(settings.packages) || !Array.isArray(graphPlan?.packages)) fail("STACK_SETTINGS_INVALID", "stack settings and generation package plan are required");
+  const output = structuredClone(settings);
+  for (const entry of graphPlan.packages) {
+    const indices = output.packages.map((setting, index) => settingSource(setting) === entry.spec ? index : -1).filter((index) => index >= 0);
+    if (indices.length !== 1) fail("STACK_PACKAGE_SELECTION_INVALID", `stack settings must select governed package exactly once: ${entry.id}`);
+    output.packages[indices[0]] = entry.resourceFilter.length === 0 ? entry.spec : { source: entry.spec, extensions: [...entry.resourceFilter], skills: [], prompts: [], themes: [] };
+  }
+  return output;
 }
 
 export class StackHarnessAdapter {
@@ -48,7 +64,9 @@ export class StackHarnessAdapter {
   }
 
   async publish({ context, settings } = {}) {
-    await saveSettings(this.configRoot, settings);
+    const graphPlan = await buildGenerationPlan({ rootDir: this.rootDir, profileId: "daily", sourceCommit: context.stack.sourceCommit });
+    const governedSettings = compileStackPackageSettings(settings, graphPlan);
+    await saveSettings(this.configRoot, governedSettings);
     const bootstrap = this.bootstrapFor(context);
     const plan = await bootstrap.planBootstrap({ configRoot: this.configRoot, profile: "daily", scope: "global" });
     const result = plan.status === "NO_CHANGES"
