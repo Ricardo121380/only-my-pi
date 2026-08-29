@@ -22,13 +22,28 @@ function settingSource(value) {
   return typeof value === "string" ? value : value && typeof value === "object" && !Array.isArray(value) ? value.source : null;
 }
 
+function sameMembers(left, right) {
+  return Array.isArray(left) && left.length === right.length && new Set(left).size === left.length
+    && [...left].sort().every((entry, index) => entry === [...right].sort()[index]);
+}
+
+function equivalentPackageSetting(current, expected) {
+  if (typeof expected === "string") return current === expected;
+  if (!current || typeof current !== "object" || Array.isArray(current)) return false;
+  const keys = ["extensions", "prompts", "skills", "source", "themes"];
+  return Object.keys(current).sort().join("\0") === keys.join("\0")
+    && current.source === expected.source
+    && ["extensions", "prompts", "skills", "themes"].every((key) => sameMembers(current[key], expected[key]));
+}
+
 export function compileStackPackageSettings(settings, graphPlan) {
   if (!settings || typeof settings !== "object" || Array.isArray(settings) || !Array.isArray(settings.packages) || !Array.isArray(graphPlan?.packages)) fail("STACK_SETTINGS_INVALID", "stack settings and generation package plan are required");
   const output = structuredClone(settings);
   for (const entry of graphPlan.packages) {
     const indices = output.packages.map((setting, index) => settingSource(setting) === entry.spec ? index : -1).filter((index) => index >= 0);
     if (indices.length !== 1) fail("STACK_PACKAGE_SELECTION_INVALID", `stack settings must select governed package exactly once: ${entry.id}`);
-    output.packages[indices[0]] = entry.resourceFilter.length === 0 ? entry.spec : { source: entry.spec, extensions: [...entry.resourceFilter], skills: [], prompts: [], themes: [] };
+    const expected = entry.resourceFilter.length === 0 ? entry.spec : { source: entry.spec, extensions: [...entry.resourceFilter], skills: [], prompts: [], themes: [] };
+    if (!equivalentPackageSetting(output.packages[indices[0]], expected)) output.packages[indices[0]] = expected;
   }
   return output;
 }

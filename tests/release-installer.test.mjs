@@ -96,4 +96,12 @@ test("stack harness compiles exact package filters before borrowing the public p
   assert.deepEqual(filtered.skills, []);
   assert.ok(compiled.packages.includes("npm:pi-memory@0.4.1"));
   assert.equal(settings.packages.every((entry) => typeof entry === "string"), true);
+
+  const existingOrder = ["extensions/sessions/index.ts", "extensions/context/index.ts", "extensions/review/index.ts", "extensions/notify/index.ts"];
+  const borrowed = {
+    packages: plan.packages.map((entry) => entry.spec === "npm:pi-agent-extensions@0.5.4"
+      ? { source: entry.spec, extensions: existingOrder, skills: [], prompts: [], themes: [] }
+      : entry.spec),
+  };
+  assert.deepEqual(compileStackPackageSettings(borrowed, plan), borrowed);
 });
