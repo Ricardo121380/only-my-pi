@@ -24,7 +24,7 @@ async function fixture(t) {
 
 async function createExternalRoot(layout, stack, { count = 9, extra = null, versionOverride = null } = {}) {
   await fs.mkdir(path.join(layout.npmRoot, "node_modules"), { recursive: true });
-  const lock = { name: "pi-packages", version: "1.0.0", lockfileVersion: 3, packages: { "": { name: "pi-packages", version: "1.0.0" } } };
+  const lock = { name: "pi-packages", version: "1.0.0", lockfileVersion: 3, packages: { "": { name: "pi-packages", version: "1.0.0", dependencies: {} } } };
   for (const entry of stack.externalPackages.slice(0, count)) {
     const packageRoot = path.join(layout.npmRoot, "node_modules", ...entry.name.split("/"));
     await fs.mkdir(packageRoot, { recursive: true });
@@ -32,12 +32,14 @@ async function createExternalRoot(layout, stack, { count = 9, extra = null, vers
     await fs.writeFile(path.join(packageRoot, "package.json"), `${JSON.stringify({ name: entry.name, version, license: "MIT" })}\n`);
     await fs.writeFile(path.join(packageRoot, "index.js"), `export default ${JSON.stringify(entry.name)};\n`);
     lock.packages[`node_modules/${entry.name}`] = { version, integrity: entry.integrity, resolved: `https://registry.npmjs.org/${entry.name}/-/${entry.name.split("/").at(-1)}-${version}.tgz` };
+    lock.packages[""].dependencies[entry.name] = version;
   }
   if (extra) {
     const packageRoot = path.join(layout.npmRoot, "node_modules", extra);
     await fs.mkdir(packageRoot, { recursive: true });
     await fs.writeFile(path.join(packageRoot, "package.json"), `${JSON.stringify({ name: extra, version: "1.0.0", license: "MIT" })}\n`);
     lock.packages[`node_modules/${extra}`] = { version: "1.0.0", integrity: stack.externalPackages[0].integrity, resolved: `https://registry.npmjs.org/${extra}/-/${extra}-1.0.0.tgz` };
+    lock.packages[""].dependencies[extra] = "1.0.0";
   }
   await fs.writeFile(path.join(layout.npmRoot, "package-lock.json"), `${JSON.stringify(lock, null, 2)}\n`);
   if (count === 9 && !extra && !versionOverride) {

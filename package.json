@@ -154,6 +154,8 @@
     "plan:m10:bundle": "node scripts/m10-build-migration-bundle.mjs --json",
     "plan:m10:protected": "node scripts/m10-protected-acceptance.mjs --plan --json",
     "plan:m11:release": "node scripts/m11-build-release.mjs --json",
+    "generate:m11:external-lock": "node scripts/generate-m11-external-lock.mjs",
+    "check:m11:external-lock": "node scripts/generate-m11-external-lock.mjs --check",
     "test:coverage:m8": "node scripts/m8-deterministic-acceptance.mjs",
     "compatibility:subagents": "node scripts/subagents-compatibility.mjs --requested preview --json",
     "test:deepseek": "node packages/deepseek-conformance/test.mjs",

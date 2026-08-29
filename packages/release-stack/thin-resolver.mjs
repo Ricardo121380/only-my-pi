@@ -132,7 +132,7 @@ export class ThinPayloadResolver {
         fs.copyFile(await boundedFile(path.join(payloadRoot, "resolution", "external", "package.json"), 1024 * 1024), path.join(external, "package.json")),
         fs.copyFile(await boundedFile(path.join(payloadRoot, "resolution", "external", "package-lock.json"), 64 * 1024 * 1024), path.join(external, "package-lock.json")),
       ]);
-      await this.run(node, [npm, "ci", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev", "--omit=peer"], { cwd: external, env: environment.env, spawnImpl: this.spawnImpl });
+      await this.run(node, [npm, "ci", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev", "--omit=peer", "--legacy-peer-deps"], { cwd: external, env: environment.env, spawnImpl: this.spawnImpl });
 
       const piIdentity = `${inspection.stackManifest.runtime.pi.name}@${inspection.stackManifest.runtime.pi.version}`;
       const piTarball = downloadedArtifacts.get(piIdentity);

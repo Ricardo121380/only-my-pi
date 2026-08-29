@@ -35,20 +35,14 @@ async function inspectShim(target, layout) {
   return Object.freeze({ status: "CONTROLLED", targetClass: "USER_LOCAL_CONTROLLED_STACK", targetDigest: sha256(path.relative(layout.shareRoot, real).split(path.sep).join("/")) });
 }
 
-function packageNameFromLockPath(relative) {
-  if (!relative.startsWith("node_modules/")) return null;
-  const tail = relative.slice("node_modules/".length).split("/");
-  return tail[0].startsWith("@") ? `${tail[0]}/${tail[1]}` : tail[0];
-}
-
 function topLevelNames(lock) {
-  const names = [];
-  for (const relative of Object.keys(lock.packages ?? {})) {
-    const name = packageNameFromLockPath(relative);
-    const depth = relative.split("/node_modules/").length - 1;
-    if (name && depth === 0 && relative === `node_modules/${name}`) names.push(name);
+  const dependencies = lock.packages?.[""]?.dependencies;
+  if (dependencies === undefined) return [];
+  if (dependencies === null || typeof dependencies !== "object" || Array.isArray(dependencies)
+    || Object.keys(dependencies).some((name) => typeof name !== "string" || typeof dependencies[name] !== "string")) {
+    fail("EXTERNAL_ROOT_UNVERIFIABLE", "existing Pi npm root has invalid top-level dependency declarations");
   }
-  return [...new Set(names)].sort();
+  return Object.keys(dependencies).sort();
 }
 
 async function inspectExternalRoot(layout, stack) {
