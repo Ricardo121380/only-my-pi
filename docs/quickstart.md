@@ -1,11 +1,105 @@
 # Quickstart
 
-`only-my-pi` is a local Pi package and configuration companion. The repository
-does not replace Pi's model runtime, credentials, permission owner, or TUI. The
-quickstart therefore begins with a disposable Pi directory and a zero-write
-plan.
+`only-my-pi` is a user-local, read-only Pi Agent Harness. The public Preview
+installs a controlled Pi runtime but does not replace Pi's credential flow,
+model runtime, permission owner, or TUI. Agent execution remains available only
+through `/omp` inside Pi; the terminal `omp` manages installation, diagnosis,
+release checks, rollback and removal.
 
-## Prerequisites
+## Public Preview installation
+
+The supported public platform is macOS 14 or newer running natively on Apple
+Silicon arm64. Intel Macs, Rosetta, Linux and Windows fail before staging. No
+preinstalled Node is required: the stack contains official Node `24.19.0` and
+Pi `0.84.3`. The installer is user-local and must not be run with `sudo`.
+
+Default Thin install:
+
+```bash
+tmp="$(mktemp -d)" && curl --fail --proto '=https' --tlsv1.2 -o "$tmp/install.sh" 'https://github.com/Ricardo121380/only-my-pi/releases/download/v0.2.0-preview.1/install.sh' && printf '%s  %s\n' 'b598cea9b09da5693af369da7bd8fe2e5f6bbfa4f1049a4ebd53080d543a760f' "$tmp/install.sh" | shasum -a 256 -c - && /bin/sh "$tmp/install.sh" --release 0.2.0-preview.1 --payload thin --yes
+```
+
+The command downloads to disk and verifies the exact bootstrap SHA before
+execution. Thin then retrieves only digest-bound bytes from the fixed GitHub,
+nodejs.org and registry.npmjs.org sources. Redirects are handled manually and
+each destination is revalidated. Credentials, `.npmrc`, GitHub tokens and
+browser state are not read.
+
+For the Full path, download `install.sh`, the Full archive,
+`release-index.json`, `stack-manifest.json` and `SHA256SUMS` from the exact tag;
+verify the published checksums and attestations, then use the verified CLI to
+review and apply the local bundle:
+
+```bash
+omp stack install --bundle /absolute/path/only-my-pi-0.2.0-preview.1-darwin-arm64-full.tar.gz --plan --json
+omp stack install --bundle /absolute/path/only-my-pi-0.2.0-preview.1-darwin-arm64-full.tar.gz --apply --yes --json
+```
+
+Once those files are local, Full plan/apply performs no network acquisition.
+Full and Thin are required to converge on the same `stackId`, Node/Pi trees,
+external package tree, only-my-pi artifact and generation graph.
+
+Optionally verify GitHub provenance in addition to SHA-256:
+
+```bash
+gh release verify v0.2.0-preview.1 --repo Ricardo121380/only-my-pi
+gh attestation verify only-my-pi-0.2.0-preview.1-darwin-arm64-thin.tar.gz --repo Ricardo121380/only-my-pi
+```
+
+`gh` is optional for installation; checksum verification is mandatory.
+
+## PATH and first run
+
+The controlled commands are `~/.local/bin/omp` and `~/.local/bin/pi`. The
+installer does not edit shell files by default. `PATH_ACTION_REQUIRED` means
+the stack committed successfully but `~/.local/bin` is not visible in the
+current shell. Follow the printed action or rerun the reviewed apply with
+`--configure-shell`; that option accepts only a real regular profile, creates a
+backup, and writes one idempotent marker block.
+
+Verify identities before configuring a model:
+
+```bash
+command -v omp
+command -v pi
+omp version --json
+omp stack status --json
+omp status --json
+omp doctor --json
+```
+
+Start `pi`, complete Pi's normal Provider/model setup without placing secrets
+in only-my-pi configuration, then invoke:
+
+```text
+/omp run
+```
+
+The wizard previews roles, models, Web/Gate authority and budgets. Public Web
+requires a separate per-run confirmation and browser cookies remain disabled.
+The default `daily` preset is `core + web + orchestration-readonly +
+ui-terminal`; memory, sync and MCP remain off.
+
+## Existing Pi environments
+
+- An exact verified nine-package tree is borrowed as
+  `PREEXISTING_EXTERNAL`; it is never adopted or removed by only-my-pi.
+- A governed partial tree can be completed only when every existing required
+  package is exact and no unrelated top-level package is present. Its original
+  root is retained as LKG.
+- A different required version, lock/SRI/tree drift, duplicate identity,
+  unknown top-level package, unsafe symlink, or existing unknown `pi`/`omp`
+  shim returns a zero-write conflict with a reconciliation plan.
+- Homebrew Pi and Node are never modified. Removing the user-local shims makes
+  the system commands visible again according to normal `PATH` order.
+
+Always run the plan first when the machine already has Pi state:
+
+```bash
+omp stack install --release 0.2.0-preview.1 --payload thin --plan --json
+```
+
+## Source-development prerequisites
 
 - Node.js 22.19.0 or newer (Node 22.19.0 and 24.x are the CI matrix);
 - a compatible Pi host, validated here against
@@ -56,7 +150,7 @@ It does not submit a prompt or read a Provider key. Extension code still has
 the invoking OS user's authority; this smoke is startup evidence, not a
 whole-session sandbox.
 
-## Daily local installation
+## Existing M10 local installation
 
 After the protected M10 promotion, the current user-level CLI is available as
 `~/.local/bin/omp`. It manages installation, status, diagnosis and rollback;
@@ -72,6 +166,10 @@ omp doctor --json
 The expected Stable identities are Pi `0.84.3`, `pi-subagents@0.57.0`, an
 `INSTALLED` status, generation alignment `MATCH`, and seven daily bindings
 that remain `external/owner=user`.
+
+Public stack lifecycle and Harness-only lifecycle are separate. See
+[Migration, rollback, and uninstall](migration-uninstall.md) before changing
+either one.
 
 ## Inspect the product surfaces
 

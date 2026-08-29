@@ -1,5 +1,48 @@
 # Troubleshooting
 
+## `PATH_ACTION_REQUIRED`
+
+The stack installed successfully, but `~/.local/bin` is not visible in the
+current shell. Follow the exact printed export/profile action. only-my-pi does
+not edit shell profiles unless `--configure-shell` was explicitly supplied.
+Do not replace an existing non-OMP `pi` or `omp` file to work around this.
+
+## `SHIM_CONFLICT`
+
+`~/.local/bin/pi` or `~/.local/bin/omp` already exists and is not a verified
+only-my-pi symlink. Installation made no change. Inspect and relocate the
+conflicting file yourself, then create a fresh plan; never let the installer
+overwrite an unknown command.
+
+## Package or tree conflict
+
+`PACKAGE_VERSION_CONFLICT`, lock/SRI/tree drift, duplicate package identity,
+or an unrelated top-level package in a partial root are zero-write outcomes.
+The public installer does not upgrade, downgrade or adopt that environment.
+Preserve the reported evidence and reconcile the user-owned Pi tree explicitly.
+
+## `PAYLOAD_CONVERGENCE_FAILED`
+
+Full and Thin did not resolve to the same canonical stack identity. Do not
+install either payload and do not reuse its staged cache. Preserve the bounded
+receipt and report the exact release tag through the private security channel
+if provenance or artifact substitution is suspected.
+
+## `MANUAL_RECONCILIATION_REQUIRED`
+
+An interrupted transaction cannot prove whether every root is wholly old or
+wholly new, or a concurrent targeted package/settings change prevents safe
+automatic restore. Do not delete journals, backup siblings, stack state or LKG
+records. Follow the exact machine-readable reconciliation plan or open an
+Issue with only the redacted error code/digests—never attach `auth.json`,
+sessions, raw prompts or model output.
+
+## Unsupported platform or Rosetta
+
+`0.2.0-preview.1` supports macOS 14+ on native Apple Silicon arm64 only. The
+installer intentionally rejects Intel Macs and Rosetta before staging. There is
+no supported override.
+
 ## `PLAN_READY` or `CONFIRMATION_REQUIRED`
 
 This is expected. Mutations are never implicit. Review the JSON plan and rerun

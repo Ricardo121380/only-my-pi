@@ -10,6 +10,7 @@ const INSTALLER = path.join(process.cwd(), "distribution", "install.sh");
 
 test("verified installer is fixed-version, checksum-first, credential-free, and never pipe-to-shell", async () => {
   const source = await fs.readFile(INSTALLER, "utf8");
+  const installerSha256 = await hashFile(INSTALLER);
   assert.match(source, /VERSION='0\.2\.0-preview\.1'/u);
   assert.match(source, /NODE_SHA256='8294b7aa9b03997481c06babf1e8b270c859358f27da57a11509afe537ac381d'/u);
   assert.match(source, /shasum -a 256/u);
@@ -25,6 +26,11 @@ test("verified installer is fixed-version, checksum-first, credential-free, and 
   assert.doesNotMatch(source, /curl[^\n]*--location/u);
   assert.doesNotMatch(source, /latest/u);
   assert.doesNotMatch(source, /Authorization|GITHUB_TOKEN|NPM_TOKEN|\.npmrc/u);
+  for (const document of ["README.md", "docs/quickstart.md"]) {
+    const text = await fs.readFile(path.join(process.cwd(), document), "utf8");
+    assert.match(text, new RegExp(installerSha256.slice("sha256:".length), "u"), `${document} must pin the exact bootstrap SHA-256`);
+    assert.doesNotMatch(text, /curl[^\n]*\|[ \t]*(?:\/bin\/)?(?:sh|bash)(?:[ \t]|$)/u);
+  }
   const syntax = spawnSync("/bin/sh", ["-n", INSTALLER], { encoding: "utf8", shell: false });
   assert.equal(syntax.status, 0, syntax.stderr);
 });

@@ -5,6 +5,28 @@ early, local-first harness phase; entries describe the governed repository
 artifacts and their verification boundary, not a promise of a published npm
 release.
 
+## 0.2.0-preview.1 — publication candidate
+
+### Added
+
+- macOS 14+ Apple Silicon Full and Thin GitHub Release payloads with embedded
+  Node 24.19.0, controlled Pi 0.84.3 and the exact audited nine-package stack;
+- canonical stack/release manifests, complete transitive artifact ledger,
+  SPDX 2.3 SBOM, third-party notices, reproducible archives and GitHub
+  provenance/SBOM attestations;
+- one checksum-first fixed-version bootstrap, controlled user-local `pi` and
+  `omp` shims, explicit release check, stack update/rollback/remove and crash-
+  recoverable transactions;
+- privacy-sanitized public history and a newly source-bound public baseline.
+
+### Security boundary
+
+The Preview remains read-only and user-local. It does not publish to npm,
+modify Homebrew, run lifecycle scripts, enable writer/MCP, perform background
+updates, or adopt third-party packages. Publication remains blocked until the
+source-bound Q11 protected matrix and Q12 public GitHub/immutable Release
+evidence pass.
+
 ## 0.1.0 — 2026-08-16
 
 ### Added

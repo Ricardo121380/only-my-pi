@@ -3,6 +3,20 @@
 `only-my-pi` contains Pi Agent resources and research. It is not intended to
 contain secrets or to make third-party code trusted by default.
 
+## Reporting a vulnerability
+
+Do not open a public Issue for suspected vulnerabilities, credential exposure,
+artifact substitution, unsafe removal or privacy leaks. Use GitHub Private
+Vulnerability Reporting for `Ricardo121380/only-my-pi`. Include the affected
+exact tag/commit, low-sensitivity error codes and reproduction steps. Do not
+attach Provider keys, cookies, `auth.json`, sessions, raw prompts, raw model
+output, memory databases or host-specific archives.
+
+The supported security-update scope for this Preview is the latest published
+`0.2.0-preview.N` on macOS 14+ arm64. No response-time SLA or stable
+compatibility window is promised during Preview. The repository never requests
+a security report through a public issue or third-party chat account.
+
 ## Never commit
 
 - API keys, OAuth tokens, refresh tokens, cookies, or credential stores

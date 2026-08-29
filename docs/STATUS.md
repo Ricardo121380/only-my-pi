@@ -28,9 +28,26 @@ PR/Actions refs. All 219 commits map one-to-one; trees, parents, messages,
 names, timestamps and file modes are unchanged, while the personal QQ
 author/committer email is absent. The new repository remains private.
 
-H2 is now establishing `public-baseline-v1`. Until its source/evidence/receipt
-chain closes, historical M8-M10 evidence is legacy inspection material, not
-current public-release authority. No repository publication, tag or Preview
+H2 is complete. Public-baseline source `73c1c005`, its direct evidence-only
+child `d2e45ef`, and completion receipt `f0f61a7` re-established authority for
+the sanitized history and the current Pi `0.84.3` read-only runtime. Historical
+M8-M10 evidence remains legacy inspection material and cannot regain current
+release authority.
+
+The local M11 implementation now includes the four release/stack schemas,
+complete transitive SRI ledger, SPDX 2.3 SBOM/notices, reproducible Full/Thin
+builder, verified acquisition, unified user-local stack transaction, embedded
+Node/Pi shims, release/update/rollback/remove CLI, fixed-SHA POSIX bootstrap,
+Q1-Q12 manifest, macOS arm64 Q10 workflow and exact-source RC/final attestation
+workflows. A real local Apple Silicon Q10 rehearsal installed and removed both
+payloads under isolated homes with one `stackId` and generation, zero Provider
+requests, external/user package ownership and no Homebrew mutation. This is
+pre-CI rehearsal evidence, not a substitute for the required GitHub-hosted Q10.
+
+The clean deterministic runner currently passes Q1-Q9 and Q12. Q10 remains
+`NOT_RUN_PLATFORM` in the ordinary runner and Q11 remains
+`NOT_RUN_BY_POLICY`; therefore the aggregate decision is
+`HOLD_PLATFORM_AND_PROTECTED`. No repository publication, public tag or Preview
 Release is authorized at this point. The complete boundary is in
 [`ADR-0012`](decisions/ADR-0012-public-preview-distribution-and-history-privacy.md).
 

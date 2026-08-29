@@ -41,15 +41,51 @@ scripts/      Repository checks and package governance tooling
 
 M11 Public Preview distribution is in progress. The original GitHub repository
 has been renamed to the private `only-my-pi-private-archive`; a new private
-`Ricardo121380/only-my-pi` contains the same 219 trees, messages, timestamps and
-merge topology with only the historical personal commit email rewritten to the
-GitHub noreply identity. The new repository remains private while the public
-baseline, Full/Thin installers, SBOM, recovery matrix and Q1-Q12 gates are
-built and audited. There is no public Release yet, and the old evidence below
-must not be interpreted as authority for a future public artifact.
+`Ricardo121380/only-my-pi` preserves all 219 commit trees, messages, timestamps
+and merge topology with only the historical personal commit email rewritten to
+the GitHub noreply identity. The new repository remains private.
+
+The sanitized public baseline is complete: source `73c1c005`, its direct
+evidence-only child `d2e45ef`, and receipt `f0f61a7` re-established current
+authority without rebinding the retired private-history receipts. The M11
+source now contains canonical Full/Thin release contracts, a complete
+transitive ledger and SPDX SBOM, reproducible builders, the unified stack
+transaction, controlled shims, checksum-first bootstrap, Q1-Q12 gate contract,
+macOS arm64 Q10 workflow, and exact-source RC/final attestation workflows.
+Q1-Q9 and Q12 pass locally; an isolated real Apple Silicon Full/Thin rehearsal
+also converged and removed cleanly, but Q10 still requires its GitHub-hosted
+arm64 run and Q11 remains `NOT_RUN_BY_POLICY`. There is no public tag or Release
+yet, and no current claim treats protected publication evidence as complete.
 
 The frozen M11 boundary is recorded in
 [ADR-0012](docs/decisions/ADR-0012-public-preview-distribution-and-history-privacy.md).
+
+## Public Preview quickstart
+
+The `0.2.0-preview.1` release supports native Apple Silicon on macOS 14 or
+newer. It installs embedded Node `24.19.0`, controlled Pi `0.84.3`, the audited
+nine-package extension tree and only-my-pi under the current user's home. It
+does not use `sudo`, replace Homebrew Pi/Node, or import Provider credentials.
+
+The default Thin bootstrap is checksum-first: it downloads `install.sh` to a
+temporary file, verifies the exact release script SHA-256, and only then runs
+it. It is intentionally not a `curl | sh` command.
+
+```bash
+tmp="$(mktemp -d)" && curl --fail --proto '=https' --tlsv1.2 -o "$tmp/install.sh" 'https://github.com/Ricardo121380/only-my-pi/releases/download/v0.2.0-preview.1/install.sh' && printf '%s  %s\n' 'b598cea9b09da5693af369da7bd8fe2e5f6bbfa4f1049a4ebd53080d543a760f' "$tmp/install.sh" | shasum -a 256 -c - && /bin/sh "$tmp/install.sh" --release 0.2.0-preview.1 --payload thin --yes
+```
+
+The installer does not edit shell profiles by default. If `~/.local/bin` is
+not already on `PATH`, installation completes with `PATH_ACTION_REQUIRED` and
+prints the exact action. Use `--configure-shell` only after reviewing that
+plan. Start the controlled `pi`, configure a Provider/model through Pi's normal
+credential flow, then use `/omp run`; terminal `omp` deliberately cannot run
+Agents.
+
+Review [the complete Quickstart](docs/quickstart.md) before using Full/offline
+payloads, installing into an existing Pi environment, updating, rolling back,
+or removing the provisioned stack. This remains a Preview: production writers,
+MCP, automatic updates, Linux, Windows and Intel macOS are not supported.
 
 The governed S0-S5 kernel reached Stable on 2026-08-27: its exact source,
 protected evidence, and receipt chain passed 31/31 required gates. **M8 Daily
