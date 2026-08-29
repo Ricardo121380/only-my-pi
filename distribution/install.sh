@@ -64,7 +64,38 @@ mkdir -m 700 "$DOWNLOAD"
 BASE="https://github.com/$REPOSITORY/releases/download/$TAG"
 
 download() {
-  curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 --output "$2" "$1"
+  current_url=$1
+  destination=$2
+  redirect_count=0
+  temporary="$destination.part"
+  headers="$WORK/download-headers"
+  rm -f "$temporary" "$headers"
+  while :; do
+    case "$current_url" in
+      https://github.com/*|https://api.github.com/*|https://release-assets.githubusercontent.com/*|https://nodejs.org/*|https://registry.npmjs.org/*) ;;
+      *) die 'download URL is not credential-free HTTPS on an approved host' ;;
+    esac
+    case "$current_url" in *'@'*|*'#'*) die 'download URL contains forbidden authority or fragment data' ;; esac
+    if ! status=$(curl --fail --silent --show-error --proto '=https' --proto-redir '=https' --tlsv1.2 --max-redirs 0 --dump-header "$headers" --output "$temporary" --write-out '%{http_code}' "$current_url"); then
+      die 'download request failed'
+    fi
+    case "$status" in
+      200)
+        mv "$temporary" "$destination"
+        rm -f "$headers"
+        return 0
+        ;;
+      301|302|303|307|308)
+        [ "$redirect_count" -lt 5 ] || die 'download exceeded the redirect limit'
+        next_url=$(awk 'tolower($1) == "location:" { $1 = ""; sub(/^[ \t]+/, ""); sub(/\r$/, ""); value = $0; count += 1 } END { if (count == 1) print value }' "$headers")
+        case "$next_url" in https://*) ;; *) die 'download redirect is missing or is not absolute HTTPS' ;; esac
+        current_url=$next_url
+        redirect_count=$((redirect_count + 1))
+        rm -f "$temporary" "$headers"
+        ;;
+      *) die "download returned unexpected HTTP status $status" ;;
+    esac
+  done
 }
 
 download "$BASE/SHA256SUMS" "$DOWNLOAD/SHA256SUMS"

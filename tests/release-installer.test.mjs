@@ -17,7 +17,12 @@ test("verified installer is fixed-version, checksum-first, credential-free, and 
   assert.match(source, /npm_config_offline=true/u);
   assert.match(source, /env -i/u);
   assert.match(source, /stack install --bundle/u);
+  assert.match(source, /--max-redirs 0/u);
+  assert.match(source, /301\|302\|303\|307\|308/u);
+  assert.match(source, /release-assets\.githubusercontent\.com/u);
+  assert.match(source, /download redirect is missing or is not absolute HTTPS/u);
   assert.doesNotMatch(source, /curl[^\n]*\|[^\n]*(?:sh|bash)/u);
+  assert.doesNotMatch(source, /curl[^\n]*--location/u);
   assert.doesNotMatch(source, /latest/u);
   assert.doesNotMatch(source, /Authorization|GITHUB_TOKEN|NPM_TOKEN|\.npmrc/u);
   const syntax = spawnSync("/bin/sh", ["-n", INSTALLER], { encoding: "utf8", shell: false });
