@@ -126,3 +126,22 @@ test("artifact acquisition binds duplicate exceptions to exact identity and SRI"
     async download(options) { await fs.writeFile(options.destination, "fixture"); return { sha256: sha256("fixture"), integrity: options.expectedSri }; },
   }), { code: "RELEASE_ARTIFACT_EXCEPTION_DRIFT" });
 });
+
+test("artifact acquisition reports the complete reviewed duplicate exception contract", async (t) => {
+  const base = await temporary(t);
+  const npmRoot = path.join(base, "npm");
+  await fs.mkdir(npmRoot);
+  const manifests = await fixtureRoot(npmRoot);
+  await assert.rejects(acquireInstalledArtifacts({
+    roots: [{ npmRoot, lockPath: path.join(npmRoot, "package-lock.json") }],
+    outputRoot: path.join(base, "exception-required"),
+    async fetchMetadata() { return { document: { dist: { tarball: "https://registry.npmjs.org/package-b/-/package-b-2.0.0.tgz", integrity: SRI_B } } }; },
+    async download(options) { await fs.writeFile(options.destination, options.url); return { sha256: sha256(options.url), integrity: options.expectedSri }; },
+    async extract({ destination, archivePath }) {
+      const packageName = (await fs.readFile(archivePath, "utf8")).includes("package-a") ? "package-a@1.0.0" : "package-b@2.0.0";
+      await fs.mkdir(path.join(destination, "package"), { recursive: true });
+      await fs.writeFile(path.join(destination, "package", "package.json"), `${JSON.stringify(manifests[packageName])}\n`);
+      return { allowedDuplicates: ["package/dist/index.js"] };
+    },
+  }), (error) => error.code === "RELEASE_ARTIFACT_EXCEPTIONS_REQUIRED" && error.requiredExceptions.length === 2 && error.requiredExceptions.every((entry) => entry.paths[0] === "package/dist/index.js"));
+});
