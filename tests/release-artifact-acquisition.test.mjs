@@ -47,7 +47,10 @@ test("artifact acquisition completes missing SRI from exact metadata and binds d
   const downloads = [];
   const metadata = [];
   const result = await acquireInstalledArtifacts({
-    roots: [{ npmRoot, lockPath: path.join(npmRoot, "package-lock.json") }],
+    roots: [
+      { npmRoot, lockPath: path.join(npmRoot, "package-lock.json") },
+      { npmRoot, lockPath: path.join(npmRoot, "package-lock.json") },
+    ],
     outputRoot: path.join(base, "artifacts"),
     async fetchMetadata(options) {
       metadata.push(options);
@@ -65,7 +68,7 @@ test("artifact acquisition completes missing SRI from exact metadata and binds d
       await fs.writeFile(path.join(destination, "package", "package.json"), `${JSON.stringify(manifests[archiveName])}\n`);
     },
   });
-  assert.equal(metadata.length, 1);
+  assert.equal(metadata.length, 2);
   assert.equal(metadata[0].url, "https://registry.npmjs.org/package-b/2.0.0");
   assert.deepEqual(downloads.map((entry) => entry.expectedSri).sort(), [SRI_A, SRI_B].sort());
   assert.equal(result.artifacts.length, 2);

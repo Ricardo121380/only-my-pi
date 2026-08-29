@@ -72,6 +72,10 @@ async function completeIntegrity(entry, metadata) {
   return { ...entry, integrity };
 }
 
+function resolutionEvidence(entry) {
+  return { identity: entry.identity, name: entry.name, version: entry.version, tarballUrl: entry.tarballUrl, integrity: entry.integrity };
+}
+
 async function packageRoot(extracted, expected) {
   const entries = await fs.readdir(extracted, { withFileTypes: true });
   if (entries.length !== 1 || entries[0].name !== "package" || !entries[0].isDirectory() || entries[0].isSymbolicLink()) fail("RELEASE_ARTIFACT_LAYOUT_INVALID", `registry artifact has an unexpected layout: ${expected.identity}`);
@@ -97,7 +101,7 @@ export async function acquireInstalledArtifacts({
   for (const raw of rawEntries) {
     const entry = await completeIntegrity(raw, fetchMetadata);
     const prior = byIdentity.get(entry.identity);
-    if (prior && canonicalJson({ ...prior, manifest: undefined }) !== canonicalJson({ ...entry, manifest: undefined })) fail("RELEASE_ARTIFACT_IDENTITY_DRIFT", `same package identity resolves to different artifacts: ${entry.identity}`);
+    if (prior && canonicalJson(resolutionEvidence(prior)) !== canonicalJson(resolutionEvidence(entry))) fail("RELEASE_ARTIFACT_IDENTITY_DRIFT", `same package identity resolves to different artifacts: ${entry.identity}`);
     byIdentity.set(entry.identity, prior ?? entry);
   }
   const artifactBytes = new Map();
