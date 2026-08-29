@@ -21,6 +21,8 @@ test("Q10 payload control flow installs, verifies, removes and cleans prepared b
   t.after(() => fs.rm(workspace, { recursive: true, force: true }));
   let installed = true;
   let cleaned = false;
+  let doctorCalls = 0;
+  let smokeCalls = 0;
   const layout = {
     configRoot: path.join(workspace, "config"),
     binRoot: path.join(workspace, "bin"),
@@ -32,7 +34,12 @@ test("Q10 payload control flow installs, verifies, removes and cleans prepared b
     async inspect() { return { payloadMode: "full", stackId, stackManifest: { onlyMyPi: { artifactSha256: `sha256:${"3".repeat(64)}` } } }; },
     async prepare() { return { resolvedRoot: path.join(workspace, "resolved"), async cleanup() { cleaned = true; } }; },
   };
-  const engine = { async apply() { return { ok: true, status: "COMMITTED" }; } };
+  let engineOptions;
+  const engine = { async apply() {
+    assert.deepEqual(await engineOptions.doctor(), { ok: true, status: "PASS" });
+    assert.deepEqual(await engineOptions.smoke(), { ok: true, status: "NO_MODEL_STARTUP_PASS" });
+    return { ok: true, status: "COMMITTED" };
+  } };
   const service = {
     async status() { return installed ? { ok: true, status: "INSTALLED", stackId, generationId, externalOwnership: { owner: "user" } } : { ok: true, status: "NOT_INSTALLED" }; },
     async planLifecycle() { return { status: "STACK_REMOVE_PLAN" }; },
@@ -43,12 +50,17 @@ test("Q10 payload control flow installs, verifies, removes and cleans prepared b
     createSource: () => source,
     async extract() {},
     createHarness: () => ({ kind: "fixture" }),
-    createEngine: () => engine,
+    createBootstrap: () => ({ async doctor() { doctorCalls += 1; return { ok: true, status: "PASS" }; } }),
+    createSmoke: () => async () => { smokeCalls += 1; return { ok: true, status: "NO_MODEL_STARTUP_PASS" }; },
+    createEngine: (options) => { engineOptions = options; return engine; },
     createService: () => service,
+    async loadSettings() { return { settings: { onlyMyPi: { managedSettings: {} } } }; },
     async plan() { return { mutation: true }; },
     async missing() { return true; },
   });
   assert.deepEqual(result, { payloadMode: "full", stackId, installStatus: "COMMITTED", installedStatus: "INSTALLED", removeStatus: "REMOVED", externalOwner: "user", generationId });
+  assert.equal(doctorCalls, 1);
+  assert.equal(smokeCalls, 1);
   assert.equal(cleaned, true);
 });
 

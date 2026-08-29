@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -37,7 +38,7 @@ async function fixture(t) {
   const layout = createStackLayout({ homeDir: home });
   const manifest = JSON.parse(await fs.readFile(path.join(ROOT, "contracts", "release", "stack-manifest.example.json"), "utf8"));
   await fs.mkdir(path.join(resolved, "node", "bin"), { recursive: true });
-  await fs.writeFile(path.join(resolved, "node", "bin", "node"), "fixture node\n", { mode: 0o755 });
+  await fs.writeFile(path.join(resolved, "node", "bin", "node"), "#!/bin/sh\nprintf '%s\\n' \"$@\"\n", { mode: 0o755 });
   await fs.symlink("node", path.join(resolved, "node", "bin", "node-alias"));
   await fs.mkdir(path.join(resolved, "pi", "dist", "bundle"), { recursive: true });
   await fs.writeFile(path.join(resolved, "pi", "dist", "bundle", "cli.js"), "fixture Pi\n", { mode: 0o755 });
@@ -94,6 +95,14 @@ test("stack transaction installs one complete user-local stack and preserves ext
   assert.equal(result.status, "COMMITTED");
   assert.equal(await fs.realpath(value.layout.ompShim), path.join(await fs.realpath(value.layout.currentStack), "bin", "omp"));
   assert.equal(await fs.realpath(value.layout.piShim), path.join(await fs.realpath(value.layout.currentStack), "bin", "pi"));
+  assert.deepEqual(
+    execFileSync(value.layout.piShim, ["--version"], { encoding: "utf8" }).trim().split("\n"),
+    [path.join(await fs.realpath(value.layout.currentStack), "pi", "dist", "bundle", "cli.js"), "--version"],
+  );
+  assert.deepEqual(
+    execFileSync(value.layout.ompShim, ["status"], { encoding: "utf8" }).trim().split("\n"),
+    [path.join(await fs.realpath(value.layout.currentStack), "only-my-pi", "package", "bin", "omp.mjs"), "status"],
+  );
   const settings = JSON.parse(await fs.readFile(value.layout.settingsFile, "utf8"));
   assert.equal(settings.packages.length, 9);
   const state = JSON.parse(await fs.readFile(value.layout.stateFile, "utf8"));

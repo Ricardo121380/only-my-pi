@@ -8,6 +8,9 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { BootstrapService } from "../packages/bootstrap/bootstrap-service.mjs";
+import { createNoModelSmokeRunner } from "../packages/bootstrap/smoke-runner.mjs";
+import { loadSettings } from "../packages/config-runtime/index.mjs";
 import {
   StackTransactionEngine,
   createLocalReleasePayloadSource,
@@ -69,9 +72,12 @@ export async function installM11NoModelPayload({ releaseRoot, payloadMode, platf
     createSource: (options) => createLocalReleasePayloadSource({ ...options, thinResolver: createThinPayloadResolver() }),
     extract: extractVerifiedTarGzip,
     createHarness: createStackHarnessAdapter,
+    createBootstrap: (options) => new BootstrapService(options),
+    createSmoke: createNoModelSmokeRunner,
     createEngine: (options) => new StackTransactionEngine(options),
     createService: createStackService,
     plan: planStackEnvironment,
+    loadSettings,
     missing,
     ...operations,
   };
@@ -86,8 +92,23 @@ export async function installM11NoModelPayload({ releaseRoot, payloadMode, platf
   const prepared = await source.prepare({ bundle });
   const harnessExtraction = path.join(workspace, `harness-${payloadMode}`);
   await ops.extract({ archivePath: path.join(prepared.resolvedRoot, "only-my-pi.tgz"), destination: harnessExtraction, expectedSha256: inspection.stackManifest.onlyMyPi.artifactSha256, maxEntries: 50_000, maxExtractedBytes: 512 * 1024 * 1024 });
-  const harness = ops.createHarness({ rootDir: path.join(harnessExtraction, "package"), configRoot: layout.configRoot });
-  const engine = ops.createEngine({ layout, harness, doctor: async () => ({ ok: true, status: "Q10_STATIC_DOCTOR_PASSED" }), smoke: async () => ({ ok: true, status: "Q10_NO_MODEL_SMOKE_PASSED" }) });
+  const harnessRoot = path.join(harnessExtraction, "package");
+  const harness = ops.createHarness({ rootDir: harnessRoot, configRoot: layout.configRoot });
+  const bootstrap = ops.createBootstrap({ rootDir: harnessRoot });
+  const smokeRunner = ops.createSmoke({ piCommand: layout.piShim });
+  const engine = ops.createEngine({
+    layout,
+    harness,
+    doctor: async () => {
+      const result = await bootstrap.doctor({ configRoot: layout.configRoot });
+      return { ok: result?.ok === true, status: result?.status ?? "FAIL" };
+    },
+    smoke: async () => {
+      const settings = await ops.loadSettings(layout.configRoot);
+      const result = await smokeRunner({ configRoot: layout.configRoot, settings: settings.settings });
+      return { ok: result?.ok === true, status: result?.status ?? "FAIL" };
+    },
+  });
   const service = ops.createService({ layout, localSource: source, releaseSource: source, engine, platformInspector: async () => platformIdentity, pathValue: () => layout.binRoot });
   try {
     const plan = await ops.plan({ layout, stackManifest: inspection.stackManifest, payloadMode, operation: "install", platform: platformIdentity, pathValue: layout.binRoot });

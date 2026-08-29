@@ -142,8 +142,9 @@ function stackPath(layout, stackId) {
 async function writeStackBins(stage) {
   const bin = path.join(stage, "bin");
   await fs.mkdir(bin, { recursive: true, mode: 0o755 });
-  const pi = `#!/bin/sh\nset -eu\nSTACK_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)\nexec "$STACK_ROOT/node/bin/node" "$STACK_ROOT/pi/dist/bundle/cli.js" "$@"\n`;
-  const omp = `#!/bin/sh\nset -eu\nSTACK_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)\nexec "$STACK_ROOT/node/bin/node" "$STACK_ROOT/only-my-pi/package/bin/omp.mjs" "$@"\n`;
+  const resolveStackRoot = `SELF=$0\nwhile [ -L "$SELF" ]; do\n  SELF_DIR=$(CDPATH= cd -P -- "$(dirname -- "$SELF")" && pwd -P)\n  LINK_TARGET=$(readlink "$SELF")\n  case "$LINK_TARGET" in\n    /*) SELF=$LINK_TARGET ;;\n    *) SELF=$SELF_DIR/$LINK_TARGET ;;\n  esac\ndone\nSTACK_ROOT=$(CDPATH= cd -P -- "$(dirname -- "$SELF")/.." && pwd -P)`;
+  const pi = `#!/bin/sh\nset -eu\n${resolveStackRoot}\nexec "$STACK_ROOT/node/bin/node" "$STACK_ROOT/pi/dist/bundle/cli.js" "$@"\n`;
+  const omp = `#!/bin/sh\nset -eu\n${resolveStackRoot}\nexec "$STACK_ROOT/node/bin/node" "$STACK_ROOT/only-my-pi/package/bin/omp.mjs" "$@"\n`;
   await fs.writeFile(path.join(bin, "pi"), pi, { mode: 0o755 });
   await fs.writeFile(path.join(bin, "omp"), omp, { mode: 0o755 });
 }
