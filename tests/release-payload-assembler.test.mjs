@@ -33,6 +33,7 @@ test("payload assembler derives one canonical manifest, ledger, SBOM, and Full/T
   const external = path.join(resolved, "external-npm");
   await fs.mkdir(path.join(resolved, "node", "bin"), { recursive: true });
   await fs.writeFile(path.join(resolved, "node", "bin", "node"), "fixture node\n", { mode: 0o755 });
+  await fs.symlink("node", path.join(resolved, "node", "bin", "node-alias"));
   await fs.mkdir(path.join(resolved, "pi", "dist", "bundle"), { recursive: true });
   const piManifest = { name: "@earendil-works/pi-coding-agent", version: CONTROLLED_PI_VERSION, license: "MIT", scripts: {} };
   await fs.writeFile(path.join(resolved, "pi", "package.json"), `${JSON.stringify(piManifest, null, 2)}\n`);
@@ -77,6 +78,7 @@ test("payload assembler derives one canonical manifest, ledger, SBOM, and Full/T
     licensesRoot: licenses,
   });
   assert.equal(assembled.status, "RELEASE_PAYLOADS_ASSEMBLED");
+  assert.equal(await fs.readlink(path.join(assembled.fullPayloadRoot, "node", "bin", "node-alias")), "node");
   const inspected = await inspectFullThinPayloadInputs({ fullPayloadRoot: assembled.fullPayloadRoot, thinPayloadRoot: assembled.thinPayloadRoot, thinResolvedRoot: assembled.thinResolvedRoot });
   assert.equal(inspected.convergence.status, "PAYLOADS_CONVERGED");
   assert.equal(inspected.fullMetadata.ledger.artifacts.length, 10);

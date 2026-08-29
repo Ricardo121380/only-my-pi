@@ -144,7 +144,7 @@ export async function assembleReleasePayloads({
   const full = path.join(outputRoot, "full");
   const thin = path.join(outputRoot, "thin");
   await fs.mkdir(outputRoot, { recursive: false, mode: 0o700 });
-  await fs.cp(resolved, full, { recursive: true, errorOnExist: true, force: false });
+  await fs.cp(resolved, full, { recursive: true, errorOnExist: true, force: false, verbatimSymlinks: true });
   await fs.mkdir(path.join(thin, "resolution", "external"), { recursive: true, mode: 0o700 });
   await Promise.all([
     fs.copyFile(path.join(resolved, "only-my-pi.tgz"), path.join(thin, "only-my-pi.tgz")),
