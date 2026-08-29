@@ -60,3 +60,26 @@ test("M11 RC workflow is exact-source, attest-only and cannot publish", () => {
   assert.match(workflow, /artifact-metadata: write/u);
   assert.doesNotMatch(workflow, /contents: write|gh release|git push|secrets\./u);
 });
+
+test("M11 publication verifies E and RC before Draft, then requires environment approval", () => {
+  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-publish.yml"), "utf8");
+  assert.match(workflow, /needs: validate-inputs/u);
+  assert.match(workflow, /ref: \$\{\{ needs\.validate-inputs\.outputs\.evidence_commit \}\}/u);
+  assert.match(workflow, /actions\/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7\.0\.0/u);
+  assert.match(workflow, /m11-release-evidence\.mjs/u);
+  assert.match(workflow, /m11-compare-release-core\.mjs/u);
+  assert.equal((workflow.match(/actions\/attest@59d89421af93a897026c735860bf21b6eb4f7b26/gu) ?? []).length, 2);
+  assert.match(workflow, /--draft --prerelease --latest=false --verify-tag/u);
+  assert.match(workflow, /Remove incomplete Draft and tag after failure/u);
+  assert.match(workflow, /gh release delete "\$TAG" --yes --cleanup-tag/u);
+  assert.match(workflow, /environment: public-preview/u);
+  assert.match(workflow, /gh release edit "\$TAG" --draft=false/u);
+  assert.match(workflow, /gh release verify "\$TAG"/u);
+  assert.match(workflow, /gh release verify-asset/u);
+  assert.match(workflow, /gh attestation verify/u);
+  assert.match(workflow, /--source-digest "\$SOURCE_COMMIT"/u);
+  assert.match(workflow, /isImmutable/u);
+  assert.doesNotMatch(workflow, /secrets\./u);
+  assert.ok(workflow.indexOf("m11-compare-release-core.mjs") < workflow.indexOf("Create annotated release tag"));
+  assert.ok(workflow.indexOf("Create complete Draft prerelease") < workflow.indexOf("environment: public-preview"));
+});

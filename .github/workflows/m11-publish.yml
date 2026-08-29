@@ -1,0 +1,202 @@
+name: M11 immutable Preview publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Exact source commit S
+        required: true
+        type: string
+      evidence_commit:
+        description: Direct Q11 evidence-only child E
+        required: true
+        type: string
+      evidence_path:
+        description: Q11 JSON path under verification/protected
+        required: true
+        type: string
+      rc_run_id:
+        description: Successful M11 RC workflow run ID for the same S
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate-inputs:
+    name: Validate immutable publication inputs
+    runs-on: ubuntu-latest
+    outputs:
+      source_commit: ${{ steps.validate.outputs.source_commit }}
+      evidence_commit: ${{ steps.validate.outputs.evidence_commit }}
+      evidence_path: ${{ steps.validate.outputs.evidence_path }}
+      rc_run_id: ${{ steps.validate.outputs.rc_run_id }}
+    steps:
+      - name: Validate exact input grammar
+        id: validate
+        env:
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+          EVIDENCE_COMMIT: ${{ inputs.evidence_commit }}
+          EVIDENCE_PATH: ${{ inputs.evidence_path }}
+          RC_RUN_ID: ${{ inputs.rc_run_id }}
+        run: |
+          set -eu
+          case "$SOURCE_COMMIT" in (*[!a-f0-9]*|'') exit 1;; esac
+          case "$EVIDENCE_COMMIT" in (*[!a-f0-9]*|'') exit 1;; esac
+          test "${#SOURCE_COMMIT}" -eq 40
+          test "${#EVIDENCE_COMMIT}" -eq 40
+          case "$EVIDENCE_PATH" in (verification/protected/*.json) ;; (*) exit 1;; esac
+          case "$EVIDENCE_PATH" in (*..*|*//*|*[!a-zA-Z0-9._/-]*) exit 1;; esac
+          EVIDENCE_NAME=${EVIDENCE_PATH#verification/protected/}
+          case "$EVIDENCE_NAME" in (''|*/*) exit 1;; esac
+          case "$RC_RUN_ID" in (*[!0-9]*|'') exit 1;; esac
+          printf 'source_commit=%s\nevidence_commit=%s\nevidence_path=%s\nrc_run_id=%s\n' "$SOURCE_COMMIT" "$EVIDENCE_COMMIT" "$EVIDENCE_PATH" "$RC_RUN_ID" >> "$GITHUB_OUTPUT"
+
+  build-draft:
+    name: Rebuild, compare, attest and create Draft
+    needs: validate-inputs
+    runs-on: macos-14-xlarge
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    env:
+      CI: "1"
+      NO_COLOR: "1"
+      PI_TELEMETRY: "0"
+      NPM_CONFIG_IGNORE_SCRIPTS: "true"
+      NPM_CONFIG_AUDIT: "false"
+      NPM_CONFIG_FUND: "false"
+      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+      SOURCE_COMMIT: ${{ needs.validate-inputs.outputs.source_commit }}
+      EVIDENCE_COMMIT: ${{ needs.validate-inputs.outputs.evidence_commit }}
+      EVIDENCE_PATH: ${{ needs.validate-inputs.outputs.evidence_path }}
+      TAG: v0.2.0-preview.1
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout evidence commit E
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-inputs.outputs.evidence_commit }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Switch to clean source S
+        run: |
+          set -eu
+          git checkout --detach "$SOURCE_COMMIT"
+          test "$(git rev-parse HEAD)" = "$SOURCE_COMMIT"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+      - name: Set up Node 24.19.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+          cache: npm
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Download accepted RC assets
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: m11-rc-${{ needs.validate-inputs.outputs.source_commit }}
+          path: ${{ runner.temp }}/m11-rc
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.validate-inputs.outputs.rc_run_id }}
+
+      - name: Extract direct Q11 evidence authority
+        run: node scripts/m11-release-evidence.mjs --source-commit "$SOURCE_COMMIT" --evidence-commit "$EVIDENCE_COMMIT" --evidence-path "$EVIDENCE_PATH" --output "$RUNNER_TEMP/q11-protected-receipt.json" --json
+
+      - name: Rebuild Final bytes from S
+        run: node scripts/m11-workflow-build.mjs --source-commit "$SOURCE_COMMIT" --output "$RUNNER_TEMP/m11-final" --status PUBLISHED --protected-receipt "$RUNNER_TEMP/q11-protected-receipt.json" --json
+
+      - name: Require RC and Final core assets to be bit-identical
+        run: node scripts/m11-compare-release-core.mjs --rc-root "$RUNNER_TEMP/m11-rc" --final-root "$RUNNER_TEMP/m11-final" --json
+
+      - name: Generate Final build provenance attestations
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: ${{ runner.temp }}/m11-final/*
+
+      - name: Generate Final SPDX SBOM attestations
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: |
+            ${{ runner.temp }}/m11-final/only-my-pi-0.2.0-preview.1-darwin-arm64-full.tar.gz
+            ${{ runner.temp }}/m11-final/only-my-pi-0.2.0-preview.1-darwin-arm64-thin.tar.gz
+          sbom-path: ${{ runner.temp }}/m11-final/only-my-pi-0.2.0-preview.1.spdx.json
+
+      - name: Require Public repository and immutable releases
+        run: |
+          set -eu
+          test "$(gh api "repos/$GITHUB_REPOSITORY" --jq .visibility)" = public
+          test "$(gh api "repos/$GITHUB_REPOSITORY/immutable-releases" --jq .enabled)" = true
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then exit 1; fi
+
+      - name: Create annotated release tag
+        run: |
+          set -eu
+          TAG_OBJECT=$(gh api --method POST "repos/$GITHUB_REPOSITORY/git/tags" -f tag="$TAG" -f message="only-my-pi 0.2.0-preview.1" -f object="$SOURCE_COMMIT" -f type=commit --jq .sha)
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$TAG" -f sha="$TAG_OBJECT" >/dev/null
+
+      - name: Create complete Draft prerelease
+        run: |
+          set -eu
+          gh release create "$TAG" \
+            "$RUNNER_TEMP/m11-final/install.sh" \
+            "$RUNNER_TEMP/m11-final/only-my-pi-0.2.0-preview.1-darwin-arm64-full.tar.gz" \
+            "$RUNNER_TEMP/m11-final/only-my-pi-0.2.0-preview.1-darwin-arm64-thin.tar.gz" \
+            "$RUNNER_TEMP/m11-final/release-index.json" \
+            "$RUNNER_TEMP/m11-final/stack-manifest.json" \
+            "$RUNNER_TEMP/m11-final/transitive-artifact-ledger.json" \
+            "$RUNNER_TEMP/m11-final/SHA256SUMS" \
+            "$RUNNER_TEMP/m11-final/only-my-pi-0.2.0-preview.1.spdx.json" \
+            "$RUNNER_TEMP/m11-final/THIRD_PARTY_NOTICES.txt" \
+            "$RUNNER_TEMP/m11-final/only-my-pi-0.2.0-preview.1-protected-receipt.json" \
+            --draft --prerelease --latest=false --verify-tag \
+            --title "only-my-pi 0.2.0-preview.1" \
+            --notes-file docs/releases/0.2.0-preview.1.md
+          test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = true
+
+      - name: Remove incomplete Draft and tag after failure
+        if: ${{ failure() }}
+        run: |
+          set -eu
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release delete "$TAG" --yes --cleanup-tag
+          elif gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG"
+          fi
+
+  publish:
+    name: Publish immutable Preview after approval
+    needs: [validate-inputs, build-draft]
+    runs-on: ubuntu-latest
+    environment: public-preview
+    permissions:
+      contents: write
+    env:
+      TAG: v0.2.0-preview.1
+      SOURCE_COMMIT: ${{ needs.validate-inputs.outputs.source_commit }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Publish approved immutable prerelease
+        run: gh release edit "$TAG" --draft=false --prerelease --latest=false --verify-tag
+
+      - name: Verify immutable release attestation and every asset
+        run: |
+          set -eu
+          test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = false
+          test "$(gh release view "$TAG" --json isPrerelease --jq .isPrerelease)" = true
+          test "$(gh release view "$TAG" --json isImmutable --jq .isImmutable)" = true
+          gh release verify "$TAG"
+          mkdir "$RUNNER_TEMP/release-assets"
+          gh release download "$TAG" --dir "$RUNNER_TEMP/release-assets"
+          for asset in "$RUNNER_TEMP/release-assets"/*; do gh release verify-asset "$TAG" "$asset"; done
+          gh attestation verify "$RUNNER_TEMP/release-assets/only-my-pi-0.2.0-preview.1-darwin-arm64-full.tar.gz" --repo "$GITHUB_REPOSITORY" --source-digest "$SOURCE_COMMIT"
+          gh attestation verify "$RUNNER_TEMP/release-assets/only-my-pi-0.2.0-preview.1-darwin-arm64-thin.tar.gz" --repo "$GITHUB_REPOSITORY" --source-digest "$SOURCE_COMMIT"
