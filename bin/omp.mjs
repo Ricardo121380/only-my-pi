@@ -181,7 +181,8 @@ export function createProductionControlService({
   const ultras = createUltraRunControlService({ rootDir: resolvedRoot });
   const themes = createThemeControlService({ rootDir: resolvedRoot });
   const statusService = createStatusService();
-  const versionService = wired.createVersionService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot, userCli });
+  const stackLayout = wired.createStackLayout({ homeDir: os.homedir(), configRoot: resolvedConfigRoot });
+  const versionService = wired.createVersionService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot, userCli, stackLayout });
   const migrationPlanner = wired.createExternalMigrationPlanner({
     configRoot: resolvedConfigRoot,
     piPackageRoot: "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent",
@@ -218,7 +219,6 @@ export function createProductionControlService({
     processAdmission,
     engine: upstreamEngine,
   });
-  const stackLayout = wired.createStackLayout({ homeDir: os.homedir(), configRoot: resolvedConfigRoot });
   const stackHarness = wired.createStackHarnessAdapter({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot, spawnImpl });
   const stackProcessAdmission = wired.createPiProcessAdmission({
     piPackageRoot: path.join(stackLayout.currentStack, "pi"),
