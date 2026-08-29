@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-import { buildM11WorkflowRelease } from "../scripts/m11-workflow-build.mjs";
+import { buildM11WorkflowRelease, parseM11WorkflowBuildArgs } from "../scripts/m11-workflow-build.mjs";
 
 test("RC workflow build creates temporary non-authority evidence and retains only reproducible output", async () => {
   const parent = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-workflow-build-test-")));
@@ -46,4 +46,12 @@ test("RC workflow build creates temporary non-authority evidence and retains onl
 
 test("published workflow build requires protected receipt authority", async () => {
   await assert.rejects(buildM11WorkflowRelease({ rootDir: process.cwd(), sourceCommit: "b".repeat(40), outputRoot: path.join(os.tmpdir(), "omp-published-test"), releaseStatus: "PUBLISHED" }), { code: "M11_WORKFLOW_BUILD_EVIDENCE_REQUIRED" });
+});
+
+test("workflow build CLI parser binds exact output authority", () => {
+  assert.deepEqual(parseM11WorkflowBuildArgs(["--source-commit", "a", "--output", "/tmp/release", "--status", "RC", "--json"]), { sourceCommit: "a", outputRoot: "/tmp/release", releaseStatus: "RC", protectedReceiptPath: null, json: true });
+  assert.throws(() => parseM11WorkflowBuildArgs(["--source-commit", "a"]), { code: "M11_WORKFLOW_BUILD_ARGUMENT_INVALID" });
+  assert.throws(() => parseM11WorkflowBuildArgs(["--source-commit", "a", "--source-commit", "b", "--output", "/tmp/release"]), { code: "M11_WORKFLOW_BUILD_ARGUMENT_INVALID" });
+  assert.throws(() => parseM11WorkflowBuildArgs(["--source-commit", "--json", "--output", "/tmp/release"]), { code: "M11_WORKFLOW_BUILD_ARGUMENT_INVALID" });
+  assert.throws(() => parseM11WorkflowBuildArgs(["--source-commit", "a", "--output", "/tmp/release", "--json", "--json"]), { code: "M11_WORKFLOW_BUILD_ARGUMENT_INVALID" });
 });

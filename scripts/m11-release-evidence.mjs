@@ -40,7 +40,7 @@ export async function extractM11ReleaseEvidence({ rootDir = ROOT, sourceCommit, 
   return Object.freeze({ ok: true, status: "M11_RELEASE_EVIDENCE_EXTRACTED", sourceCommit, evidenceCommit, evidenceId: document.evidenceId, evidenceDigest: document.evidenceDigest, assertionCount: document.assertions.length, outputClass: "EXPLICIT_NON_REPOSITORY_FILE" });
 }
 
-function parse(argv) {
+export function parseM11ReleaseEvidenceArgs(argv) {
   const result = { json: false };
   const keys = new Map([["--source-commit", "sourceCommit"], ["--evidence-commit", "evidenceCommit"], ["--evidence-path", "evidencePath"], ["--output", "outputPath"]]);
   for (let index = 0; index < argv.length; index += 1) {
@@ -52,5 +52,5 @@ function parse(argv) {
   return result;
 }
 
-export async function main(argv = process.argv.slice(2)) { const options = parse(argv); const result = await extractM11ReleaseEvidence(options); process.stdout.write(`${JSON.stringify(result, null, options.json ? 2 : 0)}\n`); return 0; }
+export async function main(argv = process.argv.slice(2)) { const options = parseM11ReleaseEvidenceArgs(argv); const result = await extractM11ReleaseEvidence(options); process.stdout.write(`${JSON.stringify(result, null, options.json ? 2 : 0)}\n`); return 0; }
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) main().then((code) => { process.exitCode = code; }, (error) => { process.stderr.write(`${JSON.stringify({ ok: false, status: "M11_RELEASE_EVIDENCE_FAILED", code: error?.code ?? "M11_RELEASE_EVIDENCE_FAILED", message: error?.message, errorDigest: sha256(String(error?.stack ?? error)) }, null, 2)}\n`); process.exitCode = 1; });

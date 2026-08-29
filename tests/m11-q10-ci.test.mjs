@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
+import { execFile as execFileCallback } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { promisify } from "node:util";
 
-import { runM11Q10Ci } from "../scripts/m11-q10-ci.mjs";
+import { inspectM11Q10SourceCommit, runM11Q10Ci } from "../scripts/m11-q10-ci.mjs";
+
+const execFile = promisify(execFileCallback);
 
 test("Q10 CI binds staging, reproducible build and clean-home acceptance without retaining assets", async () => {
   const parent = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-q10-ci-test-")));
@@ -37,4 +41,18 @@ test("Q10 CI binds staging, reproducible build and clean-home acceptance without
   } finally {
     await fs.rm(parent, { recursive: true, force: true });
   }
+});
+
+test("Q10 CI source authority requires one clean exact Git commit", async (t) => {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-q10-source-")));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await execFile("git", ["init", "-q"], { cwd: root });
+  await execFile("git", ["config", "user.name", "Fixture"], { cwd: root });
+  await execFile("git", ["config", "user.email", "fixture@users.noreply.github.com"], { cwd: root });
+  await fs.writeFile(path.join(root, "source"), "source\n");
+  await execFile("git", ["add", "source"], { cwd: root });
+  await execFile("git", ["commit", "-q", "-m", "source"], { cwd: root });
+  assert.match(await inspectM11Q10SourceCommit(root), /^[a-f0-9]{40}$/u);
+  await fs.writeFile(path.join(root, "source"), "dirty\n");
+  await assert.rejects(inspectM11Q10SourceCommit(root), { code: "Q10_CI_SOURCE_NOT_CLEAN" });
 });

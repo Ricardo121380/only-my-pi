@@ -21,7 +21,7 @@ function fail(code, message) {
   throw error;
 }
 
-async function sourceCommit(rootDir) {
+export async function inspectM11Q10SourceCommit(rootDir) {
   const [{ stdout: head }, { stdout: status }] = await Promise.all([
     execFile("git", ["rev-parse", "HEAD"], { cwd: rootDir, encoding: "utf8" }),
     execFile("git", ["status", "--porcelain=v1", "--untracked-files=all"], { cwd: rootDir, encoding: "utf8" }),
@@ -34,7 +34,7 @@ async function sourceCommit(rootDir) {
 export async function runM11Q10Ci({
   rootDir = ROOT,
   workParent = os.tmpdir(),
-  inspectSource = sourceCommit,
+  inspectSource = inspectM11Q10SourceCommit,
   stager = createReleasePayloadStager({ rootDir }),
   thinResolver = createThinPayloadResolver(),
   controller = createReleaseBuildController({ rootDir }),

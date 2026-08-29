@@ -30,7 +30,7 @@ const COMMANDS = Object.freeze({
   Q8: ["node", ["--test", "tests/release-stack-service.test.mjs", "tests/version-service.test.mjs"]],
   Q9: ["node", ["--test", "tests/stack-transaction.test.mjs", "tests/release-stack-service.test.mjs"]],
   Q10: ["node", ["scripts/m11-macos-no-model-acceptance.mjs", "--run", "--json"]],
-  Q12: ["node", ["--test", "tests/m11-release-gates.test.mjs", "tests/m11-protected-release-acceptance.test.mjs", "tests/m11-release-evidence.test.mjs", "tests/m11-release-core.test.mjs", "tests/ci-contract.test.mjs", "tests/docs-links.test.mjs"]],
+  Q12: ["node", ["--test", "tests/m11-release-gates.test.mjs", "tests/m11-protected-release-acceptance.test.mjs", "tests/m11-macos-no-model-acceptance.test.mjs", "tests/m11-release-evidence.test.mjs", "tests/m11-release-core.test.mjs", "tests/ci-contract.test.mjs", "tests/docs-links.test.mjs"]],
 });
 
 function fail(code, message) {

@@ -60,7 +60,7 @@ export async function buildM11WorkflowRelease({
   }
 }
 
-function parse(argv) {
+export function parseM11WorkflowBuildArgs(argv) {
   const result = { json: false, releaseStatus: "RC", protectedReceiptPath: null };
   const values = new Map([["--source-commit", "sourceCommit"], ["--output", "outputRoot"], ["--status", "releaseStatus"], ["--protected-receipt", "protectedReceiptPath"]]);
   const seen = new Set();
@@ -78,7 +78,7 @@ function parse(argv) {
 }
 
 export async function main(argv = process.argv.slice(2)) {
-  const options = parse(argv);
+  const options = parseM11WorkflowBuildArgs(argv);
   const result = await buildM11WorkflowRelease(options);
   process.stdout.write(`${JSON.stringify(result, null, options.json ? 2 : 0)}\n`);
   return 0;

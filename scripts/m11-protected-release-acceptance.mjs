@@ -113,7 +113,7 @@ function runtimeEnvironment(extraPath = null) {
   };
 }
 
-async function runJson(command, args, { env = runtimeEnvironment(), timeout = 30 * 60 * 1000 } = {}) {
+export async function runM11ProtectedJsonCommand(command, args, { env = runtimeEnvironment(), timeout = 30 * 60 * 1000 } = {}) {
   let stdout;
   try {
     ({ stdout } = await execFile(command, args, { cwd: ROOT, env, encoding: "utf8", timeout, maxBuffer: 8 * 1024 * 1024 }));
@@ -131,7 +131,7 @@ async function readJson(target, maxBytes = 64 * 1024 * 1024) {
   catch { fail("M11_PROTECTED_RELEASE_ASSET_INVALID", `release metadata is invalid JSON: ${path.basename(target)}`); }
 }
 
-async function inspectReleaseRoot(requested, sourceCommit) {
+export async function inspectM11ProtectedReleaseRoot(requested, sourceCommit) {
   const stat = await fs.lstat(requested).catch(() => null);
   const root = stat ? await fs.realpath(requested).catch(() => null) : null;
   if (!stat?.isDirectory() || stat.isSymbolicLink() || root !== path.resolve(requested)) fail("M11_PROTECTED_RELEASE_ROOT_UNSAFE", "RC release root is missing or unsafe");
@@ -155,9 +155,12 @@ async function inspectReleaseRoot(requested, sourceCommit) {
   return Object.freeze({ root, releaseIndex, stackManifest, assets: Object.freeze(assets) });
 }
 
-async function prepareBootstrap(release, workspace) {
+export async function prepareM11ProtectedBootstrap(release, workspace, operations = {}) {
+  const extract = operations.extract ?? extractVerifiedTarGzip;
+  const execute = operations.execute ?? execFile;
+  const stat = operations.stat ?? fs.lstat;
   const extraction = path.join(workspace, "bootstrap-full");
-  await extractVerifiedTarGzip({ archivePath: release.assets.full, destination: extraction, expectedSha256: release.releaseIndex.assets.full.sha256, maxEntries: 100_000, maxExtractedBytes: 2 * 1024 * 1024 * 1024 });
+  await extract({ archivePath: release.assets.full, destination: extraction, expectedSha256: release.releaseIndex.assets.full.sha256, maxEntries: 100_000, maxExtractedBytes: 2 * 1024 * 1024 * 1024 });
   const payload = path.join(extraction, "only-my-pi");
   const nodeRoot = path.join(payload, "node");
   const node = path.join(nodeRoot, "bin", "node");
@@ -177,50 +180,56 @@ async function prepareBootstrap(release, workspace) {
     npm_config_fund: "false",
     npm_config_offline: "true",
   };
-  await execFile(node, [npm, "install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev", "--omit=peer", "--legacy-peer-deps", "--package-lock=false", "--no-save", "--prefix", prefix, "--", artifact], { cwd: workspace, env, encoding: "utf8", timeout: 5 * 60 * 1000, maxBuffer: 1024 * 1024 });
+  await execute(node, [npm, "install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev", "--omit=peer", "--legacy-peer-deps", "--package-lock=false", "--no-save", "--prefix", prefix, "--", artifact], { cwd: workspace, env, encoding: "utf8", timeout: 5 * 60 * 1000, maxBuffer: 1024 * 1024 });
   const omp = path.join(prefix, "node_modules", "only-my-pi", "bin", "omp.mjs");
-  if (!(await fs.lstat(node)).isFile() || !(await fs.lstat(omp)).isFile()) fail("M11_PROTECTED_BOOTSTRAP_INVALID", "RC bootstrap runtime is incomplete");
+  if (!(await stat(node)).isFile() || !(await stat(omp)).isFile()) fail("M11_PROTECTED_BOOTSTRAP_INVALID", "RC bootstrap runtime is incomplete");
   return Object.freeze({ node, omp, nodeRoot });
 }
 
 async function runOmp(bootstrap, args, options = {}) {
-  return runJson(bootstrap.node, [bootstrap.omp, ...args, "--config-root", CONFIG_ROOT, "--json"], { ...options, env: runtimeEnvironment(path.join(bootstrap.nodeRoot, "bin")) });
+  return runM11ProtectedJsonCommand(bootstrap.node, [bootstrap.omp, ...args, "--config-root", CONFIG_ROOT, "--json"], { ...options, env: runtimeEnvironment(path.join(bootstrap.nodeRoot, "bin")) });
 }
 
-async function digestOrMissing(target) {
+export async function digestM11ProtectedPath(target) {
   const stat = await fs.lstat(target).catch((error) => error?.code === "ENOENT" ? null : Promise.reject(error));
   if (!stat) return sha256("MISSING");
   if (stat.isSymbolicLink()) return sha256(`LINK:${await fs.readlink(target)}`);
   if (stat.isFile()) return hashFile(target);
-  if (stat.isDirectory()) return `sha256:${await hashResourcePath({ artifactRoot: target, relativePath: ".", allowContainedSymlinks: true })}`;
+  if (stat.isDirectory()) return `sha256:${await hashResourcePath({ artifactRoot: path.dirname(target), relativePath: path.basename(target), allowContainedSymlinks: true })}`;
   fail("M11_PROTECTED_BASELINE_PATH_UNSAFE", "baseline identity contains an unsupported filesystem object");
 }
 
-async function captureBaselineIdentity(bootstrap) {
-  const layout = createStackLayout({ homeDir: HOME, configRoot: CONFIG_ROOT });
+export async function captureM11ProtectedBaselineIdentity(bootstrap, operations = {}) {
+  const run = operations.run ?? runOmp;
+  const digest = operations.digest ?? digestM11ProtectedPath;
+  const home = operations.home ?? HOME;
+  const configRoot = operations.configRoot ?? CONFIG_ROOT;
+  const layout = (operations.createLayout ?? createStackLayout)({ homeDir: home, configRoot });
   const [version, status, doctor, stack, settings, lock, lkg, cli, currentArtifact, stackState] = await Promise.all([
-    runOmp(bootstrap, ["version"]),
-    runOmp(bootstrap, ["status"]),
-    runOmp(bootstrap, ["doctor"]),
-    runOmp(bootstrap, ["stack", "status"]),
-    digestOrMissing(path.join(CONFIG_ROOT, "settings.json")),
-    digestOrMissing(path.join(CONFIG_ROOT, "npm", "package-lock.json")),
-    digestOrMissing(path.join(CONFIG_ROOT, "only-my-pi", "state", "last-known-good.json")),
-    digestOrMissing(layout.ompShim),
-    digestOrMissing(path.join(HOME, ".local", "share", "only-my-pi", "current")),
-    digestOrMissing(layout.stateFile),
+    run(bootstrap, ["version"]),
+    run(bootstrap, ["status"]),
+    run(bootstrap, ["doctor"]),
+    run(bootstrap, ["stack", "status"]),
+    digest(path.join(configRoot, "settings.json")),
+    digest(path.join(configRoot, "npm", "package-lock.json")),
+    digest(path.join(configRoot, "only-my-pi", "state", "last-known-good.json")),
+    digest(layout.ompShim),
+    digest(path.join(home, ".local", "share", "only-my-pi", "current")),
+    digest(layout.stateFile),
   ]);
   if (stack.status !== "NOT_INSTALLED" || status.status !== "INSTALLED" || !["PASS", "PASS_WITH_UPDATE_AVAILABLE"].includes(doctor.status)) fail("M11_PROTECTED_PUBLIC_BASELINE_INVALID", "Q11 requires a healthy public baseline with no active Preview stack");
   return Object.freeze({ version: { sourceCommit: version.sourceCommit, artifactSha256: version.artifactSha256, generation: version.installedGenerationId, piVersion: version.piVersion, subagentsVersion: version.subagentsVersion }, status: status.status, doctor: doctor.status, stack: stack.status, settings, lock, lkg, cli, currentArtifact, stackState });
 }
 
-async function captureInstalledIdentity(bootstrap, sourceCommit, stackId) {
+export async function captureM11ProtectedInstalledIdentity(bootstrap, sourceCommit, stackId, operations = {}) {
+  const run = operations.run ?? runOmp;
+  const readSettings = operations.loadSettings ?? loadSettings;
   const [version, status, doctor, stack, settings] = await Promise.all([
-    runOmp(bootstrap, ["version"]),
-    runOmp(bootstrap, ["status"]),
-    runOmp(bootstrap, ["doctor"]),
-    runOmp(bootstrap, ["stack", "status"]),
-    loadSettings(CONFIG_ROOT),
+    run(bootstrap, ["version"]),
+    run(bootstrap, ["status"]),
+    run(bootstrap, ["doctor"]),
+    run(bootstrap, ["stack", "status"]),
+    readSettings(operations.configRoot ?? CONFIG_ROOT),
   ]);
   const bindings = (settings.settings.onlyMyPi?.packageBindings ?? []).filter((entry) => entry.binding === "external" && entry.owner === "user");
   if (version.ok !== true || version.status !== "VERSION_IDENTITY" || version.sourceCommit !== sourceCommit || version.stackId !== stackId || version.releaseChannel !== "preview" || version.embeddedNodeVersion !== "24.19.0" || version.piVersion !== "0.84.3" || version.subagentsVersion !== "0.57.0" || version.decision !== "PUBLIC_PREVIEW") fail("M11_PROTECTED_VERSION_IDENTITY_INVALID", "installed Preview version identity drifted");
@@ -229,7 +238,7 @@ async function captureInstalledIdentity(bootstrap, sourceCommit, stackId) {
   return Object.freeze({ stackId, payloadMode: stack.payloadMode, generationId: stack.generationId, nodeVersion: stack.nodeVersion, piVersion: stack.piVersion, sourceCommit: version.sourceCommit, artifactSha256: version.artifactSha256, bindingCount: bindings.length, externalPackageCount: stack.externalOwnership.packageCount });
 }
 
-async function executableIdentity(command, versionArgs) {
+export async function inspectM11ProtectedExecutable(command, versionArgs) {
   const stat = await fs.lstat(command).catch((error) => error?.code === "ENOENT" ? null : Promise.reject(error));
   if (!stat) return Object.freeze({ exists: false });
   const real = await fs.realpath(command);
@@ -241,24 +250,24 @@ async function executableIdentity(command, versionArgs) {
 
 async function captureSystemRuntime() {
   const [pi, node] = await Promise.all([
-    executableIdentity("/opt/homebrew/bin/pi", ["--version"]),
-    executableIdentity("/opt/homebrew/bin/node", ["--version"]),
+    inspectM11ProtectedExecutable("/opt/homebrew/bin/pi", ["--version"]),
+    inspectM11ProtectedExecutable("/opt/homebrew/bin/node", ["--version"]),
   ]);
   return Object.freeze({ pi, node });
 }
 
-async function applyStack(bootstrap, bundle) {
-  const plan = await runOmp(bootstrap, ["stack", "install", "--bundle", bundle, "--plan"]);
+export async function applyM11ProtectedStack(bootstrap, bundle, run = runOmp) {
+  const plan = await run(bootstrap, ["stack", "install", "--bundle", bundle, "--plan"]);
   if (plan.mutation !== false || plan.stackId === undefined) fail("M11_PROTECTED_STACK_PLAN_INVALID", "stack install did not produce a reviewable plan");
-  const result = await runOmp(bootstrap, ["stack", "install", "--bundle", bundle, "--apply", "--yes", "--terminate-pi"]);
+  const result = await run(bootstrap, ["stack", "install", "--bundle", bundle, "--apply", "--yes", "--terminate-pi"]);
   if (result.ok !== true || !["COMMITTED", "PATH_ACTION_REQUIRED"].includes(result.status)) fail("M11_PROTECTED_STACK_INSTALL_FAILED", "stack install did not commit");
   return Object.freeze({ plan, result });
 }
 
-async function removeStack(bootstrap) {
-  const plan = await runOmp(bootstrap, ["stack", "remove", "--plan"]);
+export async function removeM11ProtectedStack(bootstrap, run = runOmp) {
+  const plan = await run(bootstrap, ["stack", "remove", "--plan"]);
   if (plan.status !== "STACK_REMOVE_PLAN") fail("M11_PROTECTED_STACK_REMOVE_PLAN_INVALID", "stack remove did not produce a reviewable plan");
-  const result = await runOmp(bootstrap, ["stack", "remove", "--apply", "--yes", "--terminate-pi"]);
+  const result = await run(bootstrap, ["stack", "remove", "--apply", "--yes", "--terminate-pi"]);
   if (result.status !== "REMOVED" || result.systemHomebrewModified !== false || result.userDataDeleted !== false) fail("M11_PROTECTED_STACK_REMOVE_FAILED", "stack remove did not restore the prior boundary");
   return Object.freeze({ plan, result });
 }
@@ -290,7 +299,7 @@ export function createM11ProtectedEvidence({ sourceCommit, stackId, usage, value
   return validateM11ProtectedEvidence(document, sourceCommit);
 }
 
-async function writeEvidence(output, evidence) {
+export async function writeM11ProtectedEvidence(output, evidence) {
   if (await fs.lstat(output).then(() => true, (error) => error?.code === "ENOENT" ? false : Promise.reject(error))) fail("M11_PROTECTED_OUTPUT_EXISTS", "protected evidence output already exists");
   const temporary = `${output}.${crypto.randomUUID()}.tmp`;
   try {
@@ -305,9 +314,26 @@ function same(left, right) {
   return canonicalJson(left) === canonicalJson(right);
 }
 
-export async function executeM11ProtectedAcceptance(args, { now = () => new Date() } = {}) {
-  const head = await git(["rev-parse", "HEAD"]);
-  const clean = await git(["status", "--porcelain=v1", "--untracked-files=all"]) === "";
+export async function executeM11ProtectedAcceptance(args, {
+  now = () => new Date(),
+  operations = {},
+} = {}) {
+  const ops = {
+    git,
+    inspectReleaseRoot: inspectM11ProtectedReleaseRoot,
+    prepareBootstrap: prepareM11ProtectedBootstrap,
+    captureBaselineIdentity: captureM11ProtectedBaselineIdentity,
+    captureSystemRuntime,
+    applyStack: applyM11ProtectedStack,
+    captureInstalledIdentity: captureM11ProtectedInstalledIdentity,
+    removeStack: removeM11ProtectedStack,
+    runPublicBaselineLiveMatrix,
+    verifyPublicPiList,
+    writeEvidence: writeM11ProtectedEvidence,
+    ...operations,
+  };
+  const head = await ops.git(["rev-parse", "HEAD"]);
+  const clean = await ops.git(["status", "--porcelain=v1", "--untracked-files=all"]) === "";
   const plan = Object.freeze({
     status: clean ? "M11_PROTECTED_PLAN_READY" : "M11_PROTECTED_PLAN_BLOCKED",
     sourceCommit: head,
@@ -321,40 +347,40 @@ export async function executeM11ProtectedAcceptance(args, { now = () => new Date
   if (args.operation === "plan") return Object.freeze({ ok: clean, status: plan.status, mutation: false, plan, exitCode: 0 });
   if (!clean || head !== args.sourceCommit) fail("M11_PROTECTED_SOURCE_INVALID", "protected Q11 requires the exact clean source S");
   if (await fs.lstat(args.output).then(() => true, (error) => error?.code === "ENOENT" ? false : Promise.reject(error))) fail("M11_PROTECTED_OUTPUT_EXISTS", "protected evidence output already exists");
-  const release = await inspectReleaseRoot(args.releaseRoot, head);
+  const release = await ops.inspectReleaseRoot(args.releaseRoot, head);
   const workspace = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "only-my-pi-q11-")));
   await fs.chmod(workspace, 0o700);
   let active = false;
   let bootstrap;
   try {
-    bootstrap = await prepareBootstrap(release, workspace);
-    const [baseline, systemBefore] = await Promise.all([captureBaselineIdentity(bootstrap), captureSystemRuntime()]);
+    bootstrap = await ops.prepareBootstrap(release, workspace);
+    const [baseline, systemBefore] = await Promise.all([ops.captureBaselineIdentity(bootstrap), ops.captureSystemRuntime()]);
 
-    const thinApply = await applyStack(bootstrap, release.assets.thin);
+    const thinApply = await ops.applyStack(bootstrap, release.assets.thin);
     active = true;
-    const thin = await captureInstalledIdentity(bootstrap, head, release.stackManifest.stackId);
-    await removeStack(bootstrap);
+    const thin = await ops.captureInstalledIdentity(bootstrap, head, release.stackManifest.stackId);
+    await ops.removeStack(bootstrap);
     active = false;
-    const restoredAfterThin = await captureBaselineIdentity(bootstrap);
+    const restoredAfterThin = await ops.captureBaselineIdentity(bootstrap);
     if (!same(restoredAfterThin, baseline)) fail("M11_PROTECTED_BASELINE_ROLLBACK_DRIFT", "Thin removal did not exactly restore the public baseline");
 
-    const fullApply = await applyStack(bootstrap, release.assets.full);
+    const fullApply = await ops.applyStack(bootstrap, release.assets.full);
     active = true;
-    const full = await captureInstalledIdentity(bootstrap, head, release.stackManifest.stackId);
+    const full = await ops.captureInstalledIdentity(bootstrap, head, release.stackManifest.stackId);
     if (thin.stackId !== full.stackId || thin.generationId !== full.generationId || thin.artifactSha256 !== full.artifactSha256) fail("M11_PROTECTED_PAYLOAD_CONVERGENCE_FAILED", "Full and Thin installed different stack identities");
-    const live = await runPublicBaselineLiveMatrix({ sourceCommit: head, installed: full, piCommand: CONTROLLED_PI });
+    const live = await ops.runPublicBaselineLiveMatrix({ sourceCommit: head, installed: full, piCommand: CONTROLLED_PI });
     if (live.usage.tokens > 75_000 || live.usage.costUsd !== 0 || live.wallSeconds > 3_600) fail("M11_PROTECTED_LIVE_BUDGET_EXCEEDED", "protected release matrix exceeded its aggregate budget");
-    const piList = await verifyPublicPiList(CONTROLLED_PI);
+    const piList = await ops.verifyPublicPiList(CONTROLLED_PI);
 
-    await removeStack(bootstrap);
+    await ops.removeStack(bootstrap);
     active = false;
-    const restoredAfterFull = await captureBaselineIdentity(bootstrap);
+    const restoredAfterFull = await ops.captureBaselineIdentity(bootstrap);
     if (!same(restoredAfterFull, baseline)) fail("M11_PROTECTED_STACK_REMOVE_DRIFT", "Full stack removal did not exactly restore the public baseline");
 
-    const reinstallApply = await applyStack(bootstrap, release.assets.thin);
+    const reinstallApply = await ops.applyStack(bootstrap, release.assets.thin);
     active = true;
-    const reinstalled = await captureInstalledIdentity(bootstrap, head, release.stackManifest.stackId);
-    const systemAfter = await captureSystemRuntime();
+    const reinstalled = await ops.captureInstalledIdentity(bootstrap, head, release.stackManifest.stackId);
+    const systemAfter = await ops.captureSystemRuntime();
     if (!same(systemAfter, systemBefore)) fail("M11_PROTECTED_SYSTEM_RUNTIME_DRIFT", "system Homebrew Pi or Node changed during Q11");
 
     const records = liveMap(live);
@@ -381,13 +407,13 @@ export async function executeM11ProtectedAcceptance(args, { now = () => new Date
       "system-runtime-preservation": systemAfter,
     };
     const evidence = createM11ProtectedEvidence({ sourceCommit: head, stackId: full.stackId, usage: { ...live.usage, wallSeconds: live.wallSeconds }, values });
-    await writeEvidence(args.output, evidence);
+    await ops.writeEvidence(args.output, evidence);
     active = false;
     return Object.freeze({ ok: true, status: "M11_PROTECTED_RELEASE_MATRIX_COMPLETE", sourceCommit: head, stackId: full.stackId, assertionCount: evidence.assertions.length, evidenceDigest: evidence.evidenceDigest, output: path.relative(ROOT, args.output), finalStack: "THIN_REINSTALLED", exitCode: 0, completedAt: now().toISOString() });
   } catch (error) {
     if (active && bootstrap) {
       try {
-        await removeStack(bootstrap);
+        await ops.removeStack(bootstrap);
       } catch (rollbackError) {
         fail("M11_PROTECTED_AUTOMATIC_ROLLBACK_FAILED", "Q11 failure could not restore the public baseline", { cause: error, rollbackError });
       }

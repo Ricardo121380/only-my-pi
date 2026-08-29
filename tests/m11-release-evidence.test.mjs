@@ -8,7 +8,7 @@ import { promisify } from "node:util";
 
 import { canonicalJson } from "../packages/config-runtime/index.mjs";
 import { sha256 } from "../packages/release-stack/index.mjs";
-import { extractM11ReleaseEvidence } from "../scripts/m11-release-evidence.mjs";
+import { extractM11ReleaseEvidence, parseM11ReleaseEvidenceArgs } from "../scripts/m11-release-evidence.mjs";
 import { M11_PROTECTED_ASSERTION_IDS } from "../scripts/m11-release-gates.mjs";
 
 const execFile = promisify(execFileCallback);
@@ -61,4 +61,11 @@ test("release evidence extraction accepts only one direct evidence child of sour
   assert.equal(JSON.parse(await fs.readFile(outputPath, "utf8")).sourceCommit, sourceCommit);
   await fs.writeFile(path.join(root, "source.txt"), "dirty\n");
   await assert.rejects(extractM11ReleaseEvidence({ rootDir: root, sourceCommit, evidenceCommit, evidencePath: relative, outputPath: path.join(outputParent, "second.json") }), { code: "M11_RELEASE_EVIDENCE_SOURCE_INVALID" });
+});
+
+test("release evidence CLI parser rejects duplicate, unknown and missing values", () => {
+  assert.deepEqual(parseM11ReleaseEvidenceArgs(["--source-commit", "a", "--evidence-commit", "b", "--evidence-path", "verification/protected/q11.json", "--output", "/tmp/out", "--json"]), { sourceCommit: "a", evidenceCommit: "b", evidencePath: "verification/protected/q11.json", outputPath: "/tmp/out", json: true });
+  assert.throws(() => parseM11ReleaseEvidenceArgs(["--json", "--json"]), { code: "M11_RELEASE_EVIDENCE_ARGUMENT_INVALID" });
+  assert.throws(() => parseM11ReleaseEvidenceArgs(["--unknown"]), { code: "M11_RELEASE_EVIDENCE_ARGUMENT_INVALID" });
+  assert.throws(() => parseM11ReleaseEvidenceArgs(["--output", "--json"]), { code: "M11_RELEASE_EVIDENCE_ARGUMENT_INVALID" });
 });

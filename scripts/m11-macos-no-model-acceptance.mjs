@@ -28,13 +28,13 @@ function fail(code, message) {
   throw error;
 }
 
-function parse(argv) {
+export function parseM11MacosNoModelArgs(argv) {
   const tokens = new Set(argv);
   if (tokens.size !== argv.length || argv.some((token) => !["--run", "--json"].includes(token)) || !tokens.has("--run")) fail("Q10_ARGUMENT_INVALID", "Q10 requires exactly --run and optionally --json");
   return { json: tokens.has("--json") };
 }
 
-function platform() {
+export function inspectM11MacosPlatform() {
   if (process.platform !== "darwin" || process.arch !== "arm64") fail("Q10_PLATFORM_UNSUPPORTED", "Q10 requires native macOS Apple Silicon");
   let version;
   let translated = "0";
@@ -49,7 +49,7 @@ function platform() {
   return Object.freeze({ os: "darwin", arch: "arm64", minimumMacOSSatisfied: true, rosetta: false, majorVersion: major });
 }
 
-async function realReleaseRoot(requested = process.env.M11_Q10_RELEASE_ROOT) {
+export async function resolveM11Q10ReleaseRoot(requested = process.env.M11_Q10_RELEASE_ROOT) {
   if (typeof requested !== "string" || !path.isAbsolute(requested)) fail("Q10_RELEASE_ROOT_REQUIRED", "M11_Q10_RELEASE_ROOT must be an absolute RC directory");
   const stat = await fs.lstat(requested).catch(() => null);
   const real = stat ? await fs.realpath(requested).catch(() => null) : null;
@@ -63,23 +63,34 @@ async function missing(target) {
   return fs.lstat(target).then(() => false, (error) => error?.code === "ENOENT" ? true : Promise.reject(error));
 }
 
-async function installOne({ releaseRoot, payloadMode, platformIdentity, workspace }) {
+export async function installM11NoModelPayload({ releaseRoot, payloadMode, platformIdentity, workspace }, operations = {}) {
+  const ops = {
+    createLayout: createStackLayout,
+    createSource: (options) => createLocalReleasePayloadSource({ ...options, thinResolver: createThinPayloadResolver() }),
+    extract: extractVerifiedTarGzip,
+    createHarness: createStackHarnessAdapter,
+    createEngine: (options) => new StackTransactionEngine(options),
+    createService: createStackService,
+    plan: planStackEnvironment,
+    missing,
+    ...operations,
+  };
   const home = path.join(workspace, `home-${payloadMode}`);
   const cache = path.join(workspace, `cache-${payloadMode}`);
   await fs.mkdir(home, { recursive: true, mode: 0o700 });
-  const layout = createStackLayout({ homeDir: home });
-  const source = createLocalReleasePayloadSource({ cacheRoot: cache, thinResolver: createThinPayloadResolver() });
+  const layout = ops.createLayout({ homeDir: home });
+  const source = ops.createSource({ cacheRoot: cache });
   const bundle = path.join(releaseRoot, `only-my-pi-0.2.0-preview.1-darwin-arm64-${payloadMode}.tar.gz`);
   const inspection = await source.inspect({ bundle });
   if (inspection.payloadMode !== payloadMode) fail("Q10_PAYLOAD_MODE_DRIFT", `Q10 ${payloadMode} asset identity drifted`);
   const prepared = await source.prepare({ bundle });
   const harnessExtraction = path.join(workspace, `harness-${payloadMode}`);
-  await extractVerifiedTarGzip({ archivePath: path.join(prepared.resolvedRoot, "only-my-pi.tgz"), destination: harnessExtraction, expectedSha256: inspection.stackManifest.onlyMyPi.artifactSha256, maxEntries: 50_000, maxExtractedBytes: 512 * 1024 * 1024 });
-  const harness = createStackHarnessAdapter({ rootDir: path.join(harnessExtraction, "package"), configRoot: layout.configRoot });
-  const engine = new StackTransactionEngine({ layout, harness, doctor: async () => ({ ok: true, status: "Q10_STATIC_DOCTOR_PASSED" }), smoke: async () => ({ ok: true, status: "Q10_NO_MODEL_SMOKE_PASSED" }) });
-  const service = createStackService({ layout, localSource: source, releaseSource: source, engine, platformInspector: async () => platformIdentity, pathValue: () => layout.binRoot });
+  await ops.extract({ archivePath: path.join(prepared.resolvedRoot, "only-my-pi.tgz"), destination: harnessExtraction, expectedSha256: inspection.stackManifest.onlyMyPi.artifactSha256, maxEntries: 50_000, maxExtractedBytes: 512 * 1024 * 1024 });
+  const harness = ops.createHarness({ rootDir: path.join(harnessExtraction, "package"), configRoot: layout.configRoot });
+  const engine = ops.createEngine({ layout, harness, doctor: async () => ({ ok: true, status: "Q10_STATIC_DOCTOR_PASSED" }), smoke: async () => ({ ok: true, status: "Q10_NO_MODEL_SMOKE_PASSED" }) });
+  const service = ops.createService({ layout, localSource: source, releaseSource: source, engine, platformInspector: async () => platformIdentity, pathValue: () => layout.binRoot });
   try {
-    const plan = await planStackEnvironment({ layout, stackManifest: inspection.stackManifest, payloadMode, operation: "install", platform: platformIdentity, pathValue: layout.binRoot });
+    const plan = await ops.plan({ layout, stackManifest: inspection.stackManifest, payloadMode, operation: "install", platform: platformIdentity, pathValue: layout.binRoot });
     const applied = await engine.apply({ plan, stackManifest: inspection.stackManifest, resolvedRoot: prepared.resolvedRoot });
     if (!applied.ok || !["COMMITTED", "PATH_ACTION_REQUIRED"].includes(applied.status)) fail("Q10_INSTALL_FAILED", `Q10 ${payloadMode} install did not commit`);
     const status = await service.status();
@@ -87,22 +98,25 @@ async function installOne({ releaseRoot, payloadMode, platformIdentity, workspac
     const removal = await service.planLifecycle({ subcommand: "remove" });
     const removed = await service.applyLifecycle({ subcommand: "remove" }, removal);
     if (removed.status !== "REMOVED" || (await service.status()).status !== "NOT_INSTALLED") fail("Q10_REMOVE_FAILED", `Q10 ${payloadMode} removal did not restore the empty baseline`);
-    if (!(await missing(layout.ompShim)) || !(await missing(layout.piShim)) || !(await missing(layout.npmRoot))) fail("Q10_REMOVE_PRESERVATION_FAILED", `Q10 ${payloadMode} removal left provisioned entrypoints or package roots`);
-    for (const relative of ["auth.json", "sessions", "models.json", "memory"]) if (!(await missing(path.join(layout.configRoot, relative)))) fail("Q10_PRIVATE_DATA_TOUCHED", `Q10 created private user data: ${relative}`);
+    if (!(await ops.missing(layout.ompShim)) || !(await ops.missing(layout.piShim)) || !(await ops.missing(layout.npmRoot))) fail("Q10_REMOVE_PRESERVATION_FAILED", `Q10 ${payloadMode} removal left provisioned entrypoints or package roots`);
+    for (const relative of ["auth.json", "sessions", "models.json", "memory"]) if (!(await ops.missing(path.join(layout.configRoot, relative)))) fail("Q10_PRIVATE_DATA_TOUCHED", `Q10 created private user data: ${relative}`);
     return Object.freeze({ payloadMode, stackId: inspection.stackId, installStatus: applied.status, installedStatus: status.status, removeStatus: removed.status, externalOwner: status.externalOwnership.owner, generationId: status.generationId });
   } finally {
     await prepared.cleanup();
   }
 }
 
-export async function runM11MacosNoModelAcceptance({ releaseRoot } = {}) {
-  const platformIdentity = platform();
-  const resolvedReleaseRoot = await realReleaseRoot(releaseRoot);
+export async function runM11MacosNoModelAcceptance({ releaseRoot, operations = {} } = {}) {
+  const inspectPlatform = operations.platform ?? inspectM11MacosPlatform;
+  const resolveReleaseRoot = operations.realReleaseRoot ?? resolveM11Q10ReleaseRoot;
+  const install = operations.install ?? installM11NoModelPayload;
+  const platformIdentity = inspectPlatform();
+  const resolvedReleaseRoot = await resolveReleaseRoot(releaseRoot);
   const workspace = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "only-my-pi-q10-")));
   await fs.chmod(workspace, 0o700);
   try {
-    const full = await installOne({ releaseRoot: resolvedReleaseRoot, payloadMode: "full", platformIdentity, workspace });
-    const thin = await installOne({ releaseRoot: resolvedReleaseRoot, payloadMode: "thin", platformIdentity, workspace });
+    const full = await install({ releaseRoot: resolvedReleaseRoot, payloadMode: "full", platformIdentity, workspace });
+    const thin = await install({ releaseRoot: resolvedReleaseRoot, payloadMode: "thin", platformIdentity, workspace });
     if (full.stackId !== thin.stackId || full.generationId !== thin.generationId) fail("Q10_PAYLOAD_CONVERGENCE_FAILED", "Q10 Full and Thin installed different stack or generation identities");
     return Object.freeze({ formatVersion: 1, ok: true, status: "Q10_MACOS_ARM64_NO_MODEL_PASSED", code: "Q10_MACOS_ARM64_NO_MODEL_PASSED", message: "Full and Thin clean-home installs converged, verified and removed", next: null, platform: "darwin-arm64", minimumMacOSMajor: platformIdentity.majorVersion, stackId: full.stackId, generationId: full.generationId, payloads: [full, thin], networkHosts: ["nodejs.org", "registry.npmjs.org"], providerRequests: 0, systemHomebrewModified: false, privateUserDataRead: false, receiptDigest: sha256(JSON.stringify({ full, thin })) });
   } finally {
@@ -111,7 +125,7 @@ export async function runM11MacosNoModelAcceptance({ releaseRoot } = {}) {
 }
 
 export async function main(argv = process.argv.slice(2)) {
-  const args = parse(argv);
+  const args = parseM11MacosNoModelArgs(argv);
   const result = await runM11MacosNoModelAcceptance();
   process.stdout.write(`${JSON.stringify(result, null, args.json ? 2 : 0)}\n`);
   return 0;
