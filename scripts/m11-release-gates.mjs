@@ -151,7 +151,7 @@ function skippedResult(id, execution, status) {
   return Object.freeze({ id, execution, status, passed: false, durationMs: 0, stdoutBytes: 0, stderrBytes: 0, stdoutSha256: digest(""), stderrSha256: digest("") });
 }
 
-function validateProtectedEvidence(document, expectedSourceCommit) {
+export function validateM11ProtectedEvidence(document, expectedSourceCommit) {
   if (!exactObject(document, ["formatVersion", "kind", "gateId", "evidenceId", "status", "sourceCommit", "stackId", "assertions", "privacy", "evidenceDigest"])) fail("M11_PROTECTED_EVIDENCE_INVALID", "Q11 evidence field set is invalid");
   if (document.formatVersion !== 1 || document.kind !== "only-my-pi-m11-protected-release-evidence" || document.gateId !== "Q11" || document.evidenceId !== "m11-protected-final-release-matrix" || document.status !== "PASS" || document.sourceCommit !== expectedSourceCommit || !SHA256.test(document.stackId ?? "")) fail("M11_PROTECTED_EVIDENCE_INVALID", "Q11 evidence identity is invalid");
   if (!Array.isArray(document.assertions) || document.assertions.length !== 20 || document.assertions.some((entry) => !exactObject(entry, ["id", "status", "evidenceSha256"]) || typeof entry.id !== "string" || entry.status !== "PASS" || !SHA256.test(entry.evidenceSha256 ?? "")) || new Set(document.assertions.map((entry) => entry.id)).size !== 20) fail("M11_PROTECTED_EVIDENCE_INVALID", "Q11 evidence must contain 20 unique passing assertions");
@@ -176,7 +176,7 @@ async function loadProtectedEvidence(rootDir, relative, sourceCommit, verifyGit)
     const changed = git(rootDir, ["diff", "--name-only", "--no-renames", `${sourceCommit}..${evidenceCommit}`]).split("\n").filter(Boolean);
     if (!equal(parents, [sourceCommit]) || !equal(changed, [relative])) fail("M11_EVIDENCE_COMMIT_INVALID", "Q11 evidence must be the only file in a direct evidence-only child of source S");
   }
-  return validateProtectedEvidence(JSON.parse(await fsPromises.readFile(real, "utf8")), sourceCommit);
+  return validateM11ProtectedEvidence(JSON.parse(await fsPromises.readFile(real, "utf8")), sourceCommit);
 }
 
 export function inspectM11Gates(argv = process.argv.slice(2), { rootDir = ROOT } = {}) {
