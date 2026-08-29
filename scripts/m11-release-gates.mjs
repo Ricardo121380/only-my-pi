@@ -30,7 +30,7 @@ const COMMANDS = Object.freeze({
   Q8: ["node", ["--test", "tests/release-stack-service.test.mjs", "tests/version-service.test.mjs"]],
   Q9: ["node", ["--test", "tests/stack-transaction.test.mjs", "tests/release-stack-service.test.mjs"]],
   Q10: ["node", ["scripts/m11-macos-no-model-acceptance.mjs", "--run", "--json"]],
-  Q12: ["node", ["--test", "tests/m11-release-gates.test.mjs", "tests/ci-contract.test.mjs", "tests/docs-links.test.mjs"]],
+  Q12: ["node", ["--test", "tests/m11-release-gates.test.mjs", "tests/m11-protected-release-acceptance.test.mjs", "tests/m11-release-evidence.test.mjs", "tests/m11-release-core.test.mjs", "tests/ci-contract.test.mjs", "tests/docs-links.test.mjs"]],
 });
 
 function fail(code, message) {
@@ -151,10 +151,35 @@ function skippedResult(id, execution, status) {
   return Object.freeze({ id, execution, status, passed: false, durationMs: 0, stdoutBytes: 0, stderrBytes: 0, stdoutSha256: digest(""), stderrSha256: digest("") });
 }
 
+export const M11_PROTECTED_ASSERTION_IDS = Object.freeze([
+  "thin-install",
+  "full-install",
+  "payload-convergence",
+  "agent-terminal",
+  "workflow-artifact-flow",
+  "ultra-route",
+  "public-web",
+  "cancellation",
+  "cross-session-resume",
+  "budget-denial",
+  "writer-denial",
+  "usage-metering",
+  "embedded-runtime-identity",
+  "cli-generation-identity",
+  "external-ownership",
+  "no-duplicate-runtime-owner",
+  "public-baseline-rollback",
+  "stack-remove",
+  "reinstall",
+  "system-runtime-preservation",
+].sort());
+
 export function validateM11ProtectedEvidence(document, expectedSourceCommit) {
-  if (!exactObject(document, ["formatVersion", "kind", "gateId", "evidenceId", "status", "sourceCommit", "stackId", "assertions", "privacy", "evidenceDigest"])) fail("M11_PROTECTED_EVIDENCE_INVALID", "Q11 evidence field set is invalid");
+  if (!exactObject(document, ["formatVersion", "kind", "gateId", "evidenceId", "status", "sourceCommit", "stackId", "usage", "assertions", "privacy", "evidenceDigest"])) fail("M11_PROTECTED_EVIDENCE_INVALID", "Q11 evidence field set is invalid");
   if (document.formatVersion !== 1 || document.kind !== "only-my-pi-m11-protected-release-evidence" || document.gateId !== "Q11" || document.evidenceId !== "m11-protected-final-release-matrix" || document.status !== "PASS" || document.sourceCommit !== expectedSourceCommit || !SHA256.test(document.stackId ?? "")) fail("M11_PROTECTED_EVIDENCE_INVALID", "Q11 evidence identity is invalid");
-  if (!Array.isArray(document.assertions) || document.assertions.length !== 20 || document.assertions.some((entry) => !exactObject(entry, ["id", "status", "evidenceSha256"]) || typeof entry.id !== "string" || entry.status !== "PASS" || !SHA256.test(entry.evidenceSha256 ?? "")) || new Set(document.assertions.map((entry) => entry.id)).size !== 20) fail("M11_PROTECTED_EVIDENCE_INVALID", "Q11 evidence must contain 20 unique passing assertions");
+  if (!exactObject(document.usage, ["directlyMeteredTokens", "variableCostUsd", "wallSeconds", "toolCalls", "meteredTerminals"]) || !Number.isSafeInteger(document.usage.directlyMeteredTokens) || document.usage.directlyMeteredTokens < 0 || document.usage.directlyMeteredTokens > 75_000 || document.usage.variableCostUsd !== 0 || !Number.isSafeInteger(document.usage.wallSeconds) || document.usage.wallSeconds < 0 || document.usage.wallSeconds > 3_600 || !Number.isSafeInteger(document.usage.toolCalls) || document.usage.toolCalls < 0 || !Number.isSafeInteger(document.usage.meteredTerminals) || document.usage.meteredTerminals < 0) fail("M11_PROTECTED_EVIDENCE_INVALID", "Q11 evidence usage is invalid or exceeds the release budget");
+  const assertionIds = Array.isArray(document.assertions) ? document.assertions.map((entry) => entry?.id).sort() : [];
+  if (!Array.isArray(document.assertions) || document.assertions.length !== M11_PROTECTED_ASSERTION_IDS.length || document.assertions.some((entry) => !exactObject(entry, ["id", "status", "evidenceSha256"]) || typeof entry.id !== "string" || entry.status !== "PASS" || !SHA256.test(entry.evidenceSha256 ?? "")) || !equal(assertionIds, M11_PROTECTED_ASSERTION_IDS)) fail("M11_PROTECTED_EVIDENCE_INVALID", "Q11 evidence must contain the exact 20 passing release assertions");
   if (!equal(document.privacy, { rawPromptsStored: false, rawOutputsStored: false, reasoningStored: false, hostPathsStored: false, secretsStored: false, sessionsStored: false })) fail("M11_PROTECTED_EVIDENCE_INVALID", "Q11 evidence privacy boundary drifted");
   const unsigned = structuredClone(document);
   delete unsigned.evidenceDigest;

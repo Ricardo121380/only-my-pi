@@ -9,6 +9,7 @@ import { promisify } from "node:util";
 import { canonicalJson } from "../packages/config-runtime/index.mjs";
 import { sha256 } from "../packages/release-stack/index.mjs";
 import { extractM11ReleaseEvidence } from "../scripts/m11-release-evidence.mjs";
+import { M11_PROTECTED_ASSERTION_IDS } from "../scripts/m11-release-gates.mjs";
 
 const execFile = promisify(execFileCallback);
 
@@ -26,7 +27,8 @@ function evidence(sourceCommit) {
     status: "PASS",
     sourceCommit,
     stackId: `sha256:${"1".repeat(64)}`,
-    assertions: Array.from({ length: 20 }, (_, index) => ({ id: `A${index + 1}`, status: "PASS", evidenceSha256: `sha256:${String(index + 1).padStart(64, "0")}` })),
+    usage: { directlyMeteredTokens: 100, variableCostUsd: 0, wallSeconds: 10, toolCalls: 2, meteredTerminals: 1 },
+    assertions: M11_PROTECTED_ASSERTION_IDS.map((id, index) => ({ id, status: "PASS", evidenceSha256: `sha256:${String(index + 1).padStart(64, "0")}` })),
     privacy: { rawPromptsStored: false, rawOutputsStored: false, reasoningStored: false, hostPathsStored: false, secretsStored: false, sessionsStored: false },
   };
   document.evidenceDigest = sha256(canonicalJson(document));

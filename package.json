@@ -151,6 +151,7 @@
     "verify:m11:q10:ci": "node scripts/m11-q10-ci.mjs --json",
     "build:m11:workflow": "node scripts/m11-workflow-build.mjs --json",
     "check:m11:release-core": "node scripts/m11-compare-release-core.mjs --json",
+    "plan:m11:protected": "node scripts/m11-protected-release-acceptance.mjs --plan --json",
     "plan:public-baseline:protected": "node scripts/public-baseline-protected-acceptance.mjs --plan --json",
     "compatibility:m9": "node scripts/m9-upstream-compatibility.mjs --plan --json",
     "probe:m9": "node scripts/m9-upstream-compatibility.mjs --probe --json",

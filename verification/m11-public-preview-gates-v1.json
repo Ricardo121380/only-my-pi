@@ -120,7 +120,7 @@
       "id": "Q12",
       "description": "Public GitHub, workflow, documentation and receipt consistency.",
       "command": "node",
-      "args": ["--test", "tests/m11-release-gates.test.mjs", "tests/ci-contract.test.mjs", "tests/docs-links.test.mjs"],
+      "args": ["--test", "tests/m11-release-gates.test.mjs", "tests/m11-protected-release-acceptance.test.mjs", "tests/m11-release-evidence.test.mjs", "tests/m11-release-core.test.mjs", "tests/ci-contract.test.mjs", "tests/docs-links.test.mjs"],
       "timeoutMs": 600000,
       "maxOutputBytes": 8388608,
       "execution": "deterministic"

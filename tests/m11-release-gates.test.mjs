@@ -3,7 +3,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { inspectM11Gates, parseM11GateArgs, runM11ReleaseVerification, validateM11GateManifest } from "../scripts/m11-release-gates.mjs";
+import { M11_PROTECTED_ASSERTION_IDS, inspectM11Gates, parseM11GateArgs, runM11ReleaseVerification, validateM11GateManifest } from "../scripts/m11-release-gates.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -16,6 +16,7 @@ test("M11 manifest fixes ten deterministic gates, one explicit platform gate and
   assert.equal(inspected.deterministicGateIds.length, 10);
   assert.deepEqual(inspected.platformGateIds, ["Q10"]);
   assert.deepEqual(inspected.protectedGateIds, ["Q11"]);
+  assert.equal(M11_PROTECTED_ASSERTION_IDS.length, 20);
   assert.equal(inspectM11Gates(["--gate", "Q11"], { rootDir: ROOT }).gate.command, null);
   assert.throws(() => validateM11GateManifest({}), { code: "M11_GATE_MANIFEST_INVALID" });
 });

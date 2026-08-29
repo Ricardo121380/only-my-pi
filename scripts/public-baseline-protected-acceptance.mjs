@@ -191,8 +191,8 @@ async function inspectArtifact(artifact, sourceCommit) {
   return Object.freeze({ sha256, bytes: stat.size });
 }
 
-async function verifyPiList() {
-  const result = await execFile(PI_COMMAND, ["list", "--no-approve"], { cwd: ROOT, env: environment(), encoding: "utf8", timeout: 60_000, maxBuffer: 1024 * 1024 });
+export async function verifyPublicPiList(piCommand = PI_COMMAND) {
+  const result = await execFile(piCommand, ["list", "--no-approve"], { cwd: ROOT, env: environment(), encoding: "utf8", timeout: 60_000, maxBuffer: 1024 * 1024 });
   const packageLines = result.stdout.split(/\r?\n/gu).filter((line) => /^  (?:npm:|\.\/only-my-pi\/)/u.test(line));
   const expected = M10_EXACT_PACKAGE_TARGET.map((entry) => `npm:${entry.name}@${entry.toVersion}`);
   if (packageLines.length !== 10 || expected.some((spec) => packageLines.filter((line) => line.trim().startsWith(spec)).length !== 1)
@@ -210,8 +210,8 @@ function liveById(evidence) {
   return new Map(evidence.assertions.map((entry) => [entry.id, entry]));
 }
 
-async function runLiveMatrix({ sourceCommit, installed }) {
-  const auth = await runJson(PI_COMMAND, ["auth", "check", "--provider", PROVIDER, "--model", MODEL, "--json", "--no-refresh"], { timeout: 30_000 });
+export async function runPublicBaselineLiveMatrix({ sourceCommit, installed, piCommand = PI_COMMAND }) {
+  const auth = await runJson(piCommand, ["auth", "check", "--provider", PROVIDER, "--model", MODEL, "--json", "--no-refresh"], { timeout: 30_000 });
   if (auth.status !== "ready" || auth.provider !== PROVIDER) fail("PUBLIC_BASELINE_PROTECTED_AUTH_UNAVAILABLE", "Pi authentication is not ready for the approved model");
   const npmRoot = path.join(CONFIG_ROOT, "npm");
   const subagentsRoot = await fs.realpath(path.join(npmRoot, "node_modules", "pi-subagents"));
@@ -236,8 +236,8 @@ async function runLiveMatrix({ sourceCommit, installed }) {
   };
   const acceptanceExtension = path.join(ROOT, "packages", "subagents", "release", "m9-live-acceptance-extension.mjs");
   const started = Date.now();
-  const main = await runPiM9Phase({ piCommand: PI_COMMAND, phase: "main", request, configRoot: CONFIG_ROOT, subagentsEntry, acceptanceExtension, timeoutMs: 30 * 60 * 1000 });
-  const resume = await runPiM9Phase({ piCommand: PI_COMMAND, phase: "resume", request, configRoot: CONFIG_ROOT, subagentsEntry, acceptanceExtension, timeoutMs: 10 * 60 * 1000 });
+  const main = await runPiM9Phase({ piCommand, phase: "main", request, configRoot: CONFIG_ROOT, subagentsEntry, acceptanceExtension, timeoutMs: 30 * 60 * 1000 });
+  const resume = await runPiM9Phase({ piCommand, phase: "resume", request, configRoot: CONFIG_ROOT, subagentsEntry, acceptanceExtension, timeoutMs: 10 * 60 * 1000 });
   for (const record of [main, resume]) {
     if (record?.type !== M9_LIVE_RECORD_TYPE || record.status !== "PASS" || record.sourceCommit !== sourceCommit
       || JSON.stringify(record.candidate) !== JSON.stringify(M9_LIVE_CANDIDATE)
@@ -382,8 +382,8 @@ export async function executePublicBaselineProtected(args, { now = () => new Dat
     if (reapply.status !== "ARTIFACT_APPLIED") fail("PUBLIC_BASELINE_PROTECTED_REAPPLY_INVALID", "sanitized baseline artifact reapply did not commit");
     const installed = await captureIdentity();
     if (installed.version.sourceCommit !== head || installed.version.artifactSha256 !== artifact.sha256) fail("PUBLIC_BASELINE_PROTECTED_REAPPLY_INVALID", "reapplied CLI does not match sanitized B artifact");
-    const live = await runLiveMatrix({ sourceCommit: head, installed });
-    const piList = await verifyPiList();
+    const live = await runPublicBaselineLiveMatrix({ sourceCommit: head, installed });
+    const piList = await verifyPublicPiList();
     const evidence = createEvidence({
       sourceCommit: head,
       artifact,
