@@ -248,7 +248,7 @@ export async function inspectM11ProtectedExecutable(command, versionArgs) {
   return Object.freeze({ exists: true, executableSha256: await hashFile(real), versionDigest: sha256(stdout.trim()) });
 }
 
-async function captureSystemRuntime() {
+export async function captureM11ProtectedSystemRuntime() {
   const [pi, node] = await Promise.all([
     inspectM11ProtectedExecutable("/opt/homebrew/bin/pi", ["--version"]),
     inspectM11ProtectedExecutable("/opt/homebrew/bin/node", ["--version"]),
@@ -323,7 +323,7 @@ export async function executeM11ProtectedAcceptance(args, {
     inspectReleaseRoot: inspectM11ProtectedReleaseRoot,
     prepareBootstrap: prepareM11ProtectedBootstrap,
     captureBaselineIdentity: captureM11ProtectedBaselineIdentity,
-    captureSystemRuntime,
+    captureSystemRuntime: captureM11ProtectedSystemRuntime,
     applyStack: applyM11ProtectedStack,
     captureInstalledIdentity: captureM11ProtectedInstalledIdentity,
     removeStack: removeM11ProtectedStack,

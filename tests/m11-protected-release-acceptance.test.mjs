@@ -14,6 +14,7 @@ import {
   applyM11ProtectedStack,
   captureM11ProtectedBaselineIdentity,
   captureM11ProtectedInstalledIdentity,
+  captureM11ProtectedSystemRuntime,
   createM11ProtectedEvidence,
   digestM11ProtectedPath,
   executeM11ProtectedAcceptance,
@@ -219,6 +220,9 @@ test("Q11 executable inspection records only digest identity", async () => {
   assert.equal(identity.exists, true);
   assert.match(identity.executableSha256, /^sha256:/u);
   assert.match(identity.versionDigest, /^sha256:/u);
+  const system = await captureM11ProtectedSystemRuntime();
+  assert.equal(typeof system.pi.exists, "boolean");
+  assert.equal(typeof system.node.exists, "boolean");
 });
 
 test("Q11 bootstrap uses only embedded Node, offline npm and scripts-disabled staging", async (t) => {
