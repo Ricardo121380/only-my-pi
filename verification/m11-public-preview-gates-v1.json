@@ -34,7 +34,7 @@
       "id": "Q3",
       "description": "Complete artifact ledger, license sources, SPDX SBOM and notices.",
       "command": "node",
-      "args": ["--test", "tests/release-artifact-ledger.test.mjs", "tests/release-license-sources.test.mjs"],
+      "args": ["--test", "tests/package-content-identity.test.mjs", "tests/release-artifact-ledger.test.mjs", "tests/release-license-sources.test.mjs"],
       "timeoutMs": 600000,
       "maxOutputBytes": 8388608,
       "execution": "deterministic"

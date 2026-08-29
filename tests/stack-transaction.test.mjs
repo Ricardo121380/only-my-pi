@@ -250,6 +250,9 @@ test("stack remove never deletes an exact preexisting external package tree", as
   });
   await engine.apply({ plan, stackManifest: value.stack, resolvedRoot: value.resolved });
   const service = createStackService({ layout: value.layout, localSource: {}, releaseSource: {}, engine });
+  const state = JSON.parse(await fs.readFile(value.layout.stateFile, "utf8"));
+  assert.equal(state.externalTree.verificationBasis, "BORROWED_PREFLIGHT_SNAPSHOT");
+  assert.equal((await service.status()).status, "INSTALLED");
   const remove = await service.planLifecycle({ subcommand: "remove" });
   await service.applyLifecycle({ subcommand: "remove" }, remove);
   assert.equal(await digestTree(value.layout.configRoot, "npm"), originalTree);

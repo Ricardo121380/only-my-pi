@@ -127,6 +127,7 @@ function state(stack) {
       omp: { targetClass: "USER_LOCAL_CONTROLLED_STACK", digest: digest("omp-shim") },
       pi: { targetClass: "USER_LOCAL_CONTROLLED_STACK", digest: digest("pi-shim") },
     },
+    externalTree: { digest: stack.externalTreeDigest, verificationBasis: "CANONICAL_RELEASE_TREE" },
     externalPackages: stack.externalPackages.map(({ name, version, treeDigest }) => ({ name, version, binding: "external", owner: "user", assetDisposition: "PROVISIONED_FOR_USER", treeDigest })),
     transactionIds: ["00000000-0000-4000-8000-000000000001"],
     removalEligibility: { stack: true, externalTree: true, reasonCodes: [] },

@@ -5,10 +5,10 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { hashResourcePath } from "../packages/bootstrap/graph-plan.mjs";
 import {
   createStackLayout,
   finalizeStackManifest,
+  hashPackageContentTree,
   planStackEnvironment,
 } from "../packages/release-stack/index.mjs";
 
@@ -42,13 +42,14 @@ async function createExternalRoot(layout, stack, { count = 9, extra = null, vers
     lock.packages[""].dependencies[extra] = "1.0.0";
   }
   await fs.writeFile(path.join(layout.npmRoot, "package-lock.json"), `${JSON.stringify(lock, null, 2)}\n`);
+  await fs.writeFile(layout.settingsFile, `${JSON.stringify({ packages: stack.externalPackages.slice(0, count).map((entry) => `npm:${entry.name}@${entry.version}`) }, null, 2)}\n`);
   if (count === 9 && !extra && !versionOverride) {
-    for (const entry of stack.externalPackages) entry.treeDigest = `sha256:${await hashResourcePath({ artifactRoot: layout.npmRoot, relativePath: `node_modules/${entry.name}`, allowContainedSymlinks: true })}`;
+    for (const entry of stack.externalPackages) entry.treeDigest = await hashPackageContentTree(path.join(layout.npmRoot, "node_modules", ...entry.name.split("/")));
     const unsigned = structuredClone(stack); delete unsigned.stackId;
     return finalizeStackManifest(unsigned);
   }
   if (count < 9 && !extra && !versionOverride) {
-    for (const entry of stack.externalPackages.slice(0, count)) entry.treeDigest = `sha256:${await hashResourcePath({ artifactRoot: layout.npmRoot, relativePath: `node_modules/${entry.name}`, allowContainedSymlinks: true })}`;
+    for (const entry of stack.externalPackages.slice(0, count)) entry.treeDigest = await hashPackageContentTree(path.join(layout.npmRoot, "node_modules", ...entry.name.split("/")));
     const unsigned = structuredClone(stack); delete unsigned.stackId;
     return finalizeStackManifest(unsigned);
   }
@@ -77,6 +78,21 @@ test("exact nine-package environment is borrowed without external tree replaceme
   assert.equal(plan.path.actionRequired, false);
 });
 
+test("exact package content is independent of npm dependency placement but own-file drift fails", async (t) => {
+  const borrowed = await fixture(t);
+  const stack = await createExternalRoot(borrowed.layout, borrowed.stack);
+  const packageRoot = path.join(borrowed.layout.npmRoot, "node_modules", "pi-agent-extensions");
+  const nested = path.join(packageRoot, "node_modules", "layout-only");
+  await fs.mkdir(nested, { recursive: true });
+  await fs.writeFile(path.join(nested, "package.json"), `${JSON.stringify({ name: "layout-only", version: "1.0.0" })}\n`);
+  const plan = await planStackEnvironment({ layout: borrowed.layout, stackManifest: stack, payloadMode: "full", platform });
+  assert.equal(plan.external.classification, "EXACT");
+  assert.equal(plan.external.switchRequired, false);
+
+  await fs.appendFile(path.join(packageRoot, "index.js"), "// own-file drift\n");
+  await assert.rejects(planStackEnvironment({ layout: borrowed.layout, stackManifest: stack, payloadMode: "full", platform }), { code: "EXTERNAL_PACKAGE_DRIFT" });
+});
+
 test("governed partial environment can be completed and preserves exact package identities", async (t) => {
   const { layout, stack: initial } = await fixture(t);
   const stack = await createExternalRoot(layout, initial, { count: 4 });
@@ -95,6 +111,23 @@ test("partial roots with unrelated packages and required version conflicts are z
   const second = await fixture(t);
   await createExternalRoot(second.layout, second.stack, { versionOverride: { name: second.stack.externalPackages[0].name, version: "9.9.9" } });
   await assert.rejects(planStackEnvironment({ layout: second.layout, stackManifest: second.stack, payloadMode: "thin", platform }), { code: "REQUIRED_PACKAGE_CONFLICT" });
+});
+
+test("existing package authority requires exact settings and registry provenance", async (t) => {
+  const settingsDrift = await fixture(t);
+  const settingsStack = await createExternalRoot(settingsDrift.layout, settingsDrift.stack);
+  const settings = JSON.parse(await fs.readFile(settingsDrift.layout.settingsFile, "utf8"));
+  settings.packages.push(settings.packages[0]);
+  await fs.writeFile(settingsDrift.layout.settingsFile, `${JSON.stringify(settings, null, 2)}\n`);
+  await assert.rejects(planStackEnvironment({ layout: settingsDrift.layout, stackManifest: settingsStack, payloadMode: "full", platform }), { code: "EXTERNAL_SETTINGS_PACKAGE_CONFLICT" });
+
+  const sourceDrift = await fixture(t);
+  const sourceStack = await createExternalRoot(sourceDrift.layout, sourceDrift.stack);
+  const lockPath = path.join(sourceDrift.layout.npmRoot, "package-lock.json");
+  const lock = JSON.parse(await fs.readFile(lockPath, "utf8"));
+  lock.packages["node_modules/pi-agent-extensions"].resolved = "https://example.invalid/package.tgz";
+  await fs.writeFile(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
+  await assert.rejects(planStackEnvironment({ layout: sourceDrift.layout, stackManifest: sourceStack, payloadMode: "full", platform }), { code: "REQUIRED_PACKAGE_CONFLICT" });
 });
 
 test("unknown user-local shims and unsupported platforms fail before writes", async (t) => {

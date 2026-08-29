@@ -4,6 +4,7 @@ import path from "node:path";
 import { hashResourcePath } from "../bootstrap/graph-plan.mjs";
 import { canonicalJson } from "../config-runtime/index.mjs";
 import { PUBLIC_STACK_PACKAGES, sha256, validateStackManifest } from "./contracts.mjs";
+import { hashPackageContentTree } from "./package-content-identity.mjs";
 
 function fail(code, message, details = {}) {
   const error = new Error(message);
@@ -45,7 +46,42 @@ function topLevelNames(lock) {
   return Object.keys(dependencies).sort();
 }
 
-async function inspectExternalRoot(layout, stack) {
+function exactTarballUrl(name, version) {
+  return `https://registry.npmjs.org/${name}/-/${name.split("/").at(-1)}-${version}.tgz`;
+}
+
+function settingSource(entry) {
+  return typeof entry === "string" ? entry : entry?.source;
+}
+
+async function verifyExistingPackageSettings(layout, expectedPackages) {
+  if (expectedPackages.length === 0) return;
+  const stat = await lstatOrNull(layout.settingsFile);
+  if (!stat?.isFile() || stat.isSymbolicLink() || stat.size < 1 || stat.size > 16 * 1024 * 1024) fail("EXTERNAL_SETTINGS_UNVERIFIABLE", "existing packages require a bounded settings.json");
+  let settings;
+  try { settings = JSON.parse(await fs.readFile(layout.settingsFile, "utf8")); }
+  catch { fail("EXTERNAL_SETTINGS_UNVERIFIABLE", "existing package settings are invalid JSON"); }
+  if (!Array.isArray(settings?.packages)) fail("EXTERNAL_SETTINGS_UNVERIFIABLE", "existing packages require an explicit settings package list");
+  for (const expected of expectedPackages) {
+    const source = `npm:${expected.name}@${expected.version}`;
+    const matches = settings.packages.filter((entry) => settingSource(entry) === source);
+    if (matches.length !== 1) fail("EXTERNAL_SETTINGS_PACKAGE_CONFLICT", `settings must select the exact existing package once: ${expected.name}`);
+  }
+}
+
+async function assertPackagePath(layout, packageRoot, name) {
+  const npmReal = await fs.realpath(layout.npmRoot);
+  let current = layout.npmRoot;
+  for (const segment of ["node_modules", ...name.split("/")]) {
+    current = path.join(current, segment);
+    const stat = await lstatOrNull(current);
+    if (!stat || stat.isSymbolicLink()) fail("EXTERNAL_ROOT_UNVERIFIABLE", `existing package path is unsafe: ${name}`);
+  }
+  const packageReal = await fs.realpath(packageRoot);
+  if (packageReal !== npmReal && !packageReal.startsWith(`${npmReal}${path.sep}`)) fail("EXTERNAL_ROOT_UNVERIFIABLE", `existing package path escapes its root: ${name}`);
+}
+
+export async function inspectExternalRoot(layout, stack) {
   const stat = await lstatOrNull(layout.npmRoot);
   if (!stat) return Object.freeze({ classification: "EMPTY", existing: [], missing: PUBLIC_STACK_PACKAGES.map((entry) => entry.name), rootDigest: null });
   if (!stat.isDirectory() || stat.isSymbolicLink()) fail("EXTERNAL_ROOT_UNSAFE", "existing Pi npm root must be a real directory");
@@ -66,16 +102,18 @@ async function inspectExternalRoot(layout, stack) {
     const relative = `node_modules/${expected.name}`;
     const locked = lock.packages[relative];
     if (!locked) { missing.push(expected.name); continue; }
-    if (locked.version !== expected.version || locked.integrity !== expected.integrity) fail("REQUIRED_PACKAGE_CONFLICT", `existing package differs from Preview target: ${expected.name}`);
+    if (locked.version !== expected.version || locked.integrity !== expected.integrity || locked.resolved !== exactTarballUrl(expected.name, expected.version)) fail("REQUIRED_PACKAGE_CONFLICT", `existing package differs from Preview target: ${expected.name}`);
     const packageRoot = path.join(layout.npmRoot, ...relative.split("/"));
     const packageStat = await lstatOrNull(packageRoot);
     if (!packageStat?.isDirectory() || packageStat.isSymbolicLink()) fail("EXTERNAL_ROOT_UNVERIFIABLE", `existing package root is unsafe: ${expected.name}`);
+    await assertPackagePath(layout, packageRoot, expected.name);
     const manifest = JSON.parse(await fs.readFile(path.join(packageRoot, "package.json"), "utf8"));
     if (manifest.name !== expected.name || manifest.version !== expected.version) fail("REQUIRED_PACKAGE_CONFLICT", `existing disk package differs: ${expected.name}`);
-    const treeDigest = `sha256:${await hashResourcePath({ artifactRoot: layout.npmRoot, relativePath: relative, allowContainedSymlinks: true })}`;
+    const treeDigest = await hashPackageContentTree(packageRoot);
     if (treeDigest !== expected.treeDigest) fail("EXTERNAL_PACKAGE_DRIFT", `existing package tree drifted: ${expected.name}`);
     existing.push(Object.freeze({ name: expected.name, version: expected.version, treeDigest }));
   }
+  await verifyExistingPackageSettings(layout, stack.externalPackages.filter((entry) => existing.some((item) => item.name === entry.name)));
   return Object.freeze({
     classification: missing.length === 0 ? "EXACT" : "PARTIAL",
     existing: Object.freeze(existing),

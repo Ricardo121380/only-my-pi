@@ -107,6 +107,13 @@ test("stack state preserves user ownership for provisioned external packages", (
   assert.throws(() => validateStackState(state), { code: "STACK_STATE_OWNERSHIP_INVALID" });
 });
 
+test("stack state records whether the external tree is canonical or borrowed", () => {
+  const state = read("contracts/release/stack-state.example.json");
+  assert.equal(state.externalTree.verificationBasis, "CANONICAL_RELEASE_TREE");
+  state.externalTree.verificationBasis = "UNVERIFIED";
+  assert.throws(() => validateStackState(state), { code: "STACK_STATE_EXTERNAL_TREE_INVALID" });
+});
+
 test("release contracts reject sensitive field names before publication", () => {
   const release = read("contracts/release/release-index.example.json");
   release.assets.full.token = "redacted";

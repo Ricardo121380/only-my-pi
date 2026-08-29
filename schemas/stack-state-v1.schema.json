@@ -4,7 +4,7 @@
   "title": "only-my-pi private stack state v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["$schema", "formatVersion", "kind", "status", "activeStack", "lkgStack", "manifestDigest", "payloadMode", "node", "pi", "onlyMyPi", "generation", "cliArtifact", "shims", "externalPackages", "transactionIds", "removalEligibility", "stateDigest"],
+  "required": ["$schema", "formatVersion", "kind", "status", "activeStack", "lkgStack", "manifestDigest", "payloadMode", "node", "pi", "onlyMyPi", "generation", "cliArtifact", "shims", "externalTree", "externalPackages", "transactionIds", "removalEligibility", "stateDigest"],
   "properties": {
     "$schema": { "const": "../../schemas/stack-state-v1.schema.json" },
     "formatVersion": { "const": 1 }, "kind": { "const": "only-my-pi-stack-state" },
@@ -18,6 +18,13 @@
     "shims": {
       "type": "object", "additionalProperties": false, "required": ["omp", "pi"],
       "properties": { "omp": { "$ref": "#/$defs/shim" }, "pi": { "$ref": "#/$defs/shim" } }
+    },
+    "externalTree": {
+      "type": "object", "additionalProperties": false, "required": ["digest", "verificationBasis"],
+      "properties": {
+        "digest": { "$ref": "#/$defs/sha256" },
+        "verificationBasis": { "enum": ["CANONICAL_RELEASE_TREE", "BORROWED_PREFLIGHT_SNAPSHOT"] }
+      }
     },
     "externalPackages": { "type": "array", "minItems": 9, "maxItems": 9, "items": { "$ref": "#/$defs/external" } },
     "transactionIds": { "type": "array", "maxItems": 256, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-f0-9-]{36}$" } },

@@ -4,7 +4,7 @@ import path from "node:path";
 import { hashResourcePath } from "../bootstrap/graph-plan.mjs";
 import { canonicalJson } from "../config-runtime/index.mjs";
 import { hashFile } from "./deterministic-archive.mjs";
-import { planStackEnvironment } from "./environment-planner.mjs";
+import { inspectExternalRoot, planStackEnvironment } from "./environment-planner.mjs";
 import { listStackJournals, readStackJournal } from "./stack-journal.mjs";
 import { stackTransactionLayout } from "./layout.mjs";
 import { sha256, validateStackManifest, validateStackState } from "./contracts.mjs";
@@ -65,8 +65,15 @@ async function verifyInstalled(layout, state) {
     onlyMyPi: await hashFile(path.join(root, "only-my-pi.tgz")),
   };
   if (identities.node !== manifest.runtime.node.treeDigest || identities.pi !== manifest.runtime.pi.treeDigest
-    || identities.external !== manifest.externalTreeDigest || identities.onlyMyPi !== manifest.onlyMyPi.artifactSha256) {
+    || identities.external !== state.externalTree.digest || identities.onlyMyPi !== manifest.onlyMyPi.artifactSha256) {
     fail("STACK_ASSET_DRIFT", "installed stack assets differ from their canonical manifest");
+  }
+  if (state.externalTree.verificationBasis === "CANONICAL_RELEASE_TREE") {
+    if (state.externalTree.digest !== manifest.externalTreeDigest) fail("STACK_EXTERNAL_TREE_AUTHORITY_INVALID", "canonical external tree state differs from the release manifest");
+  } else {
+    if (!state.externalPackages.every((entry) => entry.assetDisposition === "PREEXISTING_EXTERNAL")) fail("STACK_EXTERNAL_TREE_AUTHORITY_INVALID", "borrowed external tree state has inconsistent asset disposition");
+    const borrowed = await inspectExternalRoot(layout, manifest);
+    if (borrowed.classification !== "EXACT" || borrowed.rootDigest !== state.externalTree.digest) fail("STACK_ASSET_DRIFT", "borrowed external tree no longer matches its verified preflight snapshot");
   }
   return Object.freeze({ root, manifest, identities });
 }

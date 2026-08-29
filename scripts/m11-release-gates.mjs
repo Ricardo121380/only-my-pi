@@ -22,7 +22,7 @@ const DETERMINISTIC_IDS = Object.freeze(GATE_IDS.filter((id) => ![PLATFORM_ID, P
 const COMMANDS = Object.freeze({
   Q1: ["node", ["--test", "tests/legacy-authority.test.mjs", "tests/public-baseline.test.mjs", "tests/public-baseline-gates.test.mjs", "tests/public-baseline-protected.test.mjs"]],
   Q2: ["node", ["--test", "tests/release-stack-contracts.test.mjs"]],
-  Q3: ["node", ["--test", "tests/release-artifact-ledger.test.mjs", "tests/release-license-sources.test.mjs"]],
+  Q3: ["node", ["--test", "tests/package-content-identity.test.mjs", "tests/release-artifact-ledger.test.mjs", "tests/release-license-sources.test.mjs"]],
   Q4: ["node", ["--test", "tests/release-builder.test.mjs", "tests/release-payload-assembler.test.mjs", "tests/release-payload-stager.test.mjs", "tests/release-thin-resolver.test.mjs"]],
   Q5: ["node", ["--test", "tests/release-downloader.test.mjs", "tests/release-installer.test.mjs", "tests/release-safe-extract.test.mjs"]],
   Q6: ["node", ["--test", "tests/release-environment-planner.test.mjs"]],

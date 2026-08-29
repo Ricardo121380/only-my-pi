@@ -37,6 +37,10 @@
       "digest": "sha256:99acaa395892bb747b0c3127724dad313a02ae104277c02f147b1e0baa553441"
     }
   },
+  "externalTree": {
+    "digest": "sha256:19215c20c6a4e65363cdeab6382ea03d8078aac4f488a2fc86d959b926c40c45",
+    "verificationBasis": "CANONICAL_RELEASE_TREE"
+  },
   "externalPackages": [
     {
       "name": "@narumitw/pi-plan-mode",
@@ -119,5 +123,5 @@
     "externalTree": true,
     "reasonCodes": []
   },
-  "stateDigest": "sha256:9196a7bd80e1d9ee5a08a10a89077e36b468e445648f5cb6ee39c5e18c888810"
+  "stateDigest": "sha256:bb492a8582f6435cf235336131370086904059da5403ea85a6dbc57895d1c901"
 }

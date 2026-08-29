@@ -7,6 +7,7 @@ export * from "./release-builder.mjs";
 export * from "./release-build-controller.mjs";
 export * from "./release-payload-stager.mjs";
 export * from "./payload-assembler.mjs";
+export * from "./package-content-identity.mjs";
 export * from "./downloader.mjs";
 export * from "./layout.mjs";
 export * from "./stack-journal.mjs";

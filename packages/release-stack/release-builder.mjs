@@ -15,6 +15,7 @@ import {
   validateStackManifest,
 } from "./contracts.mjs";
 import { createDeterministicTarGzip, hashFile } from "./deterministic-archive.mjs";
+import { hashPackageContentTree } from "./package-content-identity.mjs";
 import { validateSpdxSbom } from "./sbom.mjs";
 
 const REQUIRED_METADATA = Object.freeze([
@@ -81,7 +82,7 @@ export async function inspectResolvedStack({ resolvedRoot, stackManifest } = {})
   };
   for (const entry of stack.externalPackages) {
     const relative = path.posix.join("external-npm", "node_modules", entry.name);
-    identities.externalPackages[entry.name] = await treeDigest(root, relative);
+    identities.externalPackages[entry.name] = await hashPackageContentTree(path.join(root, ...relative.split("/")));
   }
   if (identities.nodeTreeDigest !== stack.runtime.node.treeDigest
     || identities.piTreeDigest !== stack.runtime.pi.treeDigest

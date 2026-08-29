@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { hashResourcePath } from "../bootstrap/graph-plan.mjs";
 import { canonicalJson } from "../config-runtime/index.mjs";
 import { finalizeArtifactLedger, sha256 } from "./contracts.mjs";
+import { hashPackageContentTree } from "./package-content-identity.mjs";
 
 const LIFECYCLE_NAMES = new Set(["preinstall", "install", "postinstall", "prepublish", "preprepare", "prepare", "postprepare", "prepack", "postpack"]);
 const SRI = /^sha512-[A-Za-z0-9+/]+={0,2}$/u;
@@ -90,7 +90,7 @@ async function artifactTreeDigest(artifactTreeRoots, identity, installedManifest
   if (manifest.name !== installedManifest.name || manifest.version !== installedManifest.version || canonicalJson(manifest) !== canonicalJson(installedManifest)) {
     fail("LEDGER_ARTIFACT_TREE_MANIFEST_DRIFT", `artifact and installed package manifests differ for ${identity}`);
   }
-  return `sha256:${await hashResourcePath({ artifactRoot: path.dirname(real), relativePath: path.basename(real), allowContainedSymlinks: false })}`;
+  return hashPackageContentTree(real);
 }
 
 export async function buildArtifactLedger({
@@ -171,9 +171,7 @@ export async function buildArtifactLedger({
         artifactTreeRoots,
         entry.identity,
         entry.manifest,
-        async () => entry.relativePath === ""
-          ? `sha256:${await hashResourcePath({ artifactRoot: path.dirname(root), relativePath: path.basename(root), allowContainedSymlinks: false })}`
-          : `sha256:${await hashResourcePath({ artifactRoot: root, relativePath: entry.relativePath, allowContainedSymlinks: false })}`,
+        async () => hashPackageContentTree(entry.real),
       ),
       topLevel: topLevel.has(entry.manifest.name),
     };

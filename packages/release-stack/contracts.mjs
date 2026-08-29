@@ -195,11 +195,12 @@ export function validateReleaseIndex(input) {
 
 export function validateStackState(input) {
   rejectSensitiveShape(input);
-  exactKeys(input, ["$schema", "formatVersion", "kind", "status", "activeStack", "lkgStack", "manifestDigest", "payloadMode", "node", "pi", "onlyMyPi", "generation", "cliArtifact", "shims", "externalPackages", "transactionIds", "removalEligibility", "stateDigest"], "stack state", "STACK_STATE_SCHEMA_INVALID");
+  exactKeys(input, ["$schema", "formatVersion", "kind", "status", "activeStack", "lkgStack", "manifestDigest", "payloadMode", "node", "pi", "onlyMyPi", "generation", "cliArtifact", "shims", "externalTree", "externalPackages", "transactionIds", "removalEligibility", "stateDigest"], "stack state", "STACK_STATE_SCHEMA_INVALID");
   if (input.$schema !== "../../schemas/stack-state-v1.schema.json" || input.formatVersion !== 1 || input.kind !== "only-my-pi-stack-state" || !["INSTALLED", "INTERRUPTED", "REMOVED"].includes(input.status) || !["full", "thin"].includes(input.payloadMode)) fail("STACK_STATE_IDENTITY_INVALID", "stack state identity is invalid");
   if (input.status !== "REMOVED" && ![input.activeStack, input.manifestDigest].every((value) => SHA256.test(value ?? ""))) fail("STACK_STATE_ACTIVE_INVALID", "active stack identity is missing");
   if (input.status === "REMOVED" && input.activeStack !== null) fail("STACK_STATE_REMOVED_INVALID", "removed state cannot retain an active stack");
   for (const key of ["node", "pi", "onlyMyPi", "generation", "cliArtifact"]) if (typeof input[key]?.version !== "string" || !SHA256.test(input[key]?.digest ?? "")) fail("STACK_STATE_ASSET_INVALID", `stack state ${key} identity is invalid`);
+  if (!SHA256.test(input.externalTree?.digest ?? "") || !["CANONICAL_RELEASE_TREE", "BORROWED_PREFLIGHT_SNAPSHOT"].includes(input.externalTree?.verificationBasis)) fail("STACK_STATE_EXTERNAL_TREE_INVALID", "stack state external tree identity is invalid");
   assertPackageTuple(input.externalPackages, { code: "STACK_STATE_PACKAGE_TUPLE_INVALID", requireEvidence: false });
   for (const entry of input.externalPackages) if (entry.binding !== "external" || entry.owner !== "user" || !DISPOSITIONS.has(entry.assetDisposition) || !SHA256.test(entry.treeDigest ?? "")) fail("STACK_STATE_OWNERSHIP_INVALID", `stack state ownership is invalid: ${entry.name}`);
   if (!SHA256.test(input.stateDigest ?? "") || input.stateDigest !== stackStateDigest(input)) fail("STACK_STATE_DIGEST_INVALID", "stack state digest is invalid");

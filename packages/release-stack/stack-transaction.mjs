@@ -366,6 +366,10 @@ export class StackTransactionEngine {
         omp: { targetClass: "USER_LOCAL_CONTROLLED_STACK", digest: sha256("current-stack/bin/omp") },
         pi: { targetClass: "USER_LOCAL_CONTROLLED_STACK", digest: sha256("current-stack/bin/pi") },
       },
+      externalTree: {
+        digest: context.plan.external.classification === "EXACT" ? context.plan.external.priorRootDigest : context.stack.externalTreeDigest,
+        verificationBasis: context.plan.external.classification === "EXACT" ? "BORROWED_PREFLIGHT_SNAPSHOT" : "CANONICAL_RELEASE_TREE",
+      },
       externalPackages: context.stack.externalPackages.map((entry) => ({
         name: entry.name,
         version: entry.version,

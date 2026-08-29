@@ -114,7 +114,7 @@ export async function assembleReleasePayloads({
   for (const { name, version } of PUBLIC_STACK_PACKAGES) {
     const artifact = byIdentity.get(`${name}@${version}`);
     if (!artifact) fail("PAYLOAD_ASSEMBLY_ARTIFACT_MISSING", `ledger is missing direct external package: ${name}`);
-    externalPackages.push({ id: idFor(name), name, version, integrity: artifact.integrity, license: artifact.license, treeDigest: await digestTree(resolved, path.posix.join("external-npm", "node_modules", name)), binding: "external", owner: "user", lifecycleScripts: artifact.lifecycleScripts });
+    externalPackages.push({ id: idFor(name), name, version, integrity: artifact.integrity, license: artifact.license, treeDigest: artifact.treeDigest, binding: "external", owner: "user", lifecycleScripts: artifact.lifecycleScripts });
   }
   const piArtifact = byIdentity.get(`${PI_NAME}@${CONTROLLED_PI_VERSION}`);
   if (!piArtifact || piArtifact.integrity !== piIntegrity) fail("PAYLOAD_ASSEMBLY_PI_MISSING", "ledger is missing the exact controlled Pi artifact");

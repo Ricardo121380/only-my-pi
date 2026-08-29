@@ -5,10 +5,10 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { hashResourcePath } from "../packages/bootstrap/graph-plan.mjs";
 import {
   buildArtifactLedger,
   createSpdxSbom,
+  hashPackageContentTree,
   renderThirdPartyNotices,
   sbomDigest,
   validateSpdxSbom,
@@ -75,7 +75,10 @@ test("artifact ledger uses verified tarball content identity independent of inst
     artifactBytes: new Map([["example-package@1.2.3", Buffer.from("fixture-tarball")]]),
     artifactTreeRoots: new Map([["example-package@1.2.3", artifactRoot]]),
   });
-  assert.equal(ledger.artifacts[0].treeDigest, `sha256:${await hashResourcePath({ artifactRoot: artifactParent, relativePath: "package", allowContainedSymlinks: false })}`);
+  assert.equal(ledger.artifacts[0].treeDigest, await hashPackageContentTree(artifactRoot));
+  assert.equal(await hashPackageContentTree(path.join(npmRoot, "node_modules", "example-package")), ledger.artifacts[0].treeDigest);
+  await fs.appendFile(path.join(npmRoot, "node_modules", "example-package", "index.js"), "// package drift\n");
+  assert.notEqual(await hashPackageContentTree(path.join(npmRoot, "node_modules", "example-package")), ledger.artifacts[0].treeDigest);
 });
 
 test("artifact ledger requires complete integrity and verified tarball bytes", async (t) => {
