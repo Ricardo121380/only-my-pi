@@ -40,7 +40,7 @@ async function realDirectory(target, code) {
 }
 
 async function rootDigest(root) {
-  return `sha256:${await hashResourcePath({ artifactRoot: path.dirname(root), relativePath: path.basename(root), allowContainedSymlinks: false })}`;
+  return `sha256:${await hashResourcePath({ artifactRoot: path.dirname(root), relativePath: path.basename(root), allowContainedSymlinks: true })}`;
 }
 
 async function outputManifest(root) {

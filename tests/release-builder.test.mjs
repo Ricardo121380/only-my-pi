@@ -38,6 +38,7 @@ async function digestTree(root, relative) {
 async function createResolvedRoot(root, packageEntries) {
   await fs.mkdir(path.join(root, "node", "bin"), { recursive: true });
   await fs.writeFile(path.join(root, "node", "bin", "node"), "fixture node\n", { mode: 0o755 });
+  await fs.symlink("node", path.join(root, "node", "bin", "node-alias"));
   await fs.mkdir(path.join(root, "pi", "dist", "bundle"), { recursive: true });
   await fs.writeFile(path.join(root, "pi", "dist", "bundle", "cli.js"), "fixture pi\n", { mode: 0o755 });
   for (const entry of packageEntries) {
@@ -82,7 +83,7 @@ async function releaseFixture(t) {
   const thinResolved = await temporary(t, "omp-release-thin-resolved-");
   const base = await read("contracts/release/stack-manifest.example.json");
   await createResolvedRoot(full, base.externalPackages);
-  await fs.cp(path.join(full, "node"), path.join(thinResolved, "node"), { recursive: true });
+  await fs.cp(path.join(full, "node"), path.join(thinResolved, "node"), { recursive: true, verbatimSymlinks: true });
   await fs.cp(path.join(full, "pi"), path.join(thinResolved, "pi"), { recursive: true });
   await fs.cp(path.join(full, "external-npm"), path.join(thinResolved, "external-npm"), { recursive: true });
   await fs.copyFile(path.join(full, "only-my-pi.tgz"), path.join(thinResolved, "only-my-pi.tgz"));
