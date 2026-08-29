@@ -49,8 +49,7 @@ function platform() {
   return Object.freeze({ os: "darwin", arch: "arm64", minimumMacOSSatisfied: true, rosetta: false, majorVersion: major });
 }
 
-async function realReleaseRoot() {
-  const requested = process.env.M11_Q10_RELEASE_ROOT;
+async function realReleaseRoot(requested = process.env.M11_Q10_RELEASE_ROOT) {
   if (typeof requested !== "string" || !path.isAbsolute(requested)) fail("Q10_RELEASE_ROOT_REQUIRED", "M11_Q10_RELEASE_ROOT must be an absolute RC directory");
   const stat = await fs.lstat(requested).catch(() => null);
   const real = stat ? await fs.realpath(requested).catch(() => null) : null;
@@ -96,14 +95,14 @@ async function installOne({ releaseRoot, payloadMode, platformIdentity, workspac
   }
 }
 
-export async function runM11MacosNoModelAcceptance() {
+export async function runM11MacosNoModelAcceptance({ releaseRoot } = {}) {
   const platformIdentity = platform();
-  const releaseRoot = await realReleaseRoot();
+  const resolvedReleaseRoot = await realReleaseRoot(releaseRoot);
   const workspace = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "only-my-pi-q10-")));
   await fs.chmod(workspace, 0o700);
   try {
-    const full = await installOne({ releaseRoot, payloadMode: "full", platformIdentity, workspace });
-    const thin = await installOne({ releaseRoot, payloadMode: "thin", platformIdentity, workspace });
+    const full = await installOne({ releaseRoot: resolvedReleaseRoot, payloadMode: "full", platformIdentity, workspace });
+    const thin = await installOne({ releaseRoot: resolvedReleaseRoot, payloadMode: "thin", platformIdentity, workspace });
     if (full.stackId !== thin.stackId || full.generationId !== thin.generationId) fail("Q10_PAYLOAD_CONVERGENCE_FAILED", "Q10 Full and Thin installed different stack or generation identities");
     return Object.freeze({ formatVersion: 1, ok: true, status: "Q10_MACOS_ARM64_NO_MODEL_PASSED", code: "Q10_MACOS_ARM64_NO_MODEL_PASSED", message: "Full and Thin clean-home installs converged, verified and removed", next: null, platform: "darwin-arm64", minimumMacOSMajor: platformIdentity.majorVersion, stackId: full.stackId, generationId: full.generationId, payloads: [full, thin], networkHosts: ["nodejs.org", "registry.npmjs.org"], providerRequests: 0, systemHomebrewModified: false, privateUserDataRead: false, receiptDigest: sha256(JSON.stringify({ full, thin })) });
   } finally {
