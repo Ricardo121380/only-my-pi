@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { hashResourcePath } from "../packages/bootstrap/graph-plan.mjs";
 import {
   buildArtifactLedger,
   createSpdxSbom,
@@ -58,6 +59,23 @@ test("artifact ledger binds lock, disk tree, tarball bytes, lifecycle, and licen
   assert.equal(ledger.artifacts[0].topLevel, true);
   assert.deepEqual(ledger.artifacts[0].lifecycleScripts.map((entry) => [entry.name, entry.executed]), [["postinstall", false]]);
   assert.match(ledger.artifacts[0].treeDigest, /^sha256:[a-f0-9]{64}$/u);
+});
+
+test("artifact ledger uses verified tarball content identity independent of installed hoisting", async (t) => {
+  const npmRoot = await fixtureTree(t);
+  const artifactParent = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-ledger-artifact-")));
+  t.after(() => fs.rm(artifactParent, { recursive: true, force: true }));
+  const artifactRoot = path.join(artifactParent, "package");
+  await fs.cp(path.join(npmRoot, "node_modules", "example-package"), artifactRoot, { recursive: true });
+  await fs.mkdir(path.join(npmRoot, "node_modules", "example-package", "node_modules", "hoisted-difference"), { recursive: true });
+  await fs.writeFile(path.join(npmRoot, "node_modules", "example-package", "node_modules", "hoisted-difference", "index.js"), "different install layout\n");
+  const ledger = await buildArtifactLedger({
+    npmRoot,
+    sourceCommit: "b".repeat(40),
+    artifactBytes: new Map([["example-package@1.2.3", Buffer.from("fixture-tarball")]]),
+    artifactTreeRoots: new Map([["example-package@1.2.3", artifactRoot]]),
+  });
+  assert.equal(ledger.artifacts[0].treeDigest, `sha256:${await hashResourcePath({ artifactRoot: artifactParent, relativePath: "package", allowContainedSymlinks: false })}`);
 });
 
 test("artifact ledger requires complete integrity and verified tarball bytes", async (t) => {

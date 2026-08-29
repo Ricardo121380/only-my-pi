@@ -78,11 +78,26 @@ function bytesFor(artifactBytes, identity, url) {
   return Buffer.from(value);
 }
 
+async function artifactTreeDigest(artifactTreeRoots, identity, installedManifest, fallback) {
+  const selected = artifactTreeRoots instanceof Map ? artifactTreeRoots.get(identity) : artifactTreeRoots?.[identity];
+  if (selected === undefined) return fallback();
+  if (typeof selected !== "string" || !path.isAbsolute(selected)) fail("LEDGER_ARTIFACT_TREE_INVALID", `artifact content root is invalid for ${identity}`);
+  const real = await fs.realpath(selected).catch(() => null);
+  const stat = real ? await fs.lstat(real) : null;
+  if (real !== path.resolve(selected) || !stat?.isDirectory() || stat.isSymbolicLink()) fail("LEDGER_ARTIFACT_TREE_INVALID", `artifact content root is unsafe for ${identity}`);
+  const manifest = JSON.parse(await fs.readFile(path.join(real, "package.json"), "utf8"));
+  if (manifest.name !== installedManifest.name || manifest.version !== installedManifest.version || canonicalJson(manifest) !== canonicalJson(installedManifest)) {
+    fail("LEDGER_ARTIFACT_TREE_MANIFEST_DRIFT", `artifact and installed package manifests differ for ${identity}`);
+  }
+  return `sha256:${await hashResourcePath({ artifactRoot: path.dirname(real), relativePath: path.basename(real), allowContainedSymlinks: false })}`;
+}
+
 export async function buildArtifactLedger({
   npmRoot,
   lockPath = path.join(npmRoot ?? "", "package-lock.json"),
   sourceCommit,
   artifactBytes,
+  artifactTreeRoots = null,
   integrityOverrides = {},
   licenseOverrides = {},
   topLevelNames = [],
@@ -139,7 +154,12 @@ export async function buildArtifactLedger({
       packageManifestDigest: sha256(canonicalJson(entry.manifest)),
       lifecycleScripts: lifecycleScripts(entry.manifest),
       dependencies: [...new Set(dependencies)].sort(),
-      treeDigest: `sha256:${await hashResourcePath({ artifactRoot: root, relativePath: entry.relativePath, allowContainedSymlinks: false })}`,
+      treeDigest: await artifactTreeDigest(
+        artifactTreeRoots,
+        entry.identity,
+        entry.manifest,
+        async () => `sha256:${await hashResourcePath({ artifactRoot: root, relativePath: entry.relativePath, allowContainedSymlinks: false })}`,
+      ),
       topLevel: topLevel.has(entry.manifest.name),
     };
     const existing = artifactsByIdentity.get(entry.identity);

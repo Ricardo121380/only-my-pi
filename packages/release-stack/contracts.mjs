@@ -26,6 +26,7 @@ const COMMIT = /^[a-f0-9]{40}$/u;
 const SRI = /^sha512-[A-Za-z0-9+/]+={0,2}$/u;
 const PACKAGE_NAME = /^(?:@[a-z0-9._-]+\/[a-z0-9._-]+|[a-z0-9._-]+)$/u;
 const DISPOSITIONS = new Set(["PREEXISTING_EXTERNAL", "PROVISIONED_FOR_USER"]);
+const LIFECYCLE_NAMES = new Set(["preinstall", "install", "postinstall", "prepublish", "preprepare", "prepare", "postprepare", "prepack", "postpack"]);
 const FORBIDDEN_KEYS = /^(?:api.?key|token|secret|password|cookie|authorization|authorization.?header|raw.?prompt|raw.?output|reasoning|host.?path|pid|command.?line|absolute.?path)$/iu;
 
 function fail(code, message, details = {}) {
@@ -93,7 +94,14 @@ function assertPackageTuple(packages, { code = "STACK_MANIFEST_PACKAGE_TUPLE_INV
     const identity = `${entry.name}@${entry.version}`;
     if (seen.has(identity) || [...seen].some((candidate) => candidate.startsWith(`${entry.name}@`))) fail(code, `duplicate package identity: ${entry.name}`);
     seen.add(identity);
-    if (requireEvidence && (!SRI.test(entry.integrity ?? "") || !SHA256.test(entry.treeDigest ?? "") || entry.binding !== "external" || entry.owner !== "user" || !Array.isArray(entry.lifecycleScripts) || entry.lifecycleScripts.length !== 0)) {
+    const lifecycleNames = new Set();
+    const lifecycleValid = Array.isArray(entry.lifecycleScripts) && entry.lifecycleScripts.every((script) => {
+      const valid = plain(script) && canonicalJson(Object.keys(script).sort()) === canonicalJson(["commandSha256", "executed", "name"])
+        && LIFECYCLE_NAMES.has(script.name) && SHA256.test(script.commandSha256 ?? "") && script.executed === false && !lifecycleNames.has(script.name);
+      lifecycleNames.add(script?.name);
+      return valid;
+    });
+    if (requireEvidence && (!SRI.test(entry.integrity ?? "") || !SHA256.test(entry.treeDigest ?? "") || entry.binding !== "external" || entry.owner !== "user" || !lifecycleValid)) {
       fail(code, `package evidence or ownership is invalid: ${entry.name}`);
     }
   }
