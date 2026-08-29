@@ -10,6 +10,7 @@ import {
   STACK_TRANSACTION_PHASES,
   createStackLayout,
   createStackTransactionEngine,
+  createStackService,
   finalizeStackManifest,
   planStackEnvironment,
   readStackJournal,
@@ -176,4 +177,71 @@ test("concurrent targeted settings mutation stops recovery without overwriting u
   const recovery = await engine.recoverTransaction(transactionId(4));
   assert.equal(recovery.status, "MANUAL_RECONCILIATION_REQUIRED");
   assert.deepEqual(await fs.readFile(value.layout.settingsFile), userBytes);
+});
+
+test("explicit stack remove reverses the committed install and restores CLI absence", async (t) => {
+  const value = await fixture(t);
+  const engine = createStackTransactionEngine({
+    layout: value.layout,
+    harness: value.harness,
+    transactionIdFactory: () => transactionId(5),
+    processAdmission: { async plan() { return []; } },
+    doctor: async () => ({ ok: true }),
+    smoke: async () => ({ ok: true }),
+  });
+  await engine.apply({ plan: value.plan, stackManifest: value.stack, resolvedRoot: value.resolved });
+  const service = createStackService({ layout: value.layout, localSource: {}, releaseSource: {}, engine });
+  const plan = await service.planLifecycle({ subcommand: "remove" });
+  assert.equal(plan.status, "STACK_REMOVE_PLAN");
+  assert.deepEqual(plan.transactionIds, [transactionId(5)]);
+  const result = await service.applyLifecycle({ subcommand: "remove" }, plan);
+  assert.equal(result.status, "REMOVED");
+  for (const target of [value.layout.currentStack, value.layout.lkgStack, value.layout.ompShim, value.layout.piShim, value.layout.npmRoot, value.layout.settingsFile, value.layout.stateFile]) {
+    await assert.rejects(fs.lstat(target), { code: "ENOENT" });
+  }
+  assert.equal((await readStackJournal(value.layout, transactionId(5))).status, "ROLLED_BACK");
+});
+
+test("stack remove never deletes an exact preexisting external package tree", async (t) => {
+  const value = await fixture(t);
+  await fs.mkdir(value.layout.configRoot, { recursive: true });
+  await fs.cp(path.join(value.resolved, "external-npm"), value.layout.npmRoot, { recursive: true });
+  const packages = value.stack.externalPackages.map((entry) => `npm:${entry.name}@${entry.version}`);
+  await fs.writeFile(value.layout.settingsFile, `${JSON.stringify({ packages, user: { retained: true } }, null, 2)}\n`);
+  const originalTree = await digestTree(value.layout.configRoot, "npm");
+  const originalSettings = await fs.readFile(value.layout.settingsFile);
+  const plan = await planStackEnvironment({ layout: value.layout, stackManifest: value.stack, payloadMode: "full", platform, pathValue: value.layout.binRoot });
+  assert.equal(plan.external.classification, "EXACT");
+  const engine = createStackTransactionEngine({
+    layout: value.layout,
+    harness: value.harness,
+    transactionIdFactory: () => transactionId(6),
+    processAdmission: { async plan() { return []; } },
+  });
+  await engine.apply({ plan, stackManifest: value.stack, resolvedRoot: value.resolved });
+  const service = createStackService({ layout: value.layout, localSource: {}, releaseSource: {}, engine });
+  const remove = await service.planLifecycle({ subcommand: "remove" });
+  await service.applyLifecycle({ subcommand: "remove" }, remove);
+  assert.equal(await digestTree(value.layout.configRoot, "npm"), originalTree);
+  assert.deepEqual(await fs.readFile(value.layout.settingsFile), originalSettings);
+});
+
+test("stack remove preserves concurrent unrelated settings through a three-way owned merge", async (t) => {
+  const value = await fixture(t);
+  const engine = createStackTransactionEngine({
+    layout: value.layout,
+    harness: value.harness,
+    transactionIdFactory: () => transactionId(7),
+    processAdmission: { async plan() { return []; } },
+  });
+  await engine.apply({ plan: value.plan, stackManifest: value.stack, resolvedRoot: value.resolved });
+  const changed = JSON.parse(await fs.readFile(value.layout.settingsFile, "utf8"));
+  changed.userAfterInstall = { theme: "preserve-me" };
+  await fs.writeFile(value.layout.settingsFile, `${JSON.stringify(changed, null, 2)}\n`);
+  const service = createStackService({ layout: value.layout, localSource: {}, releaseSource: {}, engine });
+  const remove = await service.planLifecycle({ subcommand: "remove" });
+  const result = await service.applyLifecycle({ subcommand: "remove" }, remove);
+  assert.equal(result.status, "REMOVED");
+  assert.deepEqual(JSON.parse(await fs.readFile(value.layout.settingsFile, "utf8")), { userAfterInstall: { theme: "preserve-me" } });
+  await assert.rejects(fs.lstat(value.layout.npmRoot), { code: "ENOENT" });
 });

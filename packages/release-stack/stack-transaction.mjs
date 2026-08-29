@@ -91,6 +91,50 @@ function publishPackageSettings(settings, stack) {
   return output;
 }
 
+function sameValue(left, right) {
+  if (left === undefined || right === undefined) return left === right;
+  return canonicalJson(left) === canonicalJson(right);
+}
+
+function targetedPackageMap(settings, names) {
+  const selected = new Map();
+  for (const entry of settings?.packages ?? []) {
+    const name = packageName(entry);
+    if (!names.has(name)) continue;
+    if (selected.has(name)) fail("CONCURRENT_TARGETED_SETTINGS_CHANGE", `settings contains duplicate targeted package: ${name}`);
+    selected.set(name, entry);
+  }
+  return selected;
+}
+
+function restoreAuthorizedSettings(rollback, currentBytes) {
+  const original = rollback.settings.exists ? JSON.parse(Buffer.from(rollback.settings.contentBase64, "base64").toString("utf8")) : {};
+  const target = JSON.parse(Buffer.from(rollback.targetSettingsContentBase64, "base64").toString("utf8"));
+  const current = currentBytes.length === 0 ? {} : JSON.parse(currentBytes.toString("utf8"));
+  const names = new Set(rollback.authorizedPackageNames);
+  const maps = {
+    original: targetedPackageMap(original, names),
+    target: targetedPackageMap(target, names),
+    current: targetedPackageMap(current, names),
+  };
+  for (const name of names) {
+    const value = maps.current.get(name);
+    if (!sameValue(value, maps.target.get(name)) && !sameValue(value, maps.original.get(name))) {
+      fail("CONCURRENT_TARGETED_SETTINGS_CHANGE", `targeted package setting changed after stack publication: ${name}`);
+    }
+  }
+  if (!sameValue(current.onlyMyPi, target.onlyMyPi) && !sameValue(current.onlyMyPi, original.onlyMyPi)) {
+    fail("CONCURRENT_TARGETED_SETTINGS_CHANGE", "only-my-pi settings changed after stack publication");
+  }
+  const restored = structuredClone(current);
+  restored.packages = (restored.packages ?? []).filter((entry) => !names.has(packageName(entry)));
+  for (const entry of original.packages ?? []) if (names.has(packageName(entry))) restored.packages.push(entry);
+  if (original.packages === undefined && restored.packages.length === 0) delete restored.packages;
+  if (original.onlyMyPi === undefined) delete restored.onlyMyPi;
+  else restored.onlyMyPi = original.onlyMyPi;
+  return Buffer.from(`${JSON.stringify(restored, null, 2)}\n`);
+}
+
 function stackPath(layout, stackId) {
   return path.join(layout.stacksRoot, stackId.slice("sha256:".length));
 }
@@ -240,6 +284,8 @@ export class StackTransactionEngine {
       externalRootDigest: context.plan.external.priorRootDigest,
       externalSwitchRequired: context.plan.external.switchRequired,
       targetSettingsDigest: null,
+      targetSettingsContentBase64: null,
+      authorizedPackageNames: context.stack.externalPackages.map((entry) => entry.name).sort(),
     };
     await writeStackJson(context.paths.rollback, rollback);
     context.rollback = rollback;
@@ -269,6 +315,7 @@ export class StackTransactionEngine {
     await atomicWriteBytes(this.layout.settingsFile, bytes);
     context.publishedSettingsDigest = sha256(bytes);
     context.rollback.targetSettingsDigest = context.publishedSettingsDigest;
+    context.rollback.targetSettingsContentBase64 = bytes.toString("base64");
     await writeStackJson(context.paths.rollback, context.rollback);
   }
 
@@ -378,15 +425,21 @@ export class StackTransactionEngine {
       return Object.freeze({ ok: false, status: "MANUAL_RECONCILIATION_REQUIRED", transactionId });
     }
     const currentSettings = await readFileSnapshot(this.layout.settingsFile);
+    let restoredSettings = rollback.settings.exists ? Buffer.from(rollback.settings.contentBase64, "base64") : null;
     if (rollback.targetSettingsDigest && currentSettings.digest !== rollback.targetSettingsDigest && currentSettings.digest !== rollback.settings.digest) {
-      await markStackJournal(this.layout, transactionId, { status: "MANUAL_RECONCILIATION_REQUIRED", failureCode: "CONCURRENT_TARGETED_SETTINGS_CHANGE" });
-      return Object.freeze({ ok: false, status: "MANUAL_RECONCILIATION_REQUIRED", transactionId });
+      try {
+        const currentBytes = currentSettings.exists ? Buffer.from(currentSettings.contentBase64, "base64") : Buffer.alloc(0);
+        restoredSettings = restoreAuthorizedSettings(rollback, currentBytes);
+      } catch {
+        await markStackJournal(this.layout, transactionId, { status: "MANUAL_RECONCILIATION_REQUIRED", failureCode: "CONCURRENT_TARGETED_SETTINGS_CHANGE" });
+        return Object.freeze({ ok: false, status: "MANUAL_RECONCILIATION_REQUIRED", transactionId });
+      }
     }
     await restoreLink(this.layout.ompShim, rollback.ompShim);
     await restoreLink(this.layout.piShim, rollback.piShim);
     await restoreLink(this.layout.currentStack, rollback.currentStack);
     await restoreLink(this.layout.lkgStack, rollback.lkgStack);
-    if (rollback.settings.exists) await atomicWriteBytes(this.layout.settingsFile, Buffer.from(rollback.settings.contentBase64, "base64"));
+    if (restoredSettings !== null) await atomicWriteBytes(this.layout.settingsFile, restoredSettings);
     else await fs.rm(this.layout.settingsFile, { force: true });
     if (rollback.state.exists) await atomicWriteBytes(this.layout.stateFile, Buffer.from(rollback.state.contentBase64, "base64"));
     else await fs.rm(this.layout.stateFile, { force: true });
