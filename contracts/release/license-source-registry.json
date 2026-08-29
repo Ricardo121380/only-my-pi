@@ -1,0 +1,82 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-license-source-registry",
+  "sources": [
+    {
+      "id": "aws-sdk-js-v3-apache-2.0",
+      "declaredLicense": "Apache-2.0",
+      "file": "aws-apache-2.0.txt",
+      "contentSha256": "sha256:4186c3f89c23f27b4c0caab574737c49ee5137c36a3c103484feaca4aeec2310",
+      "sourceUrl": "https://raw.githubusercontent.com/aws/aws-sdk-js-v3/c47a84766e65e9a7f3d7151ff10d58aba29e6df0/LICENSE",
+      "normalization": "ENSURE_TRAILING_NEWLINE"
+    },
+    {
+      "id": "mario-zechner-mit",
+      "declaredLicense": "MIT",
+      "file": "mario-zechner-mit.txt",
+      "contentSha256": "sha256:4f6a1985796db5225e3b1e59972bd47e07a27a0748427cb3d3c8fbf39f9311f0",
+      "sourceUrl": "https://raw.githubusercontent.com/earendil-works/pi/4e58f324fae8ebfa98a3d45181fb248072a2afac/LICENSE",
+      "normalization": "ENSURE_TRAILING_NEWLINE"
+    },
+    {
+      "id": "nodable-mit",
+      "declaredLicense": "MIT",
+      "file": "nodable-mit.txt",
+      "contentSha256": "sha256:750cb3fb6362804957ef52caaf9b5c824015be44d494637330d7cd8834d31d40",
+      "sourceUrl": "https://raw.githubusercontent.com/nodable/val-parsers/d2070d76a8ba07e6c7fa142caeb51ffd756e47eb/LICENSE",
+      "normalization": "EXACT"
+    },
+    {
+      "id": "boolbase-isc",
+      "declaredLicense": "ISC",
+      "file": "boolbase-isc.txt",
+      "contentSha256": "sha256:cdf4d87ae0a6c160227263bf4e39a0a10e30e89ae7256e0f7ac7bde0836552c6",
+      "sourceUrl": "https://raw.githubusercontent.com/fb55/boolbase/54811f01c797a6bb1c263183ae90b7dd627e0638/LICENSE",
+      "normalization": "EXACT"
+    },
+    {
+      "id": "data-uri-to-buffer-mit",
+      "declaredLicense": "MIT",
+      "file": "data-uri-to-buffer-mit.txt",
+      "contentSha256": "sha256:5ba048e083aeb4461a7b5296a81c08e3b9e3bd7dfa5a5a1b2816cb95b121c4fe",
+      "sourceUrl": "https://raw.githubusercontent.com/TooTallNate/node-data-uri-to-buffer/85cd8c854aefbf1bb636789d80364cfac8ea1583/README.md",
+      "normalization": "EXTRACT_LINES_64_87_ENSURE_TRAILING_NEWLINE"
+    },
+    {
+      "id": "ignore-mit",
+      "declaredLicense": "MIT",
+      "file": "ignore-mit.txt",
+      "contentSha256": "sha256:542e7521fab287d3d2ea83e0145692c7d82ea81b28f141be6686364929d33079",
+      "sourceUrl": "https://raw.githubusercontent.com/kaelzhang/node-ignore/84d052ddfe7c326b01b306154e06709d6e7e2ed8/LICENSE-MIT",
+      "normalization": "ENSURE_TRAILING_NEWLINE"
+    },
+    {
+      "id": "xml-naming-mit",
+      "declaredLicense": "MIT",
+      "file": "xml-naming-mit.txt",
+      "contentSha256": "sha256:8e75fc0e776c62ccadb8178ece8d3daa9ba7601fb0a49b2dfb0ea9a7a5c0aa07",
+      "sourceUrl": "https://raw.githubusercontent.com/NaturalIntelligence/xml-naming/0330d0cfa57ee483a834c474b2d0a4f0449ee81d/LICENSE",
+      "normalization": "EXACT"
+    }
+  ],
+  "bindings": {
+    "@aws-sdk/credential-provider-http@3.972.39": "aws-sdk-js-v3-apache-2.0",
+    "@aws-sdk/credential-provider-login@3.972.41": "aws-sdk-js-v3-apache-2.0",
+    "@aws-sdk/nested-clients@3.997.9": "aws-sdk-js-v3-apache-2.0",
+    "@earendil-works/pi-agent-core@0.84.3": "mario-zechner-mit",
+    "@earendil-works/pi-ai@0.84.3": "mario-zechner-mit",
+    "@earendil-works/pi-client@0.84.3": "mario-zechner-mit",
+    "@earendil-works/pi-coding-agent@0.84.3": "mario-zechner-mit",
+    "@earendil-works/pi-protocol@0.84.3": "mario-zechner-mit",
+    "@earendil-works/pi-telemetry@0.84.3": "mario-zechner-mit",
+    "@earendil-works/pi-tui@0.84.3": "mario-zechner-mit",
+    "@mariozechner/clipboard-darwin-arm64@0.3.9": "mario-zechner-mit",
+    "@mariozechner/clipboard-darwin-universal@0.3.9": "mario-zechner-mit",
+    "@mariozechner/clipboard@0.3.9": "mario-zechner-mit",
+    "@nodable/entities@2.1.0": "nodable-mit",
+    "boolbase@1.0.0": "boolbase-isc",
+    "data-uri-to-buffer@4.0.1": "data-uri-to-buffer-mit",
+    "ignore@7.0.5": "ignore-mit",
+    "xml-naming@0.1.0": "xml-naming-mit"
+  }
+}

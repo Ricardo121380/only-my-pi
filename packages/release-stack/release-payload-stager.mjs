@@ -148,18 +148,48 @@ async function copyLicense(source, destination) {
   await fs.copyFile(source, destination, constants.COPYFILE_EXCL);
 }
 
-async function collectLicenses({ resolved, artifacts, output }) {
+export async function loadLicenseRegistry(rootDir) {
+  const contractRoot = path.join(rootDir, "contracts", "release");
+  const registryPath = path.join(contractRoot, "license-source-registry.json");
+  const registry = JSON.parse(await fs.readFile(registryPath, "utf8"));
+  if (registry?.formatVersion !== 1 || registry.kind !== "only-my-pi-license-source-registry" || !Array.isArray(registry.sources) || !registry.bindings || typeof registry.bindings !== "object" || Array.isArray(registry.bindings)) fail("RELEASE_LICENSE_REGISTRY_INVALID", "license source registry is invalid");
+  const sources = new Map();
+  for (const entry of registry.sources) {
+    if (!/^[a-z0-9][a-z0-9.-]{0,127}$/u.test(entry?.id ?? "") || !/^(MIT|ISC|Apache-2\.0)$/u.test(entry.declaredLicense ?? "") || typeof entry.file !== "string" || path.basename(entry.file) !== entry.file || !/^sha256:[a-f0-9]{64}$/u.test(entry.contentSha256 ?? "") || !/^https:\/\/raw\.githubusercontent\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/[a-f0-9]{40}\//u.test(entry.sourceUrl ?? "") || !["EXACT", "ENSURE_TRAILING_NEWLINE", "EXTRACT_LINES_64_87_ENSURE_TRAILING_NEWLINE"].includes(entry.normalization)) fail("RELEASE_LICENSE_REGISTRY_INVALID", "license source entry is invalid");
+    if (sources.has(entry.id)) fail("RELEASE_LICENSE_REGISTRY_INVALID", "license source IDs must be unique");
+    const file = path.join(contractRoot, "licenses", entry.file);
+    if (await hashFile(file) !== entry.contentSha256) fail("RELEASE_LICENSE_SOURCE_DRIFT", `reviewed license text differs from its digest: ${entry.id}`);
+    sources.set(entry.id, { ...entry, file });
+  }
+  for (const [identity, sourceId] of Object.entries(registry.bindings)) if (!/^(@[^/]+\/)?[^@/]+@[^@]+$/u.test(identity) || !sources.has(sourceId)) fail("RELEASE_LICENSE_REGISTRY_INVALID", "license source binding is invalid");
+  return { registry, registryPath, sources };
+}
+
+async function collectLicenses({ resolved, artifacts, output, licenseRegistry }) {
   await fs.mkdir(output, { mode: 0o700 });
   await copyLicense(path.join(resolved, "node", "LICENSE"), path.join(output, `Node-${EMBEDDED_NODE_VERSION}-LICENSE.txt`));
   const missingIdentities = [];
+  const usedBindings = new Set();
   for (const [identity, root] of [...artifacts.artifactTreeRoots].sort(([left], [right]) => left.localeCompare(right))) {
     const names = await fs.readdir(root);
     const candidate = names.sort().find((name) => /^(licen[cs]e|copying)(\.[A-Za-z0-9._-]+)?$/iu.test(name));
-    if (!candidate) { missingIdentities.push(identity); continue; }
     const filename = `${sha256(identity).slice("sha256:".length, "sha256:".length + 16)}-${identity.replaceAll(/[^A-Za-z0-9._-]/gu, "-")}-LICENSE.txt`;
-    await copyLicense(path.join(root, candidate), path.join(output, filename));
+    if (candidate) {
+      if (licenseRegistry.registry.bindings[identity] !== undefined) fail("RELEASE_LICENSE_BINDING_UNEXPECTED", `license source binding is no longer required: ${identity}`);
+      await copyLicense(path.join(root, candidate), path.join(output, filename));
+      continue;
+    }
+    const sourceId = licenseRegistry.registry.bindings[identity];
+    const source = licenseRegistry.sources.get(sourceId);
+    const manifest = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
+    if (!source || manifest.license !== source.declaredLicense) { missingIdentities.push(identity); continue; }
+    await copyLicense(source.file, path.join(output, filename));
+    usedBindings.add(identity);
   }
   if (missingIdentities.length > 0) fail("RELEASE_LICENSE_TEXTS_MISSING", "registry artifacts without root license texts require exact reviewed license sources", { missingIdentities: Object.freeze(missingIdentities) });
+  const unusedBindings = Object.keys(licenseRegistry.registry.bindings).filter((identity) => !usedBindings.has(identity)).sort();
+  if (unusedBindings.length > 0) fail("RELEASE_LICENSE_BINDINGS_UNUSED", "reviewed license bindings must match the exact resolved artifact set", { unusedBindings: Object.freeze(unusedBindings) });
+  await fs.copyFile(licenseRegistry.registryPath, path.join(output, "SOURCE_REGISTRY.json"));
   return output;
 }
 
@@ -186,7 +216,8 @@ async function defaultPrepare({ rootDir, sourceCommit, outputRoot, download, ext
     download,
     extract,
   });
-  const licenses = await collectLicenses({ resolved, artifacts, output: path.join(work, "licenses") });
+  const licenseRegistry = await loadLicenseRegistry(rootDir);
+  const licenses = await collectLicenses({ resolved, artifacts, output: path.join(work, "licenses"), licenseRegistry });
   const generation = await buildGenerationPlan({ rootDir, profileId: "daily", sourceCommit });
   return await assemble({
     resolvedRoot: resolved,
