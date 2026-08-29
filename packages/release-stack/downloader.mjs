@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
+import { once } from "node:events";
 import { Readable } from "node:stream";
 
 import { EMBEDDED_NODE_ARCHIVE_SHA256 } from "./contracts.mjs";
@@ -113,7 +114,7 @@ export async function downloadVerified({
       if (bytes > maxBytes) fail("DOWNLOAD_TOO_LARGE", "download exceeds the declared byte bound");
       sha256Hash.update(chunk);
       sha512Hash.update(chunk);
-      if (!output.write(chunk)) await new Promise((resolve, reject) => { output.once("drain", resolve); output.once("error", reject); });
+      if (!output.write(chunk)) await once(output, "drain");
     }
     await new Promise((resolve, reject) => { output.end(resolve); output.once("error", reject); });
     const actualSha256 = `sha256:${sha256Hash.digest("hex")}`;

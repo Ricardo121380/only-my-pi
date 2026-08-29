@@ -46,7 +46,7 @@ async function runNode(node, argv, options = {}) {
   try {
     return await execFile(node, argv, { cwd: options.cwd, env: options.env, encoding: "utf8", timeout: 20 * 60 * 1000, maxBuffer: MAX_OUTPUT });
   } catch (cause) {
-    fail("RELEASE_STAGE_COMMAND_FAILED", "scripts-disabled release staging command failed", { cause });
+    fail("RELEASE_STAGE_COMMAND_FAILED", "scripts-disabled release staging command failed", { cause, step: argv[1] ?? "unknown" });
   }
 }
 
@@ -111,7 +111,16 @@ async function installPi({ work, resolved, node, npm, env, run, download, extrac
   await fs.cp(packageRoot, pi, { recursive: true, errorOnExist: true, force: false });
   const lock = await fs.lstat(path.join(pi, "npm-shrinkwrap.json")).then(() => true, () => false);
   if (!lock) fail("RELEASE_PI_LOCK_MISSING", "controlled Pi package does not contain its exact npm shrinkwrap");
-  await run(node, [npm, "ci", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev", "--omit=peer"], { cwd: pi, env });
+  const manifestPath = path.join(pi, "package.json");
+  const manifestBytes = await fs.readFile(manifestPath);
+  const productionManifest = JSON.parse(manifestBytes.toString("utf8"));
+  delete productionManifest.devDependencies;
+  await fs.writeFile(manifestPath, `${JSON.stringify(productionManifest, null, 2)}\n`, { mode: 0o600 });
+  try {
+    await run(node, [npm, "ci", "--ignore-scripts", "--no-audit", "--no-fund", "--omit=dev", "--omit=peer"], { cwd: pi, env });
+  } finally {
+    await fs.writeFile(manifestPath, manifestBytes, { mode: 0o600 });
+  }
   return { pi, archive, artifactRoot: packageRoot, verified };
 }
 
