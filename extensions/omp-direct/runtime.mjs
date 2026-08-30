@@ -4,6 +4,10 @@ import {
   readLastInteractiveModel,
   saveLastInteractiveModel,
 } from "../../packages/daily-config/index.mjs";
+import {
+  captureWorkspaceBaseline,
+  createWorkspacePolicy,
+} from "../../packages/direct-agent/workspace.mjs";
 
 export const DIRECT_SESSION_STATES = Object.freeze({
   INSPECT: "INSPECT",
@@ -167,7 +171,7 @@ function toolResult(status, message, details = {}) {
 }
 
 export class DirectSessionController {
-  constructor({ pi, configRoot, environment = process.env, now = () => new Date().toISOString() } = {}) {
+  constructor({ pi, configRoot, environment = process.env, now = () => new Date().toISOString(), captureBaseline = captureWorkspaceBaseline } = {}) {
     if (!pi || typeof pi.getActiveTools !== "function" || typeof pi.setActiveTools !== "function") throw new TypeError("DirectSessionController requires Pi tool controls");
     if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("DirectSessionController requires an absolute configRoot");
     this.pi = pi;
@@ -179,6 +183,10 @@ export class DirectSessionController {
     this.context = null;
     this.headless = environment.ONLY_MY_PI_HEADLESS === "1";
     this.explicitModel = environment.ONLY_MY_PI_MODEL_EXPLICIT === "1";
+    this.captureBaseline = captureBaseline;
+    this.workspaceBaseline = null;
+    this.workspacePolicy = createWorkspacePolicy();
+    this.approvedScope = [];
   }
 
   isDirect() { return this.environment.ONLY_MY_PI_DIRECT === "1"; }
@@ -270,6 +278,21 @@ export class DirectSessionController {
     this.explicitPlan = false;
     this.applyToolCeiling();
     this.updateUi(ctx);
+    try {
+      if (typeof this.pi.exec === "function") {
+        this.workspaceBaseline = await this.captureBaseline({
+          cwd: ctx.cwd,
+          runGit: async (cwd, args) => {
+            const result = await this.pi.exec("git", args, { cwd });
+            return { stdout: result.stdout, stderr: result.stderr, code: result.code ?? 0 };
+          },
+        });
+        this.workspacePolicy = createWorkspacePolicy({ baseline: this.workspaceBaseline });
+      }
+    } catch (error) {
+      this.workspaceBaseline = { formatVersion: 1, status: "BASELINE_UNAVAILABLE", code: error?.code ?? "WORKSPACE_BASELINE_FAILED" };
+      if (ctx.mode === "tui") ctx.ui.notify(`Workspace baseline unavailable: ${this.workspaceBaseline.code}. Coding access will remain bounded.`, "warning");
+    }
     let selection;
     try {
       selection = await this.selectStartupModel(ctx);
@@ -336,6 +359,8 @@ export class DirectSessionController {
     const choice = await ctx.ui.select(accessSummary(request, ctx.cwd), [...ACCESS_OPTIONS]);
     if (choice === ACCESS_OPTIONS[0]) {
       this.explicitPlan = false;
+      this.approvedScope = [...request.scope];
+      this.workspacePolicy = createWorkspacePolicy({ baseline: this.workspaceBaseline, scope: this.approvedScope });
       this.transition(DIRECT_SESSION_STATES.CODING, ctx);
       return toolResult("CODING_ACCESS_GRANTED", "Project-local edit, write, and sandboxed bash tools are enabled for this OMP process.", {
         scope: request.scope,
@@ -365,14 +390,39 @@ export class DirectSessionController {
     if (MUTATION_TOOL_NAMES.has(event.toolName) && !this.hasCodingAccess()) {
       return { block: true, reason: "OMP_CODING_ACCESS_REQUIRED: project mutation is disabled until this interactive process approves request_coding_access." };
     }
+    if (MUTATION_TOOL_NAMES.has(event.toolName) && this.hasCodingAccess()) {
+      let violation = null;
+      if (event.toolName === "edit" || event.toolName === "write") {
+        violation = this.workspacePolicy.inspectPath(event.input?.path, { cwd: this.context?.cwd });
+      } else if (event.toolName === "bash") {
+        violation = this.workspacePolicy.inspectCommand(event.input?.command);
+      } else {
+        violation = { code: "UNSUPPORTED_MUTATION_TOOL", reason: `${event.toolName} is not an OMP coding tool` };
+      }
+      if (violation) return { block: true, reason: `${violation.code}: ${violation.reason}` };
+    }
     return undefined;
   }
 
-  blockUserBash() {
+  blockUserBash(event) {
     if (this.hasCodingAccess()) return undefined;
     return {
       result: {
         output: "OMP_CODING_ACCESS_REQUIRED: shell execution is disabled until coding access is approved.",
+        exitCode: 126,
+        cancelled: false,
+        truncated: false,
+      },
+    };
+  }
+
+  inspectUserBash(event) {
+    if (!this.hasCodingAccess()) return this.blockUserBash(event);
+    const violation = this.workspacePolicy.inspectCommand(event?.command);
+    if (!violation) return undefined;
+    return {
+      result: {
+        output: `${violation.code}: ${violation.reason}`,
         exitCode: 126,
         cancelled: false,
         truncated: false,

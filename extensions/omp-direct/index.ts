@@ -74,7 +74,7 @@ export default function ompDirect(pi: ExtensionAPI): void {
   pi.on("session_shutdown", (_event, ctx) => controller.shutdown(ctx));
   pi.on("before_agent_start", (event) => controller.beforeAgentStart(event));
   pi.on("tool_call", (event) => controller.blockToolCall(event));
-  pi.on("user_bash", () => controller.blockUserBash());
+  pi.on("user_bash", (event) => controller.inspectUserBash(event));
   pi.on("model_select", async (event) => {
     await controller.rememberModel(event.model).catch(() => {});
   });

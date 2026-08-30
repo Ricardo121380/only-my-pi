@@ -214,7 +214,7 @@ test("approval enables coding once, revoke immediately removes mutation tools, a
   assert.equal(approved.details.status, "CODING_ACCESS_GRANTED");
   assert.equal(controller.state, DIRECT_SESSION_STATES.CODING);
   assert.deepEqual(pi.calls.active.at(-1), CODING_TOOL_NAMES);
-  assert.equal(controller.blockToolCall({ toolName: "edit" }), undefined);
+  assert.equal(controller.blockToolCall({ toolName: "edit", input: { path: "src/example.ts" } }), undefined);
   controller.accessCommand("revoke", ctx);
   assert.equal(controller.state, DIRECT_SESSION_STATES.INSPECT);
   assert.deepEqual(pi.calls.active.at(-1), INSPECTION_TOOL_NAMES);
