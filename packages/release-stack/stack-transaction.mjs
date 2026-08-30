@@ -67,6 +67,24 @@ async function restoreLink(target, snapshot) {
   if (snapshot?.exists) await atomicSymlink(target, snapshot.relativeTarget);
 }
 
+async function rollbackPiCommand(layout, paths, stackId) {
+  const candidates = [
+    layout.piShim,
+    path.join(paths.stage, "bin", "pi"),
+    path.join(stackPath(layout, stackId), "bin", "pi"),
+  ];
+  for (const candidate of candidates) {
+    const stat = await lstatOrNull(candidate);
+    if (!stat) continue;
+    if (stat.isFile() && !stat.isSymbolicLink()) return candidate;
+    if (!stat.isSymbolicLink()) continue;
+    const resolved = await fs.realpath(candidate).catch(() => null);
+    const resolvedStat = resolved ? await lstatOrNull(resolved) : null;
+    if (resolvedStat?.isFile() && !resolvedStat.isSymbolicLink()) return candidate;
+  }
+  fail("STACK_ROLLBACK_PI_UNAVAILABLE", "Harness rollback requires a verified staged or active Pi entrypoint");
+}
+
 function packageName(setting) {
   const value = typeof setting === "string" ? setting : setting?.source;
   const match = /^npm:(@[^/]+\/[^@]+|[^@]+)@([^@]+)$/u.exec(value ?? "");
@@ -462,7 +480,10 @@ export class StackTransactionEngine {
     // The inner Harness transaction must still see the candidate settings that
     // it published. Restoring the outer settings first makes its rollback look
     // like a no-op and leaves the Harness LKG pointed at the removed generation.
-    await this.harness?.rollback?.({ transactionId, rollback });
+    const piCommand = rollback?.harness?.bootstrapTransactionId
+      ? await rollbackPiCommand(this.layout, paths, journal.stackId)
+      : null;
+    await this.harness?.rollback?.({ transactionId, rollback, piCommand });
     if (shellRemovalPlan) await this.shellProfile.remove(shellRemovalPlan, rollback.shellProfile);
     await restoreLink(this.layout.ompShim, rollback.ompShim);
     await restoreLink(this.layout.piShim, rollback.piShim);

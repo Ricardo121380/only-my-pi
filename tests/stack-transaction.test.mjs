@@ -145,10 +145,11 @@ test("explicit rollback lets the Harness restore its LKG before outer settings",
     generationId: sha256("candidate-generation"),
     rollbackIdentity: { bootstrapTransactionId: "fixture-harness-transaction" },
   });
-  value.harness.rollback = async ({ rollback }) => {
+  value.harness.rollback = async ({ rollback, piCommand }) => {
     const current = JSON.parse(await fs.readFile(value.layout.settingsFile, "utf8"));
     assert.equal(current.harnessCandidate, true);
     assert.equal(rollback.harness.bootstrapTransactionId, "fixture-harness-transaction");
+    assert.equal(piCommand, value.layout.piShim);
     rollbackObservedCandidate = true;
   };
   const engine = createStackTransactionEngine({

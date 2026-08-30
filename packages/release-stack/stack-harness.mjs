@@ -103,12 +103,15 @@ export class StackHarnessAdapter {
     return extractManagedMetadata(installed.settings)?.generationId ?? null;
   }
 
-  async rollback({ rollback } = {}) {
+  async rollback({ rollback, piCommand } = {}) {
     const transactionId = rollback?.harness?.bootstrapTransactionId;
     if (!transactionId) return Object.freeze({ status: "NO_HARNESS_ROLLBACK_REQUIRED" });
+    if (typeof piCommand !== "string" || !path.isAbsolute(piCommand)) fail("STACK_ROLLBACK_PI_UNAVAILABLE", "Harness rollback requires an absolute controlled Pi entrypoint");
+    const options = this.spawnImpl === undefined ? {} : { spawnImpl: this.spawnImpl };
     const doctor = new DoctorService({ rootDir: this.rootDir });
     const runner = createNpmCommandRunner({ configRoot: this.configRoot });
-    const transaction = new TransactionEngine({ rootDir: this.rootDir, runner, doctorService: doctor });
+    const smokeRunner = createNoModelSmokeRunner({ ...options, piCommand });
+    const transaction = new TransactionEngine({ rootDir: this.rootDir, runner, smokeRunner, doctorService: doctor });
     const bootstrap = new BootstrapService({ rootDir: this.rootDir, doctorService: doctor, transactionEngine: transaction });
     const plan = await bootstrap.planRollback({ configRoot: this.configRoot, snapshotId: `before-${transactionId}` });
     return bootstrap.rollback({ configRoot: this.configRoot, plan });
