@@ -3,12 +3,37 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
+import { resolveBoundPackageRoot } from "../bootstrap/runtime-package-binding.mjs";
 import { OMP_CONTROL_COMMANDS } from "../control-service/cli-parser.mjs";
 
 const STACK_DIRECTORY = /^[a-f0-9]{64}$/u;
 const UUID = /^[a-f0-9-]{36}$/u;
 const INTERACTIVE_TOOLS = "read,grep,find,ls";
 const HEADLESS_TOOLS = "read,grep,find,ls";
+
+const DIRECT_EXTERNAL_EXTENSIONS = Object.freeze([
+  Object.freeze({ packageId: "permission-modes", entry: "src/index.ts", resourceFilter: Object.freeze([]) }),
+  Object.freeze({ packageId: "subagents", entry: "index.ts", resourceFilter: Object.freeze([]) }),
+  Object.freeze({
+    packageId: "agent-extensions",
+    entry: null,
+    resourceFilter: Object.freeze([
+      "extensions/sessions/index.ts",
+      "extensions/context/index.ts",
+      "extensions/review/index.ts",
+      "extensions/notify/index.ts",
+    ]),
+  }),
+  Object.freeze({ packageId: "lsp", entry: "dist/index.ts", resourceFilter: Object.freeze([]) }),
+  Object.freeze({ packageId: "usage", entry: "dist/index.js", resourceFilter: Object.freeze([]) }),
+]);
+
+const DIRECT_FIRST_PARTY_EXTENSIONS = Object.freeze([
+  "extensions/session-ledger/index.ts",
+  "extensions/context-doctor/index.ts",
+  "extensions/omp-control/index.ts",
+  "extensions/omp-direct/index.ts",
+]);
 
 const SAFE_BOOLEAN_FLAGS = new Set([
   "--print", "-p",
@@ -75,9 +100,16 @@ function within(root, target) {
 function cleanEnvironment(env) {
   const output = {};
   for (const [key, value] of Object.entries(env ?? {})) {
+    if (key.startsWith("ONLY_MY_PI_") || key === "PI_PERMISSION_MODE") continue;
     if (typeof value === "string") output[key] = value;
   }
   return output;
+}
+
+function equalStrings(left, right) {
+  return Array.isArray(left)
+    && left.length === right.length
+    && left.every((entry, index) => entry === right[index]);
 }
 
 function flagValue(argv, flag) {
@@ -162,6 +194,42 @@ async function resolveContainedRegularFile(root, relativePath, label, { executab
   return resolved;
 }
 
+async function resolveContainedDirectory(root, relativePath, label) {
+  const candidate = path.join(root, relativePath);
+  const entry = await fs.lstat(candidate).catch(() => null);
+  if (!entry || !entry.isDirectory() || entry.isSymbolicLink()) {
+    fail("OMP_CONTROLLED_STACK_INVALID", `${label} is not a real directory`);
+  }
+  const resolved = await fs.realpath(candidate);
+  if (!within(root, resolved)) fail("OMP_CONTROLLED_STACK_INVALID", `${label} escapes the controlled stack`);
+  return resolved;
+}
+
+async function resolveExtensionEntry(root, relativePath, label) {
+  if (typeof relativePath !== "string"
+    || relativePath.length === 0
+    || path.isAbsolute(relativePath)
+    || relativePath.includes("\\")
+    || /(?:^|\/)\.\.(?:\/|$)/u.test(relativePath)) {
+    fail("OMP_DIRECT_EXTENSION_INVALID", `${label} has an invalid extension path`);
+  }
+  const candidate = path.join(root, ...relativePath.split("/"));
+  const stat = await fs.lstat(candidate).catch(() => null);
+  if (!stat || !stat.isFile() || stat.isSymbolicLink()) {
+    fail("OMP_DIRECT_EXTENSION_INVALID", `${label} must be a regular non-symlink file`);
+  }
+  const resolvedRoot = await fs.realpath(root);
+  const resolved = await fs.realpath(candidate);
+  if (!within(resolvedRoot, resolved)) fail("OMP_DIRECT_EXTENSION_INVALID", `${label} escapes its verified package root`);
+  return resolved;
+}
+
+function manifestExtensions(manifest) {
+  const entries = manifest?.pi?.extensions;
+  if (!Array.isArray(entries) || entries.some((entry) => typeof entry !== "string")) return [];
+  return entries.map((entry) => entry.replace(/^\.\//u, ""));
+}
+
 async function inspectStackRoot(candidate) {
   let root;
   try {
@@ -174,12 +242,14 @@ async function inspectStackRoot(candidate) {
   const nodePath = await resolveContainedRegularFile(root, path.join("node", "bin", "node"), "embedded Node", { executable: true });
   const piCliPath = await resolveContainedRegularFile(root, path.join("pi", "dist", "bundle", "cli.js"), "controlled Pi CLI");
   const ompCliPath = await resolveContainedRegularFile(root, path.join("only-my-pi", "package", "bin", "omp.mjs"), "only-my-pi CLI");
+  const ompPackageRoot = await resolveContainedDirectory(root, path.join("only-my-pi", "package"), "only-my-pi package root");
   return Object.freeze({
     root,
     stackId: `sha256:${path.basename(root)}`,
     nodePath,
     piCliPath,
     ompCliPath,
+    ompPackageRoot,
   });
 }
 
@@ -199,16 +269,83 @@ export async function resolveControlledStack({ packageRoot, homeDir = os.homedir
   fail("OMP_CONTROLLED_STACK_UNAVAILABLE", "No verified active only-my-pi stack is available; run the installed OMP CLI or use `omp admin doctor`");
 }
 
-export function buildDirectPiInvocation({ argv, stack, env = process.env, randomUUIDImpl = randomUUID } = {}) {
+export function resolveDirectConfigRoot({ env = process.env, homeDir = os.homedir() } = {}) {
+  const configured = env?.PI_CODING_AGENT_DIR;
+  const candidate = configured === undefined ? path.join(homeDir, ".pi", "agent") : configured;
+  if (typeof candidate !== "string" || !path.isAbsolute(candidate) || /[\0\r\n]/u.test(candidate)) {
+    fail("OMP_DIRECT_CONFIG_ROOT_INVALID", "Pi config root must be an absolute path");
+  }
+  return path.resolve(candidate);
+}
+
+/**
+ * Build the direct-session extension set from verified package bindings. Pi's
+ * ambient extension discovery is disabled for `omp`, so user/project packages
+ * cannot create a second /plan owner or silently widen the tool surface. Raw
+ * `pi` continues to use the user's ordinary discovery settings.
+ */
+export async function resolveDirectExtensionSet({
+  stack,
+  configRoot,
+  resolvePackage = resolveBoundPackageRoot,
+} = {}) {
+  if (!stack || typeof stack.ompPackageRoot !== "string" || !path.isAbsolute(stack.ompPackageRoot)) {
+    fail("OMP_CONTROLLED_STACK_INVALID", "direct extension resolution requires the controlled only-my-pi package root");
+  }
+  if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) {
+    fail("OMP_DIRECT_CONFIG_ROOT_INVALID", "direct extension resolution requires an absolute Pi config root");
+  }
+  const resolved = [];
+  const identities = [];
+  for (const expected of DIRECT_EXTERNAL_EXTENSIONS) {
+    const pkg = await resolvePackage({ configRoot, packageId: expected.packageId });
+    if (pkg?.binding?.binding !== "external" || pkg.binding.owner !== "user") {
+      fail("OMP_DIRECT_PACKAGE_OWNERSHIP_INVALID", `${expected.packageId} must remain an external user-owned binding`);
+    }
+    const actualFilter = pkg.binding.resourceFilter ?? [];
+    if (!equalStrings(actualFilter, expected.resourceFilter)) {
+      fail("OMP_DIRECT_RESOURCE_FILTER_DRIFT", `${expected.packageId} resource filter differs from the audited direct-session set`);
+    }
+    const entries = expected.entry === null ? expected.resourceFilter : [expected.entry];
+    const declared = new Set(manifestExtensions(pkg.manifest));
+    for (const entry of entries) {
+      if (!declared.has(entry)) {
+        fail("OMP_DIRECT_EXTENSION_UNDECLARED", `${expected.packageId} no longer declares ${entry}`);
+      }
+      resolved.push(await resolveExtensionEntry(pkg.root, entry, `${expected.packageId}:${entry}`));
+      identities.push(`${expected.packageId}:${entry}`);
+    }
+  }
+  for (const entry of DIRECT_FIRST_PARTY_EXTENSIONS) {
+    resolved.push(await resolveExtensionEntry(stack.ompPackageRoot, entry, `only-my-pi:${entry}`));
+    identities.push(`only-my-pi:${entry}`);
+  }
+  if (new Set(resolved).size !== resolved.length) fail("OMP_DIRECT_EXTENSION_DUPLICATE", "direct extension set contains a duplicate physical entry");
+  return Object.freeze({
+    extensions: Object.freeze(resolved),
+    identities: Object.freeze(identities),
+    planModeOwner: "only-my-pi",
+  });
+}
+
+export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = process.env, randomUUIDImpl = randomUUID } = {}) {
   const inspected = inspectDirectAgentArguments(argv ?? []);
   if (!stack || typeof stack.nodePath !== "string" || typeof stack.piCliPath !== "string" || !/^sha256:[a-f0-9]{64}$/u.test(stack.stackId ?? "")) {
     fail("OMP_CONTROLLED_STACK_INVALID", "direct Agent launch requires a verified controlled stack");
+  }
+  if (!Array.isArray(extensionPaths)
+    || extensionPaths.length === 0
+    || new Set(extensionPaths).size !== extensionPaths.length
+    || extensionPaths.some((entry) => typeof entry !== "string" || !path.isAbsolute(entry) || /[\0\r\n]/u.test(entry))) {
+    fail("OMP_DIRECT_EXTENSION_SET_INVALID", "direct Agent launch requires a non-empty verified extension set");
   }
   const launchId = randomUUIDImpl();
   if (typeof launchId !== "string" || !UUID.test(launchId)) fail("OMP_LAUNCH_ID_INVALID", "launch id generator returned an invalid UUID");
 
   const piArgs = [
     stack.piCliPath,
+    "--no-extensions",
+    ...extensionPaths.flatMap((entry) => ["--extension", entry]),
     "--tools",
     inspected.headless ? HEADLESS_TOOLS : INTERACTIVE_TOOLS,
     "--perm",
@@ -229,7 +366,9 @@ export function buildDirectPiInvocation({ argv, stack, env = process.env, random
 export async function launchDirectAgent({ argv = [], packageRoot, homeDir, stackRoot, env = process.env, execve = process.execve, randomUUIDImpl } = {}) {
   if (typeof execve !== "function") fail("OMP_EXECVE_UNAVAILABLE", "this Node runtime does not support process.execve()");
   const stack = await resolveControlledStack({ packageRoot, homeDir, stackRoot });
-  const invocation = buildDirectPiInvocation({ argv, stack, env, randomUUIDImpl });
+  const configRoot = resolveDirectConfigRoot({ env, homeDir });
+  const directExtensions = await resolveDirectExtensionSet({ stack, configRoot });
+  const invocation = buildDirectPiInvocation({ argv, stack, extensionPaths: directExtensions.extensions, env, randomUUIDImpl });
   execve(invocation.executable, [...invocation.argv], { ...invocation.env });
   fail("OMP_EXECVE_RETURNED", "controlled Pi process replacement returned unexpectedly");
 }

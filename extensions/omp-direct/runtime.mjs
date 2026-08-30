@@ -197,6 +197,7 @@ export class DirectSessionController {
     this.approvedScope = [];
     this.approvedRequest = null;
     this.orchestrator = null;
+    this.unsafePermissionNotified = false;
   }
 
   isDirect() { return this.environment.ONLY_MY_PI_DIRECT === "1"; }
@@ -220,6 +221,47 @@ export class DirectSessionController {
     }
     this.pi.setActiveTools(active);
     return active;
+  }
+
+  currentPermissionMode(ctx = this.context) {
+    let restored = null;
+    try {
+      const entries = ctx?.sessionManager?.getEntries?.() ?? [];
+      for (const entry of entries) {
+        if (entry?.type === "custom"
+          && entry.customType === "perm-mode"
+          && typeof entry.data?.mode === "string") restored = entry.data.mode.toLowerCase();
+      }
+    } catch {
+      // pi-permission-modes also publishes the live mode through the process
+      // environment, so an unreadable historical entry cannot widen OMP.
+    }
+    const live = typeof this.environment.PI_PERMISSION_MODE === "string"
+      ? this.environment.PI_PERMISSION_MODE.toLowerCase()
+      : null;
+    return live ?? restored ?? "unknown";
+  }
+
+  enforcePermissionBoundary(ctx = this.context) {
+    const mode = this.currentPermissionMode(ctx);
+    if (mode !== "yolo") {
+      this.unsafePermissionNotified = false;
+      return { ok: true, mode };
+    }
+    this.explicitPlan = false;
+    this.approvedRequest = null;
+    this.approvedScope = [];
+    this.state = DIRECT_SESSION_STATES.INSPECT;
+    this.applyToolCeiling();
+    this.updateUi(ctx);
+    if (!this.unsafePermissionNotified && ctx?.mode === "tui") {
+      ctx.ui.notify(
+        "UNSUPPORTED_UNSAFE_OVERRIDE: /perm yolo cannot widen an OMP direct session. Coding access was revoked; use /perm build and request coding access again, or use raw pi for an explicitly unguarded session.",
+        "warning",
+      );
+      this.unsafePermissionNotified = true;
+    }
+    return { ok: false, mode, code: "UNSUPPORTED_UNSAFE_OVERRIDE" };
   }
 
   updateUi(ctx = this.context) {
@@ -295,6 +337,7 @@ export class DirectSessionController {
     this.approvedScope = [];
     this.applyToolCeiling();
     this.updateUi(ctx);
+    this.enforcePermissionBoundary(ctx);
     try {
       if (typeof this.pi.exec === "function") {
         this.workspaceBaseline = await this.captureBaseline({
@@ -335,6 +378,7 @@ export class DirectSessionController {
     this.approvedRequest = null;
     this.approvedScope = [];
     this.orchestrator = null;
+    this.unsafePermissionNotified = false;
     this.context = null;
   }
 
@@ -350,6 +394,7 @@ export class DirectSessionController {
   }
 
   accessCommand(args, ctx) {
+    this.enforcePermissionBoundary(ctx);
     const command = typeof args === "string" ? args.trim() : "";
     if (command === "revoke") {
       this.explicitPlan = false;
@@ -363,12 +408,16 @@ export class DirectSessionController {
       ctx.ui.notify("Usage: /access or /access revoke", "warning");
       return;
     }
-    ctx.ui.notify(`OMP access: ${this.state}. Project-local coding is ${this.hasCodingAccess() ? "enabled" : "disabled"}.`, "info");
+    ctx.ui.notify(`OMP access: ${this.state}. Project-local coding is ${this.hasCodingAccess() ? "enabled" : "disabled"}. Physical permission mode: ${this.currentPermissionMode(ctx)}.`, "info");
   }
 
   async requestCodingAccess(input, ctx) {
     if (this.headless || ctx.mode !== "tui" || !ctx.hasUI) {
       return toolResult("CODING_ACCESS_UI_REQUIRED", "Headless and non-interactive OMP sessions cannot obtain write access.");
+    }
+    const permission = this.enforcePermissionBoundary(ctx);
+    if (!permission.ok) {
+      return toolResult(permission.code, "Permission mode YOLO is incompatible with guarded OMP coding. Switch to /perm build, then request access again.");
     }
     if (this.hasCodingAccess()) return toolResult("CODING_ACCESS_ALREADY_GRANTED", "Project-local coding is already enabled for this process.");
     let request;
@@ -380,6 +429,10 @@ export class DirectSessionController {
     this.transition(DIRECT_SESSION_STATES.AWAITING_CODING_ACCESS, ctx);
     const choice = await ctx.ui.select(accessSummary(request, ctx.cwd), [...ACCESS_OPTIONS]);
     if (choice === ACCESS_OPTIONS[0]) {
+      const afterApproval = this.enforcePermissionBoundary(ctx);
+      if (!afterApproval.ok) {
+        return toolResult(afterApproval.code, "Permission mode changed to YOLO while approval was pending; coding access was not granted.");
+      }
       this.explicitPlan = false;
       this.approvedRequest = request;
       this.approvedScope = [...request.scope];
@@ -404,10 +457,14 @@ export class DirectSessionController {
   }
 
   beforeAgentStart(event) {
+    const permission = this.enforcePermissionBoundary(this.context);
+    // pi-permission-modes may recompute visibility for the same turn. OMP is
+    // loaded last and reapplies its coarser session ceiling after that handler.
+    this.applyToolCeiling();
     const state = this.state;
     const coding = this.hasCodingAccess();
     return {
-      systemPrompt: `${event.systemPrompt}\n\n## only-my-pi Direct Coding Agent\nCurrent OMP state: ${state}.\n- Inspect the project before proposing changes.\n- Before edit, write, bash, project gates, or a writer child, call request_coding_access as the only tool in that tool batch.\n- Classify a task as complex when it changes public APIs, dependencies, schemas, security, concurrency, migrations, deletion, releases, or multiple coordinated modules.\n- Complex and explicit /plan tasks require a complete plan before requesting access.\n- A coding grant is process-local and project-local; it never authorizes project-external paths, secrets, MCP, unrestricted network, destructive Git, publishing, deployment, or silent commits.\n- Preserve pre-existing working-tree changes and re-read files immediately before editing.\n- Use delegate_readonly_agent only for bounded independent exploration or fresh review; at most two children may run concurrently and no child may delegate again.\n- Use delegate_managed_writer only when the approved complex plan explicitly enables it. OMP permits one writer in an ordinary managed Git clone, captures its patch, requires a fresh read-only review, and applies only a conflict-free in-scope patch.\n- Keep simple tasks with the main Agent. After a managed patch is applied, run the approved verification again in the real current worktree.\n${coding ? "- Coding access is active for this process; ordinary in-scope edits do not need another request." : "- Coding access is not active. Remain read-only until request_coding_access returns CODING_ACCESS_GRANTED."}`,
+      systemPrompt: `${event.systemPrompt}\n\n## only-my-pi Direct Coding Agent\nCurrent OMP state: ${state}. Physical permission mode: ${permission.mode}.\n- Inspect the project before proposing changes.\n- Before edit, write, bash, project gates, or a writer child, call request_coding_access as the only tool in that tool batch.\n- Classify a task as complex when it changes public APIs, dependencies, schemas, security, concurrency, migrations, deletion, releases, or multiple coordinated modules.\n- Complex and explicit /plan tasks require a complete plan before requesting access.\n- A coding grant is process-local and project-local; it never authorizes project-external paths, secrets, MCP, unrestricted network, destructive Git, publishing, deployment, or silent commits.\n- Preserve pre-existing working-tree changes and re-read files immediately before editing.\n- Use delegate_readonly_agent only for bounded independent exploration or fresh review; at most two children may run concurrently and no child may delegate again.\n- Use delegate_managed_writer only when the approved complex plan explicitly enables it. OMP permits one writer in an ordinary managed Git clone, captures its patch, requires a fresh read-only review, and applies only a conflict-free in-scope patch.\n- Keep simple tasks with the main Agent. After a managed patch is applied, run the approved verification again in the real current worktree.\n${permission.ok ? "" : "- YOLO was detected and OMP revoked coding access. Ask the user to switch to /perm build; do not attempt mutation.\n"}${coding ? "- Coding access is active for this process; ordinary in-scope edits do not need another request." : "- Coding access is not active. Remain read-only until request_coding_access returns CODING_ACCESS_GRANTED."}`,
     };
   }
 
@@ -474,6 +531,7 @@ export class DirectSessionController {
   }
 
   blockToolCall(event) {
+    this.enforcePermissionBoundary(this.context);
     if (CODING_AUTHORITY_TOOL_NAMES.has(event.toolName) && !this.hasCodingAccess()) {
       return { block: true, reason: "OMP_CODING_ACCESS_REQUIRED: managed writing is disabled until request_coding_access is approved." };
     }
@@ -507,6 +565,7 @@ export class DirectSessionController {
   }
 
   inspectUserBash(event) {
+    this.enforcePermissionBoundary(this.context);
     if (!this.hasCodingAccess()) return this.blockUserBash(event);
     const violation = this.workspacePolicy.inspectCommand(event?.command);
     if (!violation) return undefined;

@@ -111,7 +111,7 @@ test("bound package resolution validates external trees and managed generation r
   const physicalRootDigest = `sha256:${await hashResourcePath({ artifactRoot: path.join(configRoot, "npm"), relativePath: "node_modules/pi-subagents", allowContainedSymlinks: true })}`;
   const settings = {
     onlyMyPi: {
-      packageBindings: [{ id: "subagents", binding: "external", name: "pi-subagents", resolvedVersion: "0.45.2", physicalRootDigest }],
+      packageBindings: [{ id: "subagents", binding: "external", owner: "user", name: "pi-subagents", resolvedVersion: "0.45.2", physicalRootDigest }],
       managedSettings: { packages: [] },
     },
   };
@@ -148,7 +148,7 @@ test("bound package resolution rejects malformed settings, identities, binding k
   const packageRoot = path.join(configRoot, "npm", "node_modules", "package");
   await fs.mkdir(packageRoot, { recursive: true });
   await fs.writeFile(path.join(packageRoot, "package.json"), JSON.stringify({ name: "wrong", version: "1.0.0" }));
-  await writeSettings({ id: "package", binding: "external", name: "package", resolvedVersion: "1.0.0", physicalRootDigest: `sha256:${"0".repeat(64)}` });
+  await writeSettings({ id: "package", binding: "external", owner: "user", name: "package", resolvedVersion: "1.0.0", physicalRootDigest: `sha256:${"0".repeat(64)}` });
   await assert.rejects(resolveBoundPackageRoot({ configRoot, packageId: "package" }), { code: "RUNTIME_PACKAGE_DRIFT" });
 
   await writeSettings({ id: "package", binding: "managed", name: "package", resolvedVersion: "1.0.0" }, [null, "npm:package@1.0.0", { source: "./elsewhere" }, { source: "./only-my-pi/generations/missing" }]);
@@ -156,7 +156,7 @@ test("bound package resolution rejects malformed settings, identities, binding k
 
   await fs.rm(packageRoot, { recursive: true });
   await fs.symlink(configRoot, packageRoot);
-  await writeSettings({ id: "package", binding: "external", name: "package", resolvedVersion: "1.0.0", physicalRootDigest: `sha256:${"0".repeat(64)}` });
+  await writeSettings({ id: "package", binding: "external", owner: "user", name: "package", resolvedVersion: "1.0.0", physicalRootDigest: `sha256:${"0".repeat(64)}` });
   await assert.rejects(resolveBoundPackageRoot({ configRoot, packageId: "package" }), { code: "RUNTIME_PACKAGE_UNSAFE" });
 });
 

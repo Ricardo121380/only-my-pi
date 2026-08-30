@@ -10,11 +10,14 @@ import {
   classifyOmpInvocation,
   inspectDirectAgentArguments,
   OMP_AGENT_USAGE,
+  resolveDirectConfigRoot,
+  resolveDirectExtensionSet,
   resolveControlledStack,
 } from "../packages/direct-agent/launcher.mjs";
 
 const STACK_DIGEST = "a".repeat(64);
 const UUID = "00000000-0000-4000-8000-000000000000";
+const EXTENSIONS = Object.freeze(["/verified/permission.ts", "/verified/omp-direct.ts"]);
 
 function outputStream() {
   let value = "";
@@ -39,6 +42,15 @@ async function fakeStack(t) {
   await fs.writeFile(path.join(root, "node", "bin", "node"), "node", { mode: 0o755 });
   await fs.writeFile(path.join(root, "pi", "dist", "bundle", "cli.js"), "pi\n", { mode: 0o644 });
   await fs.writeFile(path.join(root, "only-my-pi", "package", "bin", "omp.mjs"), "omp\n", { mode: 0o644 });
+  for (const entry of [
+    "extensions/session-ledger/index.ts",
+    "extensions/context-doctor/index.ts",
+    "extensions/omp-control/index.ts",
+    "extensions/omp-direct/index.ts",
+  ]) {
+    await fs.mkdir(path.dirname(path.join(root, "only-my-pi", "package", entry)), { recursive: true });
+    await fs.writeFile(path.join(root, "only-my-pi", "package", entry), "export default function extension() {}\n");
+  }
   const current = path.join(home, ".local", "share", "only-my-pi", "current-stack");
   await fs.symlink(path.relative(path.dirname(current), root), current);
   return { home, root };
@@ -101,12 +113,18 @@ test("Pi invocation is read-only before admission and carries no prompt in marke
   const interactive = buildDirectPiInvocation({
     argv: ["--model", "opencode-go/deepseek-v4-flash", prompt],
     stack,
-    env: { PATH: "/usr/bin", UNDEFINED: undefined },
+    extensionPaths: EXTENSIONS,
+    env: { PATH: "/usr/bin", UNDEFINED: undefined, PI_PERMISSION_MODE: "yolo", ONLY_MY_PI_OLD: "stale" },
     randomUUIDImpl: () => UUID,
   });
-  assert.deepEqual(interactive.argv.slice(0, 7), [
+  assert.deepEqual(interactive.argv.slice(0, 12), [
     stack.nodePath,
     stack.piCliPath,
+    "--no-extensions",
+    "--extension",
+    EXTENSIONS[0],
+    "--extension",
+    EXTENSIONS[1],
     "--tools",
     "read,grep,find,ls",
     "--perm",
@@ -118,10 +136,81 @@ test("Pi invocation is read-only before admission and carries no prompt in marke
   assert.equal(interactive.env.ONLY_MY_PI_STACK_ID, `sha256:${STACK_DIGEST}`);
   assert.equal(Object.values(interactive.env).includes(prompt), false);
   assert.equal(Object.hasOwn(interactive.env, "UNDEFINED"), false);
+  assert.equal(Object.hasOwn(interactive.env, "PI_PERMISSION_MODE"), false);
+  assert.equal(Object.hasOwn(interactive.env, "ONLY_MY_PI_OLD"), false);
 
-  const headless = buildDirectPiInvocation({ argv: ["-p", "review"], stack, randomUUIDImpl: () => UUID });
+  const headless = buildDirectPiInvocation({ argv: ["-p", "review"], stack, extensionPaths: EXTENSIONS, randomUUIDImpl: () => UUID });
   assert.equal(headless.headless, true);
-  assert.deepEqual(headless.argv.slice(2, 6), ["--tools", "read,grep,find,ls", "--perm", "plan"]);
+  assert.deepEqual(headless.argv.slice(7, 11), ["--tools", "read,grep,find,ls", "--perm", "plan"]);
+  assert.throws(() => buildDirectPiInvocation({ argv: [], stack, extensionPaths: [], randomUUIDImpl: () => UUID }), {
+    code: "OMP_DIRECT_EXTENSION_SET_INVALID",
+  });
+});
+
+test("direct extension resolution disables ambient discovery and admits only audited owners", async (t) => {
+  const value = await fakeStack(t);
+  const stack = await resolveControlledStack({ stackRoot: value.root, homeDir: value.home });
+  const configRoot = path.join(value.home, ".pi", "agent");
+  await fs.mkdir(configRoot, { recursive: true });
+  const packages = new Map();
+  const add = async (packageId, extensions, resourceFilter = []) => {
+    const root = path.join(value.home, "packages", packageId);
+    for (const entry of extensions) {
+      await fs.mkdir(path.dirname(path.join(root, entry)), { recursive: true });
+      await fs.writeFile(path.join(root, entry), "export default function extension() {}\n");
+    }
+    packages.set(packageId, {
+      root,
+      manifest: { pi: { extensions: extensions.map((entry) => `./${entry}`) } },
+      binding: { binding: "external", owner: "user", resourceFilter },
+    });
+  };
+  await add("permission-modes", ["src/index.ts"]);
+  await add("subagents", ["index.ts"]);
+  await add("agent-extensions", [
+    "extensions/sessions/index.ts",
+    "extensions/context/index.ts",
+    "extensions/review/index.ts",
+    "extensions/notify/index.ts",
+    "extensions/unreviewed/index.ts",
+  ], [
+    "extensions/sessions/index.ts",
+    "extensions/context/index.ts",
+    "extensions/review/index.ts",
+    "extensions/notify/index.ts",
+  ]);
+  await add("lsp", ["dist/index.ts"]);
+  await add("usage", ["dist/index.js"]);
+  const resolved = await resolveDirectExtensionSet({
+    stack,
+    configRoot,
+    resolvePackage: async ({ packageId }) => packages.get(packageId),
+  });
+  assert.equal(resolved.planModeOwner, "only-my-pi");
+  assert.equal(resolved.extensions.length, 12);
+  assert.equal(resolved.identities.some((entry) => entry.includes("plan-mode")), false);
+  assert.equal(resolved.identities.some((entry) => entry.includes("unreviewed")), false);
+  assert.deepEqual(resolved.identities.slice(-4), [
+    "only-my-pi:extensions/session-ledger/index.ts",
+    "only-my-pi:extensions/context-doctor/index.ts",
+    "only-my-pi:extensions/omp-control/index.ts",
+    "only-my-pi:extensions/omp-direct/index.ts",
+  ]);
+
+  packages.get("permission-modes").binding.owner = "only-my-pi";
+  await assert.rejects(resolveDirectExtensionSet({
+    stack,
+    configRoot,
+    resolvePackage: async ({ packageId }) => packages.get(packageId),
+  }), { code: "OMP_DIRECT_PACKAGE_OWNERSHIP_INVALID" });
+});
+
+test("direct config root is explicit and absolute", () => {
+  assert.equal(resolveDirectConfigRoot({ env: {}, homeDir: "/tmp/home" }), "/tmp/home/.pi/agent");
+  assert.equal(resolveDirectConfigRoot({ env: { PI_CODING_AGENT_DIR: "/tmp/pi" }, homeDir: "/tmp/home" }), "/tmp/pi");
+  assert.throws(() => resolveDirectConfigRoot({ env: { PI_CODING_AGENT_DIR: "relative" } }), {
+    code: "OMP_DIRECT_CONFIG_ROOT_INVALID",
+  });
 });
 
 test("entrypoint renders Agent help and invokes the direct launcher without constructing admin services", async () => {

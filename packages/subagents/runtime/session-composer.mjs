@@ -5,7 +5,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { createAgentRegistry } from "../../agent-registry/index.mjs";
-import { hashResourcePath } from "../../bootstrap/graph-plan.mjs";
+import { resolveBoundPackageRoot } from "../../bootstrap/runtime-package-binding.mjs";
 import { createBatchSwarmControlService } from "../../control-service/batch-swarm-service.mjs";
 import { createDailyConfigService, selectRoleModel } from "../../daily-config/index.mjs";
 import { createDirectCodingOrchestrator } from "../../direct-agent/orchestration.mjs";
@@ -130,45 +130,7 @@ async function prepareWebAgentOverrides({ rootDir, managedRoot, sessionId, webEx
   return { runtimeRoot, agentsRoot, guardPath, webExtensionPath };
 }
 
-function packageSettingSource(value) {
-  if (typeof value === "string") return value;
-  return value && typeof value === "object" && !Array.isArray(value) && typeof value.source === "string" ? value.source : null;
-}
-
-async function assertPackageRoot(configRoot, packageRoot, expectedName, expectedVersion) {
-  contained(configRoot, packageRoot);
-  const stat = await fs.lstat(packageRoot);
-  if (!stat.isDirectory() || stat.isSymbolicLink()) fail("RUNTIME_PACKAGE_UNSAFE", `${expectedName} root must be a real directory`);
-  const manifest = await readJsonNoFollow(path.join(packageRoot, "package.json"));
-  if (manifest?.name !== expectedName || manifest?.version !== expectedVersion) fail("RUNTIME_PACKAGE_DRIFT", `${expectedName} identity drifted from its binding`);
-  return { root: packageRoot, manifest };
-}
-
-export async function resolveBoundPackageRoot({ configRoot, packageId } = {}) {
-  if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("resolveBoundPackageRoot requires absolute configRoot");
-  const settings = await readJsonNoFollow(path.join(configRoot, "settings.json"));
-  const binding = settings?.onlyMyPi?.packageBindings?.find((entry) => entry.id === packageId);
-  if (!binding) fail("RUNTIME_PACKAGE_BINDING_MISSING", `no installed binding exists for ${packageId}`);
-  if (typeof binding.name !== "string" || typeof binding.resolvedVersion !== "string") fail("RUNTIME_PACKAGE_BINDING_INVALID", `package binding is incomplete for ${packageId}`);
-  if (binding.binding === "external") {
-    const npmRoot = path.join(configRoot, "npm");
-    const relativePackagePath = `node_modules/${binding.name}`;
-    const result = await assertPackageRoot(configRoot, path.join(npmRoot, ...relativePackagePath.split("/")), binding.name, binding.resolvedVersion);
-    const digest = `sha256:${await hashResourcePath({ artifactRoot: npmRoot, relativePath: relativePackagePath, allowContainedSymlinks: true })}`;
-    if (digest !== binding.physicalRootDigest) fail("RUNTIME_PACKAGE_DRIFT", `${binding.name} physical tree differs from its installed binding`);
-    return result;
-  }
-  if (binding.binding !== "managed") fail("RUNTIME_PACKAGE_BINDING_INVALID", `unknown binding kind for ${packageId}`);
-  const managed = settings.onlyMyPi.managedSettings?.packages ?? [];
-  for (const setting of managed) {
-    const source = packageSettingSource(setting);
-    if (typeof source !== "string" || !source.startsWith("./only-my-pi/generations/")) continue;
-    const target = contained(configRoot, path.resolve(configRoot, source.slice(2)));
-    const manifest = await readJsonNoFollow(path.join(target, "package.json"), { missing: null });
-    if (manifest?.name === binding.name) return assertPackageRoot(configRoot, target, binding.name, binding.resolvedVersion);
-  }
-  fail("RUNTIME_PACKAGE_BINDING_MISSING", `managed package root is unavailable for ${packageId}`);
-}
+export { resolveBoundPackageRoot };
 
 async function loadCapabilityCeilingRegistrar(packageRoot) {
   const require = createRequire(path.join(packageRoot, "package.json"));

@@ -43,6 +43,7 @@ function makeContext({ select = async () => undefined, mode = "tui", model: curr
     model: currentModel,
     scopedModels,
     modelRegistry: { getAvailable: () => availableModels },
+    sessionManager: { getEntries: () => [] },
     ui: {
       select,
       notify: (message, type) => calls.notifications.push({ message, type }),
@@ -231,6 +232,73 @@ test("approval enables coding once, revoke immediately removes mutation tools, a
   assert.deepEqual(pi.calls.active.at(-1), INSPECTION_TOOL_NAMES);
   assert.equal(controller.blockToolCall({ toolName: "write" }).block, true);
   assert.equal(controller.blockUserBash().result.exitCode, 126);
+});
+
+test("permission YOLO revokes coding, blocks mutation, and the turn ceiling repairs tool visibility", async (t) => {
+  const configRoot = await tempConfig(t);
+  const pi = makePi();
+  const environment = {
+    ONLY_MY_PI_DIRECT: "1",
+    ONLY_MY_PI_HEADLESS: "0",
+    ONLY_MY_PI_MODEL_EXPLICIT: "1",
+    PI_PERMISSION_MODE: "build",
+  };
+  const ctx = makeContext({ select: async (_title, options) => options[0] });
+  const controller = new DirectSessionController({ pi, configRoot, environment });
+  await controller.start({ reason: "startup" }, { ...ctx, model: model("provider", "ready") });
+  const approved = await controller.requestCodingAccess({
+    taskSummary: "fix a local test",
+    complexity: "simple",
+    scope: ["src/**"],
+    riskFlags: [],
+    verification: ["npm test"],
+    orchestration: { useReadOnlyScouts: false, useManagedCloneWriter: false, useFreshReviewer: false },
+  }, ctx);
+  assert.equal(approved.details.status, "CODING_ACCESS_GRANTED");
+  assert.equal(controller.hasCodingAccess(), true);
+
+  environment.PI_PERMISSION_MODE = "yolo";
+  pi.calls.active.push(["read", "edit", "write", "bash"]);
+  const prompt = controller.beforeAgentStart({ systemPrompt: "base" });
+  assert.equal(controller.state, DIRECT_SESSION_STATES.INSPECT);
+  assert.equal(controller.hasCodingAccess(), false);
+  assert.deepEqual(pi.calls.active.at(-1), INSPECTION_TOOL_NAMES);
+  assert.match(prompt.systemPrompt, /YOLO was detected/u);
+  assert.match(ctx.calls.notifications.at(-1).message, /UNSUPPORTED_UNSAFE_OVERRIDE/u);
+  assert.match(controller.blockToolCall({ toolName: "edit", input: { path: "src/file.ts" } }).reason, /CODING_ACCESS_REQUIRED/u);
+
+  const denied = await controller.requestCodingAccess({
+    taskSummary: "try again",
+    complexity: "simple",
+    scope: ["src/**"],
+    riskFlags: [],
+    verification: [],
+    orchestration: { useReadOnlyScouts: false, useManagedCloneWriter: false, useFreshReviewer: false },
+  }, ctx);
+  assert.equal(denied.details.status, "UNSUPPORTED_UNSAFE_OVERRIDE");
+
+  environment.PI_PERMISSION_MODE = "build";
+  controller.beforeAgentStart({ systemPrompt: "base" });
+  assert.deepEqual(pi.calls.active.at(-1), INSPECTION_TOOL_NAMES);
+});
+
+test("latest public permission-mode session entry is honored without importing package internals", async (t) => {
+  const configRoot = await tempConfig(t);
+  const pi = makePi();
+  const ctx = makeContext();
+  ctx.sessionManager.getEntries = () => [
+    { type: "custom", customType: "perm-mode", data: { mode: "build" } },
+    { type: "custom", customType: "perm-mode", data: { mode: "yolo" } },
+  ];
+  const controller = new DirectSessionController({
+    pi,
+    configRoot,
+    environment: { ONLY_MY_PI_DIRECT: "1", ONLY_MY_PI_HEADLESS: "0", ONLY_MY_PI_MODEL_EXPLICIT: "1" },
+  });
+  controller.context = ctx;
+  controller.state = DIRECT_SESSION_STATES.CODING;
+  assert.equal(controller.enforcePermissionBoundary(ctx).code, "UNSUPPORTED_UNSAFE_OVERRIDE");
+  assert.equal(controller.state, DIRECT_SESSION_STATES.INSPECT);
 });
 
 test("explicit /plan forces complex access and sends a read-only planning prompt", async (t) => {
