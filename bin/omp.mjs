@@ -26,6 +26,11 @@ import { ProjectGateService, createNodeExecAdapter } from "../packages/project-g
 import { RunManagementService, createRunRecordStore } from "../packages/run-management/index.mjs";
 import { loadSettings } from "../packages/config-runtime/index.mjs";
 import {
+  classifyOmpInvocation,
+  launchDirectAgent,
+  OMP_AGENT_USAGE,
+} from "../packages/direct-agent/launcher.mjs";
+import {
   createGitHubReleasePayloadSource,
   createLocalReleasePayloadSource,
   createShellProfileService,
@@ -515,6 +520,44 @@ export async function runOmpCli({
   }
 }
 
+/**
+ * Route the public `omp` entry without placing a long-lived wrapper around Pi.
+ * Management requests retain the existing plan-first CLI. Daily Agent requests
+ * replace this process with the controlled Pi runtime through launchDirectAgent.
+ */
+export async function runOmpEntrypoint(options = {}) {
+  const argv = options.argv ?? process.argv.slice(2);
+  const stdout = options.stdout ?? process.stdout;
+  const stderr = options.stderr ?? process.stderr;
+  let route;
+  try {
+    route = classifyOmpInvocation(argv);
+    if (route.kind === "agent-help") {
+      writeText(stdout, `${OMP_AGENT_USAGE}\n`);
+      return OMP_EXIT_CODES.SUCCESS;
+    }
+    if (route.kind === "admin") {
+      return await runOmpCli({ ...options, argv: route.argv });
+    }
+    const agentLauncher = options.agentLauncher ?? launchDirectAgent;
+    assertFunction(agentLauncher, "agentLauncher");
+    await agentLauncher({
+      argv: route.argv,
+      packageRoot: options.rootDir ?? DEFAULT_ROOT,
+      homeDir: options.homedir ? options.homedir() : os.homedir(),
+      stackRoot: options.stackRoot,
+      env: options.env ?? process.env,
+      execve: options.execve ?? process.execve,
+      randomUUIDImpl: options.randomUUIDImpl,
+    });
+    return OMP_EXIT_CODES.SUCCESS;
+  } catch (error) {
+    const output = publicError(error);
+    writeText(stderr, formatOmpHuman(output));
+    return exitCodeForError(error);
+  }
+}
+
 function isExecutedAsProgram(argvPath) {
   if (typeof argvPath !== "string" || argvPath.length === 0) return false;
   try {
@@ -525,5 +568,5 @@ function isExecutedAsProgram(argvPath) {
 }
 
 if (isExecutedAsProgram(process.argv[1])) {
-  process.exitCode = await runOmpCli();
+  process.exitCode = await runOmpEntrypoint();
 }

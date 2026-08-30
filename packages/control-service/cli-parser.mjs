@@ -34,7 +34,7 @@ const BOOLEAN_OPTIONS = new Map([
   ["--configure-shell", "configureShell"],
 ]);
 
-const COMMANDS = new Set([
+export const OMP_CONTROL_COMMANDS = Object.freeze([
   "bootstrap",
   "install",
   "doctor",
@@ -63,6 +63,7 @@ const COMMANDS = new Set([
   "theme",
   "help",
 ]);
+const COMMANDS = new Set(OMP_CONTROL_COMMANDS);
 
 const MODE_COMMANDS = new Set(["list", "show", "use", "reset", "doctor", "diff", "scaffold"]);
 const PROFILE_COMMANDS = new Set(["list", "show", "diff"]);
