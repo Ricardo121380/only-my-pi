@@ -22,7 +22,7 @@ function makePi() {
   const pi = {
     calls,
     getAllTools: () => [
-      ...["read", "grep", "find", "ls", "edit", "write", "bash", "powershell", "request_coding_access"].map((name) => ({ name })),
+      ...["read", "grep", "find", "ls", "edit", "write", "bash", "powershell", "request_coding_access", "delegate_readonly_agent", "delegate_managed_writer"].map((name) => ({ name })),
     ],
     getActiveTools: () => calls.active.at(-1) ?? ["read", "grep", "find", "ls"],
     setActiveTools: (names) => calls.active.push([...names]),
@@ -119,6 +119,17 @@ test("coding access request rejects risky simple tasks and incomplete complex pl
       orchestration: { useReadOnlyScouts: false, useManagedCloneWriter: false, useFreshReviewer: false },
     }),
     { code: "CODING_ACCESS_SCOPE_INVALID" },
+  );
+  assert.throws(
+    () => normalizeCodingAccessRequest({
+      taskSummary: "delegate a tiny edit",
+      complexity: "simple",
+      scope: ["src/**"],
+      riskFlags: [],
+      verification: [],
+      orchestration: { useReadOnlyScouts: false, useManagedCloneWriter: true, useFreshReviewer: false },
+    }),
+    { code: "MANAGED_WRITER_PLAN_REQUIRED" },
   );
 });
 
@@ -243,4 +254,47 @@ test("explicit /plan forces complex access and sends a read-only planning prompt
     verification: [],
     orchestration: { useReadOnlyScouts: false, useManagedCloneWriter: false, useFreshReviewer: false },
   }, { explicitPlan: true }), { code: "COMPLEX_PLAN_REQUIRED" });
+});
+
+test("direct tools use one attached orchestrator and managed writer requires its approved plan", async (t) => {
+  const configRoot = await tempConfig(t);
+  const pi = makePi();
+  pi.exec = async () => ({ stdout: "", stderr: "", code: 0 });
+  const ctx = makeContext({ select: async (_title, options) => options[0] });
+  const calls = [];
+  const orchestrator = {
+    async delegateReadOnly(input) { calls.push(["read", input]); return { status: "completed", result: "evidence" }; },
+    async delegateWriter(input) { calls.push(["write", input]); return { status: "WRITER_PATCH_APPLIED_REQUIRES_REAL_WORKSPACE_VERIFICATION", changedPaths: ["src/fix.ts"] }; },
+    snapshot() { return { physicalRuntimeOwner: "pi-subagents", maximumConcurrency: 2, maximumChildren: 8, totalChildren: 2, writerUsed: true, children: [] }; },
+  };
+  const controller = new DirectSessionController({
+    pi,
+    configRoot,
+    environment: { ONLY_MY_PI_DIRECT: "1", ONLY_MY_PI_HEADLESS: "0", ONLY_MY_PI_MODEL_EXPLICIT: "1" },
+    captureBaseline: async () => ({ formatVersion: 1, status: "GIT_REPOSITORY", head: "a".repeat(40), paths: [] }),
+  });
+  assert.equal(controller.attachOrchestrator(orchestrator), true);
+  await controller.start({ reason: "startup" }, { ...ctx, model: model("provider", "ready") });
+  const read = await controller.delegateReadOnly({ agent: "omp-explorer", task: "inspect" }, ctx);
+  assert.equal(read.details.status, "DIRECT_CHILD_COMPLETED");
+  const denied = await controller.delegateManagedWriter({ scope: ["src/**"] }, ctx);
+  assert.equal(denied.details.status, "CODING_ACCESS_REQUIRED");
+  const approved = await controller.requestCodingAccess({
+    taskSummary: "implement a coordinated fix",
+    complexity: "complex",
+    scope: ["src/**"],
+    riskFlags: [],
+    plan: "Inspect the behavior, implement the change, test it, and review the patch.",
+    verification: ["npm test"],
+    orchestration: { useReadOnlyScouts: true, useManagedCloneWriter: true, useFreshReviewer: true },
+  }, ctx);
+  assert.equal(approved.details.status, "CODING_ACCESS_GRANTED");
+  const written = await controller.delegateManagedWriter({ scope: ["src/**"] }, ctx);
+  assert.equal(written.details.status, "WRITER_PATCH_APPLIED_REQUIRES_REAL_WORKSPACE_VERIFICATION");
+  assert.equal(calls[0][0], "read");
+  assert.equal(calls[1][0], "write");
+  assert.equal(calls[1][1].plan, "Inspect the behavior, implement the change, test it, and review the patch.");
+  assert.equal(calls[1][1].baseline.status, "GIT_REPOSITORY");
+  controller.agentsCommand(ctx);
+  assert.match(ctx.calls.notifications.at(-1).message, /Runtime owner: pi-subagents/u);
 });

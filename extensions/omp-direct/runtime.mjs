@@ -8,6 +8,7 @@ import {
   captureWorkspaceBaseline,
   createWorkspacePolicy,
 } from "../../packages/direct-agent/workspace.mjs";
+import { DIRECT_READ_ONLY_AGENTS } from "../../packages/direct-agent/orchestration.mjs";
 
 export const DIRECT_SESSION_STATES = Object.freeze({
   INSPECT: "INSPECT",
@@ -22,6 +23,7 @@ export const INSPECTION_TOOL_NAMES = Object.freeze([
   "find",
   "ls",
   "request_coding_access",
+  "delegate_readonly_agent",
 ]);
 
 export const CODING_TOOL_NAMES = Object.freeze([
@@ -29,9 +31,11 @@ export const CODING_TOOL_NAMES = Object.freeze([
   "edit",
   "write",
   "bash",
+  "delegate_managed_writer",
 ]);
 
 export const MUTATION_TOOL_NAMES = Object.freeze(new Set(["edit", "write", "bash", "powershell"]));
+export const CODING_AUTHORITY_TOOL_NAMES = Object.freeze(new Set(["delegate_managed_writer"]));
 
 const RISK_FLAGS = new Set([
   "public-api",
@@ -107,6 +111,14 @@ export function normalizeCodingAccessRequest(input, { explicitPlan = false } = {
   }
   const planText = input.plan === undefined ? "" : text(input.plan, "plan", 16_384);
   if (input.complexity === "complex" && planText.length === 0) fail("COMPLEX_PLAN_REQUIRED", "complex coding access requires a complete plan");
+  const orchestration = exactBooleanObject(input.orchestration, "orchestration", [
+    "useReadOnlyScouts",
+    "useManagedCloneWriter",
+    "useFreshReviewer",
+  ]);
+  if (orchestration.useManagedCloneWriter && (input.complexity !== "complex" || !orchestration.useFreshReviewer)) {
+    fail("MANAGED_WRITER_PLAN_REQUIRED", "managed-clone writing requires a complex plan and a fresh reviewer");
+  }
   return Object.freeze({
     taskSummary: text(input.taskSummary, "taskSummary", 2_000),
     complexity: input.complexity,
@@ -114,11 +126,7 @@ export function normalizeCodingAccessRequest(input, { explicitPlan = false } = {
     riskFlags: Object.freeze(riskFlags),
     plan: planText,
     verification: Object.freeze(boundedStrings(input.verification ?? [], "verification", { maximumItems: 16, maximumLength: 500 })),
-    orchestration: Object.freeze(exactBooleanObject(input.orchestration, "orchestration", [
-      "useReadOnlyScouts",
-      "useManagedCloneWriter",
-      "useFreshReviewer",
-    ])),
+    orchestration: Object.freeze(orchestration),
   });
 }
 
@@ -166,7 +174,7 @@ function accessSummary(request, cwd) {
 function toolResult(status, message, details = {}) {
   return {
     content: [{ type: "text", text: `${status}: ${message}` }],
-    details: { formatVersion: 1, status, ...details },
+    details: { ...details, formatVersion: 1, status },
   };
 }
 
@@ -187,10 +195,17 @@ export class DirectSessionController {
     this.workspaceBaseline = null;
     this.workspacePolicy = createWorkspacePolicy();
     this.approvedScope = [];
+    this.approvedRequest = null;
+    this.orchestrator = null;
   }
 
   isDirect() { return this.environment.ONLY_MY_PI_DIRECT === "1"; }
   hasCodingAccess() { return this.state === DIRECT_SESSION_STATES.CODING && !this.headless; }
+
+  attachOrchestrator(orchestrator) {
+    this.orchestrator = orchestrator && typeof orchestrator.delegateReadOnly === "function" ? orchestrator : null;
+    return this.orchestrator !== null;
+  }
 
   activeToolCeiling() {
     return this.hasCodingAccess() ? CODING_TOOL_NAMES : INSPECTION_TOOL_NAMES;
@@ -276,6 +291,8 @@ export class DirectSessionController {
     this.context = ctx;
     this.state = DIRECT_SESSION_STATES.INSPECT;
     this.explicitPlan = false;
+    this.approvedRequest = null;
+    this.approvedScope = [];
     this.applyToolCeiling();
     this.updateUi(ctx);
     try {
@@ -315,6 +332,9 @@ export class DirectSessionController {
     }
     this.state = DIRECT_SESSION_STATES.INSPECT;
     this.explicitPlan = false;
+    this.approvedRequest = null;
+    this.approvedScope = [];
+    this.orchestrator = null;
     this.context = null;
   }
 
@@ -333,6 +353,8 @@ export class DirectSessionController {
     const command = typeof args === "string" ? args.trim() : "";
     if (command === "revoke") {
       this.explicitPlan = false;
+      this.approvedRequest = null;
+      this.approvedScope = [];
       this.transition(DIRECT_SESSION_STATES.INSPECT, ctx);
       ctx.ui.notify("Coding access revoked for this session.", "info");
       return;
@@ -359,6 +381,7 @@ export class DirectSessionController {
     const choice = await ctx.ui.select(accessSummary(request, ctx.cwd), [...ACCESS_OPTIONS]);
     if (choice === ACCESS_OPTIONS[0]) {
       this.explicitPlan = false;
+      this.approvedRequest = request;
       this.approvedScope = [...request.scope];
       this.workspacePolicy = createWorkspacePolicy({ baseline: this.workspaceBaseline, scope: this.approvedScope });
       this.transition(DIRECT_SESSION_STATES.CODING, ctx);
@@ -374,6 +397,8 @@ export class DirectSessionController {
       return toolResult("CODING_ACCESS_REVISION_REQUESTED", "The user requested a revised plan; do not modify the project.");
     }
     this.explicitPlan = false;
+    this.approvedRequest = null;
+    this.approvedScope = [];
     this.transition(DIRECT_SESSION_STATES.INSPECT, ctx);
     return toolResult("CODING_ACCESS_DENIED", "The user denied coding access; continue read-only or stop.");
   }
@@ -382,11 +407,76 @@ export class DirectSessionController {
     const state = this.state;
     const coding = this.hasCodingAccess();
     return {
-      systemPrompt: `${event.systemPrompt}\n\n## only-my-pi Direct Coding Agent\nCurrent OMP state: ${state}.\n- Inspect the project before proposing changes.\n- Before edit, write, bash, project gates, or a writer child, call request_coding_access as the only tool in that tool batch.\n- Classify a task as complex when it changes public APIs, dependencies, schemas, security, concurrency, migrations, deletion, releases, or multiple coordinated modules.\n- Complex and explicit /plan tasks require a complete plan before requesting access.\n- A coding grant is process-local and project-local; it never authorizes project-external paths, secrets, MCP, unrestricted network, destructive Git, publishing, deployment, or silent commits.\n- Preserve pre-existing working-tree changes and re-read files immediately before editing.\n${coding ? "- Coding access is active for this process; ordinary in-scope edits do not need another request." : "- Coding access is not active. Remain read-only until request_coding_access returns CODING_ACCESS_GRANTED."}`,
+      systemPrompt: `${event.systemPrompt}\n\n## only-my-pi Direct Coding Agent\nCurrent OMP state: ${state}.\n- Inspect the project before proposing changes.\n- Before edit, write, bash, project gates, or a writer child, call request_coding_access as the only tool in that tool batch.\n- Classify a task as complex when it changes public APIs, dependencies, schemas, security, concurrency, migrations, deletion, releases, or multiple coordinated modules.\n- Complex and explicit /plan tasks require a complete plan before requesting access.\n- A coding grant is process-local and project-local; it never authorizes project-external paths, secrets, MCP, unrestricted network, destructive Git, publishing, deployment, or silent commits.\n- Preserve pre-existing working-tree changes and re-read files immediately before editing.\n- Use delegate_readonly_agent only for bounded independent exploration or fresh review; at most two children may run concurrently and no child may delegate again.\n- Use delegate_managed_writer only when the approved complex plan explicitly enables it. OMP permits one writer in an ordinary managed Git clone, captures its patch, requires a fresh read-only review, and applies only a conflict-free in-scope patch.\n- Keep simple tasks with the main Agent. After a managed patch is applied, run the approved verification again in the real current worktree.\n${coding ? "- Coding access is active for this process; ordinary in-scope edits do not need another request." : "- Coding access is not active. Remain read-only until request_coding_access returns CODING_ACCESS_GRANTED."}`,
     };
   }
 
+  async delegateReadOnly(input, _ctx, signal) {
+    if (!this.orchestrator) return toolResult("DIRECT_ORCHESTRATION_UNAVAILABLE", "The shared pi-subagents runtime is unavailable; continue with the main Agent.");
+    if (!input || typeof input !== "object" || !DIRECT_READ_ONLY_AGENTS.includes(input.agent)) {
+      return toolResult("DIRECT_AGENT_NOT_ALLOWED", "Select one registered read-only OMP role.");
+    }
+    try {
+      const result = await this.orchestrator.delegateReadOnly({
+        agent: input.agent,
+        task: text(input.task, "task", 32_768),
+        label: input.label === undefined ? undefined : text(input.label, "label", 128),
+        signal,
+      });
+      return toolResult("DIRECT_CHILD_COMPLETED", "The read-only child completed.", result);
+    } catch (error) {
+      return toolResult(error?.code ?? "DIRECT_CHILD_FAILED", error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  async delegateManagedWriter(input, _ctx, signal) {
+    if (!this.hasCodingAccess()) return toolResult("CODING_ACCESS_REQUIRED", "Managed writing requires the current process coding grant.");
+    if (!this.orchestrator) return toolResult("DIRECT_ORCHESTRATION_UNAVAILABLE", "The shared pi-subagents runtime is unavailable; implement with the main Agent.");
+    if (!this.approvedRequest?.orchestration?.useManagedCloneWriter) {
+      return toolResult("MANAGED_WRITER_NOT_APPROVED", "The approved coding plan did not authorize a managed-clone writer.");
+    }
+    try {
+      const scope = input?.scope === undefined ? this.approvedScope : normalizeScope(input.scope);
+      const result = await this.orchestrator.delegateWriter({
+        task: this.approvedRequest.taskSummary,
+        plan: this.approvedRequest.plan,
+        scope,
+        verification: this.approvedRequest.verification,
+        baseline: this.workspaceBaseline,
+        approvedScope: this.approvedScope,
+        signal,
+      });
+      return toolResult(
+        result.status,
+        result.status === "WRITER_PATCH_APPLIED_REQUIRES_REAL_WORKSPACE_VERIFICATION"
+          ? "The reviewed patch was applied; verify it in the real worktree before reporting completion."
+          : "The managed writer did not modify the real worktree.",
+        result,
+      );
+    } catch (error) {
+      return toolResult(error?.code ?? "DIRECT_WRITER_FAILED", error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  agentsCommand(ctx = this.context) {
+    const snapshot = this.orchestrator?.snapshot?.();
+    if (!snapshot) {
+      ctx?.ui?.notify?.("Automatic child runtime is unavailable; the main Agent remains usable.", "warning");
+      return;
+    }
+    const lines = [
+      `Runtime owner: ${snapshot.physicalRuntimeOwner}`,
+      `Children: ${snapshot.totalChildren}/${snapshot.maximumChildren}; concurrency ${snapshot.maximumConcurrency}`,
+      `Writer used: ${snapshot.writerUsed ? "yes" : "no"}`,
+      ...snapshot.children.map((entry) => `${entry.label}: ${entry.status}`),
+    ];
+    ctx?.ui?.notify?.(lines.join("\n"), "info");
+  }
+
   blockToolCall(event) {
+    if (CODING_AUTHORITY_TOOL_NAMES.has(event.toolName) && !this.hasCodingAccess()) {
+      return { block: true, reason: "OMP_CODING_ACCESS_REQUIRED: managed writing is disabled until request_coding_access is approved." };
+    }
     if (MUTATION_TOOL_NAMES.has(event.toolName) && !this.hasCodingAccess()) {
       return { block: true, reason: "OMP_CODING_ACCESS_REQUIRED: project mutation is disabled until this interactive process approves request_coding_access." };
     }

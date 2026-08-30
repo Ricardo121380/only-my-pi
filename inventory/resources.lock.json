@@ -1,7 +1,7 @@
 {
   "$schema": "../schemas/resources-lock-v1.schema.json",
   "formatVersion": 1,
-  "generatedAt": "2026-08-18",
+  "generatedAt": "2026-08-30",
   "resources": [
     {
       "id": "session-ledger",
@@ -89,6 +89,21 @@
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "omp-direct",
+      "type": "extension",
+      "path": "extensions/omp-direct/index.ts",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["/exit", "/plan", "/access", "/agents"],
+      "egressSurfaces": ["extensionEgress"],
+      "defaultLoaded": true,
       "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
@@ -637,7 +652,7 @@
       "id": "implementer-agent",
       "type": "agent",
       "path": "agents/implementer.json",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "provides": [],
       "requires": ["workspace-read", "file-tool-policy", "bash-sandbox-conditional"],
       "owners": ["only-my-pi-resource-registry"],

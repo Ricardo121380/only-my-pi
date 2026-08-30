@@ -8,6 +8,7 @@ import { createAgentRegistry } from "../../agent-registry/index.mjs";
 import { hashResourcePath } from "../../bootstrap/graph-plan.mjs";
 import { createBatchSwarmControlService } from "../../control-service/batch-swarm-service.mjs";
 import { createDailyConfigService, selectRoleModel } from "../../daily-config/index.mjs";
+import { createDirectCodingOrchestrator } from "../../direct-agent/orchestration.mjs";
 import { createWorkflowRegistry } from "../../workflow-core/index.mjs";
 import { createNodeExecAdapter, createProjectGateService } from "../../project-gates/index.mjs";
 import { createManagedCoordinator, createRecordedGoalController, createRecordedUltraRouter, createRunManagementService, createRunRecordStore } from "../../run-management/index.mjs";
@@ -652,6 +653,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
     return state.configuration;
   };
   const configuration = await configurationProvider();
+  const directCoding = dependencies.directCoding ?? (process.env.ONLY_MY_PI_DIRECT === "1");
   if (!configuration.hardOverlays.includes("orchestration-readonly")) {
     return Object.freeze({ enabled: false, status: "ORCHESTRATION_OVERLAY_DISABLED", configuration, dailyConfig, async dispose() {} });
   }
@@ -938,15 +940,33 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
     process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS = [previousExtraAgentDirs, runtimeAgentOverride.agentsRoot].filter(Boolean).join(path.delimiter);
   }
   const registerCeiling = dependencies.registerCapabilityCeiling ?? await loadCapabilityCeilingRegistrar(subagentsPackage.root);
-  const ceilingHandle = registerCeiling({
-    sessionId,
-    source: "only-my-pi-m8-readonly",
-    ceiling: {
-      allowedAgents: READ_ONLY_AGENT_IDS,
-      allowedTools: ["read", "grep", "find", "ls", "web", "web_search", "source_check", "fetch_content", "get_search_content", "structured_output"],
-      denyExtensions: false,
-    },
-  });
+  let directCodingOrchestrator = null;
+  const allowedAgents = directCoding ? [...READ_ONLY_AGENT_IDS, "omp-implementer"] : READ_ONLY_AGENT_IDS;
+  const allowedTools = ["read", "grep", "find", "ls", "web", "web_search", "source_check", "fetch_content", "get_search_content", "structured_output"];
+  if (directCoding) allowedTools.push("edit", "write", "bash");
+  let ceilingHandle;
+  try {
+    directCodingOrchestrator = directCoding
+      ? dependencies.directCodingOrchestrator ?? createDirectCodingOrchestrator({
+        transport,
+        configRoot,
+        getContext,
+        budget: configuration.budget,
+      })
+      : null;
+    ceilingHandle = registerCeiling({
+      sessionId,
+      source: directCoding ? "only-my-pi-m12-direct-coding" : "only-my-pi-m8-readonly",
+      ceiling: {
+        allowedAgents,
+        allowedTools,
+        denyExtensions: false,
+      },
+    });
+  } catch (error) {
+    directCodingOrchestrator?.dispose?.();
+    throw error;
+  }
   let disposed = false;
   return Object.freeze({
     enabled: true,
@@ -954,6 +974,8 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
     physicalRuntimeOwner: "pi-subagents",
     physicalRuntimeVersion: subagentsPackage.manifest.version,
     logicalRuntimeOwner: "@only-my-pi/subagents",
+    directCoding,
+    directCodingOrchestrator,
     configuration,
     webPolicy,
     webAuthorizer,
@@ -985,6 +1007,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
       if (disposed) return { status: "DISPOSED" };
       disposed = true;
       await coordinator.shutdown?.().catch(() => {});
+      directCodingOrchestrator?.dispose?.();
       ceilingHandle.dispose();
       await backend.dispose().catch(() => {});
       transport.dispose?.();

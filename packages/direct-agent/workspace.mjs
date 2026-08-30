@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { execFile as nodeExecFile } from "node:child_process";
+import { lstatSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -93,7 +94,8 @@ export function parseGitStatusPorcelainV2(output) {
   const paths = [];
   let head = null;
   let branch = null;
-  for (const record of records) {
+  for (let index = 0; index < records.length; index += 1) {
+    const record = records[index];
     if (record.startsWith("# branch.oid ")) {
       head = record.slice("# branch.oid ".length);
       continue;
@@ -103,11 +105,17 @@ export function parseGitStatusPorcelainV2(output) {
       continue;
     }
     if (record.startsWith("# ")) continue;
-    const tab = record.indexOf("\t");
     let candidate;
     if (record.startsWith("? ")) candidate = record.slice(2);
-    else if (tab === -1) candidate = record.slice(3).trim();
-    else candidate = record.slice(tab + 1).split("\0")[0];
+    else if (record.startsWith("! ")) continue;
+    else if (record.startsWith("1 ")) candidate = record.match(/^1 (?:\S+[ \t]){7}(.+)$/u)?.[1];
+    else if (record.startsWith("2 ")) {
+      candidate = record.match(/^2 (?:\S+[ \t]){8}(.+)$/u)?.[1];
+      // With -z, a type-2 rename/copy record is immediately followed by its
+      // original path as a separate NUL record. It is evidence, not a second
+      // current working-tree path.
+      index += 1;
+    } else if (record.startsWith("u ")) candidate = record.match(/^u (?:\S+[ \t]){9}(.+)$/u)?.[1];
     if (candidate) {
       const normalized = normalizeRelativePath(candidate, "git status path");
       paths.push({ path: normalized, status: record.slice(0, 2), raw: record.slice(0, 256) });
@@ -258,6 +266,17 @@ export function inspectMutationPath(inputPath, { cwd, scope = [] } = {}) {
     const candidate = path.relative(cwd, absolute);
     if (candidate.startsWith(`..${path.sep}`) || path.isAbsolute(candidate)) return { code: "PROJECT_PATH_ESCAPE", reason: "mutation path leaves the active project" };
     relative = normalizeRelativePath(candidate || ".");
+    if (relative === ".git" || relative.startsWith(".git/")) return { code: "GIT_METADATA_PROTECTED", reason: "the coding grant never authorizes Git metadata writes" };
+    let current = cwd;
+    for (const segment of candidate.split(path.sep).filter(Boolean)) {
+      current = path.join(current, segment);
+      try {
+        if (lstatSync(current).isSymbolicLink()) return { code: "MUTATION_SYMLINK_DENIED", reason: `${relative} traverses a symlink` };
+      } catch (error) {
+        if (error?.code === "ENOENT") break;
+        return { code: "WORKSPACE_PATH_UNAVAILABLE", reason: `unable to validate ${relative}` };
+      }
+    }
   } catch (error) {
     return { code: error?.code ?? "WORKSPACE_PATH_INVALID", reason: error instanceof Error ? error.message : String(error) };
   }
@@ -269,7 +288,14 @@ export function createWorkspacePolicy({ baseline = null, scope = [] } = {}) {
   return Object.freeze({
     baseline,
     scope: Object.freeze([...scope]),
-    inspectPath: (inputPath, options = {}) => inspectMutationPath(inputPath, { ...options, scope }),
+    inspectPath: (inputPath, options = {}) => {
+      const violation = inspectMutationPath(inputPath, { ...options, scope });
+      if (violation) return violation;
+      const cwd = options.cwd;
+      const relative = normalizeRelativePath(path.relative(cwd, path.resolve(cwd, inputPath)) || ".");
+      const submodule = (baseline?.submodules ?? []).find((entry) => relative === entry.path || relative.startsWith(`${entry.path}/`));
+      return submodule ? { code: "SUBMODULE_MUTATION_DENIED", reason: `${relative} is inside submodule ${submodule.path}` } : null;
+    },
     inspectCommand: (command, options = {}) => inspectMutationCommand(command, options),
     classify: (current) => classifyWorkspaceChanges(baseline, current),
   });

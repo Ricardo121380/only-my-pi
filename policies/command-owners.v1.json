@@ -27,6 +27,38 @@
       "implementedBy": "extensions/omp-control/index.ts"
     },
     {
+      "id": "/exit",
+      "surface": "pi-command",
+      "owner": "only-my-pi-control",
+      "aliases": [],
+      "status": "implemented",
+      "implementedBy": "extensions/omp-direct/index.ts"
+    },
+    {
+      "id": "/plan",
+      "surface": "pi-command",
+      "owner": "only-my-pi-control",
+      "aliases": [],
+      "status": "implemented",
+      "implementedBy": "extensions/omp-direct/index.ts"
+    },
+    {
+      "id": "/access",
+      "surface": "pi-command",
+      "owner": "only-my-pi-control",
+      "aliases": [],
+      "status": "implemented",
+      "implementedBy": "extensions/omp-direct/index.ts"
+    },
+    {
+      "id": "/agents",
+      "surface": "pi-command",
+      "owner": "only-my-pi-control",
+      "aliases": [],
+      "status": "implemented",
+      "implementedBy": "extensions/omp-direct/index.ts"
+    },
+    {
       "id": "perm",
       "surface": "pi-command",
       "owner": "permission",

@@ -11,7 +11,7 @@ export { compileAgentResource };
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE_DIR = path.join(ROOT, "agents");
 const OUTPUT_DIR = path.join(SOURCE_DIR, "generated");
-const READ_ONLY_OUTPUT_DIR = path.join(ROOT, "bundles", "only-my-pi-agent-bundle", "agents");
+const BUNDLE_OUTPUT_DIR = path.join(ROOT, "bundles", "only-my-pi-agent-bundle", "agents");
 const MUTATING_TOOLS = new Set(["bash", "edit", "write"]);
 
 function containedFile(relativePath) {
@@ -40,11 +40,14 @@ export function buildAgentResources({ rootDir = ROOT } = {}) {
     const promptPath = containedFile(manifest.prompt?.file);
     const compiled = compileAgentResource(manifest, fs.readFileSync(promptPath, "utf8"));
     const readOnly = manifest.writer === false && !(manifest.tools?.allow ?? []).some((tool) => MUTATING_TOOLS.has(tool));
+    const bundleEligible = readOnly || (manifest.id === "implementer" && manifest.contractStatus === "runtime-ready");
     return {
       sourcePath,
       outputPath: path.join(rootDir, "agents", "generated", `${compiled.name}.md`),
+      bundleOutputPath: bundleEligible ? path.join(rootDir, "bundles", "only-my-pi-agent-bundle", "agents", `${compiled.name}.md`) : null,
       readOnlyOutputPath: readOnly ? path.join(rootDir, "bundles", "only-my-pi-agent-bundle", "agents", `${compiled.name}.md`) : null,
       readOnly,
+      bundleEligible,
       ...compiled,
     };
   });
@@ -63,7 +66,7 @@ function syncOutputDirectory(directory, resources, pathKey) {
 
 function writeResources(resources) {
   syncOutputDirectory(OUTPUT_DIR, resources, "outputPath");
-  syncOutputDirectory(READ_ONLY_OUTPUT_DIR, resources.filter((resource) => resource.readOnly), "readOnlyOutputPath");
+  syncOutputDirectory(BUNDLE_OUTPUT_DIR, resources.filter((resource) => resource.bundleEligible), "bundleOutputPath");
 }
 
 function checkResources(resources) {
@@ -71,15 +74,15 @@ function checkResources(resources) {
   for (const resource of resources) {
     if (!fs.existsSync(resource.outputPath)) errors.push(`missing generated agent: ${path.relative(ROOT, resource.outputPath)}`);
     else if (fs.readFileSync(resource.outputPath, "utf8") !== resource.content) errors.push(`stale generated agent: ${path.relative(ROOT, resource.outputPath)}`);
-    if (resource.readOnly) {
-      if (!fs.existsSync(resource.readOnlyOutputPath)) errors.push(`missing read-only generated agent: ${path.relative(ROOT, resource.readOnlyOutputPath)}`);
-      else if (fs.readFileSync(resource.readOnlyOutputPath, "utf8") !== resource.content) errors.push(`stale read-only generated agent: ${path.relative(ROOT, resource.readOnlyOutputPath)}`);
+    if (resource.bundleEligible) {
+      if (!fs.existsSync(resource.bundleOutputPath)) errors.push(`missing bundle generated agent: ${path.relative(ROOT, resource.bundleOutputPath)}`);
+      else if (fs.readFileSync(resource.bundleOutputPath, "utf8") !== resource.content) errors.push(`stale bundle generated agent: ${path.relative(ROOT, resource.bundleOutputPath)}`);
     }
   }
-  if (fs.existsSync(READ_ONLY_OUTPUT_DIR)) {
-    const expected = new Set(resources.filter((resource) => resource.readOnly).map((resource) => path.basename(resource.readOnlyOutputPath)));
-    for (const entry of fs.readdirSync(READ_ONLY_OUTPUT_DIR, { withFileTypes: true })) {
-      if (entry.isFile() && entry.name.endsWith(".md") && !expected.has(entry.name)) errors.push(`unexpected read-only generated agent: ${entry.name}`);
+  if (fs.existsSync(BUNDLE_OUTPUT_DIR)) {
+    const expected = new Set(resources.filter((resource) => resource.bundleEligible).map((resource) => path.basename(resource.bundleOutputPath)));
+    for (const entry of fs.readdirSync(BUNDLE_OUTPUT_DIR, { withFileTypes: true })) {
+      if (entry.isFile() && entry.name.endsWith(".md") && !expected.has(entry.name)) errors.push(`unexpected bundle generated agent: ${entry.name}`);
     }
   }
   return errors;
@@ -95,7 +98,7 @@ function main() {
     const errors = checkResources(resources);
     if (errors.length) throw new Error(errors.join("\n"));
   }
-  process.stdout.write(`${JSON.stringify({ ok: true, mode: option.slice(2), agents: resources.map(({ name, sourceDigest, promptDigest, readOnly }) => ({ name, sourceDigest, promptDigest, readOnly })) }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({ ok: true, mode: option.slice(2), agents: resources.map(({ name, sourceDigest, promptDigest, readOnly, bundleEligible }) => ({ name, sourceDigest, promptDigest, readOnly, bundleEligible })) }, null, 2)}\n`);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

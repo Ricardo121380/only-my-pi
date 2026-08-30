@@ -8,6 +8,7 @@ import {
   DESTRUCTIVE_GIT_CODES,
   captureWorkspaceBaseline,
   classifyWorkspaceChanges,
+  createWorkspacePolicy,
   inspectMutationCommand,
   inspectMutationPath,
   normalizeRelativePath,
@@ -26,6 +27,20 @@ test("relative paths and glob scopes stay inside the project", () => {
   assert.equal(inspectMutationPath("tests/a.ts", { cwd: "/tmp/project", scope: ["src/**"] }).code, "CODING_SCOPE_DENIED");
 });
 
+test("mutation policy rejects Git metadata, submodules, and symlink traversal", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-workspace-paths-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await fs.mkdir(path.join(root, "src"));
+  await fs.symlink(os.tmpdir(), path.join(root, "src", "outside"));
+  const policy = createWorkspacePolicy({
+    baseline: { submodules: [{ path: "vendor/module" }] },
+    scope: ["**"],
+  });
+  assert.equal(policy.inspectPath(".git/config", { cwd: root }).code, "GIT_METADATA_PROTECTED");
+  assert.equal(policy.inspectPath("src/outside/file.ts", { cwd: root }).code, "MUTATION_SYMLINK_DENIED");
+  assert.equal(policy.inspectPath("vendor/module/file.ts", { cwd: root }).code, "SUBMODULE_MUTATION_DENIED");
+});
+
 test("destructive Git and shell escape commands are denied without shell execution", () => {
   assert.equal(inspectMutationCommand("git reset --hard HEAD").code, DESTRUCTIVE_GIT_CODES.RESET);
   assert.equal(inspectMutationCommand("git clean -fd").code, DESTRUCTIVE_GIT_CODES.CLEAN);
@@ -41,7 +56,7 @@ test("porcelain v2 status parser returns branch and bounded path inventory", () 
   const output = [
     "# branch.oid abcdef012345678901234567890123456789abcd",
     "# branch.head feature/test",
-    "1 .M N... 100644 100644 100644 abcdef0 1234567\tsrc/app.ts",
+    "1 .M N... 100644 100644 100644 abcdef0 1234567 src/app.ts",
     "? docs/new.md",
   ].join("\0") + "\0";
   const parsed = parseGitStatusPorcelainV2(output);

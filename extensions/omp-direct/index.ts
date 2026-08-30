@@ -3,6 +3,10 @@ import os from "node:os";
 import path from "node:path";
 
 import { createDirectSessionController } from "./runtime.mjs";
+import {
+  DIRECT_READ_ONLY_AGENTS,
+  DIRECT_RUNTIME_EVENT,
+} from "../../packages/direct-agent/orchestration.mjs";
 
 const CodingAccessParameters = {
   type: "object",
@@ -33,10 +37,33 @@ const CodingAccessParameters = {
   },
 } as any;
 
+const ReadOnlyDelegationParameters = {
+  type: "object",
+  additionalProperties: false,
+  required: ["agent", "task"],
+  properties: {
+    agent: { type: "string", enum: [...DIRECT_READ_ONLY_AGENTS] },
+    task: { type: "string", minLength: 1, maxLength: 32768 },
+    label: { type: "string", minLength: 1, maxLength: 128 },
+  },
+} as any;
+
+const ManagedWriterParameters = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    scope: { type: "array", minItems: 1, maxItems: 64, uniqueItems: true, items: { type: "string", minLength: 1, maxLength: 512 } },
+  },
+} as any;
+
 export default function ompDirect(pi: ExtensionAPI): void {
   if (process.env.ONLY_MY_PI_DIRECT !== "1") return;
   const configRoot = process.env.PI_CODING_AGENT_DIR ?? path.join(os.homedir(), ".pi", "agent");
   const controller = createDirectSessionController({ pi, configRoot, environment: process.env });
+
+  pi.events.on(DIRECT_RUNTIME_EVENT, (payload: any) => {
+    controller.attachOrchestrator(payload?.formatVersion === 1 && payload?.status === "READY" ? payload.orchestrator : null);
+  });
 
   pi.registerTool({
     name: "request_coding_access",
@@ -48,6 +75,32 @@ export default function ompDirect(pi: ExtensionAPI): void {
     executionMode: "sequential",
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
       return controller.requestCodingAccess(params, ctx) as any;
+    },
+  });
+
+  pi.registerTool({
+    name: "delegate_readonly_agent",
+    label: "Delegate read-only analysis",
+    description: "Run one bounded read-only OMP specialist through the shared pi-subagents runtime. Use only for independent evidence or fresh review.",
+    promptSnippet: "Delegate bounded independent read-only work to a visible OMP specialist",
+    promptGuidelines: ["Use no more children than the task needs. Children cannot delegate and cannot modify the project."],
+    parameters: ReadOnlyDelegationParameters,
+    executionMode: "parallel",
+    async execute(_toolCallId, params, signal, _onUpdate, ctx) {
+      return controller.delegateReadOnly(params, ctx, signal) as any;
+    },
+  });
+
+  pi.registerTool({
+    name: "delegate_managed_writer",
+    label: "Delegate approved managed writer",
+    description: "Use the single approved managed-clone writer for a complex coding plan. OMP reviews and verifies its patch before applying it.",
+    promptSnippet: "Delegate an approved complex implementation to the single managed-clone writer",
+    promptGuidelines: ["Call only after coding access explicitly approved a managed writer; verify an applied patch again in the real worktree."],
+    parameters: ManagedWriterParameters,
+    executionMode: "sequential",
+    async execute(_toolCallId, params, signal, _onUpdate, ctx) {
+      return controller.delegateManagedWriter(params, ctx, signal) as any;
     },
   });
 
@@ -65,7 +118,7 @@ export default function ompDirect(pi: ExtensionAPI): void {
   });
   pi.registerCommand("agents", {
     description: "Show automatic OMP child-agent activity",
-    handler: async (_args, ctx) => ctx.ui.notify("No automatic child agents are active.", "info"),
+    handler: async (_args, ctx) => controller.agentsCommand(ctx),
   });
 
   pi.on("session_start", async (event, ctx) => {
