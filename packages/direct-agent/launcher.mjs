@@ -8,7 +8,11 @@ import { OMP_CONTROL_COMMANDS } from "../control-service/cli-parser.mjs";
 
 const STACK_DIRECTORY = /^[a-f0-9]{64}$/u;
 const UUID = /^[a-f0-9-]{36}$/u;
-const INTERACTIVE_TOOLS = "read,grep,find,ls";
+// Pi's --tools option is a registry allowlist, not just the initial active-tool
+// set. Load every audited tool that an interactive direct session may enable,
+// then let omp-direct apply the narrower INSPECT/CODING ceiling at
+// session_start. The tool_call backstop remains the mutation safety boundary.
+const INTERACTIVE_TOOLS = "read,grep,find,ls,edit,write,bash,request_coding_access,delegate_readonly_agent,delegate_managed_writer";
 const HEADLESS_TOOLS = "read,grep,find,ls";
 
 const DIRECT_EXTERNAL_EXTENSIONS = Object.freeze([

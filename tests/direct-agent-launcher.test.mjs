@@ -106,7 +106,7 @@ test("controlled stack resolution follows only the active digest root", async (t
   });
 });
 
-test("Pi invocation is read-only before admission and carries no prompt in marker environment", async (t) => {
+test("Pi invocation loads the audited interactive ceiling while admission starts read-only", async (t) => {
   const value = await fakeStack(t);
   const stack = await resolveControlledStack({ stackRoot: value.root, homeDir: value.home });
   const prompt = "fix private token refresh";
@@ -126,7 +126,7 @@ test("Pi invocation is read-only before admission and carries no prompt in marke
     "--extension",
     EXTENSIONS[1],
     "--tools",
-    "read,grep,find,ls",
+    "read,grep,find,ls,edit,write,bash,request_coding_access,delegate_readonly_agent,delegate_managed_writer",
     "--perm",
     "build",
     "--model",
