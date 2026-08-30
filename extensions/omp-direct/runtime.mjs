@@ -10,6 +10,8 @@ import {
 } from "../../packages/direct-agent/workspace.mjs";
 import { DIRECT_READ_ONLY_AGENTS } from "../../packages/direct-agent/orchestration.mjs";
 
+export { DIRECT_READ_ONLY_AGENTS };
+
 export const DIRECT_SESSION_STATES = Object.freeze({
   INSPECT: "INSPECT",
   PLANNING: "PLANNING",

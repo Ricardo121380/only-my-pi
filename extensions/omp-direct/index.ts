@@ -2,11 +2,12 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import os from "node:os";
 import path from "node:path";
 
-import { createDirectSessionController } from "./runtime.mjs";
 import {
   DIRECT_READ_ONLY_AGENTS,
-  DIRECT_RUNTIME_EVENT,
-} from "../../packages/direct-agent/orchestration.mjs";
+  createDirectSessionController,
+} from "./runtime.mjs";
+
+const DIRECT_RUNTIME_EVENT = "only-my-pi:direct-runtime:v1";
 
 const CodingAccessParameters = {
   type: "object",

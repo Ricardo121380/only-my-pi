@@ -3,7 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createContextSnapshotProvider, createOmpRuntime } from "./runtime.mjs";
-import { DIRECT_RUNTIME_EVENT } from "../../packages/direct-agent/orchestration.mjs";
+
+const DIRECT_RUNTIME_EVENT = "only-my-pi:direct-runtime:v1";
 
 export default function ompControl(pi: ExtensionAPI): void {
   let messages: unknown[] = [];
