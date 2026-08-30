@@ -67,19 +67,31 @@ export class StackHarnessAdapter {
     if (!manifestStat.isFile() || manifestStat.isSymbolicLink() || !executableStat.isFile() || executableStat.isSymbolicLink()) fail("STACK_OMP_ARTIFACT_INVALID", "only-my-pi artifact did not contain a safe CLI package");
     const manifest = JSON.parse(await fs.readFile(path.join(packageRoot, "package.json"), "utf8"));
     if (manifest.name !== "only-my-pi" || manifest.version !== context.stack.onlyMyPi.version) fail("STACK_OMP_ARTIFACT_IDENTITY_INVALID", "only-my-pi artifact package identity differs from the stack manifest");
+    context.harnessRoot = packageRoot;
+  }
+
+  candidateRoot(context) {
+    const candidate = context?.harnessRoot;
+    const expected = path.join(context?.paths?.stage ?? "", "only-my-pi", "package");
+    if (typeof candidate !== "string" || !path.isAbsolute(candidate) || path.resolve(candidate) !== path.resolve(expected)) {
+      fail("STACK_OMP_STAGE_MISSING", "candidate generation requires the verified staged only-my-pi artifact");
+    }
+    return path.resolve(candidate);
   }
 
   bootstrapFor(context) {
+    const rootDir = this.candidateRoot(context);
     const options = this.spawnImpl === undefined ? {} : { spawnImpl: this.spawnImpl };
-    const doctor = new DoctorService({ rootDir: this.rootDir });
+    const doctor = new DoctorService({ rootDir });
     const runner = createNpmCommandRunner({ configRoot: this.configRoot });
     const smokeRunner = createNoModelSmokeRunner({ ...options, piCommand: path.join(context.paths.stage, "bin", "pi") });
-    const transaction = new TransactionEngine({ rootDir: this.rootDir, runner, smokeRunner, doctorService: doctor });
-    return new BootstrapService({ rootDir: this.rootDir, doctorService: doctor, transactionEngine: transaction });
+    const transaction = new TransactionEngine({ rootDir, runner, smokeRunner, doctorService: doctor });
+    return new BootstrapService({ rootDir, doctorService: doctor, transactionEngine: transaction });
   }
 
   async publish({ context, settings } = {}) {
-    const graphPlan = await buildGenerationPlan({ rootDir: this.rootDir, profileId: "daily", sourceCommit: context.stack.sourceCommit });
+    const rootDir = this.candidateRoot(context);
+    const graphPlan = await buildGenerationPlan({ rootDir, profileId: "daily", sourceCommit: context.stack.sourceCommit });
     const governedSettings = compileStackPackageSettings(settings, graphPlan);
     await saveSettings(this.configRoot, governedSettings);
     const bootstrap = this.bootstrapFor(context);

@@ -74,14 +74,17 @@ test("stack harness safely extracts the dependency-closed artifact and its CLI s
   const stage = path.join(root, "stage");
   await fs.mkdir(stage);
   const adapter = createStackHarnessAdapter({ rootDir: process.cwd(), configRoot: path.join(root, "agent") });
+  const context = {
+    paths: { stage },
+    stack: { onlyMyPi: { version: "0.3.0-preview.1", artifactSha256: await hashFile(artifact) } },
+  };
   await adapter.stage({
     artifact,
-    context: {
-      paths: { stage },
-      stack: { onlyMyPi: { version: "0.3.0-preview.1", artifactSha256: await hashFile(artifact) } },
-    },
+    context,
   });
   const cli = path.join(stage, "only-my-pi", "package", "bin", "omp.mjs");
+  assert.equal(context.harnessRoot, path.dirname(path.dirname(cli)));
+  assert.equal(adapter.bootstrapFor(context).rootDir, context.harnessRoot);
   const result = spawnSync(process.execPath, [cli, "help"], { cwd: path.dirname(cli), encoding: "utf8", shell: false, env: { PATH: process.env.PATH ?? "", HOME: root } });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /omp stack install/u);
