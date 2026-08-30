@@ -21,6 +21,7 @@ test("Q10 payload control flow installs, verifies, removes and cleans prepared b
   t.after(() => fs.rm(workspace, { recursive: true, force: true }));
   let installed = true;
   let cleaned = false;
+  let inspectedBundle;
   let doctorCalls = 0;
   let smokeCalls = 0;
   const layout = {
@@ -31,7 +32,7 @@ test("Q10 payload control flow installs, verifies, removes and cleans prepared b
     npmRoot: path.join(workspace, "config", "npm"),
   };
   const source = {
-    async inspect() { return { payloadMode: "full", stackId, stackManifest: { onlyMyPi: { artifactSha256: `sha256:${"3".repeat(64)}` } } }; },
+    async inspect({ bundle }) { inspectedBundle = bundle; return { payloadMode: "full", stackId, stackManifest: { onlyMyPi: { artifactSha256: `sha256:${"3".repeat(64)}` } } }; },
     async prepare() { return { resolvedRoot: path.join(workspace, "resolved"), async cleanup() { cleaned = true; } }; },
   };
   let engineOptions;
@@ -62,6 +63,7 @@ test("Q10 payload control flow installs, verifies, removes and cleans prepared b
   assert.equal(doctorCalls, 1);
   assert.equal(smokeCalls, 1);
   assert.equal(cleaned, true);
+  assert.equal(inspectedBundle, "/tmp/release/only-my-pi-0.3.0-preview.1-darwin-arm64-full.tar.gz");
 });
 
 test("Q10 orchestration requires Full and Thin identity convergence", async () => {

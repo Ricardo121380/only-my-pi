@@ -11,6 +11,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { BootstrapService } from "../packages/bootstrap/bootstrap-service.mjs";
 import { createNoModelSmokeRunner } from "../packages/bootstrap/smoke-runner.mjs";
 import { loadSettings } from "../packages/config-runtime/index.mjs";
+import { DIRECT_AGENT_VERSION } from "../packages/direct-agent/product-contract.mjs";
 import {
   StackTransactionEngine,
   createLocalReleasePayloadSource,
@@ -86,7 +87,7 @@ export async function installM11NoModelPayload({ releaseRoot, payloadMode, platf
   await fs.mkdir(home, { recursive: true, mode: 0o700 });
   const layout = ops.createLayout({ homeDir: home });
   const source = ops.createSource({ cacheRoot: cache });
-  const bundle = path.join(releaseRoot, `only-my-pi-0.2.0-preview.1-darwin-arm64-${payloadMode}.tar.gz`);
+  const bundle = path.join(releaseRoot, `only-my-pi-${DIRECT_AGENT_VERSION}-darwin-arm64-${payloadMode}.tar.gz`);
   const inspection = await source.inspect({ bundle });
   if (inspection.payloadMode !== payloadMode) fail("Q10_PAYLOAD_MODE_DRIFT", `Q10 ${payloadMode} asset identity drifted`);
   const prepared = await source.prepare({ bundle });
