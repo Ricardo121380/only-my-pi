@@ -1,8 +1,8 @@
 # Threat model
 
-The Harness is a policy and reproducibility layer around Pi. It is not an OS
-sandbox. The threat model therefore distinguishes configuration claims from
-enforcement evidence for every surface.
+The Agent is a policy and reproducibility layer around Pi. OMP session admission
+is not by itself an OS sandbox. The threat model therefore distinguishes the
+visible coding grant from the physical enforcement evidence for every surface.
 
 | Threat | Failure mode | Default control | Evidence |
 | --- | --- | --- | --- |
@@ -22,6 +22,34 @@ enforcement evidence for every surface.
 | local stack confusion | system Pi/Node or an unknown shim is overwritten | user-local immutable stack, exact symlink identity, unknown shim conflict, no `/opt/homebrew` writes | stack transaction and clean-host tests |
 | unsafe removal | provisioned package ownership is mistaken for OMP ownership | separate asset disposition, external/user ownership, exact LKG and drift checks | stack remove preservation tests |
 | incomplete license evidence | public bundle redistributes an unresolved artifact | complete transitive ledger, direct dependency review, SPDX 2.3 and shipped license texts | SBOM/notices validator |
+| coding grant restore | a resumed/new process silently inherits writer authority | grant remains memory-only and is recreated only by interactive approval | direct-session admission tests |
+| hidden writer activation | an extension reactivates edit/write/bash before approval | initial active-tool restriction plus independent `tool_call` backstop | tool visibility and hostile-reactivation tests |
+| dirty worktree loss | Agent cleanup or integration overwrites pre-existing changes | immutable baseline summary, no reset/clean/revert, per-path drift checks | dirty-worktree and integration tests |
+| child writer escape | isolated writer sees host secrets or mutates outside scope | ordinary managed clone, Pi permission sandbox, one writer, no inherited credentials, patch scope verification | managed-clone fault tests |
+| unsafe patch integration | stale, binary, symlink or out-of-scope child change reaches the workspace | base/drift/dry-run/review gates and all-or-nothing apply | writer integration tests |
+| headless mutation | print/RPC use bypasses the interactive coding approval | `omp -p` read-only tool set and unavailable coding-access tool | headless denial smoke |
+
+## Direct coding boundary
+
+`request_coding_access` is a coarse, session-scoped admission decision. It may
+reveal project-local edit, write, sandboxed Bash, Gate and one managed-clone
+writer surface, but it cannot widen project roots, protected paths, network,
+MCP, credential, deployment, publication or destructive Git authority. A
+coding grant is not serialized into Pi session history and is discarded during
+shutdown, resume, fork, reload and process replacement.
+
+`pi-permission-modes` remains the physical filesystem/Bash/sandbox policy owner.
+OMP starts with mutating tools inactive and also rejects a mutating tool call
+when no grant exists. These are independent controls: tool hiding reduces
+model opportunity, while the call backstop prevents another extension from
+silently widening the visible set. Project Trust controls project resource
+loading; it is not process isolation.
+
+The main Agent may modify an approved current repository without an automatic
+commit. It records pre-existing Git state and never resets, cleans or reverts
+it. A child writer uses a normal clone because permission-mode sandboxing is not
+reliably preserved in Git worktrees. Only a reviewed, scope-contained patch may
+cross back into the current workspace, and it must be reverified there.
 
 ## Public Preview release boundary
 
@@ -35,9 +63,9 @@ model memory. Lifecycle scripts remain disabled.
 
 SHA-256, npm SHA-512 SRI, SPDX and GitHub attestations provide integrity and
 provenance evidence; they do not make third-party code safe. The staged tree is
-still executable code with the user's OS authority when Pi starts. The
-read-only Harness ceiling limits registered Agent tools, not arbitrary behavior
-inside a malicious extension or dependency. Public users should inspect the
+still executable code with the user's OS authority when Pi starts. The guarded
+coding ceiling limits registered Agent tools, not arbitrary behavior inside a
+malicious extension or dependency. Public users should inspect the
 ledger/SBOM and use host isolation when their repository or credential boundary
 requires it.
 

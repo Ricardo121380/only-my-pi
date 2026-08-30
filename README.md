@@ -1,6 +1,6 @@
 # only-my-pi
 
-Governed, reproducible Pi Harness distribution and configuration companion.
+A governed terminal coding Agent built on Pi.
 
 This repository is intended to hold the parts of a Pi workflow that are safe to
 version and share:
@@ -39,58 +39,52 @@ scripts/      Repository checks and package governance tooling
 
 ## Current milestone
 
-M11 Public Preview distribution is in progress. The original GitHub repository
-has been renamed to the private `only-my-pi-private-archive`; a new private
-`Ricardo121380/only-my-pi` preserves all 219 commit trees, messages, timestamps
-and merge topology with only the historical personal commit email rewritten to
-the GitHub noreply identity. The new repository remains private.
-
-The sanitized public baseline is complete: source `73c1c005`, its direct
-evidence-only child `d2e45ef`, and receipt `f0f61a7` re-established current
-authority without rebinding the retired private-history receipts. The M11
-source now contains canonical Full/Thin release contracts, a complete
-transitive ledger and SPDX SBOM, reproducible builders, the unified stack
-transaction, controlled shims, checksum-first bootstrap, Q1-Q12 gate contract,
-macOS arm64 Q10 workflow, and exact-source RC/final attestation workflows.
-Q1-Q9 and Q12 pass locally. An isolated real Apple Silicon Q10 run installed,
-verified and removed both Full and Thin payloads with one stack identity, and
-the protected local Q11 release matrix passed all 20 assertions. GitHub-hosted
-PR authority is currently blocked because the private repository exhausted its
-Actions allowance before either Linux job started; this is recorded as
-`GITHUB_HOSTED_CI_BLOCKED_BY_ACTIONS_QUOTA`, not as a source or test failure.
-Publication remains `HOLD_PUBLICATION`: there is no public tag or Release, and
-the hosted checks, attestations and immutable publication workflow must still
-pass before release.
-
-The frozen M11 boundary is recorded in
-[ADR-0012](docs/decisions/ADR-0012-public-preview-distribution-and-history-privacy.md).
-
-## Public Preview quickstart
-
-The `0.2.0-preview.1` release supports native Apple Silicon on macOS 14 or
-newer. It installs embedded Node `24.19.0`, controlled Pi `0.84.3`, the audited
-nine-package extension tree and only-my-pi under the current user's home. It
-does not use `sudo`, replace Homebrew Pi/Node, or import Provider credentials.
-
-The default Thin bootstrap is checksum-first: it downloads `install.sh` to a
-temporary file, verifies the exact release script SHA-256, and only then runs
-it. It is intentionally not a `curl | sh` command.
+M12 Direct Terminal Coding Agent Closure is active. Its target daily path is:
 
 ```bash
-tmp="$(mktemp -d)" && curl --fail --proto '=https' --tlsv1.2 -o "$tmp/install.sh" 'https://github.com/Ricardo121380/only-my-pi/releases/download/v0.2.0-preview.1/install.sh' && printf '%s  %s\n' 'b598cea9b09da5693af369da7bd8fe2e5f6bbfa4f1049a4ebd53080d543a760f' "$tmp/install.sh" | shasum -a 256 -c - && /bin/sh "$tmp/install.sh" --release 0.2.0-preview.1 --payload thin --yes
+cd /path/to/project
+omp
 ```
 
-The installer does not edit shell profiles by default. If `~/.local/bin` is
-not already on `PATH`, installation completes with `PATH_ACTION_REQUIRED` and
-prints the exact action. Use `--configure-shell` only after reviewing that
-plan. Start the controlled `pi`, configure a Provider/model through Pi's normal
-credential flow, then use `/omp run`; terminal `omp` deliberately cannot run
-Agents.
+`omp` will enter the controlled Pi TUI directly, select an authenticated model,
+start read-only, and request one explicit session coding approval before the
+first project mutation. Complex work must present a complete plan before that
+approval. Pi remains the internal TUI, model, session and tool runtime;
+`pi-subagents` remains the sole physical child runtime.
 
-Review [the complete Quickstart](docs/quickstart.md) before using Full/offline
-payloads, installing into an existing Pi environment, updating, rolling back,
-or removing the provisioned stack. This remains a Preview: production writers,
-MCP, automatic updates, Linux, Windows and Intel macOS are not supported.
+M11 proved the user-local stack, Full/Thin acquisition, reproducible builder,
+SBOM/notices and transaction recovery, but its `/omp run` read-only product
+experience is not being published. `0.2.0-preview.1` remains
+`HOLD_PUBLICATION`; there is no public tag or Release. Those assets are retained
+as `INTERNAL_DISTRIBUTION_FOUNDATION`, while `0.3.0-preview.1` is the first
+planned public candidate for the direct coding experience.
+
+The product decision is frozen in
+[ADR-0013](docs/decisions/ADR-0013-direct-terminal-coding-agent.md). The earlier
+distribution and history boundary remains in
+[ADR-0012](docs/decisions/ADR-0012-public-preview-distribution-and-history-privacy.md).
+
+## Development quickstart
+
+M12 is not publicly released yet. The installed M11 candidate remains usable
+for diagnosis and rollback, but it is not the intended final Agent UX. Do not
+use the old bootstrap command: no `0.2.0-preview.1` Release exists.
+
+After M12 is installed locally, the intended commands are:
+
+```bash
+omp                         # interactive terminal coding Agent
+omp "fix the failing test"  # interactive Agent with an initial task
+omp -c                      # continue the latest Pi session
+omp -r                      # choose a Pi session to resume
+omp -p "review this repo"   # non-interactive, read-only
+omp admin doctor            # installation/runtime diagnostics
+```
+
+Inside the TUI, `/plan` enters the same OMP planning flow, `/access` displays or
+revokes the ephemeral coding grant, and `/exit` returns to the shell. The
+managed stack remains macOS 14+ Apple Silicon only; MCP, silent YOLO, background
+updates and project-external writer access remain unsupported.
 
 The governed S0-S5 kernel reached Stable on 2026-08-27: its exact source,
 protected evidence, and receipt chain passed 31/31 required gates. **M8 Daily
@@ -121,7 +115,7 @@ M10 real-root acceptance passed on source `6156955`, with evidence-only child
 and the protected 17-assertion live matrix all passed. The decision is now
 **`PROMOTE`** with Stable Pi `0.84.3` and `pi-subagents@0.57.0`. The current
 local `omp` CLI is the immutable user-level entry for installation and diagnosis;
-Agent execution remains exclusively inside Pi through `/omp`. M10 still does
+M12 supersedes the Pi-first `/omp` Agent entry. M10 still does
 not publish npm or a GitHub Release, add a daemon, writer, or MCP surface.
 
 Final reconciliation built the promoted artifact from source `7973a4e` with

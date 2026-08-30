@@ -1,12 +1,34 @@
 # only-my-pi status
 
-Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-29** · Stable
+Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-30** · Stable
 kernel merged to `main`: **2026-08-27** · Pi **0.84.3** · Node **25.8.0** · macOS
 `darwin-arm64`
 
-## Active milestone — M11 public Preview distribution
+## Active milestone — M12 Direct Terminal Coding Agent Closure
 
-M11 is converting the locally accepted M10 installation into a macOS 14+
+M12 changes the product entry from `pi` followed by `/omp run` into a direct
+terminal coding Agent started with `omp`. The implementation reuses the
+controlled Pi TUI, model registry, sessions, signals and tools; it does not
+create a second terminal runtime. Interactive sessions select a model, start in
+read-only `Inspect`, and may enter guarded project-local `Coding` only after one
+explicit, process-scoped approval. Complex work requires a decision-ready plan.
+
+The main Agent works in the current repository while preserving the initial Git
+state. Automatic orchestration remains bounded and visible over the sole
+`pi-subagents` physical runtime. At most one writer may run, in an OMP-managed
+ordinary clone; dirty-scope overlap falls back to the main Agent. Headless
+`omp -p` remains read-only, and coding authority never survives process exit or
+session resume.
+
+The target Preview is `0.3.0-preview.1` with capability ceiling
+`GUARDED_PROJECT_CODING`. No GitHub push or publication is authorized until the
+local C1-C12 gates, real Pi smoke, protected coding matrix, rollback and reapply
+all pass. The contract is in
+[`ADR-0013`](decisions/ADR-0013-direct-terminal-coding-agent.md).
+
+## Frozen milestone — M11 public Preview distribution
+
+M11 converted the locally accepted M10 installation into a macOS 14+
 Apple Silicon Preview distributed only through GitHub Releases. The target is
 `0.2.0-preview.1` with embedded Node `24.19.0`, controlled user-local Pi
 `0.84.3`, the exact nine-package M10 tuple, Full and Thin payloads, reproducible
@@ -49,12 +71,14 @@ The first private Draft PR workflow was blocked before either Linux job started
 because the account's GitHub Actions allowance was exhausted; Q10 was skipped
 only because it depends on those jobs. This is
 `GITHUB_HOSTED_CI_BLOCKED_BY_ACTIONS_QUOTA`, not a source or test failure. M11
-therefore remains `HOLD_PUBLICATION`: local release-candidate authority is
+remains `HOLD_PUBLICATION`: local release-candidate authority is
 verified, but hosted PR checks, GitHub attestations, repository protections and
 immutable publication are still pending. The three macOS workflows use the
 standard Apple Silicon `macos-14` runner; no M11 workflow requires a billed
 larger runner. No repository publication, public tag or Preview Release is
-authorized at this point. The complete boundary is in
+authorized. Its release work is retained as
+`INTERNAL_DISTRIBUTION_FOUNDATION`; it is not current product release authority
+and `0.2.0-preview.1` will not be published. The complete boundary is in
 [`ADR-0012`](decisions/ADR-0012-public-preview-distribution-and-history-privacy.md).
 
 ## Completed milestone — M10 Stable candidate promotion
