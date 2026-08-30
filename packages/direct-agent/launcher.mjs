@@ -106,10 +106,11 @@ function cleanEnvironment(env) {
   return output;
 }
 
-function equalStrings(left, right) {
-  return Array.isArray(left)
-    && left.length === right.length
-    && left.every((entry, index) => entry === right[index]);
+function equalStringSets(left, right) {
+  if (!Array.isArray(left) || left.length !== right.length || new Set(left).size !== left.length) return false;
+  const leftSorted = [...left].sort();
+  const rightSorted = [...right].sort();
+  return leftSorted.every((entry, index) => entry === rightSorted[index]);
 }
 
 function flagValue(argv, flag) {
@@ -303,7 +304,7 @@ export async function resolveDirectExtensionSet({
       fail("OMP_DIRECT_PACKAGE_OWNERSHIP_INVALID", `${expected.packageId} must remain an external user-owned binding`);
     }
     const actualFilter = pkg.binding.resourceFilter ?? [];
-    if (!equalStrings(actualFilter, expected.resourceFilter)) {
+    if (!equalStringSets(actualFilter, expected.resourceFilter)) {
       fail("OMP_DIRECT_RESOURCE_FILTER_DRIFT", `${expected.packageId} resource filter differs from the audited direct-session set`);
     }
     const entries = expected.entry === null ? expected.resourceFilter : [expected.entry];

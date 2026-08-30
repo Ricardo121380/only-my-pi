@@ -174,10 +174,10 @@ test("direct extension resolution disables ambient discovery and admits only aud
     "extensions/notify/index.ts",
     "extensions/unreviewed/index.ts",
   ], [
-    "extensions/sessions/index.ts",
     "extensions/context/index.ts",
-    "extensions/review/index.ts",
     "extensions/notify/index.ts",
+    "extensions/review/index.ts",
+    "extensions/sessions/index.ts",
   ]);
   await add("lsp", ["dist/index.ts"]);
   await add("usage", ["dist/index.js"]);
@@ -196,6 +196,14 @@ test("direct extension resolution disables ambient discovery and admits only aud
     "only-my-pi:extensions/omp-control/index.ts",
     "only-my-pi:extensions/omp-direct/index.ts",
   ]);
+
+  packages.get("agent-extensions").binding.resourceFilter.push("extensions/sessions/index.ts");
+  await assert.rejects(resolveDirectExtensionSet({
+    stack,
+    configRoot,
+    resolvePackage: async ({ packageId }) => packages.get(packageId),
+  }), { code: "OMP_DIRECT_RESOURCE_FILTER_DRIFT" });
+  packages.get("agent-extensions").binding.resourceFilter.pop();
 
   packages.get("permission-modes").binding.owner = "only-my-pi";
   await assert.rejects(resolveDirectExtensionSet({
