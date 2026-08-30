@@ -147,10 +147,20 @@ test("doctor reports a missing generation referenced by settings", async (t) => 
   assert.equal(result.generation.errorCode, "GENERATION_NOT_PROMOTED");
 });
 
-test("doctor rejects settings that no longer match the last-known-good state", async (t) => {
+test("doctor accepts unowned Pi settings changes after the last-known-good state", async (t) => {
   const { configRoot, service } = await fixture(t);
   const current = await loadSettings(configRoot);
   current.settings.userPreference = "concurrent-change";
+  await saveSettings(configRoot, current.settings);
+  const result = await service.doctor({ configRoot });
+  assert.equal(result.ok, true);
+  assert.equal(result.generation.status, "VERIFIED");
+});
+
+test("doctor rejects owned settings that no longer match the last-known-good state", async (t) => {
+  const { configRoot, service } = await fixture(t);
+  const current = await loadSettings(configRoot);
+  current.settings.onlyMyPi.profileId = "coding";
   await saveSettings(configRoot, current.settings);
   const result = await service.doctor({ configRoot });
   assert.equal(result.ok, false);
