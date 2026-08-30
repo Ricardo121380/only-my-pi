@@ -11,7 +11,9 @@ import {
   loadDailyCatalog,
   normalizePreferences,
   resetGlobalPreferences,
+  readLastInteractiveModel,
   resolveDailyConfiguration,
+  saveLastInteractiveModel,
   saveGlobalPreferences,
   validateResolvedModels,
 } from "../packages/daily-config/index.mjs";
@@ -183,4 +185,27 @@ test("global preferences are mode-protected, atomically replaceable and explicit
   assert.equal((await fs.stat(target)).mode & 0o777, 0o600);
   assert.equal((await resetGlobalPreferences({ configRoot })).status, "PREFERENCES_RESET");
   assert.equal((await resetGlobalPreferences({ configRoot })).status, "NO_CHANGES");
+});
+
+test("last interactive model is a bounded global preference without authentication data", async (t) => {
+  const { configRoot } = await roots(t);
+  assert.equal(await readLastInteractiveModel({ configRoot }), null);
+  const saved = await saveLastInteractiveModel({
+    configRoot,
+    model: "opencode-go/deepseek-v4-flash",
+    selectedAt: "2026-08-30T06:00:00.000Z",
+  });
+  assert.equal(saved.status, "LAST_INTERACTIVE_MODEL_SAVED");
+  assert.deepEqual(await readLastInteractiveModel({ configRoot }), {
+    model: "opencode-go/deepseek-v4-flash",
+    selectedAt: "2026-08-30T06:00:00.000Z",
+  });
+  assert.throws(
+    () => normalizePreferences({ formatVersion: 1, ui: { lastModel: saved.lastModel } }, { scope: "project" }),
+    { code: "NON_GLOBAL_UI_PREFERENCE_FORBIDDEN" },
+  );
+  assert.throws(
+    () => normalizePreferences({ formatVersion: 1, ui: { lastModel: { model: "inherit", selectedAt: "2026-08-30T06:00:00.000Z" } } }),
+    { code: "MODEL_CONFIGURATION_INVALID" },
+  );
 });

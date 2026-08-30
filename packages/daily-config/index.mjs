@@ -188,10 +188,25 @@ function normalizePricing(value, { scope }) {
   return output;
 }
 
+function normalizeUiPreferences(value, { scope }) {
+  if (value === undefined) return {};
+  if (scope !== "global") fail("NON_GLOBAL_UI_PREFERENCE_FORBIDDEN", "project and per-run configuration cannot define UI preferences");
+  exactKeys(value, new Set(["lastModel"]), "ui");
+  if (value.lastModel === undefined) return {};
+  exactKeys(value.lastModel, new Set(["model", "selectedAt"]), "ui.lastModel");
+  const model = normalizeModelId(value.lastModel.model, "ui.lastModel.model", { allowInherit: false });
+  if (typeof value.lastModel.selectedAt !== "string"
+    || !Number.isFinite(Date.parse(value.lastModel.selectedAt))
+    || new Date(value.lastModel.selectedAt).toISOString() !== value.lastModel.selectedAt) {
+    fail("PREFERENCES_INVALID", "ui.lastModel.selectedAt must be a canonical ISO timestamp");
+  }
+  return { lastModel: { model, selectedAt: value.lastModel.selectedAt } };
+}
+
 export function normalizePreferences(input, { scope = "global" } = {}) {
   object(input, `${scope} preferences`);
   assertNoSecretFields(input, `${scope} preferences`);
-  exactKeys(input, new Set(["$schema", "formatVersion", "defaultPreset", "enabledOverlays", "disabledOverlays", "models", "pricingOverrides", "budgets"]), `${scope} preferences`);
+  exactKeys(input, new Set(["$schema", "formatVersion", "defaultPreset", "enabledOverlays", "disabledOverlays", "models", "pricingOverrides", "budgets", "ui"]), `${scope} preferences`);
   if (input.formatVersion !== 1) fail("PREFERENCES_VERSION_UNSUPPORTED", `${scope} preferences formatVersion must be 1`);
   if (input.$schema !== undefined && (typeof input.$schema !== "string" || !input.$schema.endsWith("preferences-v1.schema.json"))) fail("PREFERENCES_INVALID", `${scope} preferences schema is invalid`);
   if (input.defaultPreset !== undefined && (typeof input.defaultPreset !== "string" || !ID.test(input.defaultPreset))) fail("PREFERENCES_INVALID", `${scope} defaultPreset is invalid`);
@@ -208,6 +223,7 @@ export function normalizePreferences(input, { scope = "global" } = {}) {
     models: normalizeModels(input.models, `${scope}.models`),
     pricingOverrides: normalizePricing(input.pricingOverrides, { scope }),
     budgets: normalizeBudgets(input.budgets, `${scope}.budgets`),
+    ui: normalizeUiPreferences(input.ui, { scope }),
   });
 }
 
@@ -221,6 +237,7 @@ export function defaultPreferences() {
     models: { default: DEFAULT_MODEL, roles: {} },
     pricingOverrides: {},
     budgets: { daily: DEFAULT_BUDGET },
+    ui: {},
   });
 }
 
@@ -540,6 +557,30 @@ export async function saveGlobalPreferences({ configRoot, preferences } = {}) {
     await fs.unlink(temporary).catch(() => {});
   }
   return immutable({ ok: true, status: "PREFERENCES_SAVED", mutation: true, path: "only-my-pi/preferences.json", preferences: normalized });
+}
+
+export async function readLastInteractiveModel({ configRoot } = {}) {
+  const document = await readJsonNoFollow(preferencePath(configRoot), "global preferences", { missing: null });
+  if (document === null) return null;
+  return normalizePreferences(document, { scope: "global" }).ui.lastModel ?? null;
+}
+
+export async function saveLastInteractiveModel({ configRoot, model, selectedAt = new Date().toISOString() } = {}) {
+  const document = await readJsonNoFollow(preferencePath(configRoot), "global preferences", { missing: null });
+  const preferences = document === null ? defaultPreferences() : normalizePreferences(document, { scope: "global" });
+  const saved = await saveGlobalPreferences({
+    configRoot,
+    preferences: {
+      ...preferences,
+      ui: { lastModel: { model, selectedAt } },
+    },
+  });
+  return immutable({
+    ok: true,
+    status: "LAST_INTERACTIVE_MODEL_SAVED",
+    mutation: saved.mutation,
+    lastModel: saved.preferences.ui.lastModel,
+  });
 }
 
 export async function resetGlobalPreferences({ configRoot } = {}) {
