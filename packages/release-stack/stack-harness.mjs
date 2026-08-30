@@ -36,6 +36,28 @@ function equivalentPackageSetting(current, expected) {
     && ["extensions", "prompts", "skills", "themes"].every((key) => sameMembers(current[key], expected[key]));
 }
 
+async function verifyHarnessPackageRoot(packageRoot, expectedVersion = null, unavailableCode = "STACK_OMP_ARTIFACT_INVALID") {
+  if (typeof packageRoot !== "string" || !path.isAbsolute(packageRoot)) {
+    fail(unavailableCode, "Harness package root must be absolute");
+  }
+  const root = path.resolve(packageRoot);
+  const [rootStat, manifestStat, executableStat] = await Promise.all([
+    fs.lstat(root).catch((error) => error?.code === "ENOENT" ? null : Promise.reject(error)),
+    fs.lstat(path.join(root, "package.json")).catch((error) => error?.code === "ENOENT" ? null : Promise.reject(error)),
+    fs.lstat(path.join(root, "bin", "omp.mjs")).catch((error) => error?.code === "ENOENT" ? null : Promise.reject(error)),
+  ]);
+  if (!rootStat?.isDirectory() || rootStat.isSymbolicLink()
+    || !manifestStat?.isFile() || manifestStat.isSymbolicLink()
+    || !executableStat?.isFile() || executableStat.isSymbolicLink()) {
+    fail(unavailableCode, "Harness package root is missing or unsafe");
+  }
+  const manifest = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
+  if (manifest.name !== "only-my-pi" || (expectedVersion !== null && manifest.version !== expectedVersion)) {
+    fail("STACK_OMP_ARTIFACT_IDENTITY_INVALID", "only-my-pi package identity differs from the stack manifest");
+  }
+  return root;
+}
+
 export function compileStackPackageSettings(settings, graphPlan) {
   if (!settings || typeof settings !== "object" || Array.isArray(settings) || !Array.isArray(settings.packages) || !Array.isArray(graphPlan?.packages)) fail("STACK_SETTINGS_INVALID", "stack settings and generation package plan are required");
   const output = structuredClone(settings);
@@ -60,14 +82,7 @@ export class StackHarnessAdapter {
     const destination = path.join(context.paths.stage, "only-my-pi");
     await extractVerifiedTarGzip({ archivePath: artifact, destination, expectedSha256: context.stack.onlyMyPi.artifactSha256, maxEntries: 50_000, maxExtractedBytes: 512 * 1024 * 1024 });
     const packageRoot = path.join(destination, "package");
-    const [manifestStat, executableStat] = await Promise.all([
-      fs.lstat(path.join(packageRoot, "package.json")),
-      fs.lstat(path.join(packageRoot, "bin", "omp.mjs")),
-    ]);
-    if (!manifestStat.isFile() || manifestStat.isSymbolicLink() || !executableStat.isFile() || executableStat.isSymbolicLink()) fail("STACK_OMP_ARTIFACT_INVALID", "only-my-pi artifact did not contain a safe CLI package");
-    const manifest = JSON.parse(await fs.readFile(path.join(packageRoot, "package.json"), "utf8"));
-    if (manifest.name !== "only-my-pi" || manifest.version !== context.stack.onlyMyPi.version) fail("STACK_OMP_ARTIFACT_IDENTITY_INVALID", "only-my-pi artifact package identity differs from the stack manifest");
-    context.harnessRoot = packageRoot;
+    context.harnessRoot = await verifyHarnessPackageRoot(packageRoot, context.stack.onlyMyPi.version);
   }
 
   candidateRoot(context) {
@@ -115,16 +130,17 @@ export class StackHarnessAdapter {
     return extractManagedMetadata(installed.settings)?.generationId ?? null;
   }
 
-  async rollback({ rollback, piCommand } = {}) {
+  async rollback({ rollback, piCommand, harnessRoot } = {}) {
     const transactionId = rollback?.harness?.bootstrapTransactionId;
     if (!transactionId) return Object.freeze({ status: "NO_HARNESS_ROLLBACK_REQUIRED" });
     if (typeof piCommand !== "string" || !path.isAbsolute(piCommand)) fail("STACK_ROLLBACK_PI_UNAVAILABLE", "Harness rollback requires an absolute controlled Pi entrypoint");
+    const rootDir = await verifyHarnessPackageRoot(harnessRoot, null, "STACK_ROLLBACK_HARNESS_UNAVAILABLE");
     const options = this.spawnImpl === undefined ? {} : { spawnImpl: this.spawnImpl };
-    const doctor = new DoctorService({ rootDir: this.rootDir });
+    const doctor = new DoctorService({ rootDir });
     const runner = createNpmCommandRunner({ configRoot: this.configRoot });
     const smokeRunner = createNoModelSmokeRunner({ ...options, piCommand });
-    const transaction = new TransactionEngine({ rootDir: this.rootDir, runner, smokeRunner, doctorService: doctor });
-    const bootstrap = new BootstrapService({ rootDir: this.rootDir, doctorService: doctor, transactionEngine: transaction });
+    const transaction = new TransactionEngine({ rootDir, runner, smokeRunner, doctorService: doctor });
+    const bootstrap = new BootstrapService({ rootDir, doctorService: doctor, transactionEngine: transaction });
     const plan = await bootstrap.planRollback({ configRoot: this.configRoot, snapshotId: `before-${transactionId}` });
     return bootstrap.rollback({ configRoot: this.configRoot, plan });
   }

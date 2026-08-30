@@ -437,7 +437,7 @@ function publicError(error) {
   return Object.freeze({
     ok: false,
     status: "ERROR",
-    mutation: false,
+    mutation: error?.mutation === true,
     code,
     message: singleLine(error?.message, "only-my-pi CLI failed"),
   });

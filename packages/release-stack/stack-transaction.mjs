@@ -85,6 +85,24 @@ async function rollbackPiCommand(layout, paths, stackId) {
   fail("STACK_ROLLBACK_PI_UNAVAILABLE", "Harness rollback requires a verified staged or active Pi entrypoint");
 }
 
+async function rollbackHarnessRoot(layout, stackId) {
+  const stackRoot = stackPath(layout, stackId);
+  const candidate = path.join(stackRoot, "only-my-pi", "package");
+  const [stackStat, candidateStat] = await Promise.all([
+    lstatOrNull(stackRoot),
+    lstatOrNull(candidate),
+  ]);
+  if (!stackStat?.isDirectory() || stackStat.isSymbolicLink()
+    || !candidateStat?.isDirectory() || candidateStat.isSymbolicLink()) {
+    fail("STACK_ROLLBACK_HARNESS_UNAVAILABLE", "Harness rollback requires the transaction's verified stack package");
+  }
+  const [stackReal, candidateReal] = await Promise.all([fs.realpath(stackRoot), fs.realpath(candidate)]);
+  if (!candidateReal.startsWith(`${stackReal}${path.sep}`)) {
+    fail("STACK_ROLLBACK_HARNESS_UNAVAILABLE", "Harness rollback package escapes its transaction stack");
+  }
+  return candidateReal;
+}
+
 function packageName(setting) {
   const value = typeof setting === "string" ? setting : setting?.source;
   const match = /^npm:(@[^/]+\/[^@]+|[^@]+)@([^@]+)$/u.exec(value ?? "");
@@ -411,7 +429,13 @@ export class StackTransactionEngine {
     const pending = await listStackJournals(this.layout, { incompleteOnly: true });
     const results = [];
     for (const journal of pending) {
-      const result = await this.recoverTransaction(journal.transactionId, { failureCode: "AUTOMATIC_CRASH_RECOVERY" });
+      let result;
+      try {
+        result = await this.recoverTransaction(journal.transactionId, { failureCode: "AUTOMATIC_CRASH_RECOVERY" });
+      } catch (error) {
+        error.mutation = true;
+        throw error;
+      }
       results.push(result);
       if (result.status === "MANUAL_RECONCILIATION_REQUIRED") fail("MANUAL_RECONCILIATION_REQUIRED", "an incomplete stack transaction requires manual reconciliation");
     }
@@ -429,12 +453,20 @@ export class StackTransactionEngine {
       await this.processAdmission.terminate(processes, { authorized: true });
     }
     const results = [];
-    for (const transactionId of transactionIds) {
-      const journal = await readStackJournal(this.layout, transactionId);
-      if (journal.status !== "COMMITTED") fail("STACK_ROLLBACK_TRANSACTION_INVALID", "reviewed stack transaction is not committed");
-      const result = await this.recoverTransaction(transactionId, { failureCode });
-      if (result.status !== "ROLLED_BACK") fail("MANUAL_RECONCILIATION_REQUIRED", "stack rollback did not reach a verified terminal state");
-      results.push(result);
+    let mutationStarted = false;
+    try {
+      for (const transactionId of transactionIds) {
+        const journal = await readStackJournal(this.layout, transactionId);
+        if (journal.status !== "COMMITTED") fail("STACK_ROLLBACK_TRANSACTION_INVALID", "reviewed stack transaction is not committed");
+        mutationStarted = true;
+        const result = await this.recoverTransaction(transactionId, { failureCode });
+        if (result.status !== "ROLLED_BACK") fail("MANUAL_RECONCILIATION_REQUIRED", "stack rollback did not reach a verified terminal state");
+        results.push(result);
+      }
+    } catch (error) {
+      error.mutation = error?.mutation === true || mutationStarted || results.length > 0;
+      error.completedTransactionIds = results.map((entry) => entry.transactionId);
+      throw error;
     }
     return Object.freeze({ ok: true, status: "ROLLED_BACK", mutation: true, transactionIds: Object.freeze([...transactionIds]), results: Object.freeze(results) });
   }
@@ -483,7 +515,15 @@ export class StackTransactionEngine {
     const piCommand = rollback?.harness?.bootstrapTransactionId
       ? await rollbackPiCommand(this.layout, paths, journal.stackId)
       : null;
-    await this.harness?.rollback?.({ transactionId, rollback, piCommand });
+    const harnessRoot = rollback?.harness?.bootstrapTransactionId
+      ? await rollbackHarnessRoot(this.layout, journal.stackId)
+      : null;
+    try {
+      await this.harness?.rollback?.({ transactionId, rollback, piCommand, harnessRoot });
+    } catch (error) {
+      error.mutation = true;
+      throw error;
+    }
     if (shellRemovalPlan) await this.shellProfile.remove(shellRemovalPlan, rollback.shellProfile);
     await restoreLink(this.layout.ompShim, rollback.ompShim);
     await restoreLink(this.layout.piShim, rollback.piShim);

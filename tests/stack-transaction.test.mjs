@@ -81,6 +81,19 @@ function transactionId(index = 1) {
   return `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`;
 }
 
+async function stackVariant(value, label, sourceCharacter) {
+  const resolved = path.join(value.home, `resolved-${label}`);
+  await fs.cp(value.resolved, resolved, { recursive: true, verbatimSymlinks: true });
+  await fs.writeFile(path.join(resolved, "only-my-pi.tgz"), `${label} artifact\n`);
+  const manifest = structuredClone(value.stack);
+  delete manifest.stackId;
+  manifest.sourceCommit = sourceCharacter.repeat(40);
+  manifest.onlyMyPi.artifactSha256 = sha256(await fs.readFile(path.join(resolved, "only-my-pi.tgz")));
+  const stack = finalizeStackManifest(manifest);
+  const plan = await planStackEnvironment({ layout: value.layout, stackManifest: stack, payloadMode: "full", platform, pathValue: value.layout.binRoot });
+  return { resolved, stack, plan };
+}
+
 test("stack transaction installs one complete user-local stack and preserves external ownership", async (t) => {
   const value = await fixture(t);
   const engine = createStackTransactionEngine({
@@ -145,11 +158,12 @@ test("explicit rollback lets the Harness restore its LKG before outer settings",
     generationId: sha256("candidate-generation"),
     rollbackIdentity: { bootstrapTransactionId: "fixture-harness-transaction" },
   });
-  value.harness.rollback = async ({ rollback, piCommand }) => {
+  value.harness.rollback = async ({ rollback, piCommand, harnessRoot }) => {
     const current = JSON.parse(await fs.readFile(value.layout.settingsFile, "utf8"));
     assert.equal(current.harnessCandidate, true);
     assert.equal(rollback.harness.bootstrapTransactionId, "fixture-harness-transaction");
     assert.equal(piCommand, value.layout.piShim);
+    assert.equal(harnessRoot, path.join(value.layout.stacksRoot, value.stack.stackId.slice("sha256:".length), "only-my-pi", "package"));
     rollbackObservedCandidate = true;
   };
   const engine = createStackTransactionEngine({
@@ -165,6 +179,75 @@ test("explicit rollback lets the Harness restore its LKG before outer settings",
   assert.equal(result.status, "ROLLED_BACK");
   assert.equal(rollbackObservedCandidate, true);
   await assert.rejects(fs.lstat(value.layout.settingsFile), { code: "ENOENT" });
+});
+
+test("multi-step rollback uses each transaction stack's Harness package after deleting the launcher stack", async (t) => {
+  const value = await fixture(t);
+  const ids = [transactionId(31), transactionId(32), transactionId(33)];
+  let nextId = 0;
+  const roots = [];
+  value.harness.publish = async ({ settings }) => ({
+    settings: { ...settings, harnessCandidate: true },
+    generationId: sha256(`candidate-generation-${nextId}`),
+    rollbackIdentity: { bootstrapTransactionId: `fixture-harness-${nextId}` },
+  });
+  value.harness.rollback = async ({ harnessRoot }) => {
+    assert.equal((await fs.lstat(harnessRoot)).isDirectory(), true);
+    roots.push(harnessRoot);
+  };
+  const engine = createStackTransactionEngine({
+    layout: value.layout,
+    harness: value.harness,
+    transactionIdFactory: () => ids[nextId++],
+    processAdmission: { async plan() { return []; } },
+    doctor: async () => ({ ok: true }),
+    smoke: async () => ({ ok: true }),
+  });
+  await engine.apply({ plan: value.plan, stackManifest: value.stack, resolvedRoot: value.resolved });
+  const second = await stackVariant(value, "second", "e");
+  await engine.apply({ plan: second.plan, stackManifest: second.stack, resolvedRoot: second.resolved });
+  const third = await stackVariant(value, "third", "f");
+  await engine.apply({ plan: third.plan, stackManifest: third.stack, resolvedRoot: third.resolved });
+
+  const result = await engine.rollbackCommitted([...ids].reverse());
+  assert.equal(result.status, "ROLLED_BACK");
+  assert.deepEqual(roots, [third.stack, second.stack, value.stack].map((stack) => path.join(
+    value.layout.stacksRoot,
+    stack.stackId.slice("sha256:".length),
+    "only-my-pi",
+    "package",
+  )));
+  await assert.rejects(fs.lstat(value.layout.stateFile), { code: "ENOENT" });
+  assert.deepEqual(await Promise.all(ids.map(async (id) => (await readStackJournal(value.layout, id)).status)), ["ROLLED_BACK", "ROLLED_BACK", "ROLLED_BACK"]);
+});
+
+test("rollback errors report that a durable mutation already started", async (t) => {
+  const value = await fixture(t);
+  const id = transactionId(34);
+  value.harness.publish = async ({ settings }) => ({
+    settings,
+    generationId: sha256("candidate-generation"),
+    rollbackIdentity: { bootstrapTransactionId: "fixture-harness" },
+  });
+  value.harness.rollback = async () => {
+    throw Object.assign(new Error("fixture rollback interruption"), { code: "FIXTURE_ROLLBACK_INTERRUPTED" });
+  };
+  const engine = createStackTransactionEngine({
+    layout: value.layout,
+    harness: value.harness,
+    transactionIdFactory: () => id,
+    processAdmission: { async plan() { return []; } },
+    doctor: async () => ({ ok: true }),
+    smoke: async () => ({ ok: true }),
+  });
+  await engine.apply({ plan: value.plan, stackManifest: value.stack, resolvedRoot: value.resolved });
+  await assert.rejects(engine.rollbackCommitted([id]), (error) => {
+    assert.equal(error.code, "FIXTURE_ROLLBACK_INTERRUPTED");
+    assert.equal(error.mutation, true);
+    assert.deepEqual(error.completedTransactionIds, []);
+    return true;
+  });
+  assert.equal((await readStackJournal(value.layout, id)).status, "RECOVERING");
 });
 
 test("a new mutating engine recovers crashes at every durable pre-commit boundary", async (t) => {
