@@ -209,7 +209,8 @@ test("M12 approval is rechecked, reused once, and guards delegation and mutation
   assert.equal(approved.details.status, "CODING_ACCESS_GRANTED");
   assert.equal((await controller.requestCodingAccess(simpleRequest(), ctx)).details.status, "CODING_ACCESS_ALREADY_GRANTED");
   assert.deepEqual(controller.activeToolCeiling(), CODING_TOOL_NAMES);
-  assert.match(controller.blockToolCall({ toolName: "edit", input: { path: "outside.txt" } }).reason, /CODING_SCOPE_DENIED/u);
+  assert.equal(controller.blockToolCall({ toolName: "edit", input: { path: "outside.txt" } }), undefined);
+  assert.match(controller.blockToolCall({ toolName: "edit", input: { path: "/tmp/outside.txt" } }).reason, /PROJECT_PATH_ESCAPE/u);
   assert.match(controller.blockToolCall({ toolName: "bash", input: { command: "git reset --hard" } }).reason, /DESTRUCTIVE_GIT_RESET/u);
   assert.match(controller.blockToolCall({ toolName: "powershell", input: {} }).reason, /UNSUPPORTED_MUTATION_TOOL/u);
   assert.equal(controller.inspectUserBash({ command: "npm test" }), undefined);

@@ -55,6 +55,7 @@ const ACCESS_OPTIONS = Object.freeze([
   "Deny",
 ]);
 const MODEL_REFERENCE = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}\/[A-Za-z0-9][A-Za-z0-9._:+-]{0,127}$/u;
+const PROJECT_LOCAL_SCOPE = Object.freeze(["**"]);
 
 function fail(code, message) {
   const error = new Error(message);
@@ -438,7 +439,12 @@ export class DirectSessionController {
       this.explicitPlan = false;
       this.approvedRequest = request;
       this.approvedScope = [...request.scope];
-      this.workspacePolicy = createWorkspacePolicy({ baseline: this.workspaceBaseline, scope: this.approvedScope });
+      // The request scope describes the current task and stays a hard boundary
+      // for an isolated managed writer. The human approval itself is
+      // process-local and project-wide so later ordinary local tasks do not
+      // produce another approval prompt. Project containment, protected paths,
+      // destructive Git checks, and the physical sandbox still apply.
+      this.workspacePolicy = createWorkspacePolicy({ baseline: this.workspaceBaseline, scope: PROJECT_LOCAL_SCOPE });
       this.transition(DIRECT_SESSION_STATES.CODING, ctx);
       return toolResult("CODING_ACCESS_GRANTED", "Project-local edit, write, and sandboxed bash tools are enabled for this OMP process.", {
         scope: request.scope,
@@ -466,7 +472,7 @@ export class DirectSessionController {
     const state = this.state;
     const coding = this.hasCodingAccess();
     return {
-      systemPrompt: `${event.systemPrompt}\n\n## only-my-pi Direct Coding Agent\nCurrent OMP state: ${state}. Physical permission mode: ${permission.mode}.\n- Inspect the project before proposing changes.\n- Before edit, write, bash, project gates, or a writer child, call request_coding_access as the only tool in that tool batch.\n- Classify a task as complex when it changes public APIs, dependencies, schemas, security, concurrency, migrations, deletion, releases, or multiple coordinated modules.\n- Complex and explicit /plan tasks require a complete plan before requesting access.\n- A coding grant is process-local and project-local; it never authorizes project-external paths, secrets, MCP, unrestricted network, destructive Git, publishing, deployment, or silent commits.\n- Preserve pre-existing working-tree changes and re-read files immediately before editing.\n- Use delegate_readonly_agent only for bounded independent exploration or fresh review; at most two children may run concurrently and no child may delegate again.\n- Use delegate_managed_writer only when the approved complex plan explicitly enables it. OMP permits one writer in an ordinary managed Git clone, captures its patch, requires a fresh read-only review, and applies only a conflict-free in-scope patch.\n- Keep simple tasks with the main Agent. After a managed patch is applied, run the approved verification again in the real current worktree.\n${permission.ok ? "" : "- YOLO was detected and OMP revoked coding access. Ask the user to switch to /perm build; do not attempt mutation.\n"}${coding ? "- Coding access is active for this process; ordinary in-scope edits do not need another request." : "- Coding access is not active. Remain read-only until request_coding_access returns CODING_ACCESS_GRANTED."}`,
+      systemPrompt: `${event.systemPrompt}\n\n## only-my-pi Direct Coding Agent\nCurrent OMP state: ${state}. Physical permission mode: ${permission.mode}.\n- Inspect the project before proposing changes.\n- Before edit, write, bash, project gates, or a writer child, call request_coding_access as the only tool in that tool batch.\n- Classify a task as complex when it changes public APIs, dependencies, schemas, security, concurrency, migrations, deletion, releases, or multiple coordinated modules.\n- Complex and explicit /plan tasks require a complete plan before requesting access.\n- A coding grant is process-local and project-local; it never authorizes project-external paths, secrets, MCP, unrestricted network, destructive Git, publishing, deployment, or silent commits.\n- Preserve pre-existing working-tree changes and re-read files immediately before editing.\n- Use delegate_readonly_agent only for bounded independent exploration or fresh review; at most two children may run concurrently and no child may delegate again.\n- Use delegate_managed_writer only when the approved complex plan explicitly enables it. OMP permits one writer in an ordinary managed Git clone, captures its patch, requires a fresh read-only review, and applies only a conflict-free in-scope patch.\n- Keep simple tasks with the main Agent. After a managed patch is applied, run the approved verification again in the real current worktree.\n${permission.ok ? "" : "- YOLO was detected and OMP revoked coding access. Ask the user to switch to /perm build; do not attempt mutation.\n"}${coding ? "- Coding access is active for this process; ordinary project-local edits do not need another request. The approved task scope remains a hard boundary only for a managed-clone writer." : "- Coding access is not active. Remain read-only until request_coding_access returns CODING_ACCESS_GRANTED."}`,
     };
   }
 

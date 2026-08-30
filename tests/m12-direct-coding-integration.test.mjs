@@ -71,7 +71,7 @@ function context(root) {
   };
 }
 
-test("main Agent coding grant is one-process, in-scope, non-destructive and preserves dirty work", async (t) => {
+test("main Agent coding grant is one-process, project-local, non-destructive and preserves dirty work", async (t) => {
   const root = await repository(t);
   const configRoot = path.join(root, ".private-agent-config");
   await fs.mkdir(configRoot);
@@ -97,7 +97,8 @@ test("main Agent coding grant is one-process, in-scope, non-destructive and pres
   }, ctx);
   assert.equal(granted.details.status, "CODING_ACCESS_GRANTED");
   assert.equal(controller.blockToolCall({ toolName: "edit", input: { path: "src/app.js" } }), undefined);
-  assert.equal(controller.blockToolCall({ toolName: "write", input: { path: "outside.txt" } }).block, true);
+  assert.equal(controller.blockToolCall({ toolName: "write", input: { path: "test/new.test.js" } }), undefined);
+  assert.match(controller.blockToolCall({ toolName: "write", input: { path: path.join(root, "..", "outside.txt") } }).reason, /PROJECT_PATH_ESCAPE/u);
   assert.equal(controller.blockToolCall({ toolName: "bash", input: { command: "npm test" } }), undefined);
   assert.match(controller.blockToolCall({ toolName: "bash", input: { command: "git reset --hard HEAD" } }).reason, /DESTRUCTIVE_GIT_RESET/u);
 
