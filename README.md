@@ -189,8 +189,15 @@ unchanged retained versions. The complete M10 receipt reports P1-P12 passing.
 
 ## Product direction
 
-The product is not another Provider or protocol adapter. The roadmap targets a
-usable Pi-based Harness distribution. M1 supplies the
+The product is now the terminal coding Agent launched by `omp`; Pi is its
+internal runtime. The default user journey does not expose Workflow, Swarm,
+Goal or Ultra choices. It begins read-only, asks once for guarded project-local
+coding, preserves dirty work, automatically chooses bounded subagents, verifies
+changes in the real worktree, and returns to the shell through Pi's native
+shutdown path. The older Harness control plane remains an advanced compatibility
+surface and supplies the transaction, budget, artifact and recovery kernel.
+
+Historically, M1 supplied the
 strict package, Profile, capability, owner, command, enforcement, Mode, Agent,
 Workflow, and Swarm contracts needed to build that product without false-green
 configuration checks. M2 adds the transactional `omp` configuration runtime,
@@ -513,6 +520,7 @@ npm run schema:check
 npm run agents:check
 npm run pack:check
 npm run verify
+npm run verify:m12
 npm test
 
 # M7 executable release receipt (clean source commit only)

@@ -99,7 +99,7 @@
       "review": "baseline-conservative",
       "owners": ["permission"],
       "risk": ["conditional-bash-sandbox", "degraded-prompt-fallback", "not-whole-session-isolation"],
-      "notes": "Provides the physical Build sandbox and protected-path policy. Direct omp starts Build mode, hides mutation tools until session approval, and revokes its grant if YOLO is selected; the package remains external and user owned.",
+      "notes": "Provides conditional Bash isolation through @anthropic-ai/sandbox-runtime plus protected-path policy. Direct omp starts Build mode, hides mutation tools until session approval, and revokes its grant if YOLO is selected. Never infer file, Web, MCP, Provider, extension, or whole-session isolation; the package remains external and user owned.",
       "audit": {
         "date": "2026-08-16",
         "integrity": "sha512-y4n110DiN99xl2tyLLU7ZyMadZUOYvxm9YKEpoZo2vFF4QJIgV7RKBAI6KztaRayAWPhA+95FdIBcV0He8vyfw==",

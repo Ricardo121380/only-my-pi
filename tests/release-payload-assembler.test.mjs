@@ -78,6 +78,11 @@ test("payload assembler derives one canonical manifest, ledger, SBOM, and Full/T
     licensesRoot: licenses,
   });
   assert.equal(assembled.status, "RELEASE_PAYLOADS_ASSEMBLED");
+  const currentManifest = JSON.parse(await fs.readFile(path.join(assembled.fullPayloadRoot, "stack-manifest.json"), "utf8"));
+  assert.equal(currentManifest.onlyMyPi.version, "0.3.0-preview.1");
+  assert.equal(currentManifest.capabilityCeiling.mode, "GUARDED_PROJECT_CODING");
+  assert.equal(currentManifest.capabilityCeiling.writer, true);
+  assert.ok(currentManifest.overlays.enabled.includes("writer"));
   assert.equal(await fs.readlink(path.join(assembled.fullPayloadRoot, "node", "bin", "node-alias")), "node");
   const inspected = await inspectFullThinPayloadInputs({ fullPayloadRoot: assembled.fullPayloadRoot, thinPayloadRoot: assembled.thinPayloadRoot, thinResolvedRoot: assembled.thinResolvedRoot });
   assert.equal(inspected.convergence.status, "PAYLOADS_CONVERGED");

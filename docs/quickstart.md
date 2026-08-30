@@ -1,205 +1,144 @@
 # Quickstart
 
-`only-my-pi` is a user-local, read-only Pi Agent Harness. The public Preview
-installs a controlled Pi runtime but does not replace Pi's credential flow,
-model runtime, permission owner, or TUI. Agent execution remains available only
-through `/omp` inside Pi; the terminal `omp` manages installation, diagnosis,
-release checks, rollback and removal.
+`only-my-pi` is a guarded user-local terminal coding Agent built on Pi. The
+daily entry is `omp`; Pi remains the internal TUI, model/session runtime and
+tool host.
 
-## Public Preview installation
+## Current availability
 
-The supported public platform is macOS 14 or newer running natively on Apple
-Silicon arm64. Intel Macs, Rosetta, Linux and Windows fail before staging. No
-preinstalled Node is required: the stack contains official Node `24.19.0` and
-Pi `0.84.3`. The installer is user-local and must not be run with `sudo`.
+M12 targets `0.3.0-preview.1` and is still in local acceptance. There is no
+public `0.2.0-preview.1` Release, and the old installer URL must not be used.
+The checked-in `distribution/install.sh` is a future exact-version M12
+bootstrap input, not evidence that a public Release exists.
 
-Default Thin install:
-
-```bash
-tmp="$(mktemp -d)" && curl --fail --proto '=https' --tlsv1.2 -o "$tmp/install.sh" 'https://github.com/Ricardo121380/only-my-pi/releases/download/v0.2.0-preview.1/install.sh' && printf '%s  %s\n' 'b598cea9b09da5693af369da7bd8fe2e5f6bbfa4f1049a4ebd53080d543a760f' "$tmp/install.sh" | shasum -a 256 -c - && /bin/sh "$tmp/install.sh" --release 0.2.0-preview.1 --payload thin --yes
-```
-
-The command downloads to disk and verifies the exact bootstrap SHA before
-execution. Thin then retrieves only digest-bound bytes from the fixed GitHub,
-nodejs.org and registry.npmjs.org sources. Redirects are handled manually and
-each destination is revalidated. Credentials, `.npmrc`, GitHub tokens and
-browser state are not read.
-
-For the Full path, download `install.sh`, the Full archive,
-`release-index.json`, `stack-manifest.json` and `SHA256SUMS` from the exact tag;
-verify the published checksums and attestations, then use the verified CLI to
-review and apply the local bundle:
-
-```bash
-omp stack install --bundle /absolute/path/only-my-pi-0.2.0-preview.1-darwin-arm64-full.tar.gz --plan --json
-omp stack install --bundle /absolute/path/only-my-pi-0.2.0-preview.1-darwin-arm64-full.tar.gz --apply --yes --json
-```
-
-Once those files are local, Full plan/apply performs no network acquisition.
-Full and Thin are required to converge on the same `stackId`, Node/Pi trees,
-external package tree, only-my-pi artifact and generation graph.
-
-Optionally verify GitHub provenance in addition to SHA-256:
-
-```bash
-gh release verify v0.2.0-preview.1 --repo Ricardo121380/only-my-pi
-gh attestation verify only-my-pi-0.2.0-preview.1-darwin-arm64-thin.tar.gz --repo Ricardo121380/only-my-pi
-```
-
-`gh` is optional for installation; checksum verification is mandatory.
-
-## PATH and first run
-
-The controlled commands are `~/.local/bin/omp` and `~/.local/bin/pi`. The
-installer does not edit shell files by default. `PATH_ACTION_REQUIRED` means
-the stack committed successfully but `~/.local/bin` is not visible in the
-current shell. Follow the printed action or rerun the reviewed apply with
-`--configure-shell`; that option accepts only a real regular profile, creates a
-backup, and writes one idempotent marker block.
-
-Verify identities before configuring a model:
-
-```bash
-command -v omp
-command -v pi
-omp version --json
-omp stack status --json
-omp status --json
-omp doctor --json
-```
-
-Start `pi`, complete Pi's normal Provider/model setup without placing secrets
-in only-my-pi configuration, then invoke:
-
-```text
-/omp run
-```
-
-The wizard previews roles, models, Web/Gate authority and budgets. Public Web
-requires a separate per-run confirmation and browser cookies remain disabled.
-The default `daily` preset is `core + web + orchestration-readonly +
-ui-terminal`; memory, sync and MCP remain off.
-
-## Existing Pi environments
-
-- An exact verified nine-package tree is borrowed as
-  `PREEXISTING_EXTERNAL`; it is never adopted or removed by only-my-pi.
-- A governed partial tree can be completed only when every existing required
-  package is exact and no unrelated top-level package is present. Its original
-  root is retained as LKG.
-- A different required version, lock/SRI/tree drift, duplicate identity,
-  unknown top-level package, unsafe symlink, or existing unknown `pi`/`omp`
-  shim returns a zero-write conflict with a reconciliation plan.
-- Homebrew Pi and Node are never modified. Removing the user-local shims makes
-  the system commands visible again according to normal `PATH` order.
-
-Always run the plan first when the machine already has Pi state:
-
-```bash
-omp stack install --release 0.2.0-preview.1 --payload thin --plan --json
-```
-
-## Source-development prerequisites
-
-- Node.js 22.19.0 or newer (Node 22.19.0 and 24.x are the CI matrix);
-- a compatible Pi host, validated here against
-  `@earendil-works/pi-coding-agent@0.84.3`;
-- a clean checkout and no credentials in the repository.
-
-Install dependencies without executing package lifecycle scripts:
+Source developers should complete C1-C10 before any real-stack mutation:
 
 ```bash
 npm ci --ignore-scripts --no-audit --no-fund
-npm run doctor
+npm run typecheck
 npm run schema:check
-npm run verify
+npm run pack:check
+npm run verify:m12
 ```
 
-`npm run verify` is an inspector only. It validates the one
-`release-gates-v1` manifest and does not execute gates. The final receipt form
-is reserved for a clean source commit and `npm run verify -- --run`.
+`npm run verify:m12` inspects the C1-C12 contract. After a clean source commit,
+`npm run verify:m12:run` executes C1-C10 locally. C11 and C12 remain
+`NOT_RUN_BY_POLICY` until the source-bound real-install and live-model evidence
+is imported; deterministic tests cannot manufacture those results.
 
-## Disposable local bootstrap
+## Daily terminal Agent
 
-Use an explicit directory so the experiment cannot silently modify the normal
-Pi home:
+After an M12 candidate has been installed by the protected local acceptance
+flow:
 
 ```bash
-export PI_CODING_AGENT_DIR="$(mktemp -d)"
-node bin/omp.mjs bootstrap --profile minimal --mode inspect --config-root "$PI_CODING_AGENT_DIR"
+cd /path/to/project
+omp
 ```
 
-Review the plan. A plan has `mutation:false` and zero-write evidence. To apply
-it deliberately:
+Startup verifies the active controlled stack, enters Pi with an exact audited
+extension list, honors Pi Project Trust, and opens a searchable authenticated
+model picker. The most recently selected model is highlighted. Cancelling the
+picker exits instead of silently choosing another model.
+
+Common forms:
 
 ```bash
-node bin/omp.mjs bootstrap \
-  --profile minimal \
-  --mode inspect \
-  --config-root "$PI_CODING_AGENT_DIR" \
-  --apply --yes
-
-node bin/omp.mjs status --config-root "$PI_CODING_AGENT_DIR"
-node bin/omp.mjs doctor --config-root "$PI_CODING_AGENT_DIR"
-node bin/omp.mjs safe --config-root "$PI_CODING_AGENT_DIR"
+omp "fix the failing login test"        # start with an initial task
+omp -c                                   # continue the latest session
+omp -r                                   # choose a session to resume
+omp --model provider/model-id            # explicit model; no startup picker
+omp -p "review the permission boundary" # headless and always read-only
 ```
 
-The apply path stages an immutable generation, publishes only owned settings
-last, runs the static doctor, and starts Pi in an isolated no-model RPC smoke.
-It does not submit a prompt or read a Provider key. Extension code still has
-the invoking OS user's authority; this smoke is startup evidence, not a
-whole-session sandbox.
+If Pi has no authenticated model, use the controlled/raw `pi` command to
+complete Pi's normal Provider setup. only-my-pi stores only the recent
+`provider/model-id`; it never stores or reports the credential.
 
-## Existing M10 local installation
+## Planning and coding access
 
-After the protected M10 promotion, the current user-level CLI is available as
-`~/.local/bin/omp`. It manages installation, status, diagnosis and rollback;
-it never executes Agent tasks. Use `/omp` inside Pi for Agent, BatchSwarm,
-Workflow, SwarmGoal and Ultra runs.
+Every interactive process begins in `Inspect`. Read, search, LSP, bounded
+read-only subagents and separately approved Web research are available; edit,
+write, bash, project gates and a writer child are not.
+
+For a small local change the Agent inspects first, then asks once for project
+coding access. For a complex or explicitly planned task it must present the
+scope, risks, full plan, subagent strategy and verification before the same
+approval. Approval lasts only for that `omp` process and never grants project-
+external writes, secret access, MCP, arbitrary network, destructive Git,
+deployment, publication or silent commits.
+
+Inside the TUI:
+
+```text
+/plan <task>    require the full planning path
+/access         show the current session state
+/access revoke  immediately return to Inspect
+/agents         show visible automatic child work
+/exit           gracefully return to the shell
+```
+
+Ctrl+D exits when the editor is empty. Pi retains its native Ctrl+C behavior;
+OMP does not place a wrapper process between the terminal and Pi.
+
+## Working trees and subagents
+
+OMP records HEAD, branch and a digest-only summary of dirty paths before
+coding. It never resets, checks out, cleans or attributes existing changes to
+the Agent. The main Agent re-reads a file immediately before modifying it.
+
+Simple work remains with the main Agent. Complex work may use at most two
+read-only scouts, one managed-clone writer and one fresh reviewer. `pi-subagents`
+is the sole physical child runtime. A writer clone never receives uncommitted
+user content. If its scope overlaps dirty paths, the writer is not started and
+the main Agent works in the original tree. A reviewed patch is applied only
+when its base, scope, paths, digest, dry-run and current worktree still match;
+verification then runs again in the real worktree. OMP does not stage or commit
+unless the user explicitly asks for a commit.
+
+## Management and diagnosis
+
+The canonical management namespace is `omp admin`:
 
 ```bash
-omp version --json
-omp status --json
-omp doctor --json
+omp admin version --json
+omp admin status --json
+omp admin doctor --json
+omp admin stack status --json
 ```
 
-The expected Stable identities are Pi `0.84.3`, `pi-subagents@0.57.0`, an
-`INSTALLED` status, generation alignment `MATCH`, and seven daily bindings
-that remain `external/owner=user`.
+`omp status`, `omp doctor`, `omp version`, `omp stack ...`, `omp release ...`
+and `omp upstream ...` remain compatibility aliases for one Preview cycle. To
+use a management word as the task itself, add the separator: `omp -- "status"`.
 
-Public stack lifecycle and Harness-only lifecycle are separate. See
-[Migration, rollback, and uninstall](migration-uninstall.md) before changing
-either one.
+The doctor reports launcher, controlled Pi, exact extension set, permission
+sandbox, managed writer and recent-model readiness separately. It does not
+probe Provider credentials.
 
-## Inspect the product surfaces
+## Installation and ownership boundary
 
-```bash
-node bin/omp.mjs mode list
-node bin/omp.mjs workflow list
-node bin/omp.mjs swarm list
-node bin/omp.mjs theme list
-node bin/omp.mjs theme preview only-my-pi-dark
-node bin/omp.mjs status --json
-```
+The managed platform remains macOS 14+ on native Apple Silicon with embedded
+Node `24.19.0`, controlled Pi `0.84.3` and the exact nine-package tuple. The
+system Homebrew Node/Pi installation is not modified.
 
-Pi users get the same control plane through the single `/omp` extension. The
-theme `use` and `reset` paths remain plan-first and require explicit approval;
-headless callers receive `THEME_APPLY_UNAVAILABLE` because no private TUI
-driver is invented.
+All nine third-party Pi packages remain `external/owner=user`, whether they
+were already present or explicitly provisioned for the user. only-my-pi owns
+its artifact, generated resources, generation, private run data and controlled
+stack pointers; it does not adopt the package tree. Harness uninstall and
+full-stack removal remain different explicit operations.
 
-## Build from the packed artifact
+Before a future stack install or update, always review the zero-write plan.
+Mutating apply requires `--apply --yes`; stopping an active Pi process requires
+the separate `--terminate-pi` authority and only bounded `SIGTERM` is allowed.
 
-The release smoke, which is also the `test:e2e` gate, starts from `npm pack`
-and installs into a temporary prefix with scripts disabled and npm offline:
+## Advanced compatibility surfaces
 
-```bash
-npm run test:e2e
-```
+Inside a direct Agent, `/omp run` is retired and explains that the user can
+type a task directly. Historical Agent/Workflow/Swarm/Goal/Ultra controls live
+under `/omp advanced ...` for regression and expert diagnosis. They use the
+same session composer, budgets, artifacts and `pi-subagents` runtime; they do
+not create a second permission owner or scheduler.
 
-Before installing the local artifact it builds a disposable lockfile that points
-at the freshly packed tarball, then runs `npm ci --offline` against the
-repository's exact dependency entries; the artifact install therefore does not
-depend on a registry packument being present in the CI cache. It validates the
-tarball integrity, executable `.bin/omp` and `.bin/pi`,
-checkout independence, dry-run/apply/no-op/doctor/safe/rollback, and the
-no-model startup contract. It never uses the real Pi home or a live Provider.
+The standalone `pi` command remains the advanced/raw Pi entry. Its extension
+discovery may differ from the guarded direct OMP session, so use it only when
+that distinction is intentional.

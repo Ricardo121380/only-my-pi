@@ -126,6 +126,13 @@ function releaseAssetUrl(version, asset) {
   return `https://github.com/${PUBLIC_REPOSITORY}/releases/download/${tag}/${asset}`;
 }
 
+function previewIdentity(value, { tagged = false } = {}) {
+  const match = new RegExp(tagged
+    ? "^v(0\\.(2|3)\\.0-preview\\.([1-9][0-9]*))$"
+    : "^(0\\.(2|3)\\.0-preview\\.([1-9][0-9]*))$", "u").exec(value ?? "");
+  return match ? { version: match[1], series: match[2], sequence: Number(match[3]) } : null;
+}
+
 export class GitHubReleasePayloadSource {
   constructor({ cacheRoot, fetchImpl = globalThis.fetch, thinResolver = null } = {}) {
     if (typeof cacheRoot !== "string" || !path.isAbsolute(cacheRoot)) throw new TypeError("GitHub release source requires an absolute cacheRoot");
@@ -139,16 +146,16 @@ export class GitHubReleasePayloadSource {
     const url = `https://api.github.com/repos/${PUBLIC_REPOSITORY}/releases?per_page=100`;
     const { document } = await fetchReleaseJson({ url, fetchImpl: this.fetchImpl });
     if (!Array.isArray(document)) fail("RELEASE_DISCOVERY_INVALID", "GitHub release discovery response is invalid");
+    const current = previewIdentity(currentVersion);
+    if (!current) fail("RELEASE_VERSION_INVALID", "installed Preview version is invalid");
     const versions = document
       .filter((entry) => entry && entry.draft === false && entry.prerelease === true)
-      .map((entry) => /^v(0\.2\.0-preview\.([1-9][0-9]*))$/u.exec(entry.tag_name ?? ""))
+      .map((entry) => previewIdentity(entry.tag_name, { tagged: true }))
       .filter(Boolean)
-      .map((match) => ({ version: match[1], sequence: Number(match[2]) }))
+      .filter((entry) => entry.series === current.series)
       .sort((left, right) => right.sequence - left.sequence);
-    const current = /^0\.2\.0-preview\.([1-9][0-9]*)$/u.exec(currentVersion);
-    if (!current) fail("RELEASE_VERSION_INVALID", "installed Preview version is invalid");
     const latest = versions[0]?.version ?? null;
-    const update = versions.find((entry) => entry.sequence > Number(current[1]))?.version ?? null;
+    const update = versions.find((entry) => entry.sequence > current.sequence)?.version ?? null;
     return Object.freeze({
       formatVersion: 1,
       ok: true,

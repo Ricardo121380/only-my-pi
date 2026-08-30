@@ -97,7 +97,8 @@ test("version prefers one controlled Preview stack identity over the legacy CLI 
   assert.equal(result.ok, true);
   assert.equal(result.packageVersion, "0.2.0-preview.1");
   assert.equal(result.releaseChannel, "preview");
-  assert.equal(result.decision, "PUBLIC_PREVIEW");
+  assert.equal(result.decision, "INTERNAL_DISTRIBUTION_FOUNDATION");
+  assert.equal(result.currentReleaseAuthority, false);
   assert.equal(result.embeddedNodeVersion, "24.19.0");
   assert.equal(result.piVersion, "0.84.3");
   assert.equal(result.subagentsVersion, "0.57.0");

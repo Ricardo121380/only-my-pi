@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-VERSION='0.2.0-preview.1'
+VERSION='0.3.0-preview.1'
 TAG="v$VERSION"
 REPOSITORY='Ricardo121380/only-my-pi'
 NODE_VERSION='24.19.0'

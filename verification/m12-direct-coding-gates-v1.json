@@ -1,0 +1,127 @@
+{
+  "formatVersion": 1,
+  "id": "m12-direct-coding-gates-v1",
+  "description": "M12 direct terminal coding Agent deterministic, real-install and protected live-model gates.",
+  "policy": {
+    "cwd": "repository-root",
+    "network": "deny",
+    "shell": false,
+    "protectedExecution": "evidence-only",
+    "maxGateCount": 12,
+    "maxOutputBytes": 8388608
+  },
+  "gates": [
+    {
+      "id": "C1",
+      "description": "Direct launcher, Agent/admin routing, execve contract and exit-code preservation.",
+      "command": "node",
+      "args": ["--test", "tests/direct-agent-launcher.test.mjs", "tests/omp-cli.test.mjs"],
+      "timeoutMs": 600000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "C2",
+      "description": "Startup model selection, explicit model, headless fallback and session restart semantics.",
+      "command": "node",
+      "args": ["--test", "tests/omp-direct-session.test.mjs", "tests/daily-config.test.mjs"],
+      "timeoutMs": 600000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "C3",
+      "description": "Inspect/Coding dynamic tool visibility and mutation backstop.",
+      "command": "node",
+      "args": ["--test", "tests/omp-direct-session.test.mjs"],
+      "timeoutMs": 300000,
+      "maxOutputBytes": 4194304,
+      "execution": "deterministic"
+    },
+    {
+      "id": "C4",
+      "description": "Simple/complex planning, revise/deny and one process-scoped coding approval.",
+      "command": "node",
+      "args": ["--test", "tests/omp-direct-session.test.mjs", "tests/m12-direct-coding-integration.test.mjs"],
+      "timeoutMs": 600000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "C5",
+      "description": "Permission-mode Build sandbox boundary, protected paths and YOLO revocation.",
+      "command": "node",
+      "args": ["--test", "tests/omp-direct-session.test.mjs", "tests/direct-agent-workspace.test.mjs"],
+      "timeoutMs": 600000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "C6",
+      "description": "Dirty-worktree immutable baseline and pre-existing user-change preservation.",
+      "command": "node",
+      "args": ["--test", "tests/direct-agent-workspace.test.mjs", "tests/m12-direct-coding-integration.test.mjs"],
+      "timeoutMs": 600000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "C7",
+      "description": "Main Agent guarded edit/write/bash policy and real-worktree verification boundary.",
+      "command": "node",
+      "args": ["--test", "tests/m12-direct-coding-integration.test.mjs"],
+      "timeoutMs": 600000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "C8",
+      "description": "Managed ordinary-clone writer, fresh review and conflict-free patch integration.",
+      "command": "node",
+      "args": ["--test", "tests/direct-agent-managed-clone.test.mjs"],
+      "timeoutMs": 900000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "C9",
+      "description": "Automatic visible subagents with pi-subagents as the sole physical runtime owner.",
+      "command": "node",
+      "args": ["--test", "tests/direct-agent-orchestration.test.mjs", "tests/session-runtime-composer.test.mjs"],
+      "timeoutMs": 900000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "C10",
+      "description": "Headless/Web/Gate/product contracts, static checks, global coverage and M12 direct-module coverage.",
+      "command": "node",
+      "args": ["scripts/m12-deterministic-acceptance.mjs"],
+      "timeoutMs": 1800000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "C11",
+      "description": "Protected local candidate install, no-model direct launch, exact rollback and reapply.",
+      "command": null,
+      "args": [],
+      "timeoutMs": 1,
+      "maxOutputBytes": 1024,
+      "execution": "protected-evidence",
+      "defaultStatus": "NOT_RUN_BY_POLICY",
+      "evidenceId": "m12-real-install-rollback-reapply"
+    },
+    {
+      "id": "C12",
+      "description": "Protected real-model coding, daily UX, identity and release-consistency matrix.",
+      "command": null,
+      "args": [],
+      "timeoutMs": 1,
+      "maxOutputBytes": 1024,
+      "execution": "protected-evidence",
+      "defaultStatus": "NOT_RUN_BY_POLICY",
+      "evidenceId": "m12-protected-live-coding-matrix"
+    }
+  ]
+}

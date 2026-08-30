@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { hashResourcePath } from "../bootstrap/graph-plan.mjs";
 import { canonicalJson } from "../config-runtime/index.mjs";
+import { DIRECT_AGENT_VERSION } from "../direct-agent/product-contract.mjs";
 import { hashFile } from "./deterministic-archive.mjs";
 import { inspectExternalRoot, planStackEnvironment } from "./environment-planner.mjs";
 import { listStackJournals, readStackJournal } from "./stack-journal.mjs";
@@ -164,7 +165,7 @@ export class StackService {
   async status() {
     const incomplete = await listStackJournals(this.layout, { incompleteOnly: true });
     const state = await installedState(this.layout);
-    if (!state) return Object.freeze({ formatVersion: 1, ok: true, status: "NOT_INSTALLED", code: "NOT_INSTALLED", message: "No public Preview stack is installed", next: "omp stack install --release 0.2.0-preview.1", mutation: false, incompleteTransactions: incomplete.map((entry) => entry.transactionId) });
+    if (!state) return Object.freeze({ formatVersion: 1, ok: true, status: "NOT_INSTALLED", code: "NOT_INSTALLED", message: "No public Preview stack is installed", next: `omp stack install --release ${DIRECT_AGENT_VERSION}`, mutation: false, incompleteTransactions: incomplete.map((entry) => entry.transactionId) });
     const verified = await verifyInstalled(this.layout, state);
     return Object.freeze({
       formatVersion: 1,

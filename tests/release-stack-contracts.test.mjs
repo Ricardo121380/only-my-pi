@@ -14,6 +14,11 @@ import {
   validateStackManifest,
   validateStackState,
 } from "../packages/release-stack/index.mjs";
+import {
+  DIRECT_AGENT_CAPABILITY_CEILING,
+  DIRECT_AGENT_OVERLAYS,
+  DIRECT_AGENT_VERSION,
+} from "../packages/direct-agent/product-contract.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -47,6 +52,28 @@ test("stack identity is independent from Full or Thin acquisition", () => {
   const thin = finalizeStackManifest(clone(unsigned));
   assert.equal(full.stackId, thin.stackId);
   assert.equal(Object.hasOwn(full, "payloadMode"), false);
+});
+
+test("M12 uses a guarded coding stack while retaining read-only M11 validation", () => {
+  const legacy = validateStackManifest(read("contracts/release/stack-manifest.example.json"));
+  assert.equal(legacy.onlyMyPi.version, "0.2.0-preview.1");
+  assert.equal(legacy.capabilityCeiling.mode, "READ_ONLY");
+
+  const current = clone(legacy);
+  delete current.stackId;
+  current.onlyMyPi.version = DIRECT_AGENT_VERSION;
+  current.overlays = structuredClone(DIRECT_AGENT_OVERLAYS);
+  current.capabilityCeiling = structuredClone(DIRECT_AGENT_CAPABILITY_CEILING);
+  const finalized = finalizeStackManifest(current);
+  assert.equal(finalized.onlyMyPi.version, "0.3.0-preview.1");
+  assert.equal(finalized.capabilityCeiling.mode, "GUARDED_PROJECT_CODING");
+  assert.equal(finalized.capabilityCeiling.writer, true);
+  assert.ok(finalized.overlays.enabled.includes("writer"));
+
+  const mismatched = clone(finalized);
+  mismatched.capabilityCeiling = clone(legacy.capabilityCeiling);
+  mismatched.stackId = stackManifestDigest(mismatched);
+  assert.throws(() => validateStackManifest(mismatched), { code: "STACK_CAPABILITY_INVALID" });
 });
 
 test("stack manifest fails closed on ownership, tuple, and digest drift", () => {

@@ -11,7 +11,7 @@
     "kind": { "const": "only-my-pi-release-index" },
     "version": { "$ref": "#/$defs/previewVersion" },
     "channel": { "const": "preview" },
-    "tag": { "type": "string", "pattern": "^v0\\.2\\.0-preview\\.[1-9][0-9]*$" },
+    "tag": { "type": "string", "pattern": "^v0\\.(?:2|3)\\.0-preview\\.[1-9][0-9]*$" },
     "sourceCommit": { "$ref": "#/$defs/commit" },
     "repository": { "const": "Ricardo121380/only-my-pi" },
     "platform": { "$ref": "#/$defs/platform" },
@@ -47,7 +47,7 @@
   "$defs": {
     "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
     "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
-    "previewVersion": { "type": "string", "pattern": "^0\\.2\\.0-preview\\.[1-9][0-9]*$" },
+    "previewVersion": { "type": "string", "pattern": "^0\\.(?:2|3)\\.0-preview\\.[1-9][0-9]*$" },
     "platform": {
       "type": "object", "additionalProperties": false, "required": ["os", "arch", "minimumMacOS"],
       "properties": { "os": { "const": "darwin" }, "arch": { "const": "arm64" }, "minimumMacOS": { "const": "14.0" } }

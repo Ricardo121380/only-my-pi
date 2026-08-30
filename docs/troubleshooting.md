@@ -1,5 +1,44 @@
 # Troubleshooting
 
+## `OMP_CONTROLLED_STACK_UNAVAILABLE` or `M12_UPDATE_REQUIRED`
+
+The source checkout may contain M12 while the active user-local stack still
+contains the M11 foundation. This is not solved by starting raw `pi` and it is
+not proof that the old generation is corrupt. Run `omp admin version --json`
+and `omp admin doctor --json`, preserve the current LKG, and use only the
+reviewed M12 candidate install/reapply flow. Until C11 passes, do not manually
+retarget `~/.local/bin/omp` or `current-stack`.
+
+## Model picker failure
+
+`MODEL_SELECTION_CANCELLED` exits cleanly. `MODEL_AUTH_UNAVAILABLE` means Pi
+cannot use the selected Provider/model identity; configure it through Pi's
+normal credential flow, never in only-my-pi JSON. In headless mode,
+`HEADLESS_MODEL_REQUIRED` requires `--model provider/model-id` unless a recent
+interactive model remains available.
+
+## `CODING_ACCESS_REQUIRED` or `COMPLEX_PLAN_REQUIRED`
+
+These are expected admission outcomes. Inspect first, then approve the one
+session coding request. Complex, security, dependency, schema, concurrency,
+migration, deletion and release work requires a complete plan. Approval is not
+restored by `omp -c` or `omp -r`; a new process must approve again.
+
+## `UNSUPPORTED_UNSAFE_OVERRIDE`
+
+`/perm yolo` cannot widen a guarded direct OMP session. OMP revokes the coding
+grant, hides edit/write/bash and returns to Inspect. Switch back to `/perm
+build` and request coding access again. Use raw `pi` only when an intentionally
+unguarded session is truly desired.
+
+## Managed writer handoff or conflict
+
+Dirty-scope overlap keeps implementation with the main Agent. A base, scope,
+symlink, submodule, binary, review, patch or current-worktree drift failure
+leaves the real tree untouched and preserves the bounded patch artifact for
+review. Do not bypass `git apply --check` or manually copy the clone tree over
+the project. Tests must pass again in the actual current worktree.
+
 ## `PATH_ACTION_REQUIRED`
 
 The stack installed successfully, but `~/.local/bin` is not visible in the
@@ -39,7 +78,8 @@ sessions, raw prompts or model output.
 
 ## Unsupported platform or Rosetta
 
-`0.2.0-preview.1` supports macOS 14+ on native Apple Silicon arm64 only. The
+The planned `0.3.0-preview.1` managed stack supports macOS 14+ on native Apple
+Silicon arm64 only. The
 installer intentionally rejects Intel Macs and Rosetta before staging. There is
 no supported override.
 

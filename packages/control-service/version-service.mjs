@@ -4,6 +4,7 @@ import path from "node:path";
 import { loadSettings } from "../config-runtime/index.mjs";
 import { extractManagedMetadata } from "../bootstrap/settings-merge.mjs";
 import { validateStackManifest, validateStackState } from "../release-stack/contracts.mjs";
+import { productBoundaryForVersion } from "../direct-agent/product-contract.mjs";
 
 async function readJson(target, { missing = null } = {}) {
   try {
@@ -67,6 +68,7 @@ export class VersionService {
     if (stackStateInput) {
       const stackState = validateStackState(stackStateInput);
       const manifest = validateStackManifest(await readJson(path.join(this.stackLayout.stacksRoot, stackState.activeStack.slice("sha256:".length), "stack-manifest.json")));
+      const productBoundary = productBoundaryForVersion(stackState.onlyMyPi.version);
       const subagents = stackState.externalPackages.find((entry) => entry.name === "pi-subagents") ?? null;
       const consistent = stackState.activeStack === manifest.stackId
         && stackState.manifestDigest === manifest.stackId
@@ -86,7 +88,10 @@ export class VersionService {
         installedGenerationId: stackState.generation.digest,
         piVersion: stackState.pi.version,
         subagentsVersion: subagents?.version ?? null,
-        decision: "PUBLIC_PREVIEW",
+        decision: productBoundary.currentProductContract ? productBoundary.publicationDecision : "INTERNAL_DISTRIBUTION_FOUNDATION",
+        currentProductContract: productBoundary.currentProductContract,
+        currentReleaseAuthority: productBoundary.currentReleaseAuthority,
+        product: productBoundary.product,
         ok: consistent,
         status: consistent ? "VERSION_IDENTITY" : "STACK_GENERATION_IDENTITY_DRIFT",
       });

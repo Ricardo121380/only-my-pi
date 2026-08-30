@@ -12,6 +12,7 @@ test("public baseline gate manifest keeps protected execution evidence-only", as
   assert.equal(inspected.manifest.gates.length, 5);
   assert.equal(inspected.manifest.gates[3].command, null);
   assert.equal(inspected.manifest.gates[4].execution, "authority-receipt");
+  assert.equal(["MATCH", "SUPERSEDED_BY_CURRENT_PRODUCT"].includes(inspected.graphAlignment), true);
   assert.throws(() => validatePublicBaselineGateManifest({}), { code: "PUBLIC_BASELINE_GATE_MANIFEST_INVALID" });
 });
 

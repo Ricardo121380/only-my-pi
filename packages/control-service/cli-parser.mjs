@@ -173,7 +173,7 @@ export function parseOmpArgs(argv, { env = process.env, homedir = () => process.
   if (options.projectRoot !== undefined && !path.isAbsolute(options.projectRoot)) fail("--project must be an absolute path");
   if (options.artifact !== undefined && !path.isAbsolute(options.artifact)) fail("--artifact must be an absolute path");
   if (options.bundle !== undefined && !path.isAbsolute(options.bundle)) fail("--bundle must be an absolute path");
-  if (options.release !== undefined && !/^0\.2\.0-preview\.[1-9][0-9]*$/u.test(options.release)) fail("--release must be an exact 0.2.0-preview.N version");
+  if (options.release !== undefined && !/^0\.(?:2|3)\.0-preview\.[1-9][0-9]*$/u.test(options.release)) fail("--release must be an exact supported 0.2 or 0.3 Preview version");
   if (options.payload !== undefined && !["thin", "full"].includes(options.payload)) fail("--payload must be thin or full");
   if (options.channel !== undefined && options.channel !== "preview") fail("--channel must be preview in this milestone");
   if (options.to !== undefined && !/^sha256:[a-f0-9]{64}$/u.test(options.to)) fail("--to must be an exact stack id");

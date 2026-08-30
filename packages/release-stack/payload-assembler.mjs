@@ -3,6 +3,10 @@ import path from "node:path";
 
 import { hashResourcePath } from "../bootstrap/graph-plan.mjs";
 import { canonicalJson } from "../config-runtime/index.mjs";
+import {
+  DIRECT_AGENT_CAPABILITY_CEILING,
+  DIRECT_AGENT_OVERLAYS,
+} from "../direct-agent/product-contract.mjs";
 import { buildArtifactLedger } from "./artifact-ledger.mjs";
 import {
   CONTROLLED_PI_VERSION,
@@ -134,8 +138,8 @@ export async function assembleReleasePayloads({
     transitiveLedgerSha256: ledger.ledgerDigest,
     generationTargetGraphDigest,
     defaultPreset: "daily",
-    overlays: { enabled: ["web", "orchestration-readonly", "ui-terminal"], disabled: ["memory", "sync", "mcp", "experimental"] },
-    capabilityCeiling: { mode: "READ_ONLY", maxDepth: 1, writer: false, bash: false, mcp: false },
+    overlays: structuredClone(DIRECT_AGENT_OVERLAYS),
+    capabilityCeiling: structuredClone(DIRECT_AGENT_CAPABILITY_CEILING),
     policy: { lifecycleScriptsDisabled: true, networkDuringApply: false, externalOwner: "user", webConfirmation: "PER_RUN", browserCookies: false },
     removalPolicy: { preservePreexisting: true, removeOnlyVerifiedProvisioned: true, preserveUserData: true },
   });

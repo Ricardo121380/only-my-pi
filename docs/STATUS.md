@@ -26,6 +26,24 @@ local C1-C12 gates, real Pi smoke, protected coding matrix, rollback and reapply
 all pass. The contract is in
 [`ADR-0013`](decisions/ADR-0013-direct-terminal-coding-agent.md).
 
+The M12 source implementation now includes the direct `execve` launcher,
+audited extension admission, startup model picker, unified Inspect/Planning/
+Coding state machine, process-local `request_coding_access`, tool-call and
+user-bash backstops, permission-mode YOLO revocation, dirty-worktree baseline,
+managed ordinary-clone writer, fresh reviewer, automatic visible delegation,
+direct-Agent doctor and the guarded daily profile. The package identity is now
+`0.3.0-preview.1`; the release contract validates both historical M11 read-only
+stacks and the current M12 guarded-coding stack without granting the former
+current release authority.
+
+The versioned M12 gate contract is
+[`m12-direct-coding-gates-v1`](../verification/m12-direct-coding-gates-v1.json).
+C1-C10 are local, no-model deterministic gates. C11 and C12 are deliberately
+protected evidence-only gates for the real install/rollback/reapply and the
+18-assertion live coding/UX matrix. They remain `NOT_RUN_BY_POLICY` until a
+clean source commit has passed C1-C10 and the real local stack is changed under
+the protected acceptance flow. GitHub is not used by this local closure.
+
 ## Frozen milestone — M11 public Preview distribution
 
 M11 converted the locally accepted M10 installation into a macOS 14+
@@ -886,51 +904,24 @@ invariant as the Harness MVP receipt.
 
 ## Next implementation boundary
 
-The completed M0–M7 roadmap remains the historical Harness MVP baseline. The
-approved S0–S5 plan and its Codex Goal now define the next implementation
-boundary. Both Goals are external development-orchestrator contracts and are
-not exposed through the Pi package's `prompts/` resources:
+The immediate boundary is M12.7 local acceptance, not another Harness feature:
 
-- [`plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md`](plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md) — successor plan
-- [`../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../codex/goals/develop-only-my-pi-subagents-ultrarun.md) — successor Codex Goal
-- [`plans/2026-08-16-only-my-pi-development-plan.md`](plans/2026-08-16-only-my-pi-development-plan.md) — historical M0–M7 plan
-- [`../codex/goals/develop-only-my-pi.md`](../codex/goals/develop-only-my-pi.md) — historical M0–M7 Goal
+1. close C1-C10 from a clean source commit and retain a digest-only report;
+2. build one commit-pinned `0.3.0-preview.1` artifact;
+3. run the real no-model direct-launch smoke without reading Provider secrets;
+4. apply the candidate, roll back exactly to the M11 local baseline, verify the
+   CLI/generation/package identities, and reapply the same candidate;
+5. run the protected 18-assertion live coding matrix with the already
+   configured model authority; and
+6. import only bounded C11/C12 evidence in a direct evidence-only child.
 
-The roadmap target is a usable Pi-based Harness distribution. M0 established
-the product/Labs boundary, M1 established the strict configuration and
-compatibility foundation, M2 delivered the transactional `omp` configuration
-runtime, M3 delivered the Mode Registry plus the unified `/omp` control
-surface, M4 delivered the practical single-Agent/Workflow layer, and M5
-delivered the governed AgentSwarm compiler plus the sole `pi-subagents` RPC
-adapter, and M6 delivered the semantic theme/status layer. M7 now connects the
-fixed release-gates-v1 manifest to the executable verification receipt and CI,
-adds the fresh scripts-disabled tarball end-to-end smoke, and closes the
-documentation/threat-model/package metadata loop. The Harness MVP receipt is
-complete, its feature-branch CI passed, the feature branch was fast-forwarded
-to `main`, and post-merge `main` CI run `32029765621` passed both Node matrix
-jobs.
+Until that sequence completes, the real installed stack may still report the
+M11 foundation and `omp` may still expose the old UX. Source completion is not
+installation completion. M12.8 GitHub PR, hosted CI, tag and Release remain
+deferred until hosted quota is available and are not prerequisites for proving
+the local daily experience.
 
-DeepSeek endpoint work, ACP-to-Pi wiring, and automatic turn checkpoints are
-not the next product boundary. Their existing offline modules stay under
-Labs/Experimental and remain disabled by default. Creator/self-modifying
-plugins, arbitrary JavaScript workflows, automatic marketplaces, remote
-UI/SSH/Cron, and un-sandboxed web fetch also remain outside the default
-profiles.
-
-The static single-owner topology probe, packaged-artifact inclusion, and
-digest-bound live no-model Pi RPC capability/visibility probe now pass. The
-probe used a disposable Pi root and submitted no prompt, called no Provider,
-and dispatched no child. The durable Plan Store, restart-safe
-status/resume and cross-process cancel intent are complete; cancel/stop remains
-non-authoritative without correlated backend terminal proof. The legacy direct
-imports remain one-release compatibility shims but no longer own public
-execution. S3 now supplies the true homogeneous BatchSwarm implementation,
-stable item ledger, bounded ramp/retry/failure semantics, exact AgentSpec and
-template binding, WorkflowPlan node, parent-budget recovery, and CLI/TUI
-control. The 1/8/20/64/300 logical simulations and injected adapter tests pass.
-At the historical S3 boundary the protected live read-only batch was
-`NOT_RUN_BY_POLICY`; later S5 and M8 source-bound evidence supersedes that
-historical status. S4 now supplies
-dynamic SwarmGoal plan revisions, UltraRun routing, quality policy, immutable
-artifacts, and guarded writer handoff without automatic integration. S5 adds
-promotion-specific live, fault, security, and compatibility evidence.
+DeepSeek endpoint conformance, ACP-to-Pi wiring, automatic checkpoints, MCP,
+daemon work, cross-platform support and a general package manager remain
+outside this boundary. Historical M0-M11 plans and evidence stay available for
+audit but do not define the current product entry.

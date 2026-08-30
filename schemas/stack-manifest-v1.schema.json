@@ -5,6 +5,44 @@
   "type": "object",
   "additionalProperties": false,
   "required": ["$schema", "formatVersion", "kind", "stackId", "sourceCommit", "onlyMyPi", "platform", "runtime", "externalPackages", "externalTreeDigest", "transitiveLedgerSha256", "generationTargetGraphDigest", "defaultPreset", "overlays", "capabilityCeiling", "policy", "removalPolicy"],
+  "allOf": [
+    {
+      "if": { "properties": { "onlyMyPi": { "type": "object", "properties": { "version": { "const": "0.2.0-preview.1" } } } } },
+      "then": {
+        "properties": {
+          "overlays": { "type": "object",
+            "properties": {
+              "enabled": { "const": ["web", "orchestration-readonly", "ui-terminal"] },
+              "disabled": { "const": ["memory", "sync", "mcp", "experimental"] }
+            }
+          },
+          "capabilityCeiling": { "type": "object",
+            "properties": {
+              "mode": { "const": "READ_ONLY" }, "maxDepth": { "const": 1 }, "writer": { "const": false }, "bash": { "const": false }, "mcp": { "const": false }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "onlyMyPi": { "type": "object", "properties": { "version": { "const": "0.3.0-preview.1" } } } } },
+      "then": {
+        "properties": {
+          "overlays": { "type": "object",
+            "properties": {
+              "enabled": { "const": ["web", "orchestration-readonly", "ui-terminal", "writer"] },
+              "disabled": { "const": ["memory", "sync", "mcp", "experimental"] }
+            }
+          },
+          "capabilityCeiling": { "type": "object",
+            "properties": {
+              "mode": { "const": "GUARDED_PROJECT_CODING" }, "maxDepth": { "const": 1 }, "writer": { "const": true }, "bash": { "const": true }, "mcp": { "const": false }
+            }
+          }
+        }
+      }
+    }
+  ],
   "properties": {
     "$schema": { "const": "../../schemas/stack-manifest-v1.schema.json" },
     "formatVersion": { "const": 1 },
@@ -13,7 +51,7 @@
     "sourceCommit": { "$ref": "#/$defs/commit" },
     "onlyMyPi": {
       "type": "object", "additionalProperties": false, "required": ["version", "artifactSha256"],
-      "properties": { "version": { "const": "0.2.0-preview.1" }, "artifactSha256": { "$ref": "#/$defs/sha256" } }
+      "properties": { "version": { "enum": ["0.2.0-preview.1", "0.3.0-preview.1"] }, "artifactSha256": { "$ref": "#/$defs/sha256" } }
     },
     "platform": {
       "type": "object", "additionalProperties": false, "required": ["os", "arch", "minimumMacOS"],
@@ -52,14 +90,14 @@
     "overlays": {
       "type": "object", "additionalProperties": false, "required": ["enabled", "disabled"],
       "properties": {
-        "enabled": { "const": ["web", "orchestration-readonly", "ui-terminal"] },
-        "disabled": { "const": ["memory", "sync", "mcp", "experimental"] }
+        "enabled": { "type": "array", "minItems": 3, "maxItems": 4, "uniqueItems": true, "items": { "enum": ["web", "orchestration-readonly", "ui-terminal", "writer"] } },
+        "disabled": { "type": "array", "minItems": 4, "maxItems": 4, "uniqueItems": true, "items": { "enum": ["memory", "sync", "mcp", "experimental"] } }
       }
     },
     "capabilityCeiling": {
       "type": "object", "additionalProperties": false, "required": ["mode", "maxDepth", "writer", "bash", "mcp"],
       "properties": {
-        "mode": { "const": "READ_ONLY" }, "maxDepth": { "const": 1 }, "writer": { "const": false }, "bash": { "const": false }, "mcp": { "const": false }
+        "mode": { "enum": ["READ_ONLY", "GUARDED_PROJECT_CODING"] }, "maxDepth": { "const": 1 }, "writer": { "type": "boolean" }, "bash": { "type": "boolean" }, "mcp": { "const": false }
       }
     },
     "policy": {

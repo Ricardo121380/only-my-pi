@@ -1,9 +1,15 @@
 import crypto from "node:crypto";
 
 import { canonicalJson } from "../config-runtime/index.mjs";
+import {
+  DIRECT_AGENT_VERSION,
+  LEGACY_HARNESS_VERSION,
+  productBoundaryForVersion,
+} from "../direct-agent/product-contract.mjs";
 
-export const PREVIEW_VERSION = "0.2.0-preview.1";
+export const PREVIEW_VERSION = DIRECT_AGENT_VERSION;
 export const PREVIEW_TAG = `v${PREVIEW_VERSION}`;
+export const LEGACY_PREVIEW_VERSION = LEGACY_HARNESS_VERSION;
 export const PUBLIC_REPOSITORY = "Ricardo121380/only-my-pi";
 export const EMBEDDED_NODE_VERSION = "24.19.0";
 export const EMBEDDED_NODE_ARCHIVE_SHA256 = "sha256:8294b7aa9b03997481c06babf1e8b270c859358f27da57a11509afe537ac381d";
@@ -117,7 +123,10 @@ export function validateStackManifest(input) {
   if (input.$schema !== "../../schemas/stack-manifest-v1.schema.json" || input.formatVersion !== 1 || input.kind !== "only-my-pi-stack-manifest") fail("STACK_MANIFEST_IDENTITY_INVALID", "stack manifest identity is invalid");
   if (!COMMIT.test(input.sourceCommit ?? "") || !SHA256.test(input.stackId ?? "") || input.stackId !== stackManifestDigest(input)) fail("STACK_MANIFEST_DIGEST_INVALID", "stack manifest digest is invalid");
   exactKeys(input.onlyMyPi, ["version", "artifactSha256"], "only-my-pi identity", "STACK_MANIFEST_SCHEMA_INVALID");
-  if (input.onlyMyPi.version !== PREVIEW_VERSION || !SHA256.test(input.onlyMyPi.artifactSha256 ?? "")) fail("STACK_MANIFEST_OMP_INVALID", "only-my-pi artifact identity is invalid");
+  let productBoundary;
+  try { productBoundary = productBoundaryForVersion(input.onlyMyPi.version); }
+  catch { fail("STACK_MANIFEST_OMP_INVALID", "only-my-pi artifact identity is invalid"); }
+  if (!SHA256.test(input.onlyMyPi.artifactSha256 ?? "")) fail("STACK_MANIFEST_OMP_INVALID", "only-my-pi artifact identity is invalid");
   exactKeys(input.platform, ["os", "arch", "minimumMacOS"], "platform", "STACK_MANIFEST_SCHEMA_INVALID");
   if (input.platform.os !== "darwin" || input.platform.arch !== "arm64" || input.platform.minimumMacOS !== "14.0") fail("STACK_PLATFORM_UNSUPPORTED", "stack supports only macOS 14+ arm64");
   exactKeys(input.runtime, ["node", "pi"], "runtime", "STACK_MANIFEST_SCHEMA_INVALID");
@@ -127,8 +136,8 @@ export function validateStackManifest(input) {
   if (input.runtime.pi.name !== "@earendil-works/pi-coding-agent" || input.runtime.pi.version !== CONTROLLED_PI_VERSION || input.runtime.pi.integrity !== CONTROLLED_PI_INTEGRITY || !SHA256.test(input.runtime.pi.treeDigest ?? "") || input.runtime.pi.entry !== "dist/bundle/cli.js") fail("STACK_PI_IDENTITY_INVALID", "controlled Pi identity is invalid");
   assertPackageTuple(input.externalPackages);
   if (![input.externalTreeDigest, input.transitiveLedgerSha256, input.generationTargetGraphDigest].every((value) => SHA256.test(value ?? ""))) fail("STACK_MANIFEST_EVIDENCE_INVALID", "stack manifest evidence digest is invalid");
-  if (input.defaultPreset !== "daily" || canonicalJson(input.overlays) !== canonicalJson({ enabled: ["web", "orchestration-readonly", "ui-terminal"], disabled: ["memory", "sync", "mcp", "experimental"] })) fail("STACK_PROFILE_INVALID", "public stack profile or overlays drifted");
-  if (canonicalJson(input.capabilityCeiling) !== canonicalJson({ mode: "READ_ONLY", maxDepth: 1, writer: false, bash: false, mcp: false })) fail("STACK_CAPABILITY_INVALID", "public stack is not read-only");
+  if (input.defaultPreset !== "daily" || canonicalJson(input.overlays) !== canonicalJson(productBoundary.overlays)) fail("STACK_PROFILE_INVALID", "public stack profile or overlays drifted");
+  if (canonicalJson(input.capabilityCeiling) !== canonicalJson(productBoundary.capabilityCeiling)) fail("STACK_CAPABILITY_INVALID", "public stack capability ceiling does not match its product version");
   if (canonicalJson(input.policy) !== canonicalJson({ lifecycleScriptsDisabled: true, networkDuringApply: false, externalOwner: "user", webConfirmation: "PER_RUN", browserCookies: false })) fail("STACK_POLICY_INVALID", "stack security policy drifted");
   if (canonicalJson(input.removalPolicy) !== canonicalJson({ preservePreexisting: true, removeOnlyVerifiedProvisioned: true, preserveUserData: true })) fail("STACK_REMOVAL_POLICY_INVALID", "stack removal policy drifted");
   rejectSensitiveShape(input);
@@ -182,7 +191,9 @@ export function finalizeArtifactLedger(input) {
 export function validateReleaseIndex(input) {
   rejectSensitiveShape(input);
   exactKeys(input, ["$schema", "formatVersion", "kind", "version", "channel", "tag", "sourceCommit", "repository", "platform", "stackManifestSha256", "bootstrap", "assets", "protectedEvidenceDigest", "supportedStack", "status"], "release index", "RELEASE_INDEX_SCHEMA_INVALID");
-  if (input.$schema !== "../../schemas/release-index-v1.schema.json" || input.formatVersion !== 1 || input.kind !== "only-my-pi-release-index" || input.version !== PREVIEW_VERSION || input.tag !== PREVIEW_TAG || input.channel !== "preview" || input.repository !== PUBLIC_REPOSITORY || !COMMIT.test(input.sourceCommit ?? "")) fail("RELEASE_INDEX_IDENTITY_INVALID", "release index identity is invalid");
+  try { productBoundaryForVersion(input.version); }
+  catch { fail("RELEASE_INDEX_IDENTITY_INVALID", "release index identity is invalid"); }
+  if (input.$schema !== "../../schemas/release-index-v1.schema.json" || input.formatVersion !== 1 || input.kind !== "only-my-pi-release-index" || input.tag !== `v${input.version}` || input.channel !== "preview" || input.repository !== PUBLIC_REPOSITORY || !COMMIT.test(input.sourceCommit ?? "")) fail("RELEASE_INDEX_IDENTITY_INVALID", "release index identity is invalid");
   if (canonicalJson(input.platform) !== canonicalJson({ os: "darwin", arch: "arm64", minimumMacOS: "14.0" })) fail("RELEASE_PLATFORM_INVALID", "release platform is invalid");
   if (!SHA256.test(input.stackManifestSha256 ?? "") || !SHA256.test(input.protectedEvidenceDigest ?? "") || input.bootstrap?.asset !== "install.sh" || !SHA256.test(input.bootstrap?.sha256 ?? "")) fail("RELEASE_INDEX_EVIDENCE_INVALID", "release index evidence is incomplete");
   const assets = Object.values(input.assets ?? {});

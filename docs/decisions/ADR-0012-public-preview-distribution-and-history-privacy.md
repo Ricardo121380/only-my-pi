@@ -1,6 +1,6 @@
 # ADR-0012: Public Preview distribution and history privacy
 
-Status: Accepted for M11 implementation
+Status: Superseded for product entry/version by ADR-0013; distribution and privacy decisions retained
 
 Date: 2026-08-29
 

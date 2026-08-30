@@ -5,6 +5,7 @@ import path from "node:path";
 
 import { readLastInteractiveModel } from "../daily-config/index.mjs";
 import { resolveControlledStack, resolveDirectExtensionSet } from "./launcher.mjs";
+import { DIRECT_AGENT_VERSION } from "./product-contract.mjs";
 
 async function readJsonNoFollow(filename) {
   let handle;
@@ -82,10 +83,12 @@ export class DirectAgentDoctor {
     try {
       const manifest = await readJsonNoFollow(path.join(stack.ompPackageRoot, "package.json"));
       const entryReady = await regularFile(path.join(stack.ompPackageRoot, "bin", "omp.mjs"));
+      const ready = entryReady && manifest?.name === "only-my-pi" && manifest?.version === DIRECT_AGENT_VERSION;
       components.launcher = {
-        ok: entryReady && manifest?.name === "only-my-pi",
-        status: entryReady && manifest?.name === "only-my-pi" ? "READY" : "INVALID",
+        ok: ready,
+        status: ready ? "READY" : manifest?.version === "0.2.0-preview.1" ? "M12_UPDATE_REQUIRED" : "INVALID",
         packageVersion: typeof manifest?.version === "string" ? manifest.version : null,
+        expectedPackageVersion: DIRECT_AGENT_VERSION,
         entry: "USER_LOCAL_CONTROLLED_STACK",
         processModel: "execve",
       };

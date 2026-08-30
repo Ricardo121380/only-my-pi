@@ -10,13 +10,15 @@ import { validatePublicBaselineRecord } from "../packages/release-authority/publ
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-test("public baseline record binds retired history and the promoted Stable graph", async () => {
+test("public baseline record binds retired history and its historical Stable graph", async () => {
   const record = validatePublicBaselineRecord(JSON.parse(await fs.readFile(path.join(ROOT, "contracts/release/public-baseline.json"), "utf8")));
+  const receipt = JSON.parse(await fs.readFile(path.join(ROOT, "verification/receipts/public-baseline-v1-completion.json"), "utf8"));
   const legacy = inspectLegacyAuthority({ rootDir: ROOT });
   const graph = await buildGenerationPlan({ rootDir: ROOT, profileId: "daily" });
   assert.equal(["PUBLIC_BASELINE_PENDING", "PUBLIC_BASELINE_VERIFIED"].includes(record.state), true);
   assert.equal(record.legacyAuthority.registryDigest, legacy.registryDigest);
-  assert.equal(record.stable.graphDigest, graph.graphDigest);
+  assert.equal(record.stable.graphDigest, receipt.stableGraphDigest);
+  assert.notEqual(record.stable.graphDigest, graph.graphDigest, "M12 guarded coding must not rewrite the retired M11 read-only graph identity");
   assert.equal(record.legacyAuthority.currentReleaseAuthority, false);
   if (record.state === "PUBLIC_BASELINE_PENDING") {
     assert.equal(record.sourceCommit, null);

@@ -114,10 +114,12 @@ export async function inspectPublicBaseline({ rootDir = ROOT, verifyGit = true }
     buildGenerationPlan({ rootDir, profileId: "daily" }),
   ]);
   const legacy = inspectLegacyAuthority({ rootDir });
-  if (record.stable.graphDigest !== graph.graphDigest || record.legacyAuthority.registryDigest !== legacy.registryDigest) fail("PUBLIC_BASELINE_BINDING_DRIFT", "public baseline graph or legacy binding drifted");
+  if (record.legacyAuthority.registryDigest !== legacy.registryDigest) fail("PUBLIC_BASELINE_BINDING_DRIFT", "public baseline legacy binding drifted");
+  const graphAlignment = record.stable.graphDigest === graph.graphDigest ? "MATCH" : "SUPERSEDED_BY_CURRENT_PRODUCT";
+  if (record.state === "PUBLIC_BASELINE_PENDING" && graphAlignment !== "MATCH") fail("PUBLIC_BASELINE_BINDING_DRIFT", "pending public baseline graph drifted before authority was established");
   let authority = null;
   if (record.state === "PUBLIC_BASELINE_VERIFIED") authority = verifyGit ? await validateVerifiedChain(rootDir, record) : { evidence: null, receipt: null, receiptCommit: null };
-  return Object.freeze({ manifest, record, graphDigest: graph.graphDigest, legacy, authority });
+  return Object.freeze({ manifest, record, graphDigest: graph.graphDigest, graphAlignment, legacy, authority });
 }
 
 async function runGate(rootDir, gate) {

@@ -44,6 +44,7 @@ test("direct doctor reports launcher, Pi, permission, writer, extension and mode
   assert.equal(result.ok, true);
   assert.equal(result.status, "DIRECT_AGENT_READY");
   assert.equal(result.launcher.processModel, "execve");
+  assert.equal(result.launcher.expectedPackageVersion, "0.3.0-preview.1");
   assert.equal(result.pi.version, "0.84.3");
   assert.equal(result.extensions.ambientDiscovery, false);
   assert.equal(result.extensions.planModeOwner, "only-my-pi");
