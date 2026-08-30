@@ -57,6 +57,36 @@ test("artifact install and artifact update share the plan-confirm-apply boundary
   assert.deepEqual(calls.map((entry) => `${entry.method}:${entry.options.operation}`), ["plan:install", "plan:update", "apply:update"]);
 });
 
+test("doctor reports direct Agent components and fails a matching daily target when they are unavailable", async () => {
+  const bootstrap = {
+    async doctor() {
+      return {
+        ok: true,
+        status: "PASS",
+        runtime: { profileId: "daily" },
+        generation: { alignment: "MATCH" },
+      };
+    },
+  };
+  const doctor = { live: async () => ({ ok: false, status: "UNAVAILABLE" }) };
+  const ready = createControlService({
+    bootstrap,
+    doctor,
+    directDoctor: { async inspect() { return { ok: true, status: "DIRECT_AGENT_READY" }; } },
+  });
+  assert.equal((await ready.dispatch({ command: "doctor", options: { live: false } })).directAgent.status, "DIRECT_AGENT_READY");
+
+  const unavailable = createControlService({
+    bootstrap,
+    doctor,
+    directDoctor: { async inspect() { return { ok: false, status: "DIRECT_AGENT_UPDATE_REQUIRED", code: "WRITER_UPDATE_REQUIRED" }; } },
+  });
+  const result = await unavailable.dispatch({ command: "doctor", options: { live: false } });
+  assert.equal(result.ok, false);
+  assert.equal(result.status, "FAIL");
+  assert.equal(result.code, "WRITER_UPDATE_REQUIRED");
+});
+
 test("apply requires explicit yes or a positive parent confirmation", async () => {
   const request = { command: "bootstrap", options: { apply: true, yes: false } };
   const denied = harness();

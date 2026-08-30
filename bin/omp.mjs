@@ -30,6 +30,7 @@ import {
   launchDirectAgent,
   OMP_AGENT_USAGE,
 } from "../packages/direct-agent/launcher.mjs";
+import { createDirectAgentDoctor } from "../packages/direct-agent/doctor.mjs";
 import {
   createGitHubReleasePayloadSource,
   createLocalReleasePayloadSource,
@@ -88,6 +89,7 @@ const DEFAULT_DEPENDENCIES = Object.freeze({
   createPiProcessAdmission,
   createUpstreamMigrationService,
   createVersionService,
+  createDirectAgentDoctor,
   createWorkflowControlService,
   createGitHubReleasePayloadSource,
   createLocalReleasePayloadSource,
@@ -188,6 +190,11 @@ export function createProductionControlService({
   const statusService = createStatusService();
   const stackLayout = wired.createStackLayout({ homeDir: os.homedir(), configRoot: resolvedConfigRoot });
   const versionService = wired.createVersionService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot, userCli, stackLayout });
+  const directDoctor = wired.createDirectAgentDoctor({
+    rootDir: resolvedRoot,
+    configRoot: resolvedConfigRoot,
+    stackRoot: stackLayout.currentStack,
+  });
   const migrationPlanner = wired.createExternalMigrationPlanner({
     configRoot: resolvedConfigRoot,
     piPackageRoot: "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent",
@@ -280,6 +287,7 @@ export function createProductionControlService({
     runManagement,
     statusService,
     versionService,
+    directDoctor,
     upstreamMigration,
     stackService,
   });

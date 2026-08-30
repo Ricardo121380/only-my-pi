@@ -57,10 +57,11 @@ async function approve(request, plan, confirm) {
 }
 
 export class ControlService {
-  constructor({ bootstrap, doctor, confirm, artifactInstaller, userCli, upstreamMigration, stackService, modes, workflows, swarms, ultras, themes, dailyConfig, projectGates, runManagement, statusService, versionService, rootDir, configRoot } = {}) {
+  constructor({ bootstrap, doctor, directDoctor, confirm, artifactInstaller, userCli, upstreamMigration, stackService, modes, workflows, swarms, ultras, themes, dailyConfig, projectGates, runManagement, statusService, versionService, rootDir, configRoot } = {}) {
     if (!bootstrap || !doctor) throw new TypeError("bootstrap and doctor services are required");
     this.bootstrap = bootstrap;
     this.doctor = doctor;
+    this.directDoctor = directDoctor;
     this.confirm = confirm;
     this.artifactInstaller = artifactInstaller;
     this.userCli = userCli;
@@ -131,8 +132,23 @@ export class ControlService {
         }
         return result;
       }
-      case "doctor":
-        return request.options.live ? this.doctor.live(request.options) : this.bootstrap.doctor(request.options);
+      case "doctor": {
+        if (request.options.live) return this.doctor.live(request.options);
+        const base = await this.bootstrap.doctor(request.options);
+        if (!this.directDoctor || typeof this.directDoctor.inspect !== "function") return base;
+        const directAgent = await this.directDoctor.inspect();
+        const directRequired = base?.runtime?.profileId === "daily" && base?.generation?.alignment === "MATCH";
+        if (directRequired && directAgent.ok !== true) {
+          return {
+            ...base,
+            ok: false,
+            status: "FAIL",
+            code: directAgent.code ?? "DIRECT_AGENT_UPDATE_REQUIRED",
+            directAgent,
+          };
+        }
+        return { ...base, directAgent };
+      }
       case "status": {
         const base = await this.bootstrap.status(request.options);
         if (!this.statusService || typeof this.statusService.snapshot !== "function") return base;
