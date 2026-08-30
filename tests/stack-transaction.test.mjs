@@ -136,6 +136,36 @@ test("ordinary doctor failure automatically restores the exact empty baseline", 
   assert.equal((await readStackJournal(value.layout, transactionId(2))).status, "ROLLED_BACK");
 });
 
+test("explicit rollback lets the Harness restore its LKG before outer settings", async (t) => {
+  const value = await fixture(t);
+  const id = transactionId(22);
+  let rollbackObservedCandidate = false;
+  value.harness.publish = async ({ settings }) => ({
+    settings: { ...settings, harnessCandidate: true },
+    generationId: sha256("candidate-generation"),
+    rollbackIdentity: { bootstrapTransactionId: "fixture-harness-transaction" },
+  });
+  value.harness.rollback = async ({ rollback }) => {
+    const current = JSON.parse(await fs.readFile(value.layout.settingsFile, "utf8"));
+    assert.equal(current.harnessCandidate, true);
+    assert.equal(rollback.harness.bootstrapTransactionId, "fixture-harness-transaction");
+    rollbackObservedCandidate = true;
+  };
+  const engine = createStackTransactionEngine({
+    layout: value.layout,
+    harness: value.harness,
+    transactionIdFactory: () => id,
+    processAdmission: { async plan() { return []; } },
+    doctor: async () => ({ ok: true }),
+    smoke: async () => ({ ok: true }),
+  });
+  await engine.apply({ plan: value.plan, stackManifest: value.stack, resolvedRoot: value.resolved });
+  const result = await engine.rollbackCommitted([id]);
+  assert.equal(result.status, "ROLLED_BACK");
+  assert.equal(rollbackObservedCandidate, true);
+  await assert.rejects(fs.lstat(value.layout.settingsFile), { code: "ENOENT" });
+});
+
 test("a new mutating engine recovers crashes at every durable pre-commit boundary", async (t) => {
   for (const [index, phase] of STACK_TRANSACTION_PHASES.slice(1, -1).entries()) {
     await t.test(phase, async (nested) => {

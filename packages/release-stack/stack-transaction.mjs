@@ -459,6 +459,10 @@ export class StackTransactionEngine {
         return Object.freeze({ ok: false, status: "MANUAL_RECONCILIATION_REQUIRED", transactionId });
       }
     }
+    // The inner Harness transaction must still see the candidate settings that
+    // it published. Restoring the outer settings first makes its rollback look
+    // like a no-op and leaves the Harness LKG pointed at the removed generation.
+    await this.harness?.rollback?.({ transactionId, rollback });
     if (shellRemovalPlan) await this.shellProfile.remove(shellRemovalPlan, rollback.shellProfile);
     await restoreLink(this.layout.ompShim, rollback.ompShim);
     await restoreLink(this.layout.piShim, rollback.piShim);
@@ -473,7 +477,6 @@ export class StackTransactionEngine {
       if (current) await fs.rm(this.layout.npmRoot, { recursive: true, force: true });
       if (await lstatOrNull(paths.externalBackup)) await fs.rename(paths.externalBackup, this.layout.npmRoot);
     }
-    await this.harness?.rollback?.({ transactionId, rollback });
     await fs.rm(paths.stage, { recursive: true, force: true });
     await fs.rm(paths.externalStage, { recursive: true, force: true });
     const target = stackPath(this.layout, journal.stackId);
