@@ -46,12 +46,16 @@ test("orchestration explicitly selects the sole subagent runtime and stays unver
   assert.ok(orchestration.capabilities.some((entry) => entry.id === "subagent-runtime" && entry.state === "CONFIGURED_UNVERIFIED"));
 });
 
-test("daily is Core plus public Web and read-only orchestration without default memory or sync", () => {
+test("daily is direct guarded coding plus public Web and bounded orchestration without default memory or sync", () => {
   const daily = resolveProfileData(inventory, profile("daily"));
   assert.equal(daily.policy.network, "public-ssrf-guarded");
   assert.equal(daily.policy.browserCookies, false);
   assert.equal(daily.policy.subagents.enabled, true);
   assert.equal(daily.policy.subagents.maxConcurrency, 2);
+  assert.equal(daily.policy.subagents.writerRequiresWorktree, false);
+  assert.equal(daily.policy.subagents.writerIsolation, "managed-clone");
+  assert.ok(daily.capabilities.some((entry) => entry.id === "guarded-project-coding"));
+  assert.deepEqual(daily.policy.tools, ["read", "grep", "find", "ls", "edit", "write", "bash", "web"]);
   assert.ok(daily.packages.some((entry) => entry.id === "web-access"));
   assert.ok(daily.packages.some((entry) => entry.id === "subagents"));
   assert.equal(daily.packages.some((entry) => entry.id === "memory"), false);

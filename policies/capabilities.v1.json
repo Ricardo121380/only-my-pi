@@ -153,6 +153,15 @@
       "risk": "low",
       "providedBy": ["context-doctor"],
       "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "guarded-project-coding",
+      "description": "Process-scoped OMP admission for project-local edit, write and sandboxed Bash, with an independent tool backstop, dirty-worktree protection and at most one reviewed managed-clone writer.",
+      "surfaces": ["toolCallPolicy", "fileToolPolicy", "bashSandbox"],
+      "risk": "critical",
+      "providedBy": ["omp-direct"],
+      "requires": ["workspace-read", "permission-policy"],
+      "runtimeEvidenceRequired": true
     }
   ]
 }

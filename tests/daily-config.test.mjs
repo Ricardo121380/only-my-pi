@@ -39,8 +39,10 @@ test("catalog defines Core plus the exact daily hard and soft overlays", async (
   assert.equal(catalog.overlays.web.kind, "hard");
   assert.equal(catalog.overlays["orchestration-readonly"].kind, "hard");
   assert.equal(catalog.overlays["ui-terminal"].kind, "soft");
-  assert.equal(catalog.overlays.writer.available, false);
-  assert.deepEqual(catalog.presets.daily.overlays, ["orchestration-readonly", "ui-terminal", "web"]);
+  assert.equal(catalog.overlays.writer.available, true);
+  assert.equal(catalog.overlays.writer.kind, "soft");
+  assert.deepEqual(catalog.overlays.writer.authority.tools, ["edit", "write", "bash"]);
+  assert.deepEqual(catalog.presets.daily.overlays, ["orchestration-readonly", "ui-terminal", "web", "writer"]);
   assert.equal(catalog.presets.daily.profileId, "daily");
 });
 
@@ -49,7 +51,7 @@ test("default daily configuration is conservative and source-labelled", async (t
   const resolved = await resolveDailyConfiguration({ rootDir, configRoot });
   assert.equal(resolved.preset.id, "daily");
   assert.deepEqual(resolved.hardOverlays, ["orchestration-readonly", "web"]);
-  assert.deepEqual(resolved.softOverlays, ["ui-terminal"]);
+  assert.deepEqual(resolved.softOverlays, ["ui-terminal", "writer"]);
   assert.deepEqual(resolved.budget, DEFAULT_BUDGET);
   assert.equal(resolved.models.roles.reviewer.model, "inherit");
   assert.equal(resolved.source.global, "defaults");

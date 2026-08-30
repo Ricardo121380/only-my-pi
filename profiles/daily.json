@@ -2,7 +2,7 @@
   "$schema": "../schemas/profile-v1.schema.json",
   "formatVersion": 1,
   "id": "daily",
-  "description": "Read-only-first daily Harness profile: Core plus public Web, orchestration, and first-party terminal UI resources.",
+  "description": "Direct terminal coding Agent: inspect first, approve project-local coding once per process, use bounded visible subagents, and keep public Web separately confirmed.",
   "packageIds": [
     "plan-mode",
     "agent-extensions",
@@ -29,20 +29,23 @@
     "lsp",
     "usage-observability",
     "session-ledger-metadata",
-    "context-observability"
+    "context-observability",
+    "guarded-project-coding"
   ],
   "policy": {
     "projectTrust": "ask",
     "approval": "ask",
     "network": "public-ssrf-guarded",
     "browserCookies": false,
+    "tools": ["read", "grep", "find", "ls", "edit", "write", "bash", "web"],
     "session": "central-user-session-dir",
     "contextFiles": "review-before-trust",
     "subagents": {
       "enabled": true,
       "maxDepth": 1,
       "maxConcurrency": 2,
-      "writerRequiresWorktree": true,
+      "writerRequiresWorktree": false,
+      "writerIsolation": "managed-clone",
       "defaultRole": "scout"
     },
     "mcp": {

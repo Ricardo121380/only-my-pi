@@ -151,13 +151,14 @@
     },
     {
       "id": "only-my-pi-control",
-      "description": "Reserved owner of the future omp CLI and single /omp Pi command.",
+      "description": "Owner of the direct omp launcher, one visible planning/admission state, guarded project coding backstop and advanced /omp diagnostics.",
       "exclusive": true,
-      "capabilities": [],
+      "capabilities": ["guarded-project-coding"],
       "surfaces": [],
       "resourceIds": [
         "omp-control",
         "omp-control-runtime",
+        "omp-direct",
         "omp-mode-service",
         "omp-theme-service",
         "omp-status-service",

@@ -30,10 +30,24 @@
         "enabled": { "type": "boolean" },
         "maxDepth": { "type": "integer", "minimum": 0, "maximum": 4 },
         "maxConcurrency": { "type": "integer", "minimum": 0, "maximum": 16 },
-        "writerRequiresWorktree": { "const": true },
+        "writerRequiresWorktree": { "type": "boolean" },
+        "writerIsolation": { "enum": ["git-worktree", "managed-clone"] },
         "defaultRole": { "$ref": "#/$defs/id" }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": { "const": true },
+              "writerRequiresWorktree": { "const": false }
+            },
+            "required": ["enabled", "writerRequiresWorktree"]
+          },
+          "then": {
+            "properties": { "writerIsolation": { "const": "managed-clone" } },
+            "required": ["writerIsolation"]
+          }
+        },
         {
           "if": { "properties": { "enabled": { "const": false } }, "required": ["enabled"] },
           "then": {

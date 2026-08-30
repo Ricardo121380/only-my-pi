@@ -33,7 +33,7 @@
       "review": "stable-m10",
       "owners": ["planning"],
       "risk": ["extension-policy"],
-      "notes": "Extension-level risk reduction; not an OS sandbox.",
+      "notes": "Retained as an external user package for raw Pi compatibility. Direct omp disables ambient extension discovery and uses its first-party /plan owner instead.",
       "audit": {
         "date": "2026-08-28",
         "integrity": "sha512-JRovIOp8tYMj4WpqMyLVrNaL9oyvE0hlaTSPjAHF1HUN17fmne3dch854FVyUR5LVe9jVoIpERTrs4ZP5vcUzQ==",
@@ -84,7 +84,7 @@
       "review": "stable-m10-readonly-budgeted",
       "owners": ["subagents"],
       "risk": ["child-process", "filesystem-inheritance", "cost"],
-      "notes": "Daily production roles remain read-only, depth-one, budgeted, and parent-controlled.",
+      "notes": "Direct daily sessions use one physical runtime: read-only depth-one scouts plus at most one session-approved managed-clone implementer and a fresh read-only reviewer.",
       "audit": {
         "date": "2026-08-28",
         "integrity": "sha512-CvsOBp61dZU+HV3kHdfFc+iBuO9DOI5nvTiGrSaFVpH7XK5/22QbBAdjcrhOjcSzA5Ev3l0Qr/JC1I8VLES9Bw==",
@@ -99,7 +99,7 @@
       "review": "baseline-conservative",
       "owners": ["permission"],
       "risk": ["conditional-bash-sandbox", "degraded-prompt-fallback", "not-whole-session-isolation"],
-      "notes": "Provides a conditional OS Bash sandbox through @anthropic-ai/sandbox-runtime when available and an explicit degraded prompt fallback otherwise. Never make YOLO the default, and never infer file, Web, MCP, Provider, extension, or whole-session isolation from the Bash boundary.",
+      "notes": "Provides the physical Build sandbox and protected-path policy. Direct omp starts Build mode, hides mutation tools until session approval, and revokes its grant if YOLO is selected; the package remains external and user owned.",
       "audit": {
         "date": "2026-08-16",
         "integrity": "sha512-y4n110DiN99xl2tyLLU7ZyMadZUOYvxm9YKEpoZo2vFF4QJIgV7RKBAI6KztaRayAWPhA+95FdIBcV0He8vyfw==",

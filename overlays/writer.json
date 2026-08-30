@@ -2,11 +2,11 @@
   "$schema": "../schemas/overlay-v1.schema.json",
   "formatVersion": 1,
   "id": "writer",
-  "kind": "reserved",
-  "description": "Reserved production writer authority; unavailable in M8 read-only closure.",
+  "kind": "soft",
+  "description": "Guarded project-local coding admitted once per interactive OMP process; physical writes remain constrained by permission-modes and managed-clone review policy.",
   "packageIds": [],
-  "capabilityIds": [],
-  "authority": { "network": "deny", "persistence": "reserved", "tools": [], "webConfirmation": false, "browserCookies": false },
-  "defaultEnabled": false,
-  "available": false
+  "capabilityIds": ["guarded-project-coding"],
+  "authority": { "network": "inherit", "persistence": "session", "tools": ["edit", "write", "bash"], "webConfirmation": false, "browserCookies": false },
+  "defaultEnabled": true,
+  "available": true
 }

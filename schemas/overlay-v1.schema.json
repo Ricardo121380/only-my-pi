@@ -20,7 +20,7 @@
       "properties": {
         "network": { "enum": ["deny", "inherit", "public-ssrf-guarded"] },
         "persistence": { "enum": ["none", "session", "harness-private", "user-config-sync", "reserved"] },
-        "tools": { "type": "array", "uniqueItems": true, "items": { "enum": ["read", "grep", "find", "ls", "web_search", "source_check", "fetch_content", "get_search_content", "subagent", "structured_output"] } },
+        "tools": { "type": "array", "uniqueItems": true, "items": { "enum": ["read", "grep", "find", "ls", "edit", "write", "bash", "web_search", "source_check", "fetch_content", "get_search_content", "subagent", "structured_output"] } },
         "webConfirmation": { "type": "boolean" },
         "browserCookies": { "const": false }
       }
