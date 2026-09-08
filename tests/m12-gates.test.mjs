@@ -74,6 +74,21 @@ test("protected evidence requires the exact C11/C12 matrix and bounded privacy",
   assert.throws(() => validateM12ProtectedEvidence(leaked, leaked.sourceCommit), { code: "M12_PROTECTED_EVIDENCE_INVALID" });
 });
 
+test("matrix token totals remain metered without an aggregate ceiling", () => {
+  for (const tokens of [100_001, 1_000_000, Number.MAX_SAFE_INTEGER]) {
+    const value = evidence();
+    value.usage.directlyMeteredTokens = tokens;
+    delete value.evidenceDigest;
+    value.evidenceDigest = sha(canonicalJson(value));
+    assert.equal(validateM12ProtectedEvidence(value, value.sourceCommit).usage.directlyMeteredTokens, tokens);
+  }
+  for (const tokens of [-1, 0.5, Infinity, NaN, Number.MAX_SAFE_INTEGER + 1]) {
+    const value = evidence();
+    value.usage.directlyMeteredTokens = tokens;
+    assert.throws(() => validateM12ProtectedEvidence(value, value.sourceCommit), { code: "M12_PROTECTED_EVIDENCE_INVALID" });
+  }
+});
+
 test("deterministic M12 run reports protected work as pending instead of fabricating PASS", async () => {
   const result = await runM12Verification({
     rootDir: process.cwd(),

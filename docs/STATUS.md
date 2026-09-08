@@ -44,6 +44,11 @@ protected evidence-only gates for the real install/rollback/reapply and the
 clean source commit has passed C1-C10 and the real local stack is changed under
 the protected acceptance flow. GitHub is not used by this local closure.
 
+The user removed the aggregate 100,000-token acceptance ceiling. Evidence still
+requires a non-negative safe-integer directly metered total; individual runtime
+budgets, the acceptance wall-time bound, privacy and source binding remain in
+force. This change does not authorize unbounded individual Agent runs.
+
 The September 9 CPAR/Grok 4.6 continuation exercised real file edits and tests,
 same-process grant reuse, `omp -c` recovery into Inspect, renewed approval,
 denial, and graceful exit. A complex managed writer completed its clone edit,
