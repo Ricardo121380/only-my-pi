@@ -38,42 +38,71 @@ current release authority.
 
 The versioned M12 gate contract is
 [`m12-direct-coding-gates-v1`](../verification/m12-direct-coding-gates-v1.json).
-C1-C10 are local, no-model deterministic gates. C11 and C12 are deliberately
-protected evidence-only gates for the real install/rollback/reapply and the
-18-assertion live coding/UX matrix. They remain `NOT_RUN_BY_POLICY` until a
-clean source commit has passed C1-C10 and the real local stack is changed under
-the protected acceptance flow. GitHub is not used by this local closure.
+C1-C10 are local, no-model deterministic gates. C11 and C12 import protected
+real-install and live coding evidence. On September 9, the complete C1-C12
+runner returned **COMPLETE / 12 PASS**, including the existing global coverage
+thresholds and the stricter direct-Agent module thresholds.
 
-The user removed the aggregate 100,000-token acceptance ceiling. Evidence still
-requires a non-negative safe-integer directly metered total; individual runtime
-budgets, the acceptance wall-time bound, privacy and source binding remain in
-force. This change does not authorize unbounded individual Agent runs.
+The accepted chain is:
 
-The September 9 CPAR/Grok 4.6 continuation exercised real file edits and tests,
-same-process grant reuse, `omp -c` recovery into Inspect, renewed approval,
-denial, and graceful exit. A complex managed writer completed its clone edit,
-but the fresh reviewer blocked integration because patch capture included OMP's
-own temporary Git index. The original worktree remained unchanged. The local
-fix moves the index outside the scanned tree, compares captured paths with the
-verified inventory, and rejects Git binary patches. Regression tests reproduce
-the original defect and verify that integration introduces only declared paths.
-These are partial diagnostic results, not a C12 completion receipt. The installed
-artifact must be rebuilt from the corrected source and writer integration must
-be rerun; prior source-bound acceptance cannot be relabeled as current evidence.
-The user confirmed CPAR Grok 4.6 uses a fixed subscription with no per-token
-variable charge; this is user-confirmed billing authority, not a provider price
-discovery result. On corrected source `9903f88`, real managed writing, fresh
-review, in-scope automatic integration and real-worktree tests succeeded.
-Read-only children completed, cancellation returned `DIRECT_CHILD_CANCELLED`,
-and a headless write request was refused. These partial results do not close
-the full source-bound matrix.
+- Source: `2d6efbd5cf8a602f5dc9d8d2510d800eaffe8eac`.
+- Direct evidence-only child: `66a007ce6753a5fa28fa61665e9963c3a93efbe7`.
+- [Protected evidence](../verification/protected/2026-09-09-m12-cpar-direct-coding-final.json):
+  eight C11 assertions and eighteen C12 assertions.
+- [Completion gate report](../verification/receipts/2026-09-09-m12-local-closure.json).
 
-Direct research delegation now reuses the session composer's Web authorizer.
-Only researcher/source-verifier roles can request Web; each task requires a
-separate interactive confirmation and policy recheck, and its grant is released
-on completion or failure. Headless, disabled-overlay and unsafe-config requests
-are rejected before launching a child. This wiring still requires protected
-real-Web acceptance in a newly built artifact.
+The installed artifact uses the accepted source, embedded Node `24.19.0`,
+controlled Pi `0.84.3` and pi-subagents `0.57.0`. Its stack is
+`sha256:8612df80bca713bd2139d9f6a27f6bd4b5855ccb18cc341f73158c7c61a6d637`,
+artifact is
+`sha256:2438ef7bf9f541f8b1f5aa9e39fc4b4bf67ab20174e9f51e17967a15e6d00849`,
+and generation is
+`sha256:9b9d0bf4c4dc3eb695e6dc4b99d4dbbd7d60f11f6872818ca96f1709725db67d`.
+Final status is **INSTALLED**, doctor is **PASS / MATCH**, all nine packages
+remain `external/owner=user`, and incomplete transactions are empty.
+
+Protected runs used the existing CPAR `cpar-grok-build/grok-4.6` configuration.
+Real tests covered simple edits and tests, same-process grant reuse, resumed
+Inspect and renewed approval, complex planning, dirty-overlap main-Agent
+fallback, managed clone writing, fresh review, automatic patch integration,
+concurrent read-only scouts, cancellation, separate public-Web approval,
+headless write denial, child-count budget denial and project-external write
+rejection. The negative reviewer fixture produced a defective clone candidate;
+the reviewer rejected it and the original worktree remained clean. The positive
+fixture integrated only `math.mjs` and passed tests in the real worktree without
+creating a commit. No-model reapply smoke also opened the model picker, selected
+CPAR, showed Inspect and exited cleanly through `/exit`.
+
+The real rollback restored the M11 `0.2.0-preview.1` baseline at source
+`479c69eba4f245df00dbcb126079a58a98a3b607`. Settings and stack state matched their
+saved bytes, current/LKG pointers matched, package-lock was unchanged, and the
+old stack verified. M12 was then reapplied from the same checked artifact.
+The M11 CLI correctly rejected the newer release contract without mutation;
+reapply used the verified M12 artifact-contained installer. Homebrew and user
+external-package ownership were preserved throughout.
+
+The user removed the aggregate 100,000-token acceptance ceiling. The accepted
+matrix records **273,254 directly metered tokens**, **71 metered model
+terminals**, **107 tool calls** and **1,065 seconds** between recorded matrix
+events. Counts include directly observed child terminals and do not estimate
+unobserved nested usage. Individual runtime budgets remain in force; the budget
+negative test specifically proves `maxChildren=1`, not every possible budget
+limit. CPAR fixed-subscription billing with no per-token variable charge was
+confirmed by the user, so variable cost is zero; no provider price discovery is
+claimed. Native attempts included intermittent `503 CredentialUnavailable`
+errors and a deliberately cancelled child. Successful assertions were recorded
+after bounded retries; this does not establish continuous provider availability.
+Raw conversations, reasoning, credentials and host paths are absent from the
+committed evidence and report; Pi's normal private session storage is separate.
+
+Earlier partial runs on `9903f88` and `829a517` remain diagnostic only. The final
+source includes the temporary-index patch-capture fix and direct Web-authorizer
+wiring, both exercised again in the accepted source-bound matrix. Historical
+results were not relabeled as final evidence.
+
+M12.7 local acceptance is complete. M12.8 hosted CI and publication remain
+pending, and `HOLD_PUBLICATION` remains correct. No GitHub workflow, push, tag,
+Release or npm publication was used for this closure.
 
 ## Frozen milestone — M11 public Preview distribution
 
@@ -935,23 +964,22 @@ invariant as the Harness MVP receipt.
 
 ## Next implementation boundary
 
-The immediate boundary is M12.7 local acceptance, not another Harness feature:
+The local M12.7 boundary is closed by the source/evidence/report chain above.
+The acceptance host can start `omp` directly and recover the prior M11 stack.
 
-1. close C1-C10 from a clean source commit and retain a digest-only report;
-2. build one commit-pinned `0.3.0-preview.1` artifact;
-3. run the real no-model direct-launch smoke without reading Provider secrets;
-4. apply the candidate, roll back exactly to the M11 local baseline, verify the
-   CLI/generation/package identities, and reapply the same candidate;
-5. run the protected 18-assertion live coding matrix with the already
-   configured model authority; and
-6. import only bounded C11/C12 evidence in a direct evidence-only child.
+The next release boundary is M12.8, after hosted quota is available:
 
-Until that sequence completes, the real installed stack may still report the
-M11 foundation and `omp` may still expose the old UX. Source completion is not
-installation completion. M12.8 GitHub PR, hosted CI, tag and Release remain
-deferred until hosted quota is available and are not prerequisites for proving
-the local daily experience.
+1. retain the source/evidence commits without squash or amend;
+2. push the locally verified branch once and open the planned Draft PR;
+3. run the minimum required hosted CI, changing code only for demonstrated
+   failures rather than producing test-only pushes;
+4. merge with the evidence history preserved and run one main CI; and
+5. build and verify the exact `0.3.0-preview.1` RC before any approved Preview
+   publication.
 
+Until then, keep `HOLD_PUBLICATION`, do not publish `0.2.0-preview.1`, and use
+the locally installed M12 Agent. New feature work is not required to substitute
+for hosted release acceptance.
 DeepSeek endpoint conformance, ACP-to-Pi wiring, automatic checkpoints, MCP,
 daemon work, cross-platform support and a general package manager remain
 outside this boundary. Historical M0-M11 plans and evidence stay available for

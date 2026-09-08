@@ -39,14 +39,16 @@ scripts/      Repository checks and package governance tooling
 
 ## Current milestone
 
-M12 Direct Terminal Coding Agent Closure is active. Its target daily path is:
+M12 local Direct Terminal Coding Agent acceptance is complete. C1-C12 passed
+on source `2d6efbd` with protected evidence child `66a007c`; hosted CI and public
+Preview publication remain deferred. The installed daily path is:
 
 ```bash
 cd /path/to/project
 omp
 ```
 
-`omp` will enter the controlled Pi TUI directly, select an authenticated model,
+`omp` enters the controlled Pi TUI directly, selects an authenticated model,
 start read-only, and request one explicit session coding approval before the
 first project mutation. Complex work must present a complete plan before that
 approval. Pi remains the internal TUI, model, session and tool runtime;
@@ -66,11 +68,14 @@ distribution and history boundary remains in
 
 ## Development quickstart
 
-M12 is not publicly released yet. The installed M11 candidate remains usable
-for diagnosis and rollback, but it is not the intended final Agent UX. Do not
-use the old bootstrap command: no `0.2.0-preview.1` Release exists.
+M12 is installed and locally verified on the acceptance host, but is not
+publicly released. The M11 baseline was restored exactly during acceptance,
+then M12 was reapplied. Do not use the old bootstrap command: no
+`0.2.0-preview.1` Release exists. See the
+[local closure receipt](verification/receipts/2026-09-09-m12-local-closure.json)
+and [protected matrix](verification/protected/2026-09-09-m12-cpar-direct-coding-final.json).
 
-After M12 is installed locally, the intended commands are:
+After M12 is installed locally, use:
 
 ```bash
 omp                         # interactive terminal coding Agent

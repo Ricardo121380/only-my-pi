@@ -6,8 +6,10 @@ tool host.
 
 ## Current availability
 
-M12 targets `0.3.0-preview.1` and is still in local acceptance. There is no
-public `0.2.0-preview.1` Release, and the old installer URL must not be used.
+M12 `0.3.0-preview.1` passed local C1-C12 acceptance on source `2d6efbd` and is
+installed on the acceptance host. Public distribution remains on hold pending
+hosted CI and the release workflow. There is no public `0.2.0-preview.1`
+Release, and the old installer URL must not be used.
 The checked-in `distribution/install.sh` is a future exact-version M12
 bootstrap input, not evidence that a public Release exists.
 
@@ -22,9 +24,11 @@ npm run verify:m12
 ```
 
 `npm run verify:m12` inspects the C1-C12 contract. After a clean source commit,
-`npm run verify:m12:run` executes C1-C10 locally. C11 and C12 remain
-`NOT_RUN_BY_POLICY` until the source-bound real-install and live-model evidence
-is imported; deterministic tests cannot manufacture those results.
+`npm run verify:m12:run` executes C1-C10 locally. Without an explicit evidence
+import it still reports C11/C12 as `NOT_RUN_BY_POLICY`; deterministic tests
+cannot manufacture those results. The accepted source/evidence pair and all
+12 PASS results are recorded in the
+[local closure receipt](../verification/receipts/2026-09-09-m12-local-closure.json).
 
 ## Daily terminal Agent
 
@@ -38,7 +42,7 @@ omp
 
 Startup verifies the active controlled stack, enters Pi with an exact audited
 extension list, honors Pi Project Trust, and opens a searchable authenticated
-model picker. The most recently selected model is highlighted. Cancelling the
+model picker. Current-session and recent models appear first. Cancelling the
 picker exits instead of silently choosing another model.
 
 Common forms:
