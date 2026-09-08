@@ -82,9 +82,9 @@ export default function ompDirect(pi: ExtensionAPI): void {
   pi.registerTool({
     name: "delegate_readonly_agent",
     label: "Delegate read-only analysis",
-    description: "Run one bounded read-only OMP specialist through the shared pi-subagents runtime. Use only for independent evidence or fresh review.",
+    description: "Run one bounded read-only OMP specialist through pi-subagents. Researcher/source-verifier require separate interactive public-Web approval; other roles cannot use Web.",
     promptSnippet: "Delegate bounded independent read-only work to a visible OMP specialist",
-    promptGuidelines: ["Use no more children than the task needs. Children cannot delegate and cannot modify the project."],
+    promptGuidelines: ["Use no more children than the task needs. Children cannot delegate and cannot modify the project.", "Call Web research delegation alone so its public internet confirmation is clear; coding access does not authorize Web."],
     parameters: ReadOnlyDelegationParameters,
     executionMode: "parallel",
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {

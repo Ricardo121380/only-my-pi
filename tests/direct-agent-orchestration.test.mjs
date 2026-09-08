@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { createWebRunAuthorizer } from "../packages/web-policy/index.mjs";
 
 import {
   DIRECT_DELEGATION_EVENTS,
@@ -69,6 +70,49 @@ async function setup(t) {
   let sequence = 0;
   return { configRoot, projectRoot, ctx, idFactory: () => `id-${++sequence}` };
 }
+
+test("direct research requires per-task Web approval and releases its grant", async (t) => {
+  const fixture = await setup(t);
+  const authority = createWebRunAuthorizer({ configRoot: fixture.configRoot, getSessionId: () => "session" });
+  const transport = makeTransport({ responseFor: () => ({ kind: "text", text: "verified" }) });
+  let confirmations = 0;
+  let approve = false;
+  fixture.ctx.mode = "tui";
+  fixture.ctx.ui = { setWidget() {}, async confirm(_title, description) { confirmations++; assert.match(description, /cookies are disabled/u); return approve; } };
+  const orchestrator = createDirectCodingOrchestrator({ ...fixture, getContext: () => fixture.ctx, transport, webAuthorizer: authority, webEnabled: true });
+  t.after(() => orchestrator.dispose());
+  const request = { agent: "omp-researcher", task: "Check public documentation" };
+  await assert.rejects(orchestrator.delegateReadOnly(request), { code: "PUBLIC_WEB_DENIED" });
+  assert.equal(transport.requests.length, 0);
+  approve = true;
+  await orchestrator.delegateReadOnly(request);
+  await orchestrator.delegateReadOnly({ ...request, agent: "omp-source-verifier" });
+  assert.equal(confirmations, 3);
+  assert.notEqual(transport.requests[0].ownerRunId, transport.requests[1].ownerRunId);
+  for (const sent of transport.requests) {
+    assert.equal(sent.toolBudget.block.includes("web_search"), false);
+    for (const denied of ["bash", "edit", "write", "subagent", "web"]) assert.ok(sent.toolBudget.block.includes(denied));
+  }
+  assert.equal(authority.grants.size, 0);
+  await orchestrator.delegateReadOnly({ agent: "omp-reviewer", task: "Review locally" });
+  assert.ok(transport.requests.at(-1).toolBudget.block.includes("web_search"));
+  assert.equal(confirmations, 3);
+  fixture.ctx.mode = "print";
+  await assert.rejects(orchestrator.delegateReadOnly(request), { code: "PUBLIC_WEB_APPROVAL_REQUIRED" });
+  fixture.ctx.mode = "tui";
+  fixture.ctx.ui.confirm = async () => {
+    await fs.writeFile(path.join(fixture.configRoot, "web-search.json"), JSON.stringify({ allowBrowserCookies: true }));
+    return true;
+  };
+  await assert.rejects(orchestrator.delegateReadOnly(request), { code: "PUBLIC_WEB_POLICY_BLOCKED" });
+  assert.equal(transport.requests.length, 3);
+  await fs.unlink(path.join(fixture.configRoot, "web-search.json"));
+  fixture.ctx.ui.confirm = async () => true;
+  await assert.rejects(orchestrator.delegateReadOnly({ ...request, signal: AbortSignal.abort() }), { code: "DIRECT_CHILD_CANCELLED" });
+  assert.equal(authority.grants.size, 0);
+  orchestrator.webEnabled = false;
+  await assert.rejects(orchestrator.delegateReadOnly(request), { code: "DIRECT_WEB_UNAVAILABLE" });
+});
 
 test("read-only delegation uses the shared pi-subagents owner and enforces concurrency two", async (t) => {
   const fixture = await setup(t);

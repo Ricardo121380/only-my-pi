@@ -914,6 +914,8 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
         configRoot,
         getContext,
         budget: configuration.budget,
+        webAuthorizer,
+        webEnabled: configuration.hardOverlays.includes("web"),
       })
       : null;
     ceilingHandle = registerCeiling({

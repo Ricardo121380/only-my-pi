@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
 
 import {
@@ -26,9 +26,12 @@ export const DIRECT_READ_ONLY_AGENTS = Object.freeze([
   "omp-security-reviewer",
   "omp-test-analyst",
   "omp-verifier",
+  "omp-researcher",
+  "omp-source-verifier",
 ]);
 
 const READ_ONLY_AGENT_SET = new Set(DIRECT_READ_ONLY_AGENTS);
+const WEB_AGENTS = new Set(["omp-researcher", "omp-source-verifier"]);
 const TERMINAL_STATUSES = new Set([
   "acceptance_failed", "cancelled", "completed", "duplicate_node", "failed",
   "interrupted", "invalid_request", "structured_output_failed", "timed_out",
@@ -277,13 +280,16 @@ class DirectDelegationClient {
 }
 
 export class DirectCodingOrchestrator {
-  constructor({ transport, configRoot, getContext, budget = {}, cloneService = {}, idFactory = randomUUID, now = () => new Date().toISOString() } = {}) {
+  constructor({ transport, configRoot, getContext, budget = {}, webAuthorizer = null, webEnabled = false, cloneService = {}, idFactory = randomUUID, now = () => new Date().toISOString() } = {}) {
     if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("DirectCodingOrchestrator requires absolute configRoot");
     if (typeof getContext !== "function") throw new TypeError("DirectCodingOrchestrator requires getContext()");
     this.configRoot = path.resolve(configRoot);
     this.getContext = getContext;
     this.idFactory = idFactory;
     this.now = now;
+    this.webAuthorizer = webAuthorizer;
+    this.webEnabled = webEnabled;
+    this.budget = structuredClone(budget);
     this.cloneService = {
       create: cloneService.create ?? createManagedClone,
       capture: cloneService.capture ?? captureWriterPatch,
@@ -338,21 +344,38 @@ export class DirectCodingOrchestrator {
     const ctx = this.getContext();
     if (!ctx) fail("DIRECT_SESSION_CONTEXT_UNAVAILABLE", "direct session context is unavailable");
     const childLabel = label ? boundedText(label, "label", 128) : `${agent.replace(/^omp-/u, "")}-${this.client.total + 1}`;
-    return this.client.execute({
-      ownerRunId: `direct-${process.env.ONLY_MY_PI_LAUNCH_ID ?? this.idFactory()}`,
-      nodeId: `${childLabel}-${this.idFactory()}`,
-      label: childLabel,
-      agent,
-      task,
-      cwd: ctx.cwd,
-      model: modelReference(ctx.model),
-      thinking: ctx.thinkingLevel,
-      maximumTurns: 8,
-      maximumToolCalls: 16,
-      blockedTools: ["bash", "edit", "write", "subagent", "web", "web_search", "fetch_content", "get_search_content", "source_check"],
-      result: { kind: "text" },
-      signal,
-    });
+    const web = WEB_AGENTS.has(agent);
+    const ownerRunId = `direct-${this.idFactory()}`;
+    task = boundedText(task, "task", 32_768);
+    try {
+      if (web) {
+        if (!this.webEnabled || !this.webAuthorizer) fail("DIRECT_WEB_UNAVAILABLE", "Enable the Web overlay in a new session before research delegation");
+        if (ctx.mode !== "tui" || typeof ctx.ui?.confirm !== "function") fail("PUBLIC_WEB_APPROVAL_REQUIRED", "Public Web requires interactive approval for this research task");
+        const role = agent.replace(/^omp-/u, "");
+        const plan = await this.webAuthorizer.plan({ runId: ownerRunId, roles: [role], objectiveDigest: `sha256:${createHash("sha256").update(task).digest("hex")}`, budget: this.budget, providerIds: [ctx.model?.provider].filter(Boolean) });
+        if (!await ctx.ui.confirm("Allow public Web for this research task?", `${task}\n\nRole: ${role}\nModel: ${modelReference(ctx.model)}\nBudget: ${JSON.stringify(plan.budget)}\nThe task may be sent to public internet providers. Browser cookies are disabled; private and reserved destinations are blocked.`)) fail("PUBLIC_WEB_DENIED", "Public Web was declined; no child was launched");
+        if (signal?.aborted) fail("DIRECT_CHILD_CANCELLED", "Research was cancelled before launch");
+        await this.webAuthorizer.grant(plan);
+        this.webAuthorizer.require(ownerRunId, role);
+      }
+      return await this.client.execute({
+        ownerRunId,
+        nodeId: `${childLabel}-${this.idFactory()}`,
+        label: childLabel,
+        agent,
+        task,
+        cwd: ctx.cwd,
+        model: modelReference(ctx.model),
+        thinking: ctx.thinkingLevel,
+        maximumTurns: 8,
+        maximumToolCalls: 16,
+        blockedTools: ["bash", "edit", "write", "subagent", "web", ...(web ? [] : ["web_search", "fetch_content", "get_search_content", "source_check"])],
+        result: { kind: "text" },
+        signal,
+      });
+    } finally {
+      if (web) this.webAuthorizer?.reset(ownerRunId);
+    }
   }
 
   async delegateWriter({ task, plan, scope, verification = [], baseline, approvedScope, signal } = {}) {

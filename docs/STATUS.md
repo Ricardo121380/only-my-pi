@@ -55,7 +55,20 @@ the original defect and verify that integration introduces only declared paths.
 These are partial diagnostic results, not a C12 completion receipt. The installed
 artifact must be rebuilt from the corrected source and writer integration must
 be rerun; prior source-bound acceptance cannot be relabeled as current evidence.
-CPAR pricing remains unverified and must not be recorded as zero cost.
+The user confirmed CPAR Grok 4.6 uses a fixed subscription with no per-token
+variable charge; this is user-confirmed billing authority, not a provider price
+discovery result. On corrected source `9903f88`, real managed writing, fresh
+review, in-scope automatic integration and real-worktree tests succeeded.
+Read-only children completed, cancellation returned `DIRECT_CHILD_CANCELLED`,
+and a headless write request was refused. These partial results do not close
+the full source-bound matrix.
+
+Direct research delegation now reuses the session composer's Web authorizer.
+Only researcher/source-verifier roles can request Web; each task requires a
+separate interactive confirmation and policy recheck, and its grant is released
+on completion or failure. Headless, disabled-overlay and unsafe-config requests
+are rejected before launching a child. This wiring still requires protected
+real-Web acceptance in a newly built artifact.
 
 ## Frozen milestone — M11 public Preview distribution
 
