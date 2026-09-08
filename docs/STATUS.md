@@ -44,6 +44,19 @@ protected evidence-only gates for the real install/rollback/reapply and the
 clean source commit has passed C1-C10 and the real local stack is changed under
 the protected acceptance flow. GitHub is not used by this local closure.
 
+The September 9 CPAR/Grok 4.6 continuation exercised real file edits and tests,
+same-process grant reuse, `omp -c` recovery into Inspect, renewed approval,
+denial, and graceful exit. A complex managed writer completed its clone edit,
+but the fresh reviewer blocked integration because patch capture included OMP's
+own temporary Git index. The original worktree remained unchanged. The local
+fix moves the index outside the scanned tree, compares captured paths with the
+verified inventory, and rejects Git binary patches. Regression tests reproduce
+the original defect and verify that integration introduces only declared paths.
+These are partial diagnostic results, not a C12 completion receipt. The installed
+artifact must be rebuilt from the corrected source and writer integration must
+be rerun; prior source-bound acceptance cannot be relabeled as current evidence.
+CPAR pricing remains unverified and must not be recorded as zero cost.
+
 ## Frozen milestone — M11 public Preview distribution
 
 M11 converted the locally accepted M10 installation into a macOS 14+

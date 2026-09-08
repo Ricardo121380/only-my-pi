@@ -246,20 +246,25 @@ export async function captureWriterPatch({ cloneRoot, baseCommit, scope = [], pa
   const head = textOutput((await requiredGit(runGit, root, ["rev-parse", "HEAD"], "read writer HEAD")).stdout).trim();
   if (head !== commit) fail("WRITER_PATCH_BASE_DRIFT", "writer changed its base commit; commits are not accepted");
   const status = await requiredGit(runGit, root, ["status", "--porcelain=v2", "--branch", "-z"], "read writer status");
-  const indexPath = path.join(root, `.omp-index-${randomUUID()}`);
+  // Keep Git's temporary index outside the tree scanned by intent-to-add.
+  const indexRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-writer-index-"));
+  const indexPath = path.join(indexRoot, "index");
   let diff;
+  let diffPaths;
   try {
     const env = await stageIntentToAdd(runGit, root, indexPath);
     diff = await requiredGit(runGit, root, ["diff", "--binary", "--full-index", "--no-ext-diff", commit, "--"], "capture writer patch", { env });
+    diffPaths = parseNulPaths((await requiredGit(runGit, root, ["diff", "--name-only", "-z", "--no-renames", commit, "--"], "verify captured writer paths", { env })).stdout).sort();
   } finally {
-    await fs.unlink(indexPath).catch(() => {});
+    await fs.rm(indexRoot, { recursive: true, force: true });
   }
   const patchBytes = boundedBuffer(diff.stdout, "writer patch");
   if (patchBytes.byteLength > MAX_PATCH_BYTES) fail("WRITER_PATCH_TOO_LARGE", "writer patch exceeds 16 MiB");
   const paths = await changedPaths(runGit, root, commit, status.stdout);
+  if (JSON.stringify(diffPaths) !== JSON.stringify(paths)) fail("WRITER_PATCH_PATH_DRIFT", "captured patch paths differ from the verified writer paths");
   await assertChangedPathsSafe(root, paths, scope, runGit);
   if (patchBytes.byteLength === 0 || paths.length === 0) return Object.freeze({ formatVersion: WRITER_PATCH_FORMAT_VERSION, kind: WRITER_PATCH_KIND, status: "NO_CHANGES", baseCommit: commit, changedPaths: [] });
-  if (patchBytes.includes(Buffer.from("Binary files "))) fail("WRITER_PATCH_BINARY_UNAPPROVED", "binary writer changes require an explicit binary policy");
+  if (patchBytes.includes(Buffer.from("Binary files ")) || patchBytes.includes(Buffer.from("\nGIT binary patch\n"))) fail("WRITER_PATCH_BINARY_UNAPPROVED", "binary writer changes require an explicit binary policy");
   const destinationRoot = await ensurePrivateDirectory(path.dirname(absolute(patchRoot, "patchRoot")), absolute(patchRoot, "patchRoot"));
   const patchPath = path.join(destinationRoot, `${safeRunId(runId)}-${safeRunId(nodeId)}.patch`);
   await atomicWriteFile(destinationRoot, patchPath, patchBytes);

@@ -67,6 +67,9 @@ test("managed clone excludes dirty content and integrates one verified in-scope 
   assert.deepEqual(patch.changedPaths, ["src/app.js", "src/new.js"]);
   assert.match(patch.sha256, /^sha256:[a-f0-9]{64}$/u);
   assert.equal((await fs.stat(patch.patchPath)).mode & 0o777, 0o600);
+  const patchText = await fs.readFile(patch.patchPath, "utf8");
+  assert.doesNotMatch(patchText, /\.omp-index-/u);
+  assert.deepEqual((await git(root, ["apply", "--numstat", patch.patchPath])).split("\n").map((line) => line.split("\t")[2]).sort(), [...patch.changedPaths]);
   assert.equal((await verifyWriterPatch({ patch, repositoryRoot: root, scope: ["src/**"] })).status, "VERIFIED");
 
   const applied = await applyWriterPatch({ patch, repositoryRoot: root, scope: ["src/**"], baseline });
@@ -76,6 +79,7 @@ test("managed clone excludes dirty content and integrates one verified in-scope 
   assert.equal(await fs.readFile(path.join(root, "README.md"), "utf8"), "user dirty change\n");
   assert.equal(await git(root, ["diff", "--cached", "--name-only"]), "");
   assert.equal(await git(root, ["log", "-1", "--format=%s"]), "baseline");
+  assert.deepEqual(await fs.readdir(root).then((entries) => entries.filter((entry) => entry.startsWith(".omp-index-"))), []);
 });
 
 test("managed writer fails closed on scope escape and target drift before apply", async (t) => {
@@ -101,3 +105,13 @@ test("managed writer fails closed on scope escape and target drift before apply"
   assert.equal(await fs.readFile(path.join(root, "src", "app.js"), "utf8"), "concurrent user change\n");
 });
 
+test("managed writer rejects Git binary patches even inside the approved scope", async (t) => {
+  const { root, head } = await repository(t);
+  const privateRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-binary-patch-test-"));
+  t.after(() => fs.rm(privateRoot, { recursive: true, force: true }));
+  await fs.writeFile(path.join(root, "src", "payload.bin"), Buffer.from([0, 1, 2, 0, 3]));
+  await assert.rejects(captureWriterPatch({
+    cloneRoot: root, baseCommit: head, scope: ["src/**"], patchRoot: path.join(privateRoot, "artifacts"),
+  }), { code: "WRITER_PATCH_BINARY_UNAPPROVED" });
+  assert.equal(await git(root, ["diff", "--cached", "--name-only"]), "");
+});
