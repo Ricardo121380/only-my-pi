@@ -91,12 +91,11 @@ test("direct research requires per-task Web approval and releases its grant", as
   assert.equal(confirmations, 3);
   assert.notEqual(transport.requests[0].ownerRunId, transport.requests[1].ownerRunId);
   for (const sent of transport.requests) {
-    assert.equal(sent.toolBudget.block.includes("web_search"), false);
-    for (const denied of ["bash", "edit", "write", "subagent", "web"]) assert.ok(sent.toolBudget.block.includes(denied));
+    assert.equal(sent.toolBudget.block, "*");
   }
   assert.equal(authority.grants.size, 0);
   await orchestrator.delegateReadOnly({ agent: "omp-reviewer", task: "Review locally" });
-  assert.ok(transport.requests.at(-1).toolBudget.block.includes("web_search"));
+  assert.equal(transport.requests.at(-1).toolBudget.block, "*");
   assert.equal(confirmations, 3);
   fixture.ctx.mode = "print";
   await assert.rejects(orchestrator.delegateReadOnly(request), { code: "PUBLIC_WEB_APPROVAL_REQUIRED" });
@@ -135,8 +134,7 @@ test("read-only delegation uses the shared pi-subagents owner and enforces concu
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(seen.length, 2);
   for (const request of seen) {
-    assert.ok(request.toolBudget.block.includes("edit"));
-    assert.ok(request.toolBudget.block.includes("bash"));
+    assert.equal(request.toolBudget.block, "*");
     held.respond(request, { kind: "text", text: "bounded evidence" });
   }
   await new Promise((resolve) => setImmediate(resolve));
@@ -234,8 +232,8 @@ test("managed writer requires exact captured paths and a fresh passing review be
   assert.equal(result.status, "WRITER_PATCH_APPLIED_REQUIRES_REAL_WORKSPACE_VERIFICATION");
   assert.deepEqual(calls, ["create", "capture", "capture", "capture", "apply"]);
   assert.deepEqual(transport.requests.map((request) => request.agent), ["omp-implementer", "omp-reviewer"]);
-  assert.ok(transport.requests[0].toolBudget.block.includes("subagent"));
-  assert.ok(transport.requests[1].toolBudget.block.includes("edit"));
+  assert.equal(transport.requests[0].toolBudget.block, "*");
+  assert.equal(transport.requests[1].toolBudget.block, "*");
   assert.equal(orchestrator.snapshot().writerUsed, true);
   await assert.rejects(
     orchestrator.delegateWriter({ task: "again", plan: "again", scope: ["src/**"], approvedScope: ["src/**"], baseline: { status: "GIT_REPOSITORY", head: HEAD, paths: [] } }),

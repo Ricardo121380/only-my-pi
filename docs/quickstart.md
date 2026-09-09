@@ -135,6 +135,10 @@ distinct tool-call allowances, and `maxDepth=0` disables delegation. The shared
 wall-time deadline starts at the first child admission and includes time between
 delegations; starting another child does not reset it.
 
+After a child's tool allowance is spent, the native budget blocks every tool.
+The reported tool-call count can include rejected attempts. Tool availability
+before exhaustion remains controlled by the selected agent and its extensions.
+
 Reaching a cumulative limit cancels active children and prevents further
 delegation or writer integration. Missing or invalid usage, or cancellation
 without a terminal usage report, also stops delegation until a new OMP process.

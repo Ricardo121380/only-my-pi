@@ -37,7 +37,7 @@ test("configured child turn/tool limits and zero depth reach the admission bound
   const run = f.delegate();
   await flush();
   assert.deepEqual(f.requests[0].turnBudget, { maxTurns: 2, graceTurns: 0 });
-  assert.equal(f.requests[0].toolBudget.hard, 3);
+  assert.deepEqual(f.requests[0].toolBudget, { hard: 3, block: "*" });
   f.respond(f.requests[0]);
   await run;
   const disabled = fixture(t, { maxDepth: 0 });

@@ -35,6 +35,9 @@ active children, rejects queued/new
 delegation and blocks writer integration. Unreconciled usage after cancellation,
 timeout or missing/invalid terminal usage stops further delegation for that
 process instead of treating unknown usage as zero. `/agents` exposes this state.
+Native `toolBudget.block` is set to `"*"`: this field selects which tools are
+blocked after exhaustion, not which tools are unavailable before it. Reported
+tool-call counts may include rejected attempts.
 
 The audit distinguishes these child budgets from the main Pi Agent, which is
 not included and receives no new spending ceiling in this change. The pinned

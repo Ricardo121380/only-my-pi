@@ -276,7 +276,7 @@ class DirectDelegationClient {
     }
   }
 
-  async execute({ ownerRunId, nodeId, label, agent, task, cwd, model, thinking, timeoutMs, maximumTurns = 8, maximumToolCalls = 16, blockedTools = [], result = { kind: "text" }, signal } = {}) {
+  async execute({ ownerRunId, nodeId, label, agent, task, cwd, model, thinking, timeoutMs, maximumTurns = 8, maximumToolCalls = 16, result = { kind: "text" }, signal } = {}) {
     await this.acquire(signal);
     let request;
     let attempt;
@@ -300,7 +300,8 @@ class DirectDelegationClient {
         ...(THINKING.has(thinking) ? { thinking } : {}),
         timeoutMs: Math.max(1, Math.min(timeoutMs ?? this.defaultTimeoutMs, this.deadline - Date.now())),
         turnBudget: { maxTurns: Math.min(maximumTurns, this.budget.maxTurnsPerChild), graceTurns: 0 },
-        toolBudget: { hard: Math.min(maximumToolCalls, this.budget.maxToolCallsPerChild, availableTools), block: [...new Set(blockedTools)].sort() },
+        // Native block selects tools stopped AFTER the budget; it is not a denylist.
+        toolBudget: { hard: Math.min(maximumToolCalls, this.budget.maxToolCallsPerChild, availableTools), block: "*" },
         skill: false,
         artifacts: false,
         result,
@@ -469,7 +470,6 @@ export class DirectCodingOrchestrator {
         thinking: ctx.thinkingLevel,
         maximumTurns: 8,
         maximumToolCalls: 16,
-        blockedTools: ["bash", "edit", "write", "subagent", "web", ...(web ? [] : ["web_search", "fetch_content", "get_search_content", "source_check"])],
         result: { kind: "text" },
         signal,
       });
@@ -518,7 +518,6 @@ export class DirectCodingOrchestrator {
         thinking: ctx.thinkingLevel,
         maximumTurns: 8,
         maximumToolCalls: 16,
-        blockedTools: ["subagent", "web", "web_search", "fetch_content", "get_search_content", "source_check"],
         result: { kind: "structured", schema: WRITER_RESULT_SCHEMA },
         signal,
       });
@@ -550,7 +549,6 @@ export class DirectCodingOrchestrator {
         thinking: ctx.thinkingLevel,
         maximumTurns: 6,
         maximumToolCalls: 12,
-        blockedTools: ["bash", "edit", "write", "subagent", "web", "web_search", "fetch_content", "get_search_content", "source_check"],
         result: { kind: "structured", schema: REVIEW_RESULT_SCHEMA },
         signal,
       });
