@@ -17,6 +17,8 @@ test("CI executes the same manifest-backed verify runner without credentials", (
   assert.match(workflow, /npm run verify:m8:run/u);
   assert.match(workflow, /npm run verify:m9:run/u);
   assert.match(workflow, /npm run verify:m11:run/u);
+  assert.match(workflow, /npm run verify:m12:run/u);
+  assert.match(workflow, /cancel-in-progress: true/u);
   assert.match(workflow, /runs-on: macos-14/u);
   assert.doesNotMatch(workflow, /runs-on: macos-14-xlarge/u);
   assert.match(workflow, /npm run verify:m11:q10:ci/u);
@@ -43,14 +45,18 @@ test("CI executes the same manifest-backed verify runner without credentials", (
   const m8Runner = workflow.indexOf("npm run verify:m8:run");
   const m9Runner = workflow.indexOf("npm run verify:m9:run");
   const m11Runner = workflow.indexOf("npm run verify:m11:run");
-  assert.ok(v1Runner >= 0 && receiptCleanup > v1Runner && v2Runner > receiptCleanup && m8Runner > v2Runner && m9Runner > m8Runner && m11Runner > m9Runner);
+  const m12Runner = workflow.indexOf("npm run verify:m12:run");
+  assert.ok(v1Runner >= 0 && receiptCleanup > v1Runner && v2Runner > receiptCleanup && m8Runner > v2Runner && m9Runner > m8Runner && m11Runner > m9Runner && m12Runner > m11Runner);
   assert.equal((workflow.match(/uses: actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1/gu) ?? []).length, 2);
   assert.equal((workflow.match(/uses: actions\/setup-node@820762786026740c76f36085b0efc47a31fe5020/gu) ?? []).length, 2);
 });
 
-test("M11 RC workflow is exact-source, attest-only and cannot publish", () => {
+test("current Preview RC workflow is exact-source, attest-only and cannot publish", () => {
   const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-rc.yml"), "utf8");
   assert.match(workflow, /workflow_dispatch:/u);
+  assert.match(workflow, /only-my-pi-0\.3\.0-preview\.1-darwin-arm64-full\.tar\.gz/u);
+  assert.match(workflow, /Require the current Preview version/u);
+  assert.doesNotMatch(workflow, /0\.2\.0-preview\.1/u);
   assert.match(workflow, /ref: \$\{\{ inputs\.source_commit \}\}/u);
   assert.match(workflow, /runs-on: macos-14/u);
   assert.doesNotMatch(workflow, /runs-on: macos-14-xlarge/u);
@@ -63,7 +69,7 @@ test("M11 RC workflow is exact-source, attest-only and cannot publish", () => {
   assert.doesNotMatch(workflow, /contents: write|gh release|git push|secrets\./u);
 });
 
-test("M11 publication verifies E and RC before Draft, then requires environment approval", () => {
+test("current Preview publication verifies E and RC before Draft, then requires environment approval", () => {
   const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-publish.yml"), "utf8");
   assert.match(workflow, /runs-on: macos-14/u);
   assert.doesNotMatch(workflow, /runs-on: macos-14-xlarge/u);
@@ -71,10 +77,15 @@ test("M11 publication verifies E and RC before Draft, then requires environment 
   assert.match(workflow, /ref: \$\{\{ needs\.validate-inputs\.outputs\.evidence_commit \}\}/u);
   assert.match(workflow, /actions\/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7\.0\.0/u);
   assert.match(workflow, /m11-release-evidence\.mjs/u);
+  assert.match(workflow, /C11\/C12 evidence-only child E/u);
+  assert.match(workflow, /TAG: v0\.3\.0-preview\.1/u);
+  assert.match(workflow, /Require the current Preview version/u);
+  assert.doesNotMatch(workflow, /0\.2\.0-preview\.1|Q11/u);
   assert.match(workflow, /m11-compare-release-core\.mjs/u);
   assert.equal((workflow.match(/actions\/attest@59d89421af93a897026c735860bf21b6eb4f7b26/gu) ?? []).length, 2);
   assert.match(workflow, /--draft --prerelease --latest=false --verify-tag/u);
   assert.match(workflow, /Remove incomplete Draft and tag after failure/u);
+  assert.match(workflow, /failure\(\) && steps\.create-tag\.outputs\.created == 'true'/u, "failure cleanup must never delete a pre-existing release or tag");
   assert.match(workflow, /gh release delete "\$TAG" --yes --cleanup-tag/u);
   assert.match(workflow, /environment: public-preview/u);
   assert.match(workflow, /gh release edit "\$TAG" --draft=false/u);

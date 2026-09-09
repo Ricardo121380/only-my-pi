@@ -6,6 +6,27 @@ kernel merged to `main`: **2026-08-27** · Pi **0.84.3** · Node **25.8.0** · m
 
 ## Active milestone — M12 Direct Terminal Coding Agent Closure
 
+### Public standard-runner CI route — 2026-09-10
+
+The user authorized making the sanitized `Ricardo121380/only-my-pi` repository
+public after the updated privacy checks, then opening a Draft PR and running
+standard GitHub-hosted CI. The original `only-my-pi-private-archive` remains
+private. The selected deviation is
+`PRIVATE_HOSTED_CI_SKIPPED_DUE_TO_ACTIONS_QUOTA`; it does not claim that hosted
+CI has already passed.
+
+CI now includes the current Agent C1-C10 gates on the two pinned Node versions,
+alongside the existing release gates and standard macOS arm64 clean-home job.
+The retained M11 distribution workflow filenames now target `0.3.0-preview.1`
+and require direct C11/C12 evidence. Legacy Q11 evidence cannot authorize the
+current release. Failure cleanup is limited to tags created by that run.
+
+The installed source/evidence chain below remains unchanged. This workflow
+follow-up does not rebind its protected evidence to a newer source. A passing
+public PR workflow is required before merge; main CI, exact-source RC,
+attestations and protected publication approval remain release requirements.
+Publication remains **HOLD_PUBLICATION**.
+
 ### Installed M13 follow-up — 2026-09-09
 
 The writer-verification and direct-child-budget follow-up is now installed and
@@ -1066,11 +1087,12 @@ invariant as the Harness MVP receipt.
 The local M12.7 boundary is closed by the source/evidence/report chain above.
 The acceptance host can start `omp` directly and recover the prior M11 stack.
 
-The next release boundary is M12.8, after hosted quota is available:
+The next release boundary is M12.8, using the authorized public CI route above:
 
 1. retain the source/evidence commits without squash or amend;
-2. push the locally verified branch once and open the planned Draft PR;
-3. run the minimum required hosted CI, changing code only for demonstrated
+2. complete the updated privacy checks, publish the sanitized repository and
+   open the planned Draft PR for the locally verified branch;
+3. run the minimum required public standard-runner CI, changing code only for demonstrated
    failures rather than producing test-only pushes;
 4. merge with the evidence history preserved and run one main CI; and
 5. build and verify the exact `0.3.0-preview.1` RC before any approved Preview

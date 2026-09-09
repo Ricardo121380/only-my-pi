@@ -8,7 +8,8 @@ import { promisify } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { sha256 } from "../packages/release-stack/index.mjs";
-import { validateM11ProtectedEvidence } from "./m11-release-gates.mjs";
+import { DIRECT_AGENT_VERSION } from "../packages/direct-agent/product-contract.mjs";
+import { validateM12ProtectedEvidence } from "./m12-direct-coding-gates.mjs";
 
 const execFile = promisify(execFileCallback);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -28,16 +29,18 @@ export async function extractM11ReleaseEvidence({ rootDir = ROOT, sourceCommit, 
   const head = await git(root, ["rev-parse", "HEAD"]);
   const status = await git(root, ["status", "--porcelain=v1", "--untracked-files=all"]);
   if (head !== sourceCommit || status !== "") fail("M11_RELEASE_EVIDENCE_SOURCE_INVALID", "release evidence extraction requires a clean checkout at source S");
+  const sourcePackage = JSON.parse(await git(root, ["show", `${sourceCommit}:package.json`]));
+  if (sourcePackage.version !== DIRECT_AGENT_VERSION) fail("M11_RELEASE_EVIDENCE_VERSION_INVALID", "release source must match the current direct Agent version");
   const parents = (await git(root, ["show", "-s", "--format=%P", evidenceCommit])).split(" ").filter(Boolean);
   const changed = (await git(root, ["diff", "--name-only", "--no-renames", `${sourceCommit}..${evidenceCommit}`])).split("\n").filter(Boolean);
   const deleted = (await git(root, ["diff", "--name-only", "--diff-filter=D", "--no-renames", `${sourceCommit}..${evidenceCommit}`])).split("\n").filter(Boolean);
   if (parents.length !== 1 || parents[0] !== sourceCommit || changed.length !== 1 || changed[0] !== evidencePath || deleted.length !== 0) fail("M11_RELEASE_EVIDENCE_COMMIT_INVALID", "E must be the direct evidence-only child of S");
   const raw = await git(root, ["show", `${evidenceCommit}:${evidencePath}`]);
-  const document = validateM11ProtectedEvidence(JSON.parse(raw), sourceCommit);
+  const document = validateM12ProtectedEvidence(JSON.parse(raw), sourceCommit);
   const parent = await fs.realpath(path.dirname(outputPath));
   if (parent !== path.dirname(path.resolve(outputPath)) || await fs.lstat(outputPath).then(() => true, (error) => error?.code === "ENOENT" ? false : Promise.reject(error))) fail("M11_RELEASE_EVIDENCE_OUTPUT_INVALID", "evidence output must be a new file under a real directory");
   await fs.writeFile(outputPath, `${JSON.stringify(document, null, 2)}\n`, { mode: 0o600, flag: "wx" });
-  return Object.freeze({ ok: true, status: "M11_RELEASE_EVIDENCE_EXTRACTED", sourceCommit, evidenceCommit, evidenceId: document.evidenceId, evidenceDigest: document.evidenceDigest, assertionCount: document.assertions.length, outputClass: "EXPLICIT_NON_REPOSITORY_FILE" });
+  return Object.freeze({ ok: true, status: "M11_RELEASE_EVIDENCE_EXTRACTED", sourceCommit, evidenceCommit, productVersion: document.productVersion, evidenceDigest: document.evidenceDigest, assertionCount: document.assertions.length, outputClass: "EXPLICIT_NON_REPOSITORY_FILE" });
 }
 
 export function parseM11ReleaseEvidenceArgs(argv) {

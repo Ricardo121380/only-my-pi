@@ -1,4 +1,4 @@
-name: M11 immutable Preview publication
+name: Direct Agent immutable Preview publication
 
 on:
   workflow_dispatch:
@@ -8,15 +8,15 @@ on:
         required: true
         type: string
       evidence_commit:
-        description: Direct Q11 evidence-only child E
+        description: Direct C11/C12 evidence-only child E
         required: true
         type: string
       evidence_path:
-        description: Q11 JSON path under verification/protected
+        description: C11/C12 JSON path under verification/protected
         required: true
         type: string
       rc_run_id:
-        description: Successful M11 RC workflow run ID for the same S
+        description: Successful Preview RC workflow run ID for the same S
         required: true
         type: string
 
@@ -75,7 +75,7 @@ jobs:
       SOURCE_COMMIT: ${{ needs.validate-inputs.outputs.source_commit }}
       EVIDENCE_COMMIT: ${{ needs.validate-inputs.outputs.evidence_commit }}
       EVIDENCE_PATH: ${{ needs.validate-inputs.outputs.evidence_path }}
-      TAG: v0.2.0-preview.1
+      TAG: v0.3.0-preview.1
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout evidence commit E
@@ -101,6 +101,9 @@ jobs:
       - name: Install dependencies without lifecycle scripts
         run: npm ci --ignore-scripts --no-audit --no-fund
 
+      - name: Require the current Preview version
+        run: node -e 'if (JSON.parse(require("fs").readFileSync("package.json", "utf8")).version !== "0.3.0-preview.1") process.exit(1)'
+
       - name: Download accepted RC assets
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
@@ -109,11 +112,11 @@ jobs:
           github-token: ${{ github.token }}
           run-id: ${{ needs.validate-inputs.outputs.rc_run_id }}
 
-      - name: Extract direct Q11 evidence authority
-        run: node scripts/m11-release-evidence.mjs --source-commit "$SOURCE_COMMIT" --evidence-commit "$EVIDENCE_COMMIT" --evidence-path "$EVIDENCE_PATH" --output "$RUNNER_TEMP/q11-protected-receipt.json" --json
+      - name: Extract direct C11/C12 evidence authority
+        run: node scripts/m11-release-evidence.mjs --source-commit "$SOURCE_COMMIT" --evidence-commit "$EVIDENCE_COMMIT" --evidence-path "$EVIDENCE_PATH" --output "$RUNNER_TEMP/coding-protected-receipt.json" --json
 
       - name: Rebuild Final bytes from S
-        run: node scripts/m11-workflow-build.mjs --source-commit "$SOURCE_COMMIT" --output "$RUNNER_TEMP/m11-final" --status PUBLISHED --protected-receipt "$RUNNER_TEMP/q11-protected-receipt.json" --json
+        run: node scripts/m11-workflow-build.mjs --source-commit "$SOURCE_COMMIT" --output "$RUNNER_TEMP/m11-final" --status PUBLISHED --protected-receipt "$RUNNER_TEMP/coding-protected-receipt.json" --json
 
       - name: Require RC and Final core assets to be bit-identical
         run: node scripts/m11-compare-release-core.mjs --rc-root "$RUNNER_TEMP/m11-rc" --final-root "$RUNNER_TEMP/m11-final" --json
@@ -127,9 +130,9 @@ jobs:
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
           subject-path: |
-            ${{ runner.temp }}/m11-final/only-my-pi-0.2.0-preview.1-darwin-arm64-full.tar.gz
-            ${{ runner.temp }}/m11-final/only-my-pi-0.2.0-preview.1-darwin-arm64-thin.tar.gz
-          sbom-path: ${{ runner.temp }}/m11-final/only-my-pi-0.2.0-preview.1.spdx.json
+            ${{ runner.temp }}/m11-final/only-my-pi-0.3.0-preview.1-darwin-arm64-full.tar.gz
+            ${{ runner.temp }}/m11-final/only-my-pi-0.3.0-preview.1-darwin-arm64-thin.tar.gz
+          sbom-path: ${{ runner.temp }}/m11-final/only-my-pi-0.3.0-preview.1.spdx.json
 
       - name: Require Public repository and immutable releases
         run: |
@@ -139,32 +142,34 @@ jobs:
           if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then exit 1; fi
 
       - name: Create annotated release tag
+        id: create-tag
         run: |
           set -eu
-          TAG_OBJECT=$(gh api --method POST "repos/$GITHUB_REPOSITORY/git/tags" -f tag="$TAG" -f message="only-my-pi 0.2.0-preview.1" -f object="$SOURCE_COMMIT" -f type=commit --jq .sha)
+          TAG_OBJECT=$(gh api --method POST "repos/$GITHUB_REPOSITORY/git/tags" -f tag="$TAG" -f message="only-my-pi 0.3.0-preview.1" -f object="$SOURCE_COMMIT" -f type=commit --jq .sha)
           gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$TAG" -f sha="$TAG_OBJECT" >/dev/null
+          printf 'created=true\n' >> "$GITHUB_OUTPUT"
 
       - name: Create complete Draft prerelease
         run: |
           set -eu
           gh release create "$TAG" \
             "$RUNNER_TEMP/m11-final/install.sh" \
-            "$RUNNER_TEMP/m11-final/only-my-pi-0.2.0-preview.1-darwin-arm64-full.tar.gz" \
-            "$RUNNER_TEMP/m11-final/only-my-pi-0.2.0-preview.1-darwin-arm64-thin.tar.gz" \
+            "$RUNNER_TEMP/m11-final/only-my-pi-0.3.0-preview.1-darwin-arm64-full.tar.gz" \
+            "$RUNNER_TEMP/m11-final/only-my-pi-0.3.0-preview.1-darwin-arm64-thin.tar.gz" \
             "$RUNNER_TEMP/m11-final/release-index.json" \
             "$RUNNER_TEMP/m11-final/stack-manifest.json" \
             "$RUNNER_TEMP/m11-final/transitive-artifact-ledger.json" \
             "$RUNNER_TEMP/m11-final/SHA256SUMS" \
-            "$RUNNER_TEMP/m11-final/only-my-pi-0.2.0-preview.1.spdx.json" \
+            "$RUNNER_TEMP/m11-final/only-my-pi-0.3.0-preview.1.spdx.json" \
             "$RUNNER_TEMP/m11-final/THIRD_PARTY_NOTICES.txt" \
-            "$RUNNER_TEMP/m11-final/only-my-pi-0.2.0-preview.1-protected-receipt.json" \
+            "$RUNNER_TEMP/m11-final/only-my-pi-0.3.0-preview.1-protected-receipt.json" \
             --draft --prerelease --latest=false --verify-tag \
-            --title "only-my-pi 0.2.0-preview.1" \
-            --notes-file docs/releases/0.2.0-preview.1.md
+            --title "only-my-pi 0.3.0-preview.1" \
+            --notes-file docs/releases/0.3.0-preview.1.md
           test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = true
 
       - name: Remove incomplete Draft and tag after failure
-        if: ${{ failure() }}
+        if: ${{ failure() && steps.create-tag.outputs.created == 'true' }}
         run: |
           set -eu
           if gh release view "$TAG" >/dev/null 2>&1; then
@@ -181,7 +186,7 @@ jobs:
     permissions:
       contents: write
     env:
-      TAG: v0.2.0-preview.1
+      TAG: v0.3.0-preview.1
       SOURCE_COMMIT: ${{ needs.validate-inputs.outputs.source_commit }}
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -198,5 +203,5 @@ jobs:
           mkdir "$RUNNER_TEMP/release-assets"
           gh release download "$TAG" --dir "$RUNNER_TEMP/release-assets"
           for asset in "$RUNNER_TEMP/release-assets"/*; do gh release verify-asset "$TAG" "$asset"; done
-          gh attestation verify "$RUNNER_TEMP/release-assets/only-my-pi-0.2.0-preview.1-darwin-arm64-full.tar.gz" --repo "$GITHUB_REPOSITORY" --source-digest "$SOURCE_COMMIT"
-          gh attestation verify "$RUNNER_TEMP/release-assets/only-my-pi-0.2.0-preview.1-darwin-arm64-thin.tar.gz" --repo "$GITHUB_REPOSITORY" --source-digest "$SOURCE_COMMIT"
+          gh attestation verify "$RUNNER_TEMP/release-assets/only-my-pi-0.3.0-preview.1-darwin-arm64-full.tar.gz" --repo "$GITHUB_REPOSITORY" --source-digest "$SOURCE_COMMIT"
+          gh attestation verify "$RUNNER_TEMP/release-assets/only-my-pi-0.3.0-preview.1-darwin-arm64-thin.tar.gz" --repo "$GITHUB_REPOSITORY" --source-digest "$SOURCE_COMMIT"

@@ -214,8 +214,8 @@ test("direct extension resolution disables ambient discovery and admits only aud
 });
 
 test("direct config root is explicit and absolute", () => {
-  assert.equal(resolveDirectConfigRoot({ env: {}, homeDir: "/tmp/home" }), "/tmp/home/.pi/agent");
-  assert.equal(resolveDirectConfigRoot({ env: { PI_CODING_AGENT_DIR: "/tmp/pi" }, homeDir: "/tmp/home" }), "/tmp/pi");
+  assert.equal(resolveDirectConfigRoot({ env: {}, homeDir: "/tmp/omp-user" }), "/tmp/omp-user/.pi/agent");
+  assert.equal(resolveDirectConfigRoot({ env: { PI_CODING_AGENT_DIR: "/tmp/pi" }, homeDir: "/tmp/omp-user" }), "/tmp/pi");
   assert.throws(() => resolveDirectConfigRoot({ env: { PI_CODING_AGENT_DIR: "relative" } }), {
     code: "OMP_DIRECT_CONFIG_ROOT_INVALID",
   });
