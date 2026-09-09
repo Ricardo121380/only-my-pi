@@ -139,6 +139,27 @@ function assertStatus(value, expected, label) {
   if (!expected.includes(value?.status)) fail("FRESH_UNEXPECTED_STATUS", `${label} returned ${value?.status ?? "no status"}`);
 }
 
+export function verifyFreshDoctor(doctor, profileId) {
+  const foundationReady = doctor?.repository?.ok === true
+    && doctor?.runtime?.status === "INSTALLED"
+    && Array.isArray(doctor.runtime.incompleteTransactions)
+    && doctor.runtime.incompleteTransactions.length === 0
+    && doctor?.generation?.status === "VERIFIED"
+    && doctor.generation.alignment === "MATCH"
+    && doctor.generation.errorCode === null;
+  // This Harness-only smoke intentionally does not install the controlled
+  // Full/Thin stack. The daily CLI must report that missing Agent runtime.
+  const expectedDailyGuard = doctor?.ok === false && doctor.status === "FAIL"
+    && doctor.code === "OMP_CONTROLLED_STACK_UNAVAILABLE"
+    && doctor.directAgent?.ok === false
+    && doctor.directAgent.status === "DIRECT_AGENT_UPDATE_REQUIRED"
+    && doctor.directAgent.code === "OMP_CONTROLLED_STACK_UNAVAILABLE";
+  if (!foundationReady || (profileId === "daily" ? !expectedDailyGuard : doctor?.ok !== true)) {
+    fail("FRESH_DOCTOR_FAILED", "fresh Harness doctor or controlled-stack admission did not match the expected installation scope");
+  }
+  return profileId === "daily" ? "CONTROLLED_STACK_REQUIRED" : "PASS";
+}
+
 export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT, profileId = "minimal" } = {}) {
   if (!/^[a-z][a-z0-9-]{0,63}$/u.test(profileId)) fail("FRESH_PROFILE_INVALID", "profileId is invalid");
   const root = await fs.realpath(path.resolve(rootDir));
@@ -268,17 +289,8 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT, profileI
     assertStatus(first, ["COMMITTED"], "first bootstrap apply");
     const second = await runOmp(ompBin, ["bootstrap", ...profileArgs, "--config-root", configRoot, "--apply", "--yes"], { cwd: workspace, env });
     assertStatus(second, ["NO_CHANGES", "REPAIRED_NO_CHANGES"], "second bootstrap apply");
-    const doctor = await runOmp(ompBin, ["doctor", "--config-root", configRoot], { cwd: workspace, env });
-    const doctorFindings = doctor?.repository?.findings;
-    const doctorErrors = Array.isArray(doctorFindings)
-      ? doctorFindings.filter((finding) => finding?.severity === "error")
-      : null;
-    if (doctor?.ok !== true || doctorErrors === null || doctorErrors.length !== 0) {
-      const codes = Array.isArray(doctorFindings)
-        ? doctorFindings.map((finding) => finding?.code).filter(Boolean).slice(0, 8).join(",")
-        : "malformed-doctor-result";
-      fail("FRESH_DOCTOR_FAILED", `fresh static doctor did not pass cleanly (${codes})`);
-    }
+    const doctor = await runOmp(ompBin, ["doctor", "--config-root", configRoot], { cwd: workspace, env, allowExitCodes: profileId === "daily" ? [1] : [0] });
+    const doctorStatus = verifyFreshDoctor(doctor, profileId);
     const safe = await runOmp(ompBin, ["safe", "--config-root", configRoot], { cwd: workspace, env });
     if (safe?.ok !== true || !Array.isArray(safe?.command) || safe.command[0] !== "pi") {
       fail("FRESH_SAFE_FAILED", "fresh safe command was not produced");
@@ -322,7 +334,7 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT, profileI
         dryRun: "PLAN_READY_ZERO_WRITE",
         firstApply: first.status,
         secondApply: second.status,
-        doctor: "PASS",
+        doctor: doctorStatus,
         safe: "PASS",
         rollback: rollback.status,
         finalStatus: finalStatus.status,
