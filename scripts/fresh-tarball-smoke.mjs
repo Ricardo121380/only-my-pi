@@ -163,7 +163,7 @@ export function verifyFreshDoctor(doctor, profileId) {
 export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT, profileId = "minimal" } = {}) {
   if (!/^[a-z][a-z0-9-]{0,63}$/u.test(profileId)) fail("FRESH_PROFILE_INVALID", "profileId is invalid");
   const root = await fs.realpath(path.resolve(rootDir));
-  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "only-my-pi-fresh-"));
+  const tempRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "only-my-pi-fresh-")));
   try {
     const artifacts = path.join(tempRoot, "artifacts");
     const prefix = path.join(tempRoot, "prefix");

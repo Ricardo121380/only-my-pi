@@ -11,7 +11,9 @@ kernel merged to `main`: **2026-08-27** · Pi **0.84.3** · Node **25.8.0** · m
 The user authorized making the sanitized `Ricardo121380/only-my-pi` repository
 public after the updated privacy checks, then opening a Draft PR and running
 standard GitHub-hosted CI. The original `only-my-pi-private-archive` remains
-private. The selected deviation is
+private. The sanitized repository is now public and
+[Draft PR #2](https://github.com/Ricardo121380/only-my-pi/pull/2) carries the
+current work and hosted check results. The selected deviation is
 `PRIVATE_HOSTED_CI_SKIPPED_DUE_TO_ACTIONS_QUOTA`; it does not claim that hosted
 CI has already passed.
 
@@ -20,6 +22,12 @@ alongside the existing release gates and standard macOS arm64 clean-home job.
 The retained M11 distribution workflow filenames now target `0.3.0-preview.1`
 and require direct C11/C12 evidence. Legacy Q11 evidence cannot authorize the
 current release. Failure cleanup is limited to tags created by that run.
+
+Q10's unit test verifies platform rejection on Linux and native admission on
+macOS arm64. The older daily tarball smoke verifies the Harness generation and
+the expected `CONTROLLED_STACK_REQUIRED` diagnostic: a Harness-only install
+must not claim that the direct Agent is ready. Full/Thin runtime installation
+remains the separate macOS Q10 job and protected C11 acceptance.
 
 The installed source/evidence chain below remains unchanged. This workflow
 follow-up does not rebind its protected evidence to a newer source. A passing
