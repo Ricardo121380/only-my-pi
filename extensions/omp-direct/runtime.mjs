@@ -533,6 +533,11 @@ export class DirectSessionController {
       `Runtime owner: ${snapshot.physicalRuntimeOwner}`,
       `Children: ${snapshot.totalChildren}/${snapshot.maximumChildren}; concurrency ${snapshot.maximumConcurrency}`,
       `Writer used: ${snapshot.writerUsed ? "yes" : "no"}`,
+      ...(snapshot.budget ? [
+        `Child budget: ${snapshot.budget.status === "AVAILABLE" ? "available" : "stopped"}; main Agent usage is separate.`,
+        `Reported tokens: ${snapshot.budget.used.tokens}/${snapshot.budget.limits.maxTotalTokens}; reported cost: $${snapshot.budget.used.costUsd.toFixed(6)}/$${snapshot.budget.limits.maxCostUsd}`,
+        `Child tool calls: ${snapshot.budget.used.toolCalls}/${snapshot.budget.limits.maxTotalToolCalls}; returned result bytes: ${snapshot.budget.used.resultBytes}/${snapshot.budget.limits.maxTotalOutputBytes}`,
+      ] : []),
       ...snapshot.children.map((entry) => `${entry.label}: ${entry.status}`),
     ];
     ctx?.ui?.notify?.(lines.join("\n"), "info");

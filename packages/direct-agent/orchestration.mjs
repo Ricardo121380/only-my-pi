@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
+import { DEFAULT_BUDGET } from "../daily-config/index.mjs";
 
 import {
   applyWriterPatch,
@@ -80,9 +81,9 @@ function boundedText(value, label, maximumBytes = MAX_TASK_BYTES) {
   return value.trim();
 }
 
-function boundedResult(value) {
+function boundedResult(value, maximumBytes = MAX_RESULT_BYTES) {
   const encoded = JSON.stringify(value);
-  if (encoded === undefined || Buffer.byteLength(encoded, "utf8") > MAX_RESULT_BYTES) fail("DIRECT_CHILD_RESULT_TOO_LARGE", "child result exceeds the 64 KiB OMP boundary");
+  if (encoded === undefined || Buffer.byteLength(encoded, "utf8") > maximumBytes) fail("DIRECT_CHILD_RESULT_TOO_LARGE", `child result exceeds the ${maximumBytes}-byte OMP boundary`);
   return structuredClone(value);
 }
 
@@ -124,6 +125,8 @@ function normalizeUsage(value) {
   if (!value || typeof value !== "object") return null;
   const keys = ["input", "output", "cacheRead", "cacheWrite", "cost", "turns", "toolCalls", "durationMs"];
   if (keys.some((key) => !Number.isFinite(value[key]) || value[key] < 0)) return null;
+  if (keys.some((key) => key !== "cost" && !Number.isSafeInteger(value[key]))) return null;
+  if (!Number.isSafeInteger(value.input + value.output + value.cacheRead + value.cacheWrite)) return null;
   return Object.fromEntries(keys.map((key) => [key, value[key]]));
 }
 
@@ -133,14 +136,21 @@ function terminalError(response) {
 }
 
 class DirectDelegationClient {
-  constructor({ transport, maximumConcurrency = 2, maximumChildren = 8, defaultTimeoutMs = 1_800_000, idFactory = randomUUID, onStatus = () => {} } = {}) {
+  constructor({ transport, budget, idFactory = randomUUID, onStatus = () => {} } = {}) {
+    const maximumConcurrency = Math.min(2, budget.maxConcurrency);
+    const maximumChildren = Math.min(8, budget.maxChildren);
     if (typeof transport?.subscribe !== "function" || typeof transport?.emit !== "function") throw new TypeError("direct delegation requires the shared Pi event transport");
     if (!Number.isSafeInteger(maximumConcurrency) || maximumConcurrency < 1 || maximumConcurrency > 2) throw new TypeError("direct delegation concurrency must be 1 or 2");
     if (!Number.isSafeInteger(maximumChildren) || maximumChildren < 1 || maximumChildren > 8) throw new TypeError("direct delegation child limit must be 1-8");
     this.transport = transport;
     this.maximumConcurrency = maximumConcurrency;
     this.maximumChildren = maximumChildren;
-    this.defaultTimeoutMs = defaultTimeoutMs;
+    this.budget = budget;
+    this.defaultTimeoutMs = Math.min(1_800_000, budget.maxWallSeconds * 1000);
+    this.deadline = null;
+    this.deadlineTimer = null;
+    this.budgetError = null;
+    this.used = { tokens: 0, costUsd: 0, toolCalls: 0, resultBytes: 0 };
     this.idFactory = idFactory;
     this.onStatus = onStatus;
     this.active = 0;
@@ -158,26 +168,86 @@ class DirectDelegationClient {
   capture(kind, value) {
     if (!value || typeof value !== "object") return;
     const attempt = this.pending.get(keyOf(value));
-    if (!attempt || !exactIdentity(value, attempt.request)) return;
+    if (!attempt || attempt.terminalReceived || this.budgetError || !exactIdentity(value, attempt.request)) return;
     if (kind === "started") {
       attempt.status = "running";
       this.onStatus(attempt.label, "running", value);
       return;
     }
     if (kind === "update") {
+      this.observe(attempt, value.tokens, value.toolCount);
       this.onStatus(attempt.label, "running", value);
+      try { this.requireBudget(); } catch (error) { this.stop(error); }
       return;
     }
     if (!TERMINAL_STATUSES.has(value.status)) {
       attempt.reject(Object.assign(new Error("pi-subagents returned an invalid terminal status"), { code: "DIRECT_CHILD_RESPONSE_INVALID" }));
       return;
     }
+    attempt.terminalReceived = true;
     attempt.resolve(value);
   }
 
-  async acquire(signal) {
+  observe(attempt, tokens, toolCalls) {
+    for (const [key, value] of Object.entries({ tokens, toolCalls })) {
+      if (!Number.isSafeInteger(value) || value < 0) continue;
+      const next = Math.max(attempt[key], value);
+      this.used[key] += next - attempt[key];
+      attempt[key] = next;
+    }
+  }
+
+  stop(error) {
+    if (this.budgetError) return;
+    this.budgetError = error;
+    clearTimeout(this.deadlineTimer);
+    this.cancelAll();
+    for (const attempt of this.pending.values()) attempt.reject(error);
+    for (const waiter of this.waiters.splice(0)) {
+      waiter.signal?.removeEventListener("abort", waiter.abort);
+      this.total -= 1;
+      waiter.reject(error);
+    }
+  }
+
+  requireBudget() {
     if (this.disposed) fail("DIRECT_ORCHESTRATOR_DISPOSED", "direct orchestrator is disposed");
+    if (this.budgetError) throw this.budgetError;
+    const limits = { tokens: this.budget.maxTotalTokens, costUsd: this.budget.maxCostUsd, toolCalls: this.budget.maxTotalToolCalls, resultBytes: this.budget.maxTotalOutputBytes };
+    const resource = this.deadline !== null && Date.now() >= this.deadline
+      ? "wallTime"
+      : Object.keys(limits).find((key) => this.used[key] >= limits[key]);
+    if (resource) {
+      const error = Object.assign(new Error(`this OMP process reached its delegated ${resource} budget`), { code: "DIRECT_CHILD_BUDGET_EXHAUSTED", resource });
+      this.stop(error);
+      throw error;
+    }
+    if (this.budget.maxDepth < 1) fail("DIRECT_CHILD_DEPTH_EXHAUSTED", "maxDepth=0 disables child delegation");
+  }
+
+  budgetSnapshot() {
+    return Object.freeze({
+      scope: "process-child-delegations",
+      mainAgentIncluded: false,
+      limits: Object.freeze({ ...this.budget }),
+      used: Object.freeze({ ...this.used }),
+      deadline: this.deadline,
+      status: this.budgetError?.code ?? "AVAILABLE",
+      resource: this.budgetError?.resource ?? null,
+    });
+  }
+
+  async acquire(signal) {
+    this.requireBudget();
+    if (signal?.aborted) fail("DIRECT_CHILD_CANCELLED", "delegation cancelled before admission");
     if (this.total >= this.maximumChildren) fail("DIRECT_CHILD_BUDGET_EXHAUSTED", "this OMP process reached its child-agent limit");
+    if (this.deadline === null) {
+      this.deadline = Date.now() + this.defaultTimeoutMs;
+      this.deadlineTimer = setTimeout(() => {
+        try { this.requireBudget(); } catch (error) { this.stop(error); }
+      }, this.defaultTimeoutMs);
+      this.deadlineTimer.unref?.();
+    }
     this.total += 1;
     if (this.active < this.maximumConcurrency) { this.active += 1; return; }
     await new Promise((resolve, reject) => {
@@ -208,53 +278,78 @@ class DirectDelegationClient {
 
   async execute({ ownerRunId, nodeId, label, agent, task, cwd, model, thinking, timeoutMs, maximumTurns = 8, maximumToolCalls = 16, blockedTools = [], result = { kind: "text" }, signal } = {}) {
     await this.acquire(signal);
-    const request = {
-      requestId: this.idFactory(),
-      ownerRunId: boundedText(ownerRunId, "ownerRunId", 256),
-      nodeId: boundedText(nodeId, "nodeId", 256),
-      agent: boundedText(agent, "agent", 1024),
-      task: boundedText(task, "task"),
-      context: "fresh",
-      cwd: path.resolve(boundedText(cwd, "cwd", 32 * 1024)),
-      ...(model ? { model } : {}),
-      ...(THINKING.has(thinking) ? { thinking } : {}),
-      timeoutMs: timeoutMs ?? this.defaultTimeoutMs,
-      turnBudget: { maxTurns: maximumTurns },
-      toolBudget: { hard: maximumToolCalls, block: [...new Set(blockedTools)].sort() },
-      skill: false,
-      artifacts: false,
-      result,
-    };
-    const attemptKey = keyOf(request);
-    let timer;
+    let request;
+    let attempt;
     let abort;
+    let timer;
     try {
+      this.requireBudget();
+      if (signal?.aborted) fail("DIRECT_CHILD_CANCELLED", "delegation cancelled before dispatch");
+      const reservedTools = [...this.pending.values()].reduce((sum, entry) => sum + Math.max(0, entry.request.toolBudget.hard - entry.toolCalls), 0);
+      const availableTools = this.budget.maxTotalToolCalls - this.used.toolCalls - reservedTools;
+      if (availableTools <= 0) fail("DIRECT_CHILD_BUDGET_RESERVED", "remaining delegated tool calls are reserved by active children");
+      request = {
+        requestId: this.idFactory(),
+        ownerRunId: boundedText(ownerRunId, "ownerRunId", 256),
+        nodeId: boundedText(nodeId, "nodeId", 256),
+        agent: boundedText(agent, "agent", 1024),
+        task: boundedText(task, "task"),
+        context: "fresh",
+        cwd: path.resolve(boundedText(cwd, "cwd", 32 * 1024)),
+        ...(model ? { model } : {}),
+        ...(THINKING.has(thinking) ? { thinking } : {}),
+        timeoutMs: Math.max(1, Math.min(timeoutMs ?? this.defaultTimeoutMs, this.deadline - Date.now())),
+        turnBudget: { maxTurns: Math.min(maximumTurns, this.budget.maxTurnsPerChild), graceTurns: 0 },
+        toolBudget: { hard: Math.min(maximumToolCalls, this.budget.maxToolCallsPerChild, availableTools), block: [...new Set(blockedTools)].sort() },
+        skill: false,
+        artifacts: false,
+        result,
+      };
       const response = await new Promise((resolve, reject) => {
-        this.pending.set(attemptKey, { request, label, resolve, reject, status: "queued" });
+        attempt = { request, label, resolve, reject, status: "queued", tokens: 0, toolCalls: 0, terminalReceived: false, metered: false };
+        this.pending.set(keyOf(request), attempt);
         this.onStatus(label, "queued", request);
         abort = () => {
           this.transport.emit(DIRECT_DELEGATION_EVENTS.cancel, { requestId: request.requestId, ownerRunId: request.ownerRunId, nodeId: request.nodeId });
+          reject(Object.assign(new Error("delegation cancelled"), { code: "DIRECT_CHILD_CANCELLED" }));
         };
         signal?.addEventListener("abort", abort, { once: true });
         timer = setTimeout(() => {
-          abort();
           reject(Object.assign(new Error("delegated child exceeded its OMP wall-time limit"), { code: "DIRECT_CHILD_TIMEOUT" }));
+          this.transport.emit(DIRECT_DELEGATION_EVENTS.cancel, { requestId: request.requestId, ownerRunId: request.ownerRunId, nodeId: request.nodeId });
         }, request.timeoutMs);
         timer.unref?.();
-        this.transport.emit(DIRECT_DELEGATION_EVENTS.request, request);
+        if (signal?.aborted) abort();
+        else {
+          attempt.sent = true;
+          this.transport.emit(DIRECT_DELEGATION_EVENTS.request, request);
+        }
       });
+      const usage = normalizeUsage(response.usage);
+      if (usage) {
+        attempt.metered = true;
+        this.observe(attempt, usage.input + usage.output + usage.cacheRead + usage.cacheWrite, usage.toolCalls);
+        this.used.costUsd += usage.cost;
+      }
       if (response.status !== "completed" || response.exitCode !== 0) fail(terminalError(response), `delegated ${label} did not complete`);
+      if (!usage) fail("DIRECT_CHILD_USAGE_UNAVAILABLE", "child usage is missing or invalid; further delegation is blocked");
       const resultValue = response.result?.kind === "structured" ? response.result.value : response.result?.text;
-      const normalized = Object.freeze({ status: "completed", agent, result: boundedResult(resultValue), usage: normalizeUsage(response.usage), model: response.model ?? null, thinking: response.thinking ?? null });
+      const encoded = JSON.stringify(resultValue);
+      this.used.resultBytes += encoded === undefined ? 0 : Buffer.byteLength(encoded, "utf8");
+      this.requireBudget();
+      const normalized = Object.freeze({ status: "completed", agent, result: boundedResult(resultValue, Math.min(MAX_RESULT_BYTES, this.budget.maxOutputBytesPerChild)), usage, model: response.model ?? null, thinking: response.thinking ?? null });
       this.onStatus(label, "completed", normalized);
       return normalized;
     } catch (error) {
+      if (attempt?.sent && !attempt.metered) this.stop(Object.assign(new Error("child usage could not be reconciled; restart OMP before further delegation"), { code: "DIRECT_CHILD_USAGE_UNAVAILABLE" }));
+      else if (attempt) { try { this.requireBudget(); } catch (budgetError) { this.stop(budgetError); } }
       this.onStatus(label, error?.code === "DIRECT_CHILD_CANCELLED" ? "cancelled" : "failed", { code: error?.code ?? "DIRECT_CHILD_FAILED" });
       throw error;
     } finally {
       clearTimeout(timer);
       signal?.removeEventListener?.("abort", abort);
-      this.pending.delete(attemptKey);
+      if (request) this.pending.delete(keyOf(request));
+      if (!attempt?.sent) this.total -= 1;
       this.release();
     }
   }
@@ -270,12 +365,16 @@ class DirectDelegationClient {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
+    clearTimeout(this.deadlineTimer);
     this.cancelAll();
     for (const attempt of this.pending.values()) {
       attempt.reject(Object.assign(new Error("direct orchestrator disposed"), { code: "DIRECT_ORCHESTRATOR_DISPOSED" }));
     }
     for (const unsubscribe of this.unsubscribers.splice(0)) unsubscribe();
-    for (const waiter of this.waiters.splice(0)) waiter.reject(Object.assign(new Error("direct orchestrator disposed"), { code: "DIRECT_ORCHESTRATOR_DISPOSED" }));
+    for (const waiter of this.waiters.splice(0)) {
+      waiter.signal?.removeEventListener("abort", waiter.abort);
+      waiter.reject(Object.assign(new Error("direct orchestrator disposed"), { code: "DIRECT_ORCHESTRATOR_DISPOSED" }));
+    }
   }
 }
 
@@ -289,7 +388,7 @@ export class DirectCodingOrchestrator {
     this.now = now;
     this.webAuthorizer = webAuthorizer;
     this.webEnabled = webEnabled;
-    this.budget = structuredClone(budget);
+    this.budget = { ...DEFAULT_BUDGET, ...structuredClone(budget) };
     this.verifyWriter = verifyWriter;
     this.cloneService = {
       create: cloneService.create ?? createManagedClone,
@@ -302,9 +401,7 @@ export class DirectCodingOrchestrator {
     this.disposed = false;
     this.client = new DirectDelegationClient({
       transport,
-      maximumConcurrency: Math.min(2, budget.maxConcurrency ?? 2),
-      maximumChildren: Math.min(8, budget.maxChildren ?? 8),
-      defaultTimeoutMs: Math.min(1_800_000, (budget.maxWallSeconds ?? 1800) * 1000),
+      budget: this.budget,
       idFactory,
       onStatus: (label, status, data) => {
         const prior = this.children.get(label) ?? { label, agent: data?.agent ?? null };
@@ -336,6 +433,7 @@ export class DirectCodingOrchestrator {
       maximumChildren: this.client.maximumChildren,
       totalChildren: this.client.total,
       writerUsed: this.writerUsed,
+      budget: this.client.budgetSnapshot(),
       children: Object.freeze([...this.children.values()].map((entry) => Object.freeze({ ...entry }))),
     });
   }
@@ -344,6 +442,7 @@ export class DirectCodingOrchestrator {
     if (!READ_ONLY_AGENT_SET.has(agent)) fail("DIRECT_AGENT_NOT_ALLOWED", `read-only delegation does not allow ${agent}`);
     const ctx = this.getContext();
     if (!ctx) fail("DIRECT_SESSION_CONTEXT_UNAVAILABLE", "direct session context is unavailable");
+    this.client.requireBudget();
     const childLabel = label ? boundedText(label, "label", 128) : `${agent.replace(/^omp-/u, "")}-${this.client.total + 1}`;
     const web = WEB_AGENTS.has(agent);
     const ownerRunId = `direct-${this.idFactory()}`;
@@ -388,6 +487,7 @@ export class DirectCodingOrchestrator {
     if (!scopeIsSubset(writerScope, approvedScope ?? [])) fail("DIRECT_WRITER_SCOPE_EXPANSION", "writer scope exceeds the approved coding scope");
     const overlap = writerScopeOverlapsDirtyPaths(baseline, writerScope);
     if (overlap.length > 0) return Object.freeze({ status: "MAIN_AGENT_FALLBACK_DIRTY_OVERLAP", overlap, message: "The main Agent must implement this scope in the original dirty worktree." });
+    this.client.requireBudget();
     this.writerActive = true;
     this.writerUsed = true;
     const runId = `direct-writer-${this.idFactory()}`;
@@ -464,6 +564,7 @@ export class DirectCodingOrchestrator {
         });
       }
       if (signal?.aborted || !await unchanged()) return blocked("WRITER_VERIFIED_PATCH_DRIFT", verified);
+      this.client.requireBudget();
       const applied = await this.cloneService.apply({ patch, repositoryRoot: ctx.cwd, scope: writerScope, baseline });
       return Object.freeze({
         status: "WRITER_PATCH_APPLIED_REQUIRES_REAL_WORKSPACE_VERIFICATION",

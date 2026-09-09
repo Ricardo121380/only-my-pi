@@ -125,6 +125,27 @@ when its base, scope, paths, digest, dry-run and current worktree still match;
 verification then runs again in the real worktree. OMP does not stage or commit
 unless the user explicitly asks for a commit.
 
+### Child budgets in the M13 development source
+
+`/agents` shows cumulative child tokens, reported cost, tool calls, returned
+result bytes and whether delegation is stopped. The resolved daily budget
+applies to automatic children in that OMP process; main Agent usage is separate.
+Lower configured turn/tool limits are honored, concurrent children reserve
+distinct tool-call allowances, and `maxDepth=0` disables delegation. The shared
+wall-time deadline starts at the first child admission and includes time between
+delegations; starting another child does not reset it.
+
+Reaching a cumulative limit cancels active children and prevents further
+delegation or writer integration. Missing or invalid usage, or cancellation
+without a terminal usage report, also stops delegation until a new OMP process.
+Completed or failed child usage remains charged. These controls use reported
+usage: token progress can arrive late, cache usage and cost are reconciled at
+termination, and running model calls can exceed the configured amount before
+OMP can stop them. They are not exact billing caps. Byte limits apply to returned
+JSON results, not all child logs; Project Gate commands keep their own timeouts.
+The installed M12 artifact remains unchanged until separately built, installed
+and accepted.
+
 ## Management and diagnosis
 
 The canonical management namespace is `omp admin`:

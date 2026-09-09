@@ -19,8 +19,34 @@ not modified the installed M12 artifact, GitHub workflows or historical evidence
 
 Focused validation covers orchestration, composer wiring, real argv execution
 in a temporary clone, failure/denial/cancellation, manifest drift, and patch
-drift. Full protected acceptance, installation and the separate budget audit
-remain future work; the M12 completion claims below apply only to M12 source.
+drift. Full protected acceptance and installation remain future work; the M12
+completion claims below apply only to M12 source.
+
+### M13 source-only follow-up: direct child budgets
+
+The direct delegation path now honors lower configured turn and tool-call
+limits, disallows delegation when `maxDepth=0`, reserves tool-call allowances
+across concurrent children, and shares one deadline from the first child
+admission for the lifetime of the direct orchestrator. Reported tokens (including
+cache usage), cost and tool calls accumulate across children, including failed
+terminals. Returned JSON result bytes are also bounded per child and cumulatively.
+Repeated progress/terminal events do not double-charge usage. Exhaustion cancels
+active children, rejects queued/new
+delegation and blocks writer integration. Unreconciled usage after cancellation,
+timeout or missing/invalid terminal usage stops further delegation for that
+process instead of treating unknown usage as zero. `/agents` exposes this state.
+
+The audit distinguishes these child budgets from the main Pi Agent, which is
+not included and receives no new spending ceiling in this change. The pinned
+pi-subagents delegation API reports tokens during progress and cost only at
+termination; it does not accept token/cost limits in delegation requests. These
+are observed-usage stop conditions, not exact provider billing caps: in-flight
+model calls may overshoot, and cache usage is reconciled at termination. Output
+limits cover returned results, not all child tool logs. Project Gate commands
+retain their own timeouts; the shared child deadline is rechecked before patch
+integration. This follow-up changes neither the installed artifact nor historical
+acceptance evidence. Focused deterministic tests cover the admission, accounting,
+concurrency, cancellation, deadline and writer-integration boundaries.
 
 M12 changes the product entry from `pi` followed by `/omp run` into a direct
 terminal coding Agent started with `omp`. The implementation reuses the
