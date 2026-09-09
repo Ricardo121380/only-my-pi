@@ -6,6 +6,22 @@ kernel merged to `main`: **2026-08-27** · Pi **0.84.3** · Node **25.8.0** · m
 
 ## Active milestone — M12 Direct Terminal Coding Agent Closure
 
+### M13 source-only follow-up: writer verification admission
+
+The `codex/m13-writer-verification` development branch tightens automatic writer
+integration with a runtime-owned Project Gate verifier. Real zero exit codes
+from every explicitly confirmed clone gate are required before fresh review;
+missing, failed, killed or mismatched results cannot be replaced by model prose.
+Patch identity is rechecked after testing and after review. Missing manifests
+fail closed with a retained patch. Parent-worktree testing remains a required
+follow-up, not an automatically completed claim. This source-only change has
+not modified the installed M12 artifact, GitHub workflows or historical evidence.
+
+Focused validation covers orchestration, composer wiring, real argv execution
+in a temporary clone, failure/denial/cancellation, manifest drift, and patch
+drift. Full protected acceptance, installation and the separate budget audit
+remain future work; the M12 completion claims below apply only to M12 source.
+
 M12 changes the product entry from `pi` followed by `/omp run` into a direct
 terminal coding Agent started with `omp`. The implementation reuses the
 controlled Pi TUI, model registry, sessions, signals and tools; it does not

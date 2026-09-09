@@ -61,6 +61,31 @@ complete Pi's normal Provider setup. only-my-pi stores only the recent
 
 ## Planning and coding access
 
+### Source-only M13 writer verification hardening
+
+The M13 development source adds a runtime-owned check before automatic writer
+integration. Both the trusted project and its managed clone must contain the
+same `.pi/only-my-pi-gates.json` manifest at the approved base HEAD. OMP shows
+the exact executable, argv, working directory, environment and timeout for
+confirmation, then runs every manifest gate in the clone. This is a process
+allowlist, not an OS sandbox or network restriction; decline if those project
+commands are not trusted. Model-provided verification strings are not executed.
+
+Missing manifests, denied approval, failed/killed tests or a changed patch block
+integration and retain the original patch for review. A fresh reviewer still
+must pass, and OMP checks patch freshness again before applying it. Runtime
+receipts bind the base, clone-root digest, manifest and patch, and retain only
+exit status and output digests, not raw test output. Generated unignored files
+that alter the captured patch also block integration.
+
+After integration, the main Agent must still run the approved checks in the
+real worktree before claiming completion; clone PASS is not real-worktree PASS.
+The installed M12 artifact does not gain this behavior until a new artifact is
+built, installed and separately accepted. Existing M12 evidence stays bound to
+its original source.
+
+### Session approval
+
 Every interactive process begins in `Inspect`. Read, search, LSP, bounded
 read-only subagents and separately approved Web research are available; edit,
 write, bash, project gates and a writer child are not.

@@ -280,7 +280,7 @@ class DirectDelegationClient {
 }
 
 export class DirectCodingOrchestrator {
-  constructor({ transport, configRoot, getContext, budget = {}, webAuthorizer = null, webEnabled = false, cloneService = {}, idFactory = randomUUID, now = () => new Date().toISOString() } = {}) {
+  constructor({ transport, configRoot, getContext, budget = {}, webAuthorizer = null, webEnabled = false, verifyWriter = null, cloneService = {}, idFactory = randomUUID, now = () => new Date().toISOString() } = {}) {
     if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("DirectCodingOrchestrator requires absolute configRoot");
     if (typeof getContext !== "function") throw new TypeError("DirectCodingOrchestrator requires getContext()");
     this.configRoot = path.resolve(configRoot);
@@ -290,6 +290,7 @@ export class DirectCodingOrchestrator {
     this.webAuthorizer = webAuthorizer;
     this.webEnabled = webEnabled;
     this.budget = structuredClone(budget);
+    this.verifyWriter = verifyWriter;
     this.cloneService = {
       create: cloneService.create ?? createManagedClone,
       capture: cloneService.capture ?? captureWriterPatch,
@@ -403,6 +404,7 @@ export class DirectCodingOrchestrator {
         `Approved plan:\n${boundedText(plan, "plan", 32_768)}`,
         `Exact scope: ${JSON.stringify(writerScope)}`,
         `Requested verification: ${JSON.stringify(Array.isArray(verification) ? verification.slice(0, 16) : [])}`,
+        "Your verification summary is advisory. Automatic integration requires runtime-executed, user-approved project gates; do not modify the gate manifest to obtain a passing result.",
         "Do not commit, push, delegate, use Web, modify .git, or write outside the clone. Return the exact structured result.",
       ].join("\n\n");
       const writer = await this.client.execute({
@@ -421,16 +423,28 @@ export class DirectCodingOrchestrator {
         signal,
       });
       if (writer.result?.status !== "completed") return Object.freeze({ status: "WRITER_BLOCKED", summary: writer.result?.summary ?? "Writer reported a blocked implementation." });
-      const patch = await this.cloneService.capture({ cloneRoot: managed.cloneRoot, baseCommit: baseline.head, scope: writerScope, patchRoot: managed.patchRoot, runId, nodeId: "writer-1" });
+      const capture = { cloneRoot: managed.cloneRoot, baseCommit: baseline.head, scope: writerScope, patchRoot: managed.patchRoot, runId, nodeId: "writer-1" };
+      const patch = await this.cloneService.capture(capture);
       if (patch.status === "NO_CHANGES") return Object.freeze({ status: "WRITER_NO_CHANGES", summary: writer.result.summary, usage: writer.usage });
       const reported = [...new Set((writer.result.changedPaths ?? []).map((entry) => normalizeRelativePath(entry, "writer reported path")))].sort();
       if (JSON.stringify(reported) !== JSON.stringify([...patch.changedPaths].sort())) fail("DIRECT_WRITER_REPORT_DRIFT", "writer-reported paths do not match the captured patch");
+      const blocked = (code, receipt = null) => Object.freeze({ status: "WRITER_VERIFICATION_BLOCKED", code, patchDigest: patch.sha256, artifact: relativeArtifact(this.configRoot, patch.patchPath), verificationReceipt: receipt });
+      if (!this.verifyWriter) return blocked("WRITER_VERIFIER_UNAVAILABLE");
+      const verified = await this.verifyWriter({ cloneRoot: managed.cloneRoot, patch, requestedVerification: verification, signal });
+      if (verified?.status !== "PASS" || verified.patchDigest !== patch.sha256 || verified.baseCommit !== baseline.head || !Array.isArray(verified.results) || verified.results.length === 0 || verified.results.some((result) => result.status !== "PASS" || result.exitCode !== 0 || result.killed !== false)) {
+        return blocked(verified?.code ?? "WRITER_TESTS_NOT_VERIFIED", verified);
+      }
+      const unchanged = async () => {
+        const current = await this.cloneService.capture({ ...capture, nodeId: "verification-check" });
+        return current.status === "READY" && current.sha256 === patch.sha256 && JSON.stringify(current.changedPaths) === JSON.stringify(patch.changedPaths);
+      };
+      if (signal?.aborted || !await unchanged()) return blocked("WRITER_VERIFIED_PATCH_DRIFT", verified);
       const review = await this.client.execute({
         ownerRunId: runId,
         nodeId: "reviewer-1",
         label: "reviewer-1",
         agent: "omp-reviewer",
-        task: `Freshly review the uncommitted writer changes in this clone against the approved task and scope. Do not modify files.\n\nTask: ${task}\n\nScope: ${JSON.stringify(writerScope)}\n\nPatch digest: ${patch.sha256}`,
+        task: `Freshly review the uncommitted writer changes in this clone against the approved task and scope. Do not modify files.\n\nTask: ${task}\n\nScope: ${JSON.stringify(writerScope)}\n\nPatch digest: ${patch.sha256}\n\nRuntime verification receipt: ${JSON.stringify(verified)}`,
         cwd: managed.cloneRoot,
         model: modelReference(ctx.model),
         thinking: ctx.thinkingLevel,
@@ -449,6 +463,7 @@ export class DirectCodingOrchestrator {
           artifact: relativeArtifact(this.configRoot, patch.patchPath),
         });
       }
+      if (signal?.aborted || !await unchanged()) return blocked("WRITER_VERIFIED_PATCH_DRIFT", verified);
       const applied = await this.cloneService.apply({ patch, repositoryRoot: ctx.cwd, scope: writerScope, baseline });
       return Object.freeze({
         status: "WRITER_PATCH_APPLIED_REQUIRES_REAL_WORKSPACE_VERIFICATION",
@@ -456,6 +471,7 @@ export class DirectCodingOrchestrator {
         changedPaths: applied.changedPaths,
         summary: writer.result.summary,
         cloneVerification: writer.result.verification,
+        verificationReceipt: verified,
         reviewer: { verdict: review.result.verdict, findings: review.result.findings, unverified: review.result.unverified },
         requiredVerification: Array.isArray(verification) ? verification.slice(0, 16) : [],
       });

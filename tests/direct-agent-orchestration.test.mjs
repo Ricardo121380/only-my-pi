@@ -12,6 +12,7 @@ import {
 } from "../packages/direct-agent/orchestration.mjs";
 
 const HEAD = "a".repeat(40);
+const verifiedPatch = async ({ patch }) => ({ status: "PASS", patchDigest: patch.sha256, baseCommit: HEAD, results: [{ status: "PASS", exitCode: 0, killed: false }] });
 const USAGE = Object.freeze({ input: 10, output: 5, cacheRead: 0, cacheWrite: 0, cost: 0.001, turns: 1, toolCalls: 1, durationMs: 10 });
 
 function makeTransport({ responseFor } = {}) {
@@ -214,6 +215,7 @@ test("managed writer requires exact captured paths and a fresh passing review be
     configRoot: fixture.configRoot,
     getContext: () => fixture.ctx,
     idFactory: fixture.idFactory,
+    verifyWriter: verifiedPatch,
     cloneService: {
       async create() { calls.push("create"); return { cloneRoot: path.join(fixture.configRoot, "clone"), patchRoot: path.join(fixture.configRoot, "artifacts") }; },
       async capture() { calls.push("capture"); return patch; },
@@ -230,7 +232,7 @@ test("managed writer requires exact captured paths and a fresh passing review be
     baseline: { status: "GIT_REPOSITORY", head: HEAD, paths: [] },
   });
   assert.equal(result.status, "WRITER_PATCH_APPLIED_REQUIRES_REAL_WORKSPACE_VERIFICATION");
-  assert.deepEqual(calls, ["create", "capture", "apply"]);
+  assert.deepEqual(calls, ["create", "capture", "capture", "capture", "apply"]);
   assert.deepEqual(transport.requests.map((request) => request.agent), ["omp-implementer", "omp-reviewer"]);
   assert.ok(transport.requests[0].toolBudget.block.includes("subagent"));
   assert.ok(transport.requests[1].toolBudget.block.includes("edit"));
@@ -258,6 +260,7 @@ test("fresh reviewer failure preserves the patch artifact without applying it", 
     configRoot: fixture.configRoot,
     getContext: () => fixture.ctx,
     idFactory: fixture.idFactory,
+    verifyWriter: verifiedPatch,
     cloneService: {
       async create() { return { cloneRoot: path.join(fixture.configRoot, "clone"), patchRoot: path.dirname(patchPath) }; },
       async capture() { return { status: "READY", sha256: `sha256:${"c".repeat(64)}`, changedPaths: ["src/fix.ts"], patchPath }; },
@@ -276,4 +279,43 @@ test("fresh reviewer failure preserves the patch artifact without applying it", 
   assert.equal(applied, false);
   assert.deepEqual(result.findings, ["regression"]);
   assert.equal(result.artifact, "only-my-pi/runs/run/artifacts/patch.diff");
+});
+
+test("writer reports cannot bypass runtime verification or post-review patch freshness", async (t) => {
+  for (const scenario of ["missing", "failed", "empty", "killed", "mismatch", "throws", "test-drift", "review-drift", "cancelled"]) {
+    await t.test(scenario, async (t) => {
+      const fixture = await setup(t);
+      const abort = new AbortController();
+      let captures = 0;
+      let applied = false;
+      const transport = makeTransport({ responseFor: (request) => ({ kind: "structured", value: request.agent === "omp-implementer"
+        ? { status: "completed", changedPaths: ["src/fix.ts"], summary: "all tests passed", verification: ["PASS"], followUp: [] }
+        : { verdict: "pass", findings: [], tested: ["PASS"], unverified: [] } }) });
+      const patch = { status: "READY", sha256: `sha256:${"b".repeat(64)}`, changedPaths: ["src/fix.ts"], patchPath: path.join(fixture.configRoot, "patch.diff") };
+      const verifyWriter = scenario === "missing" ? null : async (input) => {
+        if (scenario === "throws") throw new Error("verification unavailable");
+        const result = await verifiedPatch(input);
+        if (scenario === "failed") result.results[0].exitCode = 1;
+        if (scenario === "empty") result.results = [];
+        if (scenario === "killed") result.results[0].killed = true;
+        if (scenario === "mismatch") result.patchDigest = `sha256:${"c".repeat(64)}`;
+        if (scenario === "cancelled") abort.abort();
+        return result;
+      };
+      const orchestrator = createDirectCodingOrchestrator({ transport, configRoot: fixture.configRoot, getContext: () => fixture.ctx, verifyWriter, cloneService: {
+        async create() { return { cloneRoot: fixture.projectRoot, patchRoot: fixture.configRoot }; },
+        async capture() {
+          captures++;
+          if ((scenario === "test-drift" && captures === 2) || (scenario === "review-drift" && captures === 3)) return { ...patch, sha256: `sha256:${"c".repeat(64)}` };
+          return patch;
+        },
+        async apply() { applied = true; },
+      } });
+      t.after(() => orchestrator.dispose());
+      const run = orchestrator.delegateWriter({ task: "fix", plan: "fix and test", scope: ["src/**"], approvedScope: ["src/**"], baseline: { status: "GIT_REPOSITORY", head: HEAD, paths: [] }, signal: abort.signal });
+      if (scenario === "throws") await assert.rejects(run, /verification unavailable/u);
+      else assert.equal((await run).status, "WRITER_VERIFICATION_BLOCKED");
+      assert.equal(applied, false);
+    });
+  }
 });

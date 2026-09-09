@@ -9,6 +9,7 @@ import { resolveBoundPackageRoot } from "../../bootstrap/runtime-package-binding
 import { createBatchSwarmControlService } from "../../control-service/batch-swarm-service.mjs";
 import { createDailyConfigService, selectRoleModel } from "../../daily-config/index.mjs";
 import { createDirectCodingOrchestrator } from "../../direct-agent/orchestration.mjs";
+import { createWriterVerification } from "../../direct-agent/writer-verification.mjs";
 import { createWorkflowRegistry } from "../../workflow-core/index.mjs";
 import { createNodeExecAdapter, createProjectGateService } from "../../project-gates/index.mjs";
 import { createManagedCoordinator, createRecordedGoalController, createRecordedUltraRouter, createRunManagementService, createRunRecordStore } from "../../run-management/index.mjs";
@@ -916,6 +917,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
         budget: configuration.budget,
         webAuthorizer,
         webEnabled: configuration.hardOverlays.includes("web"),
+        verifyWriter: createWriterVerification({ configRoot, getContext }),
       })
       : null;
     ceilingHandle = registerCeiling({
