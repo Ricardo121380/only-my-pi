@@ -36,7 +36,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # M10 P1 verifies the preserved M9 source/evidence/merge chain.
+          # Public-baseline checks verify the preserved source/evidence chain.
           fetch-depth: 0
           persist-credentials: false
 
@@ -73,8 +73,8 @@ jobs:
       - name: Execute the M9 upstream compatibility deterministic gates
         run: npm run verify:m9:run
 
-      - name: Execute the M10 promotion deterministic gates
-        run: npm run verify:m10:run
+      - name: Verify the sanitized public-baseline authority
+        run: npm run verify:public-baseline:run
 
       - name: Execute the M11 Public Preview deterministic gates
         run: npm run verify:m11:run

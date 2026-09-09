@@ -19,6 +19,9 @@ CI has already passed.
 
 CI now includes the current Agent C1-C10 gates on the two pinned Node versions,
 alongside the existing release gates and standard macOS arm64 clean-home job.
+Public-baseline verification replaces the retired M10 automatic protected
+evidence import, whose original private-history commits are intentionally
+absent from a clean public clone. Historical M10 tests remain in the full suite.
 The retained M11 distribution workflow filenames now target `0.3.0-preview.1`
 and require direct C11/C12 evidence. Legacy Q11 evidence cannot authorize the
 current release. Failure cleanup is limited to tags created by that run.

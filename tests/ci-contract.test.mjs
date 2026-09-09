@@ -16,6 +16,8 @@ test("CI executes the same manifest-backed verify runner without credentials", (
   assert.match(workflow, /npm run verify -- --run/);
   assert.match(workflow, /npm run verify:m8:run/u);
   assert.match(workflow, /npm run verify:m9:run/u);
+  assert.match(workflow, /npm run verify:public-baseline:run/u);
+  assert.doesNotMatch(workflow, /npm run verify:m10:run/u, "retired private-history promotion cannot authorize public CI");
   assert.match(workflow, /npm run verify:m11:run/u);
   assert.match(workflow, /npm run verify:m12:run/u);
   assert.match(workflow, /cancel-in-progress: true/u);
@@ -44,9 +46,10 @@ test("CI executes the same manifest-backed verify runner without credentials", (
   const v2Runner = workflow.indexOf("npm run verify:subagents:run");
   const m8Runner = workflow.indexOf("npm run verify:m8:run");
   const m9Runner = workflow.indexOf("npm run verify:m9:run");
+  const publicBaselineRunner = workflow.indexOf("npm run verify:public-baseline:run");
   const m11Runner = workflow.indexOf("npm run verify:m11:run");
   const m12Runner = workflow.indexOf("npm run verify:m12:run");
-  assert.ok(v1Runner >= 0 && receiptCleanup > v1Runner && v2Runner > receiptCleanup && m8Runner > v2Runner && m9Runner > m8Runner && m11Runner > m9Runner && m12Runner > m11Runner);
+  assert.ok(v1Runner >= 0 && receiptCleanup > v1Runner && v2Runner > receiptCleanup && m8Runner > v2Runner && m9Runner > m8Runner && publicBaselineRunner > m9Runner && m11Runner > publicBaselineRunner && m12Runner > m11Runner);
   assert.equal((workflow.match(/uses: actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1/gu) ?? []).length, 2);
   assert.equal((workflow.match(/uses: actions\/setup-node@820762786026740c76f36085b0efc47a31fe5020/gu) ?? []).length, 2);
 });
