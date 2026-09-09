@@ -6,7 +6,58 @@ kernel merged to `main`: **2026-08-27** · Pi **0.84.3** · Node **25.8.0** · m
 
 ## Active milestone — M12 Direct Terminal Coding Agent Closure
 
-### M13 source-only follow-up: writer verification admission
+### Installed M13 follow-up — 2026-09-09
+
+The writer-verification and direct-child-budget follow-up is now installed and
+has completed **C1-C12 / 12 PASS** on the acceptance host:
+
+- Source: `15c40a23c6c819e87ad81f4141b6f1fdd495af08`.
+- Direct evidence-only child: `f7346b3996b2f0947f8bd221da437c66240b03fa`.
+- [Protected evidence](../verification/protected/2026-09-09-m13-cpar-installed-coding.json):
+  eight C11 assertions and eighteen C12 assertions.
+- [Completion receipt](../verification/receipts/2026-09-09-m13-local-closure.json).
+
+The active stack is
+`sha256:b195234e0cf2b73a8564098e9a9ad1823831951d88c5f8e5f5711a78d8821c39`,
+generation is
+`sha256:d0b349d69efd6a39b8b60603dbe7299441489407dfbb05ec5cf483e1f94eaaf3`,
+and OMP artifact is
+`sha256:f13c03bb9777d885741b554009689df2c5b5ff19d1e74f1783676666d9d2a782`.
+Final doctor is **PASS / MATCH**. Node `24.19.0`, Pi `0.84.3`, pi-subagents
+`0.57.0`, all nine external/user-owned packages, and system runtime identities
+are preserved. No Pi processes or incomplete stack transactions remain.
+
+C11 installed the candidate, exercised the no-model picker and Inspect state,
+rolled back to the original M12 stack, and reapplied the same candidate.
+Settings, stack state, package-lock and current/LKG stack pointers matched the
+baseline exactly. Restored CLI links resolve to the same binaries even though
+their text is canonicalized; the Harness records a new rollback transaction and
+time while preserving its generation, manifest and settings bindings.
+
+C12 used the real installed `omp` entry for edits/tests, grant reuse, continued
+sessions and renewed approval, complex planning, parallel scouts, managed
+writing, runtime clone gates, fresh review and real-worktree verification.
+Dirty overlap preserved the user's existing comment without starting a child.
+A defective signed-addition patch passed a deliberately incomplete positive-only
+gate but was rejected by the fresh reviewer. Web denial started no child; a
+separately approved fetch then produced the requested note. Headless writer
+denial, project-external write denial and cancellation with verified child
+process exit also passed.
+
+The matrix records 369,347 directly reported tokens, 99 terminal messages with
+usage fields (including reported zero-usage errors), 107 tool calls and 2,554
+seconds between recorded events. CPAR fixed-subscription variable cost remains
+zero under the user's existing billing confirmation. Intermittent
+`CredentialUnavailable` / `EgressUnavailable` 503 responses and the first cancel
+trial's turn-limit termination remain in private diagnostics; bounded retries
+and a precisely timed cancellation established the passing assertions. No
+unobserved usage is estimated, and continuous provider availability is not claimed.
+
+These results are separate from earlier isolated checks and historical M12
+evidence. Publication remains **HOLD_PUBLICATION**; hosted CI, push, tag and
+release were not performed.
+
+### M13 follow-up: writer verification admission
 
 The `codex/m13-writer-verification` development branch tightens automatic writer
 integration with a runtime-owned Project Gate verifier. Real zero exit codes
@@ -14,15 +65,16 @@ from every explicitly confirmed clone gate are required before fresh review;
 missing, failed, killed or mismatched results cannot be replaced by model prose.
 Patch identity is rechecked after testing and after review. Missing manifests
 fail closed with a retained patch. Parent-worktree testing remains a required
-follow-up, not an automatically completed claim. This source-only change has
-not modified the installed M12 artifact, GitHub workflows or historical evidence.
+follow-up, not an automatically completed claim. This behavior is included in
+the separately accepted installation above; historical evidence remains bound
+to its original source.
 
 Focused validation covers orchestration, composer wiring, real argv execution
 in a temporary clone, failure/denial/cancellation, manifest drift, and patch
-drift. Full protected acceptance and installation remain future work; the M12
-completion claims below apply only to M12 source.
+drift. Protected acceptance and installation are recorded above; the historical
+M12 completion claims below apply only to the original M12 source.
 
-### M13 source-only follow-up: direct child budgets
+### M13 follow-up: direct child budgets
 
 The direct delegation path now honors lower configured turn and tool-call
 limits, disallows delegation when `maxDepth=0`, reserves tool-call allowances
@@ -47,9 +99,10 @@ are observed-usage stop conditions, not exact provider billing caps: in-flight
 model calls may overshoot, and cache usage is reconciled at termination. Output
 limits cover returned results, not all child tool logs. Project Gate commands
 retain their own timeouts; the shared child deadline is rechecked before patch
-integration. This follow-up changes neither the installed artifact nor historical
-acceptance evidence. Focused deterministic tests cover the admission, accounting,
-concurrency, cancellation, deadline and writer-integration boundaries.
+integration. The separately accepted installation includes this follow-up;
+historical acceptance evidence is unchanged. Focused deterministic tests cover
+the admission, accounting, concurrency, cancellation, deadline and
+writer-integration boundaries.
 
 M12 changes the product entry from `pi` followed by `/omp run` into a direct
 terminal coding Agent started with `omp`. The implementation reuses the
@@ -96,15 +149,16 @@ The accepted chain is:
   eight C11 assertions and eighteen C12 assertions.
 - [Completion gate report](../verification/receipts/2026-09-09-m12-local-closure.json).
 
-The installed artifact uses the accepted source, embedded Node `24.19.0`,
-controlled Pi `0.84.3` and pi-subagents `0.57.0`. Its stack is
+At the original M12 closure, the installed artifact used the accepted source,
+embedded Node `24.19.0`, controlled Pi `0.84.3` and pi-subagents `0.57.0`.
+Its stack was
 `sha256:8612df80bca713bd2139d9f6a27f6bd4b5855ccb18cc341f73158c7c61a6d637`,
-artifact is
+artifact was
 `sha256:2438ef7bf9f541f8b1f5aa9e39fc4b4bf67ab20174e9f51e17967a15e6d00849`,
-and generation is
+and generation was
 `sha256:9b9d0bf4c4dc3eb695e6dc4b99d4dbbd7d60f11f6872818ca96f1709725db67d`.
-Final status is **INSTALLED**, doctor is **PASS / MATCH**, all nine packages
-remain `external/owner=user`, and incomplete transactions are empty.
+That closure finished **INSTALLED**, with doctor **PASS / MATCH**, all nine
+packages `external/owner=user`, and no incomplete transactions.
 
 Protected runs used the existing CPAR `cpar-grok-build/grok-4.6` configuration.
 Real tests covered simple edits and tests, same-process grant reuse, resumed

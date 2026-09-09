@@ -6,8 +6,9 @@ tool host.
 
 ## Current availability
 
-M12 `0.3.0-preview.1` passed local C1-C12 acceptance on source `2d6efbd` and is
-installed on the acceptance host. Public distribution remains on hold pending
+The M13 follow-up to M12 `0.3.0-preview.1` passed local C1-C12 acceptance on source
+`15c40a2` and is installed on the acceptance host. Original M12 evidence remains
+bound to `2d6efbd`. Public distribution remains on hold pending
 hosted CI and the release workflow. There is no public `0.2.0-preview.1`
 Release, and the old installer URL must not be used.
 The checked-in `distribution/install.sh` is a future exact-version M12
@@ -28,7 +29,7 @@ npm run verify:m12
 import it still reports C11/C12 as `NOT_RUN_BY_POLICY`; deterministic tests
 cannot manufacture those results. The accepted source/evidence pair and all
 12 PASS results are recorded in the
-[local closure receipt](../verification/receipts/2026-09-09-m12-local-closure.json).
+[local closure receipt](../verification/receipts/2026-09-09-m13-local-closure.json).
 
 ## Daily terminal Agent
 
@@ -61,9 +62,9 @@ complete Pi's normal Provider setup. only-my-pi stores only the recent
 
 ## Planning and coding access
 
-### Source-only M13 writer verification hardening
+### M13 writer verification hardening
 
-The M13 development source adds a runtime-owned check before automatic writer
+The installed M13 follow-up adds a runtime-owned check before automatic writer
 integration. Both the trusted project and its managed clone must contain the
 same `.pi/only-my-pi-gates.json` manifest at the approved base HEAD. OMP shows
 the exact executable, argv, working directory, environment and timeout for
@@ -80,9 +81,8 @@ that alter the captured patch also block integration.
 
 After integration, the main Agent must still run the approved checks in the
 real worktree before claiming completion; clone PASS is not real-worktree PASS.
-The installed M12 artifact does not gain this behavior until a new artifact is
-built, installed and separately accepted. Existing M12 evidence stays bound to
-its original source.
+The separately built and accepted installation at source `15c40a2` includes
+this behavior. Existing M12 evidence stays bound to its original source.
 
 ### Session approval
 
@@ -125,7 +125,7 @@ when its base, scope, paths, digest, dry-run and current worktree still match;
 verification then runs again in the real worktree. OMP does not stage or commit
 unless the user explicitly asks for a commit.
 
-### Child budgets in the M13 development source
+### M13 child budgets
 
 `/agents` shows cumulative child tokens, reported cost, tool calls, returned
 result bytes and whether delegation is stopped. The resolved daily budget
@@ -147,8 +147,7 @@ usage: token progress can arrive late, cache usage and cost are reconciled at
 termination, and running model calls can exceed the configured amount before
 OMP can stop them. They are not exact billing caps. Byte limits apply to returned
 JSON results, not all child logs; Project Gate commands keep their own timeouts.
-The installed M12 artifact remains unchanged until separately built, installed
-and accepted.
+The separately accepted installation at source `15c40a2` includes these controls.
 
 ## Management and diagnosis
 
