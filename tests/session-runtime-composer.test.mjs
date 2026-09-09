@@ -163,8 +163,7 @@ test("direct session expands the same pi-subagents ceiling only for one managed 
   const child = await composer.directCodingOrchestrator.delegateReadOnly({ agent: "omp-explorer", task: "Map one bounded area." });
   assert.equal(child.status, "completed");
   assert.equal(requests.at(-1).agent, "omp-explorer");
-  assert.ok(requests.at(-1).toolBudget.block.includes("edit"));
-  assert.ok(requests.at(-1).toolBudget.block.includes("subagent"));
+  assert.equal(requests.at(-1).toolBudget.block, "*");
 });
 
 test("pi-subagents 0.57.0 composes the same Agent, BatchSwarm, Workflow, SwarmGoal, and Ultra read-only runtime", async (t) => {
