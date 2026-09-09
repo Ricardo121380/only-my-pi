@@ -84,10 +84,14 @@ test("Q10 admits only native macOS arm64, explicit run arguments and an external
   assert.deepEqual(parseM11MacosNoModelArgs(["--run", "--json"]), { json: true });
   assert.throws(() => parseM11MacosNoModelArgs(["--json"]), { code: "Q10_ARGUMENT_INVALID" });
   assert.throws(() => parseM11MacosNoModelArgs(["--run", "--run"]), { code: "Q10_ARGUMENT_INVALID" });
-  const platform = inspectM11MacosPlatform();
-  assert.equal(platform.os, "darwin");
-  assert.equal(platform.arch, "arm64");
-  assert.ok(platform.majorVersion >= 14);
+  if (process.platform === "darwin" && process.arch === "arm64") {
+    const platform = inspectM11MacosPlatform();
+    assert.equal(platform.os, "darwin");
+    assert.equal(platform.arch, "arm64");
+    assert.ok(platform.majorVersion >= 14);
+  } else {
+    assert.throws(inspectM11MacosPlatform, { code: "Q10_PLATFORM_UNSUPPORTED" });
+  }
 
   const releaseRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-q10-release-root-")));
   t.after(() => fs.rm(releaseRoot, { recursive: true, force: true }));
