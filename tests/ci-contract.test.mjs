@@ -147,5 +147,6 @@ test("Draft recovery verifies existing source attestations before the same appro
   assert.match(publication, /needs: \[validate-inputs, build-draft, verify-draft\]/u);
   assert.match(publication, /!cancelled\(\).*validate-inputs\.result == 'success'.*build-draft\.result == 'success'.*verify-draft\.result == 'success'/u);
   assert.match(publication, /environment: public-preview/u);
+  assert.match(publication, /GH_REPO: \$\{\{ github\.repository \}\}/u, "the publish job must resolve its repository without a Git checkout");
   assert.ok(publication.indexOf("git/tags/$TAG_OBJECT") < publication.indexOf("gh release edit"));
 });

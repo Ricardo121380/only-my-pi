@@ -1,554 +1,605 @@
 # only-my-pi
 
-A governed terminal coding Agent built on Pi.
+English | [简体中文](README.zh-CN.md)
 
-This repository is intended to hold the parts of a Pi workflow that are safe to
-version and share:
+A guarded, user-local terminal coding agent built on [Pi](https://github.com/earendil-works/pi).
+Start `omp` in a project, inspect the code, approve project-local coding when needed,
+and verify the result before finishing. Pi owns the terminal UI, models, sessions
+and tools; `pi-subagents` is the sole physical child-agent runtime.
 
-- Pi extensions
-- skills
-- prompt templates
-- themes
-- documented settings and package selections
-- research notes and compatibility decisions
-
-It must not contain credentials, OAuth tokens, model keys, sessions, caches,
-local npm installs, or private source code copied from another project.
-
-## Layout
-
-```text
-extensions/   Pi extensions developed for this project
-skills/       Agent Skills (`SKILL.md` directories)
-prompts/      Product-facing Pi prompt templates
-themes/       Pi theme JSON files
-codex/        Codex-only development goals; never loaded as Pi package resources
-docs/         Research, design notes, and compatibility records
-inventory/    Version-pinned package inventory and risk metadata
-profiles/     Explicit package/policy profiles for different workflows
-policies/     Capability, owner, command, and enforcement-surface contracts
-contracts/    Versioned compatibility contracts and schema catalog
-agents/       Canonical Agent roles and generated pi-subagents resources
-modes/        Declarative Mode contracts
-workflows/    Declarative Workflow contracts
-swarm/        Declarative AgentSwarm recipe contracts
-ultra/        UltraRun strategy contracts
-packages/     First-party protocol/recovery seams and offline fixtures
-scripts/      Repository checks and package governance tooling
-```
-
-## Current milestone
-
-M12 local Direct Terminal Coding Agent acceptance and its M13 writer/budget
-follow-up are complete. The current installation passed C1-C12 on source
-`15c40a2` with protected evidence child `f7346b3`; hosted CI and public Preview
-publication remain deferred. The installed daily path is:
+**Published Preview:** [v0.3.0-preview.1](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.3.0-preview.1)
+— macOS 14+ on native Apple Silicon. Published on September 10, 2026, with immutable
+release assets. This is a Preview, with deliberately bounded platform and capability support.
 
 ```bash
 cd /path/to/project
 omp
 ```
 
-`omp` enters the controlled Pi TUI directly, selects an authenticated model,
-start read-only, and request one explicit session coding approval before the
-first project mutation. Complex work must present a complete plan before that
-approval. Pi remains the internal TUI, model, session and tool runtime;
-`pi-subagents` remains the sole physical child runtime.
+## Contents
 
-M11 proved the user-local stack, Full/Thin acquisition, reproducible builder,
-SBOM/notices and transaction recovery, but its `/omp run` read-only product
-experience is not being published. `0.2.0-preview.1` remains
-`HOLD_PUBLICATION`; there is no public tag or Release. Those assets are retained
-as `INTERNAL_DISTRIBUTION_FOUNDATION`, while `0.3.0-preview.1` is the first
-planned public candidate for the direct coding experience.
+- [What you get](#what-you-get)
+- [Platform and runtime](#platform-and-runtime)
+- [Installation](#installation)
+- [Verify release assets](#verify-release-assets)
+- [First run and model setup](#first-run-and-model-setup)
+- [Daily use and approvals](#daily-use-and-approvals)
+- [Managed writers and project verification](#managed-writers-and-project-verification)
+- [Configuration and child budgets](#configuration-and-child-budgets)
+- [Updates, rollback and removal](#updates-rollback-and-removal)
+- [Architecture and repository layout](#architecture-and-repository-layout)
+- [Development and validation](#development-and-validation)
+- [Release process and evidence](#release-process-and-evidence)
+- [Troubleshooting](#troubleshooting)
+- [Security, license and references](#security-license-and-references)
 
-The product decision is frozen in
-[ADR-0013](docs/decisions/ADR-0013-direct-terminal-coding-agent.md). The earlier
-distribution and history boundary remains in
-[ADR-0012](docs/decisions/ADR-0012-public-preview-distribution-and-history-privacy.md).
+## What you get
 
-## Development quickstart
+| Capability | Current behavior |
+| --- | --- |
+| Direct terminal entry | `omp` starts the controlled Pi TUI without a separate product dashboard. |
+| Inspect before coding | Every new interactive process starts in `Inspect`; mutation tools require coding approval. |
+| Plans for complex work | Approval includes the scope, risks, plan, subagent strategy and verification. |
+| Existing-change preservation | The runtime records the Git baseline and dirty paths; overlapping writer work stays with the main agent. |
+| Bounded delegation | Read-only scouts, separately approved Web research, one managed writer and a fresh reviewer use `pi-subagents`. |
+| Verified writer integration | Project gates run in the clone; fresh review and patch checks precede integration; real-worktree verification follows. |
+| Session continuity | Continue or resume Pi sessions while requesting a new coding grant in each new process. |
+| Explicit stack management | Plan-first installation, diagnosis, rollback and removal use ownership records and transaction journals. |
+| Verifiable distribution | Full/Thin payloads, hashes, a dependency ledger, SPDX SBOM, notices and GitHub attestations bind the release. |
 
-The M13 follow-up is installed and locally verified on the acceptance host, but
-is not publicly released. Acceptance restored the original M12 stack and then
-reapplied the M13 candidate. Do not use the old bootstrap command: no
-`0.2.0-preview.1` Release exists. See the
-[local closure receipt](verification/receipts/2026-09-09-m13-local-closure.json)
-and [protected matrix](verification/protected/2026-09-09-m13-cpar-installed-coding.json).
+The direct product does not expose Workflow, Swarm, Goal or Ultra choices in its
+normal task flow. Older orchestration interfaces remain advanced compatibility
+surfaces. MCP, silent YOLO overrides, background updates, automatic publication
+and project-external writer access are outside this Preview's default capability boundary.
 
-After M12 is installed locally, use:
+## Platform and runtime
 
-```bash
-omp                         # interactive terminal coding Agent
-omp "fix the failing test"  # interactive Agent with an initial task
-omp -c                      # continue the latest Pi session
-omp -r                      # choose a Pi session to resume
-omp -p "review this repo"   # non-interactive, read-only
-omp admin doctor            # installation/runtime diagnostics
-```
+| Item | Supported or pinned value |
+| --- | --- |
+| Managed installation | macOS 14 or newer, native `arm64` Apple Silicon |
+| Unsupported managed hosts | Intel Macs, Rosetta, Linux and Windows |
+| Embedded Node.js | `24.19.0` |
+| Controlled Pi | `0.84.3` |
+| Physical subagent runtime | `pi-subagents@0.57.0` |
+| Repository development | Node.js `>=22.19.0`; CI pins `22.19.0` and `24.19.0` |
+| Model access | Your own provider configuration and authentication through Pi |
 
-Inside the TUI, `/plan` enters the same OMP planning flow, `/access` displays or
-revokes the ephemeral coding grant, and `/exit` returns to the shell. The
-managed stack remains macOS 14+ Apple Silicon only; MCP, silent YOLO, background
-updates and project-external writer access remain unsupported.
+The release includes its Node runtime. A system Node or npm installation is not
+required for the bootstrap installer. Git is needed for the managed-clone writer.
+The installer also requires the macOS tools `curl`, `shasum`, `tar`, `awk` and
+`mktemp`. GitHub CLI is optional for installation and useful for signature verification.
 
-The governed S0-S5 kernel reached Stable on 2026-08-27: its exact source,
-protected evidence, and receipt chain passed 31/31 required gates. **M8 Daily
-Harness Closure is also complete.** Final implementation source `6f77bb6`, its
-direct evidence-only child `42185b9`, and receipt commit `02dac32` passed D1-D15 with
-15/15 gates. D13 used the configured OpenCode Go / DeepSeek V4 Flash model for
-the protected Agent, BatchSwarm, Workflow, SwarmGoal, Ultra, public-Web,
-cancellation, resume, budget and writer-denial matrix. D14 applied the same
-commit-pinned artifact to the real Pi home, restored the exact pre-install
-nine-package baseline, verified it, and reapplied the artifact. The installed
-artifact SHA-256 is
-`a8d0aaf521f3242776975876f64909fdf97f6e735813146f7258aa95f5fc2455`;
-the installed generation is `sha256:62ebd02c...d6ab3310`, with all selected
-third-party runtime packages still borrowed as `external` user assets.
+The audited external tuple contains nine packages. Being present in this tuple
+does not mean every package is enabled in a direct OMP session:
 
-M9 has been merged to `main` with its source/evidence commit identities intact.
-M10 has now promoted its audited Pi `0.84.3`, `pi-subagents@0.57.0`, and exact
-companion extension set to the repository Stable defaults and the current local
-installation. The M9 exact artifact audit, strict RPC dialect,
-offline 13-extension load, five-executor adapter matrix, Web SSRF black-box
-checks, resource soak, package check, and protected 17-assertion live-model
-matrix pass. U1-U9 remain complete, including the Agent, BatchSwarm, Workflow,
-SwarmGoal, Ultra, public-Web, cancellation, cross-session resume, budget, and
-writer-denial paths under OpenCode Go / DeepSeek V4 Flash.
+| Package | Version |
+| --- | --- |
+| `@narumitw/pi-lsp` | `0.49.6` |
+| `@narumitw/pi-plan-mode` | `0.55.2` |
+| `@sreetej510/pi-usage` | `0.7.1` |
+| `pi-agent-extensions` | `0.5.4` |
+| `pi-git-sync` | `0.1.3` |
+| `pi-memory` | `0.4.1` |
+| `pi-permission-modes` | `2.2.0` |
+| `pi-subagents` | `0.57.0` |
+| `pi-web-access` | `0.25.0` |
 
-M10 real-root acceptance passed on source `6156955`, with evidence-only child
-`9df5f44`: candidate apply, exact M8 rollback, candidate reapply, no-model smoke,
-and the protected 17-assertion live matrix all passed. The decision is now
-**`PROMOTE`** with Stable Pi `0.84.3` and `pi-subagents@0.57.0`. The current
-local `omp` CLI is the immutable user-level entry for installation and diagnosis;
-M12 supersedes the Pi-first `/omp` Agent entry. M10 still does
-not publish npm or a GitHub Release, add a daemon, writer, or MCP surface.
+The direct launcher uses exact extension filters. Memory, sync, MCP and
+experimental overlays are disabled for the direct product; its `/plan` flow is
+owned by OMP. See the [external package manifest](contracts/release/external/package.json)
+and [direct launcher](packages/direct-agent/launcher.mjs) for the exact selections.
 
-Final reconciliation built the promoted artifact from source `7973a4e` with
-SHA-256 `b718516f...65dd27` and installed generation
-`sha256:50caffbf...fc89df`. Local `omp status` is `INSTALLED`, `omp doctor` is
-`PASS`, generation alignment is `MATCH`, LKG is verified, and there are no
-incomplete transactions. The candidate and Stable graph digests match; all
-nine third-party packages remain user-owned, with six exact upgrades and three
-unchanged retained versions. The complete M10 receipt reports P1-P12 passing.
+## Installation
 
-- [M8 final D13 protected live-model evidence](verification/protected/2026-08-27-m8-live-model-matrix-final.json)
-- [M8 final D14 real-root rehearsal evidence](verification/protected/2026-08-27-m8-real-root-rehearsal-final.json)
-- [M8 final D1-D15 completion receipt](verification/receipts/2026-08-27-m8-daily-harness-final.json)
-- [M9 upstream candidate compatibility record](docs/compatibility/m9-upstream-candidates.md)
-- [M9 machine-readable compatibility decision](contracts/compatibility/upstream-candidates.json)
-- [M9 U1-U9 gate contract](verification/upstream-compatibility-gates-v1.json)
-- [M9 U9 protected live-model evidence](verification/protected/2026-08-28-m9-candidate-live-readonly-matrix.json)
-- [M9 U1-U9 completion receipt](verification/receipts/2026-08-28-m9-upstream-compatibility.json)
-- [M10 promotion and migration boundary](docs/decisions/ADR-0011-m10-promotion-and-upstream-migration.md)
-- [M10 P9 real-root migration evidence](verification/protected/2026-08-28-m10-real-root-migration.json)
-- [M10 P10 promoted live-model evidence](verification/protected/2026-08-28-m10-promoted-live-model-matrix.json)
-- [M10 final promoted installation evidence](verification/protected/2026-08-28-m10-final-promoted-install.json)
-- [M10 P1-P12 completion receipt](verification/receipts/2026-08-28-m10-promotion.json)
+### Online bootstrap
 
-- [M8 Daily Harness Closure plan](docs/plans/2026-08-27-m8-daily-harness-closure.md)
-- [Current implementation status](docs/STATUS.md)
-
-## Current research
-
-- [Subagents Orchestration v2 and UltraRun successor plan (S0-S5 Stable kernel achieved)](docs/plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md)
-- [Codex successor development Goal for S0–S5](codex/goals/develop-only-my-pi-subagents-ultrarun.md)
-- [Historical Harness MVP development plan (M0–M7, complete)](docs/plans/2026-08-16-only-my-pi-development-plan.md)
-- [Historical Codex Harness MVP Goal](codex/goals/develop-only-my-pi.md)
-- [Pi / DeepSeek Harness / open-source Harness ecosystem report](docs/research/2026-08-15-harness-ecosystem.md)
-- [Security and package review policy](SECURITY.md)
-- [Package governance decision](docs/decisions/ADR-0001-package-governance.md)
-- [Product boundary decision](docs/decisions/ADR-0002-product-boundary.md)
-- [Package topology and capability ownership decision](docs/decisions/ADR-0003-package-topology.md)
-- [Transactional bootstrap decision](docs/decisions/ADR-0004-transactional-bootstrap.md)
-- [Labs and graduation boundary](docs/LABS.md)
-- [Pinned package inventory](inventory/packages.lock.json)
-- [Profile resolver design](docs/architecture/profile-resolver.md)
-- [Session ledger design](docs/architecture/session-ledger.md)
-- [Context Doctor design](docs/architecture/context-doctor.md)
-- [Safe mode launcher](docs/architecture/safe-mode.md)
-- [Verification receipt design](docs/architecture/verification-receipt.md)
-- [MCP Doctor design](docs/architecture/mcp-doctor.md)
-- [DeepSeek Provider conformance](docs/architecture/deepseek-conformance.md)
-- [ACP v1 adapter](docs/architecture/acp-v1.md)
-- [Workspace checkpoint](docs/architecture/workspace-checkpoint.md)
-- [Theme and status layer](docs/architecture/theme-status.md)
-- [Subagents S5 release boundary](docs/architecture/subagents-s5-release.md)
-- [Subagents S5-A protected live capture](docs/architecture/subagents-s5-live-capture.md)
-- [Subagents S5-B protected background resume](docs/architecture/subagents-s5-background-resume.md)
-- [Subagents S5-C protected guarded writer](docs/architecture/subagents-s5-guarded-writer.md)
-- [Subagents S5-D fault and recovery closure](docs/architecture/subagents-s5-fault-recovery.md)
-- [Quickstart](docs/quickstart.md)
-- [Modes](docs/modes.md)
-- [AgentSwarm](docs/agent-swarm.md)
-- [Migration, rollback, and uninstall](docs/migration-uninstall.md)
-- [Troubleshooting](docs/troubleshooting.md)
-- [Threat model](docs/threat-model.md)
-- [Node/Pi compatibility matrix](docs/compatibility/node-pi-matrix.md)
-- [Transactional bootstrap runtime](docs/architecture/bootstrap-runtime.md)
-- [Mode Registry and unified control surface](docs/architecture/mode-registry.md)
-- [Agent and Workflow Core](docs/architecture/agent-workflow-core.md)
-- [Unified Subagents v2 runtime foundation](docs/architecture/subagents-v2.md)
-- [S4 SwarmGoal, UltraRun, and writer handoff](docs/architecture/subagents-s4-goal-ultra.md)
-- [Subagents v1 offline evaluation baseline](docs/evaluation/subagents-v1.md)
-- [Current implementation status](docs/STATUS.md)
-
-## Product direction
-
-The product is now the terminal coding Agent launched by `omp`; Pi is its
-internal runtime. The default user journey does not expose Workflow, Swarm,
-Goal or Ultra choices. It begins read-only, asks once for guarded project-local
-coding, preserves dirty work, automatically chooses bounded subagents, verifies
-changes in the real worktree, and returns to the shell through Pi's native
-shutdown path. The older Harness control plane remains an advanced compatibility
-surface and supplies the transaction, budget, artifact and recovery kernel.
-
-Historically, M1 supplied the
-strict package, Profile, capability, owner, command, enforcement, Mode, Agent,
-Workflow, and Swarm contracts needed to build that product without false-green
-configuration checks. M2 adds the transactional `omp` configuration runtime,
-and M3 adds the dependency-closed Mode Registry and unified `/omp` control
-surface:
-
-- a dry-run-first, idempotent `omp bootstrap`, update, uninstall, and rollback
-  path with settings published only after immutable generation verification;
-- load-time Profiles are validated capability ceilings and can now be applied
-  to an explicitly selected Pi config root;
-- versioned runtime Modes that can only narrow those ceilings, with
-  discovery/hash/explain/diff and an explicit restart path for hard envelope
-  changes;
-- eight practical Modes (`inspect`, `explore`, `plan`, `coding`, `debug`,
-  `review`, `research`, `verify`) with versioned prompts and output contracts;
-- a parent-session Workflow Core, deterministic Gate Runner, Agent Registry,
-  `.agents/skills` bridge, and bounded repo-map seam;
-- declarative Workflows and AgentSwarm recipes; M4 executes agent/gate steps and
-  M5 compiles the governed Swarm DAG into the sole `pi-subagents` extension-RPC
-  lane (live child dispatch still requires an injected Pi session);
-- one `omp` CLI and one package-owned `/omp` Pi command, including the sole
-  `/omp-context` compatibility alias;
-- a semantic, contrast-checked theme contract plus bounded status projection in
-  M6. Theme application uses only Pi's public UI driver, and neither surface
-  replaces Pi's runtime, renderer, editor, footer, or permission owner.
-
-AgentSwarm reuses the governed `pi-subagents` package through a narrow adapter.
-It does not register a competing subagent tool or child-agent runtime. The
-adapter performs capability negotiation before any spawn, compiles a
-JSON-safe `workflowScript`, and keeps run/child budgets and cancellation
-receipts bounded. DeepSeek conformance, ACP v1, and workspace checkpoint remain
-non-default Labs modules with the explicit boundaries in the
-[Labs registry](docs/LABS.md).
-
-The S0-S5 Stable kernel now contains a unified
-`packages/subagents/` facade. It provides typed AgentTemplate v2,
-ResolvedAgentSpec, TaskAssignment and terminal receipts; exact structured-
-delegation and extension-RPC v1 adapters over one pinned `pi-subagents`
-physical runtime; immutable WorkflowPlan compilation; a single
-RunCoordinator; a fenced append-only journal; crash-recoverable parent budget
-reservations; dual-read migration from the v1 Workflow/Swarm resources; and a
-true homogeneous BatchSwarm with stable item slots, bounded ramp/retry/failure
-semantics, item-level provenance, and one structured delegation bridge to the same
-physical backend. Batch retry has one owner: a Workflow batch node gets one root
-attempt, while `maxItems × item maxAttempts` is capped at 1000 physical
-assignments.
-The static single-owner check is available as `npm run
-doctor:subagents-topology`; it reads only the pinned package/wire contract and
-repository ownership catalogs plus the digest-bound low-sensitivity evidence,
-and does not itself start Pi or dispatch a child. A separately authorized
-disposable Pi `0.84.1` probe has now verified the exact upstream `ready` and
-correlated `ping` contract, four upstream-owned active subagent tools, the
-first-party `omp` commands, and no competing only-my-pi model tool. It submitted
-no prompt, Provider request, or child assignment and did not touch the real Pi
-home.
-The existing `omp workflow`, `omp swarm`, and `/omp` compatibility routes now
-compile those resources to WorkflowPlan and can execute only through an
-explicitly injected unified RunCoordinator; they never instantiate the v1
-controllers. Execution repeats the previously shown plan digest; canonical run
-input, the stable run ID, target, conditions, and mutating ApprovalReceipt are
-bound into one execution-envelope digest and fail closed on drift. Approval
-requires a live repository/capability evidence provider on initial admission,
-resume, and every mutating-node admission; a receipt for one run cannot approve
-another. Unfinished read-only content-addressed attempts may be requeued with a
-fresh attempt, while unfinished mutation is never silently replayed. Writer
-leases renew during long nodes; work that may already have started consumes its
-worst-case reservation after recovery. Deadlines and reported output/token/cost
-overruns fail closed. Without correlated process-terminal proof, a local timeout
-is non-authoritative and leaves the run orphaned. Mutating dispatch also requires
-an executor that advertises audited path enforcement; a worktree alone is not
-treated as a path allowlist. M8 now exposes the read-only daily-session path
-through the real session composer while keeping writer admission unavailable.
-Restart-safe plan lookup and durable status/cancel/resume are now implemented
-through the versioned Plan Store sidecar. S3 BatchSwarm also reuses the same
-event chain and parent reservation across crash recovery: proven completed
-items are not replayed, while a started item without terminal proof interrupts
-the run. S4 now adds a Pi-native SwarmGoal controller, UltraRun router,
-immutable artifact store, and writer handoff contract. These are logical layers
-over the same RunCoordinator and sole `pi-subagents` backend; they do not
-connect Pi to Kimi Code or add a second scheduler. The protected two-item
-homogeneous BatchSwarm check is now source-bound Stable evidence. M8 exposes
-dynamic-goal live execution through the real daily session composer, including
-bounded replan and permission-expansion approval. General live writer admission
-remains `UNAVAILABLE`
-because the public backend cannot prove a per-path allowlist. S5-C now provides
-one separately authorized, synthetic-fixture producer for the protected
-guarded-writer evidence class; it uses parent-side Git verification and never
-turns that narrow evidence path into a general writer capability.
-
-S5 now adds a versioned compatibility matrix, cumulative promotion policy, and
-digest-pinned `release-gates-v2` runner. `npm run verify:subagents` is an
-inspection-only command; `npm run verify:subagents:run` executes the fixed
-Preview deterministic gates on a clean source commit. Alpha/Beta/Stable live
-claims use a source-pinned Ed25519 evidence-import protocol and cannot be
-produced by the deterministic runner. The checked-in trust policy retains the
-Alpha public signer and adds an independent time-bounded Beta signer for a
-cumulative five-scenario capture. Alpha is proved for source `922b39b`, evidence commit
-`15f2915`, and receipt commit `312fc2d`: 25 deterministic gates plus the
-protected read-only gate passed. The OpenCode Go `deepseek-v4-flash` capture ran
-four children within 8,154 tokens and about $0.00474, without storing raw
-output, credentials, host paths, or session IDs.
-
-Beta is now proved by source `6004e61`, direct evidence-only commit `1d19b5c`,
-and receipt-only commit `cb1a8db`. The cumulative capture used OpenCode Go
-`deepseek-v4-flash` for seven physical children: the three inherited Alpha
-classes used 8,117 tokens and about $0.00391; background/resume used 13,067
-tokens and about $0.01178; the guarded writer used 7,150 tokens and about
-$0.00506. The final release run passed 25/25 deterministic and 4/4 protected
-gates. Its five signed evidence documents retain no raw output, credentials,
-host paths, session IDs, patch bytes, or changed paths. The three external
-one-time authorizations were subsequently downgraded to inert templates.
-Stable was subsequently closed by the source/evidence/receipt chain documented
-in `docs/STATUS.md`. Private signing keys remain outside the repository. That
-promotion does not authorize real Pi-home installation or general writer use.
-
-The S5-A Alpha capture producer is now implemented behind
-`npm run plan:subagents-live-evidence`. It composes a read-only Agent terminal,
-correlated workflow-stop cancellation terminal, and two-item BatchSwarm through the same sole
-`pi-subagents` backend, then signs only bounded low-sensitivity evidence through
-an external digest-only signer. Children run in an isolated synthetic fixture
-workspace, not the source checkout; the canonical read-only `omp-reviewer` is
-recompiled and drift-checked before it is copied into the disposable Pi root.
-All three scenarios share one cumulative budget, and the source HEAD/worktree
-is rechecked after signing before any evidence is staged.
-The checked-in plan is again `CONFIGURED_UNAVAILABLE`: the used Beta
-authorization is now an `operator-template`, so Provider, child, and signer
-work remain `NOT_STARTED`. The imported evidence remains valid because it is
-bound to source `6004e61`, not to the post-promotion checkout. Declared endpoint
-hosts are not an OS-enforced network allowlist.
-
-S5-B now adds the separately authorized
-`npm run plan:subagents-background-resume` producer. It uses two distinct Pi
-parent processes, one isolated persisted parent session, session-scoped
-`pi-subagents` artifacts, a mode-0600 digest-bound handoff, and a second
-correlated backend binding created through the public `resume` RPC. The final
-record retains only proof digests and cumulative metering; parent/child session
-IDs, host paths, backend IDs, prompts, and outputs remain in the disposable
-root. A live run additionally requires `--provider-file`; that credential-free
-descriptor is digest-bound by the authorization and compiled into the isolated
-Pi root. The protected run proved two authoritative terminals across two Pi
-parent processes and a new resume binding; its signed document is
-`verification/protected/background-resume.json`. The command is inert again
-because its used authorization was downgraded to a template.
-
-S5-C now adds the separately authorized
-`npm run plan:subagents-guarded-writer` producer. It runs exactly one canonical
-`omp-implementer` in a synthetic Git repository and an upstream-managed
-worktree, then treats the child result and handoff manifest as untrusted. The
-parent reconstructs a detached review worktree at the approved base, applies
-the captured patch only there, then independently verifies the exact staged
-path claim, absence of untracked or unstaged changes, regular-file modes,
-bounded full diff, `git diff --check`, and a fixed fixture-content gate. It
-creates a
-handoff-only WriterHandoff and signs only low-sensitivity proof digests; it
-never commits, merges, pushes, or applies anything to the source checkout. The
-ordinary backend compiler still rejects its `DEGRADED` worktree capability;
-only this protected fixture path may opt into the recorded
-`protected-degraded-probe-v1` admission. Its credential-free Provider
-descriptor is also authorization-digest-bound. The protected fixture run is
-imported as `verification/protected/guarded-writer-integration.json`; the
-checked-in plan is inert again because the used writer authorization is now a
-template. This narrow proof does not make the general writer seam available.
-
-S5-D adds `npm run plan:subagents-guarded-writer-cleanup`, a review-only
-reconciliation surface for the disposable S5-C runtime. It detects partial,
-drifted, missing and symlinked state, binds its observations to the exact
-authorization/source/request digests, and exposes no deletion operation. The
-plan always retains an existing target for operator review; `--run`, `--apply`
-and `--yes` are rejected. Deterministic tests also cover missing terminal
-records, truncated handoffs, missing worktrees, Git verifier failure,
-signer/staging interruption, patch reconstruction failure, and post-capture
-source drift. These remain deterministic fault/recovery checks; the separate
-source-bound writer document is the live evidence.
-
-`omp workflow|swarm run` and `resume` accept an optional bounded absolute JSON
-`--input-file`; it is read with `O_NOFOLLOW`, hashed into the execution
-envelope, and never copied into the durable Plan Store. A resume without the
-original input (or with a changed file) fails closed before child admission.
-
-Inspect and plan the first reviewed homogeneous batch without dispatching a
-child:
+Download the installer to a file, verify its pinned checksum, and inspect it before
+execution. The checksum below applies specifically to `0.3.0-preview.1`:
 
 ```bash
-node bin/omp.mjs swarm batch list
-node bin/omp.mjs swarm batch show review-items
-node bin/omp.mjs swarm batch plan review-items \
-  --input-file /absolute/path/batch-input.json --json
+mkdir only-my-pi-preview
+cd only-my-pi-preview
+
+curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+  https://github.com/Ricardo121380/only-my-pi/releases/download/v0.3.0-preview.1/install.sh \
+  --output install.sh
+
+printf '%s  install.sh\n' \
+  '542dbcb468221841b460199c41afa9af1d178e8842d7a649b61e00742186e886' \
+  | shasum -a 256 -c -
+
+less install.sh
+sh install.sh --release 0.3.0-preview.1 --payload thin --plan
 ```
 
-`batch-input.json` must be a bounded JSON object such as
-`{"artifacts":{"items":[{"path":"src/a.ts"},{"path":"src/b.ts"}]}}`.
-Planning returns the stable run ID, exact plan/execution digests, logical item
-expansion, and `liveDispatch: NOT_RUN_BY_POLICY`. A live `run` additionally
-requires the trusted Pi-session RunCoordinator and the exact confirmed
-digests; the standalone CLI does not fabricate that runtime.
-
-## Local development
-
-Run a zero-write bootstrap plan against a disposable Pi configuration root:
+Review the target paths, package ownership and proposed changes. Then install:
 
 ```bash
-export PI_CODING_AGENT_DIR="$(mktemp -d)"
-node bin/omp.mjs bootstrap --profile minimal --mode inspect
+sh install.sh --release 0.3.0-preview.1 --payload thin
 ```
 
-After reviewing the plan, apply it interactively or use `--yes` only for a
-directly authorized non-interactive run:
+The interactive installer asks for confirmation. For an explicitly approved
+noninteractive install, add `--yes`. The bootstrap script uses `--yes`; the
+management CLI uses `--apply --yes` for mutations.
+
+`--plan` does not commit the managed installation. It still downloads and extracts
+verified artifacts into temporary storage. Installation performs its own current
+state checks. The installer does not edit shell profiles unless you supply
+`--configure-shell`.
+
+If the installer reports `PATH_ACTION_REQUIRED`, follow its printed instructions.
+For the current shell, the usual entry is:
 
 ```bash
-node bin/omp.mjs bootstrap --profile minimal --mode inspect --apply
-node bin/omp.mjs status
-node bin/omp.mjs doctor
+export PATH="$HOME/.local/bin:$PATH"
+omp admin version --json
+omp admin doctor --json
 ```
 
-The apply path may fetch the exact reviewed package tarballs. It disables
-lifecycle scripts, verifies direct tarball integrity, stages a complete
-generation, publishes only owned settings last, runs a static doctor and an
-isolated no-model Pi RPC startup, then records rollback state. Provider/model
-flags store non-sensitive identifiers as `CONFIGURED_UNVERIFIED`; they do not
-read a key or call a model. See the [bootstrap runtime guide](docs/architecture/bootstrap-runtime.md)
-before targeting an existing Pi directory. `--mode` is now resolved against the
-same Mode Registry used by `omp mode` and `/omp mode`; persisted metadata remains
-bounded evidence rather than a claim that every enforcement surface is live.
+### Full and Thin
 
-Inspect the available Modes without changing settings:
+| Payload | Download for this release | Dependency acquisition |
+| --- | --- | --- |
+| Full | About 95.4 MiB | Includes the embedded runtime and complete reviewed dependency payload. |
+| Thin | About 1.34 MiB, plus dependencies | Fetches exact public artifacts and verifies their manifest-bound identities. |
+
+Both resolve to the same canonical stack. The online bootstrap accepts
+`--payload full`, but still downloads that Full archive from GitHub. For a fully
+offline installation, first transfer and verify the local Full archive, then use
+its bundled CLI as shown below.
+
+### Local Full bundle, including an offline first install
+
+Complete the [release verification](#verify-release-assets) on a connected machine,
+then transfer the verified Full archive and any verification material you need.
+The following commands require no system Node and do not fetch the managed dependencies:
 
 ```bash
-node bin/omp.mjs mode list
-node bin/omp.mjs mode show inspect --resolved
-node bin/omp.mjs mode diff inspect
-node bin/omp.mjs theme list
-node bin/omp.mjs theme preview only-my-pi-dark
-node bin/omp.mjs status --json
+omp_bundle="/absolute/path/only-my-pi-0.3.0-preview.1-darwin-arm64-full.tar.gz"
+omp_extract="$(mktemp -d)"
+tar -xzf "$omp_bundle" -C "$omp_extract"
+omp_payload="$omp_extract/only-my-pi"
+mkdir "$omp_payload/omp"
+tar -xzf "$omp_payload/only-my-pi.tgz" -C "$omp_payload/omp"
+
+env PATH="$omp_payload/node/bin:$PATH" \
+  "$omp_payload/node/bin/node" "$omp_payload/omp/package/bin/omp.mjs" \
+  admin stack install --bundle "$omp_bundle" --plan --json
 ```
 
-Install this checkout as a local Pi package while developing:
+After reviewing the plan, use the same verified bundle to apply it:
 
 ```bash
-pi install .
+env PATH="$omp_payload/node/bin:$PATH" \
+  "$omp_payload/node/bin/node" "$omp_payload/omp/package/bin/omp.mjs" \
+  admin stack install --bundle "$omp_bundle" --apply --yes --json
 ```
 
-For a one-run test without changing Pi settings:
+If OMP is already installed, the equivalent management entry is
+`omp admin stack install --bundle "$omp_bundle" --plan --json`, followed by the
+explicit apply form. Keep the verified archive for recovery. The extracted
+bootstrap directory is temporary; the installed stack has its own managed paths.
+
+### Installed paths and ownership
+
+| Default path | Purpose |
+| --- | --- |
+| `~/.local/bin/omp`, `~/.local/bin/pi` | User-level command links |
+| `~/.local/share/only-my-pi/stacks/` | Verified controlled stacks |
+| `~/.local/share/only-my-pi/current-stack` | Active stack pointer |
+| `~/.local/share/only-my-pi/lkg-stack` | Previous known-good stack pointer, when available |
+| `~/.local/share/only-my-pi/transactions/` | Stack transaction journals |
+| `~/.pi/agent/only-my-pi/` | Preferences, generation state and private run artifacts |
+| `~/.pi/agent/npm/` | User-owned external Pi package tree |
+
+Homebrew Node/Pi installations are preserved. The user-level `pi` link may take
+precedence through `PATH`; it is the controlled/raw Pi entry. Unknown existing
+`omp` or `pi` files cause a conflict instead of being overwritten. Existing
+third-party packages remain `external/owner=user`; package conflicts require
+explicit reconciliation.
+
+## Verify release assets
+
+With a GitHub CLI version that supports release and artifact attestations, download
+all ten assets into a fresh directory:
 
 ```bash
-pi -e .
+mkdir only-my-pi-release-assets
+cd only-my-pi-release-assets
+
+gh release download v0.3.0-preview.1 --repo Ricardo121380/only-my-pi
+gh release verify v0.3.0-preview.1 --repo Ricardo121380/only-my-pi
+shasum -a 256 -c SHA256SUMS
+
+for asset in *; do
+  gh release verify-asset v0.3.0-preview.1 "$asset" \
+    --repo Ricardo121380/only-my-pi
+done
 ```
 
-### Re-run the no-model subagents compatibility probe
-
-The checked-in S2 evidence can be reproduced without using the real Pi home,
-submitting a prompt, calling a Provider, or dispatching a child. Supply an
-already-present, dependency-complete copy of the exact audited
-`pi-subagents@0.45.2` artifact; the command never downloads or installs it:
+`SHA256SUMS` covers eight files. It excludes itself and `release-index.json`;
+release attestations cover the complete asset set. To verify the Full payload's
+build source as well:
 
 ```bash
-probe_root="$(mktemp -d)"
-npm run probe:subagents-live -- \
-  --config-root "$probe_root" \
-  --package-root /absolute/path/to/audited/pi-subagents \
-  --only-my-pi-root "$PWD" \
-  --pi-command "$(command -v pi)"
+gh attestation verify only-my-pi-0.3.0-preview.1-darwin-arm64-full.tar.gz \
+  --repo Ricardo121380/only-my-pi \
+  --source-digest aaf22c968c9defeb9106680a30504e4ca6949052 \
+  --signer-digest aaf22c968c9defeb9106680a30504e4ca6949052 \
+  --source-ref refs/heads/main \
+  --signer-workflow Ricardo121380/only-my-pi/.github/workflows/m11-publish.yml \
+  --deny-self-hosted-runners
 ```
 
-The probe verifies source hashes before starting Pi, creates all runtime state
-under the explicit disposable root, loads the real first-party extensions,
-and observes only the public `ready`/correlated `ping` plus tool/command
-registries. Delete the disposable root after inspecting the result. This is a
-compatibility and ownership check, not evidence of child execution, Provider
-quality, terminal/cancellation behavior, worktree enforcement, or host
-filesystem/network isolation. See the
-[compatibility contract](docs/compatibility/pi-subagents-0.45.2.md) and the
-[low-sensitivity evidence](contracts/subagents/pi-subagents-live-no-model-evidence.json).
-
-## Run the successor development Goal with Codex
-
-The repository development Goal is for Codex, not for Pi or the future
-only-my-pi Agent. It is deliberately stored outside `prompts/`, so installing
-this repository as a Pi package cannot expose it as a Pi slash prompt.
-
-M0–M7 are already complete. Open this repository as the Codex workspace, then
-start the S0–S5 successor run with:
+The same source check applies to Thin. Adding
+`--predicate-type https://spdx.dev/Document/v2.3` selects the SPDX attestation.
+The published Full archive has SHA-256:
 
 ```text
-/goal Read codex/goals/develop-only-my-pi-subagents-ultrarun.md and execute it with TARGET=all, REPO=/absolute/path/to/only-my-pi, DELIVERY=local, PROMOTION=preview. Continue until the stopping condition is satisfied.
+9990fb9dd81b5ecaab9b31d5344fb8aab3715fd89b61f07ed5fefc7191d60b0d
 ```
 
-For the architecture and runtime-foundation slice:
+## First run and model setup
 
-```text
-/goal Read codex/goals/develop-only-my-pi-subagents-ultrarun.md and execute it with TARGET=S4, REPO=/absolute/path/to/only-my-pi, DELIVERY=local, PROMOTION=preview. Continue until that target and all required dependencies are complete.
-```
+1. Install and run `omp admin doctor --json`.
+2. If Pi has no usable authenticated model, start the controlled `pi` command and
+   complete its normal provider setup. `/login` handles supported login flows;
+   API-key or custom-provider configuration follows Pi's provider documentation.
+3. Return to your project and start `omp`. Honor Pi Project Trust and choose a
+   model in the authenticated model picker, or pass `--model provider/model-id`.
+4. Start with an inspection task, then approve coding when you are ready to change files.
 
-This follows Codex's durable `/goal` workflow: one objective, explicit source
-files, checkpoints, validation commands, and a verifiable stopping condition.
-See the [official OpenAI Goal guide](https://learn.chatgpt.com/use-cases/follow-goals).
-The successor contract supports `S0` through `S5`, promotion-specific live
-gates, and `DELIVERY=local|push`. It does not grant permission to read
-credentials, mutate the real Pi home, call a live product Provider, publish a
-package, or push `main`. The historical M0–M7 Goal remains available for audit,
-but must not be rerun to manufacture successor evidence.
+OMP does not supply a model subscription or provider credits. Credentials remain
+in Pi's credential mechanism or your secret manager; do not put them into OMP
+preferences, project JSON or this repository. The recent-model preference stores
+only a provider/model identifier. Cancelling model selection exits cleanly.
 
-## Safety boundary
+`pi` is the advanced/raw runtime entry and can discover a different extension set.
+Use `omp` for the guarded product flow. In the current direct runtime, delegated
+scouts, writers and reviewers inherit the active parent model and thinking level.
 
-Pi packages execute with the invoking user's permissions. New extensions and
-skills must be reviewed before enabling them globally. Keep secrets in Pi's
-local credential stores or a secret manager, never in this repository.
-
-## Repository checks
-
-Run the reproducible governance and package checks before changing a Profile or
-promoting a package:
+## Daily use and approvals
 
 ```bash
-npm ci --ignore-scripts
+omp                              # interactive agent
+omp "fix the failing login test"  # initial task
+omp -c                           # continue the latest Pi session
+omp -r                           # select a session to resume
+omp --model provider/model-id     # explicit model selection
+omp -p "review the error handling" --model provider/model-id
+omp -- "status"                  # treat a management word as a task
+```
+
+Headless `-p`/`--print` mode is read-only: it exposes read/search tools, not a coding
+grant, Bash, a managed writer or interactive Web approval. It needs an explicit
+model unless a usable recent model is available.
+
+| TUI command or key | Purpose |
+| --- | --- |
+| `/plan <task>` | Require the planning flow before coding. |
+| `/access` | Show the current coding-access state. |
+| `/access revoke` | Return immediately to `Inspect`. |
+| `/agents` | Show current child work and cumulative child-budget usage. |
+| `/model` | Use Pi's model selection. |
+| `Esc` | Interrupt current work and propagate cancellation. |
+| `/exit` | Exit through Pi's native shutdown path. |
+| `Ctrl+D` | Exit when the input editor is empty. |
+
+A coding grant lasts for one interactive OMP process. Further work within that
+grant can reuse it; `omp -c` and `omp -r` restore conversation history, not coding
+authority. A new process starts in `Inspect` and asks again. Public Web research
+requires a separate approval for that research task, even when coding is enabled.
+
+Approval does not authorize project-external writes, secret access, destructive
+Git operations, deployment or publication. OMP does not silently stage, commit or
+push changes. `/omp run` is retired in direct sessions: enter your task directly.
+Historical controls are available under `/omp advanced ...` for expert use.
+
+## Managed writers and project verification
+
+Simple changes stay with the main agent. Complex work can use read-only scouts,
+one managed-clone writer and a fresh reviewer. The runtime permits at most two
+concurrent children, eight total children and one managed writer per process,
+subject to any lower configured budget.
+
+A managed writer starts from the approved Git HEAD in an ordinary clone. It does
+not receive uncommitted user content. If the requested scope overlaps dirty paths,
+OMP returns `MAIN_AGENT_FALLBACK_DIRTY_OVERLAP` and keeps implementation in the
+original worktree with the main agent.
+
+For automatic writer integration, the trusted project and clone must contain the
+same `.pi/only-my-pi-gates.json` at the approved HEAD. Commit that manifest to the
+project before delegating a writer. For a Node project with an `npm test` script:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/Ricardo121380/only-my-pi/main/schemas/project-gates-v1.schema.json",
+  "formatVersion": 1,
+  "id": "project-checks",
+  "gates": [
+    {
+      "id": "unit-tests",
+      "description": "Run the project's unit tests",
+      "command": "npm",
+      "args": ["test"],
+      "cwd": ".",
+      "timeoutSeconds": 900,
+      "env": { "CI": "1" }
+    }
+  ]
+}
+```
+
+Replace the example with commands appropriate to your project. The runtime shows
+the resolved executable, arguments, working directory, environment and timeout
+for confirmation; it does not execute a model's free-form verification text.
+
+The integration sequence is:
+
+1. Capture the writer's bounded patch and check its reported paths.
+2. Confirm and execute the configured project gates in the clone.
+3. Require a fresh reviewer to pass.
+4. Recheck the base, scope, patch digest and current worktree; check application before applying.
+5. Integrate the patch and have the main agent verify it again in the real worktree.
+
+Missing or changed manifests, failed tests, review findings, patch drift and
+conflicts block integration and retain the patch for review. A clone is not an OS
+sandbox. Project gates are an explicit process allowlist, run with a scrubbed
+environment; they do not provide filesystem or network isolation by themselves.
+
+## Configuration and child budgets
+
+Default global preferences live at `~/.pi/agent/only-my-pi/preferences.json`.
+A trusted project can supply `.pi/only-my-pi.json`. Project configuration can
+narrow capabilities and budgets, not expand the active generation's authority.
+For example, reduce this project's child budget:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/Ricardo121380/only-my-pi/main/schemas/preferences-v1.schema.json",
+  "formatVersion": 1,
+  "budgets": {
+    "daily": {
+      "maxConcurrency": 2,
+      "maxChildren": 4,
+      "maxDepth": 1,
+      "maxTotalTokens": 20000,
+      "maxWallSeconds": 900
+    }
+  }
+}
+```
+
+Restart OMP after changing execution-related preferences. Defaults for delegated
+work in one direct process are:
+
+| Limit | Default |
+| --- | --- |
+| Concurrent children / total children | `2` / `8` |
+| Delegation depth | `1`; `0` disables children |
+| Cumulative reported child tokens | `50,000` |
+| Cumulative reported child cost | `$0.25` |
+| Shared child wall-time window | `1,800` seconds, starting with the first admission |
+| Turns / tool calls per child | `8` / `16`; role-specific lower ceilings also apply |
+| Total child tool calls | `64` |
+| Returned result bytes per child / total | `65,536` / `262,144` |
+
+The effective limits take the minimum of applicable budgets. These are child
+limits; main-agent usage is separate. Completed and failed child usage remains
+charged to the process. Exhaustion, invalid usage or an unproven cancellation
+stops further delegation and writer integration. Reported usage can arrive late,
+so these controls are not exact provider billing caps. Byte limits cover returned
+results, not all private logs. See [the preference schema](schemas/preferences-v1.schema.json)
+and [configuration implementation](packages/daily-config/index.mjs).
+
+## Updates, rollback and removal
+
+Inspect the installation and check the current Preview series explicitly:
+
+```bash
+omp admin version --json
+omp admin status --json
+omp admin doctor --json
+omp admin stack status --json
+omp admin release check --channel preview --json
+```
+
+There is no background updater. Release discovery reports newer versions in the
+same Preview series, but the current bootstrap/release resolver accepts its own
+exact version. Use a future release's verified installer for that release; do not
+substitute an invented version or a `latest` URL into this installer.
+
+To apply a verified local bundle whose version is supported by the installed management CLI:
+
+```bash
+omp admin stack update --bundle /absolute/path/reviewed-full.tar.gz --plan --json
+omp admin stack update --bundle /absolute/path/reviewed-full.tar.gz --apply --yes --json
+```
+
+Rollback to an available known-good stack, or remove the managed stack:
+
+```bash
+omp admin stack rollback --plan --json
+omp admin stack rollback --apply --yes --json
+
+omp admin stack remove --plan --json
+omp admin stack remove --apply --yes --json
+```
+
+Review each plan independently. `--to sha256:<stack-id>` selects an exact rollback
+target. Active controlled Pi processes require separate `--terminate-pi` authority;
+the process handler uses bounded `SIGTERM`, not `SIGKILL`.
+
+`omp admin uninstall` removes OMP activation and its entry; full stack removal is
+an explicitly separate operation. Removal reconciles ownership records, preserves
+preexisting or changed user data, and may retain material for manual review.
+Provider credentials, sessions and system Homebrew installations are not an
+uninstall target. Do not manually delete transaction journals or retarget stack links.
+
+## Architecture and repository layout
+
+```mermaid
+flowchart TD
+  User["Project: omp"] --> Pi["Controlled Pi: TUI, models, sessions and tools"]
+  Pi --> Guard["OMP Inspect / coding approval"]
+  Guard --> Main["Main agent"]
+  Guard --> Children["pi-subagents: sole child runtime"]
+  Children --> Read["Read-only scouts and approved Web research"]
+  Children --> Writer["Managed clone writer"]
+  Writer --> Gates["Project gates and fresh review"]
+  Gates --> Worktree["Patch integration and real-worktree verification"]
+  Admin["omp admin"] --> Stack["Verified stacks, journals and rollback"]
+```
+
+| Path | Responsibility |
+| --- | --- |
+| `bin/` | CLI entry and management routing |
+| `extensions/omp-direct/` | Direct session state, model selection, coding grants and tool boundaries |
+| `extensions/omp-control/` | OMP control integration and advanced compatibility commands |
+| `extensions/context-doctor/`, `extensions/session-ledger/` | Context/status observations and session records |
+| `packages/direct-agent/` | Launcher, workspace baseline, clone writer, delegation and verification |
+| `packages/release-stack/`, `packages/bootstrap/` | Payload verification, ownership, installation and recovery |
+| `packages/daily-config/`, `packages/project-gates/`, `packages/web-policy/` | Preferences, executable verification and approved Web boundaries |
+| `packages/subagents/` | Historical governed orchestration kernel and the shared backend adapter |
+| `agents/`, `bundles/` | Agent definitions and generated `pi-subagents` resources |
+| `profiles/`, `presets/`, `overlays/`, `policies/` | Versioned resource and capability contracts |
+| `skills/`, `prompts/`, `themes/` | Package resources used by Pi |
+| `contracts/`, `schemas/`, `inventory/` | Machine-readable contracts, validation and pinned dependency inventory |
+| `distribution/`, `.github/workflows/` | Bootstrap script and CI/release automation |
+| `scripts/`, `tests/`, `verification/` | Checks, regression tests and source-bound evidence |
+| `docs/`, `codex/` | Design/history and repository-development instructions; not Pi prompt resources |
+
+The historical S0–S5 orchestration kernel, M8 daily harness and M9/M10 migration
+work support the direct product. The earlier `0.2.0-preview.1` distribution
+remains `HOLD_PUBLICATION` as `INTERNAL_DISTRIBUTION_FOUNDATION`; it is not a
+published installer target. M12 introduced direct terminal coding, and M13 added
+runtime writer verification and cumulative child-budget enforcement. Historical
+receipts describe their own source commits, not the current release.
+
+## Development and validation
+
+```bash
+git clone https://github.com/Ricardo121380/only-my-pi.git
+cd only-my-pi
+npm ci --ignore-scripts --no-audit --no-fund
+
+npm run lint
 npm run typecheck
-npm run doctor
-npm run doctor:profiles
-npm run profile:check
 npm run schema:check
-npm run agents:check
 npm run pack:check
-npm run verify
+node --test tests/ci-contract.test.mjs tests/docs-links.test.mjs
 npm run verify:m12
-npm test
-
-# M7 executable release receipt (clean source commit only)
-npm run verify -- --run --output verification/receipts/2026-08-16-harness-mvp.json
-npm run receipt:check -- --receipt verification/receipts/2026-08-16-harness-mvp.json
-
-# The three protocol/recovery increments
-npm run test:deepseek
-npm run test:acp
-npm run test:checkpoint
-npm run test:subagents
-npm run eval:subagents
-npm run doctor:batches
 ```
 
-The local and CI release gates both read `verification/release-gates-v1.json`.
-The final receipt is metadata-only and must be the sole file in its receipt
-commit. A tracked source change after that commit invalidates the receipt and
-requires a new source/gate/receipt sequence. Publishing, tagging, releasing,
-and opening a pull request remain separately unauthorized by the development
-Goal.
+A source checkout does not replace the installed controlled stack. For integration
+work, use disposable projects/configuration roots and the repository's fixture
+helpers. Do not point install or live-model tests at your real Pi home implicitly.
 
-The experimental profile intentionally reports blocked candidates as warnings;
-it does not activate them. Package versions are updated only after a source
-review, a disposable-workspace smoke test, and a recorded rollback path.
+| Check | Meaning |
+| --- | --- |
+| `npm run doctor`, `npm run doctor:profiles` | Validate static package resources and profiles. |
+| `npm run profile:check`, `npm run agents:check` | Check configuration and generated agent resources. |
+| `npm run pack:check` | Verify the package's positive content allowlist. |
+| `npm test` | Run the repository test suite. |
+| `npm run verify` | Inspect the versioned release-gate contract. |
+| `npm run verify -- --run` | Execute that release-gate contract on a clean source commit. |
+| `npm run verify:m12` | Inspect the C1–C12 direct-agent contract. |
+| `npm run verify:m12:run` | Execute C1–C10; protected C11/C12 require separately captured evidence. |
+
+Use targeted checks while editing and the required gate sets before promotion.
+Without protected evidence, `NOT_RUN_BY_POLICY` is expected for live gates; it
+is not a live-model PASS. Never overwrite old receipts, reuse evidence against a
+new source, or rerun historical development goals to manufacture current evidence.
+
+## Release process and evidence
+
+The published `0.3.0-preview.1` binds:
+
+- Source **S**: [`aaf22c968c9defeb9106680a30504e4ca6949052`](https://github.com/Ricardo121380/only-my-pi/commit/aaf22c968c9defeb9106680a30504e4ca6949052).
+- Protected evidence **E**: [`c4af7fd0dbe748b9b5cbab0db222935116dcc12d`](https://github.com/Ricardo121380/only-my-pi/commit/c4af7fd0dbe748b9b5cbab0db222935116dcc12d), a direct evidence-only child of S.
+- **26 protected assertions**: eight installation/rollback assertions and eighteen direct coding/runtime assertions.
+- **10 release assets**, with ten build-provenance and two SPDX attestation checks.
+- **Seven identical RC/Final core assets**: Full, Thin, installer, SBOM, notices, stack manifest and artifact ledger.
+
+The release assets are:
+
+| File | Purpose |
+| --- | --- |
+| `install.sh` | Exact-version bootstrap installer |
+| `only-my-pi-0.3.0-preview.1-darwin-arm64-full.tar.gz` | Complete local payload |
+| `only-my-pi-0.3.0-preview.1-darwin-arm64-thin.tar.gz` | Payload with verified dependency acquisition |
+| `release-index.json` | Version, source and asset identities |
+| `stack-manifest.json` | Controlled stack identity and composition |
+| `transitive-artifact-ledger.json` | Dependency artifact integrity ledger |
+| `SHA256SUMS` | Eight content checksums |
+| `only-my-pi-0.3.0-preview.1.spdx.json` | SPDX software bill of materials |
+| `THIRD_PARTY_NOTICES.txt` | Distributed third-party notices |
+| `only-my-pi-0.3.0-preview.1-protected-receipt.json` | Source-bound C11/C12 evidence |
+
+[CI](.github/workflows/ci.yml) checks Node `22.19.0`, Node `24.19.0` and a macOS arm64
+clean-home Q10 installation. The [RC workflow](.github/workflows/m11-rc.yml) builds
+and attests a source-bound candidate without publication authority. The
+[publication workflow](.github/workflows/m11-publish.yml) verifies the S/E relationship,
+compares RC/Final bytes, creates a Draft and waits for `public-preview` approval.
+Its recovery mode verifies an existing attested Draft without rebuilding it.
+The publish job supplies `GH_REPO` because it runs without a source checkout.
+
+Repository immutability settings require an administrative preflight; the
+workflow requires that confirmation plus environment approval, then verifies the
+published immutable release and its assets. The first release's final publication
+was completed with an explicit repository argument after approval; the workflow
+context correction is maintained on `main`. Do not treat that original Actions
+run as an entirely successful automatic publication.
+
+The immutable tag and asset signatures identify released bytes. New README or
+workflow commits on `main` do not modify those bytes. Do not rerun publication to
+replace this version; a later release needs its own version, source, evidence and
+reviewed release process. See the [release notes](docs/releases/0.3.0-preview.1.md).
+
+## Troubleshooting
+
+| Symptom | Next action |
+| --- | --- |
+| `PATH_ACTION_REQUIRED` | Add the printed user-bin path to the intended shell; installation may already be complete. |
+| `SHIM_CONFLICT` | Inspect the existing `omp`/`pi` file; do not overwrite an unknown command. |
+| `OMP_CONTROLLED_STACK_UNAVAILABLE` / `M12_UPDATE_REQUIRED` | Inspect `omp admin version` and `doctor`; install the reviewed current bundle rather than manually changing links. |
+| `MODEL_AUTH_UNAVAILABLE` / `HEADLESS_MODEL_REQUIRED` | Configure the provider through Pi, then choose a usable model explicitly. |
+| `CODING_ACCESS_REQUIRED` / `COMPLEX_PLAN_REQUIRED` | Inspect first and approve the required coding plan for this process. |
+| `UNSUPPORTED_UNSAFE_OVERRIDE` | Return to the supported Build permission mode and request coding access again. |
+| `MAIN_AGENT_FALLBACK_DIRTY_OVERLAP` | Keep the existing changes; let the main agent handle the overlapping scope. |
+| `WRITER_GATE_MANIFEST_REQUIRED` / `WRITER_GATE_MANIFEST_DRIFT` | Check the trusted gate manifest and its presence at the approved Git HEAD. |
+| `WRITER_REVIEW_BLOCKED` / failed clone verification | Review the retained patch and actual findings; do not bypass integration checks. |
+| `DIRECT_CHILD_BUDGET_EXHAUSTED` | Review `/agents`; the process cannot admit further children or integrate a writer after budget exhaustion. |
+| Package, checksum or tree-identity conflict | Preserve the error code and identities; reconcile the exact reviewed package set before retrying. |
+| `MANUAL_RECONCILIATION_REQUIRED` | Preserve journals and backups and follow the reported reconciliation plan. |
+
+For a report, include the exact version, platform, redacted error code and a small
+reproduction. Do not attach credentials, raw sessions or private repository contents.
+
+## Security, license and references
+
+Pi extensions and packages run with the invoking user's OS authority. Project
+Trust, approval prompts and managed clones are not whole-session isolation.
+Bash sandboxing is surface-specific; inspect the actual active/degraded state.
+Use an appropriate outer boundary for code or extensions you do not trust.
+
+Never commit API keys, OAuth tokens, cookies, credential stores, sessions, memory
+databases, caches, private run archives or unrelated private source. Report suspected
+vulnerabilities through the repository's [private security reporting](https://github.com/Ricardo121380/only-my-pi/security/advisories/new), not a public issue.
+
+First-party code is under the [MIT license](LICENSE). Dependencies retain their own
+licenses; consult [third-party notices](THIRD_PARTY_NOTICES.md), the released notices
+and SPDX SBOM. No provider credentials or paid model access are distributed.
+
+Useful references:
+
+- [Direct terminal agent decision](docs/decisions/ADR-0013-direct-terminal-coding-agent.md)
+- [Distribution and history/privacy decision](docs/decisions/ADR-0012-public-preview-distribution-and-history-privacy.md)
+- [Preference and budget design](docs/decisions/ADR-0010-overlay-model-and-budget-configuration.md)
+- [Documentation index](docs/README.md), [dated milestone history](docs/STATUS.md) and [Labs boundaries](docs/LABS.md)
+- [Security policy](SECURITY.md) and [threat model](docs/threat-model.md)
+- [Report a non-sensitive bug](https://github.com/Ricardo121380/only-my-pi/issues)
+
+Some design and historical documents describe earlier milestones and example
+versions. Use this README and the exact published release assets for current
+installation instructions; use dated records to understand their original scope.

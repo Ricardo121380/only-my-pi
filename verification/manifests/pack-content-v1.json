@@ -3,6 +3,7 @@
   "allowedExact": [
     "package.json",
     "README.md",
+    "README.zh-CN.md",
     "SECURITY.md",
     "LICENSE",
     "CHANGELOG.md",
@@ -94,6 +95,7 @@
   "required": [
     "package.json",
     "README.md",
+    "README.zh-CN.md",
     "LICENSE",
     "CHANGELOG.md",
     "bin/omp.mjs",
