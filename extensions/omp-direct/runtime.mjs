@@ -175,9 +175,13 @@ function accessSummary(request, cwd) {
 }
 
 function toolResult(status, message, details = {}) {
+  const metadata = { ...details, formatVersion: 1, status };
+  const content = [{ type: "text", text: `${status}: ${message}` }];
+  // Pi forwards content to the model; details are UI/session metadata only.
+  if (Object.keys(details).length > 0) content.push({ type: "text", text: JSON.stringify(metadata) });
   return {
-    content: [{ type: "text", text: `${status}: ${message}` }],
-    details: { ...details, formatVersion: 1, status },
+    content,
+    details: metadata,
   };
 }
 

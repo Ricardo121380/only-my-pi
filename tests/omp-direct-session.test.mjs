@@ -330,9 +330,11 @@ test("direct tools use one attached orchestrator and managed writer requires its
   pi.exec = async () => ({ stdout: "", stderr: "", code: 0 });
   const ctx = makeContext({ select: async (_title, options) => options[0] });
   const calls = [];
+  const childAnswer = "Verified answer: CHILD_RESULT_R73";
+  let writerResult = { status: "WRITER_PATCH_APPLIED_REQUIRES_REAL_WORKSPACE_VERIFICATION", changedPaths: ["src/fix.ts"] };
   const orchestrator = {
-    async delegateReadOnly(input) { calls.push(["read", input]); return { status: "completed", result: "evidence" }; },
-    async delegateWriter(input) { calls.push(["write", input]); return { status: "WRITER_PATCH_APPLIED_REQUIRES_REAL_WORKSPACE_VERIFICATION", changedPaths: ["src/fix.ts"] }; },
+    async delegateReadOnly(input) { calls.push(["read", input]); return { status: "completed", result: childAnswer }; },
+    async delegateWriter(input) { calls.push(["write", input]); return writerResult; },
     snapshot() { return { physicalRuntimeOwner: "pi-subagents", maximumConcurrency: 2, maximumChildren: 8, totalChildren: 2, writerUsed: true, children: [] }; },
   };
   const controller = new DirectSessionController({
@@ -345,6 +347,8 @@ test("direct tools use one attached orchestrator and managed writer requires its
   await controller.start({ reason: "startup" }, { ...ctx, model: model("provider", "ready") });
   const read = await controller.delegateReadOnly({ agent: "omp-explorer", task: "inspect" }, ctx);
   assert.equal(read.details.status, "DIRECT_CHILD_COMPLETED");
+  const modelText = (result) => result.content.filter((entry) => entry.type === "text").map((entry) => entry.text).join("\n");
+  assert.ok(modelText(read).includes(childAnswer), "the parent model must receive the actual child answer");
   const denied = await controller.delegateManagedWriter({ scope: ["src/**"] }, ctx);
   assert.equal(denied.details.status, "CODING_ACCESS_REQUIRED");
   const approved = await controller.requestCodingAccess({
@@ -359,10 +363,20 @@ test("direct tools use one attached orchestrator and managed writer requires its
   assert.equal(approved.details.status, "CODING_ACCESS_GRANTED");
   const written = await controller.delegateManagedWriter({ scope: ["src/**"] }, ctx);
   assert.equal(written.details.status, "WRITER_PATCH_APPLIED_REQUIRES_REAL_WORKSPACE_VERIFICATION");
+  assert.ok(modelText(written).includes("src/fix.ts"), "the parent model must receive changed paths");
   assert.equal(calls[0][0], "read");
   assert.equal(calls[1][0], "write");
   assert.equal(calls[1][1].plan, "Inspect the behavior, implement the change, test it, and review the patch.");
   assert.equal(calls[1][1].baseline.status, "GIT_REPOSITORY");
   controller.agentsCommand(ctx);
   assert.match(ctx.calls.notifications.at(-1).message, /Runtime owner: pi-subagents/u);
+  for (const diagnostic of [
+    { status: "WRITER_REVIEW_BLOCKED", findings: ["Signed addition fails for negative operands"] },
+    { status: "WRITER_VERIFICATION_BLOCKED", code: "WRITER_GATE_DENIED", verificationReceipt: { status: "BLOCKED", code: "WRITER_GATE_DENIED" } },
+  ]) {
+    writerResult = diagnostic;
+    const blocked = await controller.delegateManagedWriter({ scope: ["src/**"] }, ctx);
+    assert.ok(modelText(blocked).includes(diagnostic.findings?.[0] ?? diagnostic.code), "the parent model must receive the reason integration stopped");
+    assert.equal(blocked.details.status, diagnostic.status);
+  }
 });
