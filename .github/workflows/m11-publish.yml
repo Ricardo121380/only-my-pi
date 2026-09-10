@@ -274,6 +274,7 @@ jobs:
       TAG: v0.3.0-preview.1
       SOURCE_COMMIT: ${{ needs.validate-inputs.outputs.source_commit }}
       GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
     steps:
       - name: Publish approved immutable prerelease
         run: |
