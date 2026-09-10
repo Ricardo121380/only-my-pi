@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
@@ -104,4 +105,47 @@ test("current Preview publication verifies E and RC before Draft, then requires 
   assert.doesNotMatch(workflow, /secrets\./u);
   assert.ok(workflow.indexOf("m11-compare-release-core.mjs") < workflow.indexOf("Create annotated release tag"));
   assert.ok(workflow.indexOf("Create complete Draft prerelease") < workflow.indexOf("environment: public-preview"));
+});
+
+test("publication requires owner confirmation and preserves source identity when rebuilding", () => {
+  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-publish.yml"), "utf8");
+  const validation = workflow.split("  build-draft:")[0].split("        run: |\n")[1]
+    .split("\n").map((line) => line.replace(/^          /u, "")).join("\n");
+  const source = "a".repeat(40);
+  const run = (overrides) => spawnSync("bash", ["-c", validation], {
+    cwd: root,
+    env: {
+      PATH: process.env.PATH, GITHUB_OUTPUT: "/dev/null", GITHUB_SHA: source,
+      SOURCE_COMMIT: source, EVIDENCE_COMMIT: "b".repeat(40),
+      EVIDENCE_PATH: "verification/protected/accepted.json", RC_RUN_ID: "123",
+      IMMUTABILITY_CONFIRMED: "true", RESUME_DRAFT: "false", ...overrides,
+    },
+    encoding: "utf8",
+  }).status;
+  assert.equal(run({}), 0);
+  assert.notEqual(run({ IMMUTABILITY_CONFIRMED: "false" }), 0);
+  assert.notEqual(run({ GITHUB_SHA: "c".repeat(40) }), 0);
+  assert.equal(run({ GITHUB_SHA: "c".repeat(40), RESUME_DRAFT: "true" }), 0);
+  assert.notEqual(run({ RESUME_DRAFT: "true", EVIDENCE_PATH: "verification/protected/../other.json" }), 0);
+  assert.doesNotMatch(workflow, /gh api .*\/immutable-releases/u, "GITHUB_TOKEN cannot read administration settings");
+});
+
+test("Draft recovery verifies existing source attestations before the same approval gate", () => {
+  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-publish.yml"), "utf8");
+  const recovery = workflow.split("  verify-draft:\n")[1].split("  publish:\n")[0];
+  assert.match(recovery, /if: \$\{\{ inputs\.resume_draft \}\}/u);
+  assert.match(recovery, /npm ci --ignore-scripts/u);
+  assert.match(recovery, /m11-release-evidence\.mjs/u);
+  assert.match(recovery, /cmp .*coding-protected-receipt\.json.*protected-receipt\.json/u);
+  assert.match(recovery, /m11-compare-release-core\.mjs/u);
+  assert.match(recovery, /assert\.equal\(expected\.length,10\)/u);
+  assert.match(recovery, /--source-digest "\$SOURCE_COMMIT" --signer-digest "\$SOURCE_COMMIT" --source-ref refs\/heads\/main/u);
+  assert.match(recovery, /--signer-workflow "\$GITHUB_REPOSITORY\/\.github\/workflows\/m11-publish\.yml" --deny-self-hosted-runners/u);
+  assert.match(recovery, /--predicate-type https:\/\/spdx\.dev\/Document\/v2\.3/u);
+  assert.doesNotMatch(recovery, /m11-workflow-build|actions\/attest@|gh release (create|edit|delete)/u);
+  const publication = workflow.split("  publish:\n")[1];
+  assert.match(publication, /needs: \[validate-inputs, build-draft, verify-draft\]/u);
+  assert.match(publication, /!cancelled\(\).*validate-inputs\.result == 'success'.*build-draft\.result == 'success'.*verify-draft\.result == 'success'/u);
+  assert.match(publication, /environment: public-preview/u);
+  assert.ok(publication.indexOf("git/tags/$TAG_OBJECT") < publication.indexOf("gh release edit"));
 });

@@ -19,6 +19,16 @@ on:
         description: Successful Preview RC workflow run ID for the same S
         required: true
         type: string
+      immutable_releases_confirmed:
+        description: Repository owner has checked that release immutability is enabled
+        required: true
+        default: false
+        type: boolean
+      resume_draft:
+        description: Verify and publish an existing source-attested Draft without rebuilding
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -40,8 +50,12 @@ jobs:
           EVIDENCE_COMMIT: ${{ inputs.evidence_commit }}
           EVIDENCE_PATH: ${{ inputs.evidence_path }}
           RC_RUN_ID: ${{ inputs.rc_run_id }}
+          IMMUTABILITY_CONFIRMED: ${{ inputs.immutable_releases_confirmed }}
+          RESUME_DRAFT: ${{ inputs.resume_draft }}
         run: |
           set -eu
+          test "$IMMUTABILITY_CONFIRMED" = true
+          if test "$RESUME_DRAFT" != true; then test "$SOURCE_COMMIT" = "$GITHUB_SHA"; fi
           case "$SOURCE_COMMIT" in (*[!a-f0-9]*|'') exit 1;; esac
           case "$EVIDENCE_COMMIT" in (*[!a-f0-9]*|'') exit 1;; esac
           test "${#SOURCE_COMMIT}" -eq 40
@@ -56,6 +70,7 @@ jobs:
   build-draft:
     name: Rebuild, compare, attest and create Draft
     needs: validate-inputs
+    if: ${{ !inputs.resume_draft }}
     runs-on: macos-14
     timeout-minutes: 45
     permissions:
@@ -134,11 +149,13 @@ jobs:
             ${{ runner.temp }}/m11-final/only-my-pi-0.3.0-preview.1-darwin-arm64-thin.tar.gz
           sbom-path: ${{ runner.temp }}/m11-final/only-my-pi-0.3.0-preview.1.spdx.json
 
-      - name: Require Public repository and immutable releases
+      # The immutable-releases settings endpoint requires Administration: read,
+      # which GITHUB_TOKEN cannot request. The owner confirms it at dispatch and
+      # reviews public-preview; the publish job verifies the resulting release.
+      - name: Require Public repository and unused tag
         run: |
           set -eu
           test "$(gh api "repos/$GITHUB_REPOSITORY" --jq .visibility)" = public
-          test "$(gh api "repos/$GITHUB_REPOSITORY/immutable-releases" --jq .enabled)" = true
           if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then exit 1; fi
 
       - name: Create annotated release tag
@@ -178,9 +195,77 @@ jobs:
             gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG"
           fi
 
+  verify-draft:
+    name: Verify an existing source-attested Draft
+    needs: validate-inputs
+    if: ${{ inputs.resume_draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      # Draft releases are visible to users with repository write access.
+      contents: write
+      actions: read
+      attestations: read
+    env:
+      SOURCE_COMMIT: ${{ needs.validate-inputs.outputs.source_commit }}
+      EVIDENCE_COMMIT: ${{ needs.validate-inputs.outputs.evidence_commit }}
+      EVIDENCE_PATH: ${{ needs.validate-inputs.outputs.evidence_path }}
+      TAG: v0.3.0-preview.1
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout evidence commit E
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-inputs.outputs.evidence_commit }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Switch to clean source S and verify annotated tag
+        run: |
+          set -eu
+          git checkout --detach "$SOURCE_COMMIT"
+          test "$(git cat-file -t "refs/tags/$TAG")" = tag
+          test "$(git rev-parse "refs/tags/$TAG^{commit}")" = "$SOURCE_COMMIT"
+
+      - name: Set up Node 24.19.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Download accepted RC assets
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: m11-rc-${{ needs.validate-inputs.outputs.source_commit }}
+          path: ${{ runner.temp }}/m11-rc
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.validate-inputs.outputs.rc_run_id }}
+
+      - name: Verify Draft, source evidence, core assets and every attestation
+        run: |
+          set -eu
+          test "$(gh api "repos/$GITHUB_REPOSITORY" --jq .visibility)" = public
+          test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = true
+          test "$(gh release view "$TAG" --json isPrerelease --jq .isPrerelease)" = true
+          mkdir "$RUNNER_TEMP/m11-final"
+          gh release download "$TAG" --dir "$RUNNER_TEMP/m11-final"
+          node scripts/m11-release-evidence.mjs --source-commit "$SOURCE_COMMIT" --evidence-commit "$EVIDENCE_COMMIT" --evidence-path "$EVIDENCE_PATH" --output "$RUNNER_TEMP/coding-protected-receipt.json" --json
+          cmp "$RUNNER_TEMP/coding-protected-receipt.json" "$RUNNER_TEMP/m11-final/only-my-pi-0.3.0-preview.1-protected-receipt.json"
+          node scripts/m11-compare-release-core.mjs --rc-root "$RUNNER_TEMP/m11-rc" --final-root "$RUNNER_TEMP/m11-final" --json
+          node --input-type=module -e 'import fs from "node:fs"; import assert from "node:assert/strict"; const root=process.env.RUNNER_TEMP; const expected=fs.readdirSync(`${root}/m11-rc`).sort(); assert.equal(expected.length,10); assert.deepEqual(fs.readdirSync(`${root}/m11-final`).sort(),expected);'
+          for asset in "$RUNNER_TEMP/m11-final"/*; do
+            gh attestation verify "$asset" --repo "$GITHUB_REPOSITORY" --source-digest "$SOURCE_COMMIT" --signer-digest "$SOURCE_COMMIT" --source-ref refs/heads/main --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/m11-publish.yml" --deny-self-hosted-runners
+          done
+          for asset in "$RUNNER_TEMP/m11-final"/*.tar.gz; do
+            gh attestation verify "$asset" --repo "$GITHUB_REPOSITORY" --source-digest "$SOURCE_COMMIT" --signer-digest "$SOURCE_COMMIT" --source-ref refs/heads/main --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/m11-publish.yml" --deny-self-hosted-runners --predicate-type https://spdx.dev/Document/v2.3
+          done
+
   publish:
     name: Publish immutable Preview after approval
-    needs: [validate-inputs, build-draft]
+    needs: [validate-inputs, build-draft, verify-draft]
+    if: ${{ !cancelled() && needs.validate-inputs.result == 'success' && (needs.build-draft.result == 'success' || needs.verify-draft.result == 'success') }}
     runs-on: ubuntu-latest
     environment: public-preview
     permissions:
@@ -191,7 +276,12 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Publish approved immutable prerelease
-        run: gh release edit "$TAG" --draft=false --prerelease --latest=false --verify-tag
+        run: |
+          set -eu
+          TAG_OBJECT=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object | select(.type == "tag") | .sha')
+          test -n "$TAG_OBJECT"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$TAG_OBJECT" --jq '.object | select(.type == "commit") | .sha')" = "$SOURCE_COMMIT"
+          gh release edit "$TAG" --draft=false --prerelease --latest=false --verify-tag
 
       - name: Verify immutable release attestation and every asset
         run: |
