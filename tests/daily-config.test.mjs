@@ -11,7 +11,9 @@ import {
   loadDailyCatalog,
   normalizePreferences,
   resetGlobalPreferences,
+  readLastInteractiveModel,
   resolveDailyConfiguration,
+  saveLastInteractiveModel,
   saveGlobalPreferences,
   validateResolvedModels,
 } from "../packages/daily-config/index.mjs";
@@ -37,8 +39,10 @@ test("catalog defines Core plus the exact daily hard and soft overlays", async (
   assert.equal(catalog.overlays.web.kind, "hard");
   assert.equal(catalog.overlays["orchestration-readonly"].kind, "hard");
   assert.equal(catalog.overlays["ui-terminal"].kind, "soft");
-  assert.equal(catalog.overlays.writer.available, false);
-  assert.deepEqual(catalog.presets.daily.overlays, ["orchestration-readonly", "ui-terminal", "web"]);
+  assert.equal(catalog.overlays.writer.available, true);
+  assert.equal(catalog.overlays.writer.kind, "soft");
+  assert.deepEqual(catalog.overlays.writer.authority.tools, ["edit", "write", "bash"]);
+  assert.deepEqual(catalog.presets.daily.overlays, ["orchestration-readonly", "ui-terminal", "web", "writer"]);
   assert.equal(catalog.presets.daily.profileId, "daily");
 });
 
@@ -47,7 +51,7 @@ test("default daily configuration is conservative and source-labelled", async (t
   const resolved = await resolveDailyConfiguration({ rootDir, configRoot });
   assert.equal(resolved.preset.id, "daily");
   assert.deepEqual(resolved.hardOverlays, ["orchestration-readonly", "web"]);
-  assert.deepEqual(resolved.softOverlays, ["ui-terminal"]);
+  assert.deepEqual(resolved.softOverlays, ["ui-terminal", "writer"]);
   assert.deepEqual(resolved.budget, DEFAULT_BUDGET);
   assert.equal(resolved.models.roles.reviewer.model, "inherit");
   assert.equal(resolved.source.global, "defaults");
@@ -183,4 +187,27 @@ test("global preferences are mode-protected, atomically replaceable and explicit
   assert.equal((await fs.stat(target)).mode & 0o777, 0o600);
   assert.equal((await resetGlobalPreferences({ configRoot })).status, "PREFERENCES_RESET");
   assert.equal((await resetGlobalPreferences({ configRoot })).status, "NO_CHANGES");
+});
+
+test("last interactive model is a bounded global preference without authentication data", async (t) => {
+  const { configRoot } = await roots(t);
+  assert.equal(await readLastInteractiveModel({ configRoot }), null);
+  const saved = await saveLastInteractiveModel({
+    configRoot,
+    model: "opencode-go/deepseek-v4-flash",
+    selectedAt: "2026-08-30T06:00:00.000Z",
+  });
+  assert.equal(saved.status, "LAST_INTERACTIVE_MODEL_SAVED");
+  assert.deepEqual(await readLastInteractiveModel({ configRoot }), {
+    model: "opencode-go/deepseek-v4-flash",
+    selectedAt: "2026-08-30T06:00:00.000Z",
+  });
+  assert.throws(
+    () => normalizePreferences({ formatVersion: 1, ui: { lastModel: saved.lastModel } }, { scope: "project" }),
+    { code: "NON_GLOBAL_UI_PREFERENCE_FORBIDDEN" },
+  );
+  assert.throws(
+    () => normalizePreferences({ formatVersion: 1, ui: { lastModel: { model: "inherit", selectedAt: "2026-08-30T06:00:00.000Z" } } }),
+    { code: "MODEL_CONFIGURATION_INVALID" },
+  );
 });

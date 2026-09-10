@@ -1,0 +1,63 @@
+{
+  "formatVersion": 1,
+  "id": "public-baseline-v1",
+  "description": "Re-establish current release authority after privacy-preserving Git history rewriting.",
+  "policy": {
+    "cwd": "repository-root",
+    "network": "deny",
+    "shell": false,
+    "protectedExecution": "evidence-only",
+    "maxGateCount": 5,
+    "maxOutputBytes": 8388608
+  },
+  "gates": [
+    {
+      "id": "PB1",
+      "description": "Legacy evidence is intact, inspection-only, and never current authority.",
+      "execution": "deterministic",
+      "command": "node",
+      "args": ["--test", "tests/legacy-authority.test.mjs"],
+      "timeoutMs": 120000,
+      "maxOutputBytes": 8388608
+    },
+    {
+      "id": "PB2",
+      "description": "The sanitized source retains the promoted Stable inventory, graph, and read-only boundary.",
+      "execution": "deterministic",
+      "command": "node",
+      "args": ["--test", "tests/public-baseline.test.mjs", "tests/m10-promotion-contract.test.mjs"],
+      "timeoutMs": 180000,
+      "maxOutputBytes": 8388608
+    },
+    {
+      "id": "PB3",
+      "description": "The public baseline artifact carries an exact sanitized source identity.",
+      "execution": "deterministic",
+      "command": "node",
+      "args": ["--test", "tests/public-baseline-artifact.test.mjs"],
+      "timeoutMs": 180000,
+      "maxOutputBytes": 8388608
+    },
+    {
+      "id": "PB4",
+      "description": "Protected apply, live matrix, exact rollback, and reapply evidence is imported without replay.",
+      "execution": "protected-evidence",
+      "command": null,
+      "args": [],
+      "timeoutMs": 1,
+      "maxOutputBytes": 8388608,
+      "defaultStatus": "NOT_RUN_BY_POLICY",
+      "evidenceId": "public-baseline-live-matrix"
+    },
+    {
+      "id": "PB5",
+      "description": "The B to BE to BR chain and completion receipt establish current public baseline authority.",
+      "execution": "authority-receipt",
+      "command": null,
+      "args": [],
+      "timeoutMs": 1,
+      "maxOutputBytes": 8388608,
+      "defaultStatus": "PUBLIC_BASELINE_PENDING"
+    }
+  ]
+}

@@ -328,6 +328,7 @@ test("production factory wires every runtime dependency without invoking runners
     "createNoModelSmokeRunner",
     "TransactionEngine",
     "BootstrapService",
+    "createNoModelSmokeRunner",
     "ControlService",
   ]);
   assert.equal(calls[1].options.configRoot, configRoot);
@@ -480,6 +481,16 @@ test("argument and service failures use stderr, bounded public errors, and no st
   assert.equal(failure.stderr.includes(causeSecret), false);
   assert.equal(failure.stderr.includes("stack"), false);
   assert.equal(JSON.parse(failure.stderr).code, "SAFE_TEST_FAILURE");
+
+  const partial = await invoke(["status", "--config-root", configRoot, "--json"], {
+    service: {
+      dispatch: async () => {
+        throw Object.assign(new Error("rollback stopped after a durable mutation"), { code: "PARTIAL_ROLLBACK", mutation: true });
+      },
+    },
+  });
+  assert.equal(partial.code, OMP_EXIT_CODES.FAILURE);
+  assert.equal(JSON.parse(partial.stderr).mutation, true);
 
   const unavailable = await invoke(["status", "--config-root", configRoot, "--json"], {
     service: {

@@ -13,6 +13,7 @@ import {
   restoreOwnedSettingsSnapshot,
   verifyOwnedSettingsSnapshot,
 } from "./snapshots.mjs";
+import { extractOwnedSettings } from "./owned-settings.mjs";
 import { loadSettings } from "./settings-store.mjs";
 
 export class LastKnownGoodError extends Error {
@@ -224,18 +225,35 @@ export async function verifyLastKnownGood(configRootInput, options = {}) {
     );
   }
   let currentSettingsMatch = null;
+  let currentOwnedSettingsMatch = null;
   if (options.verifyCurrentSettings !== false) {
     const current = await loadSettings(configRoot, { settingsFile: options.settingsFile });
     currentSettingsMatch = current.digest === state.settingsDigest;
     if (!currentSettingsMatch) {
-      throw new LastKnownGoodError(
-        "current settings are not the last-known-good settings",
-        "CURRENT_SETTINGS_NOT_LAST_KNOWN_GOOD",
-        { expected: state.settingsDigest, actual: current.digest },
-      );
+      if (options.allowUnownedSettingsDrift === true) {
+        const ownedSnapshot = await loadOwnedSettingsSnapshot(configRoot, state.snapshotId);
+        const currentOwned = extractOwnedSettings(current.settings, ownedSnapshot.owned.paths);
+        currentOwnedSettingsMatch = canonicalJson(currentOwned) === canonicalJson(ownedSnapshot.owned);
+      }
+      if (currentOwnedSettingsMatch !== true) {
+        throw new LastKnownGoodError(
+          "current settings are not the last-known-good settings",
+          "CURRENT_SETTINGS_NOT_LAST_KNOWN_GOOD",
+          { expected: state.settingsDigest, actual: current.digest },
+        );
+      }
+    } else {
+      currentOwnedSettingsMatch = true;
     }
   }
-  return Object.freeze({ ok: true, state, snapshot, currentSettingsMatch, generationManifestDigest: manifestDigest });
+  return Object.freeze({
+    ok: true,
+    state,
+    snapshot,
+    currentSettingsMatch,
+    currentOwnedSettingsMatch,
+    generationManifestDigest: manifestDigest,
+  });
 }
 
 export async function restoreLastKnownGood(configRootInput, options = {}) {

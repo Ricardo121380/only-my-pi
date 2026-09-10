@@ -60,7 +60,7 @@ function automaticTransport(requests = []) {
   };
 }
 
-async function harness(t, { withoutWeb = false, inheritedExtraAgentDirs, allowVerifiedReuseCompletion = false, subagentsVersion = "0.45.2" } = {}) {
+async function harness(t, { withoutWeb = false, inheritedExtraAgentDirs, allowVerifiedReuseCompletion = false, subagentsVersion = "0.45.2", directCoding = false } = {}) {
   const configRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-session-composer-"));
   t.after(() => fs.rm(configRoot, { recursive: true, force: true }));
   const webRoot = path.join(configRoot, "fake-web");
@@ -104,6 +104,7 @@ async function harness(t, { withoutWeb = false, inheritedExtraAgentDirs, allowVe
     getContext: () => ctx,
     dependencies: {
       ...(dailyConfig ? { dailyConfig } : {}),
+      directCoding,
       allowVerifiedReuseCompletion,
       transport: automaticTransport(requests),
       subagentsPackage: { root: configRoot, manifest: { name: "pi-subagents", version: subagentsVersion } },
@@ -147,6 +148,22 @@ test("session composer owns one read-only runtime, ceiling, private stores and W
   await composer.dispose();
   assert.equal(ceilingDisposed(), true);
   assert.equal(process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS, inheritedExtraAgentDirs);
+});
+
+test("direct session expands the same pi-subagents ceiling only for one managed writer", async (t) => {
+  const { composer, ceilingCalls, requests } = await harness(t, { withoutWeb: true, subagentsVersion: "0.57.0", directCoding: true });
+  assert.equal(composer.directCoding, true);
+  assert.equal(composer.directCodingOrchestrator.snapshot().physicalRuntimeOwner, "pi-subagents");
+  assert.equal(ceilingCalls.length, 1);
+  assert.equal(ceilingCalls[0].source, "only-my-pi-m12-direct-coding");
+  assert.equal(ceilingCalls[0].ceiling.allowedAgents.filter((agent) => agent === "omp-implementer").length, 1);
+  assert.ok(ceilingCalls[0].ceiling.allowedTools.includes("edit"));
+  assert.ok(ceilingCalls[0].ceiling.allowedTools.includes("write"));
+  assert.ok(ceilingCalls[0].ceiling.allowedTools.includes("bash"));
+  const child = await composer.directCodingOrchestrator.delegateReadOnly({ agent: "omp-explorer", task: "Map one bounded area." });
+  assert.equal(child.status, "completed");
+  assert.equal(requests.at(-1).agent, "omp-explorer");
+  assert.equal(requests.at(-1).toolBudget.block, "*");
 });
 
 test("pi-subagents 0.57.0 composes the same Agent, BatchSwarm, Workflow, SwarmGoal, and Ultra read-only runtime", async (t) => {

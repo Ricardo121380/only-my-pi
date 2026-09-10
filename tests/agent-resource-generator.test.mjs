@@ -47,14 +47,16 @@ test("tester and verifier require fixed gate IDs and never arbitrary bash", () =
   assert.doesNotThrow(() => compileAgentResource(manifest({ id: "verifier", gateIds: ["full-tests"] }), "Verify receipts."));
 });
 
-test("daily bundle publishes only generated roles without mutating tools", () => {
+test("direct-coding bundle publishes read-only roles and exactly one guarded implementer", () => {
   const resources = buildAgentResources({ rootDir: root });
-  const daily = resources.filter((resource) => resource.readOnly);
-  assert.ok(daily.length > 0);
-  assert.equal(daily.some((resource) => ["omp-debugger", "omp-implementer"].includes(resource.name)), false);
-  assert.ok(daily.some((resource) => resource.name === "omp-researcher"));
-  for (const resource of daily) {
-    assert.doesNotMatch(resource.content, /^tools:.*(?:bash|edit|write)/mu);
-    assert.match(resource.readOnlyOutputPath, /bundles\/only-my-pi-agent-bundle\/agents/u);
+  const bundled = resources.filter((resource) => resource.bundleEligible);
+  const writers = bundled.filter((resource) => !resource.readOnly);
+  assert.ok(bundled.some((resource) => resource.name === "omp-researcher"));
+  assert.deepEqual(writers.map((resource) => resource.name), ["omp-implementer"]);
+  assert.match(writers[0].content, /^tools:.*edit, write, bash/mu);
+  assert.match(writers[0].content, /managed\s+ordinary Git clone/u);
+  for (const resource of bundled) {
+    assert.match(resource.bundleOutputPath, /bundles\/only-my-pi-agent-bundle\/agents/u);
+    if (resource.readOnly) assert.doesNotMatch(resource.content, /^tools:.*(?:bash|edit|write)/mu);
   }
 });

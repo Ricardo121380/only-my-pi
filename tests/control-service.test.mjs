@@ -57,6 +57,36 @@ test("artifact install and artifact update share the plan-confirm-apply boundary
   assert.deepEqual(calls.map((entry) => `${entry.method}:${entry.options.operation}`), ["plan:install", "plan:update", "apply:update"]);
 });
 
+test("doctor reports direct Agent components and fails a matching daily target when they are unavailable", async () => {
+  const bootstrap = {
+    async doctor() {
+      return {
+        ok: true,
+        status: "PASS",
+        runtime: { profileId: "daily" },
+        generation: { alignment: "MATCH" },
+      };
+    },
+  };
+  const doctor = { live: async () => ({ ok: false, status: "UNAVAILABLE" }) };
+  const ready = createControlService({
+    bootstrap,
+    doctor,
+    directDoctor: { async inspect() { return { ok: true, status: "DIRECT_AGENT_READY" }; } },
+  });
+  assert.equal((await ready.dispatch({ command: "doctor", options: { live: false } })).directAgent.status, "DIRECT_AGENT_READY");
+
+  const unavailable = createControlService({
+    bootstrap,
+    doctor,
+    directDoctor: { async inspect() { return { ok: false, status: "DIRECT_AGENT_UPDATE_REQUIRED", code: "WRITER_UPDATE_REQUIRED" }; } },
+  });
+  const result = await unavailable.dispatch({ command: "doctor", options: { live: false } });
+  assert.equal(result.ok, false);
+  assert.equal(result.status, "FAIL");
+  assert.equal(result.code, "WRITER_UPDATE_REQUIRED");
+});
+
 test("apply requires explicit yes or a positive parent confirmation", async () => {
   const request = { command: "bootstrap", options: { apply: true, yes: false } };
   const denied = harness();
@@ -95,6 +125,26 @@ test("every mutating command recovers an incomplete upstream transaction before 
   const result = await service.dispatch({ command: "upstream", mutation: true, options: { subcommand: "apply", apply: true, yes: true } });
   assert.equal(result.status, "COMMITTED");
   assert.deepEqual(calls, ["recover", "plan", "apply"]);
+});
+
+test("M11 release and stack routes keep status read-only and every mutation plan-first", async () => {
+  const calls = [];
+  const stackService = {
+    async releaseCheck(options) { calls.push(["releaseCheck", options]); return { ok: true, status: "CURRENT", mutation: false }; },
+    async status() { calls.push(["status"]); return { ok: true, status: "INSTALLED", mutation: false }; },
+    async planInstall(options) { calls.push(["planInstall", options]); return { kind: "install-plan", planDigest: "sha256:plan", mutation: false }; },
+    async applyInstall(options, plan) { calls.push(["applyInstall", options, plan]); return { ok: true, status: "COMMITTED", mutation: true }; },
+    async planLifecycle(options) { calls.push(["planLifecycle", options]); return { kind: "lifecycle-plan", planDigest: "sha256:lifecycle", mutation: false }; },
+    async applyLifecycle(options, plan) { calls.push(["applyLifecycle", options, plan]); return { ok: true, status: "REMOVED", mutation: true }; },
+  };
+  const service = createControlService({ bootstrap: {}, doctor: {}, stackService });
+  assert.equal((await service.dispatch({ command: "release", options: { channel: "preview" } })).status, "CURRENT");
+  assert.equal((await service.dispatch({ command: "stack", mutation: false, options: { subcommand: "status" } })).status, "INSTALLED");
+  assert.equal((await service.dispatch({ command: "stack", mutation: false, options: { subcommand: "install", apply: false } })).kind, "install-plan");
+  assert.equal((await service.dispatch({ command: "stack", mutation: true, options: { subcommand: "install", apply: true, yes: true } })).status, "COMMITTED");
+  assert.equal((await service.dispatch({ command: "stack", mutation: false, options: { subcommand: "remove", apply: false } })).kind, "lifecycle-plan");
+  assert.equal((await service.dispatch({ command: "stack", mutation: true, options: { subcommand: "remove", apply: true, yes: true } })).status, "REMOVED");
+  assert.deepEqual(calls.map(([method]) => method), ["releaseCheck", "status", "planInstall", "planInstall", "applyInstall", "planLifecycle", "planLifecycle", "applyLifecycle"]);
 });
 
 test("live doctor remains separate from repository static doctor", async () => {

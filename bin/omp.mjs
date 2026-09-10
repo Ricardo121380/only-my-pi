@@ -24,6 +24,23 @@ import { ControlService, OMP_USAGE } from "../packages/control-service/service.m
 import { DailyConfigService } from "../packages/daily-config/index.mjs";
 import { ProjectGateService, createNodeExecAdapter } from "../packages/project-gates/index.mjs";
 import { RunManagementService, createRunRecordStore } from "../packages/run-management/index.mjs";
+import { loadSettings } from "../packages/config-runtime/index.mjs";
+import {
+  classifyOmpInvocation,
+  launchDirectAgent,
+  OMP_AGENT_USAGE,
+} from "../packages/direct-agent/launcher.mjs";
+import { createDirectAgentDoctor } from "../packages/direct-agent/doctor.mjs";
+import {
+  createGitHubReleasePayloadSource,
+  createLocalReleasePayloadSource,
+  createShellProfileService,
+  createStackHarnessAdapter,
+  createStackLayout,
+  createStackService,
+  createStackTransactionEngine,
+  createThinPayloadResolver,
+} from "../packages/release-stack/index.mjs";
 import {
   createCandidateTargetResolver,
   createCrossRootTransactionEngine,
@@ -72,7 +89,16 @@ const DEFAULT_DEPENDENCIES = Object.freeze({
   createPiProcessAdmission,
   createUpstreamMigrationService,
   createVersionService,
+  createDirectAgentDoctor,
   createWorkflowControlService,
+  createGitHubReleasePayloadSource,
+  createLocalReleasePayloadSource,
+  createShellProfileService,
+  createStackHarnessAdapter,
+  createStackLayout,
+  createStackService,
+  createStackTransactionEngine,
+  createThinPayloadResolver,
 });
 
 function fail(code, message) {
@@ -104,6 +130,16 @@ function dependenciesWithDefaults(overrides = {}) {
   const dependencies = { ...DEFAULT_DEPENDENCIES, ...overrides };
   for (const key of allowed) assertFunction(dependencies[key], key);
   return dependencies;
+}
+
+function inspectPublicPlatform() {
+  const darwinMajor = process.platform === "darwin" ? Number.parseInt(os.release().split(".")[0], 10) : 0;
+  return Object.freeze({
+    os: process.platform,
+    arch: process.arch,
+    minimumMacOSSatisfied: process.platform === "darwin" && Number.isInteger(darwinMajor) && darwinMajor >= 23,
+    rosetta: process.platform === "darwin" && process.arch !== "arm64",
+  });
 }
 
 /**
@@ -152,7 +188,13 @@ export function createProductionControlService({
   const ultras = createUltraRunControlService({ rootDir: resolvedRoot });
   const themes = createThemeControlService({ rootDir: resolvedRoot });
   const statusService = createStatusService();
-  const versionService = wired.createVersionService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot, userCli });
+  const stackLayout = wired.createStackLayout({ homeDir: os.homedir(), configRoot: resolvedConfigRoot });
+  const versionService = wired.createVersionService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot, userCli, stackLayout });
+  const directDoctor = wired.createDirectAgentDoctor({
+    rootDir: resolvedRoot,
+    configRoot: resolvedConfigRoot,
+    stackRoot: stackLayout.currentStack,
+  });
   const migrationPlanner = wired.createExternalMigrationPlanner({
     configRoot: resolvedConfigRoot,
     piPackageRoot: "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent",
@@ -189,6 +231,37 @@ export function createProductionControlService({
     processAdmission,
     engine: upstreamEngine,
   });
+  const stackHarness = wired.createStackHarnessAdapter({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot, spawnImpl });
+  const stackProcessAdmission = wired.createPiProcessAdmission({
+    piPackageRoot: path.join(stackLayout.currentStack, "pi"),
+    piBinPath: stackLayout.piShim,
+  });
+  const stackSmoke = wired.createNoModelSmokeRunner({ ...smokeOptions, piCommand: stackLayout.piShim });
+  const shellProfile = wired.createShellProfileService({ homeDir: os.homedir() });
+  const stackEngine = wired.createStackTransactionEngine({
+    layout: stackLayout,
+    processAdmission: stackProcessAdmission,
+    harness: stackHarness,
+    shellProfile,
+    doctor: async () => {
+      const result = await bootstrap.doctor({ configRoot: resolvedConfigRoot });
+      return { ok: result?.ok === true, status: result?.status ?? "FAIL" };
+    },
+    smoke: async () => {
+      const settings = await loadSettings(resolvedConfigRoot);
+      const result = await stackSmoke({ configRoot: resolvedConfigRoot, settings: settings.settings });
+      return { ok: result?.status === "PASS" || result?.ok === true, status: result?.status ?? "FAIL" };
+    },
+  });
+  const thinResolver = wired.createThinPayloadResolver(spawnImpl === undefined ? {} : { spawnImpl });
+  const stackService = wired.createStackService({
+    layout: stackLayout,
+    localSource: wired.createLocalReleasePayloadSource({ cacheRoot: stackLayout.releaseCache, thinResolver }),
+    releaseSource: wired.createGitHubReleasePayloadSource({ cacheRoot: stackLayout.releaseCache, thinResolver }),
+    engine: stackEngine,
+    shellProfile,
+    platformInspector: async () => inspectPublicPlatform(),
+  });
   const dailyConfig = new wired.DailyConfigService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot });
   const projectGates = new wired.ProjectGateService({
     configRoot: resolvedConfigRoot,
@@ -214,7 +287,9 @@ export function createProductionControlService({
     runManagement,
     statusService,
     versionService,
+    directDoctor,
     upstreamMigration,
+    stackService,
   });
 }
 
@@ -323,6 +398,9 @@ export function formatOmpHuman(result) {
   addField(lines, "piVersion", details.piVersion);
   addField(lines, "subagentsVersion", details.subagentsVersion);
   addField(lines, "decision", details.decision);
+  addField(lines, "stackId", details.stackId ?? details.activeStackId);
+  addField(lines, "payloadMode", details.payloadMode);
+  addField(lines, "nodeVersion", details.nodeVersion ?? details.embeddedNodeVersion);
   if (details.harnessStatus?.provenance) addField(lines, "provenance", details.harnessStatus.provenance);
 
   const providerSelection = details.providerSelection ?? details.desired?.metadata?.providerSelection;
@@ -359,7 +437,7 @@ function publicError(error) {
   return Object.freeze({
     ok: false,
     status: "ERROR",
-    mutation: false,
+    mutation: error?.mutation === true,
     code,
     message: singleLine(error?.message, "only-my-pi CLI failed"),
   });
@@ -450,6 +528,44 @@ export async function runOmpCli({
   }
 }
 
+/**
+ * Route the public `omp` entry without placing a long-lived wrapper around Pi.
+ * Management requests retain the existing plan-first CLI. Daily Agent requests
+ * replace this process with the controlled Pi runtime through launchDirectAgent.
+ */
+export async function runOmpEntrypoint(options = {}) {
+  const argv = options.argv ?? process.argv.slice(2);
+  const stdout = options.stdout ?? process.stdout;
+  const stderr = options.stderr ?? process.stderr;
+  let route;
+  try {
+    route = classifyOmpInvocation(argv);
+    if (route.kind === "agent-help") {
+      writeText(stdout, `${OMP_AGENT_USAGE}\n`);
+      return OMP_EXIT_CODES.SUCCESS;
+    }
+    if (route.kind === "admin") {
+      return await runOmpCli({ ...options, argv: route.argv });
+    }
+    const agentLauncher = options.agentLauncher ?? launchDirectAgent;
+    assertFunction(agentLauncher, "agentLauncher");
+    await agentLauncher({
+      argv: route.argv,
+      packageRoot: options.rootDir ?? DEFAULT_ROOT,
+      homeDir: options.homedir ? options.homedir() : os.homedir(),
+      stackRoot: options.stackRoot,
+      env: options.env ?? process.env,
+      execve: options.execve ?? process.execve,
+      randomUUIDImpl: options.randomUUIDImpl,
+    });
+    return OMP_EXIT_CODES.SUCCESS;
+  } catch (error) {
+    const output = publicError(error);
+    writeText(stderr, formatOmpHuman(output));
+    return exitCodeForError(error);
+  }
+}
+
 function isExecutedAsProgram(argvPath) {
   if (typeof argvPath !== "string" || argvPath.length === 0) return false;
   try {
@@ -460,5 +576,5 @@ function isExecutedAsProgram(argvPath) {
 }
 
 if (isExecutedAsProgram(process.argv[1])) {
-  process.exitCode = await runOmpCli();
+  process.exitCode = await runOmpEntrypoint();
 }

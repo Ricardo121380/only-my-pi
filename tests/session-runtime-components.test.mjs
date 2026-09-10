@@ -111,7 +111,7 @@ test("bound package resolution validates external trees and managed generation r
   const physicalRootDigest = `sha256:${await hashResourcePath({ artifactRoot: path.join(configRoot, "npm"), relativePath: "node_modules/pi-subagents", allowContainedSymlinks: true })}`;
   const settings = {
     onlyMyPi: {
-      packageBindings: [{ id: "subagents", binding: "external", name: "pi-subagents", resolvedVersion: "0.45.2", physicalRootDigest }],
+      packageBindings: [{ id: "subagents", binding: "external", owner: "user", name: "pi-subagents", resolvedVersion: "0.45.2", physicalRootDigest }],
       managedSettings: { packages: [] },
     },
   };
@@ -148,7 +148,7 @@ test("bound package resolution rejects malformed settings, identities, binding k
   const packageRoot = path.join(configRoot, "npm", "node_modules", "package");
   await fs.mkdir(packageRoot, { recursive: true });
   await fs.writeFile(path.join(packageRoot, "package.json"), JSON.stringify({ name: "wrong", version: "1.0.0" }));
-  await writeSettings({ id: "package", binding: "external", name: "package", resolvedVersion: "1.0.0", physicalRootDigest: `sha256:${"0".repeat(64)}` });
+  await writeSettings({ id: "package", binding: "external", owner: "user", name: "package", resolvedVersion: "1.0.0", physicalRootDigest: `sha256:${"0".repeat(64)}` });
   await assert.rejects(resolveBoundPackageRoot({ configRoot, packageId: "package" }), { code: "RUNTIME_PACKAGE_DRIFT" });
 
   await writeSettings({ id: "package", binding: "managed", name: "package", resolvedVersion: "1.0.0" }, [null, "npm:package@1.0.0", { source: "./elsewhere" }, { source: "./only-my-pi/generations/missing" }]);
@@ -156,7 +156,7 @@ test("bound package resolution rejects malformed settings, identities, binding k
 
   await fs.rm(packageRoot, { recursive: true });
   await fs.symlink(configRoot, packageRoot);
-  await writeSettings({ id: "package", binding: "external", name: "package", resolvedVersion: "1.0.0", physicalRootDigest: `sha256:${"0".repeat(64)}` });
+  await writeSettings({ id: "package", binding: "external", owner: "user", name: "package", resolvedVersion: "1.0.0", physicalRootDigest: `sha256:${"0".repeat(64)}` });
   await assert.rejects(resolveBoundPackageRoot({ configRoot, packageId: "package" }), { code: "RUNTIME_PACKAGE_UNSAFE" });
 });
 
@@ -360,6 +360,28 @@ test("direct Agent runner preserves a safe backend terminal error code", async (
   await assert.rejects(runner({ role: "reviewer", task: "bounded", runId: "direct-error", nodeId: "node" }), { code: "DELEGATION_CHILD_FAILED_TOOL" });
 });
 
+test("direct Agent runner can settle a recorded terminal without an artifact store", async () => {
+  const updates = [];
+  const terminal = { authoritative: true, outcome: "completed", receiptId: "receipt-no-artifact", result: { verdict: "pass" } };
+  const runner = directAgentRunner({
+    agentRegistry: createAgentRegistry({ rootDir }),
+    backend: {
+      async launch({ handle }) { return { handle, binding: { bindingId: "binding" } }; },
+      async awaitTerminal() { return terminal; },
+    },
+    configurationProvider: async () => configuration(),
+    webAuthorizer: { require() {} },
+    artifactStore: null,
+    recordStore: {
+      async begin(value) { updates.push(["begin", value.id]); },
+      async update(id, value) { updates.push(["update", id, value.status]); },
+    },
+    contextProvider: async () => ({ sessionId: "recorded-session", repository: { root: rootDir, head: null }, configurationDigest: `sha256:${"0".repeat(64)}` }),
+  });
+  assert.equal((await runner({ role: "reviewer", task: "bounded", runId: "direct-no-artifact", nodeId: "node" })).receiptId, terminal.receiptId);
+  assert.deepEqual(updates.map((entry) => entry.at(-1)), ["direct-no-artifact", "running", "completed"]);
+});
+
 test("composer disables orchestration before package resolution when the hard overlay is absent", async (t) => {
   const configRoot = await temporary(t, "omp-disabled-composer-");
   const dailyConfig = { async resolve() { return { hardOverlays: [], budget: configuration().budget }; } };
@@ -446,6 +468,23 @@ test("composer fails closed on missing session identity, missing Web entry, and 
   const divisorDependencies = injectedComposerDependencies(composedConfiguration());
   divisorDependencies.goalExecutionBudgetDivisor = 1;
   await assert.rejects(createSessionRuntimeComposer({ pi: {}, rootDir, configRoot: divisorRoot, getContext: () => ({ cwd: rootDir, sessionManager: { getSessionId: () => "divisor-session" } }), dependencies: divisorDependencies }), { code: "GOAL_EXECUTION_BUDGET_DIVISOR_INVALID" });
+});
+
+test("direct composer disposes its injected writer orchestrator when ceiling registration fails", async (t) => {
+  const configRoot = await temporary(t, "omp-direct-ceiling-failure-");
+  const calls = [];
+  const dependencies = injectedComposerDependencies(composedConfiguration(), calls);
+  dependencies.directCoding = true;
+  dependencies.directCodingOrchestrator = { dispose() { calls.push("direct-orchestrator-dispose"); } };
+  dependencies.registerCapabilityCeiling = () => { throw Object.assign(new Error("ceiling failed"), { code: "CEILING_FAILED" }); };
+  await assert.rejects(createSessionRuntimeComposer({
+    pi: {},
+    rootDir,
+    configRoot,
+    getContext: () => ({ cwd: rootDir, sessionManager: { getSessionId: () => "direct-ceiling-session" } }),
+    dependencies,
+  }), { code: "CEILING_FAILED" });
+  assert.equal(calls.includes("direct-orchestrator-dispose"), true);
 });
 
 test("raw Ultra executors preserve failed planning, awaiting approval, blocked verification, and legacy workflow routes", async (t) => {

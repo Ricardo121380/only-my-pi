@@ -1,0 +1,129 @@
+{
+  "formatVersion": 1,
+  "id": "m11-public-preview-gates-v1",
+  "description": "M11 Public Preview distribution, clean-host, protected live and publication-readiness gates.",
+  "policy": {
+    "cwd": "repository-root",
+    "network": "deny-except-q10-declared-hosts",
+    "shell": false,
+    "platformExecution": "explicit-darwin-arm64",
+    "protectedExecution": "evidence-only",
+    "maxGateCount": 12,
+    "maxOutputBytes": 8388608
+  },
+  "gates": [
+    {
+      "id": "Q1",
+      "description": "Sanitized history authority, legacy retirement and public baseline contracts.",
+      "command": "node",
+      "args": ["--test", "tests/legacy-authority.test.mjs", "tests/public-baseline.test.mjs", "tests/public-baseline-gates.test.mjs", "tests/public-baseline-protected.test.mjs"],
+      "timeoutMs": 600000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "Q2",
+      "description": "Version, channel, platform and strict release/stack schemas.",
+      "command": "node",
+      "args": ["--test", "tests/release-stack-contracts.test.mjs"],
+      "timeoutMs": 300000,
+      "maxOutputBytes": 4194304,
+      "execution": "deterministic"
+    },
+    {
+      "id": "Q3",
+      "description": "Complete artifact ledger, license sources, SPDX SBOM and notices.",
+      "command": "node",
+      "args": ["--test", "tests/package-content-identity.test.mjs", "tests/release-artifact-ledger.test.mjs", "tests/release-license-sources.test.mjs"],
+      "timeoutMs": 600000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "Q4",
+      "description": "Reproducible Full/Thin build and payload convergence.",
+      "command": "node",
+      "args": ["--test", "tests/release-builder.test.mjs", "tests/release-payload-assembler.test.mjs", "tests/release-payload-stager.test.mjs", "tests/release-thin-resolver.test.mjs"],
+      "timeoutMs": 600000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "Q5",
+      "description": "Bootstrap checksum, download host, redirect, SRI, extraction and tree enforcement.",
+      "command": "node",
+      "args": ["--test", "tests/release-downloader.test.mjs", "tests/release-installer.test.mjs", "tests/release-safe-extract.test.mjs"],
+      "timeoutMs": 600000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "Q6",
+      "description": "Empty, exact, partial and conflict environment ownership semantics.",
+      "command": "node",
+      "args": ["--test", "tests/release-environment-planner.test.mjs"],
+      "timeoutMs": 300000,
+      "maxOutputBytes": 4194304,
+      "execution": "deterministic"
+    },
+    {
+      "id": "Q7",
+      "description": "Cross-root stack transaction, settings CAS and crash recovery.",
+      "command": "node",
+      "args": ["--test", "tests/stack-transaction.test.mjs"],
+      "timeoutMs": 900000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "Q8",
+      "description": "Embedded Node/Pi, controlled shims, PATH and version identity.",
+      "command": "node",
+      "args": ["--test", "tests/release-stack-service.test.mjs", "tests/version-service.test.mjs"],
+      "timeoutMs": 600000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "Q9",
+      "description": "Update, rollback, uninstall and stack removal preservation.",
+      "command": "node",
+      "args": ["--test", "tests/stack-transaction.test.mjs", "tests/release-stack-service.test.mjs"],
+      "timeoutMs": 900000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    },
+    {
+      "id": "Q10",
+      "description": "macOS 14 Apple Silicon clean-home Full/Thin no-model acceptance.",
+      "command": "node",
+      "args": ["scripts/m11-macos-no-model-acceptance.mjs", "--run", "--json"],
+      "timeoutMs": 1800000,
+      "maxOutputBytes": 8388608,
+      "execution": "platform",
+      "defaultStatus": "NOT_RUN_PLATFORM",
+      "platform": "darwin-arm64",
+      "networkHosts": ["nodejs.org", "registry.npmjs.org"]
+    },
+    {
+      "id": "Q11",
+      "description": "Protected final release live-model and real-root matrix.",
+      "command": null,
+      "args": [],
+      "timeoutMs": 1,
+      "maxOutputBytes": 1024,
+      "execution": "protected-evidence",
+      "defaultStatus": "NOT_RUN_BY_POLICY",
+      "evidenceId": "m11-protected-final-release-matrix"
+    },
+    {
+      "id": "Q12",
+      "description": "Public GitHub, workflow, documentation and receipt consistency.",
+      "command": "node",
+      "args": ["--test", "tests/m11-release-gates.test.mjs", "tests/m11-protected-release-acceptance.test.mjs", "tests/m11-macos-no-model-acceptance.test.mjs", "tests/m11-release-evidence.test.mjs", "tests/m11-release-core.test.mjs", "tests/ci-contract.test.mjs", "tests/docs-links.test.mjs"],
+      "timeoutMs": 600000,
+      "maxOutputBytes": 8388608,
+      "execution": "deterministic"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-public-baseline",
+  "state": "PUBLIC_BASELINE_PENDING",
+  "legacyAuthority": {
+    "path": "verification/legacy-authority-v1.json",
+    "registryDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "currentReleaseAuthority": false
+  },
+  "stable": {
+    "piVersion": "0.84.3",
+    "subagentsVersion": "0.57.0",
+    "graphDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "profile": "daily",
+    "capability": "READ_ONLY"
+  },
+  "sourceCommit": "cccccccccccccccccccccccccccccccccccccccc",
+  "evidenceCommit": null,
+  "protectedEvidence": null,
+  "completionReceipt": null
+}

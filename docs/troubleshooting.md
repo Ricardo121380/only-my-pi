@@ -1,5 +1,88 @@
 # Troubleshooting
 
+## `OMP_CONTROLLED_STACK_UNAVAILABLE` or `M12_UPDATE_REQUIRED`
+
+The source checkout may contain M12 while the active user-local stack still
+contains the M11 foundation. This is not solved by starting raw `pi` and it is
+not proof that the old generation is corrupt. Run `omp admin version --json`
+and `omp admin doctor --json`, preserve the current LKG, and use only the
+reviewed M12 candidate install/reapply flow. Until C11 passes, do not manually
+retarget `~/.local/bin/omp` or `current-stack`.
+
+## Model picker failure
+
+`MODEL_SELECTION_CANCELLED` exits cleanly. `MODEL_AUTH_UNAVAILABLE` means Pi
+cannot use the selected Provider/model identity; configure it through Pi's
+normal credential flow, never in only-my-pi JSON. In headless mode,
+`HEADLESS_MODEL_REQUIRED` requires `--model provider/model-id` unless a recent
+interactive model remains available.
+
+## `CODING_ACCESS_REQUIRED` or `COMPLEX_PLAN_REQUIRED`
+
+These are expected admission outcomes. Inspect first, then approve the one
+session coding request. Complex, security, dependency, schema, concurrency,
+migration, deletion and release work requires a complete plan. Approval is not
+restored by `omp -c` or `omp -r`; a new process must approve again.
+
+## `UNSUPPORTED_UNSAFE_OVERRIDE`
+
+`/perm yolo` cannot widen a guarded direct OMP session. OMP revokes the coding
+grant, hides edit/write/bash and returns to Inspect. Switch back to `/perm
+build` and request coding access again. Use raw `pi` only when an intentionally
+unguarded session is truly desired.
+
+## Managed writer handoff or conflict
+
+Dirty-scope overlap keeps implementation with the main Agent. A base, scope,
+symlink, submodule, binary, review, patch or current-worktree drift failure
+leaves the real tree untouched and preserves the bounded patch artifact for
+review. Do not bypass `git apply --check` or manually copy the clone tree over
+the project. Tests must pass again in the actual current worktree.
+
+## `PATH_ACTION_REQUIRED`
+
+The stack installed successfully, but `~/.local/bin` is not visible in the
+current shell. Follow the exact printed export/profile action. only-my-pi does
+not edit shell profiles unless `--configure-shell` was explicitly supplied.
+Do not replace an existing non-OMP `pi` or `omp` file to work around this.
+
+## `SHIM_CONFLICT`
+
+`~/.local/bin/pi` or `~/.local/bin/omp` already exists and is not a verified
+only-my-pi symlink. Installation made no change. Inspect and relocate the
+conflicting file yourself, then create a fresh plan; never let the installer
+overwrite an unknown command.
+
+## Package or tree conflict
+
+`PACKAGE_VERSION_CONFLICT`, lock/SRI/tree drift, duplicate package identity,
+or an unrelated top-level package in a partial root are zero-write outcomes.
+The public installer does not upgrade, downgrade or adopt that environment.
+Preserve the reported evidence and reconcile the user-owned Pi tree explicitly.
+
+## `PAYLOAD_CONVERGENCE_FAILED`
+
+Full and Thin did not resolve to the same canonical stack identity. Do not
+install either payload and do not reuse its staged cache. Preserve the bounded
+receipt and report the exact release tag through the private security channel
+if provenance or artifact substitution is suspected.
+
+## `MANUAL_RECONCILIATION_REQUIRED`
+
+An interrupted transaction cannot prove whether every root is wholly old or
+wholly new, or a concurrent targeted package/settings change prevents safe
+automatic restore. Do not delete journals, backup siblings, stack state or LKG
+records. Follow the exact machine-readable reconciliation plan or open an
+Issue with only the redacted error code/digests—never attach `auth.json`,
+sessions, raw prompts or model output.
+
+## Unsupported platform or Rosetta
+
+The planned `0.3.0-preview.1` managed stack supports macOS 14+ on native Apple
+Silicon arm64 only. The
+installer intentionally rejects Intel Macs and Rosetta before staging. There is
+no supported override.
+
 ## `PLAN_READY` or `CONFIRMATION_REQUIRED`
 
 This is expected. Mutations are never implicit. Review the JSON plan and rerun

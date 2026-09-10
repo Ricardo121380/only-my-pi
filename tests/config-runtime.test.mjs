@@ -786,6 +786,15 @@ test("last-known-good state verifies generation, snapshot, settings, and restore
   assert.equal((await readState(root)).digest, state.digest);
   assert.equal((await verifyLastKnownGood(root)).ok, true);
 
+  await saveSettings(root, { ...lkgSettings, userPreference: "pi-owned-change" });
+  await assert.rejects(
+    verifyLastKnownGood(root),
+    (error) => error.code === "CURRENT_SETTINGS_NOT_LAST_KNOWN_GOOD",
+  );
+  const ownershipAware = await verifyLastKnownGood(root, { allowUnownedSettingsDrift: true });
+  assert.equal(ownershipAware.currentSettingsMatch, false);
+  assert.equal(ownershipAware.currentOwnedSettingsMatch, true);
+
   const changed = await saveSettings(root, {
     ...lkgSettings,
     pi: { extensions: ["generation/bad"] },

@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "core",
   "kind": "base",
-  "description": "First-party control, planning, permissions, LSP, usage and filtered session/context/review/notify resources.",
+  "description": "First-party direct-session control with permission sandboxing, LSP, usage and filtered session/context/review/notify resources; third-party plan-mode remains installed only for raw Pi compatibility.",
   "packageIds": ["plan-mode", "agent-extensions", "permission-modes", "lsp", "usage"],
   "capabilityIds": ["workspace-read", "planning", "permission-policy", "lsp", "usage-observability"],
   "authority": { "network": "deny", "persistence": "session", "tools": ["read", "grep", "find", "ls"], "webConfirmation": false, "browserCookies": false },

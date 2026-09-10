@@ -258,3 +258,48 @@ test("M10 upstream grammar separates zero-write planning from explicit migration
     ["upstream", "status", "tx-123", "--terminate-pi"],
   ]) assert.throws(() => parseOmpArgs(argv, context), Error, argv.join(" "));
 });
+
+test("M11 release and stack grammar keeps network checks read-only and mutations plan-first", () => {
+  const check = parseOmpArgs(["release", "check", "--channel", "preview", "--json"], context);
+  assert.deepEqual(check, {
+    command: "release",
+    mutation: false,
+    options: { configRoot: "/tmp/omp-home/.pi/agent", subcommand: "check", channel: "preview", json: true },
+  });
+
+  const thin = parseOmpArgs(["stack", "install", "--release", "0.2.0-preview.1"], context);
+  assert.equal(thin.mutation, false);
+  assert.equal(thin.options.payload, "thin");
+  assert.equal(thin.options.plan, true);
+
+  const fullApply = parseOmpArgs([
+    "stack", "update", "--release", "0.2.0-preview.2", "--payload", "full",
+    "--apply", "--yes", "--terminate-pi", "--configure-shell",
+  ], context);
+  assert.equal(fullApply.mutation, true);
+  assert.equal(fullApply.options.payload, "full");
+  assert.equal(fullApply.options.configureShell, true);
+
+  const local = parseOmpArgs(["stack", "install", "--bundle", "/tmp/release.tar.gz"], context);
+  assert.equal(local.options.bundle, "/tmp/release.tar.gz");
+  assert.equal(local.options.payload, null);
+
+  const rollback = parseOmpArgs(["stack", "rollback", "--to", `sha256:${"a".repeat(64)}`, "--apply", "--yes"], context);
+  assert.equal(rollback.mutation, true);
+  assert.equal(rollback.options.to, `sha256:${"a".repeat(64)}`);
+  assert.equal(parseOmpArgs(["stack", "status", "--json"], context).mutation, false);
+  assert.equal(parseOmpArgs(["stack", "remove"], context).mutation, false);
+
+  for (const argv of [
+    ["release", "check", "--channel", "stable"],
+    ["stack", "install"],
+    ["stack", "install", "--release", "latest"],
+    ["stack", "install", "--release", "0.2.0-preview.1", "--bundle", "/tmp/a"],
+    ["stack", "install", "--bundle", "/tmp/a", "--payload", "thin"],
+    ["stack", "install", "--release", "0.2.0-preview.1", "--apply"],
+    ["stack", "install", "--release", "0.2.0-preview.1", "--yes"],
+    ["stack", "remove", "--terminate-pi"],
+    ["stack", "status", "--apply", "--yes"],
+    ["stack", "rollback", "--to", "not-a-stack"],
+  ]) assert.throws(() => parseOmpArgs(argv, context), Error, argv.join(" "));
+});

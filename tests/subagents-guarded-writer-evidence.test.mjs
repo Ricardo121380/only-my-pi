@@ -498,7 +498,7 @@ function fakeChild(record, invocation) {
   return child;
 }
 
-test("Pi guarded writer runner uses one isolated Git fixture, one managed worktree root, and an allowlisted environment", async (t) => {
+test("legacy Pi guarded writer runner stays isolated while the current implementer declares managed-clone semantics", async (t) => {
   const values = fixture();
   const directory = await fsPromises.mkdtemp(path.join(os.tmpdir(), "omp-writer-runner-"));
   t.after(() => fsPromises.rm(directory, { recursive: true, force: true }));
@@ -562,7 +562,8 @@ test("Pi guarded writer runner uses one isolated Git fixture, one managed worktr
   const upstreamConfig = JSON.parse(await fsPromises.readFile(path.join(request.agentRoot, "extensions", "subagent", "config.json"), "utf8"));
   assert.deepEqual(upstreamConfig, { artifactDir: "session" });
   const generated = await fsPromises.readFile(path.join(request.agentRoot, "agents", "omp-implementer.md"), "utf8");
-  assert.match(generated, /managed\s+worktree supplied by the parent/u);
+  assert.match(generated, /ordinary Git clone supplied by the parent/u);
+  assert.doesNotMatch(generated, /managed\s+worktree supplied by the parent/u);
   assert.equal(await git(request.fixtureRoot, "status", "--porcelain=v1", "--untracked-files=all"), "");
 });
 

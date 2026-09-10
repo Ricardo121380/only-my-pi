@@ -1,0 +1,30 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-artifact-extraction-exceptions",
+  "exceptions": [
+    {
+      "identity": "agent-base@7.1.4",
+      "integrity": "sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==",
+      "paths": [
+        "package/dist/index.js"
+      ],
+      "reasonCode": "UPSTREAM_BYTE_IDENTICAL_CANONICAL_DUPLICATE"
+    },
+    {
+      "identity": "http-proxy-agent@7.0.2",
+      "integrity": "sha512-T1gkAiYYDWYx3V5Bmyu7HcfcvL7mUrTWiM6yOfa3PIphViJ/gFPbvidQ+veqSOHci/PxBcDabeUNCzpOODJZig==",
+      "paths": [
+        "package/dist/index.js"
+      ],
+      "reasonCode": "UPSTREAM_BYTE_IDENTICAL_CANONICAL_DUPLICATE"
+    },
+    {
+      "identity": "https-proxy-agent@7.0.6",
+      "integrity": "sha512-vK9P5/iUfdl95AI+JVyUuIcVtd4ofvtrOr3HNtM2yxC9bnMbEdp3x01OhQNnjb8IJYi38VlTE3mBXwcfvywuSw==",
+      "paths": [
+        "package/dist/index.js"
+      ],
+      "reasonCode": "UPSTREAM_BYTE_IDENTICAL_CANONICAL_DUPLICATE"
+    }
+  ]
+}

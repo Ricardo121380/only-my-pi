@@ -1,0 +1,32 @@
+{
+  "$schema": "../schemas/legacy-authority-v1.schema.json",
+  "formatVersion": 1,
+  "kind": "only-my-pi-legacy-authority",
+  "authorityClass": "LEGACY_PRIVATE_HISTORY",
+  "currentReleaseAuthority": false,
+  "retirementReason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY",
+  "replacementAuthority": "public-baseline-v1",
+  "legacySnapshotCommit": "1111111111111111111111111111111111111111",
+  "legacySnapshotTree": "2222222222222222222222222222222222222222",
+  "entries": [
+    {
+      "path": "verification/protected/example.json",
+      "fileSha256": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "3333333333333333333333333333333333333333",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    }
+  ],
+  "registryDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+}

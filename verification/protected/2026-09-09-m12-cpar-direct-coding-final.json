@@ -1,0 +1,185 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-m12-protected-local-evidence",
+  "status": "PASS",
+  "sourceCommit": "2d6efbd5cf8a602f5dc9d8d2510d800eaffe8eac",
+  "productVersion": "0.3.0-preview.1",
+  "stackId": "sha256:8612df80bca713bd2139d9f6a27f6bd4b5855ccb18cc341f73158c7c61a6d637",
+  "installedGenerationId": "sha256:9b9d0bf4c4dc3eb695e6dc4b99d4dbbd7d60f11f6872818ca96f1709725db67d",
+  "artifactSha256": "sha256:2438ef7bf9f541f8b1f5aa9e39fc4b4bf67ab20174e9f51e17967a15e6d00849",
+  "usage": {
+    "directlyMeteredTokens": 273254,
+    "variableCostUsd": 0,
+    "wallSeconds": 1065,
+    "toolCalls": 107,
+    "meteredTerminals": 71
+  },
+  "assertions": [
+    {
+      "gateId": "C11",
+      "id": "baseline-exact-rollback",
+      "status": "PASS",
+      "evidenceSha256": "sha256:be13751702d3856f5c823caddb613f9290a9c61417a2c697499038ee890dcc27"
+    },
+    {
+      "gateId": "C11",
+      "id": "candidate-install",
+      "status": "PASS",
+      "evidenceSha256": "sha256:5da3208eca8474b9a6eb9414c05964c20e50399232b7260bcb463b0a293b2fd4"
+    },
+    {
+      "gateId": "C11",
+      "id": "candidate-reapply",
+      "status": "PASS",
+      "evidenceSha256": "sha256:566fc06642a7b9c0bef30098077b969d6485aeafe243162cf6f03c49bbceb670"
+    },
+    {
+      "gateId": "C11",
+      "id": "cli-generation-identity",
+      "status": "PASS",
+      "evidenceSha256": "sha256:d9c6cc4f3d47008dd3e587feddabb76228cd2378791c74633955581e7e1687b9"
+    },
+    {
+      "gateId": "C11",
+      "id": "external-ownership-preserved",
+      "status": "PASS",
+      "evidenceSha256": "sha256:41017cec42c6caddc7de78ea150c90f0dc8974753732826e6f0be5b645b7561b"
+    },
+    {
+      "gateId": "C11",
+      "id": "no-incomplete-transaction",
+      "status": "PASS",
+      "evidenceSha256": "sha256:524521b94e28e4645eb9da0363e170aacd898a1e9483b5493ff5af187fcbc5b2"
+    },
+    {
+      "gateId": "C11",
+      "id": "no-model-direct-launch",
+      "status": "PASS",
+      "evidenceSha256": "sha256:84eaad2721d1d0e958e6b971a46fd82200c5b6195c637417ac8e51970654fe34"
+    },
+    {
+      "gateId": "C11",
+      "id": "system-runtime-preserved",
+      "status": "PASS",
+      "evidenceSha256": "sha256:b188e9b3299f5ee4f00812f1713b15c80b2c5fc8483973a66928c7826cc97499"
+    },
+    {
+      "gateId": "C12",
+      "id": "budget-denial",
+      "status": "PASS",
+      "evidenceSha256": "sha256:f4edac15cbb7b44a195873b110cab087dd7cd3f72ede9ad76b94b5aeae32e5c9"
+    },
+    {
+      "gateId": "C12",
+      "id": "cancellation",
+      "status": "PASS",
+      "evidenceSha256": "sha256:745d0fbcda5c21c5e4ff02d2dfb00a812bea06ef1e38c25b8956d7ed0e008a2c"
+    },
+    {
+      "gateId": "C12",
+      "id": "complex-plan-before-coding",
+      "status": "PASS",
+      "evidenceSha256": "sha256:a55bff2acd60725fa5e20446bbfb3c772af7cb711470069664489db304ed9741"
+    },
+    {
+      "gateId": "C12",
+      "id": "conflict-free-auto-integration",
+      "status": "PASS",
+      "evidenceSha256": "sha256:675ce1c5c2a70b3c74963c3f6fe9e97d7638a5f68b1b89bc218a3280f657ef86"
+    },
+    {
+      "gateId": "C12",
+      "id": "dirty-overlap-main-agent",
+      "status": "PASS",
+      "evidenceSha256": "sha256:ff6142820592410578219652b1af55d7f6402f3b4d29d1b4a2f089dae97f3595"
+    },
+    {
+      "gateId": "C12",
+      "id": "fresh-reviewer-blocks-defect",
+      "status": "PASS",
+      "evidenceSha256": "sha256:896dc65cf7af0465923cb34ce8ff39f9f972c98425387e6eb5b632d155e1361f"
+    },
+    {
+      "gateId": "C12",
+      "id": "graceful-exit",
+      "status": "PASS",
+      "evidenceSha256": "sha256:81f7a23de0af97a489b922277820bcce64c358eb2cb20029eb54155ddd5cfbec"
+    },
+    {
+      "gateId": "C12",
+      "id": "headless-writer-denial",
+      "status": "PASS",
+      "evidenceSha256": "sha256:8e99c71889e8e6ac9f1d1d3847ebb3416801c918b8e71d779a3b6cc5d305ae99"
+    },
+    {
+      "gateId": "C12",
+      "id": "managed-clone-writer",
+      "status": "PASS",
+      "evidenceSha256": "sha256:40924f5e82475d2c0af2d10500754ccf7623b22fffaac787ae4ef8518015366f"
+    },
+    {
+      "gateId": "C12",
+      "id": "new-session-reapproval",
+      "status": "PASS",
+      "evidenceSha256": "sha256:62f3098304c52413212c309f6b1a80ebb720edf9fe4d5e46b8f522ce5fb2d77e"
+    },
+    {
+      "gateId": "C12",
+      "id": "parallel-readonly-scouts",
+      "status": "PASS",
+      "evidenceSha256": "sha256:a4bc3df9fa5f7dd95e03211a72b9022279c022f395be923f39945baff6c0c3b9"
+    },
+    {
+      "gateId": "C12",
+      "id": "project-external-write-denial",
+      "status": "PASS",
+      "evidenceSha256": "sha256:13a100f5f192e80a39b7e204933f0bfa4d4081139adf2825967b25daa87c014b"
+    },
+    {
+      "gateId": "C12",
+      "id": "public-web-separate-approval",
+      "status": "PASS",
+      "evidenceSha256": "sha256:65a516515ce2b99d62ea881a532da99d59157a60c5d2307df9b5fb317a7323be"
+    },
+    {
+      "gateId": "C12",
+      "id": "runtime-and-package-identity",
+      "status": "PASS",
+      "evidenceSha256": "sha256:d9c6cc4f3d47008dd3e587feddabb76228cd2378791c74633955581e7e1687b9"
+    },
+    {
+      "gateId": "C12",
+      "id": "same-session-grant-reuse",
+      "status": "PASS",
+      "evidenceSha256": "sha256:d5b1be0784e5d040a8ddba788133a1be7d69ed33328995b054c17d3027fe09b8"
+    },
+    {
+      "gateId": "C12",
+      "id": "session-continue",
+      "status": "PASS",
+      "evidenceSha256": "sha256:8703e5525d5ac05992762407f21bfafe5d7283872f336d1879036a04108e892d"
+    },
+    {
+      "gateId": "C12",
+      "id": "simple-single-file-fix",
+      "status": "PASS",
+      "evidenceSha256": "sha256:affd9fcfba0d64085569529d598ab508e1a440cb04a28882ff030312d64ede48"
+    },
+    {
+      "gateId": "C12",
+      "id": "single-runtime-owner",
+      "status": "PASS",
+      "evidenceSha256": "sha256:8b1bbccd595f4383dee77af6251387798a5677fd71d50bf8b62e394c61fead49"
+    }
+  ],
+  "privacy": {
+    "rawPromptsStored": false,
+    "rawOutputsStored": false,
+    "reasoningStored": false,
+    "hostPathsStored": false,
+    "secretsStored": false,
+    "sessionsStored": false,
+    "credentialsRead": false
+  },
+  "evidenceDigest": "sha256:1fb6b07fa646ddc880b41e6eefe4b9685fc05562f67586f84a80f95ecc673f12"
+}

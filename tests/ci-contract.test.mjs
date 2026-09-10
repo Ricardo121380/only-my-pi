@@ -16,6 +16,14 @@ test("CI executes the same manifest-backed verify runner without credentials", (
   assert.match(workflow, /npm run verify -- --run/);
   assert.match(workflow, /npm run verify:m8:run/u);
   assert.match(workflow, /npm run verify:m9:run/u);
+  assert.match(workflow, /npm run verify:public-baseline:run/u);
+  assert.doesNotMatch(workflow, /npm run verify:m10:run/u, "retired private-history promotion cannot authorize public CI");
+  assert.match(workflow, /npm run verify:m11:run/u);
+  assert.match(workflow, /npm run verify:m12:run/u);
+  assert.match(workflow, /cancel-in-progress: true/u);
+  assert.match(workflow, /runs-on: macos-14/u);
+  assert.doesNotMatch(workflow, /runs-on: macos-14-xlarge/u);
+  assert.match(workflow, /npm run verify:m11:q10:ci/u);
   assert.match(workflow, /receipt:check/);
   assert.match(
     workflow,
@@ -38,5 +46,62 @@ test("CI executes the same manifest-backed verify runner without credentials", (
   const v2Runner = workflow.indexOf("npm run verify:subagents:run");
   const m8Runner = workflow.indexOf("npm run verify:m8:run");
   const m9Runner = workflow.indexOf("npm run verify:m9:run");
-  assert.ok(v1Runner >= 0 && receiptCleanup > v1Runner && v2Runner > receiptCleanup && m8Runner > v2Runner && m9Runner > m8Runner);
+  const publicBaselineRunner = workflow.indexOf("npm run verify:public-baseline:run");
+  const m11Runner = workflow.indexOf("npm run verify:m11:run");
+  const m12Runner = workflow.indexOf("npm run verify:m12:run");
+  assert.ok(v1Runner >= 0 && receiptCleanup > v1Runner && v2Runner > receiptCleanup && m8Runner > v2Runner && m9Runner > m8Runner && publicBaselineRunner > m9Runner && m11Runner > publicBaselineRunner && m12Runner > m11Runner);
+  assert.equal((workflow.match(/uses: actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1/gu) ?? []).length, 2);
+  assert.equal((workflow.match(/uses: actions\/setup-node@820762786026740c76f36085b0efc47a31fe5020/gu) ?? []).length, 2);
+});
+
+test("current Preview RC workflow is exact-source, attest-only and cannot publish", () => {
+  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-rc.yml"), "utf8");
+  assert.match(workflow, /workflow_dispatch:/u);
+  assert.match(workflow, /only-my-pi-0\.3\.0-preview\.1-darwin-arm64-full\.tar\.gz/u);
+  assert.match(workflow, /Require the current Preview version/u);
+  assert.doesNotMatch(workflow, /0\.2\.0-preview\.1/u);
+  assert.match(workflow, /ref: \$\{\{ inputs\.source_commit \}\}/u);
+  assert.match(workflow, /runs-on: macos-14/u);
+  assert.doesNotMatch(workflow, /runs-on: macos-14-xlarge/u);
+  assert.match(workflow, /node scripts\/m11-workflow-build\.mjs --source-commit/u);
+  assert.equal((workflow.match(/actions\/attest@59d89421af93a897026c735860bf21b6eb4f7b26/gu) ?? []).length, 2);
+  assert.match(workflow, /actions\/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6\.0\.0/u);
+  assert.match(workflow, /id-token: write/u);
+  assert.match(workflow, /attestations: write/u);
+  assert.match(workflow, /artifact-metadata: write/u);
+  assert.doesNotMatch(workflow, /contents: write|gh release|git push|secrets\./u);
+});
+
+test("current Preview publication verifies E and RC before Draft, then requires environment approval", () => {
+  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-publish.yml"), "utf8");
+  assert.match(workflow, /runs-on: macos-14/u);
+  assert.doesNotMatch(workflow, /runs-on: macos-14-xlarge/u);
+  assert.match(workflow, /needs: validate-inputs/u);
+  assert.match(workflow, /ref: \$\{\{ needs\.validate-inputs\.outputs\.evidence_commit \}\}/u);
+  assert.match(workflow, /actions\/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7\.0\.0/u);
+  assert.match(workflow, /m11-release-evidence\.mjs/u);
+  assert.match(workflow, /C11\/C12 evidence-only child E/u);
+  assert.match(workflow, /TAG: v0\.3\.0-preview\.1/u);
+  assert.match(workflow, /Require the current Preview version/u);
+  assert.doesNotMatch(workflow, /0\.2\.0-preview\.1|Q11/u);
+  assert.match(workflow, /m11-compare-release-core\.mjs/u);
+  assert.equal((workflow.match(/actions\/attest@59d89421af93a897026c735860bf21b6eb4f7b26/gu) ?? []).length, 2);
+  assert.match(workflow, /--draft --prerelease --latest=false --verify-tag/u);
+  const notesPath = /--notes-file ([a-zA-Z0-9._/-]+\.md)/u.exec(workflow)?.[1];
+  assert.ok(notesPath, "publication must select a release notes file");
+  const version = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).version;
+  assert.ok(fs.readFileSync(path.join(root, notesPath), "utf8").startsWith(`# only-my-pi ${version}\n`), "release notes must exist for the current product version");
+  assert.match(workflow, /Remove incomplete Draft and tag after failure/u);
+  assert.match(workflow, /failure\(\) && steps\.create-tag\.outputs\.created == 'true'/u, "failure cleanup must never delete a pre-existing release or tag");
+  assert.match(workflow, /gh release delete "\$TAG" --yes --cleanup-tag/u);
+  assert.match(workflow, /environment: public-preview/u);
+  assert.match(workflow, /gh release edit "\$TAG" --draft=false/u);
+  assert.match(workflow, /gh release verify "\$TAG"/u);
+  assert.match(workflow, /gh release verify-asset/u);
+  assert.match(workflow, /gh attestation verify/u);
+  assert.match(workflow, /--source-digest "\$SOURCE_COMMIT"/u);
+  assert.match(workflow, /isImmutable/u);
+  assert.doesNotMatch(workflow, /secrets\./u);
+  assert.ok(workflow.indexOf("m11-compare-release-core.mjs") < workflow.indexOf("Create annotated release tag"));
+  assert.ok(workflow.indexOf("Create complete Draft prerelease") < workflow.indexOf("environment: public-preview"));
 });

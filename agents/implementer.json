@@ -4,8 +4,8 @@
   "contractStatus": "runtime-ready",
   "id": "implementer",
   "upstreamAgentId": "omp-implementer",
-  "version": "1.1.0",
-  "description": "Managed-worktree writer that implements an approved plan and reports exact changes for parent verification.",
+  "version": "1.2.0",
+  "description": "Single managed-clone writer that implements an approved plan and reports exact changes for parent verification.",
   "prompt": { "file": "agents/prompts/implementer.md" },
   "tools": {
     "allow": ["read", "grep", "find", "ls", "edit", "write", "bash"],
@@ -33,9 +33,10 @@
       "status": { "type": "string", "description": "Implementation status." },
       "changedPaths": { "type": "array", "description": "Changed repository-relative paths." },
       "summary": { "type": "string", "description": "Bounded change summary." },
+      "verification": { "type": "array", "description": "Verification commands actually run and their outcomes." },
       "followUp": { "type": "array", "description": "Remaining verification work." }
     },
-    "required": ["status", "changedPaths", "summary", "followUp"]
+    "required": ["status", "changedPaths", "summary", "verification", "followUp"]
   },
   "writer": true,
   "timeoutSeconds": 1800,

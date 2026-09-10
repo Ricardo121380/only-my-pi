@@ -5,9 +5,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { createAgentRegistry } from "../../agent-registry/index.mjs";
-import { hashResourcePath } from "../../bootstrap/graph-plan.mjs";
+import { resolveBoundPackageRoot } from "../../bootstrap/runtime-package-binding.mjs";
 import { createBatchSwarmControlService } from "../../control-service/batch-swarm-service.mjs";
 import { createDailyConfigService, selectRoleModel } from "../../daily-config/index.mjs";
+import { createDirectCodingOrchestrator } from "../../direct-agent/orchestration.mjs";
+import { createWriterVerification } from "../../direct-agent/writer-verification.mjs";
 import { createWorkflowRegistry } from "../../workflow-core/index.mjs";
 import { createNodeExecAdapter, createProjectGateService } from "../../project-gates/index.mjs";
 import { createManagedCoordinator, createRecordedGoalController, createRecordedUltraRouter, createRunManagementService, createRunRecordStore } from "../../run-management/index.mjs";
@@ -129,45 +131,7 @@ async function prepareWebAgentOverrides({ rootDir, managedRoot, sessionId, webEx
   return { runtimeRoot, agentsRoot, guardPath, webExtensionPath };
 }
 
-function packageSettingSource(value) {
-  if (typeof value === "string") return value;
-  return value && typeof value === "object" && !Array.isArray(value) && typeof value.source === "string" ? value.source : null;
-}
-
-async function assertPackageRoot(configRoot, packageRoot, expectedName, expectedVersion) {
-  contained(configRoot, packageRoot);
-  const stat = await fs.lstat(packageRoot);
-  if (!stat.isDirectory() || stat.isSymbolicLink()) fail("RUNTIME_PACKAGE_UNSAFE", `${expectedName} root must be a real directory`);
-  const manifest = await readJsonNoFollow(path.join(packageRoot, "package.json"));
-  if (manifest?.name !== expectedName || manifest?.version !== expectedVersion) fail("RUNTIME_PACKAGE_DRIFT", `${expectedName} identity drifted from its binding`);
-  return { root: packageRoot, manifest };
-}
-
-export async function resolveBoundPackageRoot({ configRoot, packageId } = {}) {
-  if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("resolveBoundPackageRoot requires absolute configRoot");
-  const settings = await readJsonNoFollow(path.join(configRoot, "settings.json"));
-  const binding = settings?.onlyMyPi?.packageBindings?.find((entry) => entry.id === packageId);
-  if (!binding) fail("RUNTIME_PACKAGE_BINDING_MISSING", `no installed binding exists for ${packageId}`);
-  if (typeof binding.name !== "string" || typeof binding.resolvedVersion !== "string") fail("RUNTIME_PACKAGE_BINDING_INVALID", `package binding is incomplete for ${packageId}`);
-  if (binding.binding === "external") {
-    const npmRoot = path.join(configRoot, "npm");
-    const relativePackagePath = `node_modules/${binding.name}`;
-    const result = await assertPackageRoot(configRoot, path.join(npmRoot, ...relativePackagePath.split("/")), binding.name, binding.resolvedVersion);
-    const digest = `sha256:${await hashResourcePath({ artifactRoot: npmRoot, relativePath: relativePackagePath, allowContainedSymlinks: true })}`;
-    if (digest !== binding.physicalRootDigest) fail("RUNTIME_PACKAGE_DRIFT", `${binding.name} physical tree differs from its installed binding`);
-    return result;
-  }
-  if (binding.binding !== "managed") fail("RUNTIME_PACKAGE_BINDING_INVALID", `unknown binding kind for ${packageId}`);
-  const managed = settings.onlyMyPi.managedSettings?.packages ?? [];
-  for (const setting of managed) {
-    const source = packageSettingSource(setting);
-    if (typeof source !== "string" || !source.startsWith("./only-my-pi/generations/")) continue;
-    const target = contained(configRoot, path.resolve(configRoot, source.slice(2)));
-    const manifest = await readJsonNoFollow(path.join(target, "package.json"), { missing: null });
-    if (manifest?.name === binding.name) return assertPackageRoot(configRoot, target, binding.name, binding.resolvedVersion);
-  }
-  fail("RUNTIME_PACKAGE_BINDING_MISSING", `managed package root is unavailable for ${packageId}`);
-}
+export { resolveBoundPackageRoot };
 
 async function loadCapabilityCeilingRegistrar(packageRoot) {
   const require = createRequire(path.join(packageRoot, "package.json"));
@@ -652,6 +616,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
     return state.configuration;
   };
   const configuration = await configurationProvider();
+  const directCoding = dependencies.directCoding ?? (process.env.ONLY_MY_PI_DIRECT === "1");
   if (!configuration.hardOverlays.includes("orchestration-readonly")) {
     return Object.freeze({ enabled: false, status: "ORCHESTRATION_OVERLAY_DISABLED", configuration, dailyConfig, async dispose() {} });
   }
@@ -938,15 +903,36 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
     process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS = [previousExtraAgentDirs, runtimeAgentOverride.agentsRoot].filter(Boolean).join(path.delimiter);
   }
   const registerCeiling = dependencies.registerCapabilityCeiling ?? await loadCapabilityCeilingRegistrar(subagentsPackage.root);
-  const ceilingHandle = registerCeiling({
-    sessionId,
-    source: "only-my-pi-m8-readonly",
-    ceiling: {
-      allowedAgents: READ_ONLY_AGENT_IDS,
-      allowedTools: ["read", "grep", "find", "ls", "web", "web_search", "source_check", "fetch_content", "get_search_content", "structured_output"],
-      denyExtensions: false,
-    },
-  });
+  let directCodingOrchestrator = null;
+  const allowedAgents = directCoding ? [...READ_ONLY_AGENT_IDS, "omp-implementer"] : READ_ONLY_AGENT_IDS;
+  const allowedTools = ["read", "grep", "find", "ls", "web", "web_search", "source_check", "fetch_content", "get_search_content", "structured_output"];
+  if (directCoding) allowedTools.push("edit", "write", "bash");
+  let ceilingHandle;
+  try {
+    directCodingOrchestrator = directCoding
+      ? dependencies.directCodingOrchestrator ?? createDirectCodingOrchestrator({
+        transport,
+        configRoot,
+        getContext,
+        budget: configuration.budget,
+        webAuthorizer,
+        webEnabled: configuration.hardOverlays.includes("web"),
+        verifyWriter: createWriterVerification({ configRoot, getContext }),
+      })
+      : null;
+    ceilingHandle = registerCeiling({
+      sessionId,
+      source: directCoding ? "only-my-pi-m12-direct-coding" : "only-my-pi-m8-readonly",
+      ceiling: {
+        allowedAgents,
+        allowedTools,
+        denyExtensions: false,
+      },
+    });
+  } catch (error) {
+    directCodingOrchestrator?.dispose?.();
+    throw error;
+  }
   let disposed = false;
   return Object.freeze({
     enabled: true,
@@ -954,6 +940,8 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
     physicalRuntimeOwner: "pi-subagents",
     physicalRuntimeVersion: subagentsPackage.manifest.version,
     logicalRuntimeOwner: "@only-my-pi/subagents",
+    directCoding,
+    directCodingOrchestrator,
     configuration,
     webPolicy,
     webAuthorizer,
@@ -985,6 +973,7 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
       if (disposed) return { status: "DISPOSED" };
       disposed = true;
       await coordinator.shutdown?.().catch(() => {});
+      directCodingOrchestrator?.dispose?.();
       ceilingHandle.dispose();
       await backend.dispose().catch(() => {});
       transport.dispose?.();

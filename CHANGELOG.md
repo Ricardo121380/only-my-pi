@@ -1,9 +1,56 @@
 # Changelog
 
 All notable changes to `only-my-pi` are recorded here. This project is in an
-early, local-first harness phase; entries describe the governed repository
+early, local-first Agent phase; entries describe the governed repository
 artifacts and their verification boundary, not a promise of a published npm
 release.
+
+## 0.3.0-preview.1 — local direct-Agent candidate
+
+### Added
+
+- `omp` as the direct terminal coding-Agent entry, with the controlled Pi TUI
+  replacing the launcher process so terminal signals and exit behavior remain
+  native;
+- per-process Inspect, Planning and Coding states, one explicit coding-access
+  approval, a mutation backstop and guarded project-local edit/write/bash;
+- startup model selection, clear `/exit` and `/access` commands, read-only
+  headless operation and automatic visible subagent routing;
+- dirty-worktree attribution and one managed ordinary-clone writer with scoped
+  patch checks, fresh review and conflict-safe integration;
+- C1-C12 M12 verification, with C11-C12 reserved for source-bound real-install
+  and live-coding evidence.
+
+### Security boundary
+
+The candidate starts read-only. Coding approval is scoped to one interactive
+process and the active project; it does not authorize project-external writes,
+destructive Git, deployment, publication, credentials, MCP or silent YOLO.
+The package remains unpublished while local protected acceptance and hosted
+release authority are incomplete.
+
+## 0.2.0-preview.1 — internal distribution foundation
+
+### Added
+
+- macOS 14+ Apple Silicon Full and Thin GitHub Release payloads with embedded
+  Node 24.19.0, controlled Pi 0.84.3 and the exact audited nine-package stack;
+- canonical stack/release manifests, complete transitive artifact ledger,
+  SPDX 2.3 SBOM, third-party notices, reproducible archives and GitHub
+  provenance/SBOM attestations;
+- one checksum-first fixed-version bootstrap, controlled user-local `pi` and
+  `omp` shims, explicit release check, stack update/rollback/remove and crash-
+  recoverable transactions;
+- privacy-sanitized public history and a newly source-bound public baseline.
+
+### Security boundary
+
+This version remains read-only and user-local and was never published. It does
+not publish to npm,
+modify Homebrew, run lifecycle scripts, enable writer/MCP, perform background
+updates, or adopt third-party packages. Publication remains blocked until the
+direct terminal coding-Agent product superseding it is accepted. Its builder,
+transaction, SBOM and rollback work remains reusable internal foundation.
 
 ## 0.1.0 — 2026-08-16
 

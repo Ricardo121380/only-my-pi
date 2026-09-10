@@ -4,6 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createContextSnapshotProvider, createOmpRuntime } from "./runtime.mjs";
 
+const DIRECT_RUNTIME_EVENT = "only-my-pi:direct-runtime:v1";
+
 export default function ompControl(pi: ExtensionAPI): void {
   let messages: unknown[] = [];
   let systemPromptCharacters: number | undefined;
@@ -18,6 +20,16 @@ export default function ompControl(pi: ExtensionAPI): void {
   let pendingModePrompt: { text: string; modeId: string; hash: string } | undefined;
   let activeModeSnapshot: any;
   let modeRestoreStatus: string | undefined;
+  const directSession = process.env.ONLY_MY_PI_DIRECT === "1";
+
+  const publishDirectRuntime = (status: "READY" | "UNAVAILABLE", orchestrator?: any) => {
+    if (!directSession) return;
+    pi.events.emit(DIRECT_RUNTIME_EVENT, {
+      formatVersion: 1,
+      status,
+      orchestrator: status === "READY" ? orchestrator : null,
+    });
+  };
 
   // This is intentionally a session adapter, not a second permission owner.
   // It exposes only Pi's public idle/prompt/status/append seams.  Hard
@@ -136,8 +148,10 @@ export default function ompControl(pi: ExtensionAPI): void {
       } : {
         dailyConfigService: sessionComposer.dailyConfig,
       };
+      publishDirectRuntime(sessionComposer.directCodingOrchestrator ? "READY" : "UNAVAILABLE", sessionComposer.directCodingOrchestrator);
     } catch (error: any) {
       sessionRuntimeStatus = error?.code ?? "SESSION_RUNTIME_UNAVAILABLE";
+      publishDirectRuntime("UNAVAILABLE");
       if (ctx.mode === "tui") ctx.ui?.notify?.(`only-my-pi live runtime unavailable: ${sessionRuntimeStatus}`, "warning");
     }
     if (ctx.mode === "tui") ctx.ui.setStatus("only-my-pi-control", "omp");
@@ -160,6 +174,7 @@ export default function ompControl(pi: ExtensionAPI): void {
 
   pi.on("session_shutdown", async (_event, ctx) => {
     if (ctx.mode === "tui") ctx.ui.setStatus("only-my-pi-control", undefined);
+    publishDirectRuntime("UNAVAILABLE");
     await sessionComposer?.dispose?.().catch(() => {});
     sessionComposer = undefined;
     runtime = undefined;
@@ -169,7 +184,23 @@ export default function ompControl(pi: ExtensionAPI): void {
 
   const handler = async (args: string, ctx: any) => {
     try {
-      return await getRuntime().execute(args, { ...ctx, pi });
+      let command = typeof args === "string" ? args.trim() : "";
+      if (directSession) {
+        if (command === "" || command === "run") {
+          ctx.ui.notify("You are already inside the OMP Agent. Type a task directly; use /omp advanced ... only for expert diagnostics.", "info");
+          return;
+        }
+        if (command === "advanced") {
+          ctx.ui.notify("Usage: /omp advanced <agent|workflow|swarm|goal|ultra> ...", "info");
+          return;
+        }
+        if (command.startsWith("advanced ")) command = command.slice("advanced ".length).trim();
+        else if (/^(?:agent|workflow|swarm|goal|ultra)(?:\s|$)/u.test(command)) {
+          ctx.ui.notify("This legacy executor is now expert-only. Use /omp advanced " + command, "warning");
+          return;
+        }
+      }
+      return await getRuntime().execute(command, { ...ctx, pi });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       ctx.ui.notify(`status: ERROR\nmessage: ${message.replace(/[\r\n]/gu, " ").slice(0, 512)}`, "warning");
@@ -177,7 +208,9 @@ export default function ompControl(pi: ExtensionAPI): void {
   };
 
   pi.registerCommand("omp", {
-    description: "only-my-pi daily Harness (run, agents, workflows, swarms, modes, configuration, and status)",
+    description: directSession
+      ? "Advanced only-my-pi status and diagnostics (type tasks directly in OMP)"
+      : "only-my-pi daily Harness (run, agents, workflows, swarms, modes, configuration, and status)",
     handler,
   });
 

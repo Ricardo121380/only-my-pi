@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/stack-state-v1.schema.json",
+  "title": "only-my-pi private stack state v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "formatVersion", "kind", "status", "activeStack", "lkgStack", "manifestDigest", "payloadMode", "node", "pi", "onlyMyPi", "generation", "cliArtifact", "shims", "externalTree", "externalPackages", "transactionIds", "removalEligibility", "stateDigest"],
+  "properties": {
+    "$schema": { "const": "../../schemas/stack-state-v1.schema.json" },
+    "formatVersion": { "const": 1 }, "kind": { "const": "only-my-pi-stack-state" },
+    "status": { "enum": ["INSTALLED", "INTERRUPTED", "REMOVED"] },
+    "activeStack": { "anyOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+    "lkgStack": { "anyOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+    "manifestDigest": { "anyOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+    "payloadMode": { "enum": ["full", "thin"] },
+    "node": { "$ref": "#/$defs/identity" }, "pi": { "$ref": "#/$defs/identity" }, "onlyMyPi": { "$ref": "#/$defs/identity" },
+    "generation": { "$ref": "#/$defs/identity" }, "cliArtifact": { "$ref": "#/$defs/identity" },
+    "shims": {
+      "type": "object", "additionalProperties": false, "required": ["omp", "pi"],
+      "properties": { "omp": { "$ref": "#/$defs/shim" }, "pi": { "$ref": "#/$defs/shim" } }
+    },
+    "externalTree": {
+      "type": "object", "additionalProperties": false, "required": ["digest", "verificationBasis"],
+      "properties": {
+        "digest": { "$ref": "#/$defs/sha256" },
+        "verificationBasis": { "enum": ["CANONICAL_RELEASE_TREE", "BORROWED_PREFLIGHT_SNAPSHOT"] }
+      }
+    },
+    "externalPackages": { "type": "array", "minItems": 9, "maxItems": 9, "items": { "$ref": "#/$defs/external" } },
+    "transactionIds": { "type": "array", "maxItems": 256, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-f0-9-]{36}$" } },
+    "removalEligibility": {
+      "type": "object", "additionalProperties": false, "required": ["stack", "externalTree", "reasonCodes"],
+      "properties": {
+        "stack": { "type": "boolean" }, "externalTree": { "type": "boolean" },
+        "reasonCodes": { "type": "array", "maxItems": 16, "uniqueItems": true, "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,63}$" } }
+      }
+    },
+    "stateDigest": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "identity": {
+      "type": "object", "additionalProperties": false, "required": ["version", "digest"],
+      "properties": { "version": { "type": "string", "minLength": 1, "maxLength": 64 }, "digest": { "$ref": "#/$defs/sha256" } }
+    },
+    "shim": {
+      "type": "object", "additionalProperties": false, "required": ["targetClass", "digest"],
+      "properties": { "targetClass": { "const": "USER_LOCAL_CONTROLLED_STACK" }, "digest": { "$ref": "#/$defs/sha256" } }
+    },
+    "external": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "version", "binding", "owner", "assetDisposition", "treeDigest"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^(?:@[a-z0-9._-]+/[a-z0-9._-]+|[a-z0-9._-]+)$" },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "binding": { "const": "external" }, "owner": { "const": "user" },
+        "assetDisposition": { "enum": ["PREEXISTING_EXTERNAL", "PROVISIONED_FOR_USER"] },
+        "treeDigest": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

@@ -11,10 +11,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   release-gates:
     name: Node ${{ matrix.node-version }}
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -31,7 +36,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # M10 P1 verifies the preserved M9 source/evidence/merge chain.
+          # Public-baseline checks verify the preserved source/evidence chain.
           fetch-depth: 0
           persist-credentials: false
 
@@ -68,5 +73,43 @@ jobs:
       - name: Execute the M9 upstream compatibility deterministic gates
         run: npm run verify:m9:run
 
-      - name: Execute the M10 promotion deterministic gates
-        run: npm run verify:m10:run
+      - name: Verify the sanitized public-baseline authority
+        run: npm run verify:public-baseline:run
+
+      - name: Execute the M11 Public Preview deterministic gates
+        run: npm run verify:m11:run
+
+      - name: Execute the current direct coding Agent C1-C10 gates
+        run: npm run verify:m12:run
+
+  m11-q10:
+    name: M11 Q10 macOS arm64 clean-home
+    needs: release-gates
+    runs-on: macos-14
+    timeout-minutes: 45
+    env:
+      CI: "1"
+      NO_COLOR: "1"
+      PI_TELEMETRY: "0"
+      NPM_CONFIG_IGNORE_SCRIPTS: "true"
+      NPM_CONFIG_AUDIT: "false"
+      NPM_CONFIG_FUND: "false"
+      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node 24.19.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+          cache: npm
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Build and run Q10 without retaining RC assets
+        run: npm run verify:m11:q10:ci

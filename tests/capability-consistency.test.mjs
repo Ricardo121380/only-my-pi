@@ -51,6 +51,19 @@ test("workspace-read is an explicit Pi-host capability in every profile", () => 
     assert.ok(record.document.capabilityIds.includes("workspace-read"), record.document.id);
   }
 });
+
+test("daily guarded coding is first-party while physical permission and child runtimes stay upstream", () => {
+  const governance = loadGovernance(root);
+  const daily = profile(governance, "daily");
+  const capability = governance.capabilities.capabilities.find((entry) => entry.id === "guarded-project-coding");
+  const resource = governance.resources.resources.find((entry) => entry.id === "omp-direct");
+  assert.deepEqual(capability.providedBy, ["omp-direct"]);
+  assert.deepEqual(capability.requires, ["workspace-read", "permission-policy"]);
+  assert.deepEqual(resource.profileEligibility, ["daily"]);
+  assert.ok(daily.capabilityIds.includes("guarded-project-coding"));
+  assert.ok(daily.packageIds.includes("permission-modes"));
+  assert.ok(daily.packageIds.includes("subagents"));
+});
 test("M3 mode catalog distinguishes the runtime-ready inspect mode from planned Labs", () => {
   const governance = loadGovernance(root);
   assert.ok(governance.capabilities.capabilities.every((capability) => capability.runtimeEvidenceRequired === true));

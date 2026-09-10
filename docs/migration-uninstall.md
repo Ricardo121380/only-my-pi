@@ -1,5 +1,40 @@
 # Migration, rollback, and uninstall
 
+## Public Preview stack lifecycle
+
+Public stack mutations are plan-first and require exact authority:
+
+```bash
+omp release check --channel preview --json
+omp stack update --release 0.2.0-preview.2 --payload thin --plan --json
+omp stack update --release 0.2.0-preview.2 --payload thin --apply --yes --json
+
+omp stack rollback --plan --json
+omp stack rollback --apply --yes --json
+
+omp stack remove --plan --json
+omp stack remove --apply --yes --json
+```
+
+`release check` is explicit, read-only, writes no cache and discovers only a
+newer `0.2.0-preview.N`; it never crosses channels or updates in the
+background. A mutation that detects controlled Pi processes reports their
+bounded identity and requires separate `--terminate-pi` authority. It uses
+`SIGTERM`, waits at most 15 seconds and never sends `SIGKILL`.
+
+`omp uninstall` removes only Harness activation and the `omp` entry. It does
+not use stack provisioning evidence as permission to delete embedded Node,
+controlled Pi or third-party packages. `omp stack remove` is the separate,
+explicit full-stack authority. It removes only verified OMP-owned stack assets,
+restores an exact pre-install LKG package root when safe, and deletes a
+provisioned nine-package root only when it began empty and has not drifted.
+Preexisting packages and any ambiguous or changed data are retained with a
+reconciliation plan.
+
+Neither operation removes Homebrew Pi/Node, `auth.json`, sessions, models,
+memory, git-sync data or Provider secrets. Transaction and removal receipts are
+retained as bounded audit material.
+
 ## From a manual Pi package list
 
 Do not copy `~/.pi/agent/settings.json`, `auth.json`, sessions, or npm caches

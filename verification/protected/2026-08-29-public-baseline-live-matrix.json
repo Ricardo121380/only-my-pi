@@ -1,0 +1,164 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-public-baseline-evidence",
+  "evidenceId": "public-baseline-live-matrix",
+  "sourceCommit": "73c1c005e274fbe954fc433a42638221b509439f",
+  "status": "PASS",
+  "createdAt": "2026-08-28T17:22:34.735Z",
+  "artifacts": {
+    "sanitizedArtifactSha256": "sha256:ca486215c48ba5d50d6151998ee8f5f39764bc0b81dfec1e035959d57356ec32",
+    "priorIdentityDigest": "sha256:16d24cbece15a18f4ea9e54e27d73865566dbc1f8bf2bf23ebac80094c27aea2",
+    "stableGraphDigest": "sha256:50caffbfdba4de051cb21072ce7e7d4f0dea6f108900daa35402ea26b4fc89df",
+    "installedGenerationId": "sha256:50caffbfdba4de051cb21072ce7e7d4f0dea6f108900daa35402ea26b4fc89df"
+  },
+  "runtime": {
+    "piVersion": "0.84.3",
+    "subagentsVersion": "0.57.0",
+    "provider": "cc-switch-open-code-go",
+    "model": "deepseek-v4-flash"
+  },
+  "pricing": {
+    "mode": "subscription-fixed-fee",
+    "inputPerMillion": 0,
+    "outputPerMillion": 0,
+    "fixedFeeUsd": 10,
+    "fixedFeeIncludedInRunCost": false
+  },
+  "usage": {
+    "directlyMeteredTokens": 22797,
+    "variableCostUsd": 0,
+    "wallSeconds": 367,
+    "toolCalls": 3,
+    "meteredTerminals": 2
+  },
+  "assertions": [
+    {
+      "id": "agent-terminal",
+      "status": "PASS",
+      "digest": "sha256:6e7f7f3743c2c86e218aa330b0fa1897a61be50415cb3155abdce0a0e82d7fd3"
+    },
+    {
+      "id": "batch-swarm",
+      "status": "PASS",
+      "digest": "sha256:74cef18030200d22dbe32b23ec5ae36de36b2fd35b78121d24a9e3176eb1914b"
+    },
+    {
+      "id": "budget-denial",
+      "status": "PASS",
+      "digest": "sha256:8b62f277b38ec86abdaae4bf6e2d8b487c067a9c5c57cb43a3b1c61ff5192ea0"
+    },
+    {
+      "id": "cancellation",
+      "status": "PASS",
+      "digest": "sha256:2c185b46be7ab99b91e5f287d52b943555e517e34fe8d506690884fe2011d963"
+    },
+    {
+      "id": "cli-generation-artifact-identity",
+      "status": "PASS",
+      "digest": "sha256:2047271deb66f6479c5248bfbd7c00ca619825abc148937a664d701215b2eec4"
+    },
+    {
+      "id": "cross-session-resume",
+      "status": "PASS",
+      "digest": "sha256:45028515e1bc354f170c203541618279749a8cc9c55d70fb37021a90b10ccb79"
+    },
+    {
+      "id": "external-ownership-preservation",
+      "status": "PASS",
+      "digest": "sha256:5c09e6b9b580b45395ff0cc001a729804d558021deff25eec5a78720a2599dd1"
+    },
+    {
+      "id": "installed-generation-identity",
+      "status": "PASS",
+      "digest": "sha256:5a1bc069f4c7769dd4db26719f0835fed3eeb63d4aa1ab40254412a39ff430b8"
+    },
+    {
+      "id": "legacy-authority-retired",
+      "status": "PASS",
+      "digest": "sha256:a512e271364cd1b51883919bcbef3a30c0a6d7a623564e00faf2b85fe45e0b8a"
+    },
+    {
+      "id": "no-duplicate-runtime-ownership",
+      "status": "PASS",
+      "digest": "sha256:64d8785dafe7fd980a2e0a55daa616be9373b4cfbe5601f403e072c3ab7dbb0f"
+    },
+    {
+      "id": "no-model-smoke",
+      "status": "PASS",
+      "digest": "sha256:3475093e34b68aac321544e619f1e02244e8e642175366dbd6f6e293239a54f9"
+    },
+    {
+      "id": "private-baseline-exact-identity",
+      "status": "PASS",
+      "digest": "sha256:e971f3162c6d35976f00b18079f48e18daac48d3fd19080f97d42d847f6e3378"
+    },
+    {
+      "id": "private-baseline-rollback",
+      "status": "PASS",
+      "digest": "sha256:783b173fb8eec97c19a27521573cd90ff71aaae2533a2cba68b777e558748e43"
+    },
+    {
+      "id": "public-web",
+      "status": "PASS",
+      "digest": "sha256:3fbf84a0a361e8a5328ec6a2709bf251d6b72c178b3676a6db06682903a735c2"
+    },
+    {
+      "id": "runtime-identity",
+      "status": "PASS",
+      "digest": "sha256:77e30f03aa382f67eb8313d516123c93b1e275698c8568cfedaa32fc48a5b2d9"
+    },
+    {
+      "id": "sanitized-artifact-apply",
+      "status": "PASS",
+      "digest": "sha256:f881ab4622016203b2a9f79d3d672efc1b42ca594d61f1dd9442883e281bfa4f"
+    },
+    {
+      "id": "sanitized-artifact-reapply",
+      "status": "PASS",
+      "digest": "sha256:2047271deb66f6479c5248bfbd7c00ca619825abc148937a664d701215b2eec4"
+    },
+    {
+      "id": "swarm-goal-replan",
+      "status": "PASS",
+      "digest": "sha256:1e2adf792d8267438e24c10398cd007405c932ec796884e3d2eb078a084f5923"
+    },
+    {
+      "id": "ultra-agent-route",
+      "status": "PASS",
+      "digest": "sha256:3022b647e485d83e307ce700c205c8aea344a6ac9133dd73d5017246dc31fabd"
+    },
+    {
+      "id": "ultra-workflow-route",
+      "status": "PASS",
+      "digest": "sha256:e148d7b7b43ad2c0547af30cd4f871acffcab90dc002c479386e6d36ee810200"
+    },
+    {
+      "id": "usage-metering",
+      "status": "PASS",
+      "digest": "sha256:a959e2f59f6d58db1d52d78f82a34e4e0103064f8f71f92a547ab833f7698ca7"
+    },
+    {
+      "id": "workflow-artifact-flow",
+      "status": "PASS",
+      "digest": "sha256:3eb0f1ba7b39d052fcb34add3e77ecc37bb724145231372875916d8c8635de40"
+    },
+    {
+      "id": "writer-denial",
+      "status": "PASS",
+      "digest": "sha256:e1a78e3932bd2c0652dcc87003c353ba43e74e66c38778e7d64eb3f36f565470"
+    }
+  ],
+  "privacy": {
+    "rawOutputStored": false,
+    "hostPathsStored": false,
+    "secretsStored": false,
+    "sessionsStored": false
+  },
+  "authorization": {
+    "realRoots": "EXPLICIT_APPLY_ROLLBACK_REAPPLY",
+    "providerRequests": "AUTHORIZED",
+    "credentials": "PI_RUNTIME_ONLY",
+    "writer": "DENIED"
+  },
+  "evidenceDigest": "sha256:b23412eff596ba0d55a8f6bd923ecc46429f469814acda6dde5a8bad99e5cc75"
+}

@@ -1,0 +1,127 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-m11-protected-release-evidence",
+  "gateId": "Q11",
+  "evidenceId": "m11-protected-final-release-matrix",
+  "status": "PASS",
+  "sourceCommit": "479c69eba4f245df00dbcb126079a58a98a3b607",
+  "stackId": "sha256:46783658a1aad83ad9dc60bfc4d5f5ef6f027b5e72632e5c105e123858d395d9",
+  "usage": {
+    "directlyMeteredTokens": 16089,
+    "variableCostUsd": 0,
+    "wallSeconds": 408,
+    "toolCalls": 2,
+    "meteredTerminals": 2
+  },
+  "assertions": [
+    {
+      "id": "agent-terminal",
+      "status": "PASS",
+      "evidenceSha256": "sha256:b8c0b646514adf38d920609b4007bb48eb0721527a0c3ad82971d28d238c39da"
+    },
+    {
+      "id": "budget-denial",
+      "status": "PASS",
+      "evidenceSha256": "sha256:8b62f277b38ec86abdaae4bf6e2d8b487c067a9c5c57cb43a3b1c61ff5192ea0"
+    },
+    {
+      "id": "cancellation",
+      "status": "PASS",
+      "evidenceSha256": "sha256:f8c980d294d0ee3a10c922ed89c07d48b76825c2bb3755dbcc2a610fe2fdcf9e"
+    },
+    {
+      "id": "cli-generation-identity",
+      "status": "PASS",
+      "evidenceSha256": "sha256:6ea3824efb8653c2f1cf5b13ea56dc8c1af38a5fe2bc18afd41cca5a7822647d"
+    },
+    {
+      "id": "cross-session-resume",
+      "status": "PASS",
+      "evidenceSha256": "sha256:9b40f8f9d07edbbf726334fc66744159390f938e5e751aef5434225542916df8"
+    },
+    {
+      "id": "embedded-runtime-identity",
+      "status": "PASS",
+      "evidenceSha256": "sha256:6d249b91efe1e1aac2a314ea36a31160b6083ea18716d13666b403582a3ea9ad"
+    },
+    {
+      "id": "external-ownership",
+      "status": "PASS",
+      "evidenceSha256": "sha256:d5ebeaa29c447931f97ae5c1f3f7f188d06e2c0cb582d1ade4a1bab3d4379830"
+    },
+    {
+      "id": "full-install",
+      "status": "PASS",
+      "evidenceSha256": "sha256:49ae207bf5c41ac2b0f43ef62d639ba0d54e705987c66c7f2ea551f241d60f1a"
+    },
+    {
+      "id": "no-duplicate-runtime-owner",
+      "status": "PASS",
+      "evidenceSha256": "sha256:64d8785dafe7fd980a2e0a55daa616be9373b4cfbe5601f403e072c3ab7dbb0f"
+    },
+    {
+      "id": "payload-convergence",
+      "status": "PASS",
+      "evidenceSha256": "sha256:00bc1da866d062e199155652be04df2d27c2eb13cc59209ed0edc1dd261ec214"
+    },
+    {
+      "id": "public-baseline-rollback",
+      "status": "PASS",
+      "evidenceSha256": "sha256:e2ed46c6c1f795c99e7c099c0d01b56163d7e3e723b020f301e6aa14523fd56d"
+    },
+    {
+      "id": "public-web",
+      "status": "PASS",
+      "evidenceSha256": "sha256:f30fbf22a68b6308eef67ad360094fad3b0d173dfd7fb19550b19ef3f34e067a"
+    },
+    {
+      "id": "reinstall",
+      "status": "PASS",
+      "evidenceSha256": "sha256:f943ea9b2795786e20240207126289f36e7f70f56deb6395536bc60df4f92eb5"
+    },
+    {
+      "id": "stack-remove",
+      "status": "PASS",
+      "evidenceSha256": "sha256:e2ed46c6c1f795c99e7c099c0d01b56163d7e3e723b020f301e6aa14523fd56d"
+    },
+    {
+      "id": "system-runtime-preservation",
+      "status": "PASS",
+      "evidenceSha256": "sha256:d2b427983a8577a46bf6842e6b6136285bc2feb8b8985047c5a663c801677f2e"
+    },
+    {
+      "id": "thin-install",
+      "status": "PASS",
+      "evidenceSha256": "sha256:f943ea9b2795786e20240207126289f36e7f70f56deb6395536bc60df4f92eb5"
+    },
+    {
+      "id": "ultra-route",
+      "status": "PASS",
+      "evidenceSha256": "sha256:b2096e0fdf6c9ab6f49cf7dda8e57c18586df6ada19b98159165a4746b47c0c6"
+    },
+    {
+      "id": "usage-metering",
+      "status": "PASS",
+      "evidenceSha256": "sha256:ee5c0294d1586702aecddfed17d85403fab823737a3ee05e6796b848988058e1"
+    },
+    {
+      "id": "workflow-artifact-flow",
+      "status": "PASS",
+      "evidenceSha256": "sha256:fd7bf571de2d59262e11ec80f2b6f0b3dc6ced13000220568fc31309331a0c95"
+    },
+    {
+      "id": "writer-denial",
+      "status": "PASS",
+      "evidenceSha256": "sha256:e1a78e3932bd2c0652dcc87003c353ba43e74e66c38778e7d64eb3f36f565470"
+    }
+  ],
+  "privacy": {
+    "rawPromptsStored": false,
+    "rawOutputsStored": false,
+    "reasoningStored": false,
+    "hostPathsStored": false,
+    "secretsStored": false,
+    "sessionsStored": false
+  },
+  "evidenceDigest": "sha256:c608beea5ab4fda0462fdbb7eab2d3f5a0621162cde41e58caae696be02cac1f"
+}

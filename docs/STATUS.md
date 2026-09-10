@@ -1,8 +1,294 @@
 # only-my-pi status
 
-Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-28** · Stable
+Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-30** · Stable
 kernel merged to `main`: **2026-08-27** · Pi **0.84.3** · Node **25.8.0** · macOS
 `darwin-arm64`
+
+## Active milestone — M12 Direct Terminal Coding Agent Closure
+
+### Public standard-runner CI route — 2026-09-10
+
+The user authorized making the sanitized `Ricardo121380/only-my-pi` repository
+public after the updated privacy checks, then opening a Draft PR and running
+standard GitHub-hosted CI. The original `only-my-pi-private-archive` remains
+private. The sanitized repository is now public and
+[Draft PR #2](https://github.com/Ricardo121380/only-my-pi/pull/2) carries the
+current work and hosted check results. The selected deviation is
+`PRIVATE_HOSTED_CI_SKIPPED_DUE_TO_ACTIONS_QUOTA`; it does not claim that hosted
+CI has already passed.
+
+CI now includes the current Agent C1-C10 gates on the two pinned Node versions,
+alongside the existing release gates and standard macOS arm64 clean-home job.
+Public-baseline verification replaces the retired M10 automatic protected
+evidence import, whose original private-history commits are intentionally
+absent from a clean public clone. Historical M10 tests remain in the full suite.
+The retained M11 distribution workflow filenames now target `0.3.0-preview.1`
+and require direct C11/C12 evidence. Legacy Q11 evidence cannot authorize the
+current release. Failure cleanup is limited to tags created by that run.
+
+Q10's unit test verifies platform rejection on Linux and native admission on
+macOS arm64. The older daily tarball smoke verifies the Harness generation and
+the expected `CONTROLLED_STACK_REQUIRED` diagnostic: a Harness-only install
+must not claim that the direct Agent is ready. Full/Thin runtime installation
+remains the separate macOS Q10 job and protected C11 acceptance.
+
+The installed source/evidence chain below remains unchanged. This workflow
+follow-up does not rebind its protected evidence to a newer source. A passing
+public PR workflow is required before merge; main CI, exact-source RC,
+attestations and protected publication approval remain release requirements.
+Publication remains **HOLD_PUBLICATION**.
+
+### Installed M13 follow-up — 2026-09-09
+
+The writer-verification and direct-child-budget follow-up is now installed and
+has completed **C1-C12 / 12 PASS** on the acceptance host:
+
+- Source: `15c40a23c6c819e87ad81f4141b6f1fdd495af08`.
+- Direct evidence-only child: `f7346b3996b2f0947f8bd221da437c66240b03fa`.
+- [Protected evidence](../verification/protected/2026-09-09-m13-cpar-installed-coding.json):
+  eight C11 assertions and eighteen C12 assertions.
+- [Completion receipt](../verification/receipts/2026-09-09-m13-local-closure.json).
+
+The active stack is
+`sha256:b195234e0cf2b73a8564098e9a9ad1823831951d88c5f8e5f5711a78d8821c39`,
+generation is
+`sha256:d0b349d69efd6a39b8b60603dbe7299441489407dfbb05ec5cf483e1f94eaaf3`,
+and OMP artifact is
+`sha256:f13c03bb9777d885741b554009689df2c5b5ff19d1e74f1783676666d9d2a782`.
+Final doctor is **PASS / MATCH**. Node `24.19.0`, Pi `0.84.3`, pi-subagents
+`0.57.0`, all nine external/user-owned packages, and system runtime identities
+are preserved. No Pi processes or incomplete stack transactions remain.
+
+C11 installed the candidate, exercised the no-model picker and Inspect state,
+rolled back to the original M12 stack, and reapplied the same candidate.
+Settings, stack state, package-lock and current/LKG stack pointers matched the
+baseline exactly. Restored CLI links resolve to the same binaries even though
+their text is canonicalized; the Harness records a new rollback transaction and
+time while preserving its generation, manifest and settings bindings.
+
+C12 used the real installed `omp` entry for edits/tests, grant reuse, continued
+sessions and renewed approval, complex planning, parallel scouts, managed
+writing, runtime clone gates, fresh review and real-worktree verification.
+Dirty overlap preserved the user's existing comment without starting a child.
+A defective signed-addition patch passed a deliberately incomplete positive-only
+gate but was rejected by the fresh reviewer. Web denial started no child; a
+separately approved fetch then produced the requested note. Headless writer
+denial, project-external write denial and cancellation with verified child
+process exit also passed.
+
+The matrix records 369,347 directly reported tokens, 99 terminal messages with
+usage fields (including reported zero-usage errors), 107 tool calls and 2,554
+seconds between recorded events. CPAR fixed-subscription variable cost remains
+zero under the user's existing billing confirmation. Intermittent
+`CredentialUnavailable` / `EgressUnavailable` 503 responses and the first cancel
+trial's turn-limit termination remain in private diagnostics; bounded retries
+and a precisely timed cancellation established the passing assertions. No
+unobserved usage is estimated, and continuous provider availability is not claimed.
+
+These results are separate from earlier isolated checks and historical M12
+evidence. Publication remains **HOLD_PUBLICATION**; hosted CI, push, tag and
+release were not performed.
+
+### M13 follow-up: writer verification admission
+
+The `codex/m13-writer-verification` development branch tightens automatic writer
+integration with a runtime-owned Project Gate verifier. Real zero exit codes
+from every explicitly confirmed clone gate are required before fresh review;
+missing, failed, killed or mismatched results cannot be replaced by model prose.
+Patch identity is rechecked after testing and after review. Missing manifests
+fail closed with a retained patch. Parent-worktree testing remains a required
+follow-up, not an automatically completed claim. This behavior is included in
+the separately accepted installation above; historical evidence remains bound
+to its original source.
+
+Focused validation covers orchestration, composer wiring, real argv execution
+in a temporary clone, failure/denial/cancellation, manifest drift, and patch
+drift. Protected acceptance and installation are recorded above; the historical
+M12 completion claims below apply only to the original M12 source.
+
+### M13 follow-up: direct child budgets
+
+The direct delegation path now honors lower configured turn and tool-call
+limits, disallows delegation when `maxDepth=0`, reserves tool-call allowances
+across concurrent children, and shares one deadline from the first child
+admission for the lifetime of the direct orchestrator. Reported tokens (including
+cache usage), cost and tool calls accumulate across children, including failed
+terminals. Returned JSON result bytes are also bounded per child and cumulatively.
+Repeated progress/terminal events do not double-charge usage. Exhaustion cancels
+active children, rejects queued/new
+delegation and blocks writer integration. Unreconciled usage after cancellation,
+timeout or missing/invalid terminal usage stops further delegation for that
+process instead of treating unknown usage as zero. `/agents` exposes this state.
+Native `toolBudget.block` is set to `"*"`: this field selects which tools are
+blocked after exhaustion, not which tools are unavailable before it. Reported
+tool-call counts may include rejected attempts.
+
+The audit distinguishes these child budgets from the main Pi Agent, which is
+not included and receives no new spending ceiling in this change. The pinned
+pi-subagents delegation API reports tokens during progress and cost only at
+termination; it does not accept token/cost limits in delegation requests. These
+are observed-usage stop conditions, not exact provider billing caps: in-flight
+model calls may overshoot, and cache usage is reconciled at termination. Output
+limits cover returned results, not all child tool logs. Project Gate commands
+retain their own timeouts; the shared child deadline is rechecked before patch
+integration. The separately accepted installation includes this follow-up;
+historical acceptance evidence is unchanged. Focused deterministic tests cover
+the admission, accounting, concurrency, cancellation, deadline and
+writer-integration boundaries.
+
+M12 changes the product entry from `pi` followed by `/omp run` into a direct
+terminal coding Agent started with `omp`. The implementation reuses the
+controlled Pi TUI, model registry, sessions, signals and tools; it does not
+create a second terminal runtime. Interactive sessions select a model, start in
+read-only `Inspect`, and may enter guarded project-local `Coding` only after one
+explicit, process-scoped approval. Complex work requires a decision-ready plan.
+
+The main Agent works in the current repository while preserving the initial Git
+state. Automatic orchestration remains bounded and visible over the sole
+`pi-subagents` physical runtime. At most one writer may run, in an OMP-managed
+ordinary clone; dirty-scope overlap falls back to the main Agent. Headless
+`omp -p` remains read-only, and coding authority never survives process exit or
+session resume.
+
+The target Preview is `0.3.0-preview.1` with capability ceiling
+`GUARDED_PROJECT_CODING`. No GitHub push or publication is authorized until the
+local C1-C12 gates, real Pi smoke, protected coding matrix, rollback and reapply
+all pass. The contract is in
+[`ADR-0013`](decisions/ADR-0013-direct-terminal-coding-agent.md).
+
+The M12 source implementation now includes the direct `execve` launcher,
+audited extension admission, startup model picker, unified Inspect/Planning/
+Coding state machine, process-local `request_coding_access`, tool-call and
+user-bash backstops, permission-mode YOLO revocation, dirty-worktree baseline,
+managed ordinary-clone writer, fresh reviewer, automatic visible delegation,
+direct-Agent doctor and the guarded daily profile. The package identity is now
+`0.3.0-preview.1`; the release contract validates both historical M11 read-only
+stacks and the current M12 guarded-coding stack without granting the former
+current release authority.
+
+The versioned M12 gate contract is
+[`m12-direct-coding-gates-v1`](../verification/m12-direct-coding-gates-v1.json).
+C1-C10 are local, no-model deterministic gates. C11 and C12 import protected
+real-install and live coding evidence. On September 9, the complete C1-C12
+runner returned **COMPLETE / 12 PASS**, including the existing global coverage
+thresholds and the stricter direct-Agent module thresholds.
+
+The accepted chain is:
+
+- Source: `2d6efbd5cf8a602f5dc9d8d2510d800eaffe8eac`.
+- Direct evidence-only child: `66a007ce6753a5fa28fa61665e9963c3a93efbe7`.
+- [Protected evidence](../verification/protected/2026-09-09-m12-cpar-direct-coding-final.json):
+  eight C11 assertions and eighteen C12 assertions.
+- [Completion gate report](../verification/receipts/2026-09-09-m12-local-closure.json).
+
+At the original M12 closure, the installed artifact used the accepted source,
+embedded Node `24.19.0`, controlled Pi `0.84.3` and pi-subagents `0.57.0`.
+Its stack was
+`sha256:8612df80bca713bd2139d9f6a27f6bd4b5855ccb18cc341f73158c7c61a6d637`,
+artifact was
+`sha256:2438ef7bf9f541f8b1f5aa9e39fc4b4bf67ab20174e9f51e17967a15e6d00849`,
+and generation was
+`sha256:9b9d0bf4c4dc3eb695e6dc4b99d4dbbd7d60f11f6872818ca96f1709725db67d`.
+That closure finished **INSTALLED**, with doctor **PASS / MATCH**, all nine
+packages `external/owner=user`, and no incomplete transactions.
+
+Protected runs used the existing CPAR `cpar-grok-build/grok-4.6` configuration.
+Real tests covered simple edits and tests, same-process grant reuse, resumed
+Inspect and renewed approval, complex planning, dirty-overlap main-Agent
+fallback, managed clone writing, fresh review, automatic patch integration,
+concurrent read-only scouts, cancellation, separate public-Web approval,
+headless write denial, child-count budget denial and project-external write
+rejection. The negative reviewer fixture produced a defective clone candidate;
+the reviewer rejected it and the original worktree remained clean. The positive
+fixture integrated only `math.mjs` and passed tests in the real worktree without
+creating a commit. No-model reapply smoke also opened the model picker, selected
+CPAR, showed Inspect and exited cleanly through `/exit`.
+
+The real rollback restored the M11 `0.2.0-preview.1` baseline at source
+`479c69eba4f245df00dbcb126079a58a98a3b607`. Settings and stack state matched their
+saved bytes, current/LKG pointers matched, package-lock was unchanged, and the
+old stack verified. M12 was then reapplied from the same checked artifact.
+The M11 CLI correctly rejected the newer release contract without mutation;
+reapply used the verified M12 artifact-contained installer. Homebrew and user
+external-package ownership were preserved throughout.
+
+The user removed the aggregate 100,000-token acceptance ceiling. The accepted
+matrix records **273,254 directly metered tokens**, **71 metered model
+terminals**, **107 tool calls** and **1,065 seconds** between recorded matrix
+events. Counts include directly observed child terminals and do not estimate
+unobserved nested usage. Individual runtime budgets remain in force; the budget
+negative test specifically proves `maxChildren=1`, not every possible budget
+limit. CPAR fixed-subscription billing with no per-token variable charge was
+confirmed by the user, so variable cost is zero; no provider price discovery is
+claimed. Native attempts included intermittent `503 CredentialUnavailable`
+errors and a deliberately cancelled child. Successful assertions were recorded
+after bounded retries; this does not establish continuous provider availability.
+Raw conversations, reasoning, credentials and host paths are absent from the
+committed evidence and report; Pi's normal private session storage is separate.
+
+Earlier partial runs on `9903f88` and `829a517` remain diagnostic only. The final
+source includes the temporary-index patch-capture fix and direct Web-authorizer
+wiring, both exercised again in the accepted source-bound matrix. Historical
+results were not relabeled as final evidence.
+
+M12.7 local acceptance is complete. M12.8 hosted CI and publication remain
+pending, and `HOLD_PUBLICATION` remains correct. No GitHub workflow, push, tag,
+Release or npm publication was used for this closure.
+
+## Frozen milestone — M11 public Preview distribution
+
+M11 converted the locally accepted M10 installation into a macOS 14+
+Apple Silicon Preview distributed only through GitHub Releases. The target is
+`0.2.0-preview.1` with embedded Node `24.19.0`, controlled user-local Pi
+`0.84.3`, the exact nine-package M10 tuple, Full and Thin payloads, reproducible
+archives, SPDX 2.3 SBOM, GitHub attestations, rollback and explicit full-stack
+removal.
+
+H0 passed before any visibility change: a private mirror, all-ref bundle and
+compressed mirror were created; the current tree, full history and all 50
+historical Actions logs were scanned with the repository scanner and fixed
+Gitleaks `8.30.1`; no real secret, auth/session file, LFS object, submodule,
+historical archive or oversized blob was found. Exact false-positive
+fingerprints and the old-to-new commit mapping remain private.
+
+H1 is complete. The original repository is now the private
+`only-my-pi-private-archive`; its original `main`, five historical PRs, 50
+Actions runs and feature branches remain intact. The new private
+`Ricardo121380/only-my-pi` has one rewritten `main`, no tags and no inherited
+PR/Actions refs. All 219 commits map one-to-one; trees, parents, messages,
+names, timestamps and file modes are unchanged, while the personal QQ
+author/committer email is absent. The new repository remains private.
+
+H2 is complete. Public-baseline source `73c1c005`, its direct evidence-only
+child `d2e45ef`, and completion receipt `f0f61a7` re-established authority for
+the sanitized history and the current Pi `0.84.3` read-only runtime. Historical
+M8-M10 evidence remains legacy inspection material and cannot regain current
+release authority.
+
+The local M11 implementation now includes the four release/stack schemas,
+complete transitive SRI ledger, SPDX 2.3 SBOM/notices, reproducible Full/Thin
+builder, verified acquisition, unified user-local stack transaction, embedded
+Node/Pi shims, release/update/rollback/remove CLI, fixed-SHA POSIX bootstrap,
+Q1-Q12 manifest, macOS arm64 Q10 workflow and exact-source RC/final attestation
+workflows. Q1-Q9 and Q12 pass locally. A real local Apple Silicon Q10 run
+installed, verified and removed both payloads under isolated homes with one
+`stackId` and generation, zero Provider requests, external/user package
+ownership and no Homebrew mutation. The protected local Q11 release matrix
+also passed all 20 assertions within its token, time and privacy bounds.
+
+The first private Draft PR workflow was blocked before either Linux job started
+because the account's GitHub Actions allowance was exhausted; Q10 was skipped
+only because it depends on those jobs. This is
+`GITHUB_HOSTED_CI_BLOCKED_BY_ACTIONS_QUOTA`, not a source or test failure. M11
+remains `HOLD_PUBLICATION`: local release-candidate authority is
+verified, but hosted PR checks, GitHub attestations, repository protections and
+immutable publication are still pending. The three macOS workflows use the
+standard Apple Silicon `macos-14` runner; no M11 workflow requires a billed
+larger runner. No repository publication, public tag or Preview Release is
+authorized. Its release work is retained as
+`INTERNAL_DISTRIBUTION_FOUNDATION`; it is not current product release authority
+and `0.2.0-preview.1` will not be published. The complete boundary is in
+[`ADR-0012`](decisions/ADR-0012-public-preview-distribution-and-history-privacy.md).
 
 ## Completed milestone — M10 Stable candidate promotion
 
@@ -809,51 +1095,24 @@ invariant as the Harness MVP receipt.
 
 ## Next implementation boundary
 
-The completed M0–M7 roadmap remains the historical Harness MVP baseline. The
-approved S0–S5 plan and its Codex Goal now define the next implementation
-boundary. Both Goals are external development-orchestrator contracts and are
-not exposed through the Pi package's `prompts/` resources:
+The local M12.7 boundary is closed by the source/evidence/report chain above.
+The acceptance host can start `omp` directly and recover the prior M11 stack.
 
-- [`plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md`](plans/2026-08-18-only-my-pi-subagents-ultrarun-plan.md) — successor plan
-- [`../codex/goals/develop-only-my-pi-subagents-ultrarun.md`](../codex/goals/develop-only-my-pi-subagents-ultrarun.md) — successor Codex Goal
-- [`plans/2026-08-16-only-my-pi-development-plan.md`](plans/2026-08-16-only-my-pi-development-plan.md) — historical M0–M7 plan
-- [`../codex/goals/develop-only-my-pi.md`](../codex/goals/develop-only-my-pi.md) — historical M0–M7 Goal
+The next release boundary is M12.8, using the authorized public CI route above:
 
-The roadmap target is a usable Pi-based Harness distribution. M0 established
-the product/Labs boundary, M1 established the strict configuration and
-compatibility foundation, M2 delivered the transactional `omp` configuration
-runtime, M3 delivered the Mode Registry plus the unified `/omp` control
-surface, M4 delivered the practical single-Agent/Workflow layer, and M5
-delivered the governed AgentSwarm compiler plus the sole `pi-subagents` RPC
-adapter, and M6 delivered the semantic theme/status layer. M7 now connects the
-fixed release-gates-v1 manifest to the executable verification receipt and CI,
-adds the fresh scripts-disabled tarball end-to-end smoke, and closes the
-documentation/threat-model/package metadata loop. The Harness MVP receipt is
-complete, its feature-branch CI passed, the feature branch was fast-forwarded
-to `main`, and post-merge `main` CI run `32029765621` passed both Node matrix
-jobs.
+1. retain the source/evidence commits without squash or amend;
+2. complete the updated privacy checks, publish the sanitized repository and
+   open the planned Draft PR for the locally verified branch;
+3. run the minimum required public standard-runner CI, changing code only for demonstrated
+   failures rather than producing test-only pushes;
+4. merge with the evidence history preserved and run one main CI; and
+5. build and verify the exact `0.3.0-preview.1` RC before any approved Preview
+   publication.
 
-DeepSeek endpoint work, ACP-to-Pi wiring, and automatic turn checkpoints are
-not the next product boundary. Their existing offline modules stay under
-Labs/Experimental and remain disabled by default. Creator/self-modifying
-plugins, arbitrary JavaScript workflows, automatic marketplaces, remote
-UI/SSH/Cron, and un-sandboxed web fetch also remain outside the default
-profiles.
-
-The static single-owner topology probe, packaged-artifact inclusion, and
-digest-bound live no-model Pi RPC capability/visibility probe now pass. The
-probe used a disposable Pi root and submitted no prompt, called no Provider,
-and dispatched no child. The durable Plan Store, restart-safe
-status/resume and cross-process cancel intent are complete; cancel/stop remains
-non-authoritative without correlated backend terminal proof. The legacy direct
-imports remain one-release compatibility shims but no longer own public
-execution. S3 now supplies the true homogeneous BatchSwarm implementation,
-stable item ledger, bounded ramp/retry/failure semantics, exact AgentSpec and
-template binding, WorkflowPlan node, parent-budget recovery, and CLI/TUI
-control. The 1/8/20/64/300 logical simulations and injected adapter tests pass.
-At the historical S3 boundary the protected live read-only batch was
-`NOT_RUN_BY_POLICY`; later S5 and M8 source-bound evidence supersedes that
-historical status. S4 now supplies
-dynamic SwarmGoal plan revisions, UltraRun routing, quality policy, immutable
-artifacts, and guarded writer handoff without automatic integration. S5 adds
-promotion-specific live, fault, security, and compatibility evidence.
+Until then, keep `HOLD_PUBLICATION`, do not publish `0.2.0-preview.1`, and use
+the locally installed M12 Agent. New feature work is not required to substitute
+for hosted release acceptance.
+DeepSeek endpoint conformance, ACP-to-Pi wiring, automatic checkpoints, MCP,
+daemon work, cross-platform support and a general package manager remain
+outside this boundary. Historical M0-M11 plans and evidence stay available for
+audit but do not define the current product entry.

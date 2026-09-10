@@ -289,6 +289,42 @@
       "schemaPath": "schemas/bootstrap-snapshot-v1.schema.json",
       "productionGlobs": ["contracts/bootstrap/snapshot.example.json"],
       "fixtureDir": "verification/fixtures/bootstrap/contracts/snapshot"
+    },
+    {
+      "kind": "legacyAuthority",
+      "schemaPath": "schemas/legacy-authority-v1.schema.json",
+      "productionGlobs": ["verification/legacy-authority-v1.json"],
+      "fixtureDir": "verification/fixtures/contracts/legacy-authority"
+    },
+    {
+      "kind": "publicBaseline",
+      "schemaPath": "schemas/public-baseline-v1.schema.json",
+      "productionGlobs": ["contracts/release/public-baseline.json"],
+      "fixtureDir": "verification/fixtures/contracts/public-baseline"
+    },
+    {
+      "kind": "releaseIndex",
+      "schemaPath": "schemas/release-index-v1.schema.json",
+      "productionGlobs": ["contracts/release/release-index.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/release-index"
+    },
+    {
+      "kind": "stackManifest",
+      "schemaPath": "schemas/stack-manifest-v1.schema.json",
+      "productionGlobs": ["contracts/release/stack-manifest.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/stack-manifest"
+    },
+    {
+      "kind": "transitiveArtifactLedger",
+      "schemaPath": "schemas/transitive-artifact-ledger-v1.schema.json",
+      "productionGlobs": ["contracts/release/transitive-artifact-ledger.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/transitive-artifact-ledger"
+    },
+    {
+      "kind": "stackState",
+      "schemaPath": "schemas/stack-state-v1.schema.json",
+      "productionGlobs": ["contracts/release/stack-state.example.json"],
+      "fixtureDir": "verification/fixtures/contracts/stack-state"
     }
   ]
 }

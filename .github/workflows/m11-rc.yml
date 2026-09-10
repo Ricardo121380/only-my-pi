@@ -1,0 +1,76 @@
+name: Direct Agent Preview release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Exact 40-character source commit S
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-attest:
+    name: Build and attest exact RC
+    runs-on: macos-14
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    env:
+      CI: "1"
+      NO_COLOR: "1"
+      PI_TELEMETRY: "0"
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+      NPM_CONFIG_IGNORE_SCRIPTS: "true"
+      NPM_CONFIG_AUDIT: "false"
+      NPM_CONFIG_FUND: "false"
+      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_commit }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node 24.19.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+          cache: npm
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Require the current Preview version
+        run: node -e 'if (JSON.parse(require("fs").readFileSync("package.json", "utf8")).version !== "0.3.0-preview.1") process.exit(1)'
+
+      - name: Build reproducible RC from exact source
+        run: node scripts/m11-workflow-build.mjs --source-commit "$SOURCE_COMMIT" --output "$RUNNER_TEMP/m11-rc" --status RC --json
+
+      - name: Generate build provenance attestations
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: ${{ runner.temp }}/m11-rc/*
+
+      - name: Generate SPDX SBOM attestations
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: |
+            ${{ runner.temp }}/m11-rc/only-my-pi-0.3.0-preview.1-darwin-arm64-full.tar.gz
+            ${{ runner.temp }}/m11-rc/only-my-pi-0.3.0-preview.1-darwin-arm64-thin.tar.gz
+          sbom-path: ${{ runner.temp }}/m11-rc/only-my-pi-0.3.0-preview.1.spdx.json
+
+      - name: Upload exact RC assets for protected acceptance
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: m11-rc-${{ inputs.source_commit }}
+          path: ${{ runner.temp }}/m11-rc/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0

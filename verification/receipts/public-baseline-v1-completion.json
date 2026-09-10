@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-public-baseline-receipt",
+  "status": "PUBLIC_BASELINE_VERIFIED",
+  "sourceCommit": "73c1c005e274fbe954fc433a42638221b509439f",
+  "evidenceCommit": "d2e45ef92faa4ed30145957470be91b76269e965",
+  "evidencePath": "verification/protected/2026-08-29-public-baseline-live-matrix.json",
+  "evidenceDigest": "sha256:b23412eff596ba0d55a8f6bd923ecc46429f469814acda6dde5a8bad99e5cc75",
+  "stableGraphDigest": "sha256:29c75bd86bdbd0287c1b48fe13ccb3f35173c9f82630ea9f1d34f5282889d86b",
+  "legacyRegistryDigest": "sha256:1e4822add74367bc58a4fcf792cfd2c53e7fbac86f28c543b5156259eb5306be",
+  "gateResults": [
+    { "id": "PB1", "status": "PASS" },
+    { "id": "PB2", "status": "PASS" },
+    { "id": "PB3", "status": "PASS" },
+    { "id": "PB4", "status": "PASS" },
+    { "id": "PB5", "status": "PASS" }
+  ],
+  "receiptDigest": "sha256:1258096b134d5a955048b82702bb477ebf7b06a601182fd0db618fc39ab27441"
+}

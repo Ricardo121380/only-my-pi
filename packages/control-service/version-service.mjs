@@ -3,6 +3,8 @@ import path from "node:path";
 
 import { loadSettings } from "../config-runtime/index.mjs";
 import { extractManagedMetadata } from "../bootstrap/settings-merge.mjs";
+import { validateStackManifest, validateStackState } from "../release-stack/contracts.mjs";
+import { productBoundaryForVersion } from "../direct-agent/product-contract.mjs";
 
 async function readJson(target, { missing = null } = {}) {
   try {
@@ -42,25 +44,58 @@ async function packageVersionForExecutable(executable, expectedName) {
 }
 
 export class VersionService {
-  constructor({ rootDir, configRoot, userCli, env = process.env } = {}) {
+  constructor({ rootDir, configRoot, userCli, stackLayout = null, env = process.env } = {}) {
     if (typeof rootDir !== "string" || !path.isAbsolute(rootDir)) throw new TypeError("VersionService requires an absolute rootDir");
     if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("VersionService requires an absolute configRoot");
     if (!userCli || typeof userCli.inspectActive !== "function") throw new TypeError("VersionService requires a user CLI inspector");
     this.rootDir = path.resolve(rootDir);
     this.configRoot = path.resolve(configRoot);
     this.userCli = userCli;
+    this.stackLayout = stackLayout;
     this.env = env;
   }
 
   async inspect() {
-    const [packageManifest, decisionContract, settings, activeCli, piExecutable] = await Promise.all([
+    const [packageManifest, decisionContract, settings, activeCli, piExecutable, stackStateInput] = await Promise.all([
       readJson(path.join(this.rootDir, "package.json")),
       readJson(path.join(this.rootDir, "contracts", "compatibility", "upstream-candidates.json")),
       loadSettings(this.configRoot),
       this.userCli.inspectActive(),
       executableOnPath("pi", this.env),
+      this.stackLayout ? readJson(this.stackLayout.stateFile) : null,
     ]);
     const metadata = extractManagedMetadata(settings.settings);
+    if (stackStateInput) {
+      const stackState = validateStackState(stackStateInput);
+      const manifest = validateStackManifest(await readJson(path.join(this.stackLayout.stacksRoot, stackState.activeStack.slice("sha256:".length), "stack-manifest.json")));
+      const productBoundary = productBoundaryForVersion(stackState.onlyMyPi.version);
+      const subagents = stackState.externalPackages.find((entry) => entry.name === "pi-subagents") ?? null;
+      const consistent = stackState.activeStack === manifest.stackId
+        && stackState.manifestDigest === manifest.stackId
+        && stackState.onlyMyPi.digest === manifest.onlyMyPi.artifactSha256
+        && stackState.generation.digest === metadata?.generationId;
+      return Object.freeze({
+        formatVersion: 1,
+        packageVersion: stackState.onlyMyPi.version,
+        releaseChannel: "preview",
+        sourceCommit: manifest.sourceCommit,
+        artifactSha256: stackState.onlyMyPi.digest,
+        cliRoot: "USER_LOCAL_CONTROLLED_STACK",
+        stackId: stackState.activeStack,
+        payloadMode: stackState.payloadMode,
+        embeddedNodeVersion: stackState.node.version,
+        embeddedNodeSha256: manifest.runtime.node.archiveSha256,
+        installedGenerationId: stackState.generation.digest,
+        piVersion: stackState.pi.version,
+        subagentsVersion: subagents?.version ?? null,
+        decision: productBoundary.currentProductContract ? productBoundary.publicationDecision : "INTERNAL_DISTRIBUTION_FOUNDATION",
+        currentProductContract: productBoundary.currentProductContract,
+        currentReleaseAuthority: productBoundary.currentReleaseAuthority,
+        product: productBoundary.product,
+        ok: consistent,
+        status: consistent ? "VERSION_IDENTITY" : "STACK_GENERATION_IDENTITY_DRIFT",
+      });
+    }
     const subagents = metadata?.packageBindings?.find((entry) => entry.id === "subagents") ?? null;
     const piVersion = await packageVersionForExecutable(piExecutable, "@earendil-works/pi-coding-agent");
     const cliGeneration = activeCli?.manifest.installedGenerationId ?? null;

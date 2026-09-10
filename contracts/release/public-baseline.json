@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-public-baseline",
+  "state": "PUBLIC_BASELINE_VERIFIED",
+  "legacyAuthority": {
+    "path": "verification/legacy-authority-v1.json",
+    "registryDigest": "sha256:1e4822add74367bc58a4fcf792cfd2c53e7fbac86f28c543b5156259eb5306be",
+    "currentReleaseAuthority": false
+  },
+  "stable": {
+    "piVersion": "0.84.3",
+    "subagentsVersion": "0.57.0",
+    "graphDigest": "sha256:29c75bd86bdbd0287c1b48fe13ccb3f35173c9f82630ea9f1d34f5282889d86b",
+    "profile": "daily",
+    "capability": "READ_ONLY"
+  },
+  "sourceCommit": "73c1c005e274fbe954fc433a42638221b509439f",
+  "evidenceCommit": "d2e45ef92faa4ed30145957470be91b76269e965",
+  "protectedEvidence": "verification/protected/2026-08-29-public-baseline-live-matrix.json",
+  "completionReceipt": "verification/receipts/public-baseline-v1-completion.json"
+}

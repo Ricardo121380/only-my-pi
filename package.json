@@ -1,9 +1,9 @@
 {
   "name": "only-my-pi",
-  "version": "0.1.0",
+  "version": "0.3.0-preview.1",
   "type": "module",
   "private": true,
-  "description": "Governed, reproducible Pi Harness distribution with Profiles, Modes, Workflows, and AgentSwarm",
+  "description": "Guarded user-local terminal coding agent built on Pi",
   "repository": {
     "type": "git",
     "url": "https://github.com/Ricardo121380/only-my-pi.git"
@@ -24,12 +24,14 @@
     "SECURITY.md",
     "LICENSE",
     "CHANGELOG.md",
+    "THIRD_PARTY_NOTICES.md",
     "bin/",
     "extensions/context-doctor/index.ts",
     "extensions/context-doctor/metrics.mjs",
     "extensions/session-ledger/index.ts",
     "extensions/session-ledger/ledger.mjs",
     "extensions/omp-control/",
+    "extensions/omp-direct/",
     "skills/",
     "prompts/",
     "themes/",
@@ -80,6 +82,7 @@
     "packages/config-runtime/",
     "packages/bootstrap/",
     "packages/control-service/",
+    "packages/direct-agent/",
     "packages/daily-config/",
     "packages/project-gates/",
     "packages/run-management/",
@@ -95,6 +98,7 @@
     "packages/subagents/",
     "packages/upstream-compatibility/",
     "packages/upstream-migration/",
+    "packages/release-stack/",
     "packages/adapters/"
   ],
   "scripts": {
@@ -123,7 +127,7 @@
     "pack:check": "node scripts/pack-check.mjs",
     "lint": "node scripts/lint.mjs",
     "secret:scan": "node scripts/secret-scan.mjs",
-    "test:unit": "node --test tests/agent-resource-generator.test.mjs tests/artifact-installer.test.mjs tests/bootstrap-package-bindings.test.mjs tests/capability-consistency.test.mjs tests/control-service.test.mjs tests/daily-config.test.mjs tests/daily-control.test.mjs tests/mcp-doctor.test.mjs tests/mode-registry.test.mjs tests/omp-cli-parser.test.mjs tests/profile-resolver.test.mjs tests/repo-map.test.mjs tests/run-management.test.mjs tests/safe-mode.test.mjs tests/status-service.test.mjs tests/theme-service.test.mjs tests/verification-receipt.test.mjs tests/web-policy.test.mjs",
+    "test:unit": "node --test tests/agent-resource-generator.test.mjs tests/artifact-installer.test.mjs tests/bootstrap-package-bindings.test.mjs tests/capability-consistency.test.mjs tests/control-service.test.mjs tests/daily-config.test.mjs tests/daily-control.test.mjs tests/direct-agent-doctor.test.mjs tests/direct-agent-launcher.test.mjs tests/direct-agent-workspace.test.mjs tests/direct-agent-managed-clone.test.mjs tests/direct-agent-orchestration.test.mjs tests/direct-agent-budget.test.mjs tests/omp-direct-session.test.mjs tests/m12-direct-coding-integration.test.mjs tests/m12-direct-agent-error-paths.test.mjs tests/m12-product-contract.test.mjs tests/m12-gates.test.mjs tests/mcp-doctor.test.mjs tests/mode-registry.test.mjs tests/omp-cli-parser.test.mjs tests/profile-resolver.test.mjs tests/repo-map.test.mjs tests/run-management.test.mjs tests/safe-mode.test.mjs tests/status-service.test.mjs tests/theme-service.test.mjs tests/verification-receipt.test.mjs tests/web-policy.test.mjs",
     "test:contract": "node --test tests/agent-registry.test.mjs tests/bootstrap-contracts.test.mjs tests/ci-contract.test.mjs tests/execution-state-driver-contract.test.mjs tests/package-governance.test.mjs tests/pi-subagents-contract.test.mjs tests/subagents-delegation-adapter.test.mjs tests/subagents-live-probe.test.mjs tests/subagents-live-evidence-capture.test.mjs tests/subagents-background-resume-evidence.test.mjs tests/subagents-guarded-writer-evidence.test.mjs tests/subagents-guarded-writer-reconciliation.test.mjs tests/release-gates.test.mjs tests/release-gates-v2.test.mjs tests/release-receipt.test.mjs tests/schema-validation.test.mjs tests/subagents-release.test.mjs tests/subagents-protected-evidence.test.mjs tests/subagents-provenance.test.mjs",
     "test:integration": "node --test tests/bootstrap-command-runner.test.mjs tests/bootstrap-service.test.mjs tests/bootstrap-services.test.mjs tests/bootstrap-settings-merge.test.mjs tests/bootstrap-smoke-runner.test.mjs tests/bootstrap-staging.test.mjs tests/bootstrap-transaction-engine.test.mjs tests/config-runtime.test.mjs tests/gate-runner.test.mjs tests/m3-packaged-runtime.test.mjs tests/mode-control.test.mjs tests/omp-cli.test.mjs tests/omp-control-runtime.test.mjs tests/pack-content.test.mjs tests/pi-subagents-adapter.test.mjs tests/project-gates.test.mjs tests/session-runtime-composer.test.mjs tests/skills-bridge.test.mjs tests/subagents-control-facade.test.mjs tests/subagents-resource-leak.test.mjs tests/swarm-control.test.mjs tests/swarm-core.test.mjs tests/workflow-core.test.mjs tests/docs-links.test.mjs",
     "test:e2e": "node scripts/fresh-tarball-smoke.mjs",
@@ -141,6 +145,18 @@
     "verify:m9:run": "node scripts/upstream-compatibility-gates.mjs --run --json",
     "verify:m10": "node scripts/m10-promotion-gates.mjs --json",
     "verify:m10:run": "node scripts/m10-promotion-gates.mjs --run --json",
+    "verify:public-baseline": "node scripts/public-baseline-gates.mjs --json",
+    "verify:public-baseline:run": "node scripts/public-baseline-gates.mjs --run --json",
+    "verify:m11": "node scripts/m11-release-gates.mjs --json",
+    "verify:m11:run": "node scripts/m11-release-gates.mjs --run --json",
+    "verify:m11:platform": "node scripts/m11-release-gates.mjs --run --include-platform --json",
+    "verify:m12": "node scripts/m12-direct-coding-gates.mjs --json",
+    "verify:m12:run": "node scripts/m12-direct-coding-gates.mjs --run --json",
+    "verify:m11:q10:ci": "node scripts/m11-q10-ci.mjs --json",
+    "build:m11:workflow": "node scripts/m11-workflow-build.mjs --json",
+    "check:m11:release-core": "node scripts/m11-compare-release-core.mjs --json",
+    "plan:m11:protected": "node scripts/m11-protected-release-acceptance.mjs --plan --json",
+    "plan:public-baseline:protected": "node scripts/public-baseline-protected-acceptance.mjs --plan --json",
     "compatibility:m9": "node scripts/m9-upstream-compatibility.mjs --plan --json",
     "probe:m9": "node scripts/m9-upstream-compatibility.mjs --probe --json",
     "plan:m9:live": "node scripts/m9-live-acceptance.mjs --plan --json",
@@ -148,7 +164,12 @@
     "plan:m8:real-root": "node scripts/m8-real-root-rehearsal.mjs --plan --json",
     "plan:m10:bundle": "node scripts/m10-build-migration-bundle.mjs --json",
     "plan:m10:protected": "node scripts/m10-protected-acceptance.mjs --plan --json",
+    "plan:m11:release": "node scripts/m11-build-release.mjs --json",
+    "plan:m11:stage": "node scripts/m11-stage-release.mjs --json",
+    "generate:m11:external-lock": "node scripts/generate-m11-external-lock.mjs",
+    "check:m11:external-lock": "node scripts/generate-m11-external-lock.mjs --check",
     "test:coverage:m8": "node scripts/m8-deterministic-acceptance.mjs",
+    "test:coverage:m12": "node scripts/m12-deterministic-acceptance.mjs",
     "compatibility:subagents": "node scripts/subagents-compatibility.mjs --requested preview --json",
     "test:deepseek": "node packages/deepseek-conformance/test.mjs",
     "test:acp": "node --test packages/acp-v1/acp-v1.test.mjs",
@@ -168,6 +189,12 @@
     "semver": "7.8.5",
     "ssri": "13.0.1"
   },
+  "bundleDependencies": [
+    "ajv",
+    "ajv-formats",
+    "semver",
+    "ssri"
+  ],
   "bundledDependencies": [
     "ajv",
     "ajv-formats",
@@ -185,7 +212,8 @@
     "extensions": [
       "./extensions/session-ledger/index.ts",
       "./extensions/context-doctor/index.ts",
-      "./extensions/omp-control/index.ts"
+      "./extensions/omp-control/index.ts",
+      "./extensions/omp-direct/index.ts"
     ],
     "skills": [
       "./skills"

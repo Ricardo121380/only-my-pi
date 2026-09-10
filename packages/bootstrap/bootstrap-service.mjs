@@ -420,7 +420,10 @@ export class BootstrapService {
           transactionId: "doctor-installed",
         });
         await verifyGenerationByManifest({ layout: installedLayout });
-        const lkg = await verifyLastKnownGood(configRoot);
+        // Pi may update settings it owns after an OMP generation is committed.
+        // Unowned fields do not invalidate the generation or its rollback
+        // material, while every OMP-owned field must remain byte-equivalent.
+        const lkg = await verifyLastKnownGood(configRoot, { allowUnownedSettingsDrift: true });
         if (lkg.state.generationId !== metadata.generationId) {
           fail("LKG_GENERATION_DRIFT", "last-known-good generation differs from current settings");
         }

@@ -1,8 +1,8 @@
 # Threat model
 
-The Harness is a policy and reproducibility layer around Pi. It is not an OS
-sandbox. The threat model therefore distinguishes configuration claims from
-enforcement evidence for every surface.
+The Agent is a policy and reproducibility layer around Pi. OMP session admission
+is not by itself an OS sandbox. The threat model therefore distinguishes the
+visible coding grant from the physical enforcement evidence for every surface.
 
 | Threat | Failure mode | Default control | Evidence |
 | --- | --- | --- | --- |
@@ -16,6 +16,65 @@ enforcement evidence for every surface.
 | ledger disclosure | prompts/reasoning/tool payloads persist | metadata-only bounded receipts and redaction | session/status/receipt tests |
 | false runtime claim | prompt or static metadata presented as sandbox/live Provider | `CONFIGURED_UNVERIFIED`, `RESTART_REQUIRED`, `UNAVAILABLE`, and explicit provenance | runtime doctor and status tests |
 | release drift | CI verifies a different suite than local | one versioned manifest and manifest digest in receipt/CI | release-gates and CI contract |
+| payload divergence | Full and Thin install different bytes under one version | acquisition-independent canonical stack manifest and post-stage tree convergence | release stack contract and builder tests |
+| download substitution | registry, redirect, or release bytes change after planning | fixed HTTPS hosts, manual redirect validation, complete SRI/SHA ledger, apply offline | downloader and plan/apply drift tests |
+| installer bootstrap | a one-line command executes unverified remote shell | download to a temporary regular file, compare fixed SHA-256, execute only after match | bootstrap installer tests |
+| local stack confusion | system Pi/Node or an unknown shim is overwritten | user-local immutable stack, exact symlink identity, unknown shim conflict, no `/opt/homebrew` writes | stack transaction and clean-host tests |
+| unsafe removal | provisioned package ownership is mistaken for OMP ownership | separate asset disposition, external/user ownership, exact LKG and drift checks | stack remove preservation tests |
+| incomplete license evidence | public bundle redistributes an unresolved artifact | complete transitive ledger, direct dependency review, SPDX 2.3 and shipped license texts | SBOM/notices validator |
+| coding grant restore | a resumed/new process silently inherits writer authority | grant remains memory-only and is recreated only by interactive approval | direct-session admission tests |
+| hidden writer activation | an extension reactivates edit/write/bash before approval | initial active-tool restriction plus independent `tool_call` backstop | tool visibility and hostile-reactivation tests |
+| dirty worktree loss | Agent cleanup or integration overwrites pre-existing changes | immutable baseline summary, no reset/clean/revert, per-path drift checks | dirty-worktree and integration tests |
+| child writer escape | isolated writer sees host secrets or mutates outside scope | ordinary managed clone, Pi permission sandbox, one writer, no inherited credentials, patch scope verification | managed-clone fault tests |
+| unsafe patch integration | stale, binary, symlink or out-of-scope child change reaches the workspace | base/drift/dry-run/review gates and all-or-nothing apply | writer integration tests |
+| headless mutation | print/RPC use bypasses the interactive coding approval | `omp -p` read-only tool set and unavailable coding-access tool | headless denial smoke |
+
+## Direct coding boundary
+
+`request_coding_access` is a coarse, session-scoped admission decision. It may
+reveal project-local edit, write, sandboxed Bash, Gate and one managed-clone
+writer surface, but it cannot widen project roots, protected paths, network,
+MCP, credential, deployment, publication or destructive Git authority. A
+coding grant is not serialized into Pi session history and is discarded during
+shutdown, resume, fork, reload and process replacement.
+
+`pi-permission-modes` remains the physical filesystem/Bash/sandbox policy owner.
+OMP starts with mutating tools inactive and also rejects a mutating tool call
+when no grant exists. These are independent controls: tool hiding reduces
+model opportunity, while the call backstop prevents another extension from
+silently widening the visible set. Project Trust controls project resource
+loading; it is not process isolation.
+
+The main Agent may modify an approved current repository without an automatic
+commit. It records pre-existing Git state and never resets, cleans or reverts
+it. A child writer uses a normal clone because permission-mode sandboxing is not
+reliably preserved in Git worktrees. Only a reviewed, scope-contained patch may
+cross back into the current workspace, and it must be reverified there.
+
+## Public Preview release boundary
+
+The public installer is not a general package manager. It accepts one exact
+Preview release identity, the fixed Node/Pi/package tuple, and either the Full
+or Thin acquisition path. Full plan/apply is offline once the user has the
+bundle. Thin may stage bytes only from the allowlisted GitHub Release,
+`nodejs.org`, and `registry.npmjs.org` hosts. Neither path may read `.npmrc`,
+GitHub credentials, provider credentials, browser cookies, Pi sessions, or
+model memory. Lifecycle scripts remain disabled.
+
+SHA-256, npm SHA-512 SRI, SPDX and GitHub attestations provide integrity and
+provenance evidence; they do not make third-party code safe. The staged tree is
+still executable code with the user's OS authority when Pi starts. The guarded
+coding ceiling limits registered Agent tools, not arbitrary behavior inside a
+malicious extension or dependency. Public users should inspect the
+ledger/SBOM and use host isolation when their repository or credential boundary
+requires it.
+
+`omp stack remove` is deliberately a different authority from `omp uninstall`.
+The former may remove only immutable stack assets or a complete package root
+whose provision transaction, current identity and pre-install LKG are all
+provable. Any drift preserves the asset and returns a reconciliation plan.
+Authentication, session, model, memory and git-sync data are outside both
+removal surfaces.
 
 ## Trust boundaries
 

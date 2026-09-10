@@ -1,0 +1,249 @@
+import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+import { hashResourcePath } from "../packages/bootstrap/graph-plan.mjs";
+import {
+  buildFullThinPayloads,
+  createSpdxSbom,
+  finalizeArtifactLedger,
+  finalizeStackManifest,
+  inspectResolvedStack,
+  createLocalReleasePayloadSource,
+  createReleaseBuildController,
+  renderThirdPartyNotices,
+  sha256,
+} from "../packages/release-stack/index.mjs";
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const SOURCE = "c".repeat(40);
+
+async function temporary(t, prefix) {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), prefix)));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  return root;
+}
+
+async function read(relativePath) {
+  return JSON.parse(await fs.readFile(path.join(ROOT, relativePath), "utf8"));
+}
+
+async function digestTree(root, relative) {
+  return `sha256:${await hashResourcePath({ artifactRoot: root, relativePath: relative, allowContainedSymlinks: true })}`;
+}
+
+async function createResolvedRoot(root, packageEntries) {
+  await fs.mkdir(path.join(root, "node", "bin"), { recursive: true });
+  await fs.writeFile(path.join(root, "node", "bin", "node"), "fixture node\n", { mode: 0o755 });
+  await fs.symlink("node", path.join(root, "node", "bin", "node-alias"));
+  await fs.mkdir(path.join(root, "pi", "dist", "bundle"), { recursive: true });
+  await fs.writeFile(path.join(root, "pi", "dist", "bundle", "cli.js"), "fixture pi\n", { mode: 0o755 });
+  for (const entry of packageEntries) {
+    const packageRoot = path.join(root, "external-npm", "node_modules", ...entry.name.split("/"));
+    await fs.mkdir(packageRoot, { recursive: true });
+    await fs.writeFile(path.join(packageRoot, "package.json"), `${JSON.stringify({ name: entry.name, version: entry.version, license: "MIT" })}\n`);
+    await fs.writeFile(path.join(packageRoot, "index.js"), `export default ${JSON.stringify(entry.name)};\n`);
+  }
+  await fs.writeFile(path.join(root, "external-npm", "package-lock.json"), "{}\n");
+  await fs.writeFile(path.join(root, "only-my-pi.tgz"), "fixture only-my-pi artifact\n");
+}
+
+async function writeMetadata(root, { stackManifest, ledger, sbom, notices }) {
+  await fs.writeFile(path.join(root, "stack-manifest.json"), `${JSON.stringify(stackManifest, null, 2)}\n`);
+  await fs.writeFile(path.join(root, "transitive-artifact-ledger.json"), `${JSON.stringify(ledger, null, 2)}\n`);
+  await fs.writeFile(path.join(root, "sbom.spdx.json"), `${JSON.stringify(sbom, null, 2)}\n`);
+  await fs.writeFile(path.join(root, "THIRD_PARTY_NOTICES.txt"), notices);
+  await fs.writeFile(path.join(root, "install.sh"), "#!/bin/sh\nset -eu\nexit 0\n", { mode: 0o755 });
+  await fs.mkdir(path.join(root, "LICENSES"));
+  await fs.writeFile(path.join(root, "LICENSES", "MIT.txt"), "MIT fixture license\n");
+}
+
+async function writeThinResolutionInputs(root, { stackManifest, ledger, artifactSource }) {
+  await fs.copyFile(artifactSource, path.join(root, "only-my-pi.tgz"));
+  const dependencies = Object.fromEntries(stackManifest.externalPackages.map((entry) => [entry.name, entry.version]).sort(([left], [right]) => left.localeCompare(right)));
+  const packageDocument = { name: "only-my-pi-external-stack", private: true, version: "0.0.0", dependencies };
+  const lock = { name: packageDocument.name, version: packageDocument.version, lockfileVersion: 3, requires: true, packages: { "": packageDocument } };
+  const artifacts = new Map(ledger.artifacts.map((entry) => [`${entry.name}@${entry.version}`, entry]));
+  for (const entry of stackManifest.externalPackages) {
+    const artifact = artifacts.get(`${entry.name}@${entry.version}`);
+    lock.packages[`node_modules/${entry.name}`] = { version: entry.version, resolved: artifact.tarballUrl, integrity: artifact.integrity, license: artifact.license };
+  }
+  const resolution = path.join(root, "resolution", "external");
+  await fs.mkdir(resolution, { recursive: true });
+  await fs.writeFile(path.join(resolution, "package.json"), `${JSON.stringify(packageDocument, null, 2)}\n`);
+  await fs.writeFile(path.join(resolution, "package-lock.json"), `${JSON.stringify(lock, null, 2)}\n`);
+}
+
+async function releaseFixture(t) {
+  const full = await temporary(t, "omp-release-full-");
+  const thin = await temporary(t, "omp-release-thin-");
+  const thinResolved = await temporary(t, "omp-release-thin-resolved-");
+  const base = await read("contracts/release/stack-manifest.example.json");
+  await createResolvedRoot(full, base.externalPackages);
+  await fs.cp(path.join(full, "node"), path.join(thinResolved, "node"), { recursive: true, verbatimSymlinks: true });
+  await fs.cp(path.join(full, "pi"), path.join(thinResolved, "pi"), { recursive: true });
+  await fs.cp(path.join(full, "external-npm"), path.join(thinResolved, "external-npm"), { recursive: true });
+  await fs.copyFile(path.join(full, "only-my-pi.tgz"), path.join(thinResolved, "only-my-pi.tgz"));
+
+  const ledgerBase = await read("contracts/release/transitive-artifact-ledger.example.json");
+  ledgerBase.sourceCommit = SOURCE;
+  delete ledgerBase.ledgerDigest;
+  const ledger = finalizeArtifactLedger(ledgerBase);
+  const manifestBase = structuredClone(base);
+  manifestBase.sourceCommit = SOURCE;
+  manifestBase.transitiveLedgerSha256 = ledger.ledgerDigest;
+  manifestBase.onlyMyPi.artifactSha256 = sha256(await fs.readFile(path.join(full, "only-my-pi.tgz")));
+  manifestBase.runtime.node.treeDigest = await digestTree(full, "node");
+  manifestBase.runtime.pi.treeDigest = await digestTree(full, "pi");
+  manifestBase.externalTreeDigest = await digestTree(full, "external-npm");
+  for (const entry of manifestBase.externalPackages) entry.treeDigest = await digestTree(full, path.posix.join("external-npm", "node_modules", entry.name));
+  delete manifestBase.stackId;
+  const stackManifest = finalizeStackManifest(manifestBase);
+  const sbom = createSpdxSbom({ stackManifest, ledger });
+  const notices = renderThirdPartyNotices({ stackManifest, ledger });
+  await writeMetadata(full, { stackManifest, ledger, sbom, notices });
+  await writeMetadata(thin, { stackManifest, ledger, sbom, notices });
+  await writeThinResolutionInputs(thin, { stackManifest, ledger, artifactSource: path.join(full, "only-my-pi.tgz") });
+  const protectedReceiptPath = path.join(await temporary(t, "omp-release-receipt-"), "protected-receipt.json");
+  await fs.writeFile(protectedReceiptPath, `${JSON.stringify({ formatVersion: 1, status: "FIXTURE_PASS", digest: sha256("fixture-receipt") })}\n`);
+  return { full, thin, thinResolved, stackManifest, ledger, protectedReceiptPath, protectedEvidenceDigest: sha256(await fs.readFile(protectedReceiptPath)) };
+}
+
+test("release builder creates reproducible Full and Thin assets with one stack identity", async (t) => {
+  const fixture = await releaseFixture(t);
+  const leftOutput = await temporary(t, "omp-release-output-left-");
+  const rightOutput = await temporary(t, "omp-release-output-right-");
+  const options = {
+    fullPayloadRoot: fixture.full,
+    thinPayloadRoot: fixture.thin,
+    thinResolvedRoot: fixture.thinResolved,
+    protectedReceiptPath: fixture.protectedReceiptPath,
+    protectedEvidenceDigest: fixture.protectedEvidenceDigest,
+  };
+  const left = await buildFullThinPayloads({ ...options, outputRoot: leftOutput });
+  const right = await buildFullThinPayloads({ ...options, outputRoot: rightOutput });
+  assert.equal(left.stackId, fixture.stackManifest.stackId);
+  assert.equal(left.releaseIndex.assets.full.sha256, right.releaseIndex.assets.full.sha256);
+  assert.equal(left.releaseIndex.assets.thin.sha256, right.releaseIndex.assets.thin.sha256);
+  assert.equal(left.releaseIndex.stackManifestSha256, right.releaseIndex.stackManifestSha256);
+  assert.equal(left.convergence.status, "PAYLOADS_CONVERGED");
+  assert.equal(left.releaseIndex.status, "RC");
+});
+
+test("resolved stack inspection binds all four trees and every external package", async (t) => {
+  const fixture = await releaseFixture(t);
+  const result = await inspectResolvedStack({ resolvedRoot: fixture.full, stackManifest: fixture.stackManifest });
+  assert.equal(result.stackId, fixture.stackManifest.stackId);
+  assert.equal(Object.keys(result.externalPackages).length, 9);
+  assert.equal(result.externalTreeDigest, fixture.stackManifest.externalTreeDigest);
+});
+
+test("Full/Thin convergence fails closed on one changed staged package", async (t) => {
+  const fixture = await releaseFixture(t);
+  const output = await temporary(t, "omp-release-output-drift-");
+  const target = path.join(fixture.thinResolved, "external-npm", "node_modules", "pi-subagents", "index.js");
+  await fs.appendFile(target, "// drift\n");
+  await assert.rejects(buildFullThinPayloads({
+    fullPayloadRoot: fixture.full,
+    thinPayloadRoot: fixture.thin,
+    thinResolvedRoot: fixture.thinResolved,
+    outputRoot: output,
+    protectedReceiptPath: fixture.protectedReceiptPath,
+    protectedEvidenceDigest: fixture.protectedEvidenceDigest,
+  }), { code: "RESOLVED_STACK_IDENTITY_MISMATCH" });
+});
+
+test("Full/Thin metadata divergence is rejected before archive publication", async (t) => {
+  const fixture = await releaseFixture(t);
+  const output = await temporary(t, "omp-release-output-metadata-");
+  const ledger = JSON.parse(await fs.readFile(path.join(fixture.thin, "transitive-artifact-ledger.json"), "utf8"));
+  ledger.artifacts.reverse();
+  await fs.writeFile(path.join(fixture.thin, "transitive-artifact-ledger.json"), `${JSON.stringify(ledger, null, 2)}\n`);
+  await assert.rejects(buildFullThinPayloads({
+    fullPayloadRoot: fixture.full,
+    thinPayloadRoot: fixture.thin,
+    thinResolvedRoot: fixture.thinResolved,
+    outputRoot: output,
+    protectedReceiptPath: fixture.protectedReceiptPath,
+    protectedEvidenceDigest: fixture.protectedEvidenceDigest,
+  }), { code: "LEDGER_DIGEST_INVALID" });
+});
+
+test("local Full source uses sibling release authority and remains zero-write until prepare", async (t) => {
+  const fixture = await releaseFixture(t);
+  const output = await temporary(t, "omp-release-output-source-");
+  const cache = await temporary(t, "omp-release-cache-source-");
+  const built = await buildFullThinPayloads({
+    fullPayloadRoot: fixture.full,
+    thinPayloadRoot: fixture.thin,
+    thinResolvedRoot: fixture.thinResolved,
+    outputRoot: output,
+    protectedReceiptPath: fixture.protectedReceiptPath,
+    protectedEvidenceDigest: fixture.protectedEvidenceDigest,
+  });
+  const source = createLocalReleasePayloadSource({ cacheRoot: cache });
+  const before = await fs.readdir(cache);
+  const inspection = await source.inspect({ bundle: built.assets.full.path });
+  assert.equal(inspection.payloadMode, "full");
+  assert.equal(inspection.stackId, fixture.stackManifest.stackId);
+  assert.deepEqual(await fs.readdir(cache), before);
+  const prepared = await source.prepare({ bundle: built.assets.full.path });
+  assert.equal(prepared.stackId, fixture.stackManifest.stackId);
+  assert.equal(await fs.readFile(path.join(prepared.resolvedRoot, "only-my-pi.tgz"), "utf8"), "fixture only-my-pi artifact\n");
+  await prepared.cleanup();
+  assert.deepEqual(await fs.readdir(cache), []);
+});
+
+test("release build controller performs two byte-identical builds before atomic publication", async (t) => {
+  const fixture = await releaseFixture(t);
+  const outputParent = await temporary(t, "omp-release-controller-");
+  const outputRoot = path.join(outputParent, "release");
+  const controller = createReleaseBuildController({
+    rootDir: ROOT,
+    sourceInspector: async () => ({ head: SOURCE, clean: true }),
+  });
+  const options = {
+    fullPayloadRoot: fixture.full,
+    thinPayloadRoot: fixture.thin,
+    thinResolvedRoot: fixture.thinResolved,
+    protectedReceiptPath: fixture.protectedReceiptPath,
+    protectedEvidenceDigest: fixture.protectedEvidenceDigest,
+    outputRoot,
+    sourceCommit: SOURCE,
+    status: "RC",
+  };
+  const plan = await controller.plan(options);
+  assert.equal(plan.mutation, false);
+  await assert.rejects(fs.lstat(outputRoot), { code: "ENOENT" });
+  const result = await controller.apply(options, plan);
+  assert.equal(result.status, "RELEASE_BUILD_COMMITTED");
+  assert.equal(result.reproducible, true);
+  assert.equal(result.stackId, fixture.stackManifest.stackId);
+  assert.equal(JSON.parse(await fs.readFile(path.join(outputRoot, "release-index.json"), "utf8")).status, "RC");
+});
+
+test("release build controller rejects receipt or source drift before writing output", async (t) => {
+  const fixture = await releaseFixture(t);
+  const outputParent = await temporary(t, "omp-release-controller-drift-");
+  const options = {
+    fullPayloadRoot: fixture.full,
+    thinPayloadRoot: fixture.thin,
+    thinResolvedRoot: fixture.thinResolved,
+    protectedReceiptPath: fixture.protectedReceiptPath,
+    protectedEvidenceDigest: fixture.protectedEvidenceDigest,
+    outputRoot: path.join(outputParent, "release"),
+    sourceCommit: SOURCE,
+    status: "RC",
+  };
+  const wrongSource = createReleaseBuildController({ rootDir: ROOT, sourceInspector: async () => ({ head: "d".repeat(40), clean: true }) });
+  await assert.rejects(wrongSource.plan(options), { code: "RELEASE_BUILD_SOURCE_NOT_CLEAN" });
+
+  const controller = createReleaseBuildController({ rootDir: ROOT, sourceInspector: async () => ({ head: SOURCE, clean: true }) });
+  const plan = await controller.plan(options);
+  await fs.appendFile(fixture.protectedReceiptPath, "\n");
+  await assert.rejects(controller.apply(options, plan), { code: "PROTECTED_EVIDENCE_DIGEST_MISMATCH" });
+  await assert.rejects(fs.lstat(options.outputRoot), { code: "ENOENT" });
+});

@@ -1,0 +1,698 @@
+{
+  "$schema": "../schemas/legacy-authority-v1.schema.json",
+  "formatVersion": 1,
+  "kind": "only-my-pi-legacy-authority",
+  "authorityClass": "LEGACY_PRIVATE_HISTORY",
+  "currentReleaseAuthority": false,
+  "retirementReason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY",
+  "replacementAuthority": "public-baseline-v1",
+  "legacySnapshotCommit": "f182760aa968057266c8d001b9a28d876da8f0c2",
+  "legacySnapshotTree": "2bc19fb64485f2a7654ee150ca6f5cc823da3153",
+  "entries": [
+    {
+      "path": "verification/evidence/m9-pi-0.84.3-full-stack-no-model.json",
+      "fileSha256": "sha256:3ed5ec3d4c76018b4066b1bbf8a53dbfaf3aefeb8fe5b8c87000222bff0709b1",
+      "originalClaimType": "DETERMINISTIC_EVIDENCE",
+      "originalSourceCommit": null,
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:6c93954700aa1aa5cb81b618606b619cc4898aaf9af1f99a1b0f154e3289f5d1"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/evidence/m9-pi-0.84.3-subagents-0.57.0-no-model.json",
+      "fileSha256": "sha256:7f9bd3878c044d171499aea7fdfc0003f4aa617d583c613e4171c8f858594ee4",
+      "originalClaimType": "DETERMINISTIC_EVIDENCE",
+      "originalSourceCommit": null,
+      "originalEvidenceCommit": null,
+      "originalStatus": "LIVE_NO_MODEL_CAPABILITY_PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:33317fa4b1777c551bbb0edb00bbec371d0d30fbdb383783c9a0822c5fb2e50d"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/evidence/m9-pi-web-access-0.25.0-ssrf.json",
+      "fileSha256": "sha256:bfed2f92d6fab797713b05ec1b6448782937d693f54226f871488364f4d240e3",
+      "originalClaimType": "DETERMINISTIC_EVIDENCE",
+      "originalSourceCommit": null,
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:1701a4cd379d8719bfea3b9f0f917c3657bfef05deeb99b81a759938a2f4b135"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/2026-08-27-m8-live-model-matrix-final.json",
+      "fileSha256": "sha256:a7bf396d0ada3f3ed47a925919ae877abb8407d2a506eda6d3024656b346a1af",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "6f77bb69a3bcf4184a71bef1cb0fb878b40a5cb6",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:4587bf93ea5179d365f9fcdaec1c46c409517c51612da35fec44e45d2056ab0a"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/2026-08-27-m8-live-model-matrix.json",
+      "fileSha256": "sha256:ef9d0ba380c97864265ab94e25880253c34cda030a766514282de8eb08453364",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "1b7767f27c67c210b3ac8f4411c37a9086a7c2f7",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:837dc7cfc2bc4b17fe67b8240225521be04c9e3765391e33f7b9582ffb31f3ab"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/2026-08-27-m8-real-root-rehearsal-final.json",
+      "fileSha256": "sha256:a7a8498b95db9bf2d5adf90ea85ab99cdece27c9ea5e596255714ea1766c5be4",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "6f77bb69a3bcf4184a71bef1cb0fb878b40a5cb6",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:3e517f56b6127943093ba18c4caa342f1cf4482f833f23230edd083845916b30"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/2026-08-27-m8-real-root-rehearsal.json",
+      "fileSha256": "sha256:57a067b9fa61c9f0b74c51bef2d40b166a1d372f47459853028cc24ae3accd23",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "1b7767f27c67c210b3ac8f4411c37a9086a7c2f7",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:2249212e08ce175bcd738b69a4598dd1120909a27a9ab180c53c9068fff15a8a"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/2026-08-28-m10-final-promoted-install.json",
+      "fileSha256": "sha256:e74ef755b3d0d8b74f0cbab631417c24920c54efdb54c3f4d65a7a2234ee98a6",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": null,
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:05c9a24792f17625278b51d99e8d0be4c7f61049d190cdc50b5d02e27da8d996"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/2026-08-28-m10-promoted-live-model-matrix.json",
+      "fileSha256": "sha256:951cade81a98036199038954dc3b0a00a6693eba972463a5c56d5a986ebe4a14",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "615695556f6ed699a901bef43e6fbb09f5aa663e",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:3e4fdffbd63769bed80c8058d66f9d731b199312d1d3cb79a0ce3440c0485c12"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/2026-08-28-m10-real-root-migration.json",
+      "fileSha256": "sha256:ece54855b7c83be733db70a84478a32efd72920496417a101acec853422ee4f0",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "615695556f6ed699a901bef43e6fbb09f5aa663e",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:901fcdf99fb9e0cee5983f56fb1fa0e8ee38a25e96085beda69f673381388478"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/2026-08-28-m9-candidate-live-readonly-matrix.json",
+      "fileSha256": "sha256:2f012a35730e6271ef714969a7c4aa48060506470177d97009b17679f828b39d",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "a5a71b596e8983ffbba8075f02bc2b39ba19a72b",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:ec6b8b70a397471a79279aab5634bd1ceb213b157cf1e368928afa12ca07e5a4"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/background-resume.json",
+      "fileSha256": "sha256:13283476540ce71b57b8ce37a14c68843b8e6a661beae1709d88918100e4f741",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "6004e6128dec76d8c301894c289a23d5dc855558",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:af1443974e55b17c21797b1fc1fc21dce2050280fa433ae367b7d5dbef2f1139"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/guarded-writer-integration.json",
+      "fileSha256": "sha256:15c16b582ea18c21a0b45a5f581efee976226fe5596f92164dfb2e2d23fa920e",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "6004e6128dec76d8c301894c289a23d5dc855558",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:280120e232bc73baca4bbac2b767601598a74211a22f6836ae9447f39a4d7f74"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/live-agent-cancel.json",
+      "fileSha256": "sha256:6aa6047ab485fac999eeed3ed73fd5b2aac58869792eba40e1a9e9be301cc6aa",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "6004e6128dec76d8c301894c289a23d5dc855558",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:194e1c7a2d4f13303e8ae40a48adadb8d452840a15a43ef6d0a687e21a8cc32b"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/live-agent-terminal.json",
+      "fileSha256": "sha256:a90e7649af932df013b40ca88ba078fe7a3361e693b87d171a654ebf90181c81",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "6004e6128dec76d8c301894c289a23d5dc855558",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:7290182303522ceed8e3570ecf1aeb11e7d7b82e8dc9aa4c1b3fc7855c8d0cff"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/live-batch-terminal.json",
+      "fileSha256": "sha256:b088d5cd111cfdbd697d32fa7d1ca6fa5d3c697470a90d5c91cf374b00496c79",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "6004e6128dec76d8c301894c289a23d5dc855558",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:05f062d5553a07321a07d11133664b4a543584cb5032116ed6224acbec64c878"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/stable-20260827-background-resume.json",
+      "fileSha256": "sha256:abfebedfe46bb20ebd02cb4aaf3e3f9e9bb793af9eaa6b0a1323b64f7450af48",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "2207d7230217ebd9efdf0f308e6830f52a9d38ff",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:6f0d5feac7ea3d8944419f9a86c1923895403a762f5eea1fac3cc366c28e1e6f"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/stable-20260827-guarded-writer-integration.json",
+      "fileSha256": "sha256:3b6f6bd18e4efef046088a9d3e70416ab04d074dac1d5881afcc629acbf28a7a",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "2207d7230217ebd9efdf0f308e6830f52a9d38ff",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:4d350af19350b1be0b2b728736fdc9b8c38ce3822ce615597f0ca5df0107ea78"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/stable-20260827-live-agent-cancel.json",
+      "fileSha256": "sha256:92a7b89e43777824bab29de15d16039347aa0c0b287f9bd2f11e552d40e58dee",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "2207d7230217ebd9efdf0f308e6830f52a9d38ff",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:d44b4d24bd879698346e079fdb9742d183fa02db3cbdd596a6adc981fed9eeb1"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/stable-20260827-live-agent-terminal.json",
+      "fileSha256": "sha256:8571b8ce61a2aa1c22d8d477ecb7d324a2e5615ccae5f97af982fefbcffb5ac1",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "2207d7230217ebd9efdf0f308e6830f52a9d38ff",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:98e94515c775fc5329aaf95b4f7221008ba981088f53d60f45b203f155a07c3c"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/protected/stable-20260827-live-batch-terminal.json",
+      "fileSha256": "sha256:00616c58b78630ac8111e0e771093214aa525677a378e34bf261b773e44aad92",
+      "originalClaimType": "PROTECTED_EVIDENCE",
+      "originalSourceCommit": "2207d7230217ebd9efdf0f308e6830f52a9d38ff",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "PASS",
+        "field": "evidenceDigest",
+        "declared": "sha256:6b87ed09b4f17c1e9b25e1fb485535dbfc87e991662de99e917b1676201907c8"
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-15-bootstrap.json",
+      "fileSha256": "sha256:aecd8e7d150e2f44fcee26e19ba15075b48de175f11ee6a6a7914eb1c97cbfb4",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "abf6163f077721cdb2e57212b3b47c6ec79a6959",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-15-mcp-bootstrap.json",
+      "fileSha256": "sha256:a971d6585d8562dce13a5856e1f251a03bb826f374a6d1dfb1245c3868b28432",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "05261628ffb999821dfa13bdce5e7fe0ca7812f4",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-15-status.json",
+      "fileSha256": "sha256:09a4a3d5cbebc0e5d60a3115b6802e257a14dcd9dc9dc6a34c523806cbec25ce",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "40b9d9501f2482bb58b23f8e373253654a3d96c7",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-15-three-increments.json",
+      "fileSha256": "sha256:55ddd121d464c08375b3c5273f97efa0e973cd4cfce1e229fda3241e0d5cd240",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "4ec9063554e11ee39f3f4c6f7060a193bea31bf6",
+      "originalEvidenceCommit": null,
+      "originalStatus": "PASS",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-16-harness-mvp.json",
+      "fileSha256": "sha256:6e58915ca2f737c3e78e3f293ccd6feebc425f0b7e01911822ef3d8030711eeb",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "6941761b3948d96a77596e1302d3205efb5169f1",
+      "originalEvidenceCommit": null,
+      "originalStatus": "COMPLETE",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-17-post-merge-maintenance.json",
+      "fileSha256": "sha256:255a5d36db70be300e8549b7421cb9f8a555972da96f09f3f990ab16a00b2a48",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "bff3e3be376bb2ee614a441685e7cab14324727a",
+      "originalEvidenceCommit": null,
+      "originalStatus": "COMPLETE",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-20-subagents-ultrarun-v2-preview.json",
+      "fileSha256": "sha256:c02a3f670f75aaf3e1ec42bbae3ad087c5ae82a6b4bb0e831ec3afa8a339e12f",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "fe78f2a6341820772034dad457f6cb8d39413746",
+      "originalEvidenceCommit": null,
+      "originalStatus": "COMPLETE",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-21-subagents-protected-evidence-preview.json",
+      "fileSha256": "sha256:4a3d71c03c66bf7161cab21a94e7415dc6dc08451431fff372980f4c177bb8f0",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "4e06641c877d2c1085da48662812d2e637a0ae73",
+      "originalEvidenceCommit": null,
+      "originalStatus": "COMPLETE",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-22-subagents-alpha-preflight-preview.json",
+      "fileSha256": "sha256:fc2dc3579aedfbadcc68030e84b5ba3255729b7ffa51f5022502806d59cf0cc1",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "f04fdaeba449ac79bc6b21267cc1e253558a761e",
+      "originalEvidenceCommit": null,
+      "originalStatus": "COMPLETE",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-22-subagents-s5d-preview.json",
+      "fileSha256": "sha256:e2ab68e383746d86c1b4c03d199a1161d0b68b11bf0ad58b506b04666bc0646f",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "9d129a8b3155625a0fa9b3114a3de555e466eacb",
+      "originalEvidenceCommit": null,
+      "originalStatus": "COMPLETE",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-24-subagents-alpha.json",
+      "fileSha256": "sha256:f7e3731d266e93ae7570feb3cd015602cf9ad1ec90e321d5bd3c494d3cc09db8",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "922b39bc1a8b2bc387cadf66dc366565c47a14f5",
+      "originalEvidenceCommit": "15f29159617d9374cff25136fead29d39e3488d0",
+      "originalStatus": "COMPLETE",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-24-subagents-beta.json",
+      "fileSha256": "sha256:52ed20d8427f7e72e43b07f8d265ff6079dbad34c48ba082d15949bbec8dbaae",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "6004e6128dec76d8c301894c289a23d5dc855558",
+      "originalEvidenceCommit": "1d19b5c4a44da9b4abe2706c14cd7d3951b2fb71",
+      "originalStatus": "COMPLETE",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-27-m8-daily-harness-final.json",
+      "fileSha256": "sha256:d1f5ce9e785d8a08ed5f8d6b4520884b5f56e2284621c235c7d21dae26c0ca04",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "6f77bb69a3bcf4184a71bef1cb0fb878b40a5cb6",
+      "originalEvidenceCommit": "42185b96d19635bf22d2fc17fc4822e86040b465",
+      "originalStatus": "COMPLETE",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-27-m8-daily-harness.json",
+      "fileSha256": "sha256:f55802649fc55b78134d12eed7b8de4a3aa491de2868db50ab67648592ed9d02",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "1b7767f27c67c210b3ac8f4411c37a9086a7c2f7",
+      "originalEvidenceCommit": "0c075099076a0cef73314f158e00843efc137f9b",
+      "originalStatus": "COMPLETE",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-27-subagents-stable.json",
+      "fileSha256": "sha256:dbc48575cdd18787c27cce7cdb38ead3047673932424060c40af064c0857bb8f",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "2207d7230217ebd9efdf0f308e6830f52a9d38ff",
+      "originalEvidenceCommit": "076052d12cfa3b4b68cd58b560252909eb3ba161",
+      "originalStatus": "COMPLETE",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-28-m10-promotion.json",
+      "fileSha256": "sha256:5ad07e6f10630caad4e3cf8e851e10a7e6e89befb50d7be46c19638d7afade76",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "615695556f6ed699a901bef43e6fbb09f5aa663e",
+      "originalEvidenceCommit": "9df5f44dd547234ceea40d12875defbfe67d653e",
+      "originalStatus": "COMPLETE",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    },
+    {
+      "path": "verification/receipts/2026-08-28-m9-upstream-compatibility.json",
+      "fileSha256": "sha256:b425c056b40f23a33327e1bedbf5e0463bb874c871dad461a0d67a1d9b0a3d57",
+      "originalClaimType": "COMPLETION_RECEIPT",
+      "originalSourceCommit": "a5a71b596e8983ffbba8075f02bc2b39ba19a72b",
+      "originalEvidenceCommit": "2af92de9f701d305f7263aeecec017b7c10bd696",
+      "originalStatus": "COMPLETE",
+      "internalDigest": {
+        "status": "NOT_APPLICABLE",
+        "field": null,
+        "declared": null
+      },
+      "gitAuthority": {
+        "directChildStatus": "UNAVAILABLE_AFTER_REWRITE",
+        "reason": "SOURCE_COMMIT_REWRITTEN_FOR_EMAIL_PRIVACY"
+      },
+      "currentReleaseAuthority": false
+    }
+  ],
+  "registryDigest": "sha256:1e4822add74367bc58a4fcf792cfd2c53e7fbac86f28c543b5156259eb5306be"
+}

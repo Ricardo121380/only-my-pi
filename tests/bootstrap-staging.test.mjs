@@ -469,6 +469,38 @@ test("promoted orchestration resources close the Workflow v2 and Swarm planning 
   assert.match(swarmPlan.plan.planDigest, /^sha256:[a-f0-9]{64}$/u);
 });
 
+test("promoted daily generation closes the direct Agent runtime import graph", async (t) => {
+  const configRoot = await temporaryDirectory(t);
+  const packageDocument = JSON.parse(await fs.readFile(path.join(repoRoot, "inventory", "packages.lock.json"), "utf8"));
+  const resourceDocument = JSON.parse(await fs.readFile(path.join(repoRoot, "inventory", "resources.lock.json"), "utf8"));
+  const plan = await planOwnedGraph({
+    packageInventory: { ...packageDocument, packages: [], candidates: [] },
+    resourceInventory: resourceDocument,
+    profile: { formatVersion: 1, id: "daily", packageIds: [] },
+    artifactRoot: repoRoot,
+  });
+  const generation = await stageAndPromoteGeneration({
+    plan,
+    configRoot,
+    transactionId: "m12-direct-runtime-closure",
+    artifactRoot: repoRoot,
+    runCommand: async () => { throw new Error("resource-only closure must not invoke npm"); },
+  });
+  const root = generation.layout.generationRoot;
+  for (const relative of [
+    "resources/extensions/omp-direct/index.ts",
+    "resources/extensions/omp-direct/runtime.mjs",
+    "resources/packages/direct-agent/managed-clone.mjs",
+    "resources/packages/direct-agent/orchestration.mjs",
+    "resources/packages/direct-agent/workspace.mjs",
+    "resources/packages/daily-config/index.mjs",
+  ]) await fs.access(path.join(root, relative));
+
+  const runtimeModule = await import(`${pathToFileURL(path.join(root, "resources/extensions/omp-direct/runtime.mjs"))}?m12=${Date.now()}`);
+  assert.equal(typeof runtimeModule.createDirectSessionController, "function");
+  assert.ok(runtimeModule.DIRECT_READ_ONLY_AGENTS.includes("omp-reviewer"));
+});
+
 test("integrity mismatch fails before install and before generation promotion", async (t) => {
   const { artifactRoot, configRoot } = await createArtifact(t);
   const plan = await planOwnedGraph({

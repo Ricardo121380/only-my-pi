@@ -1,6 +1,6 @@
 # only-my-pi
 
-Governed, reproducible Pi Harness distribution and configuration companion.
+A governed terminal coding Agent built on Pi.
 
 This repository is intended to hold the parts of a Pi workflow that are safe to
 version and share:
@@ -39,6 +39,59 @@ scripts/      Repository checks and package governance tooling
 
 ## Current milestone
 
+M12 local Direct Terminal Coding Agent acceptance and its M13 writer/budget
+follow-up are complete. The current installation passed C1-C12 on source
+`15c40a2` with protected evidence child `f7346b3`; hosted CI and public Preview
+publication remain deferred. The installed daily path is:
+
+```bash
+cd /path/to/project
+omp
+```
+
+`omp` enters the controlled Pi TUI directly, selects an authenticated model,
+start read-only, and request one explicit session coding approval before the
+first project mutation. Complex work must present a complete plan before that
+approval. Pi remains the internal TUI, model, session and tool runtime;
+`pi-subagents` remains the sole physical child runtime.
+
+M11 proved the user-local stack, Full/Thin acquisition, reproducible builder,
+SBOM/notices and transaction recovery, but its `/omp run` read-only product
+experience is not being published. `0.2.0-preview.1` remains
+`HOLD_PUBLICATION`; there is no public tag or Release. Those assets are retained
+as `INTERNAL_DISTRIBUTION_FOUNDATION`, while `0.3.0-preview.1` is the first
+planned public candidate for the direct coding experience.
+
+The product decision is frozen in
+[ADR-0013](docs/decisions/ADR-0013-direct-terminal-coding-agent.md). The earlier
+distribution and history boundary remains in
+[ADR-0012](docs/decisions/ADR-0012-public-preview-distribution-and-history-privacy.md).
+
+## Development quickstart
+
+The M13 follow-up is installed and locally verified on the acceptance host, but
+is not publicly released. Acceptance restored the original M12 stack and then
+reapplied the M13 candidate. Do not use the old bootstrap command: no
+`0.2.0-preview.1` Release exists. See the
+[local closure receipt](verification/receipts/2026-09-09-m13-local-closure.json)
+and [protected matrix](verification/protected/2026-09-09-m13-cpar-installed-coding.json).
+
+After M12 is installed locally, use:
+
+```bash
+omp                         # interactive terminal coding Agent
+omp "fix the failing test"  # interactive Agent with an initial task
+omp -c                      # continue the latest Pi session
+omp -r                      # choose a Pi session to resume
+omp -p "review this repo"   # non-interactive, read-only
+omp admin doctor            # installation/runtime diagnostics
+```
+
+Inside the TUI, `/plan` enters the same OMP planning flow, `/access` displays or
+revokes the ephemeral coding grant, and `/exit` returns to the shell. The
+managed stack remains macOS 14+ Apple Silicon only; MCP, silent YOLO, background
+updates and project-external writer access remain unsupported.
+
 The governed S0-S5 kernel reached Stable on 2026-08-27: its exact source,
 protected evidence, and receipt chain passed 31/31 required gates. **M8 Daily
 Harness Closure is also complete.** Final implementation source `6f77bb6`, its
@@ -68,7 +121,7 @@ M10 real-root acceptance passed on source `6156955`, with evidence-only child
 and the protected 17-assertion live matrix all passed. The decision is now
 **`PROMOTE`** with Stable Pi `0.84.3` and `pi-subagents@0.57.0`. The current
 local `omp` CLI is the immutable user-level entry for installation and diagnosis;
-Agent execution remains exclusively inside Pi through `/omp`. M10 still does
+M12 supersedes the Pi-first `/omp` Agent entry. M10 still does
 not publish npm or a GitHub Release, add a daemon, writer, or MCP surface.
 
 Final reconciliation built the promoted artifact from source `7973a4e` with
@@ -142,8 +195,15 @@ unchanged retained versions. The complete M10 receipt reports P1-P12 passing.
 
 ## Product direction
 
-The product is not another Provider or protocol adapter. The roadmap targets a
-usable Pi-based Harness distribution. M1 supplies the
+The product is now the terminal coding Agent launched by `omp`; Pi is its
+internal runtime. The default user journey does not expose Workflow, Swarm,
+Goal or Ultra choices. It begins read-only, asks once for guarded project-local
+coding, preserves dirty work, automatically chooses bounded subagents, verifies
+changes in the real worktree, and returns to the shell through Pi's native
+shutdown path. The older Harness control plane remains an advanced compatibility
+surface and supplies the transaction, budget, artifact and recovery kernel.
+
+Historically, M1 supplied the
 strict package, Profile, capability, owner, command, enforcement, Mode, Agent,
 Workflow, and Swarm contracts needed to build that product without false-green
 configuration checks. M2 adds the transactional `omp` configuration runtime,
@@ -466,6 +526,7 @@ npm run schema:check
 npm run agents:check
 npm run pack:check
 npm run verify
+npm run verify:m12
 npm test
 
 # M7 executable release receipt (clean source commit only)

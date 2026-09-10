@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ricardo121380/only-my-pi/schemas/public-baseline-v1.schema.json",
+  "title": "only-my-pi public baseline v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "kind", "state", "legacyAuthority", "stable", "sourceCommit", "evidenceCommit", "protectedEvidence", "completionReceipt"],
+  "properties": {
+    "formatVersion": { "const": 1 },
+    "kind": { "const": "only-my-pi-public-baseline" },
+    "state": { "enum": ["PUBLIC_BASELINE_PENDING", "PUBLIC_BASELINE_VERIFIED"] },
+    "legacyAuthority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "registryDigest", "currentReleaseAuthority"],
+      "properties": {
+        "path": { "const": "verification/legacy-authority-v1.json" },
+        "registryDigest": { "$ref": "#/$defs/sha256" },
+        "currentReleaseAuthority": { "const": false }
+      }
+    },
+    "stable": {
+      "type": "object", "additionalProperties": false,
+      "required": ["piVersion", "subagentsVersion", "graphDigest", "profile", "capability"],
+      "properties": {
+        "piVersion": { "const": "0.84.3" },
+        "subagentsVersion": { "const": "0.57.0" },
+        "graphDigest": { "$ref": "#/$defs/sha256" },
+        "profile": { "const": "daily" },
+        "capability": { "const": "READ_ONLY" }
+      }
+    },
+    "sourceCommit": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/commit" }] },
+    "evidenceCommit": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/commit" }] },
+    "protectedEvidence": { "anyOf": [{ "type": "null" }, { "type": "string", "pattern": "^verification/protected/[a-z0-9][a-z0-9._-]*\\.json$" }] },
+    "completionReceipt": { "anyOf": [{ "type": "null" }, { "type": "string", "pattern": "^verification/receipts/[a-z0-9][a-z0-9._-]*\\.json$" }] }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "state": { "const": "PUBLIC_BASELINE_PENDING" } } },
+      "then": { "properties": { "sourceCommit": { "type": "null" }, "evidenceCommit": { "type": "null" }, "protectedEvidence": { "type": "null" }, "completionReceipt": { "type": "null" } } }
+    },
+    {
+      "if": { "properties": { "state": { "const": "PUBLIC_BASELINE_VERIFIED" } } },
+      "then": { "properties": { "sourceCommit": { "$ref": "#/$defs/commit" }, "evidenceCommit": { "$ref": "#/$defs/commit" }, "protectedEvidence": { "type": "string" }, "completionReceipt": { "type": "string" } } }
+    }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" }
+  }
+}
