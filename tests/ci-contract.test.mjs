@@ -87,6 +87,10 @@ test("current Preview publication verifies E and RC before Draft, then requires 
   assert.match(workflow, /m11-compare-release-core\.mjs/u);
   assert.equal((workflow.match(/actions\/attest@59d89421af93a897026c735860bf21b6eb4f7b26/gu) ?? []).length, 2);
   assert.match(workflow, /--draft --prerelease --latest=false --verify-tag/u);
+  const notesPath = /--notes-file ([a-zA-Z0-9._/-]+\.md)/u.exec(workflow)?.[1];
+  assert.ok(notesPath, "publication must select a release notes file");
+  const version = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).version;
+  assert.ok(fs.readFileSync(path.join(root, notesPath), "utf8").startsWith(`# only-my-pi ${version}\n`), "release notes must exist for the current product version");
   assert.match(workflow, /Remove incomplete Draft and tag after failure/u);
   assert.match(workflow, /failure\(\) && steps\.create-tag\.outputs\.created == 'true'/u, "failure cleanup must never delete a pre-existing release or tag");
   assert.match(workflow, /gh release delete "\$TAG" --yes --cleanup-tag/u);

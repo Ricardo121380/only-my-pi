@@ -7,7 +7,6 @@ import { pathToFileURL } from "node:url";
 
 import { hashFile, sha256, validateReleaseIndex } from "../packages/release-stack/index.mjs";
 
-const CORE = Object.freeze(["THIRD_PARTY_NOTICES.txt", "install.sh", "only-my-pi-0.2.0-preview.1-darwin-arm64-full.tar.gz", "only-my-pi-0.2.0-preview.1-darwin-arm64-thin.tar.gz", "only-my-pi-0.2.0-preview.1.spdx.json", "stack-manifest.json", "transitive-artifact-ledger.json"]);
 function fail(code, message) { const error = new Error(message); error.code = code; throw error; }
 
 async function directory(target) {
@@ -20,9 +19,11 @@ async function directory(target) {
 export async function compareM11ReleaseCore({ rcRoot, finalRoot } = {}) {
   const [rc, final] = await Promise.all([directory(rcRoot), directory(finalRoot)]);
   const [rcIndex, finalIndex] = await Promise.all([fs.readFile(path.join(rc, "release-index.json"), "utf8").then(JSON.parse).then(validateReleaseIndex), fs.readFile(path.join(final, "release-index.json"), "utf8").then(JSON.parse).then(validateReleaseIndex)]);
-  if (rcIndex.status !== "RC" || finalIndex.status !== "PUBLISHED" || rcIndex.sourceCommit !== finalIndex.sourceCommit || rcIndex.stackManifestSha256 !== finalIndex.stackManifestSha256) fail("M11_CORE_COMPARE_AUTHORITY_INVALID", "RC and Final release authority or source differs");
+  if (rcIndex.status !== "RC" || finalIndex.status !== "PUBLISHED" || rcIndex.version !== finalIndex.version || rcIndex.sourceCommit !== finalIndex.sourceCommit || rcIndex.stackManifestSha256 !== finalIndex.stackManifestSha256) fail("M11_CORE_COMPARE_AUTHORITY_INVALID", "RC and Final release authority, version or source differs");
+  const prefix = `only-my-pi-${rcIndex.version}`;
+  const core = ["THIRD_PARTY_NOTICES.txt", "install.sh", `${prefix}-darwin-arm64-full.tar.gz`, `${prefix}-darwin-arm64-thin.tar.gz`, `${prefix}.spdx.json`, "stack-manifest.json", "transitive-artifact-ledger.json"];
   const files = [];
-  for (const name of CORE) {
+  for (const name of core) {
     const [left, right] = await Promise.all([hashFile(path.join(rc, name)), hashFile(path.join(final, name))]);
     if (left !== right) fail("M11_CORE_ASSET_DRIFT", `Final core asset differs from accepted RC: ${name}`);
     files.push({ name, sha256: left });
