@@ -9,6 +9,7 @@ import { extractVerifiedTarGzip } from "../release-stack/safe-extract.mjs";
 import { validateStackManifest } from "../release-stack/contracts.mjs";
 import { createDistributionManifest } from "./manifest-builder.mjs";
 import { createDistributionSbom, distributionNotices } from "./sbom.mjs";
+import { materializeExecutableLinks } from "./npm-layout.mjs";
 import { DISTRIBUTION_VERSION, hashDistributionTree, distributionError } from "./runtime.mjs";
 
 const execFile = promisify(execFileCallback);
@@ -71,6 +72,7 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
     appManifest.version = version;
     await fs.writeFile(appManifestPath, `${JSON.stringify(appManifest, null, 2)}\n`);
     await json(path.join(app, "artifact-identity.json"), { formatVersion: 1, kind: "only-my-pi-source-identity", sourceCommit });
+    const materializedExecutableLinks = await materializeExecutableLinks(runtime);
 
     const graph = await buildGenerationPlan({ rootDir, profileId: "daily", sourceCommit });
     const inventory = JSON.parse(await fs.readFile(path.join(rootDir, "inventory/packages.lock.json"), "utf8"));
@@ -114,7 +116,7 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
       artifacts.push({ name, version, filename, sha256: await hashFile(path.join(output, filename)) });
     }
     const receipt = { formatVersion: 1, status: "CANDIDATE_NOT_PUBLISHED", version, sourceCommit,
-      distributionId: manifest.distributionId, dependencySeed: { sourceCommit: SEED_SOURCE, sha256: SEED_SHA256 }, artifacts };
+      distributionId: manifest.distributionId, dependencySeed: { sourceCommit: SEED_SOURCE, sha256: SEED_SHA256 }, materializedExecutableLinks, artifacts };
     await json(path.join(output, "build-receipt.json"), receipt);
     return receipt;
   } finally {
