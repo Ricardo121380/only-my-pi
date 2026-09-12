@@ -139,6 +139,19 @@ test("Pi invocation loads the audited interactive ceiling while admission starts
   assert.equal(Object.hasOwn(interactive.env, "PI_PERMISSION_MODE"), false);
   assert.equal(Object.hasOwn(interactive.env, "ONLY_MY_PI_OLD"), false);
 
+  const native = buildDirectPiInvocation({
+    argv: [],
+    stack: { ...stack, distribution: { version: "0.4.0-preview.1" } },
+    extensionPaths: EXTENSIONS,
+    env: { PATH: "/usr/bin", PI_SUBAGENT_EXTRA_AGENT_DIRS: "/obsolete/installation/agents" },
+    randomUUIDImpl: () => UUID,
+  });
+  assert.equal(native.env.PI_SUBAGENT_EXTRA_AGENT_DIRS,
+    path.join(stack.root, "only-my-pi/package/bundles/only-my-pi-agent-bundle/agents"));
+  assert.equal(native.env.PI_SKIP_VERSION_CHECK, "1");
+  assert.equal(Object.hasOwn(native.env, "PI_OFFLINE"), false);
+  assert.equal(Object.hasOwn(interactive.env, "PI_SUBAGENT_EXTRA_AGENT_DIRS"), false);
+
   const headless = buildDirectPiInvocation({ argv: ["-p", "review"], stack, extensionPaths: EXTENSIONS, randomUUIDImpl: () => UUID });
   assert.equal(headless.headless, true);
   assert.deepEqual(headless.argv.slice(7, 11), ["--tools", "read,grep,find,ls", "--perm", "plan"]);

@@ -370,6 +370,8 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = pro
   const childEnv = {
     ...cleanEnvironment(env),
     ...(stack.distribution ? { PATH: `${path.join(stack.root, "pi/vendor-tools/bin")}${path.delimiter}${env.PATH ?? "/usr/bin:/bin"}`,
+      PI_SUBAGENT_EXTRA_AGENT_DIRS: path.join(stack.root, "only-my-pi/package/bundles/only-my-pi-agent-bundle/agents"),
+      PI_SKIP_VERSION_CHECK: "1",
       ONLY_MY_PI_DISTRIBUTION_VERSION: stack.distribution.version } : {}),
     ONLY_MY_PI_DIRECT: "1",
     ONLY_MY_PI_HEADLESS: inspected.headless ? "1" : "0",
