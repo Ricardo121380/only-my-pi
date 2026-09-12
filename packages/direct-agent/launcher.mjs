@@ -369,6 +369,8 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = pro
   ];
   const childEnv = {
     ...cleanEnvironment(env),
+    ...(stack.distribution ? { PATH: `${path.join(stack.root, "pi/vendor-tools/bin")}${path.delimiter}${env.PATH ?? "/usr/bin:/bin"}`,
+      ONLY_MY_PI_DISTRIBUTION_VERSION: stack.distribution.version } : {}),
     ONLY_MY_PI_DIRECT: "1",
     ONLY_MY_PI_HEADLESS: inspected.headless ? "1" : "0",
     ONLY_MY_PI_MODEL_EXPLICIT: inspected.explicitModel ? "1" : "0",

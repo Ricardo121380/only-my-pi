@@ -29,6 +29,10 @@ async function fixture(t) {
     await write(`only-my-pi/package/extensions/${extension}/index.ts`, "export default function extension() {}\n");
   await write("pi/package.json", { name: "@earendil-works/pi-coding-agent", version: "0.84.3" });
   await write("pi/dist/bundle/cli.js", "// fixture Pi\n");
+  for (const binary of ["fd", "rg"]) {
+    await write(`pi/vendor-tools/bin/${binary}`, "#!/bin/sh\nexit 0\n");
+    await fs.chmod(path.join(root, `pi/vendor-tools/bin/${binary}`), 0o755);
+  }
   const packageFilters = {};
   for (const [id, name] of Object.entries(PACKAGE_IDS)) {
     const { version } = PUBLIC_STACK_PACKAGES.find((entry) => entry.name === name);

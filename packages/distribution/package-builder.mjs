@@ -10,6 +10,7 @@ import { validateStackManifest } from "../release-stack/contracts.mjs";
 import { createDistributionManifest } from "./manifest-builder.mjs";
 import { createDistributionSbom, distributionNotices } from "./sbom.mjs";
 import { materializeExecutableLinks } from "./npm-layout.mjs";
+import { stageToolchain } from "./toolchain-builder.mjs";
 import { DISTRIBUTION_VERSION, hashDistributionTree, distributionError } from "./runtime.mjs";
 
 const execFile = promisify(execFileCallback);
@@ -55,6 +56,7 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
     const runtime = path.join(runtimePackage, "runtime");
     await fs.mkdir(runtime, { recursive: true });
     for (const name of ["pi", "external-npm"]) await fs.cp(path.join(seed, name), path.join(runtime, name), { recursive: true, errorOnExist: true, force: false, verbatimSymlinks: true });
+    await stageToolchain({ rootDir, runtimeRoot: runtime, work });
     await fs.mkdir(path.join(work, "home"));
     const packed = await execFile(process.execPath, [npmCli, "pack", ".", "--ignore-scripts", "--json", "--pack-destination", work], {
       cwd: rootDir, encoding: "utf8", maxBuffer: 16 * 1024 * 1024,

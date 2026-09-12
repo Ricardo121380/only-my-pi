@@ -40,6 +40,13 @@ export async function createDistributionSbom({ runtimeRoot, manifest, dependency
     }
   }
   await addApplicationPackage(appRoot);
+  const toolchain = await readRegularJson(path.join(runtimeRoot, "pi/vendor-tools/toolchain.json"));
+  for (const tool of toolchain.tools) {
+    const record = packageRecord(tool.name, tool.version, tool.license, tool.url);
+    record.primaryPackagePurpose = "APPLICATION";
+    record.checksums = [{ algorithm: "SHA256", checksumValue: tool.sha256.slice(7) }];
+    packages.set(`${tool.name}@${tool.version}`, record);
+  }
   const app = packages.get(`only-my-pi@${manifest.version}`);
   app.primaryPackagePurpose = "APPLICATION";
   app.downloadLocation = `https://github.com/Ricardo121380/only-my-pi/tree/${manifest.sourceCommit}`;

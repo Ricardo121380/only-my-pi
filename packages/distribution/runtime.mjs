@@ -102,6 +102,10 @@ export async function loadDistribution({ packageRoot = APP_ROOT, nodePath = proc
     if (await hashDistributionTree(root, component.path) !== component.treeDigest)
       throw distributionError("DISTRIBUTION_CONTENT_DRIFT", `${name} runtime content differs from its release manifest`);
   }));
+  for (const tool of ["fd", "rg"]) {
+    const binary = await containedPath(root, `pi/vendor-tools/bin/${tool}`);
+    await fs.access(binary, fs.constants.X_OK);
+  }
   const app = await readRegularJson(path.join(ompPackageRoot, "package.json"));
   const pi = await readRegularJson(path.join(root, "pi/package.json"));
   requireThat(app.name === "only-my-pi" && app.version === manifest.version && pi.version === CONTROLLED_PI_VERSION

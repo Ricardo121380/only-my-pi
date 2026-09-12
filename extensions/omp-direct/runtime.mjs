@@ -279,7 +279,8 @@ export class DirectSessionController {
       AWAITING_CODING_ACCESS: "Awaiting approval",
       CODING: "Coding",
     }[this.state];
-    ctx.ui.setStatus("omp-direct", `OMP · ${display}`);
+    const preview = this.environment.ONLY_MY_PI_DISTRIBUTION_VERSION;
+    ctx.ui.setStatus("omp-direct", `OMP${preview ? ` ${preview} (Preview)` : ""} · ${display}`);
     ctx.ui.setWidget("omp-direct-help", ["Enter send · Esc cancel · Ctrl+D exit · /help help"], { placement: "belowEditor" });
     ctx.ui.setTitle(`only-my-pi · ${display}`);
   }
