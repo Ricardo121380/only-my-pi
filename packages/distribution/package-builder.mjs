@@ -73,7 +73,10 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
     await json(path.join(app, "artifact-identity.json"), { formatVersion: 1, kind: "only-my-pi-source-identity", sourceCommit });
 
     const graph = await buildGenerationPlan({ rootDir, profileId: "daily", sourceCommit });
-    const packageFilters = Object.fromEntries(graph.packages.map((entry) => [entry.id, entry.resourceFilter]));
+    const inventory = JSON.parse(await fs.readFile(path.join(rootDir, "inventory/packages.lock.json"), "utf8"));
+    const packageFilters = Object.fromEntries(inventory.packages.filter((entry) => entry.installed === true)
+      .map((entry) => [entry.id, entry.resourceFilter ?? []]));
+    for (const entry of graph.packages) packageFilters[entry.id] = entry.resourceFilter;
     const manifest = await createDistributionManifest({ root: runtime, version, sourceCommit,
       platform: { os: "darwin", arch: "arm64", minimumMacOS: "14.0" }, packageFilters });
     await json(path.join(runtime, "distribution-manifest.json"), manifest);
