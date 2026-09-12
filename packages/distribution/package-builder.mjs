@@ -53,7 +53,7 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
     const runtimePackage = path.join(output, runtimeName);
     const runtime = path.join(runtimePackage, "runtime");
     await fs.mkdir(runtime, { recursive: true });
-    for (const name of ["pi", "external-npm"]) await fs.cp(path.join(seed, name), path.join(runtime, name), { recursive: true, errorOnExist: true, force: false });
+    for (const name of ["pi", "external-npm"]) await fs.cp(path.join(seed, name), path.join(runtime, name), { recursive: true, errorOnExist: true, force: false, verbatimSymlinks: true });
     await fs.mkdir(path.join(work, "home"));
     const packed = await execFile(process.execPath, [npmCli, "pack", ".", "--ignore-scripts", "--json", "--pack-destination", work], {
       cwd: rootDir, encoding: "utf8", maxBuffer: 16 * 1024 * 1024,
