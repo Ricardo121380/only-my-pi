@@ -8,27 +8,13 @@
       "type": "extension",
       "path": "extensions/session-ledger/index.ts",
       "version": "0.1.0",
-      "provides": [
-        "session-ledger-metadata"
-      ],
+      "provides": ["session-ledger-metadata"],
       "requires": [],
-      "owners": [
-        "session-ledger"
-      ],
+      "owners": ["session-ledger"],
       "commands": [],
-      "egressSurfaces": [
-        "extensionEgress"
-      ],
+      "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": true,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -39,21 +25,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "session-ledger"
-      ],
+      "owners": ["session-ledger"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -62,27 +38,13 @@
       "type": "extension",
       "path": "extensions/context-doctor/index.ts",
       "version": "0.1.0",
-      "provides": [
-        "context-observability"
-      ],
+      "provides": ["context-observability"],
       "requires": [],
-      "owners": [
-        "context"
-      ],
+      "owners": ["context"],
       "commands": [],
-      "egressSurfaces": [
-        "extensionEgress"
-      ],
+      "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": true,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -93,21 +55,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "context"
-      ],
+      "owners": ["context"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -118,27 +70,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
-      "commands": [
-        "omp",
-        "/omp",
-        "omp-context"
-      ],
-      "egressSurfaces": [
-        "extensionEgress"
-      ],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp", "/omp", "omp-context"],
+      "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": true,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -149,21 +85,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "owners": ["only-my-pi-control"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -172,29 +98,13 @@
       "type": "extension",
       "path": "extensions/omp-direct/index.ts",
       "version": "0.1.0",
-      "provides": [
-        "guarded-project-coding"
-      ],
-      "requires": [
-        "workspace-read",
-        "permission-policy"
-      ],
-      "owners": [
-        "only-my-pi-control"
-      ],
-      "commands": [
-        "/exit",
-        "/plan",
-        "/access",
-        "/agents"
-      ],
-      "egressSurfaces": [
-        "extensionEgress"
-      ],
+      "provides": ["guarded-project-coding"],
+      "requires": ["workspace-read", "permission-policy"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["/exit", "/plan", "/access", "/agents"],
+      "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": true,
-      "profileEligibility": [
-        "daily"
-      ],
+      "profileEligibility": ["daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -205,15 +115,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "owners": ["only-my-pi-control"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "daily"
-      ],
+      "profileEligibility": ["daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -224,15 +130,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "owners": ["only-my-pi-control"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "daily"
-      ],
+      "profileEligibility": ["daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -243,21 +145,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "owners": ["only-my-pi-control"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -267,26 +159,12 @@
       "path": "packages/control-service/theme-service.mjs",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-control"
-      ],
-      "commands": [
-        "omp"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -297,23 +175,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
-      "commands": [
-        "omp"
-      ],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -323,26 +189,12 @@
       "path": "packages/control-service/workflow-service.mjs",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-control"
-      ],
-      "commands": [
-        "omp"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -353,21 +205,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "owners": ["only-my-pi-control"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -378,21 +220,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "owners": ["only-my-pi-control"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -403,21 +235,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "owners": ["only-my-pi-control"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -428,21 +250,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "owners": ["only-my-pi-control"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -453,21 +265,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "owners": ["only-my-pi-control"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -478,21 +280,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "owners": ["only-my-pi-control"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -503,21 +295,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": true,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "planned",
       "packaged": true
     },
@@ -528,21 +310,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": true,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "planned",
       "packaged": true
     },
@@ -553,21 +325,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": true,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "planned",
       "packaged": true
     },
@@ -578,21 +340,11 @@
       "version": "1.0.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -602,22 +354,12 @@
       "path": "modes/inspect.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -627,22 +369,12 @@
       "path": "agents/scout.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
       "lifecycle": "planned",
       "packaged": true
     },
@@ -652,22 +384,12 @@
       "path": "workflows/single-agent-safe.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
       "lifecycle": "planned",
       "packaged": true
     },
@@ -677,23 +399,12 @@
       "path": "swarm/recipes/research-synthesis.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "subagent-delegation-v1",
-        "subagent-rpc-v1"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "subagent-delegation-v1", "subagent-rpc-v1"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "extensionEgress"
-      ],
+      "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -703,24 +414,12 @@
       "path": "packages/agent-registry",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -731,21 +430,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -756,21 +445,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -780,24 +459,12 @@
       "path": "packages/workflow-core",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -807,23 +474,12 @@
       "path": "packages/subagents",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "subagent-delegation-v1",
-        "subagent-rpc-v1"
-      ],
-      "owners": [
-        "only-my-pi-subagent-orchestration"
-      ],
+      "requires": ["workspace-read", "subagent-delegation-v1", "subagent-rpc-v1"],
+      "owners": ["only-my-pi-subagent-orchestration"],
       "commands": [],
-      "egressSurfaces": [
-        "extensionEgress"
-      ],
+      "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -834,21 +490,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "ui-terminal",
-        "experimental"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -858,22 +504,12 @@
       "path": "packages/repo-map",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "coding",
-        "research",
-        "orchestration",
-        "daily",
-        "experimental"
-      ],
+      "profileEligibility": ["coding", "research", "orchestration", "daily", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -883,22 +519,12 @@
       "path": "modes/explore.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -908,22 +534,12 @@
       "path": "modes/plan.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "planning"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "planning"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "coding",
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -933,26 +549,12 @@
       "path": "modes/coding.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "file-tool-policy",
-        "bash-sandbox-conditional"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "file-tool-policy", "bash-sandbox-conditional"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "toolCallPolicy",
-        "fileToolPolicy",
-        "bashSandbox"
-      ],
+      "egressSurfaces": ["toolCallPolicy", "fileToolPolicy", "bashSandbox"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "coding",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["coding", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -962,26 +564,12 @@
       "path": "modes/debug.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "file-tool-policy",
-        "bash-sandbox-conditional"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "file-tool-policy", "bash-sandbox-conditional"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "toolCallPolicy",
-        "fileToolPolicy",
-        "bashSandbox"
-      ],
+      "egressSurfaces": ["toolCallPolicy", "fileToolPolicy", "bashSandbox"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "coding",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["coding", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -991,24 +579,12 @@
       "path": "modes/review.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "review-assistance"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "review-assistance"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "fileToolPolicy"
-      ],
+      "egressSurfaces": ["fileToolPolicy"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "coding",
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1018,22 +594,12 @@
       "path": "modes/research.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "web-access"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "web-access"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "fileToolPolicy",
-        "webEgress"
-      ],
+      "egressSurfaces": ["fileToolPolicy", "webEgress"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "research"
-      ],
+      "profileEligibility": ["research"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1043,24 +609,12 @@
       "path": "modes/verify.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "fileToolPolicy"
-      ],
+      "egressSurfaces": ["fileToolPolicy"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1070,22 +624,12 @@
       "path": "agents/prompts",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1095,19 +639,12 @@
       "path": "bundles/only-my-pi-agent-bundle",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "subagent-runtime"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["subagent-runtime"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1117,22 +654,12 @@
       "path": "agents/explorer.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1142,22 +669,12 @@
       "path": "agents/planner.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "planning"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "planning"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "coding",
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1167,25 +684,12 @@
       "path": "agents/implementer.json",
       "version": "1.2.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "file-tool-policy",
-        "bash-sandbox-conditional"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "file-tool-policy", "bash-sandbox-conditional"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "bashSandbox",
-        "fileToolPolicy"
-      ],
+      "egressSurfaces": ["bashSandbox", "fileToolPolicy"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "coding",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["coding", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1195,25 +699,12 @@
       "path": "agents/debugger.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "file-tool-policy",
-        "bash-sandbox-conditional"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "file-tool-policy", "bash-sandbox-conditional"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "bashSandbox",
-        "fileToolPolicy"
-      ],
+      "egressSurfaces": ["bashSandbox", "fileToolPolicy"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "coding",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["coding", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1223,22 +714,12 @@
       "path": "agents/reviewer.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "review-assistance"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "review-assistance"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "coding",
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1248,23 +729,12 @@
       "path": "agents/researcher.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "web-access"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "web-access"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "webEgress"
-      ],
+      "egressSurfaces": ["webEgress"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1274,22 +744,12 @@
       "path": "agents/verifier.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "minimal",
-        "coding",
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1299,20 +759,12 @@
       "path": "workflows/plan-build-review.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "coding",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["coding", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1322,21 +774,12 @@
       "path": "workflows/research-report.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "web-access"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "web-access"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "webEgress"
-      ],
+      "egressSurfaces": ["webEgress"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "research"
-      ],
+      "profileEligibility": ["research"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1346,21 +789,12 @@
       "path": "workflows/review-findings.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "coding",
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1370,23 +804,12 @@
       "path": "workflows/debug-fix-verify.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "bash-sandbox-conditional"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "bash-sandbox-conditional"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "bashSandbox"
-      ],
+      "egressSurfaces": ["bashSandbox"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "coding",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["coding", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1396,20 +819,12 @@
       "path": "packages/swarm-core",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "subagent-rpc-v1"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "subagent-rpc-v1"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -1419,21 +834,12 @@
       "path": "packages/pi-subagents-adapter",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "subagent-rpc-v1"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["subagent-rpc-v1"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "extensionEgress"
-      ],
+      "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -1443,24 +849,12 @@
       "path": "packages/control-service/swarm-service.mjs",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "subagent-rpc-v1"
-      ],
-      "owners": [
-        "only-my-pi-control"
-      ],
-      "commands": [
-        "omp"
-      ],
-      "egressSurfaces": [
-        "extensionEgress"
-      ],
+      "requires": ["workspace-read", "subagent-rpc-v1"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
+      "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1470,24 +864,12 @@
       "path": "packages/control-service/swarm-goal-service.mjs",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "subagent-rpc-v1"
-      ],
-      "owners": [
-        "only-my-pi-control"
-      ],
-      "commands": [
-        "omp"
-      ],
-      "egressSurfaces": [
-        "extensionEgress"
-      ],
+      "requires": ["workspace-read", "subagent-rpc-v1"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
+      "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -1497,24 +879,12 @@
       "path": "packages/control-service/ultra-run-service.mjs",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "subagent-rpc-v1"
-      ],
-      "owners": [
-        "only-my-pi-control"
-      ],
-      "commands": [
-        "omp"
-      ],
-      "egressSurfaces": [
-        "extensionEgress"
-      ],
+      "requires": ["workspace-read", "subagent-rpc-v1"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
+      "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -1524,24 +894,12 @@
       "path": "packages/control-service/batch-swarm-service.mjs",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "subagent-delegation-v1"
-      ],
-      "owners": [
-        "only-my-pi-control"
-      ],
-      "commands": [
-        "omp"
-      ],
-      "egressSurfaces": [
-        "extensionEgress"
-      ],
+      "requires": ["workspace-read", "subagent-delegation-v1"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
+      "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -1551,21 +909,12 @@
       "path": "swarm/batches",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "subagent-delegation-v1",
-        "review-assistance"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "subagent-delegation-v1", "review-assistance"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -1575,20 +924,12 @@
       "path": "swarm/agent-specs",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "review-assistance"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "review-assistance"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -1598,19 +939,12 @@
       "path": "swarm/templates",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -1620,20 +954,12 @@
       "path": "swarm/goals",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "subagent-rpc-v1"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "subagent-rpc-v1"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -1643,20 +969,12 @@
       "path": "ultra/strategies",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "subagent-rpc-v1"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "subagent-rpc-v1"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "experimental",
       "packaged": true
     },
@@ -1666,23 +984,12 @@
       "path": "agents/source-verifier.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "web-access"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "web-access"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "webEgress"
-      ],
+      "egressSurfaces": ["webEgress"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1692,20 +999,12 @@
       "path": "agents/synthesizer.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1715,20 +1014,12 @@
       "path": "agents/tester.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "coding",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["coding", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1738,22 +1029,12 @@
       "path": "agents/security-reviewer.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "review-assistance"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "review-assistance"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "coding",
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1763,22 +1044,12 @@
       "path": "agents/test-analyst.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "review-assistance"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "review-assistance"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "coding",
-        "research",
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["coding", "research", "orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1788,24 +1059,12 @@
       "path": "swarm/recipes/coding-guarded.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "subagent-rpc-v1",
-        "file-tool-policy"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "subagent-rpc-v1", "file-tool-policy"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "extensionEgress",
-        "fileToolPolicy"
-      ],
+      "egressSurfaces": ["extensionEgress", "fileToolPolicy"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1815,23 +1074,12 @@
       "path": "swarm/recipes/review-matrix.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "subagent-rpc-v1",
-        "review-assistance"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "subagent-rpc-v1", "review-assistance"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "extensionEgress"
-      ],
+      "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1841,22 +1089,12 @@
       "path": "swarm/recipes/debug-hypotheses.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "subagent-rpc-v1"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "subagent-rpc-v1"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
-      "egressSurfaces": [
-        "extensionEgress"
-      ],
+      "egressSurfaces": ["extensionEgress"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1866,22 +1104,12 @@
       "path": "packages/control-service/agent-service.mjs",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "subagent-runtime"
-      ],
-      "owners": [
-        "only-my-pi-control"
-      ],
-      "commands": [
-        "omp"
-      ],
+      "requires": ["workspace-read", "subagent-runtime"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1892,17 +1120,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
-      "commands": [
-        "omp"
-      ],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "daily"
-      ],
+      "profileEligibility": ["daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1933,15 +1155,11 @@
       "version": "1.0.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "owners": ["only-my-pi-control"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "daily"
-      ],
+      "profileEligibility": ["daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1952,15 +1170,11 @@
       "version": "1.0.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "owners": ["only-my-pi-control"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "daily"
-      ],
+      "profileEligibility": ["daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1971,15 +1185,11 @@
       "version": "1.0.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "owners": ["only-my-pi-control"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "daily"
-      ],
+      "profileEligibility": ["daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -1989,20 +1199,12 @@
       "path": "packages/run-management",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-control"
-      ],
-      "commands": [
-        "omp"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "daily"
-      ],
+      "profileEligibility": ["daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -2013,15 +1215,11 @@
       "version": "1.0.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "owners": ["only-my-pi-control"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "daily"
-      ],
+      "profileEligibility": ["daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -2031,20 +1229,12 @@
       "path": "packages/project-gates",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-control"
-      ],
-      "commands": [
-        "omp"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-control"],
+      "commands": ["omp"],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "daily"
-      ],
+      "profileEligibility": ["daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -2054,20 +1244,12 @@
       "path": "packages/web-policy",
       "version": "0.1.0",
       "provides": [],
-      "requires": [
-        "web-access"
-      ],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "requires": ["web-access"],
+      "owners": ["only-my-pi-control"],
       "commands": [],
-      "egressSurfaces": [
-        "webEgress"
-      ],
+      "egressSurfaces": ["webEgress"],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "daily"
-      ],
+      "profileEligibility": ["daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -2078,15 +1260,11 @@
       "version": "1.0.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-control"
-      ],
+      "owners": ["only-my-pi-control"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "daily"
-      ],
+      "profileEligibility": ["daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -2096,20 +1274,12 @@
       "path": "workflows-v2/source-review-v2.json",
       "version": "2.1.0",
       "provides": [],
-      "requires": [
-        "workspace-read",
-        "subagent-runtime"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read", "subagent-runtime"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -2119,19 +1289,12 @@
       "path": "agents/goal-planner.json",
       "version": "1.0.0",
       "provides": [],
-      "requires": [
-        "workspace-read"
-      ],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "requires": ["workspace-read"],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "orchestration",
-        "daily"
-      ],
+      "profileEligibility": ["orchestration", "daily"],
       "lifecycle": "stable",
       "packaged": true
     },
@@ -2142,15 +1305,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "experimental"
-      ],
+      "profileEligibility": ["experimental"],
       "lifecycle": "labs",
       "packaged": false
     },
@@ -2161,15 +1320,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "experimental"
-      ],
+      "profileEligibility": ["experimental"],
       "lifecycle": "labs",
       "packaged": false
     },
@@ -2180,15 +1335,11 @@
       "version": "0.1.0",
       "provides": [],
       "requires": [],
-      "owners": [
-        "only-my-pi-resource-registry"
-      ],
+      "owners": ["only-my-pi-resource-registry"],
       "commands": [],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": [
-        "experimental"
-      ],
+      "profileEligibility": ["experimental"],
       "lifecycle": "labs",
       "packaged": false
     }
