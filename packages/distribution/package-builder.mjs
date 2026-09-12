@@ -11,6 +11,7 @@ import { createDistributionManifest } from "./manifest-builder.mjs";
 import { createDistributionSbom, distributionNotices } from "./sbom.mjs";
 import { materializeExecutableLinks } from "./npm-layout.mjs";
 import { stageToolchain } from "./toolchain-builder.mjs";
+import { buildDistributionArchives } from "./archive-builder.mjs";
 import { DISTRIBUTION_VERSION, hashDistributionTree, distributionError } from "./runtime.mjs";
 
 const execFile = promisify(execFileCallback);
@@ -119,6 +120,7 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
     }
     const receipt = { formatVersion: 1, status: "CANDIDATE_NOT_PUBLISHED", version, sourceCommit,
       distributionId: manifest.distributionId, dependencySeed: { sourceCommit: SEED_SOURCE, sha256: SEED_SHA256 }, materializedExecutableLinks, artifacts };
+    receipt.archives = await buildDistributionArchives({ rootDir, outputRoot: output, work, seed, seedManifest, receipt });
     await json(path.join(output, "build-receipt.json"), receipt);
     return receipt;
   } finally {
