@@ -72,8 +72,10 @@ The macOS builder verifies the immutable 0.3 dependency seed, replaces its OMP
 application with the exact clean source, and emits new identities and an SPDX
 SBOM. It does not reuse protected release evidence. `fd` and `ripgrep` are fetched
 at build time from checksum-pinned upstream releases, included with their license
-files, and covered by the Pi component digest. The macOS Git dependency policy
-still needs resolution before this candidate can be considered dependency-complete.
+files, and covered by the Pi component digest. The confirmed macOS policy is:
+npm/npx and archive users preinstall Git; Homebrew supplies Git as a dependency.
+Installation checks and native startup reject missing Git without opening the
+macOS developer-tools installer. Doctor reports Git separately from model setup.
 
 The npm loader verifies the selected platform payload before importing it.
 Its optional first-party postinstall check is read-only; correctness does not

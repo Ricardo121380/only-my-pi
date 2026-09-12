@@ -383,6 +383,10 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = pro
 export async function launchDirectAgent({ argv = [], packageRoot, homeDir, stackRoot, env = process.env, execve = process.execve, randomUUIDImpl } = {}) {
   if (typeof execve !== "function") fail("OMP_EXECVE_UNAVAILABLE", "this Node runtime does not support process.execve()");
   const stack = await resolveControlledStack({ packageRoot, homeDir, stackRoot });
+  if (stack.distribution) {
+    const { requireSystemDependencies } = await import("../distribution/system-dependencies.mjs");
+    await requireSystemDependencies({ env });
+  }
   const configRoot = resolveDirectConfigRoot({ env, homeDir });
   const directExtensions = await resolveDirectExtensionSet({ stack, configRoot });
   const invocation = buildDirectPiInvocation({ argv, stack, extensionPaths: directExtensions.extensions, env, randomUUIDImpl });

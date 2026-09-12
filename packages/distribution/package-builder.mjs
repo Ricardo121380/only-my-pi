@@ -114,7 +114,7 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
     for (const [source, target] of [["distribution/npm/loader.mjs", "loader.mjs"], ["packages/bootstrap/resource-hash.mjs", "resource-hash.mjs"], ["LICENSE", "LICENSE"]])
       await fs.copyFile(path.join(rootDir, source), path.join(cli, target));
     await fs.chmod(path.join(cli, "loader.mjs"), 0o755);
-    await fs.writeFile(path.join(cli, "README.md"), `# only-my-pi ${version}\n\nPublic Preview for macOS 14+ Apple Silicon.\n\nRun \`omp\` after installation. Configure model authentication with \`omp admin pi\`.\n\n[Full documentation](https://github.com/Ricardo121380/only-my-pi)\n`);
+    await fs.writeFile(path.join(cli, "README.md"), `# only-my-pi ${version}\n\nPublic Preview for macOS 14+ Apple Silicon. Requires Node >=22.19.0 and Git on PATH before npm/npx installation. The runtime includes fd and ripgrep.\n\nmacOS 14+ Apple Silicon 预览版。npm/npx 安装前需准备 Node >=22.19.0 和可用的 Git；运行包已包含 fd 和 ripgrep。\n\nRun \`omp\` after installation. Configure model authentication with \`omp admin pi\`.\n\n[English documentation](https://github.com/Ricardo121380/only-my-pi) · [中文说明](https://github.com/Ricardo121380/only-my-pi/blob/main/README.zh-CN.md)\n`);
 
     const artifacts = [];
     for (const [name, directory] of [[runtimeName, runtimePackage], ["only-my-pi", cli]]) {

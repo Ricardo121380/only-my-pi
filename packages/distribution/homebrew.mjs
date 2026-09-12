@@ -31,6 +31,7 @@ class OnlyMyPi < Formula
   depends_on arch: :arm64
   depends_on macos: :sonoma
   depends_on "node@24"
+  depends_on "git"
   skip_clean :all
 
   resource "only-my-pi-runtime-darwin-arm64" do
@@ -46,7 +47,7 @@ class OnlyMyPi < Formula
     node = Formula["node@24"].opt_bin/"node"
     (cli/"omp").write <<~SH
       #!/bin/sh
-      export PATH="#{Formula["node@24"].opt_bin}:$PATH"
+      export PATH="#{Formula["node@24"].opt_bin}:#{Formula["git"].opt_bin}:$PATH"
       exec "#{node}" "#{cli}/loader.mjs" "$@"
     SH
     chmod 0755, cli/"omp"

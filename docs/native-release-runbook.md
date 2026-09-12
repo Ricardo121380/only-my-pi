@@ -2,8 +2,9 @@
 
 Status: the implementation is under validation. No 0.4 product version is
 published. The public Homebrew tap exists as a scaffold, without an installable
-formula. Docker isolation remains blocked, and the macOS Git dependency policy
-must be resolved before the dependency-complete startup gate can pass.
+formula. Docker isolation remains blocked. The macOS Git policy is confirmed:
+npm/npx and archive users preinstall Git, while Homebrew provides Git. Final
+candidate acceptance must include the corresponding prerequisite checks.
 
 ## Account preparation
 

@@ -4,6 +4,7 @@ import { DirectAgentDoctor } from "../direct-agent/doctor.mjs";
 import { resolveDirectConfigRoot } from "../direct-agent/launcher.mjs";
 import { distributionError, readRegularJson } from "./runtime.mjs";
 import { migrateLegacy } from "./migrate.mjs";
+import { inspectSystemDependencies } from "./system-dependencies.mjs";
 
 const GUIDANCE = Object.freeze({
   npm: { update: "npm install -g only-my-pi@latest", uninstall: "npm uninstall -g only-my-pi" },
@@ -72,9 +73,12 @@ export async function handleDistributionCommand({ runtime, argv, env = process.e
     const doctor = new DirectAgentDoctor({ rootDir: runtime.ompPackageRoot, configRoot,
       homeDir, stackRoot: runtime.root, resolveStack: async () => runtime });
     const readiness = await doctor.inspect();
-    return { handled: true, result: { ...version, ok: readiness.ok, status: readiness.status,
-      readiness, commandPaths: await inspectCommandPaths({ env, homeDir, runtime }),
-      modelSetup: "omp admin pi", next: readiness.ok ? "Run omp; configure model authentication through omp admin pi when needed." : "Inspect the failed readiness components." } };
+    const systemDependencies = await inspectSystemDependencies({ env });
+    return { handled: true, result: { ...version, ok: readiness.ok && systemDependencies.ok,
+      status: systemDependencies.ok ? readiness.status : systemDependencies.status,
+      readiness, systemDependencies, commandPaths: await inspectCommandPaths({ env, homeDir, runtime }),
+      modelSetup: "omp admin pi", next: !systemDependencies.ok ? systemDependencies.next
+        : readiness.ok ? "Run omp; configure model authentication through omp admin pi when needed." : "Inspect the failed readiness components." } };
   }
   if (["bootstrap", "install", "update", "uninstall", "rollback", "stack", "upstream"].includes(command)
     || (command === "profiles" && args[0] === "apply")) {

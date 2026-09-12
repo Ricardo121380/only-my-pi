@@ -38,7 +38,7 @@ async function fixture(t) {
     const { version } = PUBLIC_STACK_PACKAGES.find((entry) => entry.name === name);
     await write(`external-npm/node_modules/${name}/package.json`, { name, version, pi: { extensions: (ENTRIES[id] ?? []).map((entry) => `./${entry}`) } });
     for (const entry of ENTRIES[id] ?? []) await write(`external-npm/node_modules/${name}/${entry}`, "export default function extension() {}\n");
-    packageFilters[id] = id === "agent-extensions" ? AGENT_EXTENSIONS : [];
+    packageFilters[id] = id === "agent-extensions" ? [...AGENT_EXTENSIONS] : [];
   }
   const manifest = await createDistributionManifest({ root, version: "0.4.0-preview.1", sourceCommit: "a".repeat(40),
     platform: { os: "darwin", arch: "arm64", minimumMacOS: "14.0" }, packageFilters });
@@ -147,4 +147,17 @@ test("raw Pi uses the packaged CLI and removes direct-product authority variable
   assert.deepEqual(invocation[1], [runtime.nodePath, runtime.piCliPath, "--help"]);
   assert.equal(invocation[2].ONLY_MY_PI_DIRECT, undefined);
   assert.equal(invocation[2].PI_CODING_AGENT_DIR, path.join(f.root, "home/.pi/agent"));
+});
+
+test("native doctor distinguishes a missing Git prerequisite from packaged runtime readiness", async (t) => {
+  const f = await fixture(t);
+  const runtime = await loadDistribution(f.options);
+  const homeDir = path.join(f.root, "unused-home");
+  const response = await handleDistributionCommand({ runtime, argv: ["doctor", "--json"], homeDir,
+    env: { PATH: path.join(f.root, "empty-path") } });
+  assert.equal(response.result.ok, false);
+  assert.equal(response.result.status, "SYSTEM_DEPENDENCIES_MISSING");
+  assert.equal(response.result.systemDependencies.git.reason, "GIT_NOT_FOUND");
+  assert.equal(response.result.readiness.pi.ok, true, JSON.stringify(response.result.readiness));
+  await assert.rejects(fs.stat(homeDir), { code: "ENOENT" });
 });

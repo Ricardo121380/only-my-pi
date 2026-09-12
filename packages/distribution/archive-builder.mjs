@@ -38,7 +38,7 @@ if [ "$#" -ne 2 ] || [ "$1" != '--prefix' ]; then printf '%s\\n' 'Usage: ./insta
 OMP_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 ${bootstrap}
 `, { mode: 0o755 });
-    await fs.writeFile(path.join(root, "README.txt"), `OMP ${receipt.version} Public Preview — ${mode} fallback\nRun ./install.sh --prefix /absolute/new/directory, then /absolute/new/directory/bin/omp.\nThe installer leaves existing commands, Pi configuration and sessions untouched.\nFull installs offline; Thin downloads only the checksum-pinned Node runtime during installation.\nUpgrade into a new directory and select its omp command explicitly. Retain the prior directory for rollback.\n`);
+    await fs.writeFile(path.join(root, "README.txt"), `OMP ${receipt.version} Public Preview — ${mode} fallback\nGit must already be installed and available on PATH. 安装前须准备可用的 Git。\nRun ./install.sh --prefix /absolute/new/directory, then /absolute/new/directory/bin/omp.\nThe installer leaves existing commands, Pi configuration and sessions untouched.\nFull installs offline; Thin downloads only the checksum-pinned Node runtime during installation.\nUpgrade into a new directory and select its omp command explicitly. Retain the prior directory for rollback.\n`);
     const filename = `only-my-pi-${receipt.version}-darwin-arm64-${mode}.tar.gz`;
     await createDeterministicTarGzip({ rootDir: root, outputPath: path.join(outputRoot, filename), rootName: "only-my-pi" });
     archives.push({ mode, filename, sha256: await hashFile(path.join(outputRoot, filename)), distributionId: receipt.distributionId });

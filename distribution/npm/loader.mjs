@@ -52,7 +52,11 @@ export async function locateRuntime() {
 
 export async function main(argv = process.argv.slice(2)) {
   const runtime = await locateRuntime();
-  if (argv.length === 1 && argv[0] === "--verify-install") return 0;
+  if (argv.length === 1 && argv[0] === "--verify-install") {
+    const { requireSystemDependencies } = await import(pathToFileURL(path.join(runtime.packageRoot, "packages/distribution/system-dependencies.mjs")).href);
+    await requireSystemDependencies();
+    return 0;
+  }
   const { runOmpEntrypoint } = await import(pathToFileURL(path.join(runtime.packageRoot, "bin/omp.mjs")).href);
   return runOmpEntrypoint({ argv, rootDir: runtime.packageRoot });
 }
