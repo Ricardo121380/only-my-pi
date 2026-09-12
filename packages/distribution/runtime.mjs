@@ -134,8 +134,4 @@ export async function resolveDistributionPackage(distribution, packageId) {
     resourceFilter: entry.resourceFilter, physicalRootDigest: entry.treeDigest }) });
 }
 
-let intrinsicDistribution;
-export function loadIntrinsicDistribution() {
-  intrinsicDistribution ??= loadDistribution();
-  return intrinsicDistribution;
-}
+export { loadIntrinsicDistribution } from "./intrinsic.mjs";

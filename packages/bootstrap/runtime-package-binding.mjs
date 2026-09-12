@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { hashResourcePath } from "./graph-plan.mjs";
-import { loadIntrinsicDistribution, resolveDistributionPackage } from "../distribution/runtime.mjs";
+import { loadIntrinsicDistribution } from "../distribution/intrinsic.mjs";
 
 function fail(code, message) {
   const error = new Error(message);
@@ -75,7 +75,10 @@ export async function resolveBoundPackageRoot({ configRoot, packageId } = {}) {
   }
 
   const distribution = await loadIntrinsicDistribution();
-  if (distribution) return resolveDistributionPackage(distribution, packageId);
+  if (distribution) {
+    const { resolveDistributionPackage } = await import("../distribution/runtime.mjs");
+    return resolveDistributionPackage(distribution, packageId);
+  }
   const root = path.resolve(configRoot);
   const rootStat = await fs.lstat(root).catch((cause) => {
     if (cause?.code === "ENOENT") fail("RUNTIME_PACKAGE_BINDING_MISSING", "Pi config root is unavailable");

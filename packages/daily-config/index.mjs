@@ -1,7 +1,7 @@
 import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { loadIntrinsicDistribution } from "../distribution/runtime.mjs";
+import { loadIntrinsicDistribution } from "../distribution/intrinsic.mjs";
 
 const ID = /^[a-z][a-z0-9-]{0,63}$/u;
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}\/[A-Za-z0-9][A-Za-z0-9._:+-]{0,127}$/u;
