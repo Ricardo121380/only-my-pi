@@ -1,0 +1,168 @@
+name: Protected native Preview publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Exact source S of the accepted native candidate
+        required: true
+        type: string
+      evidence_commit:
+        description: Evidence-only child E of S, already merged on main
+        required: true
+        type: string
+      evidence_path:
+        description: Native protected evidence JSON under verification/protected
+        required: true
+        type: string
+      candidate_run_id:
+        description: Successful Native distribution candidate run for S on main
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-preview-publication
+  cancel-in-progress: false
+
+env:
+  GH_REPO: Ricardo121380/only-my-pi
+  GH_TOKEN: ${{ github.token }}
+  SOURCE_COMMIT: ${{ inputs.source_commit }}
+  EVIDENCE_COMMIT: ${{ inputs.evidence_commit }}
+  EVIDENCE_PATH: ${{ inputs.evidence_path }}
+  CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+
+jobs:
+  verify:
+    name: Verify source, candidate attestations and protected evidence
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      attestations: read
+    steps:
+      - name: Validate input grammar before use
+        run: |
+          set -eu
+          test "$GITHUB_REF" = refs/heads/main
+          case "$SOURCE_COMMIT$EVIDENCE_COMMIT" in (*[!a-f0-9]*) exit 1;; esac
+          test "${#SOURCE_COMMIT}" -eq 40
+          test "${#EVIDENCE_COMMIT}" -eq 40
+          case "$CANDIDATE_RUN_ID" in (''|*[!0-9]*) exit 1;; esac
+          case "$EVIDENCE_PATH" in (verification/protected/*.json) ;; (*) exit 1;; esac
+          EVIDENCE_NAME=${EVIDENCE_PATH#verification/protected/}
+          case "$EVIDENCE_NAME" in (''|*/*|*..*|*[!a-zA-Z0-9._-]*) exit 1;; esac
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify the evidence-only source chain and candidate run
+        run: |
+          set -eu
+          git merge-base --is-ancestor "$EVIDENCE_COMMIT" "$GITHUB_SHA"
+          test "$(git rev-list --parents -n 1 "$EVIDENCE_COMMIT")" = "$EVIDENCE_COMMIT $SOURCE_COMMIT"
+          test "$(git diff --name-only "$SOURCE_COMMIT" "$EVIDENCE_COMMIT")" = "$EVIDENCE_PATH"
+          git show "$EVIDENCE_COMMIT:$EVIDENCE_PATH" > "$RUNNER_TEMP/native-protected-evidence.json"
+          gh api "repos/$GH_REPO/actions/runs/$CANDIDATE_RUN_ID" > "$RUNNER_TEMP/candidate-run.json"
+          jq -e --arg source "$SOURCE_COMMIT" '.head_sha == $source and .head_branch == "main" and .conclusion == "success" and .path == ".github/workflows/distribution-candidate.yml" and .event == "workflow_dispatch"' "$RUNNER_TEMP/candidate-run.json"
+          git checkout --detach "$SOURCE_COMMIT"
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: native-candidate-${{ inputs.source_commit }}
+          run-id: ${{ inputs.candidate_run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/accepted
+
+      - name: Verify every signed candidate artifact without rebuilding
+        run: |
+          set -eu
+          CANDIDATE="$RUNNER_TEMP/accepted/native-candidate"
+          for asset in "$CANDIDATE"/*.tgz "$CANDIDATE"/*.tar.gz "$CANDIDATE/build-receipt.json" "$CANDIDATE/only-my-pi.rb"; do
+            gh attestation verify "$asset" --repo "$GH_REPO" --source-digest "$SOURCE_COMMIT" --signer-digest "$SOURCE_COMMIT" --source-ref refs/heads/main --signer-workflow "$GH_REPO/.github/workflows/distribution-candidate.yml" --deny-self-hosted-runners
+          done
+          node scripts/publish-distribution.mjs "$CANDIDATE" "$RUNNER_TEMP/native-protected-evidence.json" "$SOURCE_COMMIT"
+
+  publish:
+    name: OIDC publish verified bytes to the preview tag
+    needs: verify
+    environment: public-preview
+    runs-on: macos-14
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+      id-token: write
+      attestations: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.evidence_commit }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Select the previously verified source and evidence
+        run: |
+          git show "$EVIDENCE_COMMIT:$EVIDENCE_PATH" > "$RUNNER_TEMP/native-protected-evidence.json"
+          git checkout --detach "$SOURCE_COMMIT"
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: native-candidate-${{ inputs.source_commit }}
+          run-id: ${{ inputs.candidate_run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/accepted
+
+      - name: Recheck downloaded candidate attestations before mutation
+        run: |
+          set -eu
+          CANDIDATE="$RUNNER_TEMP/accepted/native-candidate"
+          for asset in "$CANDIDATE"/*.tgz "$CANDIDATE"/*.tar.gz "$CANDIDATE/build-receipt.json" "$CANDIDATE/only-my-pi.rb"; do
+            gh attestation verify "$asset" --repo "$GH_REPO" --source-digest "$SOURCE_COMMIT" --signer-digest "$SOURCE_COMMIT" --source-ref refs/heads/main --signer-workflow "$GH_REPO/.github/workflows/distribution-candidate.yml" --deny-self-hosted-runners
+          done
+
+      - name: Publish or verify already-published immutable npm versions
+        run: node scripts/publish-distribution.mjs "$RUNNER_TEMP/accepted/native-candidate" "$RUNNER_TEMP/native-protected-evidence.json" "$SOURCE_COMMIT" --publish
+
+      - name: Verify the exact public npm version on Node 24
+        run: node scripts/verify-distribution-install.mjs "$RUNNER_TEMP/accepted/native-candidate" "$RUNNER_TEMP/public-node24" --public-exact
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22.19.0"
+
+      - name: Verify the exact public npm version on Node 22
+        run: node scripts/verify-distribution-install.mjs "$RUNNER_TEMP/accepted/native-candidate" "$RUNNER_TEMP/public-node22" --public-exact
+
+      - name: Publish or recover the verified GitHub Preview release without rebuilding
+        run: node scripts/publish-distribution-release.mjs "$RUNNER_TEMP/accepted/native-candidate" "$RUNNER_TEMP/native-protected-evidence.json" "$SOURCE_COMMIT" --publish
+
+      - name: Retain publication progress even after partial failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-publication-${{ inputs.source_commit }}
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/accepted/native-candidate/npm-publication.json
+            ${{ runner.temp }}/accepted/native-candidate/github-publication.json
+            ${{ runner.temp }}/public-node24/acceptance.json
+            ${{ runner.temp }}/public-node22/acceptance.json

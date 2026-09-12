@@ -87,7 +87,7 @@ export async function hashDistributionTree(root, relative) {
 }
 
 export async function loadDistribution({ packageRoot = APP_ROOT, nodePath = process.execPath, nodeVersion = process.versions.node,
-  platform = process.platform, arch = process.arch, kernelRelease = os.release(), glibc = process.report?.getReport()?.header?.glibcVersionRuntime } = {}) {
+  platform = process.platform, arch = process.arch, kernelRelease = os.release(), glibc = process.platform === "linux" ? process.report?.getReport()?.header?.glibcVersionRuntime : undefined } = {}) {
   const root = await fs.realpath(path.resolve(packageRoot, "../.."));
   const input = await readRegularJson(path.join(root, "distribution-manifest.json"), { optional: true });
   if (!input) return null;

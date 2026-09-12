@@ -61,7 +61,10 @@ nested sandboxing is not an accepted workaround.
 
 The local npm CLI currently reports `ENEEDAUTH`. Registration, first publication
 and trusted publisher setup require the account owner's applicable login/2FA.
-No npm package, tap or Docker product image has been published by this work yet.
+The public `Ricardo121380/homebrew-tap` repository now contains its own verified
+formula-update workflow, but no installable formula. No npm product package or
+Docker product image has been published. See [the release runbook](native-release-runbook.md)
+for OIDC setup, protected acceptance, recovery and default-tag promotion.
 
 ## Candidate verification and discovered packaging constraints
 

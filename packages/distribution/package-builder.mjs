@@ -33,9 +33,12 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
   if (version !== DISTRIBUTION_VERSION || process.platform !== "darwin" || process.arch !== "arm64")
     throw distributionError("DISTRIBUTION_BUILD_PLATFORM_UNSUPPORTED", "the first native release must be built on macOS arm64");
   const run = (argv) => execFile("git", argv, { cwd: rootDir, encoding: "utf8" });
-  const [head, status] = await Promise.all([run(["rev-parse", "HEAD"]), run(["status", "--porcelain", "--untracked-files=all"])]);
-  if (head.stdout.trim() !== sourceCommit || status.stdout.trim())
-    throw distributionError("DISTRIBUTION_SOURCE_DIRTY", "build requires the exact clean source commit");
+  const assertSource = async () => {
+    const [head, status] = await Promise.all([run(["rev-parse", "HEAD"]), run(["status", "--porcelain", "--untracked-files=all"])]);
+    if (head.stdout.trim() !== sourceCommit || status.stdout.trim())
+      throw distributionError("DISTRIBUTION_SOURCE_DIRTY", "build requires the exact clean source commit throughout staging; use an isolated checkout for concurrent development");
+  };
+  await assertSource();
   const output = path.resolve(outputRoot);
   const realSource = await fs.realpath(rootDir);
   if (output === realSource || output.startsWith(`${realSource}${path.sep}`))
@@ -58,6 +61,7 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
     await fs.mkdir(runtime, { recursive: true });
     for (const name of ["pi", "external-npm"]) await fs.cp(path.join(seed, name), path.join(runtime, name), { recursive: true, errorOnExist: true, force: false, verbatimSymlinks: true });
     await stageToolchain({ rootDir, runtimeRoot: runtime, work });
+    await assertSource();
     await fs.mkdir(path.join(work, "home"));
     const packed = await execFile(process.execPath, [npmCli, "pack", ".", "--ignore-scripts", "--json", "--pack-destination", work], {
       cwd: rootDir, encoding: "utf8", maxBuffer: 16 * 1024 * 1024,
@@ -121,6 +125,7 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
     const receipt = { formatVersion: 1, status: "CANDIDATE_NOT_PUBLISHED", version, sourceCommit,
       distributionId: manifest.distributionId, dependencySeed: { sourceCommit: SEED_SOURCE, sha256: SEED_SHA256 }, materializedExecutableLinks, artifacts };
     receipt.archives = await buildDistributionArchives({ rootDir, outputRoot: output, work, seed, seedManifest, receipt });
+    await assertSource();
     await json(path.join(output, "build-receipt.json"), receipt);
     return receipt;
   } finally {

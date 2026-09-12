@@ -7,9 +7,9 @@ import { promisify } from "node:util";
 import { hashFile } from "../packages/release-stack/deterministic-archive.mjs";
 
 const execFile = promisify(callback);
-const [build, output] = process.argv.slice(2);
-if (!path.isAbsolute(build ?? "") || !path.isAbsolute(output ?? ""))
-  throw new Error("Usage: node scripts/verify-distribution-install.mjs /absolute/build /fresh/output");
+const [build, output, registryMode] = process.argv.slice(2);
+if (!path.isAbsolute(build ?? "") || !path.isAbsolute(output ?? "") || ![undefined, "--public-exact", "--public-default"].includes(registryMode))
+  throw new Error("Usage: node scripts/verify-distribution-install.mjs /absolute/build /fresh/output [--public-exact|--public-default]");
 await fs.mkdir(output, { recursive: false });
 const receipt = JSON.parse(await fs.readFile(path.join(build, "build-receipt.json"), "utf8"));
 const packages = new Map();
@@ -35,8 +35,9 @@ const server = http.createServer((request, response) => {
   } else if (archive) response.end(archive.bytes);
   else { response.statusCode = 404; response.end(JSON.stringify({ error: "Unknown test artifact" })); }
 });
-await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-registry = `http://127.0.0.1:${server.address().port}/`;
+if (!registryMode) await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+registry = registryMode ? "https://registry.npmjs.org/" : `http://127.0.0.1:${server.address().port}/`;
+const selector = registryMode === "--public-exact" ? `only-my-pi@${receipt.version}` : "only-my-pi";
 const home = path.join(output, "home");
 const prefix = path.join(output, "prefix");
 await fs.mkdir(home);
@@ -52,7 +53,7 @@ async function run(label, executable, args, extraEnv = {}) {
   return result.stdout;
 }
 try {
-  await run("global-install", process.execPath, [npm, "install", "--global", "--prefix", prefix, "only-my-pi"]);
+  await run("global-install", process.execPath, [npm, "install", "--global", "--prefix", prefix, selector]);
   const omp = path.join(prefix, "bin/omp");
   const offline = async (label, args) => run(label, "/usr/bin/sandbox-exec", ["-p", "(version 1)(allow default)(deny network*)", omp, ...args]);
   await offline("verify-offline", ["--verify-install"]);
@@ -62,7 +63,7 @@ try {
   if ((await offline("raw-pi-offline", ["admin", "pi", "--version"])).trim() !== "0.84.3") throw new Error("wrong bundled Pi");
   try { await fs.lstat(path.join(home, ".pi")); throw new Error("read-only commands initialized user config"); }
   catch (error) { if (error.code !== "ENOENT") throw error; }
-  const npxVersion = await run("npx-fresh-cache", process.execPath, [npm, "exec", "--yes", "--", "only-my-pi", "--version"],
+  const npxVersion = await run("npx-fresh-cache", process.execPath, [npm, "exec", "--yes", "--", selector, "--version"],
     { npm_config_cache: path.join(output, "npx-cache") });
   if (!npxVersion.includes(`only-my-pi ${receipt.version}`)) throw new Error("fresh npx did not run the candidate");
   const saved = path.join(home, ".pi/agent/sessions/preserve-fixture.txt");
@@ -72,11 +73,14 @@ try {
   try { await fs.lstat(omp); throw new Error("uninstall left the command installed"); }
   catch (error) { if (error.code !== "ENOENT") throw error; }
   if (await fs.readFile(saved, "utf8") !== "preserved session fixture\n") throw new Error("uninstall changed user data");
-  await run("global-reinstall", process.execPath, [npm, "install", "--global", "--prefix", prefix, "only-my-pi"]);
+  await run("global-reinstall", process.execPath, [npm, "install", "--global", "--prefix", prefix, selector]);
   await offline("reinstall-verify-offline", ["--verify-install"]);
   if (await fs.readFile(saved, "utf8") !== "preserved session fixture\n") throw new Error("reinstall changed user data");
-  await fs.writeFile(path.join(output, "acceptance.json"), JSON.stringify({ formatVersion: 1, status: "LOCAL_INSTALL_ACCEPTANCE_PASS",
-    publicRegistryVerified: false, protectedProductAcceptance: false, sourceCommit: receipt.sourceCommit,
+  const status = registryMode ? "PUBLIC_INSTALL_ACCEPTANCE_PASS" : "LOCAL_INSTALL_ACCEPTANCE_PASS";
+  await fs.writeFile(path.join(output, "acceptance.json"), JSON.stringify({ formatVersion: 1, status,
+    publicRegistryVerified: Boolean(registryMode), selector, protectedProductAcceptance: false, sourceCommit: receipt.sourceCommit,
     distributionId: receipt.distributionId, node: process.versions.node, checks, requests }, null, 2));
-  console.log(JSON.stringify({ status: "LOCAL_INSTALL_ACCEPTANCE_PASS", checks: checks.length, output }));
-} finally { server.closeAllConnections(); await new Promise((resolve) => server.close(resolve)); }
+  console.log(JSON.stringify({ status, checks: checks.length, output }));
+} finally {
+  if (server.listening) { server.closeAllConnections(); await new Promise((resolve) => server.close(resolve)); }
+}

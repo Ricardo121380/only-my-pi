@@ -1,0 +1,77 @@
+name: Update verified OMP formula
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published OMP Preview version
+        required: true
+        type: string
+      source_commit:
+        description: Exact upstream release source commit
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  attestations: read
+
+concurrency:
+  group: update-only-my-pi
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      UPSTREAM_REPO: Ricardo121380/only-my-pi
+      VERSION: ${{ inputs.version }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate the published release and its source
+        run: |
+          set -eu
+          case "$VERSION" in (0.4.0-preview.1|0.4.0-preview.2) ;; (*) exit 1;; esac
+          case "$SOURCE_COMMIT" in (''|*[!a-f0-9]*) exit 1;; esac
+          test "${#SOURCE_COMMIT}" -eq 40
+          gh release view "v$VERSION" --repo "$UPSTREAM_REPO" --json isDraft,isPrerelease,targetCommitish > "$RUNNER_TEMP/release.json"
+          jq -e --arg source "$SOURCE_COMMIT" '.isDraft == false and .isPrerelease == true and .targetCommitish == $source' "$RUNNER_TEMP/release.json"
+          mkdir "$RUNNER_TEMP/formula"
+          gh release download "v$VERSION" --repo "$UPSTREAM_REPO" --pattern only-my-pi.rb --pattern build-receipt.json --dir "$RUNNER_TEMP/formula"
+          for asset in "$RUNNER_TEMP/formula/only-my-pi.rb" "$RUNNER_TEMP/formula/build-receipt.json"; do
+            gh attestation verify "$asset" --repo "$UPSTREAM_REPO" --source-digest "$SOURCE_COMMIT" --signer-digest "$SOURCE_COMMIT" --source-ref refs/heads/main --signer-workflow "$UPSTREAM_REPO/.github/workflows/distribution-candidate.yml" --deny-self-hosted-runners
+          done
+          jq -e --arg source "$SOURCE_COMMIT" --arg version "$VERSION" '.sourceCommit == $source and .version == $version' "$RUNNER_TEMP/formula/build-receipt.json"
+
+      - name: Update the formula in this tap only
+        run: |
+          set -eu
+          mkdir -p Formula
+          cp "$RUNNER_TEMP/formula/only-my-pi.rb" Formula/only-my-pi.rb
+          cat > README.md <<'EOF'
+          # OMP Homebrew tap
+
+          Public Preview for macOS 14+ Apple Silicon.
+
+          ```sh
+          brew install ricardo121380/tap/only-my-pi
+          omp
+          ```
+
+          [English documentation](https://github.com/Ricardo121380/only-my-pi#readme)
+          · [中文说明](https://github.com/Ricardo121380/only-my-pi/blob/main/README.zh-CN.md)
+
+          Formula updates consume the signed upstream release artifacts. The tap does not rebuild OMP.
+          EOF
+          if git diff --quiet && test -z "$(git ls-files --others --exclude-standard Formula README.md)"; then exit 0; fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add Formula/only-my-pi.rb README.md
+          git commit -m "chore: publish OMP $VERSION"
+          gh auth setup-git --hostname github.com
+          git push origin HEAD:main
