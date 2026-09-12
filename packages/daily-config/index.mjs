@@ -1,6 +1,7 @@
 import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { loadIntrinsicDistribution } from "../distribution/intrinsic.mjs";
 
 const ID = /^[a-z][a-z0-9-]{0,63}$/u;
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}\/[A-Za-z0-9][A-Za-z0-9._:+-]{0,127}$/u;
@@ -403,7 +404,10 @@ export async function resolveDailyConfiguration({ rootDir, configRoot, projectRo
   const catalog = await loadDailyCatalog({ rootDir });
   const defaults = defaultPreferences();
   const settingsDocument = await readJsonNoFollow(path.join(path.resolve(configRoot), "settings.json"), "Pi settings", { missing: null });
-  const installedProfileId = settingsDocument?.onlyMyPi?.profileId ?? null;
+  // Native distributions carry the audited daily graph themselves. A prior
+  // legacy generation is user history, not authority over the running package.
+  const distribution = await loadIntrinsicDistribution();
+  const installedProfileId = distribution ? "daily" : settingsDocument?.onlyMyPi?.profileId ?? null;
   const installedPresetId = ({ daily: "daily", coding: "core", minimal: "core" })[installedProfileId] ?? null;
   const globalDocument = await readJsonNoFollow(preferencePath(configRoot), "global preferences", { missing: null });
   const global = globalDocument === null ? defaults : normalizePreferences(globalDocument, { scope: "global" });
@@ -433,7 +437,8 @@ export async function resolveDailyConfiguration({ rootDir, configRoot, projectRo
     status: "RESOLVED",
     source: {
       global: globalDocument === null ? "defaults" : "global",
-      generation: installedPresetId === null ? "not-installed-or-legacy" : `installed:${installedProfileId}`,
+      generation: distribution ? `distribution:${distribution.distribution.version}`
+        : installedPresetId === null ? "not-installed-or-legacy" : `installed:${installedProfileId}`,
       project: projectStatus,
       perRun: run === null ? "none" : "per-run",
     },

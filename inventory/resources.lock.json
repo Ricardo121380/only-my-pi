@@ -1129,6 +1129,26 @@
       "packaged": true
     },
     {
+      "id": "omp-distribution-intrinsic",
+      "type": "library",
+      "path": "packages/distribution/intrinsic.mjs",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": [],
+      "owners": [
+        "only-my-pi-control"
+      ],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": [
+        "orchestration",
+        "daily"
+      ],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
       "id": "omp-overlay-catalog",
       "type": "library",
       "path": "overlays",

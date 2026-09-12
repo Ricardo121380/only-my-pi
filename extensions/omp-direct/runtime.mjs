@@ -279,7 +279,8 @@ export class DirectSessionController {
       AWAITING_CODING_ACCESS: "Awaiting approval",
       CODING: "Coding",
     }[this.state];
-    ctx.ui.setStatus("omp-direct", `OMP · ${display}`);
+    const preview = this.environment.ONLY_MY_PI_DISTRIBUTION_VERSION;
+    ctx.ui.setStatus("omp-direct", `OMP${preview ? ` ${preview} (Preview)` : ""} · ${display}`);
     ctx.ui.setWidget("omp-direct-help", ["Enter send · Esc cancel · Ctrl+D exit · /help help"], { placement: "belowEditor" });
     ctx.ui.setTitle(`only-my-pi · ${display}`);
   }
@@ -311,7 +312,9 @@ export class DirectSessionController {
       if (!this.headless) await this.rememberModel(ctx.model);
       return { ok: true, status: "EXPLICIT_MODEL_SELECTED", model: modelReference(ctx.model) };
     }
-    if (candidates.length === 0) return { ok: false, status: "NO_AUTHENTICATED_MODELS", message: "No authenticated model is available. Configure a Provider before starting OMP." };
+    if (candidates.length === 0) return { ok: false, status: "NO_AUTHENTICATED_MODELS", message: this.environment.ONLY_MY_PI_DISTRIBUTION_VERSION
+      ? "No authenticated model is available. Run omp admin pi to configure model authentication, then start omp."
+      : "No authenticated model is available. Configure a Provider before starting OMP." };
     let selected;
     if (this.headless) {
       if (!last) return { ok: false, status: "HEADLESS_MODEL_REQUIRED", message: "No recent interactive model is recorded; pass --model provider/model." };

@@ -31,6 +31,8 @@ import {
   OMP_AGENT_USAGE,
 } from "../packages/direct-agent/launcher.mjs";
 import { createDirectAgentDoctor } from "../packages/direct-agent/doctor.mjs";
+import { loadDistribution, readRegularJson } from "../packages/distribution/runtime.mjs";
+import { handleDistributionCommand } from "../packages/distribution/commands.mjs";
 import {
   createGitHubReleasePayloadSource,
   createLocalReleasePayloadSource,
@@ -401,6 +403,10 @@ export function formatOmpHuman(result) {
   addField(lines, "stackId", details.stackId ?? details.activeStackId);
   addField(lines, "payloadMode", details.payloadMode);
   addField(lines, "nodeVersion", details.nodeVersion ?? details.embeddedNodeVersion);
+  addField(lines, "installationChannel", details.installation?.channel);
+  addField(lines, "distributionId", details.distributionId);
+  addField(lines, "backup", details.backup);
+  addField(lines, "replacement", details.replacement);
   if (details.harnessStatus?.provenance) addField(lines, "provenance", details.harnessStatus.provenance);
 
   const providerSelection = details.providerSelection ?? details.desired?.metadata?.providerSelection;
@@ -539,12 +545,27 @@ export async function runOmpEntrypoint(options = {}) {
   const stderr = options.stderr ?? process.stderr;
   let route;
   try {
+    if (argv.length === 1 && ["--version", "-v"].includes(argv[0])) {
+      const manifest = await readRegularJson(path.join(options.rootDir ?? DEFAULT_ROOT, "package.json"));
+      writeText(stdout, `only-my-pi ${manifest.version}\n`);
+      return OMP_EXIT_CODES.SUCCESS;
+    }
     route = classifyOmpInvocation(argv);
     if (route.kind === "agent-help") {
       writeText(stdout, `${OMP_AGENT_USAGE}\n`);
       return OMP_EXIT_CODES.SUCCESS;
     }
     if (route.kind === "admin") {
+      const runtime = await loadDistribution({ packageRoot: options.rootDir ?? DEFAULT_ROOT });
+      if (runtime) {
+        const native = await handleDistributionCommand({ runtime, argv: route.argv,
+          env: options.env ?? process.env, homeDir: options.homedir ? options.homedir() : os.homedir(),
+          execve: options.execve ?? process.execve });
+        if (native.handled) {
+          writeText(stdout, wantsJson(route.argv) ? stringifyOmpJson(native.result) : formatOmpHuman(native.result));
+          return exitCodeForResult(native.result);
+        }
+      }
       return await runOmpCli({ ...options, argv: route.argv });
     }
     const agentLauncher = options.agentLauncher ?? launchDirectAgent;
@@ -561,7 +582,7 @@ export async function runOmpEntrypoint(options = {}) {
     return OMP_EXIT_CODES.SUCCESS;
   } catch (error) {
     const output = publicError(error);
-    writeText(stderr, formatOmpHuman(output));
+    writeText(stderr, route?.kind === "admin" && wantsJson(route.argv) ? stringifyOmpJson(output) : formatOmpHuman(output));
     return exitCodeForError(error);
   }
 }

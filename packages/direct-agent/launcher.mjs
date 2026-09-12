@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { resolveBoundPackageRoot } from "../bootstrap/runtime-package-binding.mjs";
+import { loadDistribution, resolveDistributionPackage } from "../distribution/runtime.mjs";
 import { OMP_CONTROL_COMMANDS } from "../control-service/cli-parser.mjs";
 
 const STACK_DIRECTORY = /^[a-f0-9]{64}$/u;
@@ -259,6 +260,10 @@ async function inspectStackRoot(candidate) {
 }
 
 export async function resolveControlledStack({ packageRoot, homeDir = os.homedir(), stackRoot } = {}) {
+  if (packageRoot) {
+    const distribution = await loadDistribution({ packageRoot });
+    if (distribution) return distribution;
+  }
   const candidates = [];
   if (stackRoot !== undefined) {
     if (typeof stackRoot !== "string" || !path.isAbsolute(stackRoot)) fail("OMP_CONTROLLED_STACK_INVALID", "stack root must be absolute");
@@ -303,9 +308,14 @@ export async function resolveDirectExtensionSet({
   const resolved = [];
   const identities = [];
   for (const expected of DIRECT_EXTERNAL_EXTENSIONS) {
-    const pkg = await resolvePackage({ configRoot, packageId: expected.packageId });
-    if (pkg?.binding?.binding !== "external" || pkg.binding.owner !== "user") {
-      fail("OMP_DIRECT_PACKAGE_OWNERSHIP_INVALID", `${expected.packageId} must remain an external user-owned binding`);
+    const pkg = stack.distribution && resolvePackage === resolveBoundPackageRoot
+      ? await resolveDistributionPackage(stack, expected.packageId)
+      : await resolvePackage({ configRoot, packageId: expected.packageId });
+    const owned = stack.distribution
+      ? pkg?.binding?.binding === "distribution" && pkg.binding.owner === stack.channel
+      : pkg?.binding?.binding === "external" && pkg.binding.owner === "user";
+    if (!owned) {
+      fail("OMP_DIRECT_PACKAGE_OWNERSHIP_INVALID", `${expected.packageId} does not belong to this installation`);
     }
     const actualFilter = pkg.binding.resourceFilter ?? [];
     if (!equalStringSets(actualFilter, expected.resourceFilter)) {
@@ -359,6 +369,8 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = pro
   ];
   const childEnv = {
     ...cleanEnvironment(env),
+    ...(stack.distribution ? { PATH: `${path.join(stack.root, "pi/vendor-tools/bin")}${path.delimiter}${env.PATH ?? "/usr/bin:/bin"}`,
+      ONLY_MY_PI_DISTRIBUTION_VERSION: stack.distribution.version } : {}),
     ONLY_MY_PI_DIRECT: "1",
     ONLY_MY_PI_HEADLESS: inspected.headless ? "1" : "0",
     ONLY_MY_PI_MODEL_EXPLICIT: inspected.explicitModel ? "1" : "0",
@@ -371,6 +383,10 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = pro
 export async function launchDirectAgent({ argv = [], packageRoot, homeDir, stackRoot, env = process.env, execve = process.execve, randomUUIDImpl } = {}) {
   if (typeof execve !== "function") fail("OMP_EXECVE_UNAVAILABLE", "this Node runtime does not support process.execve()");
   const stack = await resolveControlledStack({ packageRoot, homeDir, stackRoot });
+  if (stack.distribution) {
+    const { requireSystemDependencies } = await import("../distribution/system-dependencies.mjs");
+    await requireSystemDependencies({ env });
+  }
   const configRoot = resolveDirectConfigRoot({ env, homeDir });
   const directExtensions = await resolveDirectExtensionSet({ stack, configRoot });
   const invocation = buildDirectPiInvocation({ argv, stack, extensionPaths: directExtensions.extensions, env, randomUUIDImpl });

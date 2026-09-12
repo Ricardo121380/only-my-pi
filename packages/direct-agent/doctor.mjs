@@ -83,13 +83,14 @@ export class DirectAgentDoctor {
     try {
       const manifest = await readJsonNoFollow(path.join(stack.ompPackageRoot, "package.json"));
       const entryReady = await regularFile(path.join(stack.ompPackageRoot, "bin", "omp.mjs"));
-      const ready = entryReady && manifest?.name === "only-my-pi" && manifest?.version === DIRECT_AGENT_VERSION;
+      const expectedVersion = stack.distribution?.version ?? DIRECT_AGENT_VERSION;
+      const ready = entryReady && manifest?.name === "only-my-pi" && manifest?.version === expectedVersion;
       components.launcher = {
         ok: ready,
         status: ready ? "READY" : manifest?.version === "0.2.0-preview.1" ? "M12_UPDATE_REQUIRED" : "INVALID",
         packageVersion: typeof manifest?.version === "string" ? manifest.version : null,
-        expectedPackageVersion: DIRECT_AGENT_VERSION,
-        entry: "USER_LOCAL_CONTROLLED_STACK",
+        expectedPackageVersion: expectedVersion,
+        entry: stack.distribution ? "PACKAGE_MANAGED_DISTRIBUTION" : "USER_LOCAL_CONTROLLED_STACK",
         processModel: "execve",
       };
     } catch (error) {

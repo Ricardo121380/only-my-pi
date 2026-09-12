@@ -100,6 +100,7 @@
     "packages/upstream-compatibility/",
     "packages/upstream-migration/",
     "packages/release-stack/",
+    "packages/distribution/",
     "packages/adapters/"
   ],
   "scripts": {
@@ -179,7 +180,8 @@
     "test:subagents": "node --test tests/subagents-*.test.mjs",
     "eval:subagents": "node --test tests/subagents-evaluation.test.mjs",
     "checkpoint": "node packages/workspace-checkpoint/cli.mjs",
-    "test": "node --test"
+    "test": "node --test",
+    "test:distribution": "node --test tests/distribution-*.test.mjs"
   },
   "engines": {
     "node": ">=22.19.0"

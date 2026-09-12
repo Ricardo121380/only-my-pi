@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { hashResourcePath } from "./graph-plan.mjs";
+import { loadIntrinsicDistribution } from "../distribution/intrinsic.mjs";
 
 function fail(code, message) {
   const error = new Error(message);
@@ -71,6 +72,12 @@ export async function resolveBoundPackageRoot({ configRoot, packageId } = {}) {
   }
   if (typeof packageId !== "string" || packageId.length === 0) {
     throw new TypeError("resolveBoundPackageRoot requires packageId");
+  }
+
+  const distribution = await loadIntrinsicDistribution();
+  if (distribution) {
+    const { resolveDistributionPackage } = await import("../distribution/runtime.mjs");
+    return resolveDistributionPackage(distribution, packageId);
   }
   const root = path.resolve(configRoot);
   const rootStat = await fs.lstat(root).catch((cause) => {
