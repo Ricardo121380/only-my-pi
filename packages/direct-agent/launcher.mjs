@@ -297,6 +297,7 @@ export function resolveDirectConfigRoot({ env = process.env, homeDir = os.homedi
 export async function resolveDirectExtensionSet({
   stack,
   configRoot,
+  headless = false,
   resolvePackage = resolveBoundPackageRoot,
 } = {}) {
   if (!stack || typeof stack.ompPackageRoot !== "string" || !path.isAbsolute(stack.ompPackageRoot)) {
@@ -308,6 +309,7 @@ export async function resolveDirectExtensionSet({
   const resolved = [];
   const identities = [];
   for (const expected of DIRECT_EXTERNAL_EXTENSIONS) {
+    if (stack.distribution && headless && expected.packageId === "subagents") continue;
     const pkg = stack.distribution && resolvePackage === resolveBoundPackageRoot
       ? await resolveDistributionPackage(stack, expected.packageId)
       : await resolvePackage({ configRoot, packageId: expected.packageId });
@@ -370,6 +372,11 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = pro
   const childEnv = {
     ...cleanEnvironment(env),
     ...(stack.distribution ? { PATH: `${path.join(stack.root, "pi/vendor-tools/bin")}${path.delimiter}${env.PATH ?? "/usr/bin:/bin"}`,
+      PI_SUBAGENT_EXTRA_AGENT_DIRS: path.join(stack.root, "only-my-pi/package/bundles/only-my-pi-agent-bundle/agents"),
+      PI_SKIP_VERSION_CHECK: "1",
+      PI_PACKAGE_DIR: path.join(stack.root, "pi/omp-assets"),
+      OMP_CODING_AGENT_DIR: resolveDirectConfigRoot({ env }),
+      OMP_CODING_AGENT_SESSION_DIR: env.PI_CODING_AGENT_SESSION_DIR ?? "",
       ONLY_MY_PI_DISTRIBUTION_VERSION: stack.distribution.version } : {}),
     ONLY_MY_PI_DIRECT: "1",
     ONLY_MY_PI_HEADLESS: inspected.headless ? "1" : "0",
@@ -388,7 +395,7 @@ export async function launchDirectAgent({ argv = [], packageRoot, homeDir, stack
     await requireSystemDependencies({ env });
   }
   const configRoot = resolveDirectConfigRoot({ env, homeDir });
-  const directExtensions = await resolveDirectExtensionSet({ stack, configRoot });
+  const directExtensions = await resolveDirectExtensionSet({ stack, configRoot, headless: inspectDirectAgentArguments(argv).headless });
   const invocation = buildDirectPiInvocation({ argv, stack, extensionPaths: directExtensions.extensions, env, randomUUIDImpl });
   execve(invocation.executable, [...invocation.argv], { ...invocation.env });
   fail("OMP_EXECVE_RETURNED", "controlled Pi process replacement returned unexpectedly");

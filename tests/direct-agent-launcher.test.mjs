@@ -139,6 +139,23 @@ test("Pi invocation loads the audited interactive ceiling while admission starts
   assert.equal(Object.hasOwn(interactive.env, "PI_PERMISSION_MODE"), false);
   assert.equal(Object.hasOwn(interactive.env, "ONLY_MY_PI_OLD"), false);
 
+  const native = buildDirectPiInvocation({
+    argv: [],
+    stack: { ...stack, distribution: { version: "0.4.0-preview.1" } },
+    extensionPaths: EXTENSIONS,
+    env: { PATH: "/usr/bin", PI_SUBAGENT_EXTRA_AGENT_DIRS: "/obsolete/installation/agents",
+      PI_CODING_AGENT_DIR: "/custom/pi-config", PI_CODING_AGENT_SESSION_DIR: "/custom/sessions" },
+    randomUUIDImpl: () => UUID,
+  });
+  assert.equal(native.env.PI_SUBAGENT_EXTRA_AGENT_DIRS,
+    path.join(stack.root, "only-my-pi/package/bundles/only-my-pi-agent-bundle/agents"));
+  assert.equal(native.env.PI_SKIP_VERSION_CHECK, "1");
+  assert.equal(native.env.PI_PACKAGE_DIR, path.join(stack.root, "pi/omp-assets"));
+  assert.equal(native.env.OMP_CODING_AGENT_DIR, "/custom/pi-config");
+  assert.equal(native.env.OMP_CODING_AGENT_SESSION_DIR, "/custom/sessions");
+  assert.equal(Object.hasOwn(native.env, "PI_OFFLINE"), false);
+  assert.equal(Object.hasOwn(interactive.env, "PI_SUBAGENT_EXTRA_AGENT_DIRS"), false);
+
   const headless = buildDirectPiInvocation({ argv: ["-p", "review"], stack, extensionPaths: EXTENSIONS, randomUUIDImpl: () => UUID });
   assert.equal(headless.headless, true);
   assert.deepEqual(headless.argv.slice(7, 11), ["--tools", "read,grep,find,ls", "--perm", "plan"]);
@@ -188,6 +205,16 @@ test("direct extension resolution disables ambient discovery and admits only aud
   });
   assert.equal(resolved.planModeOwner, "only-my-pi");
   assert.equal(resolved.extensions.length, 12);
+  const nativeHeadless = await resolveDirectExtensionSet({
+    stack: { ...stack, distribution: {}, channel: "npm" }, configRoot, headless: true,
+    resolvePackage: async ({ packageId }) => {
+      assert.notEqual(packageId, "subagents");
+      const pkg = packages.get(packageId);
+      return { ...pkg, binding: { ...pkg.binding, binding: "distribution", owner: "npm" } };
+    },
+  });
+  assert.equal(nativeHeadless.identities.includes("subagents:index.ts"), false);
+  assert.equal(nativeHeadless.extensions.length, 11);
   assert.equal(resolved.identities.some((entry) => entry.includes("plan-mode")), false);
   assert.equal(resolved.identities.some((entry) => entry.includes("unreviewed")), false);
   assert.deepEqual(resolved.identities.slice(-4), [

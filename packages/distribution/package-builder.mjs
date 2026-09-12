@@ -10,6 +10,7 @@ import { validateStackManifest } from "../release-stack/contracts.mjs";
 import { createDistributionManifest } from "./manifest-builder.mjs";
 import { createDistributionSbom, distributionNotices } from "./sbom.mjs";
 import { materializeExecutableLinks } from "./npm-layout.mjs";
+import { stagePiBranding } from "./pi-branding.mjs";
 import { stageToolchain } from "./toolchain-builder.mjs";
 import { buildDistributionArchives } from "./archive-builder.mjs";
 import { DISTRIBUTION_VERSION, hashDistributionTree, distributionError } from "./runtime.mjs";
@@ -80,6 +81,7 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
     await fs.writeFile(appManifestPath, `${JSON.stringify(appManifest, null, 2)}\n`);
     await json(path.join(app, "artifact-identity.json"), { formatVersion: 1, kind: "only-my-pi-source-identity", sourceCommit });
     const materializedExecutableLinks = await materializeExecutableLinks(runtime);
+    await stagePiBranding(path.join(runtime, "pi"));
 
     const graph = await buildGenerationPlan({ rootDir, profileId: "daily", sourceCommit });
     const inventory = JSON.parse(await fs.readFile(path.join(rootDir, "inventory/packages.lock.json"), "utf8"));
