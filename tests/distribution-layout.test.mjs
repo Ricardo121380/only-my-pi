@@ -6,6 +6,26 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import test from "node:test";
 import { materializeExecutableLinks } from "../packages/distribution/npm-layout.mjs";
+import { stagePiBranding } from "../packages/distribution/pi-branding.mjs";
+
+test("native Pi branding preserves original identity and includes offline UI assets", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-pi-assets-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const original = { name: "pi-engine", version: "0.84.3", piConfig: { configDir: ".pi" } };
+  await fs.writeFile(path.join(root, "package.json"), JSON.stringify(original));
+  for (const entry of ["README.md", "CHANGELOG.md", "docs/guide.md", "examples/sample.js",
+    "dist/modes/interactive/theme/dark.json", "dist/modes/interactive/assets/logo.txt", "dist/core/export-html/template.html"]) {
+    await fs.mkdir(path.dirname(path.join(root, entry)), { recursive: true });
+    await fs.writeFile(path.join(root, entry), entry);
+  }
+  await stagePiBranding(root);
+  assert.deepEqual(JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8")), original);
+  assert.deepEqual(JSON.parse(await fs.readFile(path.join(root, "omp-assets/package.json"), "utf8")),
+    { ...original, piConfig: { name: "omp", configDir: ".pi" } });
+  assert.equal(await fs.readFile(path.join(root, "omp-assets/dist/core/export-html/template.html"), "utf8"),
+    "dist/core/export-html/template.html");
+  await assert.rejects(stagePiBranding(root), { code: "EEXIST" });
+});
 
 test("npm-portable bin wrappers retain relative imports and arguments in paths with spaces", async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp bin links ")));
