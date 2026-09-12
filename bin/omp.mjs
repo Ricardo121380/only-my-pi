@@ -403,6 +403,10 @@ export function formatOmpHuman(result) {
   addField(lines, "stackId", details.stackId ?? details.activeStackId);
   addField(lines, "payloadMode", details.payloadMode);
   addField(lines, "nodeVersion", details.nodeVersion ?? details.embeddedNodeVersion);
+  addField(lines, "installationChannel", details.installation?.channel);
+  addField(lines, "distributionId", details.distributionId);
+  addField(lines, "backup", details.backup);
+  addField(lines, "replacement", details.replacement);
   if (details.harnessStatus?.provenance) addField(lines, "provenance", details.harnessStatus.provenance);
 
   const providerSelection = details.providerSelection ?? details.desired?.metadata?.providerSelection;
@@ -578,7 +582,7 @@ export async function runOmpEntrypoint(options = {}) {
     return OMP_EXIT_CODES.SUCCESS;
   } catch (error) {
     const output = publicError(error);
-    writeText(stderr, formatOmpHuman(output));
+    writeText(stderr, route?.kind === "admin" && wantsJson(route.argv) ? stringifyOmpJson(output) : formatOmpHuman(output));
     return exitCodeForError(error);
   }
 }

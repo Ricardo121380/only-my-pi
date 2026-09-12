@@ -3,6 +3,7 @@ import path from "node:path";
 import { DirectAgentDoctor } from "../direct-agent/doctor.mjs";
 import { resolveDirectConfigRoot } from "../direct-agent/launcher.mjs";
 import { distributionError } from "./runtime.mjs";
+import { migrateLegacy } from "./migrate.mjs";
 
 const GUIDANCE = Object.freeze({
   npm: { update: "npm install -g only-my-pi@latest", uninstall: "npm uninstall -g only-my-pi" },
@@ -24,7 +25,7 @@ export async function inspectCommandPaths({ env = process.env, homeDir, runtime 
     if (entries.some((entry) => entry.path === filename)) continue;
     entries.push({ path: filename, target,
       legacy: target.startsWith(path.join(homeDir, ".local/share/only-my-pi/stacks") + path.sep),
-      current: target.startsWith(`${path.dirname(runtime.root)}${path.sep}`) || target === runtime.ompCliPath });
+      current: target.startsWith(`${path.resolve(runtime.root, "../..", "only-my-pi")}${path.sep}`) || target === runtime.ompCliPath });
   }
   return { entries, legacyShadowsCurrent: entries[0]?.legacy === true,
     multipleEntries: new Set(entries.map((entry) => entry.target)).size > 1 };
@@ -41,10 +42,13 @@ export function distributionVersion(runtime, env = process.env) {
 export async function handleDistributionCommand({ runtime, argv, env = process.env, homeDir, execve = process.execve }) {
   const [command, ...args] = argv;
   const configRoot = resolveDirectConfigRoot({ env, homeDir });
+  if (command === "migrate") return { handled: true, result: await migrateLegacy({ runtime, argv: args, env, homeDir, inspectPaths: inspectCommandPaths }) };
   if (command === "pi") {
     const childEnv = Object.fromEntries(Object.entries(env).filter(([key, value]) => !key.startsWith("ONLY_MY_PI_") && typeof value === "string"));
     if (typeof execve !== "function") throw distributionError("OMP_EXECVE_UNAVAILABLE", "this Node runtime does not support process.execve");
-    execve(runtime.nodePath, [runtime.nodePath, runtime.piCliPath, ...args], { ...childEnv, PI_CODING_AGENT_DIR: configRoot });
+    execve(runtime.nodePath, [runtime.nodePath, runtime.piCliPath, ...args], { ...childEnv,
+      PATH: `${path.join(runtime.root, "pi/vendor-tools/bin")}${path.delimiter}${env.PATH ?? "/usr/bin:/bin"}`,
+      PI_CODING_AGENT_DIR: configRoot });
     throw distributionError("OMP_EXECVE_RETURNED", "raw Pi process replacement unexpectedly returned");
   }
   if (["version", "doctor", "status"].includes(command) || (command === "stack" && args[0] === "status")) {
@@ -60,7 +64,8 @@ export async function handleDistributionCommand({ runtime, argv, env = process.e
       readiness, commandPaths: await inspectCommandPaths({ env, homeDir, runtime }),
       modelSetup: "omp admin pi", next: readiness.ok ? "Run omp; configure model authentication through omp admin pi when needed." : "Inspect the failed readiness components." } };
   }
-  if (["bootstrap", "install", "update", "uninstall", "stack", "upstream"].includes(command)) {
+  if (["bootstrap", "install", "update", "uninstall", "rollback", "stack", "upstream"].includes(command)
+    || (command === "profiles" && args[0] === "apply")) {
     const operation = command === "uninstall" || args[0] === "remove" ? "uninstall" : "update";
     return { handled: true, result: { ok: false, status: "PACKAGE_MANAGER_OWNS_INSTALLATION", mutation: false,
       installation: { channel: runtime.channel }, next: GUIDANCE[runtime.channel][operation],
