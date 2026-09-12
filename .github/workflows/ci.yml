@@ -49,6 +49,9 @@ jobs:
       - name: Install dependencies without lifecycle scripts
         run: npm ci --ignore-scripts --no-audit --no-fund
 
+      - name: Verify native distribution identity and migration boundaries
+        run: npm run test:distribution
+
       - name: Validate the merged Harness MVP receipt
         if: hashFiles('verification/receipts/2026-08-16-harness-mvp.json') != ''
         run: npm run receipt:check -- --receipt verification/receipts/2026-08-16-harness-mvp.json --source-commit 6941761b3948d96a77596e1302d3205efb5169f1

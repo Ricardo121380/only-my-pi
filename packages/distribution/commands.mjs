@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { DirectAgentDoctor } from "../direct-agent/doctor.mjs";
 import { resolveDirectConfigRoot } from "../direct-agent/launcher.mjs";
-import { distributionError } from "./runtime.mjs";
+import { distributionError, readRegularJson } from "./runtime.mjs";
 import { migrateLegacy } from "./migrate.mjs";
 
 const GUIDANCE = Object.freeze({
@@ -14,6 +14,18 @@ const GUIDANCE = Object.freeze({
 
 export async function inspectCommandPaths({ env = process.env, homeDir, runtime }) {
   const entries = [];
+  // npm global installs may nest the optional helper below the public CLI;
+  // npm exec and Homebrew can place the two packages beside each other.
+  const moduleRoot = path.resolve(runtime.root, "../..");
+  const publicEntries = new Set([runtime.ompCliPath]);
+  for (const candidate of [path.join(moduleRoot, "only-my-pi"), path.resolve(moduleRoot, "..")]) {
+    const descriptor = await readRegularJson(path.join(candidate, "runtime-packages.json"), { optional: true });
+    if (descriptor?.version === runtime.distribution.version
+      && Object.values(descriptor.platforms ?? {}).some((entry) => entry.distributionId === runtime.stackId)) {
+      publicEntries.add(path.join(candidate, "loader.mjs"));
+      publicEntries.add(path.join(candidate, "omp"));
+    }
+  }
   for (const directory of (env.PATH ?? "").split(path.delimiter).filter((value) => path.isAbsolute(value))) {
     const filename = path.join(directory, "omp");
     const stat = await fs.stat(filename).catch((error) => {
@@ -25,7 +37,7 @@ export async function inspectCommandPaths({ env = process.env, homeDir, runtime 
     if (entries.some((entry) => entry.path === filename)) continue;
     entries.push({ path: filename, target,
       legacy: target.startsWith(path.join(homeDir, ".local/share/only-my-pi/stacks") + path.sep),
-      current: target.startsWith(`${path.resolve(runtime.root, "../..", "only-my-pi")}${path.sep}`) || target === runtime.ompCliPath });
+      current: publicEntries.has(target) });
   }
   return { entries, legacyShadowsCurrent: entries[0]?.legacy === true,
     multipleEntries: new Set(entries.map((entry) => entry.target)).size > 1 };

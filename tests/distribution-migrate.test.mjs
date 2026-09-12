@@ -29,6 +29,8 @@ async function fixture(t) {
   await fs.symlink(cli, path.join(prefix, "bin/omp"));
   const runtime = { channel: "npm", root: path.join(prefix, "lib/node_modules/only-my-pi-runtime-darwin-arm64/runtime"),
     ompCliPath: "/unused", stackId: `sha256:${"a".repeat(64)}`, distribution: { version: "0.4.0-preview.1" } };
+  await fs.writeFile(path.join(path.dirname(cli), "runtime-packages.json"), JSON.stringify({ version: runtime.distribution.version,
+    platforms: { "darwin-arm64": { distributionId: runtime.stackId } } }));
   const options = { runtime, homeDir, env: { PATH: `${bin}:${prefix}/bin` }, inspectPaths: inspectCommandPaths };
   return { options, share, bin, stack };
 }
@@ -78,4 +80,15 @@ test("apply requires both the source selector and explicit yes", async (t) => {
   const f = await fixture(t);
   for (const argv of [["--apply"], ["--from", "legacy", "--apply"], ["--from", "legacy", "--plan", "--yes"]])
     await assert.rejects(migrateLegacy({ ...f.options, argv }), { code: "INVALID_ARGUMENT" });
+});
+
+test("PATH diagnostics recognize a helper nested beneath the global npm CLI", async (t) => {
+  const f = await fixture(t);
+  const publicCli = path.join(f.options.homeDir, "npm/lib/node_modules/only-my-pi");
+  f.options.runtime.root = path.join(publicCli, "node_modules/only-my-pi-runtime-darwin-arm64/runtime");
+  const paths = await inspectCommandPaths(f.options);
+  assert.equal(paths.entries[0].legacy, true);
+  assert.equal(paths.entries[1].current, true);
+  await fs.writeFile(path.join(publicCli, "runtime-packages.json"), JSON.stringify({ version: "0.0.0", platforms: {} }));
+  assert.equal((await inspectCommandPaths(f.options)).entries[1].current, false);
 });

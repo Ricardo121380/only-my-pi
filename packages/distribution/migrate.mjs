@@ -44,8 +44,8 @@ export async function planLegacyMigration({ runtime, homeDir, env, inspectPaths 
   const state = validateStackState(await readRegularJson(layout.stateFile));
   const link = await fs.readlink(layout.ompShim);
   const target = path.join(layout.stacksRoot, state.activeStack?.slice(7) ?? "", "bin/omp");
-  if (state.status !== "INSTALLED" || state.shims.omp.targetClass !== "USER_LOCAL_CONTROLLED_STACK"
-    || state.shims.omp.digest !== sha256("current-stack/bin/omp")
+  if (state.status !== "INSTALLED" || state.shims?.omp?.targetClass !== "USER_LOCAL_CONTROLLED_STACK"
+    || state.shims?.omp?.digest !== sha256("current-stack/bin/omp")
     || path.resolve(layout.binRoot, link) !== path.join(layout.currentStack, "bin/omp")
     || await fs.realpath(layout.ompShim) !== target)
     fail("The legacy entry does not match its installed ownership record.");
