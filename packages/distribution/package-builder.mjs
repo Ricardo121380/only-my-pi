@@ -16,6 +16,7 @@ import { buildDistributionArchives } from "./archive-builder.mjs";
 import { DISTRIBUTION_VERSION, DISTRIBUTION_VERSIONS, hashDistributionTree, distributionError } from "./runtime.mjs";
 
 import { stageLinuxDependencies } from "./linux-dependency-builder.mjs";
+import { applyRuntimePatches } from "./runtime-patches.mjs";
 
 const execFile = promisify(execFileCallback);
 const SEED_SHA256 = "sha256:9990fb9dd81b5ecaab9b31d5344fb8aab3715fd89b61f07ed5fefc7191d60b0d";
@@ -91,6 +92,7 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
     await json(path.join(app, "artifact-identity.json"), { formatVersion: 1, kind: "only-my-pi-source-identity", sourceCommit });
     const materializedExecutableLinks = await materializeExecutableLinks(runtime);
     await stagePiBranding(path.join(runtime, "pi"));
+    const runtimePatches = await applyRuntimePatches({ runtimeRoot: runtime, version, platform });
 
     const graph = await buildGenerationPlan({ rootDir, profileId: "daily", sourceCommit });
     const inventory = JSON.parse(await fs.readFile(path.join(rootDir, "inventory/packages.lock.json"), "utf8"));
@@ -109,7 +111,7 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
     await fs.cp(path.join(seed, "LICENSES"), path.join(runtime, "LICENSES"), { recursive: true });
     const dependencyLedger = JSON.parse(await fs.readFile(path.join(seed, "transitive-artifact-ledger.json"), "utf8"));
     await json(path.join(runtime, "dependency-seed-ledger.json"), dependencyLedger);
-    const sbom = await createDistributionSbom({ runtimeRoot: runtime, manifest, dependencyLedger });
+    const sbom = await createDistributionSbom({ runtimeRoot: runtime, manifest, dependencyLedger, runtimePatches });
     await json(path.join(runtime, "sbom.spdx.json"), sbom);
     await fs.writeFile(path.join(runtime, "THIRD_PARTY_NOTICES.txt"), distributionNotices(sbom));
 

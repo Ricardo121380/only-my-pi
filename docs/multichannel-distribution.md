@@ -169,3 +169,25 @@ node scripts/assemble-distribution-cli.mjs /absolute/combined /absolute/macos-ca
 No phase-two publication is currently authorized by the phase-one publication
 validator. Linux package-name registration and trusted-publisher setup are
 account preparation only; bootstrap versions are not product releases.
+
+
+### Linux sandbox fixes found by live acceptance
+
+The first Kimi run exposed a reviewer exhausting its budget while trying to
+reconstruct Git internals. Reviewer tasks now identify the changed files and
+explain the already-verified scope/patch boundary, so the read-only reviewer can
+inspect source/tests directly without increasing its authority or budget.
+
+Linux uses a separate external lock with `@anthropic-ai/sandbox-runtime@0.0.76`;
+the historical macOS lock and immutable seed are unchanged. This brings the
+upstream Linux process-isolation fixes into the new platform. The packaged
+permission adapter's empty-file cleanup is replaced by explicit mountpoint
+ownership leases: exclusive creation, inode/metadata checks, and cleanup only
+after all overlapping commands finish. Existing empty files and user changes
+are preserved. Unknown leftovers are not guessed to be owned.
+
+Build patches require exact upstream file digests and emit
+`external-npm/omp-runtime-patches.json`. Patched bytes and that record are covered
+by the distribution component identity; the SPDX notices identify patched
+upstream packages. Third-party lifecycle scripts remain disabled. Live product
+acceptance must be repeated on the final patched candidate before release.

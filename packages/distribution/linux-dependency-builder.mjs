@@ -31,6 +31,7 @@ export async function stageLinuxDependencies({ rootDir, work, sourceCommit, npmC
     npm_config_audit: "false", npm_config_fund: "false", npm_config_registry: "https://registry.npmjs.org/" };
   const run = (node, argv, options) => execFile(node, argv, { ...options, timeout: 20 * 60_000, maxBuffer: 16 * 1024 * 1024 });
   const options = { rootDir, resolved: seed, work, node: process.execPath, npm: npmCli, env, run,
+    externalContract: path.join(rootDir, "contracts/release/linux-external"),
     download: downloadVerified, extract: extractVerifiedTarGzip };
   process.stderr.write(`Building locked dependencies for ${platform}\n`);
   const external = await installExternal(options);

@@ -89,10 +89,10 @@ async function installNode({ work, resolved, download, extract }) {
   return { node, npm, archive };
 }
 
-export async function installExternal({ rootDir, resolved, node, npm, env, run }) {
+export async function installExternal({ rootDir, resolved, node, npm, env, run, externalContract }) {
   const external = path.join(resolved, "external-npm");
   await fs.mkdir(external, { mode: 0o700 });
-  const contract = path.join(rootDir, "contracts", "release", "external");
+  const contract = externalContract ?? path.join(rootDir, "contracts", "release", "external");
   await Promise.all([
     fs.copyFile(await boundedFile(path.join(contract, "package.json"), "RELEASE_EXTERNAL_CONTRACT_INVALID", 1024 * 1024), path.join(external, "package.json")),
     fs.copyFile(await boundedFile(path.join(contract, "package-lock.json"), "RELEASE_EXTERNAL_CONTRACT_INVALID", 64 * 1024 * 1024), path.join(external, "package-lock.json")),

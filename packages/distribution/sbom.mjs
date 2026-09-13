@@ -10,7 +10,7 @@ function packageRecord(name, version, license, downloadLocation = "NOASSERTION")
     copyrightText: "NOASSERTION", primaryPackagePurpose: "LIBRARY" };
 }
 
-export async function createDistributionSbom({ runtimeRoot, manifest, dependencyLedger }) {
+export async function createDistributionSbom({ runtimeRoot, manifest, dependencyLedger, runtimePatches = [] }) {
   const ledger = validateArtifactLedger(dependencyLedger);
   const packages = new Map();
   for (const entry of ledger.artifacts) {
@@ -18,6 +18,8 @@ export async function createDistributionSbom({ runtimeRoot, manifest, dependency
     item.checksums = [{ algorithm: "SHA256", checksumValue: entry.sha256.slice(7) },
       { algorithm: "SHA512", checksumValue: Buffer.from(entry.integrity.slice(7), "base64").toString("hex") }];
     item.comment = `Verified dependency seed content; treeDigest=${entry.treeDigest}; lifecycleScriptsExecuted=false`;
+    const patches = runtimePatches.filter((patch) => patch.packageName === entry.name && patch.packageVersion === entry.version);
+    if (patches.length) item.comment += `; OMP source-bound patches=${JSON.stringify(patches)}`;
     packages.set(`${entry.name}@${entry.version}`, item);
   }
   const appRoot = path.join(runtimeRoot, manifest.components.app.path);

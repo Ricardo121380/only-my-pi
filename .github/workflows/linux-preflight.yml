@@ -2,10 +2,6 @@ name: Linux sandbox feasibility
 
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - scripts/probe-linux-sandbox.mjs
-      - .github/workflows/linux-preflight.yml
 
 permissions:
   contents: read

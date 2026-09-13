@@ -234,6 +234,8 @@ test("managed writer requires exact captured paths and a fresh passing review be
   assert.deepEqual(transport.requests.map((request) => request.agent), ["omp-implementer", "omp-reviewer"]);
   assert.equal(transport.requests[0].toolBudget.block, "*");
   assert.equal(transport.requests[1].toolBudget.block, "*");
+  assert.match(transport.requests[1].task, /Changed files: \["src\/fix.ts"\]/u);
+  assert.match(transport.requests[1].task, /do not traverse \.git objects/u);
   assert.equal(orchestrator.snapshot().writerUsed, true);
   await assert.rejects(
     orchestrator.delegateWriter({ task: "again", plan: "again", scope: ["src/**"], approvedScope: ["src/**"], baseline: { status: "GIT_REPOSITORY", head: HEAD, paths: [] } }),
