@@ -47,17 +47,17 @@ omp --version
 ```bash
 node --version
 git --version
-npm install -g only-my-pi@0.4.0-preview.1
+npm install -g only-my-pi
 omp --version
 ```
 
 For an ephemeral run with the same prerequisites:
 
 ```bash
-npx only-my-pi@0.4.0-preview.1
+npx only-my-pi
 ```
 
-These commands install the accepted **0.4.0-preview.1 Public Preview**. npm `preview` also points to this version. Promotion of npm `latest` is pending account-owner 2FA; use the explicit version above until default-entry acceptance is complete.
+Default installation selects the accepted **0.4.0-preview.1 Public Preview**. Both npm `latest` and `preview` point to this version. To pin it explicitly, use `npm install -g only-my-pi@0.4.0-preview.1` or `npx only-my-pi@0.4.0-preview.1`.
 
 All channels use the same prebuilt core with audited extensions, fd and ripgrep. npm platform packages do not bundle Node. Startup does not download missing runtime dependencies. Only `omp` is registered globally; existing `pi` commands are preserved.
 
@@ -208,8 +208,8 @@ These report the actual version, channel, platform, Node/Pi and PATH entries. A 
 | Channel | Upgrade | Remove program files |
 | --- | --- | --- |
 | Homebrew | `brew upgrade ricardo121380/tap/only-my-pi` | `brew uninstall only-my-pi` |
-| npm | `npm install -g only-my-pi@0.4.0-preview.1` | `npm uninstall -g only-my-pi` |
-| npx | Start a new `npx only-my-pi@0.4.0-preview.1` run | npm owns the cache |
+| npm | `npm install -g only-my-pi@latest` | `npm uninstall -g only-my-pi` |
+| npx | Start a new `npx only-my-pi@latest` run | npm owns the cache |
 | Full/Thin archive | Install a verified release into a new directory | Remove only the explicitly selected OMP program directory after exiting it |
 
 Uninstalling the program preserves user credentials, preferences and sessions. OMP does not modify another package manager's program files or an existing Pi third-party package tree. For rollback, select a previously verified version/directory; do not retarget or overwrite a running installation.

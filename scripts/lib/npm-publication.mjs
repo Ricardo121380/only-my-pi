@@ -1,5 +1,14 @@
 import { setTimeout } from "node:timers/promises";
 
+export async function awaitPublishedTag({ inspect, name, tag, version, wait = setTimeout,
+  delays = [0, 2000, 5000, 10000, 20000] }) {
+  for (const delay of delays) {
+    if (delay) await wait(delay);
+    if ((await inspect())["dist-tags"]?.[tag] === version) return;
+  }
+  throw new Error(`tag update was not confirmed after bounded registry checks: ${name}:${tag}; preserve the receipt and inspect registry state before retrying`);
+}
+
 export async function awaitPublishedVersion({ inspect, name, version, integrity, wait = setTimeout,
   delays = [0, 2000, 5000, 10000, 20000] }) {
   let published;

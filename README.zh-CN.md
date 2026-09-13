@@ -47,17 +47,17 @@ omp --version
 ```bash
 node --version
 git --version
-npm install -g only-my-pi@0.4.0-preview.1
+npm install -g only-my-pi
 omp --version
 ```
 
 临时运行使用相同前置条件：
 
 ```bash
-npx only-my-pi@0.4.0-preview.1
+npx only-my-pi
 ```
 
-上述命令安装已验收的 **0.4.0-preview.1 Public Preview**，npm 的 `preview` 标签也已指向此版本。npm `latest` 的推进仍待账户所有者完成 2FA；在默认入口验收完成前，请使用上述精确版本。
+默认入口提供已验收的 **0.4.0-preview.1 Public Preview**，npm 的 `latest` 和 `preview` 均指向此版本。如需固定版本，使用 `npm install -g only-my-pi@0.4.0-preview.1` 或 `npx only-my-pi@0.4.0-preview.1`。
 
 各渠道复用同一份预构建运行核心，包含审核过的扩展、fd 和 ripgrep；npm 平台包不捆绑 Node。首次启动不会补下载运行依赖。只注册全局 `omp`，保留已有的 `pi` 命令。
 
@@ -208,8 +208,8 @@ omp admin doctor --json
 | 渠道 | 升级 | 移除程序文件 |
 | --- | --- | --- |
 | Homebrew | `brew upgrade ricardo121380/tap/only-my-pi` | `brew uninstall only-my-pi` |
-| npm | `npm install -g only-my-pi@0.4.0-preview.1` | `npm uninstall -g only-my-pi` |
-| npx | 重新运行 `npx only-my-pi@0.4.0-preview.1` | 缓存由 npm 管理 |
+| npm | `npm install -g only-my-pi@latest` | `npm uninstall -g only-my-pi` |
+| npx | 重新运行 `npx only-my-pi@latest` | 缓存由 npm 管理 |
 | Full/Thin 安装包 | 将校验后的版本安装到新目录 | 退出程序后，仅移除明确选定的 OMP 程序目录 |
 
 卸载程序默认保留用户凭据、偏好和会话。OMP 不跨包管理器修改程序文件，也不改写既有 Pi 第三方包树。回滚时选择已验证的旧版本或旧目录，不覆盖正在运行的安装。
