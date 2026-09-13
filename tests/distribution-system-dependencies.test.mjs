@@ -75,3 +75,17 @@ test("Linux tools alone never count as readiness when namespaces are denied", as
   assert.equal(result.status, "LINUX_SANDBOX_UNAVAILABLE");
   assert.equal(result.sandbox.ok, false);
 });
+
+test("Linux gitfiles are preserved while the adapter's weaker fallback is refused", async (t) => {
+  const root = await fixture(t);
+  for (const name of ["git", "bwrap", "socat", "rg"])
+    await fs.writeFile(path.join(root, name), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+  await fs.writeFile(path.join(root, ".git"), "gitdir: /existing/user/repository\n");
+  const result = await inspectSystemDependencies({ platform: "linux", cwd: root, env: { PATH: root },
+    run: async (command, argv) => {
+      assert.ok(!argv.includes("--unshare-net"));
+      return { stdout: path.basename(command) === "git" ? "git version 2.45.2\n" : "tool 1.0\n" };
+    } });
+  assert.equal(result.reason, "LINUX_GITFILE_SANDBOX_UNSUPPORTED");
+  assert.equal(await fs.readFile(path.join(root, ".git"), "utf8"), "gitdir: /existing/user/repository\n");
+});

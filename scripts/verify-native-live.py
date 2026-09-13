@@ -86,6 +86,7 @@ class Tui:
             self.screen = (self.screen + ANSI.sub("", chunk.decode(errors="replace")))[-160000:]
 
     def wait(self, predicate, phase, timeout=240):
+        print("Checking: " + phase, flush=True)
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             self.pump()
@@ -140,7 +141,8 @@ def run(args):
     archive_node = Path(args.command).resolve().parent.parent / "node/bin"
     if (archive_node / "node").is_file():
         env["PATH"] = str(archive_node) + ":" + env["PATH"]
-    receipt = {"formatVersion": 1, "status": "BLOCKED", "model": MODEL, "assertions": {}}
+    receipt = {"formatVersion": 1, "status": "BLOCKED", "model": MODEL,
+               "harnessSha256": digest(__file__), "assertions": {}}
     active = None
     try:
         identity = json.loads(checked([args.command, "admin", "version", "--json"], env=env).stdout)
@@ -182,7 +184,7 @@ def run(args):
         (project / "preserve.txt").write_text("Pre-existing user fixture; do not change.\n")
         before = digest(project / "math.mjs")
         active = Tui(args.command, project, env, config / "sessions", READ_PROMPT)
-        active.wait(lambda: "(Preview) · Inspect" in active.screen, "initial Inspect")
+        active.wait(lambda: "(Preview) · Inspect" in active.screen and "Build (sandboxed" in active.screen, "initial Inspect with active sandbox")
         active.wait(lambda: active.result("delegate_readonly_agent", "DIRECT_CHILD_COMPLETED") and active.finished(), "read-only scout")
         assert digest(project / "math.mjs") == before, "Inspect changed source"
         receipt["assertions"]["models-and-inspect"] = True
@@ -227,11 +229,19 @@ def run(args):
         receipt["failure"] = type(error).__name__ + ": " + str(error)[:500]
         raise
     finally:
-        if active:
-            active.stop()
-        (output / "acceptance.json").write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n")
-        shutil.rmtree(workspace)
-        print(json.dumps({"status": receipt["status"], "assertions": list(receipt["assertions"]), "output": str(output)}))
+        try:
+            if active:
+                active.stop()
+        except Exception:
+            receipt["status"] = "BLOCKED"
+            receipt["failure"] = "TUI cleanup failed"
+            raise
+        finally:
+            try:
+                (output / "acceptance.json").write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n")
+            finally:
+                shutil.rmtree(workspace)
+            print(json.dumps({"status": receipt["status"], "assertions": list(receipt["assertions"]), "output": str(output)}))
 
 
 if __name__ == "__main__":

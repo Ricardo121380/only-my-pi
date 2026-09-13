@@ -64,8 +64,10 @@ nested sandboxing is not an accepted workaround.
 
 The macOS packages are registered, trusted publishing is configured, and both
 `latest` and `preview` point to `0.4.0-preview.1`. The public Homebrew formula is
-installable. Linux platform package registration and trust configuration remain
-phase-two prerequisites; account-owner login/2FA may be required. No Docker
+installable. Both Linux platform names are registered with bootstrap versions,
+and the account owner completed trusted-publisher configuration for
+`distribution-publish.yml` in the protected `public-preview` environment.
+The first product publication must still verify OIDC authorization. No Docker
 product image has been published. See [the release runbook](native-release-runbook.md).
 
 ## Phase-two environment gate
@@ -191,3 +193,9 @@ Build patches require exact upstream file digests and emit
 by the distribution component identity; the SPDX notices identify patched
 upstream packages. Third-party lifecycle scripts remain disabled. Live product
 acceptance must be repeated on the final patched candidate before release.
+
+This Linux Preview requires an ordinary Git clone. The pinned permission
+adapter falls back to prompting for worktrees/submodules using a `.git` file;
+the Linux dependency check rejects that layout instead, preserving the file and
+requiring a clone. This limitation must remain visible in the public Linux
+installation instructions when the channel is released.
