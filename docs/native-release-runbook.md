@@ -43,6 +43,9 @@ process and normal-exit cleanup. Earlier `NATIVE_LIVE_SUBSET_PASS` results are
 development evidence, not sufficient release authority. Repeat the complete
 same-source Kimi harness on native ARM Linux and macOS as well; keep credentials
 and raw sessions out of uploaded evidence.
+Pass `--candidate-receipt /absolute/candidate/build-receipt.json` to every full
+Kimi run. Install, migration, archive and live receipts bind this exact hash so
+provisional platform-CLI checks cannot stand in for the final combined CLI.
 
 Download the candidate's install, migration, archive, Linux sandbox and
 Homebrew receipts, plus all three complete Kimi receipts, into a dedicated

@@ -209,6 +209,17 @@ def run(args):
             raise RuntimeError("installed candidate identity differs")
         receipt.update({"sourceCommit": args.source_commit, "version": identity["packageVersion"],
                         "distributionId": identity["distributionId"], "platform": identity["installation"]["platform"]})
+        if not args.only_cancel:
+            if not args.candidate_receipt:
+                raise RuntimeError("full live acceptance requires the combined candidate receipt")
+            candidate = json.loads(Path(args.candidate_receipt).read_text())
+            platform = receipt["platform"]["os"] + "-" + receipt["platform"]["arch"]
+            if (candidate.get("status") != "MULTIPLATFORM_CANDIDATE_NOT_PUBLISHED"
+                    or candidate.get("sourceCommit") != args.source_commit
+                    or candidate.get("version") != receipt["version"]
+                    or candidate.get("platforms", {}).get(platform, {}).get("distributionId") != receipt["distributionId"]):
+                raise RuntimeError("combined candidate identity differs")
+            receipt["buildReceiptSha256"] = digest(args.candidate_receipt)
         if args.model_config:
             provider = json.loads(Path(args.model_config).read_text())["providers"]["cc-switch-kimi-for-coding"]
         else:
@@ -316,5 +327,6 @@ if __name__ == "__main__":
     parser.add_argument("--source-commit", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--model-config")
+    parser.add_argument("--candidate-receipt", help="verified combined build receipt; required for full acceptance")
     parser.add_argument("--only-cancel", action="store_true", help="diagnostic subset; never full release evidence")
     run(parser.parse_args())

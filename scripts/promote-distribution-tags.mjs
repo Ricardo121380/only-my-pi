@@ -13,12 +13,13 @@ const [candidate, node22Receipt, node24Receipt, mode] = process.argv.slice(2);
 if (![candidate, node22Receipt, node24Receipt].every((item) => path.isAbsolute(item ?? "")) || ![undefined, "--apply"].includes(mode))
   throw new Error("Usage: node scripts/promote-distribution-tags.mjs /candidate /public-node22.json /public-node24.json [--apply]");
 const receipt = JSON.parse(await fs.readFile(path.join(candidate, "build-receipt.json"), "utf8"));
+const buildReceiptDigest = await hashFile(path.join(candidate, "build-receipt.json"));
 if (!["0.4.0-preview.1", "0.4.0-preview.2"].includes(receipt.version) || !/^[a-f0-9]{40}$/u.test(receipt.sourceCommit ?? "")
   || (receipt.version === "0.4.0-preview.1" && !/^sha256:[a-f0-9]{64}$/u.test(receipt.distributionId ?? ""))) throw new Error("unexpected promotion identity");
 for (const [filename, node] of [[node22Receipt, "22.19.0"], [node24Receipt, "24.19.0"]]) {
   if (receipt.version === "0.4.0-preview.2") {
     for (const platform of RELEASE_PLATFORMS)
-      validatePublicPlatformAcceptance(JSON.parse(await fs.readFile(path.join(filename, `${platform}.json`), "utf8")), receipt, node, platform);
+      validatePublicPlatformAcceptance(JSON.parse(await fs.readFile(path.join(filename, `${platform}.json`), "utf8")), receipt, node, platform, buildReceiptDigest);
     continue;
   }
   const acceptance = JSON.parse(await fs.readFile(filename, "utf8"));

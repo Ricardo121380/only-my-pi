@@ -38,7 +38,7 @@ for (const platform of RELEASE_PLATFORMS) {
   const distributionId = receipt.platforms?.[platform]?.distributionId;
   const select = (status, predicate = () => true) => {
     const match = records.find(({ value }) => value.status === status && value.sourceCommit === receipt.sourceCommit
-      && value.distributionId === distributionId && predicate(value));
+      && value.distributionId === distributionId && value.buildReceiptSha256 === buildReceiptDigest && predicate(value));
     assert.ok(match, `${platform}: missing accepted ${status}`);
     return match;
   };

@@ -46,14 +46,16 @@ test("phase two requires every platform's source-bound protected assertions", ()
 test("default tags require exact public acceptance for the selected platform and Node", () => {
   const { receipt } = fixture();
   const platform = "linux-x64";
+  const buildReceiptDigest = sha256(JSON.stringify(receipt));
   const acceptance = { status: "PUBLIC_INSTALL_ACCEPTANCE_PASS", version: receipt.version,
+    buildReceiptSha256: buildReceiptDigest,
     platform, node: "24.19.0", selector: `only-my-pi@${receipt.version}`, publicRegistryVerified: true,
     sourceCommit: receipt.sourceCommit, distributionId: receipt.platforms[platform].distributionId,
     checks: ["global-install", "verify-offline", "version-offline", "doctor-offline", "raw-pi-offline", "npx-fresh-cache", "global-uninstall", "global-reinstall", "reinstall-verify-offline"].map((label) => ({ label, exitCode: 0 })) };
-  assert.equal(validatePublicPlatformAcceptance(acceptance, receipt, "24.19.0", platform), acceptance);
+  assert.equal(validatePublicPlatformAcceptance(acceptance, receipt, "24.19.0", platform, buildReceiptDigest), acceptance);
   for (const changed of [{ node: "22.19.0" }, { platform: "linux-arm64" }, { selector: "only-my-pi" },
-    { publicRegistryVerified: false }, { checks: Array(9).fill({ label: "global-install", exitCode: 0 }) }])
-    assert.throws(() => validatePublicPlatformAcceptance({ ...acceptance, ...changed }, receipt, "24.19.0", platform), /public acceptance missing/u);
+    { publicRegistryVerified: false }, { buildReceiptSha256: sha256("provisional CLI") }, { checks: Array(9).fill({ label: "global-install", exitCode: 0 }) }])
+    assert.throws(() => validatePublicPlatformAcceptance({ ...acceptance, ...changed }, receipt, "24.19.0", platform, buildReceiptDigest), /public acceptance missing/u);
 });
 
 test("publication verifies all four npm packages, six archives and generated formula bytes", async (t) => {
@@ -88,7 +90,8 @@ test("publication verifies all four npm packages, six archives and generated for
   const harnessSha256 = sha256(execFileSync("git", ["show", `${f.receipt.sourceCommit}:scripts/verify-native-live.py`]));
   let lastLive;
   for (const platform of RELEASE_PLATFORMS) {
-    const common = { sourceCommit: f.receipt.sourceCommit, distributionId: f.receipt.platforms[platform].distributionId };
+    const common = { sourceCommit: f.receipt.sourceCommit, distributionId: f.receipt.platforms[platform].distributionId,
+      buildReceiptSha256: sha256(JSON.stringify(f.receipt)) };
     for (const node of ["22.19.0", "24.19.0"])
       await write({ ...common, status: "LOCAL_INSTALL_ACCEPTANCE_PASS", node, publicRegistryVerified: false, productUpgrade: platform === "darwin-arm64",
         checks: ["global-install", "verify-offline", "version-offline", "doctor-offline", "raw-pi-offline", "npx-fresh-cache", "global-uninstall", "global-reinstall", "reinstall-verify-offline",
@@ -113,6 +116,10 @@ test("publication verifies all four npm packages, six archives and generated for
   await fs.writeFile(lastLive, JSON.stringify(stale));
   assert.throws(() => collect(path.join(candidateDirectory, "refused-evidence.json")), /missing accepted NATIVE_LIVE_ACCEPTANCE_PASS/u);
   await assert.rejects(fs.stat(path.join(candidateDirectory, "refused-evidence.json")), { code: "ENOENT" });
+  stale.status = "NATIVE_LIVE_ACCEPTANCE_PASS";
+  stale.buildReceiptSha256 = sha256("provisional CLI with the same core");
+  await fs.writeFile(lastLive, JSON.stringify(stale));
+  assert.throws(() => collect(path.join(candidateDirectory, "refused-provisional.json")), /missing accepted NATIVE_LIVE_ACCEPTANCE_PASS/u);
   await fs.appendFile(path.join(candidateDirectory, f.receipt.artifacts[1].filename), "tampered");
   await assert.rejects(inspect(), /npm artifact bytes differ/u);
   await fs.writeFile(path.join(candidateDirectory, f.receipt.artifacts[1].filename), f.receipt.artifacts[1].filename);

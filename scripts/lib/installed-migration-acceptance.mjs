@@ -9,7 +9,7 @@ const execFile = promisify(callback);
 
 // Synthetic legacy ownership records exercise the installed CLI, never the
 // operator's actual legacy stack, configuration, or command links.
-export async function verifyInstalledMigration({ command, home, env, sourceCommit, distributionId }) {
+export async function verifyInstalledMigration({ command, home, env, sourceCommit, distributionId, buildReceiptSha256 }) {
   const bin = path.join(home, ".local/bin");
   const share = path.join(home, ".local/share/only-my-pi");
   const state = JSON.parse(await fs.readFile(new URL("../../contracts/release/stack-state.example.json", import.meta.url)));
@@ -53,6 +53,6 @@ export async function verifyInstalledMigration({ command, home, env, sourceCommi
   await assert.rejects(run(["migrate", "--from", "legacy", "--apply", "--yes"]),
     (error) => /LEGACY_MIGRATION_UNSAFE/u.test(error.stdout + error.stderr));
   assert.equal(await fs.readFile(path.join(bin, "omp"), "utf8"), unknown);
-  return { status: "INSTALLED_MIGRATION_ACCEPTANCE_PASS", sourceCommit, distributionId,
+  return { status: "INSTALLED_MIGRATION_ACCEPTANCE_PASS", sourceCommit, distributionId, buildReceiptSha256,
     assertions: { "legacy-migration": true, "path-shadow-detection": true, "unknown-files-preserved": true } };
 }

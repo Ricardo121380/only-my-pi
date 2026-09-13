@@ -13,6 +13,7 @@ if (!path.isAbsolute(build ?? "") || !path.isAbsolute(output ?? "") || ![undefin
   throw new Error("Usage: node scripts/verify-distribution-install.mjs /absolute/build /fresh/output [--public-exact|--public-default]");
 await fs.mkdir(output, { recursive: false });
 const receipt = JSON.parse(await fs.readFile(path.join(build, "build-receipt.json"), "utf8"));
+const buildReceiptSha256 = await hashFile(path.join(build, "build-receipt.json"));
 const distributionId = receipt.platforms?.[`${process.platform}-${process.arch}`]?.distributionId ?? receipt.distributionId;
 if (!/^sha256:[a-f0-9]{64}$/u.test(distributionId ?? "")) throw new Error("current platform identity is missing");
 const packages = new Map();
@@ -95,14 +96,14 @@ try {
   }
   if (await fs.readFile(saved, "utf8") !== "preserved session fixture\n") throw new Error("reinstall changed user data");
   if (receipt.version === "0.4.0-preview.2") {
-    const migration = await verifyInstalledMigration({ command: omp, home, env, sourceCommit: receipt.sourceCommit, distributionId });
+    const migration = await verifyInstalledMigration({ command: omp, home, env, sourceCommit: receipt.sourceCommit, distributionId, buildReceiptSha256 });
     if (await fs.readFile(saved, "utf8") !== "preserved session fixture\n") throw new Error("migration changed user data");
     await fs.writeFile(path.join(output, "migration.json"), JSON.stringify(migration, null, 2));
   }
   const status = registryMode ? "PUBLIC_INSTALL_ACCEPTANCE_PASS" : "LOCAL_INSTALL_ACCEPTANCE_PASS";
   await fs.writeFile(path.join(output, "acceptance.json"), JSON.stringify({ formatVersion: 1, status,
     publicRegistryVerified: Boolean(registryMode), selector, protectedProductAcceptance: false, sourceCommit: receipt.sourceCommit,
-    ...(receipt.version === "0.4.0-preview.2" ? { version: receipt.version, platform: `${process.platform}-${process.arch}`, productUpgrade } : {}),
+    ...(receipt.version === "0.4.0-preview.2" ? { version: receipt.version, platform: `${process.platform}-${process.arch}`, productUpgrade, buildReceiptSha256 } : {}),
     distributionId, node: process.versions.node, checks, requests }, null, 2));
   console.log(JSON.stringify({ status, checks: checks.length, output }));
 } finally {

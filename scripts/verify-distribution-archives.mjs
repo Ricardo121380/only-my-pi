@@ -3,6 +3,7 @@ import path from "node:path";
 import { execFile as callback } from "node:child_process";
 import { promisify } from "node:util";
 import { extractVerifiedTarGzip } from "../packages/release-stack/safe-extract.mjs";
+import { hashFile } from "../packages/release-stack/deterministic-archive.mjs";
 
 const execFile = promisify(callback);
 const [build, output] = process.argv.slice(2);
@@ -54,6 +55,7 @@ for (const mode of ["full", "thin"]) {
   if (await fs.readFile(path.join(prefix, "preserve-fixture.txt"), "utf8") !== "do not overwrite\n") throw new Error("unknown file was modified");
 }
 await fs.writeFile(path.join(output, "acceptance.json"), JSON.stringify({ status: "LOCAL_ARCHIVE_ACCEPTANCE_PASS",
+  ...(receipt.version === "0.4.0-preview.2" ? { buildReceiptSha256: await hashFile(path.join(build, "build-receipt.json")) } : {}),
   sourceCommit: receipt.sourceCommit, distributionId, fullInstalledOffline: true,
   thinInstalledFromPinnedNode: true, unknownFilesPreserved: true, identities }, null, 2));
 console.log(JSON.stringify({ status: "LOCAL_ARCHIVE_ACCEPTANCE_PASS", output }));
