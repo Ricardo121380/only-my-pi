@@ -68,6 +68,7 @@ class Tui:
         os.close(slave)
         self.screen = ""
         self.ui_digest = hashlib.sha256()
+        self.closed = False
 
     def rows(self):
         if not self.session:
@@ -132,20 +133,27 @@ class Tui:
         self.wait(lambda: self.result("request_coding_access", "CODING_ACCESS_GRANTED"), "coding grant")
 
     def stop(self):
+        if self.closed:
+            return self.process.poll() == 0
         graceful = True
-        if self.process.poll() is None:
-            self.send("\x04")
-            try:
-                self.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                graceful = False
-                self.process.send_signal(signal.SIGTERM)
+        try:
+            if self.process.poll() is None:
+                self.send("\x04")
                 try:
-                    self.process.wait(timeout=10)
-                except subprocess.TimeoutExpired:
-                    os.killpg(self.process.pid, signal.SIGKILL)
-                    self.process.wait(timeout=5)
-        os.close(self.master)
+                    # A real terminal continues reading while Pi redraws/exits.
+                    # Waiting without draining a PTY can block its final writes.
+                    self.wait(lambda: self.process.poll() is not None, "normal exit", timeout=5)
+                except TimeoutError:
+                    graceful = False
+                    self.process.send_signal(signal.SIGTERM)
+                    try:
+                        self.wait(lambda: self.process.poll() is not None, "termination cleanup", timeout=10)
+                    except TimeoutError:
+                        self.process.kill()
+                        self.wait(lambda: self.process.poll() is not None, "forced cleanup", timeout=5)
+        finally:
+            os.close(self.master)
+            self.closed = True
         return graceful and self.process.returncode == 0
 
 
@@ -189,7 +197,11 @@ def run(args):
     output = Path(args.output).resolve()
     output.mkdir(parents=True, exist_ok=False)
     workspace = Path(tempfile.mkdtemp(prefix="omp-live-", dir=output.parent))
-    project = workspace / "project"
+    # A project under the operator's real HOME can inherit their .agents/skills
+    # even when the process HOME is isolated. Keep project ancestry separate;
+    # provider configuration remains outside the generic writable /tmp tree.
+    project_workspace = Path(tempfile.mkdtemp(prefix="omp-live-project-", dir="/var/tmp")).resolve()
+    project = project_workspace / "project"
     home = workspace / "home"
     config = home / ".pi/agent"
     project.mkdir()
@@ -317,7 +329,10 @@ def run(args):
             try:
                 (output / "acceptance.json").write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n")
             finally:
-                shutil.rmtree(workspace)
+                try:
+                    shutil.rmtree(workspace)
+                finally:
+                    shutil.rmtree(project_workspace)
             print(json.dumps({"status": receipt["status"], "assertions": list(receipt["assertions"]), "output": str(output)}))
 
 
