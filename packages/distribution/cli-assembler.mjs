@@ -83,9 +83,42 @@ export async function assemblePublicCli({ rootDir, platformDirectories, outputRo
     await fs.writeFile(path.join(cli, "README.md"), `# only-my-pi ${version} Public Preview\n\nmacOS 14+ Apple Silicon and Linux glibc x64/arm64. Requires Node >=22.19.0 and Git; Linux also requires bubblewrap, socat, ripgrep and a system policy permitting the strong sandbox.\n\n支持 macOS 14+ Apple Silicon 与 Linux glibc x64/arm64。需准备 Node >=22.19.0 和 Git；Linux 还需 bubblewrap、socat、ripgrep 及允许强沙箱的系统策略。\n\nConfigure models with \`omp admin pi\`, then run \`omp\` inside your project.\n\n[English](https://github.com/Ricardo121380/only-my-pi) · [中文](https://github.com/Ricardo121380/only-my-pi/blob/main/README.zh-CN.md)\n`);
     const filename = `only-my-pi-${version}.tgz`;
     await createDeterministicTarGzip({ rootDir: cli, outputPath: path.join(outputRoot, filename), rootName: "package" });
-    artifacts.push({ name: "only-my-pi", version, filename, sha256: await hashFile(path.join(outputRoot, filename)) });
+    const cliArtifact = { name: "only-my-pi", version, filename, sha256: await hashFile(path.join(outputRoot, filename)) };
+    artifacts.push(cliArtifact);
+    const archives = [];
+    // Reuse the candidate core/Node bytes, replacing only each provisional CLI
+    // with the one public CLI. Final archives must be reverified before signing.
+    for (const platform of PLATFORMS) {
+      const index = receipts.findIndex((item) => item.platform === platform);
+      const runtimeArtifact = artifacts.find((item) => item.name === platforms[platform].name);
+      for (const mode of ["full", "thin"]) {
+        const original = receipts[index].archives.find((item) => item.mode === mode);
+        const name = `only-my-pi-${version}-${platform}-${mode}.tar.gz`;
+        if (original?.filename !== name || original.distributionId !== platforms[platform].distributionId)
+          throw new Error("platform fallback identity is missing");
+        const stage = path.join(work, `${platform}-${mode}`);
+        await extractVerifiedTarGzip({ archivePath: path.join(platformDirectories[index], name), destination: stage,
+          expectedSha256: original.sha256, maxEntries: 200_000, maxExtractedBytes: 2 * 1024 * 1024 * 1024 });
+        const root = path.join(stage, "only-my-pi");
+        const archiveManifest = JSON.parse(await fs.readFile(path.join(root, "archive-manifest.json"), "utf8"));
+        if (archiveManifest.sourceCommit !== sourceCommit || archiveManifest.version !== version
+          || archiveManifest.platform !== platform || archiveManifest.mode !== mode
+          || archiveManifest.distributionId !== platforms[platform].distributionId
+          || archiveManifest.packages.length !== 2
+          || await hashFile(path.join(root, runtimeArtifact.filename)) !== runtimeArtifact.sha256)
+          throw new Error("fallback core differs from the shared runtime");
+        if (mode === "full" && await hashDistributionTree(root, "node") !== archiveManifest.node.treeDigest)
+          throw new Error("fallback Node content differs");
+        await fs.copyFile(path.join(outputRoot, cliArtifact.filename), path.join(root, cliArtifact.filename));
+        archiveManifest.packages = [runtimeArtifact, cliArtifact];
+        await fs.writeFile(path.join(root, "archive-manifest.json"), `${JSON.stringify(archiveManifest, null, 2)}\n`);
+        await createDeterministicTarGzip({ rootDir: root, outputPath: path.join(outputRoot, name), rootName: "only-my-pi" });
+        archives.push({ platform, mode, filename: name, sha256: await hashFile(path.join(outputRoot, name)), distributionId: platforms[platform].distributionId });
+        await fs.rm(stage, { recursive: true, force: true });
+      }
+    }
     await assertSource();
-    const result = { formatVersion: 1, status: "MULTIPLATFORM_CANDIDATE_NOT_PUBLISHED", version, sourceCommit, platforms, artifacts };
+    const result = { formatVersion: 1, status: "MULTIPLATFORM_CANDIDATE_NOT_PUBLISHED", version, sourceCommit, platforms, artifacts, archives };
     await fs.writeFile(path.join(outputRoot, "build-receipt.json"), `${JSON.stringify(result, null, 2)}\n`);
     return result;
   } finally { await fs.rm(work, { recursive: true, force: true }); }

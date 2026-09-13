@@ -60,3 +60,18 @@ test("Linux requires all declared tools and reports Git separately", async (t) =
   assert.equal(ready.ok, true);
   assert.deepEqual(Object.keys(ready.tools), ["bwrap", "socat", "rg"]);
 });
+
+test("Linux tools alone never count as readiness when namespaces are denied", async (t) => {
+  const root = await fixture(t);
+  for (const name of ["git", "bwrap", "socat", "rg"])
+    await fs.writeFile(path.join(root, name), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+  const result = await inspectSystemDependencies({ platform: "linux", env: { PATH: root },
+    run: async (command, argv) => {
+      if (argv.includes("--unshare-net")) throw new Error("kernel denied network namespace");
+      return { stdout: path.basename(command) === "git" ? "git version 2.45.2\n" : "tool 1.0\n" };
+    } });
+  assert.equal(result.git.ok, true);
+  assert.equal(result.ok, false);
+  assert.equal(result.status, "LINUX_SANDBOX_UNAVAILABLE");
+  assert.equal(result.sandbox.ok, false);
+});

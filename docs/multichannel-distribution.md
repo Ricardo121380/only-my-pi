@@ -4,8 +4,9 @@ Status: phase-one macOS `0.4.0-preview.1` is released and accepted on public
 Homebrew/npm/npx. Phase two Linux/Docker is in implementation and **not released**.
 
 The approved rollout introduces `0.4.0-preview.1` for native macOS arm64
-Homebrew/npm/npx, then `0.4.0-preview.2` for Linux x64/arm64 npm and interactive
-Docker. The existing `0.3.0-preview.1` release and its source-bound evidence remain
+Homebrew/npm/npx, then `0.4.0-preview.2` for Linux x64/arm64 npm. The user approved
+delivering Linux first; interactive Docker remains a separate later delivery
+with the same strict isolation gate. The existing `0.3.0-preview.1` release and its source-bound evidence remain
 historical and immutable. The private source package's legacy stack version is
 not publication authority for the separately versioned native distribution.
 
@@ -37,7 +38,8 @@ not publication authority for the separately versioned native distribution.
 - [x] Legacy entry migration with ownership checks and recoverable backup.
 - [x] Local Homebrew install, formula tests, revision upgrade and uninstall.
 - [x] Final-source macOS candidate revalidation and public Homebrew tap acceptance.
-- [ ] Linux runtime and native x64/arm64 acceptance.
+- [x] Linux locked runtime builder and three-platform CLI assembler.
+- [ ] Final-source Linux x64/arm64 product acceptance and public installation.
 - [ ] Docker filesystem, network and PID isolation acceptance.
 - [x] macOS protected release evidence, signed artifacts and channel publication.
 - [x] macOS public-registry exact/default installation verification and bilingual README promotion.
@@ -133,3 +135,37 @@ the legacy shim and state record, and renames only that shim to a recoverable
 backup in its original directory. It preserves raw `pi`, old stacks and user
 data. A prepared or incomplete migration receipt requires inspection before
 another attempt; unknown command files are not replaced.
+
+
+## Linux candidate construction
+
+`Phase two platform candidates` builds each runtime on its native platform,
+using Ubuntu 22.04 for Linux. Both architectures passed the environment probe;
+Ubuntu 24.04 default policy failed network-namespace setup and is not represented
+as accepted. The runtime prerequisite check now tests actual bwrap namespace
+creation as well as tool presence, failing closed when unavailable.
+
+Linux uses the existing exact external lock and Pi shrinkwrap, with scripts
+disabled. Native clipboard dependencies are acquired from their locked registry
+artifacts and recorded in a fresh ledger. Linux tool archives and Node 24.19.0
+are checksum pinned. Reviewed license bindings are projected onto the actual
+platform dependency set; historical macOS registry semantics remain unchanged.
+
+Each platform initially emits a `PLATFORM_CANDIDATE_NOT_PUBLISHABLE` receipt.
+The assembler requires exactly macOS arm64, Linux arm64 and Linux x64 from the
+same clean source and version. It verifies runtime content and emits one CLI
+with all three exact optional dependencies. Full/Thin are then assembled with
+that same public CLI and unchanged core/Node bytes. The combined CLI is tested
+on Node 22.19.0 and 24.19.0 on all three platforms, and final fallbacks are
+retested. These checks do not substitute for protected product acceptance.
+
+```sh
+# Run natively on Linux, using Node 24.19.0, in a clean checkout.
+node scripts/build-distribution.mjs --source-commit COMMIT --version 0.4.0-preview.2 --output /absolute/linux-candidate
+# Every input must have the same source/version; all platforms are mandatory.
+node scripts/assemble-distribution-cli.mjs /absolute/combined /absolute/macos-candidate /absolute/linux-arm64-candidate /absolute/linux-x64-candidate
+```
+
+No phase-two publication is currently authorized by the phase-one publication
+validator. Linux package-name registration and trusted-publisher setup are
+account preparation only; bootstrap versions are not product releases.

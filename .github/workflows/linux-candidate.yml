@@ -108,6 +108,7 @@ jobs:
           name: combined-candidate
           path: |
             ${{ runner.temp }}/combined/*.tgz
+            ${{ runner.temp }}/combined/*.tar.gz
             ${{ runner.temp }}/combined/build-receipt.json
 
   combined-install:
@@ -152,6 +153,9 @@ jobs:
           name: combined-candidate
           path: ${{ runner.temp }}/combined
       - run: node scripts/verify-distribution-install.mjs "$RUNNER_TEMP/combined" "$RUNNER_TEMP/acceptance"
+      - name: Verify final Full/Thin bytes with the shared CLI
+        if: matrix.node == '24.19.0'
+        run: node scripts/verify-distribution-archives.mjs "$RUNNER_TEMP/combined" "$RUNNER_TEMP/archives"
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -160,3 +164,5 @@ jobs:
           path: |
             ${{ runner.temp }}/acceptance/*.json
             ${{ runner.temp }}/acceptance/*.log
+            ${{ runner.temp }}/archives/*.json
+            ${{ runner.temp }}/archives/*.log

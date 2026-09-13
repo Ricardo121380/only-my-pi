@@ -60,6 +60,17 @@ export async function inspectSystemDependencies({ env = process.env, platform = 
         }
       }
       if (!result.ok) Object.assign(result, { status: "SYSTEM_DEPENDENCIES_MISSING", reason: "LINUX_TOOLS_UNAVAILABLE", next: LINUX_GUIDANCE });
+      else {
+        try {
+          await run(result.tools.bwrap.path, ["--unshare-user", "--unshare-pid", "--unshare-net", "--die-with-parent",
+            "--ro-bind", "/", "/", "--dev", "/dev", "--proc", "/proc", "--", "/usr/bin/true"],
+          { env, cwd, timeout: 5000, maxBuffer: 4096 });
+          result.sandbox = { ok: true, status: "STRONG_SANDBOX_READY" };
+        } catch {
+          Object.assign(result, { ok: false, status: "LINUX_SANDBOX_UNAVAILABLE", reason: "LINUX_SANDBOX_UNAVAILABLE",
+            sandbox: { ok: false, status: "STRONG_SANDBOX_BLOCKED" }, next: LINUX_GUIDANCE });
+        }
+      }
     }
     return result;
   } catch { return missing("GIT_UNAVAILABLE"); }

@@ -10,6 +10,8 @@ if (!path.isAbsolute(build ?? "") || !path.isAbsolute(output ?? ""))
   throw new Error("Usage: node scripts/verify-distribution-archives.mjs /absolute/build /fresh/output");
 await fs.mkdir(output);
 const receipt = JSON.parse(await fs.readFile(path.join(build, "build-receipt.json"), "utf8"));
+const platform = `${process.platform}-${process.arch}`;
+const distributionId = receipt.platforms?.[platform]?.distributionId ?? receipt.distributionId;
 const identities = [];
 function offline(executable, args, writable) {
   return process.platform === "darwin"
@@ -18,8 +20,8 @@ function offline(executable, args, writable) {
       "--ro-bind", "/", "/", "--dev", "/dev", "--proc", "/proc", "--bind", writable, writable, "--", executable, ...args]];
 }
 for (const mode of ["full", "thin"]) {
-  const artifact = receipt.archives.find((item) => item.mode === mode);
-  if (!artifact || artifact.distributionId !== receipt.distributionId || path.basename(artifact.filename) !== artifact.filename)
+  const artifact = receipt.archives.find((item) => item.mode === mode && (!item.platform || item.platform === platform));
+  if (!artifact || artifact.distributionId !== distributionId || path.basename(artifact.filename) !== artifact.filename)
     throw new Error("archive identity is missing");
   const extracted = path.join(output, mode);
   await extractVerifiedTarGzip({ archivePath: path.join(build, artifact.filename), destination: extracted,
@@ -37,7 +39,7 @@ for (const mode of ["full", "thin"]) {
   const [verify, verifyArgs] = offline(path.join(prefix, "bin/omp"), ["admin", "version", "--json"], output);
   const { stdout } = await execFile(verify, verifyArgs, { env, cwd: home });
   const identity = JSON.parse(stdout);
-  if (!identity.ok || identity.installation.channel !== "archive" || identity.distributionId !== receipt.distributionId
+  if (!identity.ok || identity.installation.channel !== "archive" || identity.distributionId !== distributionId
     || identity.sourceCommit !== receipt.sourceCommit) throw new Error("installed archive identity differs");
   identities.push(identity);
   await fs.writeFile(path.join(prefix, "preserve-fixture.txt"), "do not overwrite\n");
@@ -52,6 +54,6 @@ for (const mode of ["full", "thin"]) {
   if (await fs.readFile(path.join(prefix, "preserve-fixture.txt"), "utf8") !== "do not overwrite\n") throw new Error("unknown file was modified");
 }
 await fs.writeFile(path.join(output, "acceptance.json"), JSON.stringify({ status: "LOCAL_ARCHIVE_ACCEPTANCE_PASS",
-  sourceCommit: receipt.sourceCommit, distributionId: receipt.distributionId, fullInstalledOffline: true,
+  sourceCommit: receipt.sourceCommit, distributionId, fullInstalledOffline: true,
   thinInstalledFromPinnedNode: true, unknownFilesPreserved: true, identities }, null, 2));
 console.log(JSON.stringify({ status: "LOCAL_ARCHIVE_ACCEPTANCE_PASS", output }));
