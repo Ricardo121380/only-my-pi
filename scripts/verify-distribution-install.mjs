@@ -5,6 +5,7 @@ import crypto from "node:crypto";
 import { execFile as callback } from "node:child_process";
 import { promisify } from "node:util";
 import { hashFile } from "../packages/release-stack/deterministic-archive.mjs";
+import { verifyInstalledMigration } from "./lib/installed-migration-acceptance.mjs";
 
 const execFile = promisify(callback);
 const [build, output, registryMode] = process.argv.slice(2);
@@ -12,6 +13,7 @@ if (!path.isAbsolute(build ?? "") || !path.isAbsolute(output ?? "") || ![undefin
   throw new Error("Usage: node scripts/verify-distribution-install.mjs /absolute/build /fresh/output [--public-exact|--public-default]");
 await fs.mkdir(output, { recursive: false });
 const receipt = JSON.parse(await fs.readFile(path.join(build, "build-receipt.json"), "utf8"));
+const buildReceiptSha256 = await hashFile(path.join(build, "build-receipt.json"));
 const distributionId = receipt.platforms?.[`${process.platform}-${process.arch}`]?.distributionId ?? receipt.distributionId;
 if (!/^sha256:[a-f0-9]{64}$/u.test(distributionId ?? "")) throw new Error("current platform identity is missing");
 const packages = new Map();
@@ -78,12 +80,30 @@ try {
   try { await fs.lstat(omp); throw new Error("uninstall left the command installed"); }
   catch (error) { if (error.code !== "ENOENT") throw error; }
   if (await fs.readFile(saved, "utf8") !== "preserved session fixture\n") throw new Error("uninstall changed user data");
+  const productUpgrade = receipt.version === "0.4.0-preview.2" && process.platform === "darwin";
+  if (productUpgrade) {
+    await run("global-install-previous", process.execPath, [npm, "install", "--global", "--prefix", prefix,
+      "only-my-pi@0.4.0-preview.1", "--registry", "https://registry.npmjs.org"]);
+    const previous = JSON.parse((await execFile(omp, ["admin", "version", "--json"], { cwd: home, env, timeout: 60_000 })).stdout);
+    if (previous.packageVersion !== "0.4.0-preview.1" || previous.sourceCommit !== "38e71adc8c2c52cc332db288f5dcdd14f73bd8cb")
+      throw new Error("previous public npm version differs");
+  }
   await run("global-reinstall", process.execPath, [npm, "install", "--global", "--prefix", prefix, selector]);
   await offline("reinstall-verify-offline", ["--verify-install"]);
+  if (productUpgrade) {
+    const upgraded = JSON.parse(await offline("upgrade-version-offline", ["admin", "version", "--json"]));
+    if (upgraded.sourceCommit !== receipt.sourceCommit || upgraded.distributionId !== distributionId) throw new Error("npm upgrade identity differs");
+  }
   if (await fs.readFile(saved, "utf8") !== "preserved session fixture\n") throw new Error("reinstall changed user data");
+  if (receipt.version === "0.4.0-preview.2") {
+    const migration = await verifyInstalledMigration({ command: omp, home, env, sourceCommit: receipt.sourceCommit, distributionId, buildReceiptSha256 });
+    if (await fs.readFile(saved, "utf8") !== "preserved session fixture\n") throw new Error("migration changed user data");
+    await fs.writeFile(path.join(output, "migration.json"), JSON.stringify(migration, null, 2));
+  }
   const status = registryMode ? "PUBLIC_INSTALL_ACCEPTANCE_PASS" : "LOCAL_INSTALL_ACCEPTANCE_PASS";
   await fs.writeFile(path.join(output, "acceptance.json"), JSON.stringify({ formatVersion: 1, status,
     publicRegistryVerified: Boolean(registryMode), selector, protectedProductAcceptance: false, sourceCommit: receipt.sourceCommit,
+    ...(receipt.version === "0.4.0-preview.2" ? { version: receipt.version, platform: `${process.platform}-${process.arch}`, productUpgrade, buildReceiptSha256 } : {}),
     distributionId, node: process.versions.node, checks, requests }, null, 2));
   console.log(JSON.stringify({ status, checks: checks.length, output }));
 } finally {

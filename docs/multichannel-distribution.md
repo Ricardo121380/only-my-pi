@@ -168,9 +168,11 @@ node scripts/build-distribution.mjs --source-commit COMMIT --version 0.4.0-previ
 node scripts/assemble-distribution-cli.mjs /absolute/combined /absolute/macos-candidate /absolute/linux-arm64-candidate /absolute/linux-x64-candidate
 ```
 
-No phase-two publication is currently authorized by the phase-one publication
-validator. Linux package-name registration and trusted-publisher setup are
-account preparation only; bootstrap versions are not product releases.
+Phase two has a separate strict publication validator; the historical
+phase-one evidence rules retain their original meaning. Linux package-name
+registration and trusted-publisher setup are account preparation only;
+bootstrap versions are not product releases. A phase-two publication requires
+the complete three-platform evidence matrix and the protected approval.
 
 
 ### Linux sandbox fixes found by live acceptance

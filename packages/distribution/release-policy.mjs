@@ -2,6 +2,7 @@ import path from "node:path";
 import { canonicalJson, sha256 } from "../config-runtime/index.mjs";
 import { hashFile } from "../release-stack/deterministic-archive.mjs";
 import { DISTRIBUTION_VERSION, readRegularJson } from "./runtime.mjs";
+import { inspectMultiplatformRelease } from "./multiplatform-release-policy.mjs";
 
 export const NATIVE_RELEASE_ASSERTIONS = Object.freeze([
   "npm-node22-lifecycle", "npm-node24-lifecycle", "homebrew-lifecycle",
@@ -39,6 +40,8 @@ export async function inspectNativeRelease({ candidateDirectory, evidencePath, s
   const receiptFile = path.join(candidateDirectory, "build-receipt.json");
   const receipt = await readRegularJson(receiptFile);
   requireThat(receipt.sourceCommit === sourceCommit, "candidate does not belong to the selected source");
+  if (receipt.version === "0.4.0-preview.2") return inspectMultiplatformRelease({ candidateDirectory, receipt,
+    evidence: await readRegularJson(evidencePath), buildReceiptDigest: await hashFile(receiptFile) });
   const evidence = validateNativeReleaseEvidence(await readRegularJson(evidencePath), receipt, await hashFile(receiptFile));
   const expected = ["only-my-pi-runtime-darwin-arm64", "only-my-pi"];
   requireThat(Array.isArray(receipt.artifacts) && receipt.artifacts.length === 2, "unexpected npm package set");

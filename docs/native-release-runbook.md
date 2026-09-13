@@ -5,7 +5,8 @@ Status: phase-one macOS `0.4.0-preview.1` is published on npm (`latest` and
 npm/npx installation acceptance passed on Node 22.19.0 and 24.19.0. Signed
 publication passed in [run 34746473618](https://github.com/Ricardo121380/only-my-pi/actions/runs/34746473618),
 and real public Homebrew installation passed in [tap run 34746809330](https://github.com/Ricardo121380/homebrew-tap/actions/runs/34746809330).
-Linux/Docker remain phase two; Docker isolation is still blocked. npm/npx and
+Linux `0.4.0-preview.2` remains an unpublished candidate; Docker is deferred
+and its isolation is still blocked. npm/npx and
 archive users preinstall Git, while Homebrew provides Git.
 
 ## Account preparation
@@ -25,6 +26,58 @@ See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/).
 
 No long-lived npm write token is required by either GitHub workflow. Do not
 change or bypass the existing `public-preview` environment reviewers.
+
+## Phase-two completion gate
+
+Use `linux-candidate.yml` on the exact merged source S. It builds the three
+native runtimes, assembles one CLI, generates and signs the macOS Formula, and
+checks final npm/Full/Thin installation on both Node versions. The macOS npm
+and Homebrew checks include an upgrade from public `0.4.0-preview.1`; Linux is
+a new channel with reinstall and legacy-entry migration checks. Homebrew
+mutations run only on a disposable hosted macOS runner.
+
+The protected `linux-live-acceptance.yml` uses the account-authorized environment
+Secret only for x64 Kimi tests. Its receipt must now be
+`NATIVE_LIVE_ACCEPTANCE_PASS`, including cancellation of an observed child
+process and normal-exit cleanup. Earlier `NATIVE_LIVE_SUBSET_PASS` results are
+development evidence, not sufficient release authority. Repeat the complete
+same-source Kimi harness on native ARM Linux and macOS as well; keep credentials
+and raw sessions out of uploaded evidence.
+Pass `--candidate-receipt /absolute/candidate/build-receipt.json` to every full
+Kimi run. Install, migration, archive and live receipts bind this exact hash so
+provisional platform-CLI checks cannot stand in for the final combined CLI.
+
+Download the candidate's install, migration, archive, Linux sandbox and
+Homebrew receipts, plus all three complete Kimi receipts, into a dedicated
+proof directory. Run on the candidate source:
+
+```sh
+node scripts/collect-multiplatform-evidence.mjs /absolute/candidate /absolute/proofs /absolute/new-evidence.json
+```
+
+The collector refuses missing/failed checks, mixed source or runtime identities,
+stale Kimi harnesses, wrong models and changed candidate bytes. Copy only the
+resulting JSON into `verification/protected` in an evidence-only child E of S,
+then merge E with the existing checks. Keep the raw sanitized receipts in the
+release artifact directory; each assertion records its supporting receipt hash.
+
+Dispatch the existing trusted publisher `distribution-publish.yml` with
+`version=0.4.0-preview.2`, S, E, evidence path and the signed candidate run.
+It verifies the source/evidence chain and signatures, then requests the existing
+`public-preview` approval. It publishes the four exact npm archives, verifies
+real public installation on all six platform/Node combinations, then publishes
+the matching GitHub assets. Partial publication journals retain platform
+identities; resume the same bytes, never rebuild or overwrite the version.
+
+Default-tag promotion is still separate and uses the owner's authenticated npm
+session. For `.2`, the second and third arguments to
+`promote-distribution-tags.mjs` are directories for Node 22 and Node 24 public
+receipts, each containing `darwin-arm64.json`, `linux-arm64.json` and
+`linux-x64.json`. The script validates all six exact public results and all four
+package integrities/provenance records before changing `preview`/`latest`.
+The phase-one file-argument interface remains supported. Recheck the real
+default npm/npx entry and the public tap after promotion. Only then update the
+bilingual quick starts. Docker is not included in this release gate.
 
 ## Candidate and protected acceptance
 

@@ -56,7 +56,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          for file in "$RUNNER_TEMP/candidate"/*.tgz "$RUNNER_TEMP/candidate"/*.tar.gz "$RUNNER_TEMP/candidate/build-receipt.json"; do
+          for file in "$RUNNER_TEMP/candidate"/*.tgz "$RUNNER_TEMP/candidate"/*.tar.gz "$RUNNER_TEMP/candidate/build-receipt.json" "$RUNNER_TEMP/candidate/only-my-pi.rb"; do
             gh attestation verify "$file" --repo Ricardo121380/only-my-pi --source-digest "$SOURCE_COMMIT" --signer-digest "$SOURCE_COMMIT" --source-ref refs/heads/main --signer-workflow Ricardo121380/only-my-pi/.github/workflows/linux-candidate.yml --deny-self-hosted-runners
           done
           node scripts/install-live-candidate.mjs "$RUNNER_TEMP/candidate" "$RUNNER_TEMP/live-install" "$SOURCE_COMMIT"
@@ -64,7 +64,7 @@ jobs:
         env:
           OMP_KIMI_TEST_API_KEY: ${{ secrets.OMP_KIMI_TEST_API_KEY }}
         run: |
-          python3 scripts/verify-native-live.py --command "$RUNNER_TEMP/live-install/installed/bin/omp" --source-commit "$SOURCE_COMMIT" --output "$RUNNER_TEMP/live-evidence"
+          python3 scripts/verify-native-live.py --command "$RUNNER_TEMP/live-install/installed/bin/omp" --source-commit "$SOURCE_COMMIT" --candidate-receipt "$RUNNER_TEMP/candidate/build-receipt.json" --output "$RUNNER_TEMP/live-evidence"
       - name: Retain only sanitized acceptance, never credentials or raw sessions
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

@@ -2,8 +2,9 @@ import { DISTRIBUTION_VERSION } from "./runtime.mjs";
 
 /** The tap consumes the already-built npm archives, never rebuilds the core. */
 export function homebrewFormula(receipt, { localAssetDirectory } = {}) {
-  if (receipt?.version !== DISTRIBUTION_VERSION || !/^[a-f0-9]{40}$/u.test(receipt.sourceCommit ?? "")
-    || !/^sha256:[a-f0-9]{64}$/u.test(receipt.distributionId ?? "") || !Array.isArray(receipt.artifacts))
+  const distributionId = receipt?.platforms?.["darwin-arm64"]?.distributionId ?? receipt?.distributionId;
+  if (![DISTRIBUTION_VERSION, "0.4.0-preview.2"].includes(receipt?.version) || !/^[a-f0-9]{40}$/u.test(receipt.sourceCommit ?? "")
+    || !/^sha256:[a-f0-9]{64}$/u.test(distributionId ?? "") || !Array.isArray(receipt.artifacts))
     throw new Error("Homebrew requires an identified macOS Preview build");
   const select = (name) => {
     const artifact = receipt.artifacts.find((entry) => entry.name === name);
@@ -19,7 +20,7 @@ export function homebrewFormula(receipt, { localAssetDirectory } = {}) {
       throw new Error("local Homebrew fixture directory must be an absolute simple path");
     base = `file://${localAssetDirectory}`;
   }
-  return `# Generated from ${receipt.sourceCommit}; core identity ${receipt.distributionId}
+  return `# Generated from ${receipt.sourceCommit}; core identity ${distributionId}
 class OnlyMyPi < Formula
   desc "Guarded terminal coding agent built on Pi (Public Preview)"
   homepage "https://github.com/Ricardo121380/only-my-pi"

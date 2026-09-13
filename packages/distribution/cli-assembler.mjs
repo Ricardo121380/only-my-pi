@@ -6,6 +6,7 @@ import { promisify } from "node:util";
 import { createDeterministicTarGzip, hashFile } from "../release-stack/deterministic-archive.mjs";
 import { extractVerifiedTarGzip } from "../release-stack/safe-extract.mjs";
 import { validateDistributionManifest, hashDistributionTree } from "./runtime.mjs";
+import { homebrewFormula } from "./homebrew.mjs";
 
 const PLATFORMS = ["darwin-arm64", "linux-arm64", "linux-x64"];
 const execFile = promisify(callback);
@@ -119,6 +120,8 @@ export async function assemblePublicCli({ rootDir, platformDirectories, outputRo
     }
     await assertSource();
     const result = { formatVersion: 1, status: "MULTIPLATFORM_CANDIDATE_NOT_PUBLISHED", version, sourceCommit, platforms, artifacts, archives };
+    await fs.writeFile(path.join(outputRoot, "only-my-pi.rb"), homebrewFormula(result));
+    result.homebrew = { filename: "only-my-pi.rb", sha256: await hashFile(path.join(outputRoot, "only-my-pi.rb")) };
     await fs.writeFile(path.join(outputRoot, "build-receipt.json"), `${JSON.stringify(result, null, 2)}\n`);
     return result;
   } finally { await fs.rm(work, { recursive: true, force: true }); }

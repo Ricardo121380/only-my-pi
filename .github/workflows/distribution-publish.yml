@@ -3,6 +3,14 @@ name: Protected native Preview publication
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: Accepted product version
+        required: true
+        type: choice
+        default: 0.4.0-preview.1
+        options:
+          - 0.4.0-preview.1
+          - 0.4.0-preview.2
       source_commit:
         description: Exact source S of the accepted native candidate
         required: true
@@ -33,17 +41,39 @@ env:
   SOURCE_COMMIT: ${{ inputs.source_commit }}
   EVIDENCE_COMMIT: ${{ inputs.evidence_commit }}
   EVIDENCE_PATH: ${{ inputs.evidence_path }}
+  RELEASE_VERSION: ${{ inputs.version }}
   CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
 
 jobs:
   verify:
     name: Verify source, candidate attestations and protected evidence
     runs-on: ubuntu-latest
+    outputs:
+      artifact_name: ${{ steps.route.outputs.artifact_name }}
+      candidate_subdir: ${{ steps.route.outputs.candidate_subdir }}
+      candidate_workflow: ${{ steps.route.outputs.candidate_workflow }}
     permissions:
       contents: read
       actions: read
       attestations: read
     steps:
+      - name: Select the version-specific candidate route
+        id: route
+        run: |
+          set -eu
+          case "$RELEASE_VERSION" in
+            0.4.0-preview.1)
+              echo "artifact_name=native-candidate-$SOURCE_COMMIT" >> "$GITHUB_OUTPUT"
+              echo 'candidate_subdir=native-candidate' >> "$GITHUB_OUTPUT"
+              workflow=.github/workflows/distribution-candidate.yml ;;
+            0.4.0-preview.2)
+              echo 'artifact_name=combined-candidate' >> "$GITHUB_OUTPUT"
+              echo 'candidate_subdir=.' >> "$GITHUB_OUTPUT"
+              workflow=.github/workflows/linux-candidate.yml ;;
+            *) exit 1 ;;
+          esac
+          echo "candidate_workflow=$workflow" >> "$GITHUB_OUTPUT"
+          echo "CANDIDATE_WORKFLOW=$workflow" >> "$GITHUB_ENV"
       - name: Validate input grammar before use
         run: |
           set -eu
@@ -69,7 +99,7 @@ jobs:
           test "$(git diff --name-only "$SOURCE_COMMIT" "$EVIDENCE_COMMIT")" = "$EVIDENCE_PATH"
           git show "$EVIDENCE_COMMIT:$EVIDENCE_PATH" > "$RUNNER_TEMP/native-protected-evidence.json"
           gh api "repos/$GH_REPO/actions/runs/$CANDIDATE_RUN_ID" > "$RUNNER_TEMP/candidate-run.json"
-          jq -e --arg source "$SOURCE_COMMIT" '.head_sha == $source and .head_branch == "main" and .conclusion == "success" and .path == ".github/workflows/distribution-candidate.yml" and .event == "workflow_dispatch"' "$RUNNER_TEMP/candidate-run.json"
+          jq -e --arg source "$SOURCE_COMMIT" --arg workflow "$CANDIDATE_WORKFLOW" '.head_sha == $source and .head_branch == "main" and .conclusion == "success" and .path == $workflow and .event == "workflow_dispatch"' "$RUNNER_TEMP/candidate-run.json"
           git checkout --detach "$SOURCE_COMMIT"
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -80,7 +110,7 @@ jobs:
 
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: native-candidate-${{ inputs.source_commit }}
+          name: ${{ steps.route.outputs.artifact_name }}
           run-id: ${{ inputs.candidate_run_id }}
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/accepted
@@ -88,10 +118,11 @@ jobs:
       - name: Verify every signed candidate artifact without rebuilding
         run: |
           set -eu
-          CANDIDATE="$RUNNER_TEMP/accepted/native-candidate"
+          CANDIDATE="$RUNNER_TEMP/accepted/${{ steps.route.outputs.candidate_subdir }}"
           for asset in "$CANDIDATE"/*.tgz "$CANDIDATE"/*.tar.gz "$CANDIDATE/build-receipt.json" "$CANDIDATE/only-my-pi.rb"; do
-            gh attestation verify "$asset" --repo "$GH_REPO" --source-digest "$SOURCE_COMMIT" --signer-digest "$SOURCE_COMMIT" --source-ref refs/heads/main --signer-workflow "$GH_REPO/.github/workflows/distribution-candidate.yml" --deny-self-hosted-runners
+            gh attestation verify "$asset" --repo "$GH_REPO" --source-digest "$SOURCE_COMMIT" --signer-digest "$SOURCE_COMMIT" --source-ref refs/heads/main --signer-workflow "$GH_REPO/$CANDIDATE_WORKFLOW" --deny-self-hosted-runners
           done
+          node --input-type=module -e 'import fs from "node:fs"; if (JSON.parse(fs.readFileSync(process.argv[1])).version !== process.env.RELEASE_VERSION) throw new Error("candidate version mismatch");' "$CANDIDATE/build-receipt.json"
           node scripts/publish-distribution.mjs "$CANDIDATE" "$RUNNER_TEMP/native-protected-evidence.json" "$SOURCE_COMMIT"
 
   publish:
@@ -135,7 +166,7 @@ jobs:
 
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: native-candidate-${{ inputs.source_commit }}
+          name: ${{ needs.verify.outputs.artifact_name }}
           run-id: ${{ inputs.candidate_run_id }}
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/accepted
@@ -143,26 +174,29 @@ jobs:
       - name: Recheck downloaded candidate attestations before mutation
         run: |
           set -eu
-          CANDIDATE="$RUNNER_TEMP/accepted/native-candidate"
+          CANDIDATE="$RUNNER_TEMP/accepted/${{ needs.verify.outputs.candidate_subdir }}"
           for asset in "$CANDIDATE"/*.tgz "$CANDIDATE"/*.tar.gz "$CANDIDATE/build-receipt.json" "$CANDIDATE/only-my-pi.rb"; do
-            gh attestation verify "$asset" --repo "$GH_REPO" --source-digest "$SOURCE_COMMIT" --signer-digest "$SOURCE_COMMIT" --source-ref refs/heads/main --signer-workflow "$GH_REPO/.github/workflows/distribution-candidate.yml" --deny-self-hosted-runners
+            gh attestation verify "$asset" --repo "$GH_REPO" --source-digest "$SOURCE_COMMIT" --signer-digest "$SOURCE_COMMIT" --source-ref refs/heads/main --signer-workflow "$GH_REPO/${{ needs.verify.outputs.candidate_workflow }}" --deny-self-hosted-runners
           done
 
       - name: Publish or verify already-published immutable npm versions
-        run: node scripts/publish-distribution.mjs "$RUNNER_TEMP/accepted/native-candidate" "$RUNNER_TEMP/native-protected-evidence.json" "$SOURCE_COMMIT" --publish
+        run: node scripts/publish-distribution.mjs "$RUNNER_TEMP/accepted/${{ needs.verify.outputs.candidate_subdir }}" "$RUNNER_TEMP/native-protected-evidence.json" "$SOURCE_COMMIT" --publish
 
       - name: Verify the exact public npm version on Node 24
-        run: node scripts/verify-distribution-install.mjs "$RUNNER_TEMP/accepted/native-candidate" "$RUNNER_TEMP/public-node24" --public-exact
+        if: inputs.version == '0.4.0-preview.1'
+        run: node scripts/verify-distribution-install.mjs "$RUNNER_TEMP/accepted/${{ needs.verify.outputs.candidate_subdir }}" "$RUNNER_TEMP/public-node24" --public-exact
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22.19.0"
 
       - name: Verify the exact public npm version on Node 22
-        run: node scripts/verify-distribution-install.mjs "$RUNNER_TEMP/accepted/native-candidate" "$RUNNER_TEMP/public-node22" --public-exact
+        if: inputs.version == '0.4.0-preview.1'
+        run: node scripts/verify-distribution-install.mjs "$RUNNER_TEMP/accepted/${{ needs.verify.outputs.candidate_subdir }}" "$RUNNER_TEMP/public-node22" --public-exact
 
       - name: Publish or recover the verified GitHub Preview release without rebuilding
-        run: node scripts/publish-distribution-release.mjs "$RUNNER_TEMP/accepted/native-candidate" "$RUNNER_TEMP/native-protected-evidence.json" "$SOURCE_COMMIT" --publish
+        if: inputs.version == '0.4.0-preview.1'
+        run: node scripts/publish-distribution-release.mjs "$RUNNER_TEMP/accepted/${{ needs.verify.outputs.candidate_subdir }}" "$RUNNER_TEMP/native-protected-evidence.json" "$SOURCE_COMMIT" --publish
 
       - name: Retain publication progress even after partial failure
         if: always()
@@ -171,7 +205,102 @@ jobs:
           name: native-publication-${{ inputs.source_commit }}
           if-no-files-found: warn
           path: |
-            ${{ runner.temp }}/accepted/native-candidate/npm-publication.json
-            ${{ runner.temp }}/accepted/native-candidate/github-publication.json
+            ${{ runner.temp }}/accepted/${{ needs.verify.outputs.candidate_subdir }}/npm-publication.json
+            ${{ runner.temp }}/accepted/${{ needs.verify.outputs.candidate_subdir }}/github-publication.json
             ${{ runner.temp }}/public-node24/acceptance.json
             ${{ runner.temp }}/public-node22/acceptance.json
+
+  public-install:
+    name: Exact public ${{ matrix.platform }} Node ${{ matrix.node }}
+    if: inputs.version == '0.4.0-preview.2'
+    needs: [verify, publish]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: ubuntu-22.04, platform: linux-x64, node: '22.19.0' }
+          - { runner: ubuntu-22.04, platform: linux-x64, node: '24.19.0' }
+          - { runner: ubuntu-22.04-arm, platform: linux-arm64, node: '22.19.0' }
+          - { runner: ubuntu-22.04-arm, platform: linux-arm64, node: '24.19.0' }
+          - { runner: macos-14, platform: darwin-arm64, node: '22.19.0' }
+          - { runner: macos-14, platform: darwin-arm64, node: '24.19.0' }
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+      attestations: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ inputs.source_commit }}
+          persist-credentials: false
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y bubblewrap socat ripgrep git
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+        with:
+          name: combined-candidate
+          run-id: ${{ inputs.candidate_run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/candidate
+      - name: Verify the signed candidate before public installation
+        run: |
+          for file in "$RUNNER_TEMP/candidate"/*.tgz "$RUNNER_TEMP/candidate"/*.tar.gz "$RUNNER_TEMP/candidate/build-receipt.json" "$RUNNER_TEMP/candidate/only-my-pi.rb"; do
+            gh attestation verify "$file" --repo "$GH_REPO" --source-digest "$SOURCE_COMMIT" --signer-digest "$SOURCE_COMMIT" --source-ref refs/heads/main --signer-workflow "$GH_REPO/.github/workflows/linux-candidate.yml" --deny-self-hosted-runners
+          done
+          node scripts/verify-distribution-install.mjs "$RUNNER_TEMP/candidate" "$RUNNER_TEMP/public-install" --public-exact
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: public-exact-${{ matrix.platform }}-${{ matrix.node }}
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/public-install/acceptance.json
+            ${{ runner.temp }}/public-install/migration.json
+
+  multiplatform-release:
+    name: Publish verified multi-platform GitHub assets
+    if: inputs.version == '0.4.0-preview.2'
+    needs: [verify, publish, public-install]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    environment: public-preview
+    permissions:
+      contents: write
+      actions: read
+      attestations: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ inputs.evidence_commit }}
+          fetch-depth: 0
+          persist-credentials: false
+      - run: |
+          git show "$EVIDENCE_COMMIT:$EVIDENCE_PATH" > "$RUNNER_TEMP/evidence.json"
+          git checkout --detach "$SOURCE_COMMIT"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.19.0'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+        with:
+          name: combined-candidate
+          run-id: ${{ inputs.candidate_run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/candidate
+      - name: Verify and publish the accepted bytes without rebuilding
+        run: |
+          for file in "$RUNNER_TEMP/candidate"/*.tgz "$RUNNER_TEMP/candidate"/*.tar.gz "$RUNNER_TEMP/candidate/build-receipt.json" "$RUNNER_TEMP/candidate/only-my-pi.rb"; do
+            gh attestation verify "$file" --repo "$GH_REPO" --source-digest "$SOURCE_COMMIT" --signer-digest "$SOURCE_COMMIT" --source-ref refs/heads/main --signer-workflow "$GH_REPO/.github/workflows/linux-candidate.yml" --deny-self-hosted-runners
+          done
+          node scripts/publish-distribution-release.mjs "$RUNNER_TEMP/candidate" "$RUNNER_TEMP/evidence.json" "$SOURCE_COMMIT" --publish
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: multiplatform-github-publication
+          if-no-files-found: warn
+          path: ${{ runner.temp }}/candidate/github-publication.json

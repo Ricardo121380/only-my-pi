@@ -5,15 +5,23 @@ import { execFile as callback } from "node:child_process";
 import { promisify } from "node:util";
 import { hashFile } from "../packages/release-stack/deterministic-archive.mjs";
 import { awaitPublishedTag } from "./lib/npm-publication.mjs";
+import { RELEASE_PLATFORMS } from "../packages/distribution/multiplatform-release-policy.mjs";
+import { validatePublicPlatformAcceptance } from "../packages/distribution/public-acceptance.mjs";
 
 const execFile = promisify(callback);
 const [candidate, node22Receipt, node24Receipt, mode] = process.argv.slice(2);
 if (![candidate, node22Receipt, node24Receipt].every((item) => path.isAbsolute(item ?? "")) || ![undefined, "--apply"].includes(mode))
   throw new Error("Usage: node scripts/promote-distribution-tags.mjs /candidate /public-node22.json /public-node24.json [--apply]");
 const receipt = JSON.parse(await fs.readFile(path.join(candidate, "build-receipt.json"), "utf8"));
-if (receipt.version !== "0.4.0-preview.1" || !/^[a-f0-9]{40}$/u.test(receipt.sourceCommit ?? "")
-  || !/^sha256:[a-f0-9]{64}$/u.test(receipt.distributionId ?? "")) throw new Error("unexpected promotion identity");
+const buildReceiptDigest = await hashFile(path.join(candidate, "build-receipt.json"));
+if (!["0.4.0-preview.1", "0.4.0-preview.2"].includes(receipt.version) || !/^[a-f0-9]{40}$/u.test(receipt.sourceCommit ?? "")
+  || (receipt.version === "0.4.0-preview.1" && !/^sha256:[a-f0-9]{64}$/u.test(receipt.distributionId ?? ""))) throw new Error("unexpected promotion identity");
 for (const [filename, node] of [[node22Receipt, "22.19.0"], [node24Receipt, "24.19.0"]]) {
+  if (receipt.version === "0.4.0-preview.2") {
+    for (const platform of RELEASE_PLATFORMS)
+      validatePublicPlatformAcceptance(JSON.parse(await fs.readFile(path.join(filename, `${platform}.json`), "utf8")), receipt, node, platform, buildReceiptDigest);
+    continue;
+  }
   const acceptance = JSON.parse(await fs.readFile(filename, "utf8"));
   if (acceptance.status !== "PUBLIC_INSTALL_ACCEPTANCE_PASS" || acceptance.publicRegistryVerified !== true
     || acceptance.node !== node || acceptance.selector !== `only-my-pi@${receipt.version}`
@@ -28,8 +36,13 @@ const fetchPackage = async (name) => {
   return response.json();
 };
 const journal = { formatVersion: 1, version: receipt.version, sourceCommit: receipt.sourceCommit,
-  distributionId: receipt.distributionId, status: "TAG_PROMOTION_PLAN", packages: [], completed: [] };
-for (const name of ["only-my-pi-runtime-darwin-arm64", "only-my-pi"]) {
+  distributionId: receipt.distributionId, platforms: receipt.platforms, status: "TAG_PROMOTION_PLAN", packages: [], completed: [] };
+const packageOrder = receipt.version === "0.4.0-preview.2"
+  ? [...RELEASE_PLATFORMS.map((platform) => `only-my-pi-runtime-${platform}`), "only-my-pi"]
+  : ["only-my-pi-runtime-darwin-arm64", "only-my-pi"];
+if (receipt.artifacts?.length !== packageOrder.length || new Set(receipt.artifacts.map((item) => item.name)).size !== packageOrder.length)
+  throw new Error("unexpected promotion package set");
+for (const name of packageOrder) {
   const item = receipt.artifacts.find((entry) => entry.name === name);
   if (item?.filename !== `${name}-${receipt.version}.tgz` || await hashFile(path.join(candidate, item.filename)) !== item.sha256)
     throw new Error("local candidate bytes differ");

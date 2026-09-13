@@ -18,7 +18,7 @@ const repo = "Ricardo121380/only-my-pi";
 const tag = `v${receipt.version}`;
 const gh = (args) => execFile("gh", args, { encoding: "utf8", timeout: 120_000, maxBuffer: 4 * 1024 * 1024 });
 const staging = await fs.mkdtemp(path.join(os.tmpdir(), "omp-release-"));
-const journal = { formatVersion: 1, version: receipt.version, sourceCommit, distributionId: receipt.distributionId,
+const journal = { formatVersion: 1, version: receipt.version, sourceCommit, distributionId: receipt.distributionId, platforms: receipt.platforms,
   status: "PREPARING_GITHUB_RELEASE", completedAssets: [] };
 const save = () => fs.writeFile(path.join(candidateDirectory, "github-publication.json"), `${JSON.stringify(journal, null, 2)}\n`);
 try {
@@ -34,7 +34,7 @@ try {
   release = await inspect();
   if (!release) {
     const notes = path.join(staging, "notes.md");
-    await fs.writeFile(notes, `OMP ${receipt.version} Public Preview for macOS 14+ Apple Silicon.\n\nSource: ${sourceCommit}\n\nThe npm/Homebrew core and Full/Thin fallbacks share distribution identity \`${receipt.distributionId}\`. Linux and Docker are not part of this phase-one release.\n`);
+    await fs.writeFile(notes, receipt.platforms ? `OMP ${receipt.version} Public Preview for macOS 14+ Apple Silicon and Linux glibc x64/arm64.\n\nSource: ${sourceCommit}\n\nEach platform shares its core identity across npm and Full/Thin; macOS also supports Homebrew. Linux requires Git, bubblewrap, socat, ripgrep and a working strong sandbox, and uses ordinary Git clones. Docker remains deferred.\n` : `OMP ${receipt.version} Public Preview for macOS 14+ Apple Silicon.\n\nSource: ${sourceCommit}\n\nThe npm/Homebrew core and Full/Thin fallbacks share distribution identity \`${receipt.distributionId}\`. Linux and Docker are not part of this phase-one release.\n`);
     await gh(["release", "create", tag, "--repo", repo, "--target", sourceCommit, "--draft", "--prerelease",
       "--title", `OMP ${receipt.version} (Preview)`, "--notes-file", notes]);
     release = await inspect();
