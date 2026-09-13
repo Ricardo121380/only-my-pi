@@ -115,7 +115,16 @@ jobs:
       - name: Select the previously verified source and evidence
         run: |
           git show "$EVIDENCE_COMMIT:$EVIDENCE_PATH" > "$RUNNER_TEMP/native-protected-evidence.json"
+          git show "$GITHUB_SHA:scripts/publish-distribution.mjs" > "$RUNNER_TEMP/publish-distribution.mjs"
+          git show "$GITHUB_SHA:scripts/lib/npm-publication.mjs" > "$RUNNER_TEMP/npm-publication.mjs"
+          git show "$GITHUB_SHA:scripts/publish-distribution-release.mjs" > "$RUNNER_TEMP/publish-distribution-release.mjs"
+          git show "$GITHUB_SHA:scripts/lib/github-release.mjs" > "$RUNNER_TEMP/github-release.mjs"
           git checkout --detach "$SOURCE_COMMIT"
+          # Publication tooling may improve independently; accepted artifacts are never rebuilt.
+          cp "$RUNNER_TEMP/publish-distribution.mjs" scripts/publish-distribution.mjs
+          cp "$RUNNER_TEMP/npm-publication.mjs" scripts/lib/npm-publication.mjs
+          cp "$RUNNER_TEMP/publish-distribution-release.mjs" scripts/publish-distribution-release.mjs
+          cp "$RUNNER_TEMP/github-release.mjs" scripts/lib/github-release.mjs
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
