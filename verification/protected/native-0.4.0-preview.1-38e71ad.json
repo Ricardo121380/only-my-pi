@@ -1,0 +1,88 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-native-protected-evidence",
+  "status": "PASS",
+  "version": "0.4.0-preview.1",
+  "sourceCommit": "38e71adc8c2c52cc332db288f5dcdd14f73bd8cb",
+  "distributionId": "sha256:a7af13f85bafadd22f591f88071078ffba8268c2ddee786f35bc000b10a4b75a",
+  "platform": "darwin-arm64",
+  "buildReceiptSha256": "sha256:b8a465e83bbc22d6bf71ada90ba20879e72aa81529617018b37e0e8bcec770e7",
+  "assertions": [
+    {
+      "id": "npm-node22-lifecycle",
+      "status": "PASS",
+      "evidenceSha256": "sha256:cdc551bc26f0ab59e575e330fe94db145200048ac690bfc41e842cbca0ff5c9d"
+    },
+    {
+      "id": "npm-node24-lifecycle",
+      "status": "PASS",
+      "evidenceSha256": "sha256:882929f8991dc1fdc2fd237fd34808eaaffcec742caf9121300de10d94195563"
+    },
+    {
+      "id": "homebrew-lifecycle",
+      "status": "PASS",
+      "evidenceSha256": "sha256:3e709d96aeecb3146c10e496fa21c35f5d62133aa2ee58aa4a6979d74c1803dd"
+    },
+    {
+      "id": "full-thin-identity",
+      "status": "PASS",
+      "evidenceSha256": "sha256:c278e109322d15bd8ce4bdb39296f233e2360d7ef0e9245669bb1839de22d615"
+    },
+    {
+      "id": "dependency-complete-startup",
+      "status": "PASS",
+      "evidenceSha256": "sha256:78a5f3f15c50ace1e3ec18f59bb28dc2d410d53c393ab109bf2a22a01f6f6ee9"
+    },
+    {
+      "id": "models-and-inspect",
+      "status": "PASS",
+      "evidenceSha256": "sha256:1ab35a95e7680ea173899a52f34b3b4dc2f51441327b6433189b472a3a84910a"
+    },
+    {
+      "id": "coding-approval",
+      "status": "PASS",
+      "evidenceSha256": "sha256:9b85c6bdcb18aa26f8272eeab1999dfaec8f1c456fd8281e129023f37f1069cc"
+    },
+    {
+      "id": "resume-reapproval",
+      "status": "PASS",
+      "evidenceSha256": "sha256:ad0881df3b8d5415c5c7f0687c7f8439120ae0ab30f52915b6ae4fd560c270f7"
+    },
+    {
+      "id": "readonly-headless",
+      "status": "PASS",
+      "evidenceSha256": "sha256:15d9f43355cc845893cd3381c6e44cfc955799ecf292590168a8eb55548da076"
+    },
+    {
+      "id": "readonly-subagents",
+      "status": "PASS",
+      "evidenceSha256": "sha256:b8827037b8838db5d1b19e92bdc753ad8af9fdfe2fb91bba863e9bad2c96ffca"
+    },
+    {
+      "id": "managed-clone-writer",
+      "status": "PASS",
+      "evidenceSha256": "sha256:59e80bd25cc6d80c135de2a97b14e56120c89a662449d763a4f7adbc5c39a5d2"
+    },
+    {
+      "id": "project-gates-and-review",
+      "status": "PASS",
+      "evidenceSha256": "sha256:8cf27a83b36b2aea6d4aba7f66ab75c9ece9a2cf0ee4204b4556ff8446ffa778"
+    },
+    {
+      "id": "cancel-and-cleanup",
+      "status": "PASS",
+      "evidenceSha256": "sha256:a8834afc5981857e8a3b657085c9ff212854c2a90559b5884e737fbeec3a765b"
+    },
+    {
+      "id": "legacy-migration",
+      "status": "PASS",
+      "evidenceSha256": "sha256:87e10059abe1c47b3e3bed4242790068ddf4545790edb9b06a9da358ec6f141b"
+    },
+    {
+      "id": "path-shadow-detection",
+      "status": "PASS",
+      "evidenceSha256": "sha256:3c56c3e9633aa3ed60136e123dc9b45022f457939367746e933a2b1308a5fac5"
+    }
+  ],
+  "evidenceDigest": "sha256:70f5b88aaed6c645c9c6aa68f4acf9dd1c9f9b734fe3036a74576ae2101435aa"
+}
