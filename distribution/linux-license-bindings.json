@@ -5,5 +5,13 @@
     "@mariozechner/clipboard-linux-x64-musl@0.3.9": "mario-zechner-mit",
     "@mariozechner/clipboard-linux-arm64-gnu@0.3.9": "mario-zechner-mit",
     "@mariozechner/clipboard-linux-arm64-musl@0.3.9": "mario-zechner-mit"
-  }
+  },
+  "selections": [
+    {
+      "identity": "node-forge@1.4.0",
+      "declared": "(BSD-3-Clause OR GPL-2.0)",
+      "selected": "BSD-3-Clause",
+      "source": "https://github.com/digitalbazaar/forge/blob/v1.4.0/LICENSE"
+    }
+  ]
 }

@@ -44,7 +44,18 @@ export async function stageLinuxDependencies({ rootDir, work, sourceCommit, npmC
   process.stderr.write("Verifying locked transitive artifact identities and licenses\n");
   const artifacts = await acquireInstalledArtifacts({ roots, outputRoot: path.join(work, "verified-artifacts"),
     duplicateExceptions: exceptions.exceptions });
-  const common = { ...artifacts, sourceCommit };
+  const linuxLicenses = JSON.parse(await fs.readFile(path.join(rootDir, "distribution/linux-license-bindings.json"), "utf8"));
+  const licenseOverrides = {};
+  for (const selection of linuxLicenses.selections ?? []) {
+    const artifactRoot = artifacts.artifactTreeRoots.get(selection.identity);
+    if (!artifactRoot) throw new Error(`license selection artifact is missing: ${selection.identity}`);
+    const metadata = JSON.parse(await fs.readFile(path.join(artifactRoot, "package.json"), "utf8"));
+    if (metadata.license !== selection.declared
+      || !selection.declared.replace(/[()]/gu, "").split(" OR ").includes(selection.selected))
+      throw new Error(`reviewed license choice differs: ${selection.identity}`);
+    licenseOverrides[selection.identity] = selection.selected;
+  }
+  const common = { ...artifacts, sourceCommit, licenseOverrides };
   const ledgers = await Promise.all(roots.map((root, index) => buildArtifactLedger({ ...common, ...root,
     topLevelNames: index === 0 ? PUBLIC_STACK_PACKAGES.map((item) => item.name) : [PI_NAME] })));
   const ledger = mergeLedgers(sourceCommit, ledgers);
@@ -56,14 +67,14 @@ export async function stageLinuxDependencies({ rootDir, work, sourceCommit, npmC
     maxEntries: 100_000, maxExtractedBytes: 1024 * 1024 * 1024 });
   await fs.rename(path.join(extracted, lock.node.archiveName.replace(/\.tar\.gz$/u, "")), path.join(seed, "node"));
   const licenseRegistry = await loadLicenseRegistry(rootDir);
-  const linuxLicenses = JSON.parse(await fs.readFile(path.join(rootDir, "distribution/linux-license-bindings.json"), "utf8"));
   // The historical registry is unchanged. Project its reviewed bindings onto
   // this platform's actual artifact set and add the pinned Linux counterparts.
   const bindings = { ...licenseRegistry.registry.bindings, ...linuxLicenses.bindings };
   licenseRegistry.registry = { ...licenseRegistry.registry, bindings: Object.fromEntries(
     Object.entries(bindings).filter(([identity]) => artifacts.artifactTreeRoots.has(identity))) };
   await collectLicenses({ resolved: seed, artifacts, output: path.join(seed, "LICENSES"), licenseRegistry });
-  await fs.writeFile(path.join(seed, "LICENSES/SOURCE_REGISTRY.json"), `${JSON.stringify(licenseRegistry.registry, null, 2)}\n`);
+  await fs.writeFile(path.join(seed, "LICENSES/SOURCE_REGISTRY.json"), `${JSON.stringify({ ...licenseRegistry.registry,
+    licenseSelections: linuxLicenses.selections ?? [] }, null, 2)}\n`);
   await fs.writeFile(path.join(seed, "transitive-artifact-ledger.json"), `${JSON.stringify(ledger, null, 2)}\n`);
   return { seed, seedManifest: { runtime: { node: { ...lock.node, treeDigest: await hashDistributionTree(seed, "node") } } },
     dependencySeed: { sourceCommit, ledgerDigest: ledger.ledgerDigest } };

@@ -12,9 +12,12 @@ function packageRecord(name, version, license, downloadLocation = "NOASSERTION")
 
 export async function createDistributionSbom({ runtimeRoot, manifest, dependencyLedger, runtimePatches = [] }) {
   const ledger = validateArtifactLedger(dependencyLedger);
+  const registry = await readRegularJson(path.join(runtimeRoot, "LICENSES/SOURCE_REGISTRY.json"), { optional: true });
+  const declarations = new Map((registry?.licenseSelections ?? []).map((item) => [item.identity, item.declared]));
   const packages = new Map();
   for (const entry of ledger.artifacts) {
     const item = packageRecord(entry.name, entry.version, entry.license, entry.tarballUrl);
+    item.licenseDeclared = declarations.get(`${entry.name}@${entry.version}`) ?? entry.license;
     item.checksums = [{ algorithm: "SHA256", checksumValue: entry.sha256.slice(7) },
       { algorithm: "SHA512", checksumValue: Buffer.from(entry.integrity.slice(7), "base64").toString("hex") }];
     item.comment = `Verified dependency seed content; treeDigest=${entry.treeDigest}; lifecycleScriptsExecuted=false`;

@@ -1,0 +1,74 @@
+name: Protected Linux x64 Kimi acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Exact main-branch source of the signed candidate
+        required: true
+        type: string
+      candidate_run_id:
+        description: Successful phase-two candidate workflow run
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  attestations: read
+
+jobs:
+  live:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    environment: public-preview
+    env:
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+      CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+    steps:
+      - name: Admit only a successful signed candidate from main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          test "$GITHUB_REF" = refs/heads/main
+          case "$SOURCE_COMMIT" in (''|*[!a-f0-9]*) exit 1;; esac
+          test "${#SOURCE_COMMIT}" -eq 40
+          case "$CANDIDATE_RUN_ID" in (''|*[!0-9]*) exit 1;; esac
+          gh api "repos/Ricardo121380/only-my-pi/actions/runs/$CANDIDATE_RUN_ID" > "$RUNNER_TEMP/candidate-run.json"
+          jq -e --arg source "$SOURCE_COMMIT" '.head_sha == $source and .head_branch == "main" and .event == "workflow_dispatch" and .path == ".github/workflows/linux-candidate.yml" and .conclusion == "success"' "$RUNNER_TEMP/candidate-run.json"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ inputs.source_commit }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "24.19.0"
+      - run: sudo apt-get update && sudo apt-get install -y bubblewrap socat ripgrep git
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+        with:
+          name: combined-candidate
+          run-id: ${{ inputs.candidate_run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/candidate
+      - name: Verify source attestations before installing any runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for file in "$RUNNER_TEMP/candidate"/*.tgz "$RUNNER_TEMP/candidate"/*.tar.gz "$RUNNER_TEMP/candidate/build-receipt.json"; do
+            gh attestation verify "$file" --repo Ricardo121380/only-my-pi --source-digest "$SOURCE_COMMIT" --signer-digest "$SOURCE_COMMIT" --source-ref refs/heads/main --signer-workflow Ricardo121380/only-my-pi/.github/workflows/linux-candidate.yml --deny-self-hosted-runners
+          done
+          node scripts/install-live-candidate.mjs "$RUNNER_TEMP/candidate" "$RUNNER_TEMP/live-install" "$SOURCE_COMMIT"
+      - name: Real Kimi flows in a synthetic project only
+        env:
+          OMP_KIMI_TEST_API_KEY: ${{ secrets.OMP_KIMI_TEST_API_KEY }}
+        run: |
+          python3 scripts/verify-native-live.py --command "$RUNNER_TEMP/live-install/installed/bin/omp" --source-commit "$SOURCE_COMMIT" --output "$RUNNER_TEMP/live-evidence"
+      - name: Retain only sanitized acceptance, never credentials or raw sessions
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: linux-x64-kimi-acceptance
+          if-no-files-found: warn
+          path: ${{ runner.temp }}/live-evidence/acceptance.json
