@@ -50,7 +50,9 @@ try {
     const [root, parentNet, parentPid, port] = process.argv.slice(1);
     assert.notEqual(fs.readlinkSync('/proc/self/ns/net'), parentNet);
     assert.notEqual(fs.readlinkSync('/proc/self/ns/pid'), parentPid);
-    assert.equal(fs.readFileSync(root + '/secret', 'utf8'), '');
+    try { assert.equal(fs.readFileSync(root + '/secret', 'utf8'), ''); }
+    catch (error) { assert.ok(['EACCES', 'EPERM'].includes(error.code)); }
+    assert.equal(fs.readFileSync(root + '/outside', 'utf8'), 'unchanged');
     assert.throws(() => fs.writeFileSync(root + '/outside', 'forbidden'), {code:'EROFS'});
     fs.writeFileSync('/tmp/omp-allowed/result', 'allowed');
     const socket = net.connect(Number(port), '127.0.0.1');
