@@ -9,6 +9,7 @@ on:
       - packages/release-stack/**
       - distribution/toolchain-*.json
       - scripts/build-distribution.mjs
+      - scripts/assemble-distribution-cli.mjs
       - scripts/verify-distribution-*.mjs
 
 permissions:
@@ -79,3 +80,83 @@ jobs:
             ${{ runner.temp }}/node22/*.log
             ${{ runner.temp }}/archives/*.json
             ${{ runner.temp }}/archives/*.log
+
+  assemble:
+    name: Assemble one CLI for all three platforms
+    needs: candidate
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "24.19.0"
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+        with:
+          pattern: platform-candidate-*
+          path: ${{ runner.temp }}/platforms
+      - name: Verify all platform identities and assemble without rebuilding runtimes
+        run: |
+          node scripts/assemble-distribution-cli.mjs "$RUNNER_TEMP/combined" \
+            "$RUNNER_TEMP/platforms/platform-candidate-darwin-arm64/candidate" \
+            "$RUNNER_TEMP/platforms/platform-candidate-linux-arm64/candidate" \
+            "$RUNNER_TEMP/platforms/platform-candidate-linux-x64/candidate"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: combined-candidate
+          path: |
+            ${{ runner.temp }}/combined/*.tgz
+            ${{ runner.temp }}/combined/build-receipt.json
+
+  combined-install:
+    name: Combined CLI on ${{ matrix.platform }} Node ${{ matrix.node }}
+    needs: assemble
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            platform: linux-x64
+            node: "22.19.0"
+          - runner: ubuntu-22.04
+            platform: linux-x64
+            node: "24.19.0"
+          - runner: ubuntu-22.04-arm
+            platform: linux-arm64
+            node: "22.19.0"
+          - runner: ubuntu-22.04-arm
+            platform: linux-arm64
+            node: "24.19.0"
+          - runner: macos-14
+            platform: darwin-arm64
+            node: "22.19.0"
+          - runner: macos-14
+            platform: darwin-arm64
+            node: "24.19.0"
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y bubblewrap socat ripgrep git
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+        with:
+          name: combined-candidate
+          path: ${{ runner.temp }}/combined
+      - run: node scripts/verify-distribution-install.mjs "$RUNNER_TEMP/combined" "$RUNNER_TEMP/acceptance"
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: combined-install-${{ matrix.platform }}-${{ matrix.node }}
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/acceptance/*.json
+            ${{ runner.temp }}/acceptance/*.log

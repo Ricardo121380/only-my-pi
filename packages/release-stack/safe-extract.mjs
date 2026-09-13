@@ -156,6 +156,7 @@ export async function extractVerifiedTarGzip({
   let entries = 0;
   let totalBytes = 0;
   let pendingPax = {};
+  let pendingGnuPath;
   let zeroBlocks = 0;
   try {
     while (zeroBlocks < 2) {
@@ -163,21 +164,38 @@ export async function extractVerifiedTarGzip({
       if (header.every((byte) => byte === 0)) { zeroBlocks += 1; continue; }
       zeroBlocks = 0;
       checksum(header);
-      const prefix = string(header, 345, 155);
+      // Old GNU headers use this area for timestamps, not the POSIX prefix.
+      const prefix = string(header, 257, 6) === "ustar " ? "" : string(header, 345, 155);
       const headerName = [prefix, string(header, 0, 100)].filter(Boolean).join("/");
       const size = octal(header, 124, 12);
       const mode = octal(header, 100, 8);
       const type = string(header, 156, 1) || "0";
       const linkHeader = string(header, 157, 100);
       if (!Number.isSafeInteger(size) || size < 0) fail("ARCHIVE_HEADER_INVALID", "tar entry size is invalid");
+      if (type === "L") {
+        if (size < 2 || size > 4096 || pendingGnuPath !== undefined || Object.keys(pendingPax).length)
+          fail("ARCHIVE_GNU_NAME_INVALID", "GNU long name is oversized or ambiguous");
+        const bytes = await reader.readExactly(size);
+        if (bytes.indexOf(0) !== bytes.length - 1) fail("ARCHIVE_GNU_NAME_INVALID", "GNU long name must have one terminal NUL");
+        pendingGnuPath = safeRelative(bytes.subarray(0, -1).toString("utf8"));
+        entries += 1;
+        totalBytes += size;
+        if (entries > maxEntries) fail("ARCHIVE_ENTRY_LIMIT", "tar archive contains too many entries");
+        if (totalBytes > maxExtractedBytes) fail("ARCHIVE_EXPANDED_SIZE_LIMIT", "tar archive exceeds the expanded byte bound");
+        const pad = (BLOCK - (size % BLOCK)) % BLOCK;
+        if (pad) await reader.readExactly(pad);
+        continue;
+      }
       if (type === "x") {
+        if (pendingGnuPath !== undefined) fail("ARCHIVE_GNU_NAME_INVALID", "mixed GNU and PAX names are ambiguous");
         if (size > 64 * 1024) fail("ARCHIVE_PAX_INVALID", "PAX header exceeds the size bound");
         pendingPax = parsePax(await reader.readExactly(size));
         const pad = (BLOCK - (size % BLOCK)) % BLOCK;
         if (pad) await reader.readExactly(pad);
         continue;
       }
-      const relative = safeRelative(pendingPax.path ?? headerName);
+      const relative = safeRelative(pendingGnuPath ?? pendingPax.path ?? headerName);
+      pendingGnuPath = undefined;
       const link = pendingPax.linkpath ?? linkHeader;
       pendingPax = {};
       entries += 1;
@@ -221,6 +239,7 @@ export async function extractVerifiedTarGzip({
       if (pad) await reader.readExactly(pad);
     }
     if (Object.keys(pendingPax).length > 0) fail("ARCHIVE_PAX_INVALID", "dangling PAX header");
+    if (pendingGnuPath !== undefined) fail("ARCHIVE_GNU_NAME_INVALID", "dangling GNU long name");
     return Object.freeze({ ok: true, status: "ARCHIVE_EXTRACTED", entries, extractedBytes: totalBytes, destination: root, allowedDuplicates: Object.freeze([...usedDuplicateExceptions].sort()) });
   } catch (error) {
     await fsp.rm(root, { recursive: true, force: true });
