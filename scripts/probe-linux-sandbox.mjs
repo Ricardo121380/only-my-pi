@@ -18,6 +18,12 @@ try {
   assert.equal(process.platform, "linux", "requires native Linux");
   assert.notEqual(process.getuid(), 0, "must run as a non-root user");
   assert.ok(process.report.getReport().header.glibcVersionRuntime, "requires glibc");
+  receipt.operatingSystem = await fs.readFile("/etc/os-release", "utf8");
+  receipt.userNamespacePolicy = {};
+  for (const name of ["unprivileged_userns_clone", "apparmor_restrict_unprivileged_userns"]) {
+    receipt.userNamespacePolicy[name] = await fs.readFile(`/proc/sys/kernel/${name}`, "utf8")
+      .then((value) => value.trim(), (error) => error.code === "ENOENT" ? "not-present" : Promise.reject(error));
+  }
   receipt.dependencies = {};
   for (const [name, flag] of [["git", "--version"], ["bwrap", "--version"], ["socat", "-V"], ["rg", "--version"]]) {
     const result = await execFile(name, [flag], { timeout: 5000 });
@@ -69,7 +75,7 @@ try {
     "realNetworkDenied", "privateReadDenied", "outsideWriteDenied", "allowedWrite"];
   receipt.status = "LINUX_SANDBOX_PREFLIGHT_PASS";
 } catch (error) {
-  receipt.error = { message: error.message, stderr: error.stderr ?? null };
+  receipt.error = { message: error.stderr?.trim() || error.message };
   process.exitCode = 1;
 } finally {
   if (server) await new Promise((resolve) => server.close(resolve));

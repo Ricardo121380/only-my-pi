@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   native:
-    name: Native Linux ${{ matrix.arch }} sandbox
+    name: ${{ matrix.runner }} native sandbox
     strategy:
       fail-fast: false
       matrix:
@@ -20,6 +20,10 @@ jobs:
           - runner: ubuntu-24.04
             arch: x64
           - runner: ubuntu-24.04-arm
+            arch: arm64
+          - runner: ubuntu-22.04
+            arch: x64
+          - runner: ubuntu-22.04-arm
             arch: arm64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
@@ -43,6 +47,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: linux-preflight-${{ matrix.arch }}
+          name: linux-preflight-${{ matrix.runner }}
           path: ${{ runner.temp }}/linux-preflight.json
           if-no-files-found: warn
