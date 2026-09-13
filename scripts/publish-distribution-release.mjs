@@ -5,6 +5,7 @@ import { execFile as callback } from "node:child_process";
 import { promisify } from "node:util";
 import { inspectNativeRelease } from "../packages/distribution/release-policy.mjs";
 import { hashFile } from "../packages/release-stack/deterministic-archive.mjs";
+import { selectReleaseByTag } from "./lib/github-release.mjs";
 
 const execFile = promisify(callback);
 const [candidateDirectory, evidencePath, sourceCommit, mode] = process.argv.slice(2);
@@ -25,9 +26,12 @@ try {
   const files = [...receipt.artifacts, ...receipt.archives].map((entry) => path.join(candidateDirectory, entry.filename));
   files.push(path.join(candidateDirectory, "build-receipt.json"), path.join(candidateDirectory, "only-my-pi.rb"), path.join(staging, "native-protected-evidence.json"));
   let release;
-  const inspect = async () => JSON.parse((await gh(["api", `repos/${repo}/releases/tags/${tag}`])).stdout);
-  try { release = await inspect(); }
-  catch (error) { if (!error.stderr?.includes("HTTP 404")) throw error; }
+  const inspect = async () => {
+    // A draft may not be returned by the published-release-by-tag endpoint.
+    const pages = JSON.parse((await gh(["api", `repos/${repo}/releases?per_page=100`, "--paginate", "--slurp"])).stdout);
+    return selectReleaseByTag(pages.flat(), tag);
+  };
+  release = await inspect();
   if (!release) {
     const notes = path.join(staging, "notes.md");
     await fs.writeFile(notes, `OMP ${receipt.version} Public Preview for macOS 14+ Apple Silicon.\n\nSource: ${sourceCommit}\n\nThe npm/Homebrew core and Full/Thin fallbacks share distribution identity \`${receipt.distributionId}\`. Linux and Docker are not part of this phase-one release.\n`);
@@ -35,7 +39,7 @@ try {
       "--title", `OMP ${receipt.version} (Preview)`, "--notes-file", notes]);
     release = await inspect();
   }
-  if (release.target_commitish !== sourceCommit || !release.prerelease)
+  if (!release || release.target_commitish !== sourceCommit || !release.prerelease)
     throw new Error("Existing release belongs to a different source or channel; it was not modified.");
   const expectedNames = new Set(files.map((file) => path.basename(file)));
   if (release.assets.some((asset) => !expectedNames.has(asset.name)))
