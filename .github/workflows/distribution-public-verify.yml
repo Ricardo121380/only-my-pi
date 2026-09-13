@@ -1,0 +1,88 @@
+name: Verify public multi-platform installation
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Exact accepted source of the signed candidate
+        required: true
+        type: string
+      candidate_run_id:
+        description: Successful signed main candidate run
+        required: true
+        type: string
+      selector:
+        description: Public npm selector to verify
+        required: true
+        type: choice
+        default: default
+        options: [exact, default]
+
+permissions:
+  contents: read
+  actions: read
+  attestations: read
+
+jobs:
+  verify:
+    name: Public ${{ inputs.selector }} on ${{ matrix.platform }} Node ${{ matrix.node }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: ubuntu-22.04, platform: linux-x64, node: '22.19.0' }
+          - { runner: ubuntu-22.04, platform: linux-x64, node: '24.19.0' }
+          - { runner: ubuntu-22.04-arm, platform: linux-arm64, node: '22.19.0' }
+          - { runner: ubuntu-22.04-arm, platform: linux-arm64, node: '24.19.0' }
+          - { runner: macos-14, platform: darwin-arm64, node: '22.19.0' }
+          - { runner: macos-14, platform: darwin-arm64, node: '24.19.0' }
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+      CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+      SELECTOR: ${{ inputs.selector }}
+    steps:
+      - name: Admit only a successful signed main candidate
+        run: |
+          set -eu
+          test "$GITHUB_REF" = refs/heads/main
+          case "$SOURCE_COMMIT" in (''|*[!a-f0-9]*) exit 1;; esac
+          test "${#SOURCE_COMMIT}" -eq 40
+          case "$CANDIDATE_RUN_ID" in (''|*[!0-9]*) exit 1;; esac
+          case "$SELECTOR" in (exact|default) ;; (*) exit 1;; esac
+          gh api "repos/Ricardo121380/only-my-pi/actions/runs/$CANDIDATE_RUN_ID" > "$RUNNER_TEMP/candidate-run.json"
+          jq -e --arg source "$SOURCE_COMMIT" '.head_sha == $source and .head_branch == "main" and .event == "workflow_dispatch" and .path == ".github/workflows/linux-candidate.yml" and .conclusion == "success"' "$RUNNER_TEMP/candidate-run.json"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ inputs.source_commit }}
+          persist-credentials: false
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y bubblewrap socat ripgrep git
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+        with:
+          name: combined-candidate
+          run-id: ${{ inputs.candidate_run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/candidate
+      - name: Verify signatures, then install from the actual public npm selector
+        run: |
+          set -eu
+          for file in "$RUNNER_TEMP/candidate"/*.tgz "$RUNNER_TEMP/candidate"/*.tar.gz "$RUNNER_TEMP/candidate/build-receipt.json" "$RUNNER_TEMP/candidate/only-my-pi.rb"; do
+            gh attestation verify "$file" --repo Ricardo121380/only-my-pi --source-digest "$SOURCE_COMMIT" --signer-digest "$SOURCE_COMMIT" --source-ref refs/heads/main --signer-workflow Ricardo121380/only-my-pi/.github/workflows/linux-candidate.yml --deny-self-hosted-runners
+          done
+          node scripts/verify-distribution-install.mjs "$RUNNER_TEMP/candidate" "$RUNNER_TEMP/public-install" "--public-$SELECTOR"
+      - name: Preserve public installation receipts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: public-${{ inputs.selector }}-${{ matrix.platform }}-${{ matrix.node }}
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/public-install/*.json
+            ${{ runner.temp }}/public-install/*.log
