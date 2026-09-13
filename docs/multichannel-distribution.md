@@ -1,6 +1,7 @@
 # Multi-channel distribution implementation
 
-Status: implementation in progress; **not released**.
+Status: phase-one macOS `0.4.0-preview.1` is released and accepted on public
+Homebrew/npm/npx. Phase two Linux/Docker is in implementation and **not released**.
 
 The approved rollout introduces `0.4.0-preview.1` for native macOS arm64
 Homebrew/npm/npx, then `0.4.0-preview.2` for Linux x64/arm64 npm and interactive
@@ -35,11 +36,11 @@ not publication authority for the separately versioned native distribution.
       on Node 22.19.0 and 24.19.0; startup without external network downloads.
 - [x] Legacy entry migration with ownership checks and recoverable backup.
 - [x] Local Homebrew install, formula tests, revision upgrade and uninstall.
-- [ ] Final-source candidate revalidation and public Homebrew tap acceptance.
+- [x] Final-source macOS candidate revalidation and public Homebrew tap acceptance.
 - [ ] Linux runtime and native x64/arm64 acceptance.
 - [ ] Docker filesystem, network and PID isolation acceptance.
-- [ ] Fresh protected release evidence, signed artifacts and channel publication.
-- [ ] Public-registry installation verification and bilingual README promotion.
+- [x] macOS protected release evidence, signed artifacts and channel publication.
+- [x] macOS public-registry exact/default installation verification and bilingual README promotion.
 
 ## Docker feasibility
 
@@ -59,12 +60,35 @@ nested sandboxing is not an accepted workaround.
 
 ## Publication prerequisites
 
-The local npm CLI currently reports `ENEEDAUTH`. Registration, first publication
-and trusted publisher setup require the account owner's applicable login/2FA.
-The public `Ricardo121380/homebrew-tap` repository now contains its own verified
-formula-update workflow, but no installable formula. No npm product package or
-Docker product image has been published. See [the release runbook](native-release-runbook.md)
-for OIDC setup, protected acceptance, recovery and default-tag promotion.
+The macOS packages are registered, trusted publishing is configured, and both
+`latest` and `preview` point to `0.4.0-preview.1`. The public Homebrew formula is
+installable. Linux platform package registration and trust configuration remain
+phase-two prerequisites; account-owner login/2FA may be required. No Docker
+product image has been published. See [the release runbook](native-release-runbook.md).
+
+## Phase-two environment gate
+
+`Linux sandbox feasibility` runs `scripts/probe-linux-sandbox.mjs` on native
+Ubuntu x64 and arm64 runners. It checks non-root execution, glibc, Git,
+bubblewrap, socat and ripgrep, fresh PID/proc and network namespaces, a real
+TCP endpoint reachable outside but denied inside, hidden private file content,
+denied out-of-scope writes and permitted project writes. It does not disable
+AppArmor, seccomp, system-path masks or kernel restrictions. Failures retain
+`BLOCKED` evidence and do not authorize coding or publication.
+
+This is only an environment feasibility gate, not full OMP acceptance. Linux
+still needs a platform-native locked dependency build (the current builder
+intentionally accepts only the reviewed macOS seed), exact-version CLI assembly,
+Node 22/24 lifecycle tests and the protected product matrix. Docker additionally
+needs UID/GID persistence, signal handling, Compose and real product isolation
+acceptance. A successful native Linux probe does not validate Docker.
+
+The default Colima Docker configuration was retested after phase one and still
+rejects non-root namespace creation. The historical scoped-profile experiment
+also failed at fresh `/proc`. Upstream records this nested procfs restriction
+in [runc issue 1658](https://github.com/opencontainers/runc/issues/1658).
+Docker's [`systempaths=unconfined`](https://docs.docker.com/reference/cli/docker/container/run/#security-configuration)
+disables protected system paths and is not an accepted workaround.
 
 ## Candidate verification and discovered packaging constraints
 
