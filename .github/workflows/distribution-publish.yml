@@ -205,8 +205,8 @@ jobs:
           name: native-publication-${{ inputs.source_commit }}
           if-no-files-found: warn
           path: |
-            ${{ runner.temp }}/accepted/${{ needs.verify.outputs.candidate_subdir }}/npm-publication.json
-            ${{ runner.temp }}/accepted/${{ needs.verify.outputs.candidate_subdir }}/github-publication.json
+            ${{ runner.temp }}/accepted/**/npm-publication.json
+            ${{ runner.temp }}/accepted/**/github-publication.json
             ${{ runner.temp }}/public-node24/acceptance.json
             ${{ runner.temp }}/public-node22/acceptance.json
 
