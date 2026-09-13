@@ -1,0 +1,30 @@
+{
+  "formatVersion": 1,
+  "platform": "linux-x64",
+  "node": {
+    "version": "24.19.0",
+    "archiveName": "node-v24.19.0-linux-x64.tar.gz",
+    "archiveSha256": "sha256:f625d97cd707df4ff96254916fbc5ff014f09c09effe5a1e0ca8f6d41a8789d4",
+    "license": "MIT"
+  },
+  "tools": [
+    {
+      "name": "fd",
+      "version": "10.5.0",
+      "license": "MIT OR Apache-2.0",
+      "url": "https://github.com/sharkdp/fd/releases/download/v10.5.0/fd-v10.5.0-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "sha256:a1259cd129636efbc3fef123525c1b49e88fe5088c012630983c310e52fdfa95",
+      "archiveRoot": "fd-v10.5.0-x86_64-unknown-linux-gnu",
+      "binary": "fd"
+    },
+    {
+      "name": "ripgrep",
+      "version": "15.2.0",
+      "license": "MIT OR Unlicense",
+      "url": "https://github.com/BurntSushi/ripgrep/releases/download/15.2.0/ripgrep-15.2.0-x86_64-unknown-linux-musl.tar.gz",
+      "sha256": "sha256:33e15bcf1624b25cdd2a55813a47a2f95dbe126268203e76aa6a585d1e7b149c",
+      "archiveRoot": "ripgrep-15.2.0-x86_64-unknown-linux-musl",
+      "binary": "rg"
+    }
+  ]
+}

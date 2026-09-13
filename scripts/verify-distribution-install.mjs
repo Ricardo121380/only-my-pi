@@ -55,7 +55,10 @@ async function run(label, executable, args, extraEnv = {}) {
 try {
   await run("global-install", process.execPath, [npm, "install", "--global", "--prefix", prefix, selector]);
   const omp = path.join(prefix, "bin/omp");
-  const offline = async (label, args) => run(label, "/usr/bin/sandbox-exec", ["-p", "(version 1)(allow default)(deny network*)", omp, ...args]);
+  const offline = async (label, args) => process.platform === "darwin"
+    ? run(label, "/usr/bin/sandbox-exec", ["-p", "(version 1)(allow default)(deny network*)", omp, ...args])
+    : run(label, "/usr/bin/bwrap", ["--unshare-user", "--unshare-pid", "--unshare-net", "--die-with-parent",
+      "--ro-bind", "/", "/", "--dev", "/dev", "--proc", "/proc", "--", omp, ...args]);
   await offline("verify-offline", ["--verify-install"]);
   if (!(await offline("version-offline", ["--version"])).includes(`only-my-pi ${receipt.version}`)) throw new Error("wrong OMP version");
   const doctor = JSON.parse(await offline("doctor-offline", ["admin", "doctor", "--json"]));

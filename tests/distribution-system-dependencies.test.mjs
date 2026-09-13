@@ -23,7 +23,7 @@ test("the actual executable and Git version are reported", async (t) => {
   const root = await fixture(t);
   const git = path.join(root, "git");
   await fs.writeFile(git, '#!/bin/sh\nprintf "git version 2.45.2\\n"\n', { mode: 0o755 });
-  const result = await inspectSystemDependencies({ env: { PATH: root } });
+  const result = await inspectSystemDependencies({ platform: "darwin", env: { PATH: root } });
   assert.equal(result.ok, true);
   assert.equal(result.git.path, git);
   assert.equal(result.git.version, "2.45.2");
@@ -43,4 +43,20 @@ test("a project-relative Git shadow is rejected before executing it", async (t) 
   const result = await inspectSystemDependencies({ env: { PATH: `.:${root}` }, cwd: root,
     run: () => assert.fail("relative Git must not run") });
   assert.equal(result.git.reason, "GIT_ON_RELATIVE_PATH");
+});
+
+
+test("Linux requires all declared tools and reports Git separately", async (t) => {
+  const root = await fixture(t);
+  await fs.writeFile(path.join(root, "git"), '#!/bin/sh\nprintf "git version 2.45.2\\n"\n', { mode: 0o755 });
+  const options = { platform: "linux", env: { PATH: root } };
+  const missing = await inspectSystemDependencies(options);
+  assert.equal(missing.git.ok, true);
+  assert.equal(missing.reason, "LINUX_TOOLS_UNAVAILABLE");
+  await assert.rejects(requireSystemDependencies(options), { code: "SYSTEM_DEPENDENCIES_MISSING" });
+  for (const name of ["bwrap", "socat", "rg"])
+    await fs.writeFile(path.join(root, name), '#!/bin/sh\nprintf "tool 1.0\\n"\n', { mode: 0o755 });
+  const ready = await inspectSystemDependencies(options);
+  assert.equal(ready.ok, true);
+  assert.deepEqual(Object.keys(ready.tools), ["bwrap", "socat", "rg"]);
 });
