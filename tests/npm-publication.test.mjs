@@ -1,6 +1,22 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { awaitPublishedVersion } from "../scripts/lib/npm-publication.mjs";
+import { awaitPublishedTag, awaitPublishedVersion } from "../scripts/lib/npm-publication.mjs";
+
+test("tag confirmation retries stale metadata without repeating mutations", async () => {
+  const responses = [{ "dist-tags": { latest: "0.0.0-bootstrap.0" } }, { "dist-tags": { latest: "0.4.0-preview.1" } }];
+  const waits = [];
+  await awaitPublishedTag({ name: "only-my-pi", tag: "latest", version: "0.4.0-preview.1",
+    inspect: async () => responses.shift(), delays: [0, 1], wait: async (ms) => waits.push(ms) });
+  assert.deepEqual(waits, [1]);
+  assert.equal(responses.length, 0);
+});
+
+test("tag confirmation stops at its read bound and preserves actionable failure", async () => {
+  let reads = 0;
+  await assert.rejects(awaitPublishedTag({ name: "only-my-pi", tag: "latest", version: "0.4.0-preview.1",
+    inspect: async () => { reads++; return {}; }, delays: [0, 1], wait: async () => {} }), /preserve the receipt/);
+  assert.equal(reads, 2);
+});
 
 const expected = { name: "only-my-pi", version: "0.4.0-preview.1", integrity: "sha512-candidate" };
 const visible = { name: expected.name, version: expected.version, dist: { integrity: expected.integrity,

@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import { execFile as callback } from "node:child_process";
 import { promisify } from "node:util";
 import { hashFile } from "../packages/release-stack/deterministic-archive.mjs";
+import { awaitPublishedTag } from "./lib/npm-publication.mjs";
 
 const execFile = promisify(callback);
 const [candidate, node22Receipt, node24Receipt, mode] = process.argv.slice(2);
@@ -21,7 +22,8 @@ for (const [filename, node] of [[node22Receipt, "22.19.0"], [node24Receipt, "24.
     throw new Error(`exact public installation acceptance is missing for Node ${node}`);
 }
 const fetchPackage = async (name) => {
-  const response = await fetch(`https://registry.npmjs.org/${name}`, { signal: AbortSignal.timeout(30_000) });
+  const response = await fetch(`https://registry.npmjs.org/${name}?tagCheck=${Date.now()}`, {
+    headers: { "cache-control": "no-cache" }, signal: AbortSignal.timeout(30_000) });
   if (!response.ok) throw new Error(`npm metadata unavailable: HTTP ${response.status}`);
   return response.json();
 };
@@ -46,7 +48,7 @@ if (mode === "--apply") {
       for (const tag of ["preview", "latest"]) {
         if ((await fetchPackage(name))["dist-tags"]?.[tag] !== receipt.version)
           await execFile("npm", ["dist-tag", "add", `${name}@${receipt.version}`, tag, "--registry", "https://registry.npmjs.org"], { timeout: 60_000 });
-        if ((await fetchPackage(name))["dist-tags"]?.[tag] !== receipt.version) throw new Error(`tag update was not confirmed: ${name}:${tag}`);
+        await awaitPublishedTag({ inspect: () => fetchPackage(name), name, tag, version: receipt.version });
         journal.completed.push({ name, tag, version: receipt.version });
         await save();
       }
