@@ -1,10 +1,12 @@
 # Native Preview release runbook
 
-Status: the implementation is under validation. No 0.4 product version is
-published. The public Homebrew tap exists as a scaffold, without an installable
-formula. Docker isolation remains blocked. The macOS Git policy is confirmed:
-npm/npx and archive users preinstall Git, while Homebrew provides Git. Final
-candidate acceptance must include the corresponding prerequisite checks.
+Status: macOS `0.4.0-preview.1` is published on npm (`preview`) and as a
+GitHub prerelease. Public npm exact-version acceptance passed on Node 22.19.0
+and 24.19.0 in [publication run 34746473618](https://github.com/Ricardo121380/only-my-pi/actions/runs/34746473618).
+The public tap formula is published. npm `latest` promotion still requires
+account-owner 2FA and subsequent default-entry acceptance; phase one is not yet
+complete. Docker isolation remains blocked. npm/npx and archive users preinstall
+Git, while Homebrew provides Git.
 
 ## Account preparation
 

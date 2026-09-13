@@ -4,11 +4,11 @@
 
 **先理解代码，再授权修改。**
 
-only-my-pi（OMP）是基于 [Pi](https://github.com/earendil-works/pi) 的终端 AI 编程助手，安装在当前用户目录。进入项目运行 `omp`，即可阅读代码、分析问题，并在明确授权后进行项目内修改。
+only-my-pi（OMP）是基于 [Pi](https://github.com/earendil-works/pi) 的终端 AI 编程助手，通过 Homebrew 或 npm 安装。进入项目运行 `omp`，即可阅读代码、分析问题，并在明确授权后进行项目内修改。
 
 Pi 提供终端界面、模型、会话和基础工具；OMP 在此之上增加编程审批、有预算的子代理协作，以及可验证的安装与回滚。
 
-> **已发布预览版：[v0.3.0-preview.1](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.3.0-preview.1)**<br>
+> **已发布预览版：[v0.4.0-preview.1](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.1)**<br>
 > 受控安装仅支持 **macOS 14+、原生 Apple Silicon（arm64）**。模型账户与费用由你自行配置和承担。
 
 [快速开始](#快速开始) · [日常使用](#日常使用与审批) · [常见问题](#常见问题) · [安全边界](#安全与许可证)
@@ -21,75 +21,65 @@ Pi 提供终端界面、模型、会话和基础工具；OMP 在此之上增加�
 | 保留已有工作 | 记录 Git 基线和未提交路径；写入任务与已有改动重叠时，由主 Agent 在原工作区处理。 |
 | 协作而不无限扩张 | 按需使用只读子代理、一个写入子代理和独立上下文的审查者，并限制并发与累计用量。 |
 | 检查后再合入子代理补丁 | 在克隆中运行项目检查，通过审查和补丁校验后合入，再验证真实工作区。 |
-| 明确管理本地安装 | 先预览安装计划，再显式执行；发布包可校验，受控栈支持诊断、回滚和移除。 |
+| 明确管理本地安装 | Homebrew/npm 管理程序文件；OMP 报告渠道和实际版本，保留配置与会话，并提供旧入口迁移。 |
 
 日常使用不需要选择 Workflow、Swarm、Goal 或 Ultra。**这些约束不等于操作系统沙箱**，详见[安全边界](#安全与许可证)。
 
 ## 快速开始
 
-<a id="平台与运行时"></a>
+<a id="platform-and-runtime"></a>
 
-### 1. 确认环境
+支持 **macOS 14+ 原生 Apple Silicon（arm64）**。本版本不支持 Intel Mac、Rosetta、原生 Windows、Linux 或 Docker。模型账号与访问额度由用户准备；随包 Pi 版本为 **0.84.3**。
 
-当前预览版不支持 Intel Mac、Rosetta、Linux 或 Windows 的受控安装。受控栈使用固定的 **Node.js 24.19.0** 和 **Pi 0.84.3**；安装器提供运行时，不需要预装系统 Node 或 npm。写入子代理需要 Git；安装器使用 macOS 的 `curl`、`shasum`、`tar`、`awk` 和 `mktemp`。
+<a id="installation"></a>
 
-<a id="安装"></a>
+### 1. 通过 Homebrew 或 npm 安装
 
-### 2. 校验安装器并预览计划
-
-以普通用户身份操作，不要使用 `sudo`。先下载固定版本的脚本并核对 SHA-256；下面的哈希**只适用于 0.3.0-preview.1**：
+**Homebrew** 自动提供 Node 24 和 Git：
 
 ```bash
-mkdir -p only-my-pi-preview &&
-cd only-my-pi-preview &&
-curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
-  https://github.com/Ricardo121380/only-my-pi/releases/download/v0.3.0-preview.1/install.sh \
-  --output install.sh &&
-printf '%s  install.sh\n' \
-  '542dbcb468221841b460199c41afa9af1d178e8842d7a649b61e00742186e886' \
-  | shasum -a 256 -c -
+brew install ricardo121380/tap/only-my-pi
+omp --version
 ```
 
-只有看到校验成功后，才阅读脚本并生成安装计划。下载或校验失败时不要继续：
+**npm** 复用已有的 **Node >=22.19.0**，并要求 PATH 中已有可用 Git。先准备这两项依赖，再安装：
 
 ```bash
-less install.sh
-sh install.sh --release 0.3.0-preview.1 --payload thin --plan
+node --version
+git --version
+npm install -g only-my-pi@0.4.0-preview.1
+omp --version
 ```
 
-`--plan` 不提交受控安装状态，但仍会下载并解压已验证的资产到临时目录。
-
-### 3. 确认安装
-
-核对计划中的目标路径、包所有权和拟执行改动后，再运行：
+临时运行使用相同前置条件：
 
 ```bash
-sh install.sh --release 0.3.0-preview.1 --payload thin
+npx only-my-pi@0.4.0-preview.1
 ```
 
-安装器会请求确认。已明确批准的非交互安装可加 `--yes`；只有显式添加 `--configure-shell` 才会修改 shell 配置。
+上述命令安装已验收的 **0.4.0-preview.1 Public Preview**，npm 的 `preview` 标签也已指向此版本。npm `latest` 的推进仍待账户所有者完成 2FA；在默认入口验收完成前，请使用上述精确版本。
 
-如果出现 `PATH_ACTION_REQUIRED`，按输出指引设置路径。默认安装在当前 shell 中可这样检查：
+各渠道复用同一份预构建运行核心，包含审核过的扩展、fd 和 ripgrep；npm 平台包不捆绑 Node。首次启动不会补下载运行依赖。只注册全局 `omp`，保留已有的 `pi` 命令。
+
+<a id="first-run-and-model-setup"></a>
+
+### 2. 配置模型，进入项目
 
 ```bash
-export PATH="$HOME/.local/bin:$PATH"
 omp admin doctor --json
+omp admin pi
 ```
 
-<a id="首次启动与模型配置"></a>
-
-### 4. 配置模型，进入项目
-
-尚未配置模型时，先运行 `pi`，按 [Pi 文档](https://github.com/earendil-works/pi)配置服务商和认证；支持的登录流程可使用 `/login`。完成后退出 Pi，回到项目目录：
+使用 Pi 的 `/login` 或 Provider 配置接入模型。`omp admin pi` 打开随包原始 Pi，用于登录和高级配置。退出后进入项目：
 
 ```bash
 cd /path/to/project
 omp
 ```
 
-按 Pi Project Trust 提示确认你信任该项目，再选择已认证的模型。也可以使用 `omp --model provider/model-id`；请将占位符替换成实际模型标识。
+仅信任预期的项目，选择已认证模型，或使用 `omp --model provider/model-id`。每个新交互进程从 Inspect 开始，写入前需要编程审批。程序安装不包含模型订阅或 Provider 额度。
 
-**日常使用运行 `omp`，而不是 `pi`。** `pi` 是高级原始运行时入口，可能加载不同的扩展集合。用户级安装不代表本地模型推理；OMP 不提供模型订阅或服务商额度，也不要把凭据写入项目配置。
+已有凭据、偏好和会话仍位于原 Pi 目录（默认 `~/.pi/agent/`）。离线或手动安装见[高级安装](#advanced-installation)。
 
 ## 日常使用与审批
 
@@ -135,7 +125,7 @@ omp -- "status"                          # 将管理命令同名词当作任务
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/Ricardo121380/only-my-pi/v0.3.0-preview.1/schemas/project-gates-v1.schema.json",
+  "$schema": "https://raw.githubusercontent.com/Ricardo121380/only-my-pi/v0.4.0-preview.1/schemas/project-gates-v1.schema.json",
   "formatVersion": 1,
   "id": "project-checks",
   "gates": [
@@ -207,6 +197,154 @@ omp -- "status"                          # 将管理命令同名词当作任务
 <a id="更新回滚与移除"></a>
 
 ## 安装管理
+
+```bash
+omp admin version --json
+omp admin doctor --json
+```
+
+以上命令报告实际版本、渠道、平台、Node/Pi 和 PATH 入口。运行环境就绪与模型尚未配置是不同状态；Doctor 可识别旧入口遮挡新版的问题。
+
+| 渠道 | 升级 | 移除程序文件 |
+| --- | --- | --- |
+| Homebrew | `brew upgrade ricardo121380/tap/only-my-pi` | `brew uninstall only-my-pi` |
+| npm | `npm install -g only-my-pi@0.4.0-preview.1` | `npm uninstall -g only-my-pi` |
+| npx | 重新运行 `npx only-my-pi@0.4.0-preview.1` | 缓存由 npm 管理 |
+| Full/Thin 安装包 | 将校验后的版本安装到新目录 | 退出程序后，仅移除明确选定的 OMP 程序目录 |
+
+卸载程序默认保留用户凭据、偏好和会话。OMP 不跨包管理器修改程序文件，也不改写既有 Pi 第三方包树。回滚时选择已验证的旧版本或旧目录，不覆盖正在运行的安装。
+
+### 迁移旧 OMP 命令链接
+
+如果旧 `omp` 遮挡新版，先用完整路径调用新的**持久 npm 或 Homebrew** 入口：
+
+```bash
+/path/to/new/omp admin migrate --from legacy --plan --json
+/path/to/new/omp admin migrate --from legacy --apply --yes --json
+hash -r
+omp admin doctor --json
+```
+
+迁移会核验新入口和旧安装所有权，只备份确认属于旧 OMP 的链接。未知文件、原始 Pi、旧栈及用户数据均不会被自动删除。npx 不适合作为持久迁移目标；出现未完成记录时，应保留回执和备份进行核对。
+
+## 常见问题
+
+| 现象或错误码 | 建议处理 |
+| --- | --- |
+| `SYSTEM_DEPENDENCIES_MISSING` / Git 不可用 | npm/npx 用户先安装 Git；Homebrew 用户检查依赖与 PATH。安装器不会弹出系统开发工具安装窗口。 |
+| `PATH_ACTION_REQUIRED` / `SHIM_CONFLICT` | 检查命令路径和现有同名文件；不要覆盖未知命令。 |
+| `NO_AUTHENTICATED_MODELS` / `MODEL_AUTH_UNAVAILABLE` / `HEADLESS_MODEL_REQUIRED` | 通过 Pi 配置认证，再显式选择可用模型。 |
+| `CODING_ACCESS_REQUIRED` / `COMPLEX_PLAN_REQUIRED` | 先检查并批准当前进程所需的编程计划。 |
+| `MAIN_AGENT_FALLBACK_DIRTY_OVERLAP` | 保留已有改动，由主 Agent 处理重叠范围。 |
+| `WRITER_GATE_MANIFEST_REQUIRED` / `WRITER_GATE_MANIFEST_DRIFT` | 核对检查清单是否已提交到获批 HEAD，以及清单是否一致。 |
+| `WRITER_REVIEW_BLOCKED` / 检查失败 | 阅读保留的补丁和检查结果，不要绕过合入条件。 |
+| `DIRECT_CHILD_BUDGET_EXHAUSTED` | 查看 `/agents`；当前进程不能继续委派或合入写入补丁。 |
+| `OMP_CONTROLLED_STACK_UNAVAILABLE` / `M12_UPDATE_REQUIRED` | 运行版本与诊断命令，使用经过验证的安装包恢复，不要手动改链接。 |
+| `MANUAL_RECONCILIATION_REQUIRED` / 校验冲突 | 保留错误信息、事务日志和备份，按报告核对后再重试。 |
+
+[报告非敏感问题](https://github.com/Ricardo121380/only-my-pi/issues)时，请附精确版本、平台、脱敏错误码和最小复现；不要上传凭据、原始会话或私有源码。
+
+<a id="advanced-installation"></a>
+<a id="verify-release-assets"></a>
+<a id="release-process-and-evidence"></a>
+
+## 高级安装：Full/Thin、离线与回滚
+
+Homebrew/npm 是主要入口。Full/Thin 用作手动安装、离线与恢复备用方案；两者使用同一核心身份。Full 包含 Node 24.19.0，可在下载并验证后完全离线安装；Thin 在安装时仅获取固定的 Node 24.19.0。两者均要求预装 Git。离线安装不代表模型可以离线访问。
+
+从对应 GitHub Release 下载目标压缩包，先核验来源证明。以下示例为 Full（将文件名的 full 替换为 thin 可验证 Thin）：
+
+```bash
+gh release download v0.4.0-preview.1 --repo Ricardo121380/only-my-pi \
+  --pattern only-my-pi-0.4.0-preview.1-darwin-arm64-full.tar.gz
+gh attestation verify only-my-pi-0.4.0-preview.1-darwin-arm64-full.tar.gz \
+  --repo Ricardo121380/only-my-pi \
+  --source-digest 38e71adc8c2c52cc332db288f5dcdd14f73bd8cb \
+  --signer-digest 38e71adc8c2c52cc332db288f5dcdd14f73bd8cb \
+  --source-ref refs/heads/main \
+  --signer-workflow Ricardo121380/only-my-pi/.github/workflows/distribution-candidate.yml \
+  --deny-self-hosted-runners
+```
+
+只有校验成功后才解压，并指定一个不存在的新程序目录：
+
+```bash
+tar -xzf only-my-pi-0.4.0-preview.1-darwin-arm64-full.tar.gz
+./only-my-pi/install.sh --prefix /absolute/new/omp-directory
+/absolute/new/omp-directory/bin/omp
+```
+
+新安装器拒绝覆盖已有前缀，不添加全局链接。升级安装到另一个新目录；回滚使用旧目录入口。`build-receipt.json` 包含产物 SHA-256 与源码，发布回执不会改变旧版栈清单的含义。
+
+
+<details>
+<summary>旧版 0.3.0-preview.1：历史安装与恢复参考（仅适用于旧栈）</summary>
+
+### 快速开始
+
+
+#### 1. 确认环境
+
+当前预览版不支持 Intel Mac、Rosetta、Linux 或 Windows 的受控安装。受控栈使用固定的 **Node.js 24.19.0** 和 **Pi 0.84.3**；安装器提供运行时，不需要预装系统 Node 或 npm。写入子代理需要 Git；安装器使用 macOS 的 `curl`、`shasum`、`tar`、`awk` 和 `mktemp`。
+
+
+#### 2. 校验安装器并预览计划
+
+以普通用户身份操作，不要使用 `sudo`。先下载固定版本的脚本并核对 SHA-256；下面的哈希**只适用于 0.3.0-preview.1**：
+
+```bash
+mkdir -p only-my-pi-preview &&
+cd only-my-pi-preview &&
+curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+  https://github.com/Ricardo121380/only-my-pi/releases/download/v0.3.0-preview.1/install.sh \
+  --output install.sh &&
+printf '%s  install.sh\n' \
+  '542dbcb468221841b460199c41afa9af1d178e8842d7a649b61e00742186e886' \
+  | shasum -a 256 -c -
+```
+
+只有看到校验成功后，才阅读脚本并生成安装计划。下载或校验失败时不要继续：
+
+```bash
+less install.sh
+sh install.sh --release 0.3.0-preview.1 --payload thin --plan
+```
+
+`--plan` 不提交受控安装状态，但仍会下载并解压已验证的资产到临时目录。
+
+#### 3. 确认安装
+
+核对计划中的目标路径、包所有权和拟执行改动后，再运行：
+
+```bash
+sh install.sh --release 0.3.0-preview.1 --payload thin
+```
+
+安装器会请求确认。已明确批准的非交互安装可加 `--yes`；只有显式添加 `--configure-shell` 才会修改 shell 配置。
+
+如果出现 `PATH_ACTION_REQUIRED`，按输出指引设置路径。默认安装在当前 shell 中可这样检查：
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+omp admin doctor --json
+```
+
+
+#### 4. 配置模型，进入项目
+
+尚未配置模型时，先运行 `pi`，按 [Pi 文档](https://github.com/earendil-works/pi)配置服务商和认证；支持的登录流程可使用 `/login`。完成后退出 Pi，回到项目目录：
+
+```bash
+cd /path/to/project
+omp
+```
+
+按 Pi Project Trust 提示确认你信任该项目，再选择已认证的模型。也可以使用 `omp --model provider/model-id`；请将占位符替换成实际模型标识。
+
+**日常使用运行 `omp`，而不是 `pi`。** `pi` 是高级原始运行时入口，可能加载不同的扩展集合。用户级安装不代表本地模型推理；OMP 不提供模型订阅或服务商额度，也不要把凭据写入项目配置。
+
+
+### 安装管理
 
 查看版本、诊断安装并显式检查同一 Preview 系列的新发布：
 
@@ -280,23 +418,8 @@ omp admin stack remove --apply --yes --json
 
 </details>
 
-## 常见问题
 
-| 现象或错误码 | 建议处理 |
-| --- | --- |
-| `PATH_ACTION_REQUIRED` / `SHIM_CONFLICT` | 检查命令路径和现有同名文件；不要覆盖未知命令。 |
-| `MODEL_AUTH_UNAVAILABLE` / `HEADLESS_MODEL_REQUIRED` | 通过 Pi 配置认证，再显式选择可用模型。 |
-| `CODING_ACCESS_REQUIRED` / `COMPLEX_PLAN_REQUIRED` | 先检查并批准当前进程所需的编程计划。 |
-| `MAIN_AGENT_FALLBACK_DIRTY_OVERLAP` | 保留已有改动，由主 Agent 处理重叠范围。 |
-| `WRITER_GATE_MANIFEST_REQUIRED` / `WRITER_GATE_MANIFEST_DRIFT` | 核对检查清单是否已提交到获批 HEAD，以及清单是否一致。 |
-| `WRITER_REVIEW_BLOCKED` / 检查失败 | 阅读保留的补丁和检查结果，不要绕过合入条件。 |
-| `DIRECT_CHILD_BUDGET_EXHAUSTED` | 查看 `/agents`；当前进程不能继续委派或合入写入补丁。 |
-| `OMP_CONTROLLED_STACK_UNAVAILABLE` / `M12_UPDATE_REQUIRED` | 运行版本与诊断命令，使用经过验证的安装包恢复，不要手动改链接。 |
-| `MANUAL_RECONCILIATION_REQUIRED` / 校验冲突 | 保留错误信息、事务日志和备份，按报告核对后再重试。 |
-
-[报告非敏感问题](https://github.com/Ricardo121380/only-my-pi/issues)时，请附精确版本、平台、脱敏错误码和最小复现；不要上传凭据、原始会话或私有源码。
-
-## 安装包与发布验证
+### 安装包与发布验证
 
 | 安装包 | 适用方式 |
 | --- | --- |
@@ -305,8 +428,6 @@ omp admin stack remove --apply --yes --json
 
 两者安装同一套规范栈。在线脚本的 `--payload full` 仍会从 GitHub 下载；**完全离线安装需要本地 Full 包**。离线安装不意味着模型调用也离线。
 
-<a id="验证发布资产"></a>
-<a id="发布流程与证据"></a>
 
 <details>
 <summary>验证发布资产、签名与构建来源</summary>
@@ -375,7 +496,11 @@ env PATH="$omp_payload/node/bin:$PATH" \
 
 </details>
 
-<a id="开发与验证"></a>
+
+
+</details>
+
+<a id="development-and-validation"></a>
 
 ## 开发与贡献
 
