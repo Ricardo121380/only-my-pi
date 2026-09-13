@@ -8,8 +8,9 @@ const execFile = promisify(callback);
 
 /** Build-time only. Downloads are pinned, checked before extraction and kept
  * inside the Pi component's signed tree, including upstream license files. */
-export async function stageToolchain({ rootDir, runtimeRoot, work }) {
-  const lock = JSON.parse(await fs.readFile(path.join(rootDir, "distribution/toolchain-darwin-arm64.json"), "utf8"));
+export async function stageToolchain({ rootDir, runtimeRoot, work, platform = "darwin-arm64" }) {
+  if (!["darwin-arm64", "linux-x64", "linux-arm64"].includes(platform)) throw new Error("unsupported toolchain platform");
+  const lock = JSON.parse(await fs.readFile(path.join(rootDir, `distribution/toolchain-${platform}.json`), "utf8"));
   const destination = path.join(runtimeRoot, "pi/vendor-tools");
   await fs.mkdir(path.join(destination, "bin"), { recursive: true });
   for (const tool of lock.tools) {

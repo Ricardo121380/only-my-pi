@@ -13,7 +13,10 @@ import { materializeExecutableLinks } from "./npm-layout.mjs";
 import { stagePiBranding } from "./pi-branding.mjs";
 import { stageToolchain } from "./toolchain-builder.mjs";
 import { buildDistributionArchives } from "./archive-builder.mjs";
-import { DISTRIBUTION_VERSION, hashDistributionTree, distributionError } from "./runtime.mjs";
+import { DISTRIBUTION_VERSION, DISTRIBUTION_VERSIONS, hashDistributionTree, distributionError } from "./runtime.mjs";
+
+import { stageLinuxDependencies } from "./linux-dependency-builder.mjs";
+import { applyRuntimePatches } from "./runtime-patches.mjs";
 
 const execFile = promisify(execFileCallback);
 const SEED_SHA256 = "sha256:9990fb9dd81b5ecaab9b31d5344fb8aab3715fd89b61f07ed5fefc7191d60b0d";
@@ -28,11 +31,13 @@ async function json(filename, value) {
  */
 export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sourceCommit,
   version = DISTRIBUTION_VERSION, npmCli = path.resolve(path.dirname(process.execPath), "../lib/node_modules/npm/bin/npm-cli.js") }) {
-  for (const value of [rootDir, outputRoot, seedBundle, npmCli]) {
+  for (const value of [rootDir, outputRoot, npmCli, ...(process.platform === "darwin" ? [seedBundle] : [])]) {
     if (typeof value !== "string" || !path.isAbsolute(value)) throw new TypeError("native build paths must be absolute");
   }
-  if (version !== DISTRIBUTION_VERSION || process.platform !== "darwin" || process.arch !== "arm64")
-    throw distributionError("DISTRIBUTION_BUILD_PLATFORM_UNSUPPORTED", "the first native release must be built on macOS arm64");
+  const platform = `${process.platform}-${process.arch}`;
+  if (!DISTRIBUTION_VERSIONS.includes(version) || !["darwin-arm64", "linux-x64", "linux-arm64"].includes(platform)
+    || (version === DISTRIBUTION_VERSION && platform !== "darwin-arm64"))
+    throw distributionError("DISTRIBUTION_BUILD_PLATFORM_UNSUPPORTED", "unsupported native release version/platform");
   const run = (argv) => execFile("git", argv, { cwd: rootDir, encoding: "utf8" });
   const assertSource = async () => {
     const [head, status] = await Promise.all([run(["rev-parse", "HEAD"]), run(["status", "--porcelain", "--untracked-files=all"])]);
@@ -47,21 +52,26 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
   await fs.mkdir(output, { recursive: false });
   const work = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-native-build-")));
   try {
-    await extractVerifiedTarGzip({ archivePath: seedBundle, destination: path.join(work, "seed"), expectedSha256: SEED_SHA256,
-      maxEntries: 200_000, maxExtractedBytes: 2 * 1024 * 1024 * 1024 });
-    const seed = path.join(work, "seed/only-my-pi");
-    const seedManifest = validateStackManifest(JSON.parse(await fs.readFile(path.join(seed, "stack-manifest.json"), "utf8")));
-    if (seedManifest.sourceCommit !== SEED_SOURCE || seedManifest.onlyMyPi.version !== "0.3.0-preview.1"
-      || await hashDistributionTree(seed, "pi") !== seedManifest.runtime.pi.treeDigest
-      || await hashDistributionTree(seed, "external-npm") !== seedManifest.externalTreeDigest)
-      throw distributionError("DISTRIBUTION_SEED_INVALID", "dependency seed differs from the immutable reviewed release");
-
-    const runtimeName = "only-my-pi-runtime-darwin-arm64";
+    let seed, seedManifest, dependencySeed;
+    if (process.platform === "linux") {
+      ({ seed, seedManifest, dependencySeed } = await stageLinuxDependencies({ rootDir, work, sourceCommit, npmCli }));
+    } else {
+      await extractVerifiedTarGzip({ archivePath: seedBundle, destination: path.join(work, "seed"), expectedSha256: SEED_SHA256,
+        maxEntries: 200_000, maxExtractedBytes: 2 * 1024 * 1024 * 1024 });
+      seed = path.join(work, "seed/only-my-pi");
+      seedManifest = validateStackManifest(JSON.parse(await fs.readFile(path.join(seed, "stack-manifest.json"), "utf8")));
+      if (seedManifest.sourceCommit !== SEED_SOURCE || seedManifest.onlyMyPi.version !== "0.3.0-preview.1"
+        || await hashDistributionTree(seed, "pi") !== seedManifest.runtime.pi.treeDigest
+        || await hashDistributionTree(seed, "external-npm") !== seedManifest.externalTreeDigest)
+        throw distributionError("DISTRIBUTION_SEED_INVALID", "dependency seed differs from the immutable reviewed release");
+      dependencySeed = { sourceCommit: SEED_SOURCE, sha256: SEED_SHA256 };
+    }
+    const runtimeName = `only-my-pi-runtime-${platform}`;
     const runtimePackage = path.join(output, runtimeName);
     const runtime = path.join(runtimePackage, "runtime");
     await fs.mkdir(runtime, { recursive: true });
     for (const name of ["pi", "external-npm"]) await fs.cp(path.join(seed, name), path.join(runtime, name), { recursive: true, errorOnExist: true, force: false, verbatimSymlinks: true });
-    await stageToolchain({ rootDir, runtimeRoot: runtime, work });
+    await stageToolchain({ rootDir, runtimeRoot: runtime, work, platform });
     await assertSource();
     await fs.mkdir(path.join(work, "home"));
     const packed = await execFile(process.execPath, [npmCli, "pack", ".", "--ignore-scripts", "--json", "--pack-destination", work], {
@@ -82,6 +92,7 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
     await json(path.join(app, "artifact-identity.json"), { formatVersion: 1, kind: "only-my-pi-source-identity", sourceCommit });
     const materializedExecutableLinks = await materializeExecutableLinks(runtime);
     await stagePiBranding(path.join(runtime, "pi"));
+    const runtimePatches = await applyRuntimePatches({ runtimeRoot: runtime, version, platform });
 
     const graph = await buildGenerationPlan({ rootDir, profileId: "daily", sourceCommit });
     const inventory = JSON.parse(await fs.readFile(path.join(rootDir, "inventory/packages.lock.json"), "utf8"));
@@ -89,17 +100,18 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
       .map((entry) => [entry.id, entry.resourceFilter ?? []]));
     for (const entry of graph.packages) packageFilters[entry.id] = entry.resourceFilter;
     const manifest = await createDistributionManifest({ root: runtime, version, sourceCommit,
-      platform: { os: "darwin", arch: "arm64", minimumMacOS: "14.0" }, packageFilters });
+      platform: process.platform === "darwin" ? { os: "darwin", arch: "arm64", minimumMacOS: "14.0" }
+        : { os: "linux", arch: process.arch, libc: "glibc" }, packageFilters });
     await json(path.join(runtime, "distribution-manifest.json"), manifest);
     await json(path.join(runtimePackage, "package.json"), { name: runtimeName, version, private: false,
-      description: "Prebuilt only-my-pi runtime for macOS Apple Silicon", license: "MIT", os: ["darwin"], cpu: ["arm64"],
+      description: `Prebuilt only-my-pi runtime for ${platform}`, license: "MIT", os: [process.platform], cpu: [process.arch],
       repository: { type: "git", url: "git+https://github.com/Ricardo121380/only-my-pi.git" }, files: ["runtime/", "LICENSE", "distribution-installation.json"] });
     await json(path.join(runtimePackage, "distribution-installation.json"), { formatVersion: 1, channel: "npm", version });
     await fs.copyFile(path.join(rootDir, "LICENSE"), path.join(runtimePackage, "LICENSE"));
     await fs.cp(path.join(seed, "LICENSES"), path.join(runtime, "LICENSES"), { recursive: true });
     const dependencyLedger = JSON.parse(await fs.readFile(path.join(seed, "transitive-artifact-ledger.json"), "utf8"));
     await json(path.join(runtime, "dependency-seed-ledger.json"), dependencyLedger);
-    const sbom = await createDistributionSbom({ runtimeRoot: runtime, manifest, dependencyLedger });
+    const sbom = await createDistributionSbom({ runtimeRoot: runtime, manifest, dependencyLedger, runtimePatches });
     await json(path.join(runtime, "sbom.spdx.json"), sbom);
     await fs.writeFile(path.join(runtime, "THIRD_PARTY_NOTICES.txt"), distributionNotices(sbom));
 
@@ -107,16 +119,16 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
     await fs.mkdir(cli);
     await json(path.join(cli, "package.json"), { name: "only-my-pi", version, private: false, type: "module", license: "MIT",
       description: "Guarded terminal coding agent built on Pi (Public Preview)", bin: { omp: "loader.mjs" },
-      engines: { node: ">=22.19.0" }, os: ["darwin"], cpu: ["arm64"],
+      engines: { node: ">=22.19.0" }, os: [process.platform], cpu: [process.arch],
       optionalDependencies: { [runtimeName]: version }, scripts: { postinstall: "node loader.mjs --verify-install" },
       repository: { type: "git", url: "git+https://github.com/Ricardo121380/only-my-pi.git" },
       homepage: "https://github.com/Ricardo121380/only-my-pi", files: ["loader.mjs", "resource-hash.mjs", "runtime-packages.json", "README.md", "LICENSE"] });
     await json(path.join(cli, "runtime-packages.json"), { formatVersion: 1, version, sourceCommit,
-      platforms: { "darwin-arm64": { name: runtimeName, distributionId: manifest.distributionId } } });
+      platforms: { [platform]: { name: runtimeName, distributionId: manifest.distributionId } } });
     for (const [source, target] of [["distribution/npm/loader.mjs", "loader.mjs"], ["packages/bootstrap/resource-hash.mjs", "resource-hash.mjs"], ["LICENSE", "LICENSE"]])
       await fs.copyFile(path.join(rootDir, source), path.join(cli, target));
     await fs.chmod(path.join(cli, "loader.mjs"), 0o755);
-    await fs.writeFile(path.join(cli, "README.md"), `# only-my-pi ${version}\n\nPublic Preview for macOS 14+ Apple Silicon. Requires Node >=22.19.0 and Git on PATH before npm/npx installation. The runtime includes fd and ripgrep.\n\nmacOS 14+ Apple Silicon 预览版。npm/npx 安装前需准备 Node >=22.19.0 和可用的 Git；运行包已包含 fd 和 ripgrep。\n\nRun \`omp\` after installation. Configure model authentication with \`omp admin pi\`.\n\n[English documentation](https://github.com/Ricardo121380/only-my-pi) · [中文说明](https://github.com/Ricardo121380/only-my-pi/blob/main/README.zh-CN.md)\n`);
+    await fs.writeFile(path.join(cli, "README.md"), `# only-my-pi ${version}\n\nPublic Preview for ${platform}. Requires Node >=22.19.0 and Git on PATH. Linux additionally requires bubblewrap, socat, ripgrep and a kernel/security policy permitting the strong sandbox. The runtime includes fd and ripgrep.\n\n${platform} 预览版。npm/npx 安装前需准备 Node >=22.19.0 和 Git；Linux 还需 bubblewrap、socat、ripgrep 及允许强沙箱运行的系统策略。\n\nRun \`omp\` after installation. Configure model authentication with \`omp admin pi\`.\n\n[English documentation](https://github.com/Ricardo121380/only-my-pi) · [中文说明](https://github.com/Ricardo121380/only-my-pi/blob/main/README.zh-CN.md)\n`);
 
     const artifacts = [];
     for (const [name, directory] of [[runtimeName, runtimePackage], ["only-my-pi", cli]]) {
@@ -124,8 +136,8 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
       await createDeterministicTarGzip({ rootDir: directory, outputPath: path.join(output, filename), rootName: "package" });
       artifacts.push({ name, version, filename, sha256: await hashFile(path.join(output, filename)) });
     }
-    const receipt = { formatVersion: 1, status: "CANDIDATE_NOT_PUBLISHED", version, sourceCommit,
-      distributionId: manifest.distributionId, dependencySeed: { sourceCommit: SEED_SOURCE, sha256: SEED_SHA256 }, materializedExecutableLinks, artifacts };
+    const receipt = { formatVersion: 1, status: version === DISTRIBUTION_VERSION ? "CANDIDATE_NOT_PUBLISHED" : "PLATFORM_CANDIDATE_NOT_PUBLISHABLE", version, sourceCommit, platform,
+      distributionId: manifest.distributionId, dependencySeed, materializedExecutableLinks, artifacts };
     receipt.archives = await buildDistributionArchives({ rootDir, outputRoot: output, work, seed, seedManifest, receipt });
     await assertSource();
     await json(path.join(output, "build-receipt.json"), receipt);

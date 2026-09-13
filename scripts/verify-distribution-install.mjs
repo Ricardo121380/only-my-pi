@@ -12,12 +12,14 @@ if (!path.isAbsolute(build ?? "") || !path.isAbsolute(output ?? "") || ![undefin
   throw new Error("Usage: node scripts/verify-distribution-install.mjs /absolute/build /fresh/output [--public-exact|--public-default]");
 await fs.mkdir(output, { recursive: false });
 const receipt = JSON.parse(await fs.readFile(path.join(build, "build-receipt.json"), "utf8"));
+const distributionId = receipt.platforms?.[`${process.platform}-${process.arch}`]?.distributionId ?? receipt.distributionId;
+if (!/^sha256:[a-f0-9]{64}$/u.test(distributionId ?? "")) throw new Error("current platform identity is missing");
 const packages = new Map();
 for (const artifact of receipt.artifacts) {
   if (path.basename(artifact.filename) !== artifact.filename || await hashFile(path.join(build, artifact.filename)) !== artifact.sha256)
     throw new Error("candidate bytes differ from the build receipt");
   const bytes = await fs.readFile(path.join(build, artifact.filename));
-  const manifest = JSON.parse(await fs.readFile(path.join(build, artifact.name, "package.json"), "utf8"));
+  const manifest = JSON.parse((await execFile("tar", ["-xOzf", path.join(build, artifact.filename), "package/package.json"], { maxBuffer: 1024 * 1024 })).stdout);
   packages.set(artifact.name, { artifact, bytes, manifest });
 }
 const requests = [];
@@ -55,11 +57,14 @@ async function run(label, executable, args, extraEnv = {}) {
 try {
   await run("global-install", process.execPath, [npm, "install", "--global", "--prefix", prefix, selector]);
   const omp = path.join(prefix, "bin/omp");
-  const offline = async (label, args) => run(label, "/usr/bin/sandbox-exec", ["-p", "(version 1)(allow default)(deny network*)", omp, ...args]);
+  const offline = async (label, args) => process.platform === "darwin"
+    ? run(label, "/usr/bin/sandbox-exec", ["-p", "(version 1)(allow default)(deny network*)", omp, ...args])
+    : run(label, "/usr/bin/bwrap", ["--unshare-user", "--unshare-pid", "--unshare-net", "--die-with-parent",
+      "--ro-bind", "/", "/", "--dev", "/dev", "--proc", "/proc", "--", omp, ...args]);
   await offline("verify-offline", ["--verify-install"]);
   if (!(await offline("version-offline", ["--version"])).includes(`only-my-pi ${receipt.version}`)) throw new Error("wrong OMP version");
   const doctor = JSON.parse(await offline("doctor-offline", ["admin", "doctor", "--json"]));
-  if (!doctor.ok || doctor.sourceCommit !== receipt.sourceCommit || doctor.distributionId !== receipt.distributionId) throw new Error("doctor identity differs");
+  if (!doctor.ok || doctor.sourceCommit !== receipt.sourceCommit || doctor.distributionId !== distributionId) throw new Error("doctor identity differs");
   if ((await offline("raw-pi-offline", ["admin", "pi", "--version"])).trim() !== "0.84.3") throw new Error("wrong bundled Pi");
   try { await fs.lstat(path.join(home, ".pi")); throw new Error("read-only commands initialized user config"); }
   catch (error) { if (error.code !== "ENOENT") throw error; }
@@ -79,7 +84,7 @@ try {
   const status = registryMode ? "PUBLIC_INSTALL_ACCEPTANCE_PASS" : "LOCAL_INSTALL_ACCEPTANCE_PASS";
   await fs.writeFile(path.join(output, "acceptance.json"), JSON.stringify({ formatVersion: 1, status,
     publicRegistryVerified: Boolean(registryMode), selector, protectedProductAcceptance: false, sourceCommit: receipt.sourceCommit,
-    distributionId: receipt.distributionId, node: process.versions.node, checks, requests }, null, 2));
+    distributionId, node: process.versions.node, checks, requests }, null, 2));
   console.log(JSON.stringify({ status, checks: checks.length, output }));
 } finally {
   if (server.listening) { server.closeAllConnections(); await new Promise((resolve) => server.close(resolve)); }

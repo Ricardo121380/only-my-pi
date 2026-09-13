@@ -19,7 +19,7 @@ function octal(buffer, offset, length, value) {
   Buffer.from(`${value.toString(8).padStart(length - 1, "0")}\0`).copy(buffer, offset);
 }
 
-function header(name, { type = "0", size = 0, link = "" } = {}) {
+function header(name, { type = "0", size = 0, link = "", gnu = false } = {}) {
   const value = Buffer.alloc(BLOCK);
   Buffer.from(name).copy(value, 0);
   octal(value, 100, 8, 0o644);
@@ -32,6 +32,7 @@ function header(name, { type = "0", size = 0, link = "" } = {}) {
   Buffer.from(link).copy(value, 157);
   Buffer.from("ustar\0").copy(value, 257);
   Buffer.from("00").copy(value, 263);
+  if (gnu) { Buffer.from("ustar ").copy(value, 257); octal(value, 345, 12, 123); }
   const sum = value.reduce((total, byte) => total + byte, 0).toString(8).padStart(6, "0");
   Buffer.from(`${sum}\0 `).copy(value, 148);
   return value;
@@ -41,7 +42,7 @@ function maliciousArchive(entries) {
   const blocks = [];
   for (const entry of entries) {
     const bytes = Buffer.from(entry.content ?? "");
-    blocks.push(header(entry.name, { type: entry.type, size: bytes.length, link: entry.link }));
+    blocks.push(header(entry.name, { type: entry.type, size: bytes.length, link: entry.link, gnu: entry.gnu }));
     if (bytes.length > 0) {
       blocks.push(bytes);
       blocks.push(Buffer.alloc((BLOCK - (bytes.length % BLOCK)) % BLOCK));
@@ -149,4 +150,26 @@ test("safe extractor ignores audited npm PAX metadata but rejects unknown namesp
   const unsafeArchive = path.join(root, "unsafe.tgz");
   await fs.writeFile(unsafeArchive, unsafe);
   await assert.rejects(extractVerifiedTarGzip({ archivePath: unsafeArchive, destination: path.join(root, "unsafe"), expectedSha256: sha256(unsafe) }), { code: "ARCHIVE_PAX_UNSUPPORTED" });
+});
+
+test("GNU long names retain traversal and link-parent protections", async (t) => {
+  const root = await temporary(t, "omp-extract-gnu-");
+  const long = `package/${"a".repeat(120)}/file`;
+  const cases = [
+    { entries: [{ name: "././@LongLink", type: "L", content: long + "\0", gnu: true }, { name: "truncated", content: "payload", gnu: true }] },
+    { entries: [{ name: "././@LongLink", type: "L", content: "../../escape\0" }], code: "ARCHIVE_PATH_TRAVERSAL" },
+    { entries: [{ name: "././@LongLink", type: "L", content: long }], code: "ARCHIVE_GNU_NAME_INVALID" },
+    { entries: [{ name: "././@LongLink", type: "L", content: long + "\0" }], code: "ARCHIVE_GNU_NAME_INVALID" },
+    { entries: [{ name: "package/link", type: "2", link: "directory" },
+      { name: "././@LongLink", type: "L", content: "package/link/file\0" }, { name: "truncated", content: "unsafe" }], code: "ARCHIVE_PARENT_UNSAFE" },
+  ];
+  for (const [index, item] of cases.entries()) {
+    const bytes = maliciousArchive(item.entries);
+    const archivePath = path.join(root, `${index}.tgz`);
+    const destination = path.join(root, `out-${index}`);
+    await fs.writeFile(archivePath, bytes);
+    const extraction = extractVerifiedTarGzip({ archivePath, destination, expectedSha256: sha256(bytes) });
+    if (item.code) await assert.rejects(extraction, { code: item.code });
+    else { await extraction; assert.equal(await fs.readFile(path.join(destination, long), "utf8"), "payload"); }
+  }
 });

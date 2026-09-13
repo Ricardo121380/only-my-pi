@@ -1,0 +1,48 @@
+name: Linux sandbox feasibility
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    name: ${{ matrix.runner }} native sandbox
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+          - runner: ubuntu-22.04
+            arch: x64
+          - runner: ubuntu-22.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Install distribution prerequisites on this disposable runner
+        run: sudo apt-get update && sudo apt-get install -y bubblewrap socat ripgrep git
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "24.19.0"
+      - name: Verify native architecture and strong sandbox prerequisites
+        env:
+          EXPECTED_ARCH: ${{ matrix.arch }}
+        run: |
+          node -e 'if(process.arch !== process.env.EXPECTED_ARCH) process.exit(1)'
+          set -o pipefail
+          node scripts/probe-linux-sandbox.mjs | tee "$RUNNER_TEMP/linux-preflight.json"
+      - name: Retain feasibility evidence including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: linux-preflight-${{ matrix.runner }}
+          path: ${{ runner.temp }}/linux-preflight.json
+          if-no-files-found: warn

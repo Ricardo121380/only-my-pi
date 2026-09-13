@@ -89,10 +89,10 @@ async function installNode({ work, resolved, download, extract }) {
   return { node, npm, archive };
 }
 
-async function installExternal({ rootDir, resolved, node, npm, env, run }) {
+export async function installExternal({ rootDir, resolved, node, npm, env, run, externalContract }) {
   const external = path.join(resolved, "external-npm");
   await fs.mkdir(external, { mode: 0o700 });
-  const contract = path.join(rootDir, "contracts", "release", "external");
+  const contract = externalContract ?? path.join(rootDir, "contracts", "release", "external");
   await Promise.all([
     fs.copyFile(await boundedFile(path.join(contract, "package.json"), "RELEASE_EXTERNAL_CONTRACT_INVALID", 1024 * 1024), path.join(external, "package.json")),
     fs.copyFile(await boundedFile(path.join(contract, "package-lock.json"), "RELEASE_EXTERNAL_CONTRACT_INVALID", 64 * 1024 * 1024), path.join(external, "package-lock.json")),
@@ -101,7 +101,7 @@ async function installExternal({ rootDir, resolved, node, npm, env, run }) {
   return external;
 }
 
-async function installPi({ work, resolved, node, npm, env, run, download, extract }) {
+export async function installPi({ work, resolved, node, npm, env, run, download, extract }) {
   const archive = path.join(work, "downloads", "pi-coding-agent.tgz");
   const extracted = path.join(work, "pi-artifact");
   const verified = await download({ url: PI_URL, destination: archive, expectedSri: CONTROLLED_PI_INTEGRITY, maxBytes: 512 * 1024 * 1024, allowedHosts: ["registry.npmjs.org"] });
@@ -165,7 +165,7 @@ export async function loadLicenseRegistry(rootDir) {
   return { registry, registryPath, sources };
 }
 
-async function collectLicenses({ resolved, artifacts, output, licenseRegistry }) {
+export async function collectLicenses({ resolved, artifacts, output, licenseRegistry }) {
   await fs.mkdir(output, { mode: 0o700 });
   await copyLicense(path.join(resolved, "node", "LICENSE"), path.join(output, `Node-${EMBEDDED_NODE_VERSION}-LICENSE.txt`));
   const missingIdentities = [];

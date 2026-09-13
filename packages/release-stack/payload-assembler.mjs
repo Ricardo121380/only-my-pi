@@ -46,7 +46,7 @@ function idFor(name) {
   return name.replace(/^@/u, "").replaceAll("/", "-").replaceAll(/[^a-z0-9-]/gu, "-");
 }
 
-function mergeLedgers(sourceCommit, ledgers) {
+export function mergeLedgers(sourceCommit, ledgers) {
   const entries = new Map();
   for (const ledger of ledgers) {
     for (const artifact of ledger.artifacts) {

@@ -5,6 +5,7 @@ import { promisify } from "node:util";
 
 const execFile = promisify(callback);
 const GUIDANCE = "Install Git before using npm/npx or archive installations; Homebrew supplies Git automatically. On macOS, install Git with Homebrew or install Apple's Command Line Tools, then retry.";
+const LINUX_GUIDANCE = "Install Git, bubblewrap, socat and ripgrep on PATH. Linux also needs a kernel and security policy permitting the strong sandbox; dependencies alone do not prove sandbox readiness.";
 
 export async function inspectSystemDependencies({ env = process.env, platform = process.platform,
   cwd = process.cwd(), run = execFile } = {}) {
@@ -35,12 +36,60 @@ export async function inspectSystemDependencies({ env = process.env, platform = 
     const { stdout } = await run(git, ["--version"], { env: { ...env, GIT_TERMINAL_PROMPT: "0" }, cwd, timeout: 5000, maxBuffer: 4096 });
     const version = /^git version ([0-9]+\.[0-9]+[^\r\n]*)\s*$/u.exec(stdout)?.[1];
     if (!version) return missing("GIT_VERSION_INVALID");
-    return { ok: true, status: "SYSTEM_DEPENDENCIES_READY", git: { ok: true, path: git, version } };
+    const result = { ok: true, status: "SYSTEM_DEPENDENCIES_READY", git: { ok: true, path: git, version } };
+    if (platform === "linux") {
+      result.tools = {};
+      for (const [name, flag] of [["bwrap", "--version"], ["socat", "-V"], ["rg", "--version"]]) {
+        let executable;
+        for (const directory of (env.PATH ?? "/usr/bin:/bin").split(path.delimiter)) {
+          const candidate = path.resolve(cwd, directory, name);
+          const stat = await fs.stat(candidate).catch(() => null);
+          if (!stat?.isFile() || (stat.mode & 0o111) === 0) continue;
+          if (path.isAbsolute(directory)) executable = await fs.realpath(candidate);
+          break;
+        }
+        try {
+          if (!executable) throw new Error("executable missing or on relative PATH");
+          const output = await run(executable, [flag], { env, cwd, timeout: 5000, maxBuffer: 4096 });
+          const reported = (output.stdout || output.stderr || "").trim().split("\n")[0];
+          if (!reported) throw new Error("empty version output");
+          result.tools[name] = { ok: true, path: executable, version: reported };
+        } catch {
+          result.tools[name] = { ok: false };
+          result.ok = false;
+        }
+      }
+      if (!result.ok) Object.assign(result, { status: "SYSTEM_DEPENDENCIES_MISSING", reason: "LINUX_TOOLS_UNAVAILABLE", next: LINUX_GUIDANCE });
+      else {
+        try {
+          const gitEntry = await fs.lstat(path.join(cwd, ".git")).catch((error) => {
+            if (error.code === "ENOENT") return null;
+            throw error;
+          });
+          // The pinned permission adapter degrades gitfiles to prompting.
+          // A new Linux channel must refuse that fallback, preserving the file.
+          if (gitEntry && !gitEntry.isDirectory()) {
+            Object.assign(result, { ok: false, status: "LINUX_SANDBOX_UNAVAILABLE", reason: "LINUX_GITFILE_SANDBOX_UNSUPPORTED",
+              sandbox: { ok: false, status: "STRONG_SANDBOX_BLOCKED" },
+              next: "Use an ordinary Git clone for this Linux Preview. The current permission adapter cannot provide guarded worktree/submodule execution; no weaker fallback is enabled." });
+            return result;
+          }
+          await run(result.tools.bwrap.path, ["--unshare-user", "--unshare-pid", "--unshare-net", "--die-with-parent",
+            "--ro-bind", "/", "/", "--dev", "/dev", "--proc", "/proc", "--", "/usr/bin/true"],
+          { env, cwd, timeout: 5000, maxBuffer: 4096 });
+          result.sandbox = { ok: true, status: "STRONG_SANDBOX_READY" };
+        } catch {
+          Object.assign(result, { ok: false, status: "LINUX_SANDBOX_UNAVAILABLE", reason: "LINUX_SANDBOX_UNAVAILABLE",
+            sandbox: { ok: false, status: "STRONG_SANDBOX_BLOCKED" }, next: LINUX_GUIDANCE });
+        }
+      }
+    }
+    return result;
   } catch { return missing("GIT_UNAVAILABLE"); }
 }
 
 export async function requireSystemDependencies(options) {
   const result = await inspectSystemDependencies(options);
-  if (!result.ok) throw Object.assign(new Error(`${result.git.reason}: ${result.next}`), { code: "SYSTEM_DEPENDENCIES_MISSING" });
+  if (!result.ok) throw Object.assign(new Error(`${result.reason ?? result.git.reason}: ${result.next}`), { code: "SYSTEM_DEPENDENCIES_MISSING" });
   return result;
 }

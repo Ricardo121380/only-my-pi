@@ -12,7 +12,7 @@ try {
     if (!key || !argv[i + 1] || Object.hasOwn(options, key)) throw new Error("expected unique --output, --seed-bundle, --source-commit and optional --version values");
     options[key] = argv[i + 1];
   }
-  if (!options.sourceCommit || !options.outputRoot || !options.seedBundle) throw new Error("missing required build arguments");
+  if (!options.sourceCommit || !options.outputRoot || (process.platform === "darwin" && !options.seedBundle)) throw new Error("missing required build arguments");
   process.stdout.write(`${JSON.stringify(await buildNativePackages(options), null, 2)}\n`);
 } catch (error) {
   process.stderr.write(`${JSON.stringify({ ok: false, code: error.code ?? "DISTRIBUTION_BUILD_FAILED", message: error.message })}\n`);

@@ -1,10 +1,12 @@
 # Multi-channel distribution implementation
 
-Status: implementation in progress; **not released**.
+Status: phase-one macOS `0.4.0-preview.1` is released and accepted on public
+Homebrew/npm/npx. Phase two Linux/Docker is in implementation and **not released**.
 
 The approved rollout introduces `0.4.0-preview.1` for native macOS arm64
-Homebrew/npm/npx, then `0.4.0-preview.2` for Linux x64/arm64 npm and interactive
-Docker. The existing `0.3.0-preview.1` release and its source-bound evidence remain
+Homebrew/npm/npx, then `0.4.0-preview.2` for Linux x64/arm64 npm. The user approved
+delivering Linux first; interactive Docker remains a separate later delivery
+with the same strict isolation gate. The existing `0.3.0-preview.1` release and its source-bound evidence remain
 historical and immutable. The private source package's legacy stack version is
 not publication authority for the separately versioned native distribution.
 
@@ -35,11 +37,12 @@ not publication authority for the separately versioned native distribution.
       on Node 22.19.0 and 24.19.0; startup without external network downloads.
 - [x] Legacy entry migration with ownership checks and recoverable backup.
 - [x] Local Homebrew install, formula tests, revision upgrade and uninstall.
-- [ ] Final-source candidate revalidation and public Homebrew tap acceptance.
-- [ ] Linux runtime and native x64/arm64 acceptance.
+- [x] Final-source macOS candidate revalidation and public Homebrew tap acceptance.
+- [x] Linux locked runtime builder and three-platform CLI assembler.
+- [ ] Final-source Linux x64/arm64 product acceptance and public installation.
 - [ ] Docker filesystem, network and PID isolation acceptance.
-- [ ] Fresh protected release evidence, signed artifacts and channel publication.
-- [ ] Public-registry installation verification and bilingual README promotion.
+- [x] macOS protected release evidence, signed artifacts and channel publication.
+- [x] macOS public-registry exact/default installation verification and bilingual README promotion.
 
 ## Docker feasibility
 
@@ -59,12 +62,37 @@ nested sandboxing is not an accepted workaround.
 
 ## Publication prerequisites
 
-The local npm CLI currently reports `ENEEDAUTH`. Registration, first publication
-and trusted publisher setup require the account owner's applicable login/2FA.
-The public `Ricardo121380/homebrew-tap` repository now contains its own verified
-formula-update workflow, but no installable formula. No npm product package or
-Docker product image has been published. See [the release runbook](native-release-runbook.md)
-for OIDC setup, protected acceptance, recovery and default-tag promotion.
+The macOS packages are registered, trusted publishing is configured, and both
+`latest` and `preview` point to `0.4.0-preview.1`. The public Homebrew formula is
+installable. Both Linux platform names are registered with bootstrap versions,
+and the account owner completed trusted-publisher configuration for
+`distribution-publish.yml` in the protected `public-preview` environment.
+The first product publication must still verify OIDC authorization. No Docker
+product image has been published. See [the release runbook](native-release-runbook.md).
+
+## Phase-two environment gate
+
+`Linux sandbox feasibility` runs `scripts/probe-linux-sandbox.mjs` on native
+Ubuntu x64 and arm64 runners. It checks non-root execution, glibc, Git,
+bubblewrap, socat and ripgrep, fresh PID/proc and network namespaces, a real
+TCP endpoint reachable outside but denied inside, hidden private file content,
+denied out-of-scope writes and permitted project writes. It does not disable
+AppArmor, seccomp, system-path masks or kernel restrictions. Failures retain
+`BLOCKED` evidence and do not authorize coding or publication.
+
+This is only an environment feasibility gate, not full OMP acceptance. Linux
+still needs a platform-native locked dependency build (the current builder
+intentionally accepts only the reviewed macOS seed), exact-version CLI assembly,
+Node 22/24 lifecycle tests and the protected product matrix. Docker additionally
+needs UID/GID persistence, signal handling, Compose and real product isolation
+acceptance. A successful native Linux probe does not validate Docker.
+
+The default Colima Docker configuration was retested after phase one and still
+rejects non-root namespace creation. The historical scoped-profile experiment
+also failed at fresh `/proc`. Upstream records this nested procfs restriction
+in [runc issue 1658](https://github.com/opencontainers/runc/issues/1658).
+Docker's [`systempaths=unconfined`](https://docs.docker.com/reference/cli/docker/container/run/#security-configuration)
+disables protected system paths and is not an accepted workaround.
 
 ## Candidate verification and discovered packaging constraints
 
@@ -109,3 +137,65 @@ the legacy shim and state record, and renames only that shim to a recoverable
 backup in its original directory. It preserves raw `pi`, old stacks and user
 data. A prepared or incomplete migration receipt requires inspection before
 another attempt; unknown command files are not replaced.
+
+
+## Linux candidate construction
+
+`Phase two platform candidates` builds each runtime on its native platform,
+using Ubuntu 22.04 for Linux. Both architectures passed the environment probe;
+Ubuntu 24.04 default policy failed network-namespace setup and is not represented
+as accepted. The runtime prerequisite check now tests actual bwrap namespace
+creation as well as tool presence, failing closed when unavailable.
+
+Linux uses the existing exact external lock and Pi shrinkwrap, with scripts
+disabled. Native clipboard dependencies are acquired from their locked registry
+artifacts and recorded in a fresh ledger. Linux tool archives and Node 24.19.0
+are checksum pinned. Reviewed license bindings are projected onto the actual
+platform dependency set; historical macOS registry semantics remain unchanged.
+
+Each platform initially emits a `PLATFORM_CANDIDATE_NOT_PUBLISHABLE` receipt.
+The assembler requires exactly macOS arm64, Linux arm64 and Linux x64 from the
+same clean source and version. It verifies runtime content and emits one CLI
+with all three exact optional dependencies. Full/Thin are then assembled with
+that same public CLI and unchanged core/Node bytes. The combined CLI is tested
+on Node 22.19.0 and 24.19.0 on all three platforms, and final fallbacks are
+retested. These checks do not substitute for protected product acceptance.
+
+```sh
+# Run natively on Linux, using Node 24.19.0, in a clean checkout.
+node scripts/build-distribution.mjs --source-commit COMMIT --version 0.4.0-preview.2 --output /absolute/linux-candidate
+# Every input must have the same source/version; all platforms are mandatory.
+node scripts/assemble-distribution-cli.mjs /absolute/combined /absolute/macos-candidate /absolute/linux-arm64-candidate /absolute/linux-x64-candidate
+```
+
+No phase-two publication is currently authorized by the phase-one publication
+validator. Linux package-name registration and trusted-publisher setup are
+account preparation only; bootstrap versions are not product releases.
+
+
+### Linux sandbox fixes found by live acceptance
+
+The first Kimi run exposed a reviewer exhausting its budget while trying to
+reconstruct Git internals. Reviewer tasks now identify the changed files and
+explain the already-verified scope/patch boundary, so the read-only reviewer can
+inspect source/tests directly without increasing its authority or budget.
+
+Linux uses a separate external lock with `@anthropic-ai/sandbox-runtime@0.0.76`;
+the historical macOS lock and immutable seed are unchanged. This brings the
+upstream Linux process-isolation fixes into the new platform. The packaged
+permission adapter's empty-file cleanup is replaced by explicit mountpoint
+ownership leases: exclusive creation, inode/metadata checks, and cleanup only
+after all overlapping commands finish. Existing empty files and user changes
+are preserved. Unknown leftovers are not guessed to be owned.
+
+Build patches require exact upstream file digests and emit
+`external-npm/omp-runtime-patches.json`. Patched bytes and that record are covered
+by the distribution component identity; the SPDX notices identify patched
+upstream packages. Third-party lifecycle scripts remain disabled. Live product
+acceptance must be repeated on the final patched candidate before release.
+
+This Linux Preview requires an ordinary Git clone. The pinned permission
+adapter falls back to prompting for worktrees/submodules using a `.git` file;
+the Linux dependency check rejects that layout instead, preserving the file and
+requiring a clone. This limitation must remain visible in the public Linux
+installation instructions when the channel is released.

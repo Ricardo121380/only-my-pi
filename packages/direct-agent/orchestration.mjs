@@ -543,7 +543,7 @@ export class DirectCodingOrchestrator {
         nodeId: "reviewer-1",
         label: "reviewer-1",
         agent: "omp-reviewer",
-        task: `Freshly review the uncommitted writer changes in this clone against the approved task and scope. Do not modify files.\n\nTask: ${task}\n\nScope: ${JSON.stringify(writerScope)}\n\nPatch digest: ${patch.sha256}\n\nRuntime verification receipt: ${JSON.stringify(verified)}`,
+        task: `Freshly review the uncommitted writer changes in this clone against the approved task and scope. Do not modify files. The runtime has checked patch identity and scope. Read the changed files and relevant tests directly; do not traverse .git objects to reconstruct a diff. Report any unverified point in the structured result.\n\nTask: ${task}\n\nScope: ${JSON.stringify(writerScope)}\n\nChanged files: ${JSON.stringify(patch.changedPaths)}\n\nPatch digest: ${patch.sha256}\n\nRuntime verification receipt: ${JSON.stringify(verified)}`,
         cwd: managed.cloneRoot,
         model: modelReference(ctx.model),
         thinking: ctx.thinkingLevel,
