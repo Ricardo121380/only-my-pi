@@ -1,0 +1,266 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-multiplatform-protected-evidence",
+  "status": "PASS",
+  "version": "0.4.0-preview.2",
+  "sourceCommit": "e63e1a3b870fb548ce4c2c08ed25d5b767b7e21b",
+  "buildReceiptSha256": "sha256:df236cf884e654e0318c1f09afdb2b8d84ee81c6a41922f19d4c10164271cd58",
+  "platforms": {
+    "darwin-arm64": {
+      "distributionId": "sha256:14ac2484055e3eb092103e74754666d6f19490dd2d1da577861ba4e301f30600",
+      "assertions": [
+        {
+          "id": "npm-node22-lifecycle",
+          "status": "PASS",
+          "evidenceSha256": "sha256:ffe7f3ff4c9818bc40eba1557d3e2828890c40ba08b58370d027835dc8819dff"
+        },
+        {
+          "id": "npm-node24-lifecycle",
+          "status": "PASS",
+          "evidenceSha256": "sha256:b9111ba30d0a1170716b1fd2ebb74a3f96f581a147e9ce21812e798fddba1da1"
+        },
+        {
+          "id": "full-thin-identity",
+          "status": "PASS",
+          "evidenceSha256": "sha256:f5e544bfcd6cac25d473f5c1f485da83470b937a09f7c84e9d6625a3da3ebe18"
+        },
+        {
+          "id": "dependency-complete-startup",
+          "status": "PASS",
+          "evidenceSha256": "sha256:b9111ba30d0a1170716b1fd2ebb74a3f96f581a147e9ce21812e798fddba1da1"
+        },
+        {
+          "id": "models-and-inspect",
+          "status": "PASS",
+          "evidenceSha256": "sha256:c9d4734bf41f9bccd1820193da4aa761a1f7252bf453a78e94c3d85f209027d4"
+        },
+        {
+          "id": "coding-approval",
+          "status": "PASS",
+          "evidenceSha256": "sha256:c9d4734bf41f9bccd1820193da4aa761a1f7252bf453a78e94c3d85f209027d4"
+        },
+        {
+          "id": "resume-reapproval",
+          "status": "PASS",
+          "evidenceSha256": "sha256:c9d4734bf41f9bccd1820193da4aa761a1f7252bf453a78e94c3d85f209027d4"
+        },
+        {
+          "id": "readonly-headless",
+          "status": "PASS",
+          "evidenceSha256": "sha256:c9d4734bf41f9bccd1820193da4aa761a1f7252bf453a78e94c3d85f209027d4"
+        },
+        {
+          "id": "readonly-subagents",
+          "status": "PASS",
+          "evidenceSha256": "sha256:c9d4734bf41f9bccd1820193da4aa761a1f7252bf453a78e94c3d85f209027d4"
+        },
+        {
+          "id": "managed-clone-writer",
+          "status": "PASS",
+          "evidenceSha256": "sha256:c9d4734bf41f9bccd1820193da4aa761a1f7252bf453a78e94c3d85f209027d4"
+        },
+        {
+          "id": "project-gates-and-review",
+          "status": "PASS",
+          "evidenceSha256": "sha256:c9d4734bf41f9bccd1820193da4aa761a1f7252bf453a78e94c3d85f209027d4"
+        },
+        {
+          "id": "cancel-and-cleanup",
+          "status": "PASS",
+          "evidenceSha256": "sha256:c9d4734bf41f9bccd1820193da4aa761a1f7252bf453a78e94c3d85f209027d4"
+        },
+        {
+          "id": "legacy-migration",
+          "status": "PASS",
+          "evidenceSha256": "sha256:f6debdff644f1828a569700ad1adae497e923c10ed588c5ae3ad2186750bd3e6"
+        },
+        {
+          "id": "path-shadow-detection",
+          "status": "PASS",
+          "evidenceSha256": "sha256:f6debdff644f1828a569700ad1adae497e923c10ed588c5ae3ad2186750bd3e6"
+        },
+        {
+          "id": "unknown-files-preserved",
+          "status": "PASS",
+          "evidenceSha256": "sha256:c9d4734bf41f9bccd1820193da4aa761a1f7252bf453a78e94c3d85f209027d4"
+        },
+        {
+          "id": "homebrew-lifecycle",
+          "status": "PASS",
+          "evidenceSha256": "sha256:266435d67b97c4eb2f966b20ec453de29b85d9c9d88e1e2ba93955be8a638928"
+        }
+      ]
+    },
+    "linux-arm64": {
+      "distributionId": "sha256:314f10865cdd6fb8ee665ede7c0d75c912d4dbb1a90267b6782e0289aab11ac5",
+      "assertions": [
+        {
+          "id": "npm-node22-lifecycle",
+          "status": "PASS",
+          "evidenceSha256": "sha256:a6790a3e9a96f03e6dff69c6b96a6a6ea281952e376261b4ad90a5860741dc86"
+        },
+        {
+          "id": "npm-node24-lifecycle",
+          "status": "PASS",
+          "evidenceSha256": "sha256:0821c00b7b4dfa21e8ffe09a0fd956ac55006395859ff37cd938dc6b8c863fc4"
+        },
+        {
+          "id": "full-thin-identity",
+          "status": "PASS",
+          "evidenceSha256": "sha256:b3ddee803dfd707381aa19f125ad5d3f2ec966f0be595c8ee398132841cb9ddc"
+        },
+        {
+          "id": "dependency-complete-startup",
+          "status": "PASS",
+          "evidenceSha256": "sha256:0821c00b7b4dfa21e8ffe09a0fd956ac55006395859ff37cd938dc6b8c863fc4"
+        },
+        {
+          "id": "models-and-inspect",
+          "status": "PASS",
+          "evidenceSha256": "sha256:af0270830f185de9d21a672df945ba0527b445bb229b5d1fa66e0e9c653435bf"
+        },
+        {
+          "id": "coding-approval",
+          "status": "PASS",
+          "evidenceSha256": "sha256:af0270830f185de9d21a672df945ba0527b445bb229b5d1fa66e0e9c653435bf"
+        },
+        {
+          "id": "resume-reapproval",
+          "status": "PASS",
+          "evidenceSha256": "sha256:af0270830f185de9d21a672df945ba0527b445bb229b5d1fa66e0e9c653435bf"
+        },
+        {
+          "id": "readonly-headless",
+          "status": "PASS",
+          "evidenceSha256": "sha256:af0270830f185de9d21a672df945ba0527b445bb229b5d1fa66e0e9c653435bf"
+        },
+        {
+          "id": "readonly-subagents",
+          "status": "PASS",
+          "evidenceSha256": "sha256:af0270830f185de9d21a672df945ba0527b445bb229b5d1fa66e0e9c653435bf"
+        },
+        {
+          "id": "managed-clone-writer",
+          "status": "PASS",
+          "evidenceSha256": "sha256:af0270830f185de9d21a672df945ba0527b445bb229b5d1fa66e0e9c653435bf"
+        },
+        {
+          "id": "project-gates-and-review",
+          "status": "PASS",
+          "evidenceSha256": "sha256:af0270830f185de9d21a672df945ba0527b445bb229b5d1fa66e0e9c653435bf"
+        },
+        {
+          "id": "cancel-and-cleanup",
+          "status": "PASS",
+          "evidenceSha256": "sha256:af0270830f185de9d21a672df945ba0527b445bb229b5d1fa66e0e9c653435bf"
+        },
+        {
+          "id": "legacy-migration",
+          "status": "PASS",
+          "evidenceSha256": "sha256:d1fcb99f280e40567d9edbdf807a58ecd095058942eba8a932f8f415c632a198"
+        },
+        {
+          "id": "path-shadow-detection",
+          "status": "PASS",
+          "evidenceSha256": "sha256:d1fcb99f280e40567d9edbdf807a58ecd095058942eba8a932f8f415c632a198"
+        },
+        {
+          "id": "unknown-files-preserved",
+          "status": "PASS",
+          "evidenceSha256": "sha256:af0270830f185de9d21a672df945ba0527b445bb229b5d1fa66e0e9c653435bf"
+        },
+        {
+          "id": "strong-sandbox-isolation",
+          "status": "PASS",
+          "evidenceSha256": "sha256:6c121d62a8fb580666dad7811c6518150135d992b0ab0c8695ce31db47d18c54"
+        }
+      ]
+    },
+    "linux-x64": {
+      "distributionId": "sha256:782f017c01e94af3b67030b9de01eea1b402021f7c27df2cc914c93a38418220",
+      "assertions": [
+        {
+          "id": "npm-node22-lifecycle",
+          "status": "PASS",
+          "evidenceSha256": "sha256:b141268ed330822138dd65ed23637656e06fd5701478fc6d1cd8ba674570a1a3"
+        },
+        {
+          "id": "npm-node24-lifecycle",
+          "status": "PASS",
+          "evidenceSha256": "sha256:a3d101605743eb45349d46e388ac337c450e8e043b5cb22d1a3b0dc9f4226310"
+        },
+        {
+          "id": "full-thin-identity",
+          "status": "PASS",
+          "evidenceSha256": "sha256:60b08d7a4b5f4102ad787793d6877be4ca3a0bb29920416b4d40bfa3478bcb45"
+        },
+        {
+          "id": "dependency-complete-startup",
+          "status": "PASS",
+          "evidenceSha256": "sha256:a3d101605743eb45349d46e388ac337c450e8e043b5cb22d1a3b0dc9f4226310"
+        },
+        {
+          "id": "models-and-inspect",
+          "status": "PASS",
+          "evidenceSha256": "sha256:e8efade77c194c70b80735040c12d09be76a0eef458de1c9c26de5fec15d0f86"
+        },
+        {
+          "id": "coding-approval",
+          "status": "PASS",
+          "evidenceSha256": "sha256:e8efade77c194c70b80735040c12d09be76a0eef458de1c9c26de5fec15d0f86"
+        },
+        {
+          "id": "resume-reapproval",
+          "status": "PASS",
+          "evidenceSha256": "sha256:e8efade77c194c70b80735040c12d09be76a0eef458de1c9c26de5fec15d0f86"
+        },
+        {
+          "id": "readonly-headless",
+          "status": "PASS",
+          "evidenceSha256": "sha256:e8efade77c194c70b80735040c12d09be76a0eef458de1c9c26de5fec15d0f86"
+        },
+        {
+          "id": "readonly-subagents",
+          "status": "PASS",
+          "evidenceSha256": "sha256:e8efade77c194c70b80735040c12d09be76a0eef458de1c9c26de5fec15d0f86"
+        },
+        {
+          "id": "managed-clone-writer",
+          "status": "PASS",
+          "evidenceSha256": "sha256:e8efade77c194c70b80735040c12d09be76a0eef458de1c9c26de5fec15d0f86"
+        },
+        {
+          "id": "project-gates-and-review",
+          "status": "PASS",
+          "evidenceSha256": "sha256:e8efade77c194c70b80735040c12d09be76a0eef458de1c9c26de5fec15d0f86"
+        },
+        {
+          "id": "cancel-and-cleanup",
+          "status": "PASS",
+          "evidenceSha256": "sha256:e8efade77c194c70b80735040c12d09be76a0eef458de1c9c26de5fec15d0f86"
+        },
+        {
+          "id": "legacy-migration",
+          "status": "PASS",
+          "evidenceSha256": "sha256:b639962ccd51e07a28e164ba0e085e8132b5189b11c5ab36e76bacb7ddc3844d"
+        },
+        {
+          "id": "path-shadow-detection",
+          "status": "PASS",
+          "evidenceSha256": "sha256:b639962ccd51e07a28e164ba0e085e8132b5189b11c5ab36e76bacb7ddc3844d"
+        },
+        {
+          "id": "unknown-files-preserved",
+          "status": "PASS",
+          "evidenceSha256": "sha256:e8efade77c194c70b80735040c12d09be76a0eef458de1c9c26de5fec15d0f86"
+        },
+        {
+          "id": "strong-sandbox-isolation",
+          "status": "PASS",
+          "evidenceSha256": "sha256:f416f950e4184aecf85285c873325560c45d83f2631f143acad811c3fbe3e14d"
+        }
+      ]
+    }
+  },
+  "evidenceDigest": "sha256:f03a577abe1bbbf1cebe91be28214a3850bb40967d3d38674e5a9c0ec79a3270"
+}
