@@ -56,7 +56,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          for file in "$RUNNER_TEMP/candidate"/*.tgz "$RUNNER_TEMP/candidate"/*.tar.gz "$RUNNER_TEMP/candidate/build-receipt.json"; do
+          for file in "$RUNNER_TEMP/candidate"/*.tgz "$RUNNER_TEMP/candidate"/*.tar.gz "$RUNNER_TEMP/candidate/build-receipt.json" "$RUNNER_TEMP/candidate/only-my-pi.rb"; do
             gh attestation verify "$file" --repo Ricardo121380/only-my-pi --source-digest "$SOURCE_COMMIT" --signer-digest "$SOURCE_COMMIT" --source-ref refs/heads/main --signer-workflow Ricardo121380/only-my-pi/.github/workflows/linux-candidate.yml --deny-self-hosted-runners
           done
           node scripts/install-live-candidate.mjs "$RUNNER_TEMP/candidate" "$RUNNER_TEMP/live-install" "$SOURCE_COMMIT"

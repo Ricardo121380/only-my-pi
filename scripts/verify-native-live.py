@@ -22,6 +22,7 @@ ANSI = re.compile(r"\x1b\][^\x07]*(?:\x07|\x1b\\)|\x1b\[[0-?]*[ -/]*[@-~]")
 READ_PROMPT = "Synthetic acceptance: stay in Inspect. Read math.mjs and test.mjs, then delegate one read-only scout to independently identify the negative-addition bug. Do not modify files or request coding access. Give a short final answer."
 WRITE_PROMPT = "Prepare a complex plan and request_coding_access for scope exactly [math.mjs]. Explicitly enable a managed clone writer and fresh reviewer. Delegate the fix to the writer, use the committed .pi/only-my-pi-gates.json unit gate, require fresh review, apply the verified patch, then run node test.mjs in the real worktree. Preserve all other files and existing changes. Do not commit or push."
 RESUME_PROMPT = "This is a new process. Request coding access again before adding one trailing blank line to math.mjs. Wait for the decision; do not perform any write before approval."
+CANCEL_PROMPT = "Synthetic cancellation test: immediately delegate one read-only scout to inspect math.mjs and test.mjs and carefully explain signed-addition edge cases. Do not inspect yourself, request coding access, or change files."
 
 
 def checked(argv, **options):
@@ -30,6 +31,25 @@ def checked(argv, **options):
 
 def digest(filename):
     return "sha256:" + hashlib.sha256(Path(filename).read_bytes()).hexdigest()
+
+
+def processes():
+    # Process arguments stay in memory; never log them or include them in receipts.
+    result = {}
+    for line in checked(["ps", "-axo", "pid=,ppid=,command="]).stdout.splitlines():
+        fields = line.strip().split(None, 2)
+        if len(fields) == 3:
+            result[int(fields[0])] = (int(fields[1]), fields[2])
+    return result
+
+
+def descendants(pid, table):
+    found = set()
+    frontier = {pid}
+    while frontier:
+        frontier = {child for child, (parent, _) in table.items() if parent in frontier} - found
+        found.update(frontier)
+    return found
 
 
 class Tui:
@@ -112,11 +132,13 @@ class Tui:
         self.wait(lambda: self.result("request_coding_access", "CODING_ACCESS_GRANTED"), "coding grant")
 
     def stop(self):
+        graceful = True
         if self.process.poll() is None:
             self.send("\x04")
             try:
                 self.process.wait(timeout=5)
             except subprocess.TimeoutExpired:
+                graceful = False
                 self.process.send_signal(signal.SIGTERM)
                 try:
                     self.process.wait(timeout=10)
@@ -124,6 +146,43 @@ class Tui:
                     os.killpg(self.process.pid, signal.SIGKILL)
                     self.process.wait(timeout=5)
         os.close(self.master)
+        return graceful and self.process.returncode == 0
+
+
+def verify_cancel(command, project, env, sessions):
+    before = digest(project / "math.mjs")
+    tui = Tui(command, project, env, sessions, CANCEL_PROMPT)
+    children = set()
+    stopped = False
+    try:
+        def child_started():
+            table = processes()
+            running = descendants(tui.process.pid, table)
+            # Pi replaces argv with its process title after startup.
+            models = {pid for pid in running if "/dist/cli.js" in table[pid][1]
+                      or table[pid][1].split()[0] in {"pi", "pi-rpc", "omp", "omp-rpc"}}
+            if models:
+                children.update(models)
+            return bool(models) and any(c.get("name") == "delegate_readonly_agent"
+                for m in tui.messages() for c in m.get("content", []) if c.get("type") == "toolCall")
+        tui.wait(child_started, "real child process before cancellation")
+        tui.send("\x1b")
+        tui.wait(lambda: not children.intersection(processes()) and (
+            tui.result("delegate_readonly_agent", "DIRECT_CHILD_CANCELLED") or
+            any(m.get("stopReason") == "aborted" for m in tui.messages())), "cancelled child cleanup", timeout=30)
+        remaining = descendants(tui.process.pid, processes())
+        clean_exit = tui.stop()
+        stopped = True
+        assert clean_exit, "normal exit required forced termination"
+        deadline = time.monotonic() + 10
+        while remaining.intersection(processes()) and time.monotonic() < deadline:
+            time.sleep(0.2)
+        assert not remaining.intersection(processes()), "child processes remain after normal exit"
+        assert digest(project / "math.mjs") == before, "cancelled read-only child changed source"
+        return {"observedChildCount": len(children), "childrenReaped": True, "normalExit": True}
+    finally:
+        if not stopped:
+            tui.stop()
 
 
 def run(args):
@@ -183,6 +242,11 @@ def run(args):
         baseline = checked(["git", "rev-parse", "HEAD"], cwd=project, env=env).stdout.strip()
         (project / "preserve.txt").write_text("Pre-existing user fixture; do not change.\n")
         before = digest(project / "math.mjs")
+        if args.only_cancel:
+            receipt["cancellation"] = verify_cancel(args.command, project, env, config / "sessions")
+            receipt["assertions"]["cancel-and-cleanup"] = True
+            receipt["status"] = "NATIVE_CANCEL_ACCEPTANCE_PASS"
+            return
         active = Tui(args.command, project, env, config / "sessions", READ_PROMPT)
         active.wait(lambda: "(Preview) · Inspect" in active.screen and "Build (sandboxed" in active.screen, "initial Inspect with active sandbox")
         active.wait(lambda: active.result("delegate_readonly_agent", "DIRECT_CHILD_COMPLETED") and active.finished(), "read-only scout")
@@ -217,14 +281,16 @@ def run(args):
         assert "-5" in result.stdout and not (project / "unexpected.txt").exists()
         assert digest(project / "math.mjs") == fixed
         receipt["assertions"]["readonly-headless"] = True
+        receipt["cancellation"] = verify_cancel(args.command, project, env, config / "sessions")
+        receipt["assertions"]["cancel-and-cleanup"] = True
         assert (project / "preserve.txt").read_text() == "Pre-existing user fixture; do not change.\n"
         assert (project / ".bashrc").stat().st_ino == original_empty_inode and (project / ".bashrc").stat().st_size == 0
         assert checked(["git", "rev-parse", "HEAD"], cwd=project, env=env).stdout.strip() == baseline
         changes = checked(["git", "status", "--porcelain"], cwd=project, env=env).stdout.splitlines()
         assert sorted(changes) == [" M math.mjs", " M preserve.txt"], "unexpected project side effects"
         receipt["assertions"]["unknown-files-preserved"] = True
-        receipt["status"] = "NATIVE_LIVE_SUBSET_PASS"
-        receipt["notCovered"] = ["cancel-and-cleanup", "legacy-migration", "path-shadow-detection", "public-registry-installation"]
+        receipt["status"] = "NATIVE_LIVE_ACCEPTANCE_PASS"
+        receipt["notCovered"] = ["legacy-migration", "path-shadow-detection", "public-registry-installation"]
     except Exception as error:
         receipt["failure"] = type(error).__name__ + ": " + str(error)[:500]
         raise
@@ -250,4 +316,5 @@ if __name__ == "__main__":
     parser.add_argument("--source-commit", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--model-config")
+    parser.add_argument("--only-cancel", action="store_true", help="diagnostic subset; never full release evidence")
     run(parser.parse_args())

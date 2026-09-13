@@ -45,7 +45,7 @@ jobs:
           node-version: "24.19.0"
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - if: runner.os == 'Linux'
-        run: node scripts/probe-linux-sandbox.mjs
+        run: node scripts/probe-linux-sandbox.mjs > "$RUNNER_TEMP/sandbox.json"
       - name: Fetch immutable seed for macOS only
         if: runner.os == 'macOS'
         env:
@@ -75,6 +75,7 @@ jobs:
           name: platform-candidate-${{ matrix.platform }}
           if-no-files-found: warn
           path: |
+            ${{ runner.temp }}/sandbox.json
             ${{ runner.temp }}/candidate/*.tgz
             ${{ runner.temp }}/candidate/*.tar.gz
             ${{ runner.temp }}/candidate/build-receipt.json
@@ -120,6 +121,7 @@ jobs:
             ${{ runner.temp }}/combined/*.tgz
             ${{ runner.temp }}/combined/*.tar.gz
             ${{ runner.temp }}/combined/build-receipt.json
+            ${{ runner.temp }}/combined/only-my-pi.rb
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: combined-candidate
@@ -127,6 +129,7 @@ jobs:
             ${{ runner.temp }}/combined/*.tgz
             ${{ runner.temp }}/combined/*.tar.gz
             ${{ runner.temp }}/combined/build-receipt.json
+            ${{ runner.temp }}/combined/only-my-pi.rb
 
   combined-install:
     name: Combined CLI on ${{ matrix.platform }} Node ${{ matrix.node }}
@@ -183,3 +186,34 @@ jobs:
             ${{ runner.temp }}/acceptance/*.log
             ${{ runner.temp }}/archives/*.json
             ${{ runner.temp }}/archives/*.log
+
+  homebrew:
+    name: Homebrew product upgrade and lifecycle
+    needs: assemble
+    runs-on: macos-14
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      attestations: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+        with:
+          name: combined-candidate
+          path: ${{ runner.temp }}/combined
+      - name: Upgrade the public previous version to the exact candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/verify-distribution-homebrew.sh "$RUNNER_TEMP/combined" "$RUNNER_TEMP/homebrew"
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: homebrew-candidate-lifecycle
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/homebrew/acceptance.json
+            ${{ runner.temp }}/homebrew/*-version.json
+            ${{ runner.temp }}/homebrew/*-doctor.json
+            ${{ runner.temp }}/homebrew/lifecycle.log

@@ -18,7 +18,7 @@ if (mode !== "--publish") {
     throw new Error("Product publication must use the protected GitHub Actions OIDC workflow.");
   const journalPath = path.join(candidateDirectory, "npm-publication.json");
   const journal = { formatVersion: 1, status: "PUBLISHING", version: receipt.version, sourceCommit,
-    distributionId: receipt.distributionId, protectedEvidenceDigest: evidence.evidenceDigest, submissions: [], completed: [] };
+    distributionId: receipt.distributionId, platforms: receipt.platforms, protectedEvidenceDigest: evidence.evidenceDigest, submissions: [], completed: [] };
   const save = () => fs.writeFile(journalPath, `${JSON.stringify(journal, null, 2)}\n`);
   await save();
   try {
