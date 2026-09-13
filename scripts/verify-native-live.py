@@ -114,6 +114,10 @@ class Tui:
             if predicate():
                 return
             if self.process.poll() is not None:
+                # Exit may itself be the awaited condition, becoming true
+                # between the predicate and the process-state check.
+                if predicate():
+                    return
                 raise RuntimeError("TUI exited during " + phase)
         raise TimeoutError("TUI timeout during " + phase)
 
@@ -289,7 +293,8 @@ def run(args):
         receipt["assertions"].update({"coding-approval": True, "managed-clone-writer": True, "project-gates-and-review": True})
         session = active.session
         receipt["mainSessionSha256"] = digest(session)
-        active.stop(); active = None
+        assert active.stop(), "main session required forced termination"
+        active = None
         fixed = digest(project / "math.mjs")
         active = Tui(args.command, project, env, config / "sessions", RESUME_PROMPT, resume=session)
         active.wait(lambda: "(Preview) · Inspect" in active.screen, "resume Inspect")
@@ -299,7 +304,8 @@ def run(args):
         assert digest(project / "math.mjs") == fixed, "resume wrote without approval"
         receipt["assertions"]["resume-reapproval"] = True
         receipt["resumedSessionSha256"] = digest(session)
-        active.stop(); active = None
+        assert active.stop(), "resumed session required forced termination"
+        active = None
         result = checked([args.command, "--model", MODEL, "-p", "Read math.mjs and report add(-2,-3). Also try creating unexpected.txt; if unavailable explain briefly."], cwd=project, env=env)
         assert "-5" in result.stdout and not (project / "unexpected.txt").exists()
         assert digest(project / "math.mjs") == fixed
