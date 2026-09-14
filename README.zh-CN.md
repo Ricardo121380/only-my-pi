@@ -8,8 +8,8 @@ only-my-pi（OMP）是基于 [Pi](https://github.com/earendil-works/pi) 的终�
 
 Pi 提供终端界面、模型、会话和基础工具；OMP 在此之上增加编程审批、有预算的子代理协作，以及可验证的安装与回滚。
 
-> **已发布预览版：[v0.4.0-preview.1](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.1)**<br>
-> 受控安装仅支持 **macOS 14+、原生 Apple Silicon（arm64）**。模型账户与费用由你自行配置和承担。
+> **已发布预览版：[v0.4.0-preview.2](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2)**<br>
+> 支持 **macOS 14+、原生 Apple Silicon（arm64）** 和 **Linux glibc x64/arm64**。模型账户与费用由你自行配置和承担。
 
 [快速开始](#快速开始) · [日常使用](#日常使用与审批) · [常见问题](#常见问题) · [安全边界](#安全与许可证)
 
@@ -29,13 +29,13 @@ Pi 提供终端界面、模型、会话和基础工具；OMP 在此之上增加�
 
 <a id="platform-and-runtime"></a>
 
-支持 **macOS 14+ 原生 Apple Silicon（arm64）**。本版本不支持 Intel Mac、Rosetta、原生 Windows、Linux 或 Docker。模型账号与访问额度由用户准备；随包 Pi 版本为 **0.84.3**。
+支持 **macOS 14+ 原生 Apple Silicon（arm64）** 和 **Linux glibc x64/arm64**。不支持 Intel Mac、Rosetta、原生 Windows 或 Alpine/musl。Docker 的隔离验收尚未完成，目前不提供该安装渠道。模型账号与访问额度由用户准备；随包 Pi 版本为 **0.84.3**。
 
 <a id="installation"></a>
 
 ### 1. 通过 Homebrew 或 npm 安装
 
-**Homebrew** 自动提供 Node 24 和 Git：
+**Homebrew（macOS）** 自动提供 Node 24 和 Git：
 
 ```bash
 brew install ricardo121380/tap/only-my-pi
@@ -51,15 +51,27 @@ npm install -g only-my-pi
 omp --version
 ```
 
+**Linux 前置条件：**使用普通 Git 克隆，准备 Node >=22.19.0、Git、bubblewrap、socat 和 ripgrep。Ubuntu 22.04 示例：
+
+```bash
+sudo apt-get update
+sudo apt-get install -y git bubblewrap socat ripgrep
+node --version
+npm install -g only-my-pi
+omp admin doctor --json
+```
+
+原生 Ubuntu 22.04 x64/arm64 已通过验收。内核与安全策略还必须允许强沙箱，仅安装这些工具并不足够。Ubuntu 24.04 默认用户命名空间策略未通过预检；不要通过关闭系统安全控制绕过失败。本预览版拒绝使用 `.git` 文件的 Git worktree/submodule，请改用普通克隆。
+
 临时运行使用相同前置条件：
 
 ```bash
 npx only-my-pi
 ```
 
-默认入口提供已验收的 **0.4.0-preview.1 Public Preview**，npm 的 `latest` 和 `preview` 均指向此版本。如需固定版本，使用 `npm install -g only-my-pi@0.4.0-preview.1` 或 `npx only-my-pi@0.4.0-preview.1`。
+默认入口提供已验收的 **0.4.0-preview.2 Public Preview**，npm 的 `latest` 和 `preview` 均指向此版本。如需固定版本，使用 `npm install -g only-my-pi@0.4.0-preview.2` 或 `npx only-my-pi@0.4.0-preview.2`。
 
-各渠道复用同一份预构建运行核心，包含审核过的扩展、fd 和 ripgrep；npm 平台包不捆绑 Node。首次启动不会补下载运行依赖。只注册全局 `omp`，保留已有的 `pi` 命令。
+同平台的各渠道复用同一份预构建运行核心，包含审核过的扩展、fd 和 ripgrep；npm 平台包不捆绑 Node。首次启动不会补下载运行依赖。只注册全局 `omp`，保留已有的 `pi` 命令。
 
 <a id="first-run-and-model-setup"></a>
 
@@ -125,7 +137,7 @@ omp -- "status"                          # 将管理命令同名词当作任务
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/Ricardo121380/only-my-pi/v0.4.0-preview.1/schemas/project-gates-v1.schema.json",
+  "$schema": "https://raw.githubusercontent.com/Ricardo121380/only-my-pi/v0.4.0-preview.2/schemas/project-gates-v1.schema.json",
   "formatVersion": 1,
   "id": "project-checks",
   "gates": [
@@ -232,6 +244,8 @@ omp admin doctor --json
 | 现象或错误码 | 建议处理 |
 | --- | --- |
 | `SYSTEM_DEPENDENCIES_MISSING` / Git 不可用 | npm/npx 用户先安装 Git；Homebrew 用户检查依赖与 PATH。安装器不会弹出系统开发工具安装窗口。 |
+| `LINUX_SANDBOX_UNAVAILABLE` | 核对 Linux 系统依赖、命名空间及安全策略；沙箱不可用时会阻止启动。 |
+| `LINUX_GITFILE_SANDBOX_UNSUPPORTED` | 使用普通 Git 克隆；原有 `.git` 文件会保留。 |
 | `PATH_ACTION_REQUIRED` / `SHIM_CONFLICT` | 检查命令路径和现有同名文件；不要覆盖未知命令。 |
 | `NO_AUTHENTICATED_MODELS` / `MODEL_AUTH_UNAVAILABLE` / `HEADLESS_MODEL_REQUIRED` | 通过 Pi 配置认证，再显式选择可用模型。 |
 | `CODING_ACCESS_REQUIRED` / `COMPLEX_PLAN_REQUIRED` | 先检查并批准当前进程所需的编程计划。 |
@@ -250,26 +264,26 @@ omp admin doctor --json
 
 ## 高级安装：Full/Thin、离线与回滚
 
-Homebrew/npm 是主要入口。Full/Thin 用作手动安装、离线与恢复备用方案；两者使用同一核心身份。Full 包含 Node 24.19.0，可在下载并验证后完全离线安装；Thin 在安装时仅获取固定的 Node 24.19.0。两者均要求预装 Git。离线安装不代表模型可以离线访问。
+Homebrew/npm 是主要入口。Full/Thin 用作手动安装、离线与恢复备用方案；两者使用同一核心身份。Full 包含 Node 24.19.0，可在下载并验证后完全离线安装；Thin 在安装时仅获取固定的 Node 24.19.0。两者均要求预装 Git；Linux 还需要 bubblewrap、socat、ripgrep 和可用的强沙箱。离线安装不代表模型可以离线访问。
 
-从对应 GitHub Release 下载目标压缩包，先核验来源证明。以下示例为 Full（将文件名的 full 替换为 thin 可验证 Thin）：
+按平台选择 `darwin-arm64`、`linux-x64` 或 `linux-arm64`。以下示例使用 `darwin-arm64`，Linux 用户替换文件名中的平台部分。从对应 GitHub Release 下载目标压缩包，先核验来源证明。以下示例为 Full（将文件名的 full 替换为 thin 可验证 Thin）：
 
 ```bash
-gh release download v0.4.0-preview.1 --repo Ricardo121380/only-my-pi \
-  --pattern only-my-pi-0.4.0-preview.1-darwin-arm64-full.tar.gz
-gh attestation verify only-my-pi-0.4.0-preview.1-darwin-arm64-full.tar.gz \
+gh release download v0.4.0-preview.2 --repo Ricardo121380/only-my-pi \
+  --pattern only-my-pi-0.4.0-preview.2-darwin-arm64-full.tar.gz
+gh attestation verify only-my-pi-0.4.0-preview.2-darwin-arm64-full.tar.gz \
   --repo Ricardo121380/only-my-pi \
-  --source-digest 38e71adc8c2c52cc332db288f5dcdd14f73bd8cb \
-  --signer-digest 38e71adc8c2c52cc332db288f5dcdd14f73bd8cb \
+  --source-digest e63e1a3b870fb548ce4c2c08ed25d5b767b7e21b \
+  --signer-digest e63e1a3b870fb548ce4c2c08ed25d5b767b7e21b \
   --source-ref refs/heads/main \
-  --signer-workflow Ricardo121380/only-my-pi/.github/workflows/distribution-candidate.yml \
+  --signer-workflow Ricardo121380/only-my-pi/.github/workflows/linux-candidate.yml \
   --deny-self-hosted-runners
 ```
 
 只有校验成功后才解压，并指定一个不存在的新程序目录：
 
 ```bash
-tar -xzf only-my-pi-0.4.0-preview.1-darwin-arm64-full.tar.gz
+tar -xzf only-my-pi-0.4.0-preview.2-darwin-arm64-full.tar.gz
 ./only-my-pi/install.sh --prefix /absolute/new/omp-directory
 /absolute/new/omp-directory/bin/omp
 ```
@@ -285,7 +299,7 @@ tar -xzf only-my-pi-0.4.0-preview.1-darwin-arm64-full.tar.gz
 
 #### 1. 确认环境
 
-当前预览版不支持 Intel Mac、Rosetta、Linux 或 Windows 的受控安装。受控栈使用固定的 **Node.js 24.19.0** 和 **Pi 0.84.3**；安装器提供运行时，不需要预装系统 Node 或 npm。写入子代理需要 Git；安装器使用 macOS 的 `curl`、`shasum`、`tar`、`awk` 和 `mktemp`。
+这一历史 0.3 安装器仍仅适用于 macOS Apple Silicon，不支持 Intel Mac、Rosetta、Linux 或 Windows。当前 Linux 安装请使用上面的 npm/npx 或对应平台 Full/Thin 包。受控栈使用固定的 **Node.js 24.19.0** 和 **Pi 0.84.3**；安装器提供运行时，不需要预装系统 Node 或 npm。写入子代理需要 Git；安装器使用 macOS 的 `curl`、`shasum`、`tar`、`awk` 和 `mktemp`。
 
 
 #### 2. 校验安装器并预览计划

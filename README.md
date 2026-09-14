@@ -8,8 +8,8 @@ only-my-pi (OMP) is a terminal coding agent built on [Pi](https://github.com/ear
 
 Pi provides the terminal UI, models, sessions, and core tools. OMP adds coding approvals, budgeted subagent collaboration, and verifiable installation and rollback.
 
-> **Published Preview: [v0.4.0-preview.1](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.1)**<br>
-> Managed installation supports **macOS 14+ on native Apple Silicon (arm64)** only. Bring your own model access and provider account.
+> **Published Preview: [v0.4.0-preview.2](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2)**<br>
+> Supports **macOS 14+ Apple Silicon (arm64)** and **Linux glibc x64/arm64**. Bring your own model access and provider account.
 
 [Quick start](#quick-start) · [Daily use](#daily-use-and-approvals) · [Troubleshooting](#troubleshooting) · [Security](#security-and-license)
 
@@ -29,13 +29,13 @@ You do not need to choose a Workflow, Swarm, Goal, or Ultra to do everyday work.
 
 <a id="platform-and-runtime"></a>
 
-Supports **macOS 14+ on native Apple Silicon (arm64)**. This release does not support Intel Mac, Rosetta, native Windows, Linux or Docker. Bring your own model access. The packaged Pi version is **0.84.3**.
+Supports **macOS 14+ on native Apple Silicon (arm64)** and **Linux glibc x64/arm64**. Intel Mac, Rosetta, native Windows and Alpine/musl are unsupported. Docker is not yet available; its isolation acceptance remains incomplete. Bring your own model access. The packaged Pi version is **0.84.3**.
 
 <a id="installation"></a>
 
 ### 1. Install with Homebrew or npm
 
-**Homebrew** supplies Node 24 and Git:
+**Homebrew (macOS)** supplies Node 24 and Git:
 
 ```bash
 brew install ricardo121380/tap/only-my-pi
@@ -51,15 +51,27 @@ npm install -g only-my-pi
 omp --version
 ```
 
+**Linux prerequisites:** use an ordinary Git clone, Node >=22.19.0, Git, bubblewrap, socat and ripgrep. On Ubuntu 22.04:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y git bubblewrap socat ripgrep
+node --version
+npm install -g only-my-pi
+omp admin doctor --json
+```
+
+Native Ubuntu 22.04 x64 and arm64 passed acceptance. The kernel and security policy must allow the strong sandbox; installing the tools alone is insufficient. Ubuntu 24.04's default user-namespace policy failed our preflight. Do not disable system security controls to bypass a failure. This Preview refuses Git worktrees/submodules using a `.git` file; use an ordinary clone.
+
 For an ephemeral run with the same prerequisites:
 
 ```bash
 npx only-my-pi
 ```
 
-Default installation selects the accepted **0.4.0-preview.1 Public Preview**. Both npm `latest` and `preview` point to this version. To pin it explicitly, use `npm install -g only-my-pi@0.4.0-preview.1` or `npx only-my-pi@0.4.0-preview.1`.
+Default installation selects the accepted **0.4.0-preview.2 Public Preview**. Both npm `latest` and `preview` point to this version. To pin it explicitly, use `npm install -g only-my-pi@0.4.0-preview.2` or `npx only-my-pi@0.4.0-preview.2`.
 
-All channels use the same prebuilt core with audited extensions, fd and ripgrep. npm platform packages do not bundle Node. Startup does not download missing runtime dependencies. Only `omp` is registered globally; existing `pi` commands are preserved.
+All channels on the same platform use the same prebuilt core with audited extensions, fd and ripgrep. npm platform packages do not bundle Node. Startup does not download missing runtime dependencies. Only `omp` is registered globally; existing `pi` commands are preserved.
 
 <a id="first-run-and-model-setup"></a>
 
@@ -125,7 +137,7 @@ This example assumes a Node project with an existing `npm test` script. Replace 
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/Ricardo121380/only-my-pi/v0.4.0-preview.1/schemas/project-gates-v1.schema.json",
+  "$schema": "https://raw.githubusercontent.com/Ricardo121380/only-my-pi/v0.4.0-preview.2/schemas/project-gates-v1.schema.json",
   "formatVersion": 1,
   "id": "project-checks",
   "gates": [
@@ -232,6 +244,8 @@ Migration verifies the new entry and old ownership record, then backs up only a 
 | Symptom or error | What to do |
 | --- | --- |
 | `SYSTEM_DEPENDENCIES_MISSING` / unavailable Git | Prepare Git before npm/npx installation; Homebrew users should check dependencies and PATH. The verifier does not launch the macOS developer-tools installer. |
+| `LINUX_SANDBOX_UNAVAILABLE` | Verify Linux dependencies and namespace/security-policy support; a failed sandbox blocks startup. |
+| `LINUX_GITFILE_SANDBOX_UNSUPPORTED` | Use an ordinary Git clone; the `.git` file is preserved. |
 | `PATH_ACTION_REQUIRED` / `SHIM_CONFLICT` | Check command paths and existing files; do not overwrite an unknown command. |
 | `NO_AUTHENTICATED_MODELS` / `MODEL_AUTH_UNAVAILABLE` / `HEADLESS_MODEL_REQUIRED` | Configure authentication through Pi, then select a usable model explicitly. |
 | `CODING_ACCESS_REQUIRED` / `COMPLEX_PLAN_REQUIRED` | Inspect first and approve the coding plan required for this process. |
@@ -250,26 +264,26 @@ For a [non-sensitive bug report](https://github.com/Ricardo121380/only-my-pi/iss
 
 ## Advanced installation: Full/Thin, offline and rollback
 
-Homebrew/npm are the primary entry points. Full/Thin are manual, offline and recovery fallbacks sharing the same core identity. Full includes Node 24.19.0 and installs offline after download and verification. Thin retrieves only pinned Node 24.19.0 during installation. Both require preinstalled Git. Offline installation does not provide offline model inference.
+Homebrew/npm are the primary entry points. Full/Thin are manual, offline and recovery fallbacks sharing the same core identity. Full includes Node 24.19.0 and installs offline after download and verification. Thin retrieves only pinned Node 24.19.0 during installation. Both require preinstalled Git; Linux also requires bubblewrap, socat, ripgrep and a working strong sandbox. Offline installation does not provide offline model inference.
 
-Download the desired archive from the GitHub Release and verify its provenance first. This example uses Full (replace full with thin in the filename to verify Thin):
+Choose `darwin-arm64`, `linux-x64` or `linux-arm64` for your platform. The example below uses `darwin-arm64`; replace that filename segment for Linux. Download the desired archive from the GitHub Release and verify its provenance first. This example uses Full (replace full with thin in the filename to verify Thin):
 
 ```bash
-gh release download v0.4.0-preview.1 --repo Ricardo121380/only-my-pi \
-  --pattern only-my-pi-0.4.0-preview.1-darwin-arm64-full.tar.gz
-gh attestation verify only-my-pi-0.4.0-preview.1-darwin-arm64-full.tar.gz \
+gh release download v0.4.0-preview.2 --repo Ricardo121380/only-my-pi \
+  --pattern only-my-pi-0.4.0-preview.2-darwin-arm64-full.tar.gz
+gh attestation verify only-my-pi-0.4.0-preview.2-darwin-arm64-full.tar.gz \
   --repo Ricardo121380/only-my-pi \
-  --source-digest 38e71adc8c2c52cc332db288f5dcdd14f73bd8cb \
-  --signer-digest 38e71adc8c2c52cc332db288f5dcdd14f73bd8cb \
+  --source-digest e63e1a3b870fb548ce4c2c08ed25d5b767b7e21b \
+  --signer-digest e63e1a3b870fb548ce4c2c08ed25d5b767b7e21b \
   --source-ref refs/heads/main \
-  --signer-workflow Ricardo121380/only-my-pi/.github/workflows/distribution-candidate.yml \
+  --signer-workflow Ricardo121380/only-my-pi/.github/workflows/linux-candidate.yml \
   --deny-self-hosted-runners
 ```
 
 Only after verification succeeds, extract into a fresh working directory and choose a new, nonexistent program prefix:
 
 ```bash
-tar -xzf only-my-pi-0.4.0-preview.1-darwin-arm64-full.tar.gz
+tar -xzf only-my-pi-0.4.0-preview.2-darwin-arm64-full.tar.gz
 ./only-my-pi/install.sh --prefix /absolute/new/omp-directory
 /absolute/new/omp-directory/bin/omp
 ```
@@ -285,7 +299,7 @@ The new installer refuses an existing prefix and does not add global links. Upgr
 
 #### 1. Check your environment
 
-This Preview does not support managed installation on Intel Macs, Rosetta, Linux, or Windows. The managed stack uses **Node.js 24.19.0** and **Pi 0.84.3**. The bootstrap installer supplies the runtime, so no system Node or npm is needed. Managed writers require Git. The installer uses the macOS tools `curl`, `shasum`, `tar`, `awk`, and `mktemp`.
+This historical 0.3 installer remains macOS Apple Silicon only; it does not support Intel Macs, Rosetta, Linux or Windows. For current Linux installation use npm/npx or the new platform Full/Thin archives above. The managed stack uses **Node.js 24.19.0** and **Pi 0.84.3**. The bootstrap installer supplies the runtime, so no system Node or npm is needed. Managed writers require Git. The installer uses the macOS tools `curl`, `shasum`, `tar`, `awk`, and `mktemp`.
 
 
 #### 2. Verify the installer and preview the plan
