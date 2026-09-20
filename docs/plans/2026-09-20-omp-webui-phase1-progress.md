@@ -2,6 +2,8 @@
 
 执行依据：[详细计划](2026-09-20-omp-webui-phase1-plan.md)及[P1 决策](2026-09-20-omp-webui-phase1-discussion.md)。本记录区分实施进度与阶段验收，不改变已确认范围。
 
+**最终状态（2026-09-20）：M1-T PASS，M1-I PASS。** 日常安装停留在已验证的 Pi 0.85.1 / Node 24.19.0 候选；下文保留各批次历史、失败尝试和最终证据，不将早期结果冒充最终结果。
+
 ## 1A 基线收口
 
 - 原分支 `codex/preview-two-bilingual-readmes`，原 HEAD `573ea9e1b844c27e19bbb4561ca902523a54bd23`；原暂存区为空。
@@ -25,7 +27,7 @@
 
 只读复核：OMP `0.3.0-preview.1`、Pi `0.84.3`、Node `24.19.0`。current 为 `0e928b0cbf7d1afebc8af8e1e90fc2be1047247a44b4e67d72be8e9e2d5f3ba1`，LKG 为 `25a6d923d374e8862b0bcd0edadd1d9e47c173cef3e2388dd4b6b61a93c166b3`。事务元数据为 5 COMMITTED、29 ROLLED_BACK，无非终态。
 
-没有切换日常安装，没有读取认证内容，没有发起真实模型任务。全部安装字节验真仍在 1F 切换前执行。
+在 1A 时点尚未切换日常安装、读取认证内容或发起真实模型任务；完整安装字节验真已在后续 1F 切换前执行。
 
 ## 后续状态
 
@@ -52,7 +54,7 @@
 - 私有栈不切换用户外部 npm 包或覆写设置；单元事务验证回滚保留安装后合法配置变化。
 - 此基础候选尚不含后续 Host/UI，不能用它替代最终 M1 候选。
 
-### 1C–1E 已实施，最终候选集成待验
+### 1C–1E 实施与开发态验证
 
 - Host：loopback 动态端口、一次性配对、严格 Origin/Host、认证 WebSocket、类型化命令、幂等任务、恢复中断状态、进程回收、只读目录/文件/diff/回执。
 - Pi 实际 JSONL worker 加载受控扩展；普通 RPC 不开放审批。文件和 Git 过滤器安全测试通过。
@@ -78,25 +80,40 @@
 - 最终安装包包含 54 个实际前端依赖的许可证；与后端重叠依赖保留原始完整性校验，不覆盖 ledger 证据。
 - 两项旧测试在并发回归下暴露 `setImmediate` 时序假设，改成等待实际 writer/reviewer 派发事件；原预算和权限断言不变。
 
-### 真实任务与当前阻碍
+### 真实任务与失败记录（已收敛）
 
 | 项目 | 结果 | 证据 |
 | --- | --- | --- |
 | L1 初次只读分析 | FAIL：OpenCode Go 路由返回 401 CreditsError / Insufficient balance | 临时项目会话；错误已脱敏 |
 | L1 预算内失败重试 | PASS：既有 Kimi For Coding 路由读取代码并准确定位加法实现错误，项目无改动 | `live-L1.json`、`ui-live-L1.png` |
 | L2 流式与运行中取消 | 流式已观察到 3 次 partial 更新；取消 **未通过**，观测后额外检查导致任务先完成 | `live-L2-initial.json`，保留真实 succeeded 状态，不伪记 cancelled |
-| L3 安装态 CLI 修改/检查 | NOT_RUN | 原预算预留最后 1 个任务 |
+| L2 用户额外授权补测 | PASS：首个 partial 触发页面取消按钮，约 100.3ms 后后端 cancelled，对应 worker 已退出，部分输出保留 | `live-L2-extra.json`、`ui-live-cancel.png` |
+| L3 安装态 CLI 修改/检查 | PASS：PATH 中真实 omp TUI，审批 simple / calc.mjs 后仅修改该文件；模型运行测试及嵌入 Node 独立复跑均 1 pass / 0 fail；正常退出 | `live-L3.json`、`live-L3.typescript` |
 
-当前已使用 2/3 个真实任务及 1/1 次失败重试。已向用户请求**额外 1 个小型取消验收任务**；未获答复前不追加模型任务，也不把 L3 的预留额度用于其他用途。补测应在同一次 egolite 脚本内等待首个 partial 后立即点击取消，避免跨工具回合错过窗口。
+用户明确回复“允许”后，才执行额外 1 个小型取消任务。最终使用原定 3/3 个真实任务、1/1 次失败重试，以及额外授权的 1/1 个取消补测任务。没有充值、新增服务或继续发起模型任务。真实成功路径为既有 Kimi For Coding；OpenCode Go 的余额问题保留为外部服务限制。
 
-M1-T 为 **NOT_RUN（必需取消检查未完成）**，M1-I 为 **NOT_RUN**。没有切换日常安装。
+M1-T 为 **PASS**，M1-I 为 **PASS**。权威汇总在仓库外 `artifacts/webui-phase1/M1-T.json` 与 `M1-I.json`。
 
-### 日常晋升准备
+### 日常晋升结果
 
-- `promotion.json` 为 `PREFLIGHT_PASS`，不是安装完成回执。
-- 升级前 active 仍为 `0e928b0c…d5f3ba1`，Pi 0.84.3 / Node 24.19.0；完整 Node/Pi/外部包/OMP 字节验真 PASS，无未完成事务。
+- `promotion.json` 最终为 `PASS`，完整记录升级、回滚和重新应用，不以预检代替安装结果。
+- 升级前 active 为 `0e928b0c…d5f3ba1`，Pi 0.84.3 / Node 24.19.0；切换前完整 Node/Pi/外部包/OMP 字节验真 PASS，无未完成事务。
+- 首次升级事务 `e4216fff-2336-4746-9b35-a651ae092841`：PATH 版本、安装态配对、静态 Web 资产和 PATH `omp web status` PASS。
+- 明确回滚到上述升级前 active，恢复真实 Pi 0.84.3 身份；没有误用更早 LKG。
+- 同候选重新应用事务 `a6c62663-2303-4b3e-8b45-09b1cd1d1157`：最终 active 为 `b17ce477…c354539`，Pi 0.85.1 / Node 24.19.0，源码 `ac5761e`。
+- 最终 CLI 任务之后再次验真安装内容 PASS，无未完成事务。只读 rollback plan 的目标仍是本次升级前 active。
 - PATH 中 `omp` 为用户本地 shim，raw `pi` 为独立 Homebrew；已记录后者真实路径与字节摘要。
-- 仓库外 `promote-final.mjs` 使用受支持 Full 栈事务：技术回执 PASS 后才允许 apply；明确回滚到本次旧 active，再应用同一个不可变候选；不提供强停用户 Pi 的授权。
-- 本次候选 Host 与模拟验收 Host 均已停止；没有留置运行中的模型任务。
+- 原 Homebrew Pi 字节未改变；原外部包目录 inode 与完整树摘要均保持；整个晋升事务的用户设置摘要保持。正常模型执行产生的新历史不被回滚覆盖。
+- 仓库外 `promote-final.mjs` 使用受支持 Full 栈事务，位于回滚删除范围之外；仅在 M1-T PASS 后 apply，没有强停用户 Pi。
+- 最终 egolite 从安装态 Host 查看了 L3 历史和实际单行 diff，`installed-web.json` PASS，截图 `ui-installed.png`。浏览器任务空间已正常释放。
+- CLI、候选/安装态 Host、模拟验收 Host 均已停止；最终 `omp web status` 为 `HOST_NOT_RUNNING`。用户可自行运行 `omp web` 启动。
+- L3 TUI 和其完整子进程树 RSS 快照记录在 `L3-process-memory.json`，为一次快照而非峰值；不将它当作 Chromium 总内存。
 
-待额外预算确认后，顺序仍为：补齐 L2 → M1-T → 日常升级/明确回滚/同候选重新应用 → L3 → M1-I。不得跳过技术门禁提前切换。
+### 第二阶段接缝及保留限制
+
+- 普通 WebUI 仍只读；GUI 编程审批、账号管理、文件保存、人工终端和旧会话续接不提前开放。
+- 项目 writer 所有权已验证进程协议，CLI/GUI/人工终端所有写入入口的统一接入留给 M2。
+- 同 Provider 账号隔离与 OAuth 刷新为模拟凭据探针；真实互操作仅声明已跑过的 Kimi For Coding。
+- 前端性能数值来自本机固定样本，不是跨设备 SLA；未宣称屏幕阅读器认证或跨平台桌面验收。
+- 既有 fast-uri 公告与 OpenCode Go 额度问题未被隐藏，也未借本任务擅自升级锁定依赖或充值。
+- 使用与诊断见[工作台指南](../webui.md)。源码与文档均仅本地提交，没有推送或发布。

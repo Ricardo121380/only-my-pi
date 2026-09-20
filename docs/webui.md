@@ -2,6 +2,8 @@
 
 工作台要求经过验证的 Pi 0.85.1 Full 候选栈。旧 Pi 0.84.3 安装不会因执行 `omp web` 自动升级。
 
+2026-09-20 本机已完成 M1-T / M1-I，日常 OMP 使用 Pi 0.85.1 / Node 24.19.0。验收服务已停止，按下列命令启动即可。模型列表中优先选择已验证的 **Kimi For Coding / cc-switch-kimi-for-coding**；当日 OpenCode Go 路由返回余额不足，列在模型列表中不代表额度可用。
+
 ```sh
 omp web
 omp web status --json
