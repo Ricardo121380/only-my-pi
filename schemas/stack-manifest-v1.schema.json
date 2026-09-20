@@ -72,9 +72,13 @@
         },
         "pi": {
           "type": "object", "additionalProperties": false, "required": ["name", "version", "integrity", "treeDigest", "entry"],
+          "oneOf": [
+            { "properties": { "version": { "const": "0.84.3" }, "integrity": { "const": "sha512-Yr2p9PubrbFZmYEPYI+C8KmZP9xlFuLDnAG64RtU0ZDgrdiXYWa+y7WGyJO5OlqPliOkVCMd9IzVszO3/t0D0w==" } } },
+            { "properties": { "version": { "const": "0.85.1" }, "integrity": { "const": "sha512-FGRN+OHbWaefBPGaTggAdLjrIHW+s2PzLyglz/5dfLzb9of7uuXMXYC0fJIeZTw+shS32o2cuQ9jF7YSDuL/oQ==" } } }
+          ],
           "properties": {
             "name": { "const": "@earendil-works/pi-coding-agent" },
-            "version": { "const": "0.84.3" },
+            "version": { "enum": ["0.84.3", "0.85.1"] },
             "integrity": { "$ref": "#/$defs/sri" },
             "treeDigest": { "$ref": "#/$defs/sha256" },
             "entry": { "const": "dist/bundle/cli.js" }

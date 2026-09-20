@@ -16,6 +16,7 @@ import {
   PUBLIC_STACK_PACKAGES,
   finalizeArtifactLedger,
   finalizeStackManifest,
+  piRuntimeContract,
   sha256,
 } from "./contracts.mjs";
 import { hashFile } from "./deterministic-archive.mjs";
@@ -87,6 +88,7 @@ export async function assembleReleasePayloads({
   sourceCommit,
   generationTargetGraphDigest,
   piIntegrity,
+  piVersion = CONTROLLED_PI_VERSION,
   artifactBytes,
   artifactTreeRoots,
   integrityOverrides = {},
@@ -96,6 +98,7 @@ export async function assembleReleasePayloads({
 } = {}) {
   if (![resolvedRoot, outputRoot, installScriptPath, licensesRoot].every((value) => typeof value === "string" && path.isAbsolute(value))) throw new TypeError("payload assembler paths must be absolute");
   if (!COMMIT.test(sourceCommit ?? "") || !DIGEST.test(generationTargetGraphDigest ?? "")) fail("PAYLOAD_ASSEMBLY_IDENTITY_INVALID", "payload assembly source or generation identity is invalid");
+  if (piRuntimeContract(piVersion).integrity !== piIntegrity) fail("STACK_PI_IDENTITY_INVALID", "payload Pi version and integrity differ");
   const resolved = await realDirectory(resolvedRoot, "PAYLOAD_ASSEMBLY_ROOT_UNSAFE");
   await Promise.all(["node", "pi", "external-npm"].map((relative) => realDirectory(path.join(resolved, relative), "PAYLOAD_ASSEMBLY_ROOT_UNSAFE")));
   await realDirectory(licensesRoot, "PAYLOAD_LICENSES_UNSAFE");
@@ -109,7 +112,7 @@ export async function assembleReleasePayloads({
       npmRoot: path.join(resolved, "pi"),
       lockPath: piLock,
       topLevelNames: [PI_NAME],
-      rootArtifact: { version: CONTROLLED_PI_VERSION, tarballUrl: `https://registry.npmjs.org/${PI_NAME}/-/pi-coding-agent-${CONTROLLED_PI_VERSION}.tgz`, integrity: piIntegrity },
+      rootArtifact: { version: piVersion, tarballUrl: `https://registry.npmjs.org/${PI_NAME}/-/pi-coding-agent-${piVersion}.tgz`, integrity: piIntegrity },
     }),
   ]);
   const ledger = mergeLedgers(sourceCommit, [externalLedger, piLedger]);
@@ -120,7 +123,7 @@ export async function assembleReleasePayloads({
     if (!artifact) fail("PAYLOAD_ASSEMBLY_ARTIFACT_MISSING", `ledger is missing direct external package: ${name}`);
     externalPackages.push({ id: idFor(name), name, version, integrity: artifact.integrity, license: artifact.license, treeDigest: artifact.treeDigest, binding: "external", owner: "user", lifecycleScripts: artifact.lifecycleScripts });
   }
-  const piArtifact = byIdentity.get(`${PI_NAME}@${CONTROLLED_PI_VERSION}`);
+  const piArtifact = byIdentity.get(`${PI_NAME}@${piVersion}`);
   if (!piArtifact || piArtifact.integrity !== piIntegrity) fail("PAYLOAD_ASSEMBLY_PI_MISSING", "ledger is missing the exact controlled Pi artifact");
   const stack = finalizeStackManifest({
     $schema: "../../schemas/stack-manifest-v1.schema.json",
@@ -131,7 +134,7 @@ export async function assembleReleasePayloads({
     platform: { os: "darwin", arch: "arm64", minimumMacOS: "14.0" },
     runtime: {
       node: { version: EMBEDDED_NODE_VERSION, archiveName: `node-v${EMBEDDED_NODE_VERSION}-darwin-arm64.tar.gz`, archiveSha256: EMBEDDED_NODE_ARCHIVE_SHA256, license: "MIT", treeDigest: await digestTree(resolved, "node") },
-      pi: { name: PI_NAME, version: CONTROLLED_PI_VERSION, integrity: piIntegrity, treeDigest: await digestTree(resolved, "pi"), entry: "dist/bundle/cli.js" },
+      pi: { name: PI_NAME, version: piVersion, integrity: piIntegrity, treeDigest: await digestTree(resolved, "pi"), entry: "dist/bundle/cli.js" },
     },
     externalPackages,
     externalTreeDigest: await digestTree(resolved, "external-npm"),

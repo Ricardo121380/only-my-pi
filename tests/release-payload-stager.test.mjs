@@ -63,3 +63,25 @@ test("release payload stager rejects repository outputs and cleans failed stagin
   await assert.rejects(failing.apply({ sourceCommit: SOURCE, outputRoot }, plan), { code: "FIXTURE_FAILURE" });
   assert.equal(await fs.lstat(outputRoot).then(() => true, () => false), false);
 });
+
+test("staging binds an explicit Pi candidate and rejects changing it after review", async (t) => {
+  const repo = await temporary(t, "omp-candidate-repo-");
+  const parent = await temporary(t, "omp-candidate-output-");
+  const outputRoot = path.join(parent, "candidate");
+  let selected = null;
+  const stager = createReleasePayloadStager({ rootDir: repo,
+    sourceInspector: async () => ({ head: SOURCE, clean: true }),
+    async prepare(options) {
+      selected = options.piVersion;
+      return { stackId: `sha256:${"b".repeat(64)}`, fullPayloadRoot: options.outputRoot };
+    },
+  });
+  const options = { sourceCommit: SOURCE, outputRoot, piVersion: "0.85.1" };
+  const plan = await stager.plan(options);
+  assert.equal(plan.piRuntime.version, "0.85.1");
+  await assert.rejects(stager.apply({ ...options, piVersion: "0.84.3" }, plan), { code: "RELEASE_STAGE_PLAN_DRIFT" });
+  assert.equal(selected, null);
+  assert.equal(await fs.lstat(outputRoot).then(() => true, () => false), false);
+  await stager.apply(options, plan);
+  assert.equal(selected, "0.85.1");
+});

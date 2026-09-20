@@ -1,6 +1,6 @@
 # OMP WebUI → Electron 分阶段开发与自动验收计划
 
-日期：2026-09-20。状态：用户已确认方案与共同理解；计划已落盘，产品实施尚未开始。
+日期：2026-09-20。状态：用户已确认方案与共同理解；第一阶段实施已开始，详见[实施记录](2026-09-20-omp-webui-phase1-progress.md)。
 
 本计划依据 [Q1–Q22 最终选择](2026-09-20-web-desktop-discussion.md)整理。相关决策见 [ADR-0014](../decisions/ADR-0014-webui-to-electron.md)、[ADR-0015](../decisions/ADR-0015-gui-account-isolation.md)、[ADR-0016](../decisions/ADR-0016-host-lifecycle-and-project-writer-ownership.md)；术语以 [CONTEXT.md](../../CONTEXT.md)为准。文档落盘不代表已修改产品代码、升级 Pi 或完成任何阶段验收。
 
@@ -240,7 +240,7 @@ K3 辅助产物需落实为布局、组件状态和交互规则，并通过实�
 
 | 里程碑 | 交付物 | 当前实施状态 | 验收状态 |
 | --- | --- | --- | --- |
-| M1-T | 可运行 Host、只读 WebUI、固定候选运行核心、兼容与技术验证证据 | 未开始 | NOT_RUN |
+| M1-T | 可运行 Host、只读 WebUI、固定候选运行核心、兼容与技术验证证据 | 1A 已完成，1B 实施中 | NOT_RUN |
 | M1-I（M1 完成） | 日常 CLI 升级、回滚及同候选重新应用，最终安装态检查 | 待 M1-T | NOT_RUN |
 | M2 | 可日用 WebUI、完整 GUI 多账号、基础编辑器与终端、端到端验收报告 | 待 M1 门禁通过 | NOT_RUN |
 | M3 | macOS arm64 自用安装包、本地升级回滚能力、安装态验收及使用说明 | 待 M2 门禁通过 | NOT_RUN |

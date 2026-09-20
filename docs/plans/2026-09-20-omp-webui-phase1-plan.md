@@ -1,6 +1,6 @@
 # OMP 第一阶段详细开发计划：运行基线、只读 WebUI 与日常 CLI 升级
 
-日期：2026-09-20。状态：用户已确认共同理解，计划已落盘；代码实现、基线提交、运行时升级和阶段验收均尚未开始。
+日期：2026-09-20。状态：实施已开始，1A 基线收口完成，1B 候选身份与 Pi staging 已开始；完整候选、日常安装升级和阶段验收未完成。证据见[实施记录](2026-09-20-omp-webui-phase1-progress.md)。
 
 本计划细化[三阶段总纲](2026-09-20-omp-webui-desktop-plan.md)。实际选择见[P1-Q1–Q9 决策记录](2026-09-20-omp-webui-phase1-discussion.md)；运行合同与晋升决策见[ADR-0017](../decisions/ADR-0017-versioned-runtime-contracts-and-stack-promotion.md)，术语以[CONTEXT.md](../../CONTEXT.md)为准。
 
@@ -357,8 +357,8 @@ M1 最终交付包应包含：
 
 | 批次或检查点 | 当前状态 | 验收 |
 | --- | --- | --- |
-| 1A 基线收口 | 未开始 | NOT_RUN |
-| 1B 候选运行栈 | 待 1A | NOT_RUN |
+| 1A 基线收口 | 已提交 fa8e5d1，定向检查通过 | PASS |
+| 1B 候选运行栈 | 身份合同、开发依赖、Pi staging 完成；扩展/完整栈待实现 | NOT_RUN（批次验收） |
 | 1C Host/只读 worker | 待 1B | NOT_RUN |
 | 1D 高风险验证 | 待 1C | NOT_RUN |
 | 1E 只读工作台 | 待 1D | NOT_RUN |
@@ -366,4 +366,4 @@ M1 最终交付包应包含：
 | 1F 日常安装晋升 | 待 M1-T | NOT_RUN |
 | M1-I 安装验收 | 待 1F 及最终安装态真实任务 | NOT_RUN |
 
-当前只有计划文档完成落盘；没有据此运行开发门禁、升级日常安装或形成新的实现基线提交。
+实施进度与限制见[实施记录](2026-09-20-omp-webui-phase1-progress.md)。局部测试通过不代表 M1-T 或 M1-I 通过；日常安装尚未升级。

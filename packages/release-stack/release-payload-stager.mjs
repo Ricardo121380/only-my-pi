@@ -7,10 +7,10 @@ import { promisify } from "node:util";
 import { buildGenerationPlan } from "../bootstrap/index.mjs";
 import { acquireInstalledArtifacts } from "./artifact-acquisition.mjs";
 import {
-  CONTROLLED_PI_INTEGRITY,
   CONTROLLED_PI_VERSION,
   EMBEDDED_NODE_ARCHIVE_SHA256,
   EMBEDDED_NODE_VERSION,
+  piRuntimeContract,
   sha256,
 } from "./contracts.mjs";
 import { createDeterministicTarGzip, hashFile } from "./deterministic-archive.mjs";
@@ -24,7 +24,6 @@ const COMMIT = /^[a-f0-9]{40}$/u;
 const NODE_ARCHIVE = `node-v${EMBEDDED_NODE_VERSION}-darwin-arm64.tar.gz`;
 const NODE_URL = `https://nodejs.org/download/release/v${EMBEDDED_NODE_VERSION}/${NODE_ARCHIVE}`;
 const PI_NAME = "@earendil-works/pi-coding-agent";
-const PI_URL = `https://registry.npmjs.org/${PI_NAME}/-/pi-coding-agent-${CONTROLLED_PI_VERSION}.tgz`;
 const MAX_OUTPUT = 16 * 1024 * 1024;
 
 function fail(code, message, details = {}) {
@@ -101,10 +100,11 @@ export async function installExternal({ rootDir, resolved, node, npm, env, run, 
   return external;
 }
 
-export async function installPi({ work, resolved, node, npm, env, run, download, extract }) {
+export async function installPi({ work, resolved, node, npm, env, run, download, extract, piVersion = CONTROLLED_PI_VERSION }) {
+  const contract = piRuntimeContract(piVersion);
   const archive = path.join(work, "downloads", "pi-coding-agent.tgz");
   const extracted = path.join(work, "pi-artifact");
-  const verified = await download({ url: PI_URL, destination: archive, expectedSri: CONTROLLED_PI_INTEGRITY, maxBytes: 512 * 1024 * 1024, allowedHosts: ["registry.npmjs.org"] });
+  const verified = await download({ url: `https://registry.npmjs.org/${PI_NAME}/-/pi-coding-agent-${contract.version}.tgz`, destination: archive, expectedSri: contract.integrity, maxBytes: 512 * 1024 * 1024, allowedHosts: ["registry.npmjs.org"] });
   await extract({ archivePath: archive, destination: extracted, expectedSha256: verified.sha256, maxEntries: 100_000, maxExtractedBytes: 1024 * 1024 * 1024 });
   const packageRoot = await singleDirectory(extracted, "package");
   const pi = path.join(resolved, "pi");
@@ -114,6 +114,7 @@ export async function installPi({ work, resolved, node, npm, env, run, download,
   const manifestPath = path.join(pi, "package.json");
   const manifestBytes = await fs.readFile(manifestPath);
   const productionManifest = JSON.parse(manifestBytes.toString("utf8"));
+  if (productionManifest.name !== PI_NAME || productionManifest.version !== contract.version) fail("STACK_PI_IDENTITY_INVALID", "downloaded Pi package does not match the requested runtime");
   delete productionManifest.devDependencies;
   await fs.writeFile(manifestPath, `${JSON.stringify(productionManifest, null, 2)}\n`, { mode: 0o600 });
   try {
@@ -193,7 +194,8 @@ export async function collectLicenses({ resolved, artifacts, output, licenseRegi
   return output;
 }
 
-async function defaultPrepare({ rootDir, sourceCommit, outputRoot, download, extract, run, acquire, assemble }) {
+async function defaultPrepare({ rootDir, sourceCommit, outputRoot, download, extract, run, acquire, assemble, piVersion = CONTROLLED_PI_VERSION }) {
+  const piContract = piRuntimeContract(piVersion);
   const work = outputRoot;
   const resolved = path.join(work, "resolved");
   await fs.mkdir(path.join(work, "downloads"), { recursive: true, mode: 0o700 });
@@ -202,14 +204,14 @@ async function defaultPrepare({ rootDir, sourceCommit, outputRoot, download, ext
   const environment = scrubbedEnvironment(path.join(work, "environment"), path.dirname(runtime.node), { offline: false });
   await prepareEnvironment(environment);
   const external = await installExternal({ rootDir, resolved, node: runtime.node, npm: runtime.npm, env: environment.env, run });
-  const pi = await installPi({ work, resolved, node: runtime.node, npm: runtime.npm, env: environment.env, run, download, extract });
+  const pi = await installPi({ work, resolved, node: runtime.node, npm: runtime.npm, env: environment.env, run, download, extract, piVersion });
   await buildOnlyMyPi({ rootDir, sourceCommit, work, resolved, node: runtime.node, npm: runtime.npm, env: environment.env, run, extract });
   const exceptionDocument = JSON.parse(await fs.readFile(path.join(rootDir, "contracts", "release", "artifact-extraction-exceptions.json"), "utf8"));
   if (exceptionDocument?.formatVersion !== 1 || exceptionDocument.kind !== "only-my-pi-artifact-extraction-exceptions" || !Array.isArray(exceptionDocument.exceptions)) fail("RELEASE_ARTIFACT_EXCEPTION_INVALID", "artifact extraction exception contract is invalid");
   const artifacts = await acquire({
     roots: [
       { npmRoot: external, lockPath: path.join(external, "package-lock.json") },
-      { npmRoot: pi.pi, lockPath: path.join(pi.pi, "npm-shrinkwrap.json"), rootArtifact: { name: PI_NAME, version: CONTROLLED_PI_VERSION, tarballUrl: PI_URL, integrity: CONTROLLED_PI_INTEGRITY } },
+      { npmRoot: pi.pi, lockPath: path.join(pi.pi, "npm-shrinkwrap.json"), rootArtifact: { name: PI_NAME, version: piVersion, tarballUrl: `https://registry.npmjs.org/${PI_NAME}/-/pi-coding-agent-${piVersion}.tgz`, integrity: piContract.integrity } },
     ],
     outputRoot: path.join(work, "artifacts"),
     duplicateExceptions: exceptionDocument.exceptions,
@@ -224,7 +226,8 @@ async function defaultPrepare({ rootDir, sourceCommit, outputRoot, download, ext
     outputRoot: path.join(work, "payloads"),
     sourceCommit,
     generationTargetGraphDigest: generation.graphDigest,
-    piIntegrity: CONTROLLED_PI_INTEGRITY,
+    piVersion,
+    piIntegrity: piContract.integrity,
     artifactBytes: artifacts.artifactBytes,
     artifactTreeRoots: artifacts.artifactTreeRoots,
     integrityOverrides: artifacts.integrityOverrides,
@@ -240,13 +243,14 @@ export class ReleasePayloadStager {
     Object.assign(this, { sourceInspector, prepare, download, extract, run, acquire, assemble });
   }
 
-  async plan({ sourceCommit, outputRoot } = {}) {
+  async plan({ sourceCommit, outputRoot, piVersion = CONTROLLED_PI_VERSION } = {}) {
+    const piContract = piRuntimeContract(piVersion);
     if (!COMMIT.test(sourceCommit ?? "") || typeof outputRoot !== "string" || !path.isAbsolute(outputRoot) || !outside(this.rootDir, outputRoot)) fail("RELEASE_STAGE_ARGUMENT_INVALID", "release stage requires an exact source and a non-repository absolute output root");
     const parent = await realDirectory(path.dirname(outputRoot), "RELEASE_STAGE_PARENT_UNSAFE");
     if (parent !== path.dirname(path.resolve(outputRoot)) || !(await outputMissing(outputRoot))) fail("RELEASE_STAGE_OUTPUT_EXISTS", "release stage output must not exist");
     const source = await this.sourceInspector(this.rootDir);
     if (source.head !== sourceCommit || source.clean !== true) fail("RELEASE_STAGE_SOURCE_NOT_CLEAN", "release stage requires a clean checkout at the exact source commit");
-    const plan = { formatVersion: 1, kind: "only-my-pi-release-stage-plan", mutation: false, status: "RELEASE_STAGE_PLANNED", sourceCommit, outputClass: "EXPLICIT_NON_REPOSITORY_DIRECTORY", networkHosts: ["nodejs.org", "registry.npmjs.org"], lifecycleScriptsDisabled: true };
+    const plan = { formatVersion: 1, kind: "only-my-pi-release-stage-plan", mutation: false, status: "RELEASE_STAGE_PLANNED", sourceCommit, piRuntime: piContract, outputClass: "EXPLICIT_NON_REPOSITORY_DIRECTORY", networkHosts: ["nodejs.org", "registry.npmjs.org"], lifecycleScriptsDisabled: true };
     return Object.freeze({ ...plan, planDigest: sha256(JSON.stringify(plan)) });
   }
 
@@ -256,7 +260,7 @@ export class ReleasePayloadStager {
     const output = path.resolve(options.outputRoot);
     await fs.mkdir(output, { mode: 0o700 });
     try {
-      const staged = await this.prepare({ rootDir: this.rootDir, sourceCommit: options.sourceCommit, outputRoot: output, download: this.download, extract: this.extract, run: this.run, acquire: this.acquire, assemble: this.assemble });
+      const staged = await this.prepare({ rootDir: this.rootDir, sourceCommit: options.sourceCommit, outputRoot: output, piVersion: plan.piRuntime.version, download: this.download, extract: this.extract, run: this.run, acquire: this.acquire, assemble: this.assemble });
       return Object.freeze({ ok: true, status: "RELEASE_PAYLOADS_STAGED", mutation: true, sourceCommit: options.sourceCommit, stackId: staged.stackId, outputClass: plan.outputClass, fullPayloadRoot: staged.fullPayloadRoot, thinPayloadRoot: staged.thinPayloadRoot, thinResolvedRoot: staged.thinResolvedRoot });
     } catch (error) {
       await fs.rm(output, { recursive: true, force: true });
