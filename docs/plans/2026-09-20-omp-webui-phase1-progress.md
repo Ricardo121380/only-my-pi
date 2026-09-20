@@ -43,10 +43,27 @@
 - 升级后安全与构建相关定向回归 130 项通过；随后加入 staging 防伪回归，分发/版本合同组 31 项通过；产品/CI/文档合同 21 项通过。各组存在重叠，不相加当作独立测试总数。
 - 类型、Schema 检查通过；无需启动浏览器或模型。
 
-### 1B 剩余，不得跳过
+### 1B Full 候选与隔离事务
 
-栈内独立扩展副本、按精确运行合同选择和证明补丁全集、vendor 工具、候选许可证/完整 SBOM、Full 栈实际构建与安装/回滚、旧栈真实字节验证。当前实现只打通候选身份和 Pi staging，不能称为 Full 栈升级完成。尚未修改旧 macOS native seed 构建路径或安装事务。
+- 本地提交 `7c12cd9`、`ae1cf46`、`ebfa64e`、`0248a58` 完成合同、私有扩展、许可证与 Full 布局。
+- 基础 Full 位于仓库外 `artifacts/webui-phase1/full-0248a58/payloads/full`，stackId `sha256:a80d4879ca889152a969c990ce1a30090cbdfbc748705f366fad1f085553cbb8`。
+- 内嵌 Node 24.19.0 / Pi 0.85.1；12 个受控扩展实际加载无错误；两项源码绑定补丁、vendor 工具、ledger、许可证和完整运行时 SBOM 均通过。
+- `isolated-install-Uzicex/rehearsal.json`：真实隔离安装 → 回滚 → 同候选重新应用 PASS；实际 RPC get_state / abort PASS，零模型调用。
+- 私有栈不切换用户外部 npm 包或覆写设置；单元事务验证回滚保留安装后合法配置变化。
+- 此基础候选尚不含后续 Host/UI，不能用它替代最终 M1 候选。
 
-1C–1F、M1-T、M1-I 均为 NOT_RUN。真实模型预算使用 0/3，失败重试 0/1。
+### 1C–1E 已实施，最终候选集成待验
 
-前端阶段依次应用 ui-ux-pro-max 的设计检索、frontend-design 的视觉计划与自评、frontend-ui-craft 的完整交互状态；实际 React 实现另遵循性能规则，使用 ego-browser 验证。当前尚未进行前端设计或开发。
+- Host：loopback 动态端口、一次性配对、严格 Origin/Host、认证 WebSocket、类型化命令、幂等任务、恢复中断状态、进程回收、只读目录/文件/diff/回执。
+- Pi 实际 JSONL worker 加载受控扩展；普通 RPC 不开放审批。文件和 Git 过滤器安全测试通过。
+- 1D：真实 Pi RPC + 确定性模型 + 真实 write 工具验证批准、撤权、迟到批准、取消及普通 RPC 拒写。没有生产 HTTP 测试开关。
+- 账号探针使用公开 ModelRuntime：同 Provider 独立文件存储与实际模拟请求、并发 OAuth 刷新、凭据已存但同步失败；账号切换前旧进程退出。仅模拟凭据，不证明所有真实 Provider 的互操作性。
+- 项目规范路径/别名竞争、会话锁、崩溃和 PID 身份不明拒绝抢占通过；全入口 writer 所有权集成仍是 M2。
+- React/TypeScript/Vite 中文三栏工作台已实现；7 项组件/事件测试通过；主 Host 测试 19 项（含真实 SDK 探针）。新增文件纳入打包和类型/语法检查。
+- `ui-ux-pro-max` 两次布局查询不匹配，未照搬；设计与状态合同见[设计文档](2026-09-20-omp-webui-design.md)。采用 frontend-design、frontend-ui-craft 和 React 性能规则。K3 无可用路由，按既定备用方案由当前 Codex 完成。
+- egolite 验证 10,000 条历史按 50 条分页、5MiB 工具结果按 64KiB 读取、文件/diff/缺失回执、刷新重连与取消；1440px / 390px 截图、窄屏无横向溢出、reduced-motion。
+- 实测输入事件到下一帧 P95 29ms（30 个键盘输入）；20 次模拟 worker 的取消 HTTP 确认 P95 15.2ms。真实模型耗时和进程退出单独记录，不能用这些数字代替。
+- 前端实际 bundle 的依赖清单、许可证正文纳入发行物和 SBOM；stager 在打包前显式重建 Web，避免忽略目录里的旧资产被当新源码产物。
+- npm audit 报告既有 fast-uri 的 URL 规范化高危公告。Host 网络地址校验使用 Node URL，不用该库执行网络请求；AJV 用于本地 Schema。未自动升级既有发布锁定依赖，此限制随交付记录。
+
+M1-T / M1-I 仍为 NOT_RUN。下一步固定源码重新构建最终 Full，完成候选真实任务和日常晋升。真实模型预算使用 0/3，失败重试 0/1。

@@ -81,6 +81,9 @@ Daily Agent:
   omp -r                      Choose a session to resume
   omp -p "review this repo"   Run a read-only non-interactive task
   omp --model <provider/id>   Select a model without the startup picker
+  omp web                     Open the local read-only workbench
+  omp web status              Inspect the local Host
+  omp web stop                Stop the Host and its tasks
 
 Management:
   omp admin status
@@ -146,6 +149,7 @@ export function classifyOmpInvocation(argv = []) {
   if (argv[0] === "--") {
     return Object.freeze({ kind: "agent", argv: argv.slice(1), compatibilityAlias: false });
   }
+  if (argv[0] === "web") return Object.freeze({ kind: "web", argv: argv.slice(1), compatibilityAlias: false });
   if (typeof argv[0] === "string" && CONTROL_COMMANDS.has(argv[0])) {
     return Object.freeze({ kind: "admin", argv: [...argv], compatibilityAlias: true });
   }

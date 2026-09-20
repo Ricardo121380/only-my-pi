@@ -7,7 +7,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const TEXT_EXTENSIONS = new Set([".cjs", ".js", ".json", ".md", ".mjs", ".ts", ".txt", ".yaml", ".yml"]);
+const TEXT_EXTENSIONS = new Set([".cjs", ".js", ".json", ".md", ".mjs", ".ts", ".tsx", ".css", ".html", ".txt", ".yaml", ".yml"]);
 const JAVASCRIPT_EXTENSIONS = new Set([".cjs", ".js", ".mjs"]);
 const CONFLICT_MARKER = /^(?:<<<<<<< .+|=======|>>>>>>> .+)$/mu;
 

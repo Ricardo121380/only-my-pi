@@ -63,6 +63,8 @@
     "packages/bootstrap/",
     "packages/control-service/",
     "packages/direct-agent/",
+    "packages/host/",
+    "webui/dist/",
     "packages/daily-config/",
     "packages/project-gates/",
     "packages/run-management/",
@@ -84,6 +86,7 @@
   ],
   "allowedBundledPrefixes": [
     "node_modules/ajv/",
+    "node_modules/ws/",
     "node_modules/ajv-formats/",
     "node_modules/fast-deep-equal/",
     "node_modules/fast-uri/",

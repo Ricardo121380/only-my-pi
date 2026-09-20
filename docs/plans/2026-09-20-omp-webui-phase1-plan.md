@@ -1,6 +1,6 @@
 # OMP 第一阶段详细开发计划：运行基线、只读 WebUI 与日常 CLI 升级
 
-日期：2026-09-20。状态：实施已开始，1A 基线收口完成，1B 候选身份与 Pi staging 已开始；完整候选、日常安装升级和阶段验收未完成。证据见[实施记录](2026-09-20-omp-webui-phase1-progress.md)。
+日期：2026-09-20。状态：1A 完成；1B 基础 Full 已验证；1C–1E 已实现，最终候选集成与日常安装验收进行中。证据见[实施记录](2026-09-20-omp-webui-phase1-progress.md)。
 
 本计划细化[三阶段总纲](2026-09-20-omp-webui-desktop-plan.md)。实际选择见[P1-Q1–Q9 决策记录](2026-09-20-omp-webui-phase1-discussion.md)；运行合同与晋升决策见[ADR-0017](../decisions/ADR-0017-versioned-runtime-contracts-and-stack-promotion.md)，术语以[CONTEXT.md](../../CONTEXT.md)为准。
 
@@ -358,10 +358,10 @@ M1 最终交付包应包含：
 | 批次或检查点 | 当前状态 | 验收 |
 | --- | --- | --- |
 | 1A 基线收口 | 已提交 fa8e5d1，定向检查通过 | PASS |
-| 1B 候选运行栈 | 身份合同、开发依赖、Pi staging 完成；扩展/完整栈待实现 | NOT_RUN（批次验收） |
-| 1C Host/只读 worker | 待 1B | NOT_RUN |
-| 1D 高风险验证 | 待 1C | NOT_RUN |
-| 1E 只读工作台 | 待 1D | NOT_RUN |
+| 1B 候选运行栈 | 基础 Full 与隔离安装回滚已通过；最终 Host/UI 候选待构建 | PASS（基础栈） |
+| 1C Host/只读 worker | 已实现；认证、RPC、取消与崩溃恢复测试通过 | PASS（开发态） |
+| 1D 高风险验证 | 真实 SDK 工具、模拟账号、进程竞争探针通过 | PASS（模拟模型） |
+| 1E 只读工作台 | 构建、组件及 egolite 主流程通过 | PASS（开发态） |
 | M1-T 技术验收 | 待 1A–1E 及候选真实任务 | NOT_RUN |
 | 1F 日常安装晋升 | 待 M1-T | NOT_RUN |
 | M1-I 安装验收 | 待 1F 及最终安装态真实任务 | NOT_RUN |

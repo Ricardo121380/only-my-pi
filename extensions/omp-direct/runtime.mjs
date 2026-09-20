@@ -186,7 +186,7 @@ function toolResult(status, message, details = {}) {
 }
 
 export class DirectSessionController {
-  constructor({ pi, configRoot, environment = process.env, now = () => new Date().toISOString(), captureBaseline = captureWorkspaceBaseline } = {}) {
+  constructor({ pi, configRoot, environment = process.env, now = () => new Date().toISOString(), captureBaseline = captureWorkspaceBaseline, hostInteraction = null } = {}) {
     if (!pi || typeof pi.getActiveTools !== "function" || typeof pi.setActiveTools !== "function") throw new TypeError("DirectSessionController requires Pi tool controls");
     if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("DirectSessionController requires an absolute configRoot");
     this.pi = pi;
@@ -210,10 +210,11 @@ export class DirectSessionController {
     this.grantBinding = null;
     this.orchestrator = null;
     this.unsafePermissionNotified = false;
+    this.hostInteraction = hostInteraction;
   }
 
   isDirect() { return this.environment.ONLY_MY_PI_DIRECT === "1"; }
-  hasCodingAccess() { return this.state === DIRECT_SESSION_STATES.CODING && !this.headless; }
+  hasCodingAccess() { return this.state === DIRECT_SESSION_STATES.CODING && (!this.headless || this.hostInteraction?.allows(this.context) === true); }
 
   invalidateCodingAuthority() {
     this.approvalEpoch += 1;
@@ -243,7 +244,7 @@ export class DirectSessionController {
   applyToolCeiling() {
     const configured = new Set(this.pi.getAllTools().map((tool) => tool.name));
     const active = this.activeToolCeiling().filter((name) => configured.has(name));
-    if (this.headless) {
+    if (this.headless && this.hostInteraction?.allows(this.context) !== true) {
       const index = active.indexOf("request_coding_access");
       if (index !== -1) active.splice(index, 1);
     }
@@ -449,7 +450,8 @@ export class DirectSessionController {
   }
 
   async requestCodingAccess(input, ctx, signal) {
-    if (this.headless || ctx.mode !== "tui" || !ctx.hasUI) {
+    const hostInteractive = this.hostInteraction?.allows(ctx) === true;
+    if ((!hostInteractive && (this.headless || ctx.mode !== "tui")) || !ctx.hasUI) {
       return toolResult("CODING_ACCESS_UI_REQUIRED", "Headless and non-interactive OMP sessions cannot obtain write access.");
     }
     const permission = this.enforcePermissionBoundary(ctx);
@@ -475,7 +477,7 @@ export class DirectSessionController {
       if (this.lifecycleEpoch === lifecycle && this.approvalEpoch === approval) this.transition(DIRECT_SESSION_STATES.INSPECT, ctx);
       return toolResult("CODING_ACCESS_UI_FAILED", error instanceof Error ? error.message : String(error));
     }
-    if (signal?.aborted || this.lifecycleEpoch !== lifecycle || this.approvalEpoch !== approval || this.state !== DIRECT_SESSION_STATES.AWAITING_CODING_ACCESS || identity !== this.sessionIdentity(this.context)) {
+    if (signal?.aborted || (hostInteractive && this.hostInteraction?.allows(ctx) !== true) || this.lifecycleEpoch !== lifecycle || this.approvalEpoch !== approval || this.state !== DIRECT_SESSION_STATES.AWAITING_CODING_ACCESS || identity !== this.sessionIdentity(this.context)) {
       if (this.lifecycleEpoch === lifecycle && this.approvalEpoch === approval && this.state === DIRECT_SESSION_STATES.AWAITING_CODING_ACCESS) {
         this.invalidateCodingAuthority();
         this.transition(DIRECT_SESSION_STATES.INSPECT, ctx);

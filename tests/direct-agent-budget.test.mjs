@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { EventEmitter } from "node:events";
+import { EventEmitter, once } from "node:events";
 import { realpathSync } from "node:fs";
 import test from "node:test";
 import { DIRECT_DELEGATION_EVENTS as EVENTS, createDirectCodingOrchestrator } from "../packages/direct-agent/orchestration.mjs";
@@ -205,7 +205,7 @@ test("per-child and cumulative returned-result byte limits reject oversized resu
   }
 });
 
-test("an exhausted writer budget cannot reach verification or modify the real workspace", async (t) => {
+test("an exhausted writer budget cannot reach verification or modify the real workspace", { timeout: 5000 }, async (t) => {
   let captured = false;
   let applied = false;
   const f = fixture(t, { maxCostUsd: 0.001 }, {
@@ -215,18 +215,19 @@ test("an exhausted writer budget cannot reach verification or modify the real wo
       apply: async () => { applied = true; },
     },
   });
+  const dispatched = once(f.events, EVENTS.request);
   const rejected = assert.rejects(f.orchestrator.delegateWriter({
     task: "fix", plan: "fix and test", scope: ["app.js"], approvedScope: ["app.js"],
     baseline: { status: "GIT_REPOSITORY", head: "a".repeat(40), paths: [] },
   }), { code: "DIRECT_CHILD_BUDGET_EXHAUSTED", resource: "costUsd" });
-  await flush();
-  f.respond(f.requests[0], { result: { kind: "structured", value: { status: "completed", changedPaths: ["app.js"], summary: "fixed", verification: [], followUp: [] } } });
+  const [request] = await dispatched;
+  f.respond(request, { result: { kind: "structured", value: { status: "completed", changedPaths: ["app.js"], summary: "fixed", verification: [], followUp: [] } } });
   await rejected;
   assert.equal(captured, false);
   assert.equal(applied, false);
 });
 
-test("the shared deadline is rechecked after writer verification and review before integration", async (t) => {
+test("the shared deadline is rechecked after writer verification and review before integration", { timeout: 5000 }, async (t) => {
   t.mock.timers.enable({ apis: ["Date", "setTimeout"], now: 1000 });
   let captures = 0;
   let applied = false;
@@ -243,14 +244,16 @@ test("the shared deadline is rechecked after writer verification and review befo
     },
     verifyWriter: async () => ({ status: "PASS", patchDigest: patch.sha256, baseCommit: head, results: [{ status: "PASS", exitCode: 0, killed: false }] }),
   });
+  const dispatched = once(f.events, EVENTS.request);
   const rejected = assert.rejects(f.orchestrator.delegateWriter({
     task: "fix", plan: "fix and test", scope: ["app.js"], approvedScope: ["app.js"],
     baseline: { status: "GIT_REPOSITORY", head, paths: [] },
   }), { code: "DIRECT_CHILD_BUDGET_EXHAUSTED", resource: "wallTime" });
-  await flush();
-  f.respond(f.requests[0], { result: { kind: "structured", value: { status: "completed", changedPaths: ["app.js"], summary: "fixed", verification: [], followUp: [] } } });
-  await flush();
-  f.respond(f.requests[1], { result: { kind: "structured", value: { verdict: "pass", findings: [], tested: [], unverified: [] } } });
+  const [writer] = await dispatched;
+  const reviewing = once(f.events, EVENTS.request);
+  f.respond(writer, { result: { kind: "structured", value: { status: "completed", changedPaths: ["app.js"], summary: "fixed", verification: [], followUp: [] } } });
+  const [reviewer] = await reviewing;
+  f.respond(reviewer, { result: { kind: "structured", value: { verdict: "pass", findings: [], tested: [], unverified: [] } } });
   await rejected;
   assert.equal(applied, false);
 });

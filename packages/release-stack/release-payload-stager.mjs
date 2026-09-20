@@ -126,6 +126,13 @@ export async function installPi({ work, resolved, node, npm, env, run, download,
 }
 
 async function buildOnlyMyPi({ rootDir, sourceCommit, work, resolved, node, npm, env, run, extract }) {
+  // Build ignored assets explicitly from this clean source before packaging.
+  // No dependency lifecycle scripts or implicit npm hooks are executed.
+  if (await fs.lstat(path.join(rootDir, "webui/vite.config.ts")).then(() => true, () => false)) {
+    await run(node, [path.join(rootDir, "node_modules/vite/bin/vite.js"), "build", "--config", "webui/vite.config.ts"], { cwd: rootDir, env });
+    await boundedFile(path.join(rootDir, "webui/dist/index.html"), "RELEASE_WEB_BUILD_MISSING");
+    await boundedFile(path.join(rootDir, "webui/dist/dependencies.json"), "RELEASE_WEB_BUILD_MISSING");
+  }
   const packed = await run(node, [npm, "pack", ".", "--ignore-scripts", "--json", "--pack-destination", path.join(work, "downloads")], { cwd: rootDir, env });
   let descriptor;
   try { descriptor = JSON.parse(packed.stdout); }

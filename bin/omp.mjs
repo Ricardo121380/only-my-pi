@@ -563,6 +563,12 @@ export async function runOmpEntrypoint(options = {}) {
       return OMP_EXIT_CODES.SUCCESS;
     }
     route = classifyOmpInvocation(argv);
+    if (route.kind === "web") {
+      const { runWebCommand } = await import("../packages/host/cli.mjs");
+      const result = await (options.webCommand ?? runWebCommand)({ argv: route.argv, packageRoot: options.rootDir ?? DEFAULT_ROOT, env: options.env ?? process.env });
+      writeText(stdout, stringifyOmpJson(result));
+      return exitCodeForResult(result);
+    }
     if (route.kind === "agent-help") {
       writeText(stdout, `${OMP_AGENT_USAGE}\n`);
       return OMP_EXIT_CODES.SUCCESS;
