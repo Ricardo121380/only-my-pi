@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { EventEmitter } from "node:events";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -12,6 +13,7 @@ import {
   normalizeCodingAccessRequest,
   orderSelectableModels,
 } from "../extensions/omp-direct/runtime.mjs";
+import { createDirectCodingOrchestrator, DIRECT_DELEGATION_EVENTS } from "../packages/direct-agent/orchestration.mjs";
 
 function model(provider, id, reasoning = true) {
   return { provider, id, reasoning };
@@ -43,7 +45,8 @@ function makeContext({ select = async () => undefined, mode = "tui", model: curr
     model: currentModel,
     scopedModels,
     modelRegistry: { getAvailable: () => availableModels },
-    sessionManager: { getEntries: () => [] },
+    isProjectTrusted: () => true,
+    sessionManager: { getEntries: () => [], getSessionId: () => "test-session" },
     ui: {
       select,
       notify: (message, type) => calls.notifications.push({ message, type }),
@@ -227,11 +230,52 @@ test("approval enables coding once, revoke immediately removes mutation tools, a
   assert.equal(controller.state, DIRECT_SESSION_STATES.CODING);
   assert.deepEqual(pi.calls.active.at(-1), CODING_TOOL_NAMES);
   assert.equal(controller.blockToolCall({ toolName: "edit", input: { path: "src/example.ts" } }), undefined);
+  assert.match(controller.blockToolCall({ toolName: "bash", input: { command: "echo ok\ngit reset --hard HEAD" } }).reason, /BASH_MULTILINE_UNSUPPORTED/u);
+  assert.match(controller.inspectUserBash({ command: "echo ok\ngit commit -m fix" }).result.output, /BASH_MULTILINE_UNSUPPORTED/u);
   controller.accessCommand("revoke", ctx);
   assert.equal(controller.state, DIRECT_SESSION_STATES.INSPECT);
   assert.deepEqual(pi.calls.active.at(-1), INSPECTION_TOOL_NAMES);
   assert.equal(controller.blockToolCall({ toolName: "write" }).block, true);
   assert.equal(controller.blockUserBash().result.exitCode, 126);
+});
+
+test("a pending approval cannot regrant coding after revocation", async (t) => {
+  const configRoot = await tempConfig(t);
+  const pi = makePi();
+  let resolveChoice;
+  const ctx = makeContext({ select: () => new Promise((resolve) => { resolveChoice = resolve; }) });
+  const controller = new DirectSessionController({ pi, configRoot, environment: { ONLY_MY_PI_DIRECT: "1", ONLY_MY_PI_HEADLESS: "0", ONLY_MY_PI_MODEL_EXPLICIT: "1" } });
+  await controller.start({ reason: "startup" }, { ...ctx, model: model("provider", "ready") });
+  const pending = controller.requestCodingAccess({ taskSummary: "fix", complexity: "simple", scope: ["src/**"], riskFlags: [], verification: [], orchestration: { useReadOnlyScouts: false, useManagedCloneWriter: false, useFreshReviewer: false } }, ctx);
+  controller.accessCommand("revoke", ctx);
+  resolveChoice("Approve plan and allow coding for this session");
+  const result = await pending;
+  assert.notEqual(result.details.status, "CODING_ACCESS_GRANTED");
+  assert.equal(controller.hasCodingAccess(), false);
+});
+
+test("a cancelled or superseded approval cannot change the current grant", async (t) => {
+  const configRoot = await tempConfig(t);
+  const pi = makePi();
+  const choices = [];
+  const ctx = makeContext({ select: () => new Promise((resolve) => { choices.push(resolve); }) });
+  const controller = new DirectSessionController({ pi, configRoot, environment: { ONLY_MY_PI_DIRECT: "1", ONLY_MY_PI_HEADLESS: "0", ONLY_MY_PI_MODEL_EXPLICIT: "1" } });
+  await controller.start({ reason: "startup" }, { ...ctx, model: model("provider", "ready") });
+  const request = { taskSummary: "fix", complexity: "simple", scope: ["src/**"], riskFlags: [], verification: [], orchestration: { useReadOnlyScouts: false, useManagedCloneWriter: false, useFreshReviewer: false } };
+  const abort = new AbortController();
+  const cancelled = controller.requestCodingAccess(request, ctx, abort.signal);
+  abort.abort();
+  choices.shift()("Approve plan and allow coding for this session");
+  assert.equal((await cancelled).details.status, "CODING_ACCESS_STALE");
+  assert.equal(controller.state, DIRECT_SESSION_STATES.INSPECT);
+
+  const old = controller.requestCodingAccess(request, ctx);
+  const newer = controller.requestCodingAccess(request, ctx);
+  choices.pop()("Approve plan and allow coding for this session");
+  assert.equal((await newer).details.status, "CODING_ACCESS_GRANTED");
+  choices.shift()("Deny");
+  assert.equal((await old).details.status, "CODING_ACCESS_STALE");
+  assert.equal(controller.hasCodingAccess(), true);
 });
 
 test("permission YOLO revokes coding, blocks mutation, and the turn ceiling repairs tool visibility", async (t) => {
@@ -368,7 +412,18 @@ test("direct tools use one attached orchestrator and managed writer requires its
   assert.equal(calls[1][0], "write");
   assert.equal(calls[1][1].plan, "Inspect the behavior, implement the change, test it, and review the patch.");
   assert.equal(calls[1][1].baseline.status, "GIT_REPOSITORY");
-  controller.agentsCommand(ctx);
+  const assertWriterAuthority = calls[1][1].assertAuthority;
+  assert.doesNotThrow(() => assertWriterAuthority(ctx));
+  ctx.cwd = "/tmp/other-project";
+  assert.throws(() => assertWriterAuthority(ctx), { code: "DIRECT_WRITER_AUTHORIZATION_REVOKED" });
+  ctx.cwd = "/tmp/example-project";
+  ctx.isProjectTrusted = () => false;
+  assert.throws(() => assertWriterAuthority(ctx), { code: "DIRECT_WRITER_AUTHORIZATION_REVOKED" });
+  ctx.isProjectTrusted = () => true;
+  controller.environment.PI_PERMISSION_MODE = "yolo";
+  assert.throws(() => assertWriterAuthority(ctx), { code: "DIRECT_WRITER_AUTHORIZATION_REVOKED" });
+  delete controller.environment.PI_PERMISSION_MODE;
+  await controller.agentsCommand(ctx);
   assert.match(ctx.calls.notifications.at(-1).message, /Runtime owner: pi-subagents/u);
   for (const diagnostic of [
     { status: "WRITER_REVIEW_BLOCKED", findings: ["Signed addition fails for negative operands"] },
@@ -379,4 +434,60 @@ test("direct tools use one attached orchestrator and managed writer requires its
     assert.ok(modelText(blocked).includes(diagnostic.findings?.[0] ?? diagnostic.code), "the parent model must receive the reason integration stopped");
     assert.equal(blocked.details.status, diagnostic.status);
   }
+});
+
+test("revoking the controller grant cancels a real orchestrator before patch apply", { timeout: 5000 }, async (t) => {
+  const configRoot = await tempConfig(t);
+  const ctx = makeContext({ select: async (_title, options) => options[0] });
+  ctx.cwd = await fs.realpath(configRoot);
+  ctx.model = model("provider", "ready");
+  const pi = makePi();
+  pi.exec = async () => ({ stdout: "", stderr: "", code: 0 });
+  const controller = new DirectSessionController({ pi, configRoot, environment: { ONLY_MY_PI_DIRECT: "1", ONLY_MY_PI_HEADLESS: "0", ONLY_MY_PI_MODEL_EXPLICIT: "1" }, captureBaseline: async () => ({ status: "GIT_REPOSITORY", head: "a".repeat(40), paths: [] }) });
+  await controller.start({ reason: "startup" }, ctx);
+  const events = new EventEmitter();
+  const usage = { input: 10, output: 5, cacheRead: 0, cacheWrite: 0, cost: 0.001, turns: 1, toolCalls: 1, durationMs: 10 };
+  const transport = {
+    subscribe(name, handler) { events.on(name, handler); return () => events.off(name, handler); },
+    emit(name, request) {
+      events.emit(name, request);
+      if (name !== DIRECT_DELEGATION_EVENTS.request) return;
+      queueMicrotask(() => events.emit(DIRECT_DELEGATION_EVENTS.response, {
+        requestId: request.requestId, ownerRunId: request.ownerRunId, nodeId: request.nodeId,
+        status: "completed", exitCode: 0, usage,
+        result: { kind: "structured", value: request.agent === "omp-implementer"
+          ? { status: "completed", changedPaths: ["src/fix.ts"], summary: "fixed", verification: [], followUp: [] }
+          : { verdict: "pass", findings: [], tested: [], unverified: [] } },
+      }));
+    },
+  };
+  let releaseVerification;
+  let verifying;
+  const verificationStarted = new Promise((resolve) => { verifying = resolve; });
+  const patch = { status: "READY", sha256: `sha256:${"b".repeat(64)}`, changedPaths: ["src/fix.ts"], patchPath: path.join(configRoot, "only-my-pi", "runs", "fixture", "artifacts", "fixture-writer-1.patch") };
+  let applied = false;
+  let writerRecord;
+  const orchestrator = createDirectCodingOrchestrator({ transport, configRoot, getContext: () => ctx,
+    recordStore: { async begin({ id, directWriter }) { writerRecord = { runId: id, status: "planned", directWriter }; return writerRecord; }, async update(_id, patch) { writerRecord = { ...writerRecord, ...patch }; return writerRecord; } },
+    contextProvider: async () => ({ sessionId: ctx.sessionManager.getSessionId(), repository: { root: ctx.cwd, head: "a".repeat(40) }, configurationDigest: `sha256:${"a".repeat(64)}` }),
+    verifyRealWorkspace: async () => ({ status: "BLOCKED", code: "WRITER_REAL_GATE_DENIED" }),
+    verifyWriter: async () => {
+    verifying();
+    return new Promise((resolve) => { releaseVerification = resolve; });
+  }, cloneService: {
+    async create() { return { cloneRoot: path.join(configRoot, "clone"), patchRoot: path.join(configRoot, "artifacts") }; },
+    async capture() { return patch; },
+    async apply() { applied = true; return { patchDigest: patch.sha256, changedPaths: patch.changedPaths }; },
+  } });
+  t.after(() => orchestrator.dispose());
+  controller.attachOrchestrator(orchestrator);
+  assert.equal((await controller.requestCodingAccess({ taskSummary: "fix", complexity: "complex", scope: ["src/**"], riskFlags: [], plan: "Fix and test", verification: [], orchestration: { useReadOnlyScouts: false, useManagedCloneWriter: true, useFreshReviewer: true } }, ctx)).details.status, "CODING_ACCESS_GRANTED");
+  const writing = controller.delegateManagedWriter({ scope: ["src/**"] }, ctx);
+  const first = await Promise.race([verificationStarted.then(() => "verifying"), writing.then((result) => result.details.status)]);
+  assert.equal(first, "verifying");
+  controller.accessCommand("revoke", ctx);
+  releaseVerification({ status: "PASS", patchDigest: patch.sha256, baseCommit: "a".repeat(40), results: [{ status: "PASS", exitCode: 0, killed: false }] });
+  const result = await writing;
+  assert.equal(applied, false);
+  assert.notEqual(result.details.status, "WRITER_PATCH_APPLIED_REQUIRES_REAL_WORKSPACE_VERIFICATION");
 });

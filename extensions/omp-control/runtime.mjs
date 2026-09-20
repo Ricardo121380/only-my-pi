@@ -546,7 +546,7 @@ export function createOmpRuntime({ rootDir, configRoot, registry, modeService, a
         const subcommand = args[0] ?? "list";
         const id = args[1] ?? null;
         try {
-          if (subcommand === "list" && args.length === 0) { const result = await runManagement.list(); notify(ctx, result); return result; }
+          if (subcommand === "list" && (args.length === 0 || args.length === 1)) { const result = await runManagement.list(); notify(ctx, result); return result; }
           if (subcommand === "show" && id && args.length === 2) { const result = await runManagement.show(id); notify(ctx, result); return result; }
           if (subcommand === "cancel" && id && args.length === 2) { const result = await runManagement.cancel(id); notify(ctx, result, result.ok === false ? "warning" : "info"); return result; }
           if (subcommand === "resume" && id && args.length === 2) { const result = await runManagement.resume(id); notify(ctx, result, result.ok === false ? "warning" : "info"); return result; }

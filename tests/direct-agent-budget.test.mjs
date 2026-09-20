@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
+import { realpathSync } from "node:fs";
 import test from "node:test";
 import { DIRECT_DELEGATION_EVENTS as EVENTS, createDirectCodingOrchestrator } from "../packages/direct-agent/orchestration.mjs";
 import { DirectSessionController } from "../extensions/omp-direct/runtime.mjs";
 
 const USAGE = { input: 5, output: 5, cacheRead: 0, cacheWrite: 0, cost: 0.001, turns: 1, toolCalls: 1, durationMs: 10 };
+const PROJECT_ROOT = realpathSync("/tmp");
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 function fixture(t, budget = {}, options = {}) {
@@ -13,14 +15,18 @@ function fixture(t, budget = {}, options = {}) {
   const cancellations = [];
   events.on(EVENTS.request, (request) => requests.push(request));
   events.on(EVENTS.cancel, (request) => cancellations.push(request));
+  let writerRecord;
   const orchestrator = createDirectCodingOrchestrator({
     configRoot: "/tmp/omp-direct-budget",
-    getContext: () => ({ cwd: "/tmp/project", model: { provider: "test", id: "test" }, mode: "print" }),
+    getContext: () => ({ cwd: PROJECT_ROOT, model: { provider: "test", id: "test" }, mode: "print" }),
     transport: {
       subscribe(name, handler) { events.on(name, handler); return () => events.off(name, handler); },
       emit(name, value) { events.emit(name, value); },
     },
     budget,
+    recordStore: { async begin({ id, directWriter }) { writerRecord = { runId: id, status: "planned", directWriter }; return writerRecord; }, async update(_id, patch) { writerRecord = { ...writerRecord, ...patch }; return writerRecord; } },
+    contextProvider: async () => ({ sessionId: "session", repository: { root: PROJECT_ROOT, head: "a".repeat(40) }, configurationDigest: `sha256:${"c".repeat(64)}` }),
+    verifyRealWorkspace: async () => ({ status: "BLOCKED", code: "WRITER_REAL_GATE_DENIED" }),
     ...options,
   });
   t.after(() => orchestrator.dispose());
@@ -225,7 +231,7 @@ test("the shared deadline is rechecked after writer verification and review befo
   let captures = 0;
   let applied = false;
   const head = "a".repeat(40);
-  const patch = { status: "READY", sha256: `sha256:${"b".repeat(64)}`, changedPaths: ["app.js"], patchPath: "/tmp/omp-direct-budget/patch.diff" };
+  const patch = { status: "READY", sha256: `sha256:${"b".repeat(64)}`, changedPaths: ["app.js"], patchPath: "/tmp/omp-direct-budget/only-my-pi/runs/fixture/artifacts/fixture-writer-1.patch" };
   const f = fixture(t, { maxWallSeconds: 1 }, {
     cloneService: {
       create: async () => ({ cloneRoot: "/tmp/clone", patchRoot: "/tmp/omp-direct-budget" }),
@@ -257,7 +263,7 @@ test("agents status exposes observed child usage and explicitly excludes the mai
     pi: { getActiveTools: () => [], setActiveTools() {} },
   });
   controller.attachOrchestrator(f.orchestrator);
-  controller.agentsCommand({ ui: { notify: (message) => notifications.push(message) } });
+  await controller.agentsCommand({ ui: { notify: (message) => notifications.push(message) } });
   assert.match(notifications[0], /main Agent usage is separate/u);
   assert.match(notifications[0], /Reported tokens: 0\/50000/u);
   assert.equal(f.orchestrator.snapshot().budget.mainAgentIncluded, false);

@@ -251,6 +251,7 @@ function shellHasDestructiveGit(command) {
 
 export function inspectMutationCommand(command, { allowCommit = false } = {}) {
   if (typeof command !== "string" || command.length > 32_768 || /[\0\r]/u.test(command)) return { code: "BASH_COMMAND_INVALID", reason: "command is invalid or too large" };
+  if (command.includes("\n")) return { code: "BASH_MULTILINE_UNSUPPORTED", reason: "physical multiline commands are not supported in the OMP coding shell" };
   if (/[`]|\$\(/u.test(command)) return { code: "SHELL_EXPANSION_UNSUPPORTED", reason: "command substitution is not allowed in the OMP coding shell" };
   const destructive = shellHasDestructiveGit(command);
   if (destructive && !(allowCommit && destructive.code === DESTRUCTIVE_GIT_CODES.COMMIT)) return destructive;

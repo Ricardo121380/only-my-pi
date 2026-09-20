@@ -47,9 +47,42 @@
     },
     "artifactsRetained": { "type": "boolean" },
     "receiptDigest": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/digest" }] },
+    "directWriter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "application", "verification", "patchDigest", "patch", "receiptDigest", "failureCode", "updatedAt"],
+      "properties": {
+        "stage": { "enum": ["PREPARING", "PATCH_CAPTURED", "CLONE_VERIFIED", "REVIEWED", "APPLYING", "APPLICATION_UNKNOWN", "APPLIED_PENDING_VERIFICATION", "VERIFYING", "VERIFIED", "BLOCKED"] },
+        "application": { "enum": ["NOT_STARTED", "UNKNOWN", "APPLIED"] },
+        "verification": { "enum": ["NOT_RUN", "PENDING", "RUNNING", "PASS", "FAIL", "BLOCKED"] },
+        "patchDigest": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/digest" }] },
+        "patch": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/directWriterPatch" }] },
+        "receiptDigest": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/digest" }] },
+        "failureCode": { "oneOf": [{ "type": "null" }, { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,127}$" }] },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        { "if": { "properties": { "patchDigest": { "type": "null" } } }, "then": { "properties": { "patch": { "type": "null" } } }, "else": { "properties": { "patch": { "$ref": "#/$defs/directWriterPatch" } } } },
+        { "if": { "properties": { "application": { "enum": ["UNKNOWN", "APPLIED"] } } }, "then": { "properties": { "patchDigest": { "$ref": "#/$defs/digest" }, "patch": { "$ref": "#/$defs/directWriterPatch" } } } },
+        { "if": { "properties": { "stage": { "enum": ["PREPARING", "PATCH_CAPTURED", "CLONE_VERIFIED", "REVIEWED", "APPLYING", "BLOCKED"] } } }, "then": { "properties": { "application": { "const": "NOT_STARTED" }, "verification": { "const": "NOT_RUN" } } } },
+        { "if": { "properties": { "stage": { "const": "APPLICATION_UNKNOWN" } } }, "then": { "properties": { "application": { "const": "UNKNOWN" }, "verification": { "const": "NOT_RUN" } } } },
+        { "if": { "properties": { "stage": { "const": "APPLIED_PENDING_VERIFICATION" } } }, "then": { "properties": { "application": { "const": "APPLIED" }, "verification": { "enum": ["PENDING", "FAIL", "BLOCKED"] } } } },
+        { "if": { "properties": { "stage": { "const": "VERIFYING" } } }, "then": { "properties": { "application": { "const": "APPLIED" }, "verification": { "const": "RUNNING" } } } },
+        { "if": { "properties": { "stage": { "const": "VERIFIED" } } }, "then": { "properties": { "application": { "const": "APPLIED" }, "verification": { "const": "PASS" }, "receiptDigest": { "$ref": "#/$defs/digest" } } } }
+      ]
+    },
     "recordDigest": { "$ref": "#/$defs/digest" }
   },
   "$defs": {
+    "directWriterPatch": {
+      "type": "object", "additionalProperties": false,
+      "required": ["relativePath", "byteLength", "digest"],
+      "properties": {
+        "relativePath": { "type": "string", "pattern": "^runs/[a-z0-9][a-z0-9._:-]{0,127}/artifacts/[a-z0-9][a-z0-9._:-]{0,127}\\.patch$" },
+        "byteLength": { "type": "integer", "minimum": 0 },
+        "digest": { "$ref": "#/$defs/digest" }
+      }
+    },
     "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
     "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
   }

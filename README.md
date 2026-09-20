@@ -25,6 +25,8 @@ Pi provides the terminal UI, models, sessions, and core tools. OMP adds coding a
 
 You do not need to choose a Workflow, Swarm, Goal, or Ultra to do everyday work. **These controls are not an OS sandbox.** See [security boundaries](#security-and-license).
 
+The current branch contains **unreleased** direct-Agent hardening: physical multiline Bash is rejected; revocation cancels in-flight managed writing; and a clone-verified patch is not complete until a separately approved gate passes in the real worktree. A patch may be applied while its verification is pending, failed, or cancelled. `/omp runs` and `/omp runs show <id>` expose a redacted, read-only record; they do not resume a writer or restore coding permission. A cancelled Git apply can leave an unknown application outcome, which requires manual inspection before retry. These statements do not describe the published `v0.4.0-preview.2` binaries.
+
 ## Quick start
 
 <a id="platform-and-runtime"></a>

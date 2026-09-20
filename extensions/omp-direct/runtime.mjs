@@ -203,12 +203,33 @@ export class DirectSessionController {
     this.workspacePolicy = createWorkspacePolicy();
     this.approvedScope = [];
     this.approvedRequest = null;
+    this.lifecycleEpoch = 0;
+    this.approvalEpoch = 0;
+    this.grantEpoch = 0;
+    this.grantAbort = null;
+    this.grantBinding = null;
     this.orchestrator = null;
     this.unsafePermissionNotified = false;
   }
 
   isDirect() { return this.environment.ONLY_MY_PI_DIRECT === "1"; }
   hasCodingAccess() { return this.state === DIRECT_SESSION_STATES.CODING && !this.headless; }
+
+  invalidateCodingAuthority() {
+    this.approvalEpoch += 1;
+    this.grantEpoch += 1;
+    this.grantAbort?.abort();
+    this.grantAbort = null;
+    this.grantBinding = null;
+    this.approvedRequest = null;
+    this.approvedScope = [];
+  }
+
+  sessionIdentity(ctx) {
+    const sessionId = ctx?.sessionManager?.getSessionId?.();
+    return typeof sessionId === "string" && sessionId && typeof ctx?.cwd === "string" && path.isAbsolute(ctx.cwd)
+      ? `${sessionId}\0${path.resolve(ctx.cwd)}` : null;
+  }
 
   attachOrchestrator(orchestrator) {
     this.orchestrator = orchestrator && typeof orchestrator.delegateReadOnly === "function" ? orchestrator : null;
@@ -256,8 +277,7 @@ export class DirectSessionController {
       return { ok: true, mode };
     }
     this.explicitPlan = false;
-    this.approvedRequest = null;
-    this.approvedScope = [];
+    this.invalidateCodingAuthority();
     this.state = DIRECT_SESSION_STATES.INSPECT;
     this.applyToolCeiling();
     this.updateUi(ctx);
@@ -340,26 +360,32 @@ export class DirectSessionController {
   }
 
   async start(_event, ctx) {
+    this.lifecycleEpoch += 1;
+    const lifecycle = this.lifecycleEpoch;
+    this.invalidateCodingAuthority();
     this.context = ctx;
     this.state = DIRECT_SESSION_STATES.INSPECT;
     this.explicitPlan = false;
-    this.approvedRequest = null;
-    this.approvedScope = [];
+    this.workspaceBaseline = null;
+    this.workspacePolicy = createWorkspacePolicy();
     this.applyToolCeiling();
     this.updateUi(ctx);
     this.enforcePermissionBoundary(ctx);
     try {
       if (typeof this.pi.exec === "function") {
-        this.workspaceBaseline = await this.captureBaseline({
+        const baseline = await this.captureBaseline({
           cwd: ctx.cwd,
           runGit: async (cwd, args) => {
             const result = await this.pi.exec("git", args, { cwd });
             return { stdout: result.stdout, stderr: result.stderr, code: result.code ?? 0 };
           },
         });
+        if (this.lifecycleEpoch !== lifecycle) return { ok: false, status: "SESSION_START_SUPERSEDED" };
+        this.workspaceBaseline = baseline;
         this.workspacePolicy = createWorkspacePolicy({ baseline: this.workspaceBaseline });
       }
     } catch (error) {
+      if (this.lifecycleEpoch !== lifecycle) return { ok: false, status: "SESSION_START_SUPERSEDED" };
       this.workspaceBaseline = { formatVersion: 1, status: "BASELINE_UNAVAILABLE", code: error?.code ?? "WORKSPACE_BASELINE_FAILED" };
       if (ctx.mode === "tui") ctx.ui.notify(`Workspace baseline unavailable: ${this.workspaceBaseline.code}. Coding access will remain bounded.`, "warning");
     }
@@ -369,6 +395,7 @@ export class DirectSessionController {
     } catch (error) {
       selection = { ok: false, status: error?.code ?? "MODEL_SELECTION_FAILED", message: error instanceof Error ? error.message : String(error) };
     }
+    if (this.lifecycleEpoch !== lifecycle) return { ok: false, status: "SESSION_START_SUPERSEDED" };
     if (!selection.ok) {
       const message = `${selection.status}: ${selection.message}`;
       if (ctx.mode === "tui") ctx.ui.notify(message, selection.status === "MODEL_SELECTION_CANCELLED" ? "info" : "error");
@@ -379,20 +406,21 @@ export class DirectSessionController {
   }
 
   shutdown(ctx = this.context) {
+    this.lifecycleEpoch += 1;
+    this.invalidateCodingAuthority();
     if (ctx?.mode === "tui") {
       ctx.ui.setStatus("omp-direct", undefined);
       ctx.ui.setWidget("omp-direct-help", undefined);
     }
     this.state = DIRECT_SESSION_STATES.INSPECT;
     this.explicitPlan = false;
-    this.approvedRequest = null;
-    this.approvedScope = [];
     this.orchestrator = null;
     this.unsafePermissionNotified = false;
     this.context = null;
   }
 
   enterPlanning(args, ctx) {
+    this.invalidateCodingAuthority();
     this.explicitPlan = true;
     this.transition(DIRECT_SESSION_STATES.PLANNING, ctx);
     const task = typeof args === "string" ? args.trim() : "";
@@ -408,8 +436,7 @@ export class DirectSessionController {
     const command = typeof args === "string" ? args.trim() : "";
     if (command === "revoke") {
       this.explicitPlan = false;
-      this.approvedRequest = null;
-      this.approvedScope = [];
+      this.invalidateCodingAuthority();
       this.transition(DIRECT_SESSION_STATES.INSPECT, ctx);
       ctx.ui.notify("Coding access revoked for this session.", "info");
       return;
@@ -421,7 +448,7 @@ export class DirectSessionController {
     ctx.ui.notify(`OMP access: ${this.state}. Project-local coding is ${this.hasCodingAccess() ? "enabled" : "disabled"}. Physical permission mode: ${this.currentPermissionMode(ctx)}.`, "info");
   }
 
-  async requestCodingAccess(input, ctx) {
+  async requestCodingAccess(input, ctx, signal) {
     if (this.headless || ctx.mode !== "tui" || !ctx.hasUI) {
       return toolResult("CODING_ACCESS_UI_REQUIRED", "Headless and non-interactive OMP sessions cannot obtain write access.");
     }
@@ -430,22 +457,40 @@ export class DirectSessionController {
       return toolResult(permission.code, "Permission mode YOLO is incompatible with guarded OMP coding. Switch to /perm build, then request access again.");
     }
     if (this.hasCodingAccess()) return toolResult("CODING_ACCESS_ALREADY_GRANTED", "Project-local coding is already enabled for this process.");
+    const identity = this.sessionIdentity(ctx);
+    if (!identity || identity !== this.sessionIdentity(this.context)) return toolResult("CODING_ACCESS_SESSION_UNAVAILABLE", "The current project session identity is unavailable or changed.");
     let request;
     try {
       request = normalizeCodingAccessRequest(input, { explicitPlan: this.explicitPlan });
     } catch (error) {
       return toolResult(error?.code ?? "CODING_ACCESS_REQUEST_INVALID", error instanceof Error ? error.message : String(error));
     }
+    const lifecycle = this.lifecycleEpoch;
+    const approval = ++this.approvalEpoch;
     this.transition(DIRECT_SESSION_STATES.AWAITING_CODING_ACCESS, ctx);
-    const choice = await ctx.ui.select(accessSummary(request, ctx.cwd), [...ACCESS_OPTIONS]);
-    if (choice === ACCESS_OPTIONS[0]) {
-      const afterApproval = this.enforcePermissionBoundary(ctx);
-      if (!afterApproval.ok) {
-        return toolResult(afterApproval.code, "Permission mode changed to YOLO while approval was pending; coding access was not granted.");
+    let choice;
+    try {
+      choice = await ctx.ui.select(accessSummary(request, ctx.cwd), [...ACCESS_OPTIONS]);
+    } catch (error) {
+      if (this.lifecycleEpoch === lifecycle && this.approvalEpoch === approval) this.transition(DIRECT_SESSION_STATES.INSPECT, ctx);
+      return toolResult("CODING_ACCESS_UI_FAILED", error instanceof Error ? error.message : String(error));
+    }
+    if (signal?.aborted || this.lifecycleEpoch !== lifecycle || this.approvalEpoch !== approval || this.state !== DIRECT_SESSION_STATES.AWAITING_CODING_ACCESS || identity !== this.sessionIdentity(this.context)) {
+      if (this.lifecycleEpoch === lifecycle && this.approvalEpoch === approval && this.state === DIRECT_SESSION_STATES.AWAITING_CODING_ACCESS) {
+        this.invalidateCodingAuthority();
+        this.transition(DIRECT_SESSION_STATES.INSPECT, ctx);
       }
+      return toolResult("CODING_ACCESS_STALE", "The approval request was cancelled or superseded; no coding access was granted.");
+    }
+    const afterApproval = this.enforcePermissionBoundary(ctx);
+    if (!afterApproval.ok) return toolResult(afterApproval.code, "Permission mode changed to YOLO while approval was pending; coding access was not granted.");
+    if (choice === ACCESS_OPTIONS[0]) {
       this.explicitPlan = false;
       this.approvedRequest = request;
       this.approvedScope = [...request.scope];
+      this.grantEpoch += 1;
+      this.grantAbort = new AbortController();
+      this.grantBinding = identity;
       // The request scope describes the current task and stays a hard boundary
       // for an isolated managed writer. The human approval itself is
       // process-local and project-wide so later ordinary local tasks do not
@@ -460,13 +505,13 @@ export class DirectSessionController {
       });
     }
     if (choice === ACCESS_OPTIONS[1]) {
+      this.invalidateCodingAuthority();
       this.transition(DIRECT_SESSION_STATES.PLANNING, ctx);
       ctx.ui.notify("Revise the plan in your next message. Coding access remains disabled.", "info");
       return toolResult("CODING_ACCESS_REVISION_REQUESTED", "The user requested a revised plan; do not modify the project.");
     }
     this.explicitPlan = false;
-    this.approvedRequest = null;
-    this.approvedScope = [];
+    this.invalidateCodingAuthority();
     this.transition(DIRECT_SESSION_STATES.INSPECT, ctx);
     return toolResult("CODING_ACCESS_DENIED", "The user denied coding access; continue read-only or stop.");
   }
@@ -501,13 +546,27 @@ export class DirectSessionController {
     }
   }
 
-  async delegateManagedWriter(input, _ctx, signal) {
+  async delegateManagedWriter(input, ctx, signal) {
     if (!this.hasCodingAccess()) return toolResult("CODING_ACCESS_REQUIRED", "Managed writing requires the current process coding grant.");
     if (!this.orchestrator) return toolResult("DIRECT_ORCHESTRATION_UNAVAILABLE", "The shared pi-subagents runtime is unavailable; implement with the main Agent.");
     if (!this.approvedRequest?.orchestration?.useManagedCloneWriter) {
       return toolResult("MANAGED_WRITER_NOT_APPROVED", "The approved coding plan did not authorize a managed-clone writer.");
     }
+    const grant = this.grantAbort;
+    const epoch = this.grantEpoch;
+    const identity = this.grantBinding;
+    if (!grant || !identity) return toolResult("CODING_ACCESS_REQUIRED", "Managed writing requires a current project-bound coding grant.");
+    const assertAuthority = (operationContext = ctx) => {
+      if (grant.signal.aborted || this.grantEpoch !== epoch || !this.hasCodingAccess()
+        || identity !== this.grantBinding || identity !== this.sessionIdentity(this.context)
+        || identity !== this.sessionIdentity(ctx) || identity !== this.sessionIdentity(operationContext)
+        || this.currentPermissionMode(this.context) === "yolo"
+        || this.context?.isProjectTrusted?.() !== true || operationContext?.isProjectTrusted?.() !== true) {
+        fail("DIRECT_WRITER_AUTHORIZATION_REVOKED", "Managed writer authorization is no longer current.");
+      }
+    };
     try {
+      assertAuthority();
       const scope = input?.scope === undefined ? this.approvedScope : normalizeScope(input.scope);
       const result = await this.orchestrator.delegateWriter({
         task: this.approvedRequest.taskSummary,
@@ -516,21 +575,21 @@ export class DirectSessionController {
         verification: this.approvedRequest.verification,
         baseline: this.workspaceBaseline,
         approvedScope: this.approvedScope,
-        signal,
+        signal: signal ? AbortSignal.any([signal, grant.signal]) : grant.signal,
+        assertAuthority,
       });
-      return toolResult(
-        result.status,
-        result.status === "WRITER_PATCH_APPLIED_REQUIRES_REAL_WORKSPACE_VERIFICATION"
-          ? "The reviewed patch was applied; verify it in the real worktree before reporting completion."
-          : "The managed writer did not modify the real worktree.",
-        result,
-      );
+      const applied = result.status === "WRITER_PATCH_VERIFIED" || result.status === "WRITER_PATCH_APPLIED_REQUIRES_REAL_WORKSPACE_VERIFICATION" || result.status === "WRITER_PATCH_APPLIED_RECORD_FAILED";
+      return toolResult(result.status,
+        result.status === "WRITER_PATCH_VERIFIED" ? "The patch was applied and separately verified in the real worktree."
+          : applied ? "The patch was applied, but real-worktree verification or its record is incomplete; inspect the run before reporting completion."
+            : "The managed writer did not confirm an application to the real worktree.", result);
     } catch (error) {
-      return toolResult(error?.code ?? "DIRECT_WRITER_FAILED", error instanceof Error ? error.message : String(error));
+      const uncertain = error?.code === "WRITER_PATCH_APPLICATION_UNKNOWN";
+      return toolResult(error?.code ?? "DIRECT_WRITER_FAILED", uncertain ? "Git apply started, but its result is unknown; inspect the real worktree before any retry." : error instanceof Error ? error.message : String(error));
     }
   }
 
-  agentsCommand(ctx = this.context) {
+  async agentsCommand(ctx = this.context) {
     const snapshot = this.orchestrator?.snapshot?.();
     if (!snapshot) {
       ctx?.ui?.notify?.("Automatic child runtime is unavailable; the main Agent remains usable.", "warning");
@@ -547,6 +606,13 @@ export class DirectSessionController {
       ] : []),
       ...snapshot.children.map((entry) => `${entry.label}: ${entry.status}`),
     ];
+    try {
+      const recent = (await this.orchestrator.recordStore?.list?.() ?? []).filter((entry) => entry.directWriter).slice(0, 3);
+      for (const entry of recent) {
+        const writer = entry.directWriter;
+        lines.push(`Writer ${entry.runId}: ${writer.stage}; application ${writer.application}; verification ${writer.verification}${["APPLYING", "APPLICATION_UNKNOWN", "VERIFYING"].includes(writer.stage) ? "; inspect worktree before retry" : ""}`);
+      }
+    } catch { lines.push("Writer records: unavailable; inspect /omp runs."); }
     ctx?.ui?.notify?.(lines.join("\n"), "info");
   }
 

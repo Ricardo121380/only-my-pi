@@ -105,6 +105,61 @@ test("managed writer fails closed on scope escape and target drift before apply"
   assert.equal(await fs.readFile(path.join(root, "src", "app.js"), "utf8"), "concurrent user change\n");
 });
 
+test("revocation during the final target check stops Git apply", async (t) => {
+  const { root, head } = await repository(t);
+  const configRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-managed-clone-private-"));
+  t.after(() => fs.rm(configRoot, { recursive: true, force: true }));
+  const baseline = await captureWorkspaceBaseline({ cwd: root });
+  const managed = await createManagedClone({ repositoryRoot: root, runId: "revocation-test", baseCommit: head, runsRoot: path.join(configRoot, "runs") });
+  await fs.writeFile(path.join(managed.cloneRoot, "src", "app.js"), "export const value = 2;\n");
+  const patch = await captureWriterPatch({ cloneRoot: managed.cloneRoot, baseCommit: head, scope: ["src/**"], patchRoot: managed.patchRoot, runId: managed.runId });
+  let authorized = true;
+  let applyStarts = 0;
+  const runGit = async (cwd, args) => {
+    if (args[0] === "apply" && args[1] === "--binary") applyStarts++;
+    const result = await execFile("git", args, { cwd, encoding: "utf8" });
+    if (args[0] === "submodule") authorized = false;
+    return { code: 0, stdout: result.stdout, stderr: result.stderr };
+  };
+  await assert.rejects(applyWriterPatch({ patch, repositoryRoot: root, scope: ["src/**"], baseline, runGit, assertAuthority: () => {
+    if (!authorized) throw Object.assign(new Error("revoked"), { code: "DIRECT_WRITER_AUTHORIZATION_REVOKED" });
+  } }), { code: "DIRECT_WRITER_AUTHORIZATION_REVOKED" });
+  assert.equal(applyStarts, 0);
+  assert.equal(await fs.readFile(path.join(root, "src", "app.js"), "utf8"), "export const value = 1;\n");
+});
+
+test("managed clone forwards cancellation to its own Git process", async (t) => {
+  const { root, head } = await repository(t);
+  const configRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-managed-clone-private-"));
+  t.after(() => fs.rm(configRoot, { recursive: true, force: true }));
+  const abort = new AbortController();
+  let receivedSignal = null;
+  let started;
+  const admitted = new Promise((resolve) => { started = resolve; });
+  const running = createManagedClone({ repositoryRoot: root, runId: "cancelled-clone", baseCommit: head, runsRoot: path.join(configRoot, "runs"), signal: abort.signal, runGit: async (_cwd, _args, options) => {
+    receivedSignal = options.signal;
+    started();
+    return new Promise((resolve) => options.signal.addEventListener("abort", () => resolve({ code: 1, stdout: "", stderr: "cancelled" }), { once: true }));
+  } });
+  await admitted;
+  abort.abort();
+  await assert.rejects(running, { code: "MANAGED_CLONE_CANCELLED" });
+  assert.equal(receivedSignal, abort.signal);
+});
+
+test("an unconfirmed Git termination preserves the partial private clone", async (t) => {
+  const { root, head } = await repository(t);
+  const configRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-managed-clone-private-"));
+  t.after(() => fs.rm(configRoot, { recursive: true, force: true }));
+  let partialClone;
+  await assert.rejects(createManagedClone({ repositoryRoot: root, runId: "unconfirmed-clone", baseCommit: head, runsRoot: path.join(configRoot, "runs"), runGit: async (_cwd, args) => {
+    partialClone = args.at(-1);
+    await fs.mkdir(partialClone);
+    return { code: 1, stdout: "", stderr: "cancelled", terminationUnconfirmed: true };
+  } }), { code: "MANAGED_CLONE_GIT_TERMINATION_UNCONFIRMED" });
+  assert.equal((await fs.lstat(partialClone)).isDirectory(), true);
+});
+
 test("managed writer rejects Git binary patches even inside the approved scope", async (t) => {
   const { root, head } = await repository(t);
   const privateRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-binary-patch-test-"));

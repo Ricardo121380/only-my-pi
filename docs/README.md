@@ -2,6 +2,27 @@
 
 Research and design notes for only-my-pi live here.
 
+## Accepted WebUI / Desktop plan
+
+The 2026-09-20 design discussion is complete. The following records describe
+the accepted plan; implementation and milestone acceptance have not started.
+
+- [Development plan and automatic acceptance gates](plans/2026-09-20-omp-webui-desktop-plan.md)
+- [Q1–Q22 decisions and shared-understanding confirmation](plans/2026-09-20-web-desktop-discussion.md)
+- [Phase 1 detailed development and daily-install promotion plan](plans/2026-09-20-omp-webui-phase1-plan.md)
+- [Phase 1 P1-Q1–Q9 decisions](plans/2026-09-20-omp-webui-phase1-discussion.md)
+- [Domain glossary](../CONTEXT.md)
+- [ADR-0014: shared WebUI to Electron](decisions/ADR-0014-webui-to-electron.md)
+- [ADR-0015: GUI account isolation](decisions/ADR-0015-gui-account-isolation.md)
+- [ADR-0016: execution lifecycle and project writer ownership](decisions/ADR-0016-host-lifecycle-and-project-writer-ownership.md)
+- [ADR-0017: versioned runtime contracts and stack promotion](decisions/ADR-0017-versioned-runtime-contracts-and-stack-promotion.md)
+
+Phase 1 is complete only after both M1-T (candidate technical acceptance) and
+M1-I (daily CLI switch, rollback, and reapplication of the same candidate)
+pass. Documentation completion does not imply either acceptance has run.
+
+## Directory guide
+
 Recommended records:
 
 - `research/` — package and harness research with source dates

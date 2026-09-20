@@ -92,6 +92,55 @@ test("manifest or HEAD drift revokes a session grant", async (t) => {
   assert.equal(service.status().status, "PROJECT_GATE_UNTRUSTED");
 });
 
+test("reset cancels an in-flight gate and a killed zero exit is never PASS", async (t) => {
+  const data = await fixture(t);
+  const originalExec = data.service.exec;
+  const plan = await data.service.plan(["unit-tests"]);
+  await data.service.grant(plan);
+  let started;
+  const admitted = new Promise((resolve) => { started = resolve; });
+  data.service.exec = (command, args, options) => command === "/usr/bin/env"
+    ? new Promise((resolve) => {
+      started();
+      options.signal.addEventListener("abort", () => resolve({ code: 0, stdout: "", stderr: "", killed: true }), { once: true });
+    })
+    : originalExec(command, args, options);
+  const running = data.service.run("unit-tests");
+  await admitted;
+  assert.equal(data.service.reset().status, "PROJECT_GATE_TRUST_RESET");
+  const receipt = await running;
+  assert.equal(receipt.status, "FAIL");
+  assert.equal(receipt.killed, true);
+});
+
+test("a gate plan captured before reset cannot be approved afterward", async (t) => {
+  const { service } = await fixture(t);
+  const oldPlan = await service.plan(["unit-tests"]);
+  service.reset();
+  await assert.rejects(service.grant(oldPlan), { code: "PROJECT_GATE_PLAN_STALE" });
+  const fresh = await service.plan(["unit-tests"]);
+  assert.equal((await service.grant(fresh)).status, "PROJECT_GATE_TRUSTED_SESSION");
+});
+
+test("dispose preserves an unconfirmed process termination result", async (t) => {
+  const data = await fixture(t);
+  const originalExec = data.service.exec;
+  await data.service.grant(await data.service.plan(["unit-tests"]));
+  let started;
+  const admitted = new Promise((resolve) => { started = resolve; });
+  data.service.exec = (command, args, options) => command === "/usr/bin/env"
+    ? new Promise((resolve) => {
+      started();
+      options.signal.addEventListener("abort", () => resolve({ code: 1, stdout: "", stderr: "", killed: true, terminationUnconfirmed: true }), { once: true });
+    })
+    : originalExec(command, args, options);
+  const running = data.service.run("unit-tests");
+  await admitted;
+  const disposed = data.service.dispose();
+  assert.equal((await running).status, "FAIL");
+  assert.equal((await disposed).terminationUnconfirmed, true);
+});
+
 test("untrusted project, secret env, path escape, duplicate gate and shell-shaped command fail closed", async (t) => {
   const fixtureData = await fixture(t);
   fixtureData.context.isProjectTrusted = () => false;

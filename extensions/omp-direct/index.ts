@@ -74,8 +74,8 @@ export default function ompDirect(pi: ExtensionAPI): void {
     promptGuidelines: ["Call request_coding_access by itself before the first edit, write, bash, project gate, or writer child in this OMP process."],
     parameters: CodingAccessParameters,
     executionMode: "sequential",
-    async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-      return controller.requestCodingAccess(params, ctx) as any;
+    async execute(_toolCallId, params, signal, _onUpdate, ctx) {
+      return controller.requestCodingAccess(params, ctx, signal) as any;
     },
   });
 

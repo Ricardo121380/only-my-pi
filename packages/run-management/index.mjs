@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { projectRunRecord, validateDirectWriter } from "../direct-agent/contracts.mjs";
 
 const RUN_ID = /^[a-z0-9][a-z0-9._:-]{0,127}$/u;
 const DIGEST = /^sha256:[a-f0-9]{64}$/u;
@@ -51,7 +52,7 @@ async function readJson(target) {
   } finally { await handle?.close().catch(() => {}); }
 }
 
-async function atomicWrite(root, target, value) {
+async function atomicWrite(root, target, value, beforePublish) {
   const directory = path.dirname(target);
   await ensurePrivate(root, directory);
   await assertNoSymlink(root, target);
@@ -63,8 +64,11 @@ async function atomicWrite(root, target, value) {
     await handle.sync();
     await handle.close();
     handle = null;
+    beforePublish?.();
     await fs.rename(temporary, target);
     await fs.chmod(target, 0o600);
+    const parent = await fs.open(directory, fsConstants.O_RDONLY);
+    try { await parent.sync(); } finally { await parent.close(); }
   } finally { await handle?.close().catch(() => {}); await fs.unlink(temporary).catch(() => {}); }
 }
 
@@ -78,6 +82,7 @@ function artifactsFromProjection(projection) {
   return [...byId.values()].sort((left, right) => left.id.localeCompare(right.id));
 }
 function normalizedRecord(input) {
+  if (input.directWriter !== undefined) validateDirectWriter(input.directWriter);
   const value = { ...input, recordDigest: digest(withoutDigest(input)) };
   if (input.recordDigest !== undefined && input.recordDigest !== value.recordDigest) fail("RUN_RECORD_TAMPERED", "run record digest is invalid");
   return Object.freeze(value);
@@ -89,14 +94,15 @@ export function createRunRecordStore({ managedRoot, clock = Date.now, retentionM
   if (!Number.isSafeInteger(retentionMs) || retentionMs < 1) throw new TypeError("retentionMs must be positive");
   const root = path.resolve(managedRoot);
   const runsRoot = path.join(root, "runs");
+  const pendingUpdates = new Map();
   const pathFor = (id) => path.join(runsRoot, runId(id), "run-record.json");
 
   async function get(id) {
     const raw = await readJson(pathFor(id));
     return raw === null ? null : normalizedRecord(raw);
   }
-  async function save(value) { const record = normalizedRecord(value); await atomicWrite(root, pathFor(record.runId), record); return record; }
-  async function begin({ id, sessionId, repository, configurationDigest, planDigest, executionEnvelopeDigest, input, inputDigest }) {
+  async function save(value, beforePublish) { const record = normalizedRecord(value); await atomicWrite(root, pathFor(record.runId), record, beforePublish); return record; }
+  async function begin({ id, sessionId, repository, configurationDigest, planDigest, executionEnvelopeDigest, input, inputDigest, directWriter }) {
     const existing = await get(id);
     if (existing) {
       if (existing.planDigest !== planDigest || existing.executionEnvelopeDigest !== executionEnvelopeDigest || existing.inputDigest !== inputDigest) fail("RUN_RECORD_CONFLICT", "run record binding differs from the requested execution");
@@ -107,15 +113,23 @@ export function createRunRecordStore({ managedRoot, clock = Date.now, retentionM
       $schema: RECORD_SCHEMA, formatVersion: 1, kind: "private-run-record", runId: runId(id), createdAt: timestamp, updatedAt: timestamp,
       sessionId, repository, configurationDigest, planDigest, executionEnvelopeDigest, inputDigest, input: canonical(input), inputRetained: true,
       status: "planned", terminalAt: null, artifacts: [], artifactsRetained: true, receiptDigest: null,
+      ...(directWriter ? { directWriter } : {}),
     });
   }
-  async function update(id, patch = {}) {
-    const existing = await get(id);
-    if (!existing) fail("RUN_RECORD_NOT_FOUND", `run record not found: ${id}`);
-    const status = patch.status ?? existing.status;
-    const timestamp = nowIso(clock);
-    const terminalAt = TERMINAL.has(status) ? (existing.terminalAt ?? timestamp) : null;
-    return save({ ...withoutDigest(existing), ...patch, runId: existing.runId, createdAt: existing.createdAt, updatedAt: timestamp, status, terminalAt });
+  async function update(id, patch = {}, { beforePublish } = {}) {
+    const key = runId(id);
+    const prior = pendingUpdates.get(key) ?? Promise.resolve();
+    const next = prior.catch(() => {}).then(async () => {
+      const existing = await get(key);
+      if (!existing) fail("RUN_RECORD_NOT_FOUND", `run record not found: ${key}`);
+      const status = patch.status ?? existing.status;
+      if (patch.directWriter !== undefined) validateDirectWriter(patch.directWriter, existing.directWriter ?? null);
+      const timestamp = nowIso(clock);
+      const terminalAt = TERMINAL.has(status) ? (existing.terminalAt ?? timestamp) : null;
+      return save({ ...withoutDigest(existing), ...patch, runId: existing.runId, createdAt: existing.createdAt, updatedAt: timestamp, status, terminalAt }, beforePublish);
+    });
+    pendingUpdates.set(key, next);
+    try { return await next; } finally { if (pendingUpdates.get(key) === next) pendingUpdates.delete(key); }
   }
   async function updateProjection(id, projection) {
     return update(id, { status: projection.status, artifacts: artifactsFromProjection(projection), artifactsRetained: true, receiptDigest: projection.terminal ? digest(projection.terminal) : null });
@@ -255,10 +269,10 @@ export function createRecordedUltraRouter({ router, recordStore, contextProvider
 
 export class RunManagementService {
   constructor({ recordStore, coordinator = null } = {}) { if (!recordStore) throw new TypeError("RunManagementService requires recordStore"); this.records = recordStore; this.coordinator = coordinator; }
-  async list() { const records = await this.records.list(); return { ok: true, status: "RUN_LIST", mutation: false, runs: records.map((record) => ({ runId: record.runId, status: record.status, createdAt: record.createdAt, updatedAt: record.updatedAt, terminalAt: record.terminalAt, inputRetained: record.inputRetained, artifactsRetained: record.artifactsRetained, artifactCount: record.artifacts.length, receiptDigest: record.receiptDigest })) }; }
-  async show(id, { includeRaw = false } = {}) { const record = await this.records.require(id); return { ok: true, status: "RUN_SHOW", mutation: false, run: includeRaw ? record : { ...record, input: record.inputRetained ? "[private-raw-retained]" : null } }; }
-  async cancel(id) { if (!this.coordinator) return { ok: false, status: "RUN_CANCEL_UNAVAILABLE", code: "PI_SESSION_REQUIRED", mutation: false }; return { ok: true, status: "RUN_CANCEL", mutation: true, result: await this.coordinator.cancel(id) }; }
-  async resume(id, options) { if (!this.coordinator) return { ok: false, status: "RUN_RESUME_UNAVAILABLE", code: "PI_SESSION_REQUIRED", mutation: false }; const projection = await this.coordinator.resume(id, options); return { ok: projection.status === "completed", status: `RUN_${projection.status.toUpperCase().replaceAll("-", "_")}`, mutation: true, projection }; }
+  async list() { const records = await this.records.list(); return { ok: true, status: "RUN_LIST", mutation: false, runs: records.map(projectRunRecord) }; }
+  async show(id, { includeRaw = false } = {}) { const record = await this.records.require(id); return { ok: true, status: "RUN_SHOW", mutation: false, run: includeRaw ? record : { ...projectRunRecord(record), input: record.inputRetained ? "[private-raw-retained]" : null } }; }
+  async cancel(id) { const record = await this.records.require(id); if (record.directWriter) return { ok: false, status: "RUN_CANCEL_UNAVAILABLE", code: "DIRECT_WRITER_RECOVERY_UNSUPPORTED", mutation: false }; if (!this.coordinator) return { ok: false, status: "RUN_CANCEL_UNAVAILABLE", code: "PI_SESSION_REQUIRED", mutation: false }; return { ok: true, status: "RUN_CANCEL", mutation: true, result: await this.coordinator.cancel(id) }; }
+  async resume(id, options) { const record = await this.records.require(id); if (record.directWriter) return { ok: false, status: "RUN_RESUME_UNAVAILABLE", code: "DIRECT_WRITER_RECOVERY_UNSUPPORTED", mutation: false }; if (!this.coordinator) return { ok: false, status: "RUN_RESUME_UNAVAILABLE", code: "PI_SESSION_REQUIRED", mutation: false }; const projection = await this.coordinator.resume(id, options); return { ok: projection.status === "completed", status: `RUN_${projection.status.toUpperCase().replaceAll("-", "_")}`, mutation: true, projection }; }
   gcPlan() { return this.records.gcPlan(); }
   gcApply(plan) { return this.records.gcApply(plan); }
 }

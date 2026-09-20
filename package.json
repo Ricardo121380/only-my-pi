@@ -125,7 +125,7 @@
     "profile:diff": "node scripts/profile-resolver.mjs profiles/coding.json --diff profiles/research.json",
     "safe": "node scripts/safe-mode.mjs",
     "schema:check": "node scripts/schema-check.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.safety.json",
     "pack:check": "node scripts/pack-check.mjs",
     "lint": "node scripts/lint.mjs",
     "secret:scan": "node scripts/secret-scan.mjs",
