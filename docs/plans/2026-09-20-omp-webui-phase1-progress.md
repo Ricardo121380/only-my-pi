@@ -66,4 +66,37 @@
 - 前端实际 bundle 的依赖清单、许可证正文纳入发行物和 SBOM；stager 在打包前显式重建 Web，避免忽略目录里的旧资产被当新源码产物。
 - npm audit 报告既有 fast-uri 的 URL 规范化高危公告。Host 网络地址校验使用 Node URL，不用该库执行网络请求；AJV 用于本地 Schema。未自动升级既有发布锁定依赖，此限制随交付记录。
 
-M1-T / M1-I 仍为 NOT_RUN。下一步固定源码重新构建最终 Full，完成候选真实任务和日常晋升。真实模型预算使用 0/3，失败重试 0/1。
+## 最终候选与验收检查点
+
+- 运行源码提交：`ac5761e0e32620921431d7dd417b45dd62627c78`（此前功能提交 `57a21f5`）。后续仅验收文档提交不改变候选来源。
+- 最终 Full：项目工作目录外层的 `artifacts/webui-phase1/full-final-v1/payloads/full`。
+- stackId：`sha256:b17ce477747f87d908c03228e80d45dd0cc49f58910dfd726e5137153c354539`。
+- 归档 `omp-phase1-ac5761e-full.tar.gz`：115,465,257 bytes，SHA-256 `598e6d573aff9ee624090d035c640b3dd5bf26f321e4f6985cf51800db6d7925`。
+- 最终 Node 24.19.0 聚合门禁 `final-gates/deterministic.json`：清洁源码、194 项相关 Node 回归、7 项前端测试、类型、构建、lint、Schema、打包、agents、秘密扫描与 diff 全部 PASS。
+- Node 22.19.0 同组门禁在功能提交前通过；最后两项修正是子进程 Node 参数隔离、SBOM 保留已有校验字段，最终候选再经实际集成验证。
+- `isolated-install-KjjWXm/rehearsal.json`：最终候选实际安装、真实 get_state/abort、回滚、同候选重新应用 PASS。
+- 最终安装包包含 54 个实际前端依赖的许可证；与后端重叠依赖保留原始完整性校验，不覆盖 ledger 证据。
+- 两项旧测试在并发回归下暴露 `setImmediate` 时序假设，改成等待实际 writer/reviewer 派发事件；原预算和权限断言不变。
+
+### 真实任务与当前阻碍
+
+| 项目 | 结果 | 证据 |
+| --- | --- | --- |
+| L1 初次只读分析 | FAIL：OpenCode Go 路由返回 401 CreditsError / Insufficient balance | 临时项目会话；错误已脱敏 |
+| L1 预算内失败重试 | PASS：既有 Kimi For Coding 路由读取代码并准确定位加法实现错误，项目无改动 | `live-L1.json`、`ui-live-L1.png` |
+| L2 流式与运行中取消 | 流式已观察到 3 次 partial 更新；取消 **未通过**，观测后额外检查导致任务先完成 | `live-L2-initial.json`，保留真实 succeeded 状态，不伪记 cancelled |
+| L3 安装态 CLI 修改/检查 | NOT_RUN | 原预算预留最后 1 个任务 |
+
+当前已使用 2/3 个真实任务及 1/1 次失败重试。已向用户请求**额外 1 个小型取消验收任务**；未获答复前不追加模型任务，也不把 L3 的预留额度用于其他用途。补测应在同一次 egolite 脚本内等待首个 partial 后立即点击取消，避免跨工具回合错过窗口。
+
+M1-T 为 **NOT_RUN（必需取消检查未完成）**，M1-I 为 **NOT_RUN**。没有切换日常安装。
+
+### 日常晋升准备
+
+- `promotion.json` 为 `PREFLIGHT_PASS`，不是安装完成回执。
+- 升级前 active 仍为 `0e928b0c…d5f3ba1`，Pi 0.84.3 / Node 24.19.0；完整 Node/Pi/外部包/OMP 字节验真 PASS，无未完成事务。
+- PATH 中 `omp` 为用户本地 shim，raw `pi` 为独立 Homebrew；已记录后者真实路径与字节摘要。
+- 仓库外 `promote-final.mjs` 使用受支持 Full 栈事务：技术回执 PASS 后才允许 apply；明确回滚到本次旧 active，再应用同一个不可变候选；不提供强停用户 Pi 的授权。
+- 本次候选 Host 与模拟验收 Host 均已停止；没有留置运行中的模型任务。
+
+待额外预算确认后，顺序仍为：补齐 L2 → M1-T → 日常升级/明确回滚/同候选重新应用 → L3 → M1-I。不得跳过技术门禁提前切换。
