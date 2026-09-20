@@ -149,9 +149,10 @@ async function copyLicense(source, destination) {
   await fs.copyFile(source, destination, constants.COPYFILE_EXCL);
 }
 
-export async function loadLicenseRegistry(rootDir) {
+export async function loadLicenseRegistry(rootDir, piVersion = CONTROLLED_PI_VERSION) {
+  piRuntimeContract(piVersion);
   const contractRoot = path.join(rootDir, "contracts", "release");
-  const registryPath = path.join(contractRoot, "license-source-registry.json");
+  const registryPath = path.join(contractRoot, piVersion === "0.85.1" ? "license-source-registry-pi0851.json" : "license-source-registry.json");
   const registry = JSON.parse(await fs.readFile(registryPath, "utf8"));
   if (registry?.formatVersion !== 1 || registry.kind !== "only-my-pi-license-source-registry" || !Array.isArray(registry.sources) || !registry.bindings || typeof registry.bindings !== "object" || Array.isArray(registry.bindings)) fail("RELEASE_LICENSE_REGISTRY_INVALID", "license source registry is invalid");
   const sources = new Map();
@@ -218,7 +219,7 @@ async function defaultPrepare({ rootDir, sourceCommit, outputRoot, download, ext
     download,
     extract,
   });
-  const licenseRegistry = await loadLicenseRegistry(rootDir);
+  const licenseRegistry = await loadLicenseRegistry(rootDir, piVersion);
   const licenses = await collectLicenses({ resolved, artifacts, output: path.join(work, "licenses"), licenseRegistry });
   const generation = await buildGenerationPlan({ rootDir, profileId: "daily", sourceCommit });
   return await assemble({
