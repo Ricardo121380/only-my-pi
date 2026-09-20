@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import test from "node:test";
 import Ajv from "ajv/dist/2020.js";
 import { finalizeStackManifest, validateReleaseIndex, piRuntimeContract } from "../packages/release-stack/contracts.mjs";
+import { DIRECT_AGENT_OVERLAYS, DIRECT_AGENT_CAPABILITY_CEILING } from "../packages/direct-agent/product-contract.mjs";
 
 const read = async (file) => JSON.parse(await fs.readFile(new URL(`../${file}`, import.meta.url), "utf8"));
 
@@ -21,6 +22,14 @@ test("both Pi contracts validate, but cross-version SRI does not", async () => {
   for (const version of ["0.84.3", "0.85.1"]) {
     const candidate = structuredClone(manifest);
     Object.assign(candidate.runtime.pi, piRuntimeContract(version));
+    if (version === "0.85.1") {
+      candidate.privateRuntimeDigest = `sha256:${"a".repeat(64)}`;
+      candidate.onlyMyPi.version = "0.3.0-preview.1";
+      candidate.overlays = structuredClone(DIRECT_AGENT_OVERLAYS);
+      candidate.capabilityCeiling = structuredClone(DIRECT_AGENT_CAPABILITY_CEILING);
+      candidate.policy.externalOwner = "only-my-pi";
+      for (const entry of candidate.externalPackages) { entry.binding = "stack"; entry.owner = "only-my-pi"; }
+    }
     const finalized = finalizeStackManifest(candidate);
     assert.equal(validate(finalized), true, JSON.stringify(validate.errors));
     candidate.runtime.pi.integrity = piRuntimeContract(version === "0.84.3" ? "0.85.1" : "0.84.3").integrity;

@@ -222,6 +222,7 @@ async function defaultPrepare({ rootDir, sourceCommit, outputRoot, download, ext
   const licenses = await collectLicenses({ resolved, artifacts, output: path.join(work, "licenses"), licenseRegistry });
   const generation = await buildGenerationPlan({ rootDir, profileId: "daily", sourceCommit });
   return await assemble({
+    rootDir,
     resolvedRoot: resolved,
     outputRoot: path.join(work, "payloads"),
     sourceCommit,

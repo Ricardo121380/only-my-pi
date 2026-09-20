@@ -10,8 +10,9 @@ function once(text, before, after) {
 
 /** Explicit, byte-bound build patches. Upstream ledger evidence is preserved;
  * the patched tree and this patch record are covered by distribution identity. */
-export async function applyRuntimePatches({ runtimeRoot, version, platform }) {
-  if (version !== "0.4.0-preview.2") return [];
+export async function applyRuntimePatches({ runtimeRoot, version, platform, runtimeContract }) {
+  if (runtimeContract !== undefined && runtimeContract !== "phase1-pi0851") throw new Error("unknown runtime patch contract");
+  if (version !== "0.4.0-preview.2" && runtimeContract !== "phase1-pi0851") return [];
   const patches = [];
   async function patch(relative, packageName, packageVersion, expected, transform) {
     const filename = path.join(runtimeRoot, "external-npm/node_modules", relative);

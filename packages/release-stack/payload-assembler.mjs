@@ -10,6 +10,7 @@ import {
 import { buildArtifactLedger } from "./artifact-ledger.mjs";
 import {
   CONTROLLED_PI_VERSION,
+  CANDIDATE_PI_VERSION,
   EMBEDDED_NODE_ARCHIVE_SHA256,
   EMBEDDED_NODE_VERSION,
   PREVIEW_VERSION,
@@ -21,6 +22,8 @@ import {
 } from "./contracts.mjs";
 import { hashFile } from "./deterministic-archive.mjs";
 import { createSpdxSbom, renderThirdPartyNotices } from "./sbom.mjs";
+import { preparePrivateRuntime, writePrivateRuntimeSbom } from "./private-runtime.mjs";
+import { hashPackageContentTree } from "./package-content-identity.mjs";
 
 const COMMIT = /^[a-f0-9]{40}$/u;
 const DIGEST = /^sha256:[a-f0-9]{64}$/u;
@@ -95,6 +98,7 @@ export async function assembleReleasePayloads({
   installScriptPath,
   licensesRoot,
   licenseOverrides = {},
+  rootDir,
 } = {}) {
   if (![resolvedRoot, outputRoot, installScriptPath, licensesRoot].every((value) => typeof value === "string" && path.isAbsolute(value))) throw new TypeError("payload assembler paths must be absolute");
   if (!COMMIT.test(sourceCommit ?? "") || !DIGEST.test(generationTargetGraphDigest ?? "")) fail("PAYLOAD_ASSEMBLY_IDENTITY_INVALID", "payload assembly source or generation identity is invalid");
@@ -116,12 +120,16 @@ export async function assembleReleasePayloads({
     }),
   ]);
   const ledger = mergeLedgers(sourceCommit, [externalLedger, piLedger]);
+  const privateRuntime = piVersion === CANDIDATE_PI_VERSION
+    ? await preparePrivateRuntime({ rootDir, resolved, sourceCommit, work: path.dirname(resolved) }) : null;
   const byIdentity = new Map(ledger.artifacts.map((entry) => [`${entry.name}@${entry.version}`, entry]));
   const externalPackages = [];
   for (const { name, version } of PUBLIC_STACK_PACKAGES) {
     const artifact = byIdentity.get(`${name}@${version}`);
     if (!artifact) fail("PAYLOAD_ASSEMBLY_ARTIFACT_MISSING", `ledger is missing direct external package: ${name}`);
-    externalPackages.push({ id: idFor(name), name, version, integrity: artifact.integrity, license: artifact.license, treeDigest: artifact.treeDigest, binding: "external", owner: "user", lifecycleScripts: artifact.lifecycleScripts });
+    externalPackages.push({ id: idFor(name), name, version, integrity: artifact.integrity, license: artifact.license,
+      treeDigest: privateRuntime ? await hashPackageContentTree(path.join(resolved, "external-npm/node_modules", name)) : artifact.treeDigest,
+      binding: privateRuntime ? "stack" : "external", owner: privateRuntime ? "only-my-pi" : "user", lifecycleScripts: artifact.lifecycleScripts });
   }
   const piArtifact = byIdentity.get(`${PI_NAME}@${piVersion}`);
   if (!piArtifact || piArtifact.integrity !== piIntegrity) fail("PAYLOAD_ASSEMBLY_PI_MISSING", "ledger is missing the exact controlled Pi artifact");
@@ -130,6 +138,7 @@ export async function assembleReleasePayloads({
     formatVersion: 1,
     kind: "only-my-pi-stack-manifest",
     sourceCommit,
+    ...(privateRuntime ? { privateRuntimeDigest: privateRuntime.manifest.distributionId } : {}),
     onlyMyPi: { version: PREVIEW_VERSION, artifactSha256: await hashFile(path.join(resolved, "only-my-pi.tgz")) },
     platform: { os: "darwin", arch: "arm64", minimumMacOS: "14.0" },
     runtime: {
@@ -143,7 +152,7 @@ export async function assembleReleasePayloads({
     defaultPreset: "daily",
     overlays: structuredClone(DIRECT_AGENT_OVERLAYS),
     capabilityCeiling: structuredClone(DIRECT_AGENT_CAPABILITY_CEILING),
-    policy: { lifecycleScriptsDisabled: true, networkDuringApply: false, externalOwner: "user", webConfirmation: "PER_RUN", browserCookies: false },
+    policy: { lifecycleScriptsDisabled: true, networkDuringApply: false, externalOwner: privateRuntime ? "only-my-pi" : "user", webConfirmation: "PER_RUN", browserCookies: false },
     removalPolicy: { preservePreexisting: true, removeOnlyVerifiedProvisioned: true, preserveUserData: true },
   });
   const sbom = createSpdxSbom({ stackManifest: stack, ledger });
@@ -159,5 +168,6 @@ export async function assembleReleasePayloads({
     fs.copyFile(path.join(resolved, "external-npm", "package-lock.json"), path.join(thin, "resolution", "external", "package-lock.json")),
   ]);
   await Promise.all([full, thin].map((root) => writeMetadata(root, { stack, ledger, sbom, notices, installScriptPath, licensesRoot })));
+  if (privateRuntime) await writePrivateRuntimeSbom({ root: full, ...privateRuntime, ledger, stack });
   return Object.freeze({ ok: true, status: "RELEASE_PAYLOADS_ASSEMBLED", sourceCommit, stackId: stack.stackId, ledgerDigest: ledger.ledgerDigest, fullPayloadRoot: full, thinPayloadRoot: thin, thinResolvedRoot: resolved });
 }

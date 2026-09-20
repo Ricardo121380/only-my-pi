@@ -7,6 +7,7 @@ import { migrateLegacy } from "./migrate.mjs";
 import { inspectSystemDependencies } from "./system-dependencies.mjs";
 
 const GUIDANCE = Object.freeze({
+  stack: { update: "omp admin stack update --bundle <verified-full-bundle> --plan", uninstall: "omp admin stack remove --plan" },
   npm: { update: "npm install -g only-my-pi@latest", uninstall: "npm uninstall -g only-my-pi" },
   homebrew: { update: "brew upgrade ricardo121380/tap/only-my-pi", uninstall: "brew uninstall only-my-pi" },
   docker: { update: "docker pull ghcr.io/ricardo121380/only-my-pi:latest", uninstall: "Remove the OMP container; retain the configuration volume." },
@@ -47,13 +48,15 @@ export async function inspectCommandPaths({ env = process.env, homeDir, runtime 
 export function distributionVersion(runtime, env = process.env) {
   return { formatVersion: 1, ok: true, status: "DISTRIBUTION_READY", mutation: false,
     packageVersion: runtime.distribution.version, sourceCommit: runtime.distribution.sourceCommit,
-    distributionId: runtime.stackId, piVersion: "0.84.3", nodeVersion: process.versions.node,
+    distributionId: runtime.stackId, piVersion: runtime.distribution.runtimeContract === "phase1-pi0851" ? "0.85.1" : "0.84.3", nodeVersion: process.versions.node,
     installation: { channel: runtime.channel, platform: runtime.distribution.platform,
       runtimeRoot: runtime.root, ephemeral: runtime.channel === "npm" && env.npm_command === "exec" } };
 }
 
 export async function handleDistributionCommand({ runtime, argv, env = process.env, homeDir, execve = process.execve }) {
   const [command, ...args] = argv;
+  if (runtime.channel === "stack" && ["stack", "release"].includes(command)) return { handled: false };
+  if (runtime.channel === "stack" && command === "migrate") return { handled: true, result: { ok: false, status: "PRIVATE_STACK_CHANNEL_FIXED", mutation: false } };
   const configRoot = resolveDirectConfigRoot({ env, homeDir });
   if (command === "migrate") return { handled: true, result: await migrateLegacy({ runtime, argv: args, env, homeDir, inspectPaths: inspectCommandPaths }) };
   if (command === "pi") {

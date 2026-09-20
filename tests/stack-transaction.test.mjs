@@ -7,6 +7,10 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { hashResourcePath } from "../packages/bootstrap/graph-plan.mjs";
+import { piRuntimeContract } from "../packages/release-stack/contracts.mjs";
+import { DIRECT_AGENT_OVERLAYS, DIRECT_AGENT_CAPABILITY_CEILING } from "../packages/direct-agent/product-contract.mjs";
+import { createDistributionManifest } from "../packages/distribution/manifest-builder.mjs";
+import { PACKAGE_IDS } from "../packages/distribution/runtime.mjs";
 import {
   STACK_TRANSACTION_PHASES,
   createShellProfileService,
@@ -400,4 +404,53 @@ test("stack remove preserves concurrent unrelated settings through a three-way o
   assert.equal(result.status, "REMOVED");
   assert.deepEqual(JSON.parse(await fs.readFile(value.layout.settingsFile, "utf8")), { userAfterInstall: { theme: "preserve-me" } });
   await assert.rejects(fs.lstat(value.layout.npmRoot), { code: "ENOENT" });
+});
+
+test("private candidate installs beside legacy packages and rollback preserves new user settings", async (t) => {
+  const value = await fixture(t);
+  let next = 70;
+  const engine = createStackTransactionEngine({ layout: value.layout, harness: value.harness,
+    transactionIdFactory: () => transactionId(next++), doctor: async () => ({ ok: true }), smoke: async () => ({ ok: true }) });
+  await engine.apply({ plan: value.plan, stackManifest: value.stack, resolvedRoot: value.resolved });
+  const originalTree = await digestTree(value.layout.configRoot, "npm");
+  const originalSettings = await fs.readFile(value.layout.settingsFile);
+  const originalStack = await fs.realpath(value.layout.currentStack);
+  const resolved = path.join(value.home, "private-resolved");
+  await fs.cp(value.resolved, resolved, { recursive: true, verbatimSymlinks: true });
+  const app = path.join(resolved, "only-my-pi/package/bin");
+  await fs.mkdir(app, { recursive: true });
+  await fs.writeFile(path.join(app, "omp.mjs"), "process.stdout.write('fixture omp\\n');\n");
+  const runtime = await createDistributionManifest({ root: resolved, version: "0.3.0-preview.1", sourceCommit: "e".repeat(40),
+    platform: { os: "darwin", arch: "arm64", minimumMacOS: "14.0" }, runtimeContract: "phase1-pi0851",
+    packageFilters: Object.fromEntries(Object.keys(PACKAGE_IDS).map((id) => [id, []])) });
+  await fs.writeFile(path.join(resolved, "distribution-manifest.json"), JSON.stringify(runtime));
+  await fs.mkdir(path.join(resolved, "LICENSES"));
+  for (const name of ["runtime-sbom.spdx.json", "transitive-artifact-ledger.json", "sbom.spdx.json", "THIRD_PARTY_NOTICES.txt"]) await fs.writeFile(path.join(resolved, name), "fixture metadata");
+  const candidate = structuredClone(value.stack);
+  Object.assign(candidate.runtime.pi, piRuntimeContract("0.85.1"));
+  candidate.sourceCommit = "e".repeat(40);
+  candidate.onlyMyPi.version = "0.3.0-preview.1";
+  candidate.privateRuntimeDigest = runtime.distributionId;
+  candidate.overlays = structuredClone(DIRECT_AGENT_OVERLAYS);
+  candidate.capabilityCeiling = structuredClone(DIRECT_AGENT_CAPABILITY_CEILING);
+  candidate.policy.externalOwner = "only-my-pi";
+  for (const entry of candidate.externalPackages) { entry.binding = "stack"; entry.owner = "only-my-pi"; }
+  const stack = finalizeStackManifest(candidate);
+  const plan = await planStackEnvironment({ layout: value.layout, stackManifest: stack, payloadMode: "full", platform, pathValue: value.layout.binRoot });
+  assert.equal(plan.external.switchRequired, false);
+  assert.equal(plan.external.ownership, "stack/only-my-pi");
+  await assert.rejects(planStackEnvironment({ layout: value.layout, stackManifest: stack, payloadMode: "thin", platform }), { code: "PRIVATE_STACK_REQUIRES_FULL" });
+  await engine.apply({ plan, stackManifest: stack, resolvedRoot: resolved });
+  assert.deepEqual(await fs.readFile(value.layout.settingsFile), originalSettings);
+  assert.equal(await digestTree(value.layout.configRoot, "npm"), originalTree);
+  assert.notEqual((await fs.stat(path.join(await fs.realpath(value.layout.currentStack), "external-npm/package-lock.json"))).ino,
+    (await fs.stat(path.join(value.layout.npmRoot, "package-lock.json"))).ino);
+  const changedSettings = `${JSON.stringify({ ...JSON.parse(originalSettings), userNewSetting: true })}\n`;
+  await fs.writeFile(value.layout.settingsFile, changedSettings);
+  const service = createStackService({ layout: value.layout, localSource: {}, releaseSource: {}, engine });
+  const rollback = await service.planLifecycle({ subcommand: "rollback", to: value.stack.stackId });
+  await service.applyLifecycle({ subcommand: "rollback", to: value.stack.stackId }, rollback);
+  assert.equal(await fs.realpath(value.layout.currentStack), originalStack);
+  assert.equal(await fs.readFile(value.layout.settingsFile, "utf8"), changedSettings);
+  assert.equal(await digestTree(value.layout.configRoot, "npm"), originalTree);
 });

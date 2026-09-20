@@ -13,7 +13,9 @@ import {
   validateArtifactLedger,
   validateReleaseIndex,
   validateStackManifest,
+  isPrivateStack,
 } from "./contracts.mjs";
+import { validateDistributionManifest } from "../distribution/runtime.mjs";
 import { createDeterministicTarGzip, hashFile } from "./deterministic-archive.mjs";
 import { hashPackageContentTree } from "./package-content-identity.mjs";
 import { validateSpdxSbom } from "./sbom.mjs";
@@ -71,6 +73,11 @@ export async function inspectResolvedStack({ resolvedRoot, stackManifest } = {})
   if (typeof resolvedRoot !== "string" || !path.isAbsolute(resolvedRoot)) throw new TypeError("inspectResolvedStack requires an absolute resolvedRoot");
   const root = await realDirectory(path.resolve(resolvedRoot), "RESOLVED_STACK_ROOT_UNSAFE");
   const stack = validateStackManifest(stackManifest);
+  if (isPrivateStack(stack)) {
+    const runtime = validateDistributionManifest(await jsonFile(root, "distribution-manifest.json"));
+    if (runtime.runtimeContract !== "phase1-pi0851" || runtime.distributionId !== stack.privateRuntimeDigest || runtime.sourceCommit !== stack.sourceCommit) fail("STACK_PRIVATE_RUNTIME_INVALID", "private runtime descriptor differs from the Full stack");
+    for (const component of Object.values(runtime.components)) if (await treeDigest(root, component.path) !== component.treeDigest) fail("STACK_PRIVATE_RUNTIME_INVALID", "private runtime component differs from its descriptor");
+  }
   for (const directory of ["node", "pi", "external-npm"]) await realDirectory(path.join(root, directory), "RESOLVED_STACK_ROOT_UNSAFE");
   const onlyMyPi = await boundedFile(root, "only-my-pi.tgz", { maxBytes: 512 * 1024 * 1024 });
   const identities = {

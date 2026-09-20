@@ -5,6 +5,11 @@
   "type": "object",
   "additionalProperties": false,
   "required": ["$schema", "formatVersion", "kind", "status", "activeStack", "lkgStack", "manifestDigest", "payloadMode", "node", "pi", "onlyMyPi", "generation", "cliArtifact", "shims", "externalTree", "externalPackages", "transactionIds", "removalEligibility", "stateDigest"],
+  "allOf": [{
+    "if": { "properties": { "pi": { "type": "object", "properties": { "version": { "const": "0.85.1" } } } } },
+    "then": { "properties": { "payloadMode": { "const": "full" }, "externalTree": { "type": "object", "properties": { "verificationBasis": { "const": "STACK_PRIVATE" } } }, "externalPackages": { "type": "array", "items": { "type": "object", "properties": { "binding": { "const": "stack" }, "owner": { "const": "only-my-pi" }, "assetDisposition": { "const": "STACK_PRIVATE" } } } } } },
+    "else": { "properties": { "externalTree": { "type": "object", "properties": { "verificationBasis": { "enum": ["CANONICAL_RELEASE_TREE", "BORROWED_PREFLIGHT_SNAPSHOT"] } } }, "externalPackages": { "type": "array", "items": { "type": "object", "properties": { "binding": { "const": "external" }, "owner": { "const": "user" }, "assetDisposition": { "enum": ["PREEXISTING_EXTERNAL", "PROVISIONED_FOR_USER"] } } } } } }
+  }],
   "properties": {
     "$schema": { "const": "../../schemas/stack-state-v1.schema.json" },
     "formatVersion": { "const": 1 }, "kind": { "const": "only-my-pi-stack-state" },
@@ -23,7 +28,7 @@
       "type": "object", "additionalProperties": false, "required": ["digest", "verificationBasis"],
       "properties": {
         "digest": { "$ref": "#/$defs/sha256" },
-        "verificationBasis": { "enum": ["CANONICAL_RELEASE_TREE", "BORROWED_PREFLIGHT_SNAPSHOT"] }
+        "verificationBasis": { "enum": ["CANONICAL_RELEASE_TREE", "BORROWED_PREFLIGHT_SNAPSHOT", "STACK_PRIVATE"] }
       }
     },
     "externalPackages": { "type": "array", "minItems": 9, "maxItems": 9, "items": { "$ref": "#/$defs/external" } },
@@ -53,8 +58,8 @@
       "properties": {
         "name": { "type": "string", "pattern": "^(?:@[a-z0-9._-]+/[a-z0-9._-]+|[a-z0-9._-]+)$" },
         "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
-        "binding": { "const": "external" }, "owner": { "const": "user" },
-        "assetDisposition": { "enum": ["PREEXISTING_EXTERNAL", "PROVISIONED_FOR_USER"] },
+        "binding": { "enum": ["external", "stack"] }, "owner": { "enum": ["user", "only-my-pi"] },
+        "assetDisposition": { "enum": ["PREEXISTING_EXTERNAL", "PROVISIONED_FOR_USER", "STACK_PRIVATE"] },
         "treeDigest": { "$ref": "#/$defs/sha256" }
       }
     }

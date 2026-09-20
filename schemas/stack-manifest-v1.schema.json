@@ -7,6 +7,11 @@
   "required": ["$schema", "formatVersion", "kind", "stackId", "sourceCommit", "onlyMyPi", "platform", "runtime", "externalPackages", "externalTreeDigest", "transitiveLedgerSha256", "generationTargetGraphDigest", "defaultPreset", "overlays", "capabilityCeiling", "policy", "removalPolicy"],
   "allOf": [
     {
+      "if": { "properties": { "runtime": { "type": "object", "properties": { "pi": { "type": "object", "properties": { "version": { "const": "0.85.1" } } } } } } },
+      "then": { "required": ["privateRuntimeDigest"], "properties": { "onlyMyPi": { "type": "object", "properties": { "version": { "const": "0.3.0-preview.1" } } }, "externalPackages": { "type": "array", "items": { "type": "object", "properties": { "binding": { "const": "stack" }, "owner": { "const": "only-my-pi" } } } }, "policy": { "type": "object", "properties": { "externalOwner": { "const": "only-my-pi" } } } } },
+      "else": { "not": { "required": ["privateRuntimeDigest"] }, "properties": { "externalPackages": { "type": "array", "items": { "type": "object", "properties": { "binding": { "const": "external" }, "owner": { "const": "user" } } } }, "policy": { "type": "object", "properties": { "externalOwner": { "const": "user" } } } } }
+    },
+    {
       "if": { "properties": { "onlyMyPi": { "type": "object", "properties": { "version": { "const": "0.2.0-preview.1" } } } } },
       "then": {
         "properties": {
@@ -48,6 +53,7 @@
     "formatVersion": { "const": 1 },
     "kind": { "const": "only-my-pi-stack-manifest" },
     "stackId": { "$ref": "#/$defs/sha256" },
+    "privateRuntimeDigest": { "$ref": "#/$defs/sha256" },
     "sourceCommit": { "$ref": "#/$defs/commit" },
     "onlyMyPi": {
       "type": "object", "additionalProperties": false, "required": ["version", "artifactSha256"],
@@ -108,7 +114,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["lifecycleScriptsDisabled", "networkDuringApply", "externalOwner", "webConfirmation", "browserCookies"],
       "properties": {
-        "lifecycleScriptsDisabled": { "const": true }, "networkDuringApply": { "const": false }, "externalOwner": { "const": "user" },
+        "lifecycleScriptsDisabled": { "const": true }, "networkDuringApply": { "const": false }, "externalOwner": { "enum": ["user", "only-my-pi"] },
         "webConfirmation": { "const": "PER_RUN" }, "browserCookies": { "const": false }
       }
     },
@@ -133,7 +139,7 @@
         "integrity": { "$ref": "#/$defs/sri" },
         "license": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9.+-]{0,63}$" },
         "treeDigest": { "$ref": "#/$defs/sha256" },
-        "binding": { "const": "external" }, "owner": { "const": "user" },
+        "binding": { "enum": ["external", "stack"] }, "owner": { "enum": ["user", "only-my-pi"] },
         "lifecycleScripts": {
           "type": "array", "maxItems": 9,
           "items": {

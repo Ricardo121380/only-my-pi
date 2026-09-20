@@ -4,6 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { realpathSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 
 import { BootstrapService } from "../packages/bootstrap/bootstrap-service.mjs";
@@ -33,6 +35,7 @@ import {
 import { createDirectAgentDoctor } from "../packages/direct-agent/doctor.mjs";
 import { loadDistribution, readRegularJson } from "../packages/distribution/runtime.mjs";
 import { handleDistributionCommand } from "../packages/distribution/commands.mjs";
+import { isPrivateStack } from "../packages/release-stack/contracts.mjs";
 import {
   createGitHubReleasePayloadSource,
   createLocalReleasePayloadSource,
@@ -245,11 +248,20 @@ export function createProductionControlService({
     processAdmission: stackProcessAdmission,
     harness: stackHarness,
     shellProfile,
-    doctor: async () => {
+    doctor: async ({ context }) => {
+      if (isPrivateStack(context.stack)) {
+        const runtime = await loadDistribution({ packageRoot: path.join(context.activeStackPath, "only-my-pi/package"), nodePath: path.join(context.activeStackPath, "node/bin/node") });
+        return { ok: runtime?.stackId === context.stack.stackId, status: "PRIVATE_STACK_VERIFIED" };
+      }
       const result = await bootstrap.doctor({ configRoot: resolvedConfigRoot });
       return { ok: result?.ok === true, status: result?.status ?? "FAIL" };
     },
-    smoke: async () => {
+    smoke: async ({ context }) => {
+      if (isPrivateStack(context.stack)) {
+        const { stdout } = await promisify(execFile)(path.join(context.activeStackPath, "node/bin/node"), [path.join(context.activeStackPath, "pi/dist/bundle/cli.js"), "--version"],
+          { env: { PATH: "/usr/bin:/bin", HOME: context.paths.root }, timeout: 20_000, maxBuffer: 64 * 1024 });
+        return { ok: stdout.trim() === context.stack.runtime.pi.version, status: "PRIVATE_PI_SMOKE" };
+      }
       const settings = await loadSettings(resolvedConfigRoot);
       const result = await stackSmoke({ configRoot: resolvedConfigRoot, settings: settings.settings });
       return { ok: result?.status === "PASS" || result?.ok === true, status: result?.status ?? "FAIL" };
