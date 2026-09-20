@@ -2,7 +2,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { buildGenerationPlan } from "../bootstrap/index.mjs";
 import { createDistributionManifest } from "../distribution/manifest-builder.mjs";
-import { materializeExecutableLinks } from "../distribution/npm-layout.mjs";
 import { applyRuntimePatches } from "../distribution/runtime-patches.mjs";
 import { stagePiBranding } from "../distribution/pi-branding.mjs";
 import { stageToolchain } from "../distribution/toolchain-builder.mjs";
@@ -14,7 +13,6 @@ import { extractVerifiedTarGzip } from "./safe-extract.mjs";
 export async function preparePrivateRuntime({ rootDir, resolved, sourceCommit, work }) {
   await extractVerifiedTarGzip({ archivePath: path.join(resolved, "only-my-pi.tgz"), destination: path.join(resolved, "only-my-pi"),
     expectedSha256: await hashFile(path.join(resolved, "only-my-pi.tgz")), maxEntries: 100_000, maxExtractedBytes: 512 * 1024 * 1024 });
-  await materializeExecutableLinks(resolved);
   await stageToolchain({ rootDir, runtimeRoot: resolved, work, platform: "darwin-arm64" });
   await stagePiBranding(path.join(resolved, "pi"));
   const patches = await applyRuntimePatches({ runtimeRoot: resolved, version: "0.3.0-preview.1", platform: "darwin-arm64", runtimeContract: "phase1-pi0851" });
