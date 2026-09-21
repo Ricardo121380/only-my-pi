@@ -11,6 +11,8 @@ import { loadDistribution } from "../../packages/distribution/runtime.mjs";
 const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-browser-control-")));
 const configRoot = path.join(root, "config"), project = path.join(root, "project");
 await fs.mkdir(project);
+await fs.writeFile(path.join(project, "README.md"), "# Editor fixture\n\nOnly temporary project data.\n");
+await fs.writeFile(path.join(project, "example.ts"), "export const message = 'hello';\n");
 let requests = 0;
 const model = http.createServer(async (req, res) => {
   for await (const chunk of req) void chunk;
@@ -33,6 +35,10 @@ await fs.writeFile(paths.authPath, JSON.stringify({ fixture: { type: "api_key", 
 await fs.writeFile(paths.modelsPath, JSON.stringify({ providers: { fixture: { baseUrl: `http://127.0.0.1:${model.address().port}/v1`, api: "openai-completions", models: [{ id: "fixture", name: "Fixture", contextWindow: 32000, maxTokens: 128 }] } } }));
 const stack = await loadDistribution({ packageRoot: process.env.OMP_TEST_STACK_PACKAGE });
 if (!stack) throw Error("An explicit verified stack is required");
+if (process.env.OMP_TEST_CLI === "1") {
+  await fs.copyFile(paths.authPath, path.join(configRoot, "auth.json"));
+  await fs.copyFile(paths.modelsPath, path.join(configRoot, "models.json"));
+}
 const host = await startHost({ stack, configRoot, assetsRoot: fileURLToPath(new URL("../../webui/dist", import.meta.url)), allowControlled: true, env: { PATH: process.env.PATH } });
 const paired = await fetch(`${host.origin}/pair`, { method: "POST", headers: { Origin: host.origin, "content-type": "application/json" }, body: JSON.stringify({ token: new URL(host.pairingUrl).hash.slice(6) }) });
 const cookie = paired.headers.get("set-cookie").split(";")[0];
@@ -42,9 +48,9 @@ async function command(input) {
   return result.json();
 }
 const added = await command({ type: "addProject", path: project });
-const task = await command({ type: "startTask", requestId: "browser-control", projectId: added.projectId, accountId: account.accountId, model: "fixture/fixture", mode: "controlled", prompt: "浏览器审批验收：仅写入临时 proof.txt" });
+const task = process.env.OMP_TEST_CLI === "1" ? null : await command({ type: "startTask", requestId: "browser-control", projectId: added.projectId, accountId: account.accountId, model: "fixture/fixture", mode: "controlled", prompt: "浏览器审批验收：仅写入临时 proof.txt" });
 const pair = await fetch(`${host.origin}/internal/pair`, { method: "POST", headers: { Authorization: `Bearer ${host.controlToken}` } });
-console.log(JSON.stringify({ pairingUrl: (await pair.json()).url, project, taskId: task.taskId }));
+console.log(JSON.stringify({ pairingUrl: (await pair.json()).url, project, configRoot, projectId: added.projectId, accountId: account.accountId, taskId: task?.taskId ?? null }));
 let closing = false;
 async function stop() {
   if (closing) return; closing = true;

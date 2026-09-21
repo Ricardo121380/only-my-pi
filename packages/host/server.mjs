@@ -14,6 +14,7 @@ import { AccountOAuth } from "./account-oauth.mjs";
 import { recoverAuthProcesses } from "./auth-process.mjs";
 import { listModels } from "./models.mjs";
 import { listFiles, readFile, gitDiff } from "./inspector.mjs";
+import { ManualWorkspaces } from "./manual-workspaces.mjs";
 import { HOST_PROTOCOL, HOST_VERSION, CLI_ACCOUNT_ID, hostError, validateCommand, terminal } from "./contracts.mjs";
 import { projectRunRecord } from "../direct-agent/contracts.mjs";
 import { createRunRecordStore } from "../run-management/index.mjs";
@@ -21,10 +22,10 @@ import { createRunRecordStore } from "../run-management/index.mjs";
 const secret = () => randomBytes(32).toString("hex");
 const equal = (a, b) => typeof a === "string" && typeof b === "string" && timingSafeEqual(createHash("sha256").update(a).digest(), createHash("sha256").update(b).digest());
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-async function body(request) {
+async function body(request, limit = 65536) {
   if (request.headers["content-type"] !== "application/json") throw hostError("CONTENT_TYPE_REQUIRED", 415);
   let bytes = 0, text = ""; const decoder = new StringDecoder("utf8");
-  for await (const chunk of request) { bytes += chunk.length; if (bytes > 65536) throw hostError("REQUEST_TOO_LARGE", 413); text += decoder.write(chunk); }
+  for await (const chunk of request) { bytes += chunk.length; if (bytes > limit) throw hostError("REQUEST_TOO_LARGE", 413); text += decoder.write(chunk); }
   text += decoder.end();
   try { return JSON.parse(text); } catch { throw hostError("JSON_INVALID"); }
 }
@@ -69,6 +70,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
   const projectsFile = path.join(root, "projects.json");
   const previous = await readJsonObject(configRoot, projectsFile).catch(async (e) => { if (e.code === "ENOENT") return null; await lock.release(); throw e; });
   const catalog = new ProjectCatalog({ sessionRoot, projects: previous?.projects ?? [] });
+  const manual = new ManualWorkspaces({ configRoot, catalog });
   const accounts = new AccountCatalog(configRoot);
   const oauth = new AccountOAuth({ stack, configRoot, accounts, env });
   let modelCache, modelTime = 0;
@@ -172,7 +174,12 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
         if (req.method === "POST" && url.pathname === "/api/command") {
           if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
           if (req.headers["x-omp-host-protocol"] !== String(HOST_PROTOCOL)) throw hostError("PROTOCOL_MISMATCH", 409);
-          const command = validateCommand(await body(req));
+          const command = validateCommand(await body(req, 4 * 1024 * 1024));
+          if (["enterManual", "leaveManual", "saveFile"].includes(command.type)) {
+            if (!allowControlled) throw hostError("CONTROLLED_MODE_UNAVAILABLE", 409);
+            const result = command.type === "enterManual" ? await manual.enter(command.projectId) : command.type === "leaveManual" ? await manual.leave(command.projectId, command.manualId) : await manual.save(command);
+            return response(res, 200, result);
+          }
           if (command.type === "addProject") { const project = await catalog.add(command.path); await atomicWriteJson(configRoot, projectsFile, { projects: catalog.listProjects() }); publish("projects", catalog.listProjects()); return response(res, 200, project); }
           if (command.type === "startTask") return response(res, 202, await tasks.start(command));
           if (command.type === "answerApproval") return response(res, 200, await tasks.answerApproval(command.taskId, command.approvalId, command.value));
@@ -181,6 +188,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
         }
         if (req.method !== "GET") throw hostError("METHOD_DENIED", 405);
         if (url.pathname === "/api/state") return response(res, 200, snapshot());
+        if (url.pathname === "/api/manual") return response(res, 200, { workspaces: manual.snapshot(), available: allowControlled });
         if (url.pathname === "/api/oauth-providers") return response(res, 200, { providers: await oauth.providers() });
         if (url.pathname === "/api/oauth-flow") return response(res, 200, oauth.snapshot(url.searchParams.get("flowId")));
         if (url.pathname === "/api/models") {
@@ -209,10 +217,10 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
       const realRoot = await fs.realpath(assetsRoot), file = await fs.realpath(path.join(realRoot, relative));
       if (!file.startsWith(realRoot + path.sep)) throw hostError("ASSET_DENIED", 403);
       const stat = await fs.stat(file); if (!stat.isFile() || stat.size > 8 * 1024 * 1024) throw hostError("ASSET_DENIED", 403);
-      const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml" }[path.extname(file)];
+      const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".ttf": "font/ttf", ".woff": "font/woff", ".woff2": "font/woff2" }[path.extname(file)];
       if (!mime) throw hostError("ASSET_DENIED", 403);
       res.writeHead(200, { "content-type": `${mime}; charset=utf-8`, "cache-control": "no-store", "x-content-type-options": "nosniff", "referrer-policy": "no-referrer",
-        "content-security-policy": "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" });
+        "content-security-policy": "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self'; connect-src 'self'; img-src 'self' data:; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" });
       res.end(await fs.readFile(file));
     } catch (error) { if (!res.headersSent) response(res, error.status ?? (error.code === "ENOENT" ? 404 : 500), { code: /^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "HOST_REQUEST_FAILED" }); else res.destroy(); }
     finally { requests--; }
@@ -235,7 +243,11 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
       clearInterval(scanTimer); clearTimeout(flushTimer); modelAbort.abort();
       authAbort.abort();
       await Promise.allSettled([...authOperations, oauth.stop()]);
-      try { await tasks.stop(); }
+      try {
+        const results = await Promise.allSettled([tasks.stop(), manual.stop()]);
+        const failure = results.find((result) => result.status === "rejected");
+        if (failure) throw failure.reason;
+      }
       finally {
         while (scanRunning) await pause(10);
         for (const client of clients) client.terminate(); wss.close();

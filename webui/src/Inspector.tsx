@@ -2,11 +2,21 @@ import { useEffect, useState } from "react";
 import { api, errorText, query } from "./api";
 import { Icon } from "./Icon";
 import { RunReceipts, type RunReceipt } from "./RunReceipts";
+import type { EditorProps } from "./EditorWorkspace";
 interface Entry { name: string; path: string; directory: boolean }
 export function Inspector({ projectId, projectName, projectPath, sessionId, hidden, onClose }: { projectId: string; projectName?: string; projectPath?: string; sessionId?: string | null; hidden?: boolean; onClose: () => void }) {
   const [tab, setTab] = useState("files"), [directory, setDirectory] = useState(""), [file, setFile] = useState("");
   const [entries, setEntries] = useState<Entry[]>([]), [text, setText] = useState(""), [notice, setNotice] = useState(""), [error, setError] = useState(""), [busy, setBusy] = useState(false), [revision, setRevision] = useState(0);
   const [runs, setRuns] = useState<RunReceipt[]>([]);
+  const [Editor, setEditor] = useState<React.ComponentType<EditorProps> | null>(null), [editorOpen, setEditorOpen] = useState(false), [editorLoading, setEditorLoading] = useState(false);
+  async function openEditor() {
+    if (editorLoading) return;
+    if (Editor) { setEditorOpen(true); return; }
+    setEditorLoading(true);
+    try { const module = await import("./EditorWorkspace"); setEditor(() => module.default); setEditorOpen(true); }
+    catch { setError("编辑器加载失败，请检查连接后重新打开。"); }
+    finally { setEditorLoading(false); }
+  }
   useEffect(() => {
     if (!projectId) return;
     const controller = new AbortController(); setBusy(true); setError(""); setText(""); setEntries([]); setNotice(""); setRuns([]);
@@ -24,6 +34,8 @@ export function Inspector({ projectId, projectName, projectPath, sessionId, hidd
   return <aside className="inspector" aria-label="项目面板" inert={hidden}>
     <header className="inspector-header"><div className="segments" style={{ "--active-index": tab==="files"?0:tab==="diff"?1:2 } as React.CSSProperties} aria-label="项目面板内容">{([["files","预览","preview"],["diff","变更","file"],["runs","活动","activity"]] as const).map(([id,label,icon])=><button key={id} className={`segment ${tab===id?"active":""}`} aria-pressed={tab===id} onClick={()=>setTab(id)}><Icon name={icon} />{label}</button>)}</div><button className="iconbtn round" aria-label="关闭项目面板" onClick={onClose}><Icon name="panel" /></button></header>
     <div className="inspector-content">
+    <button className="softbtn" disabled={!projectId || editorLoading} onClick={() => void openEditor()}>{editorLoading ? "正在加载编辑器…" : "打开编辑工作区"}</button>
+    {editorOpen && Editor && <Editor key={projectId} projectId={projectId} projectName={projectName || "项目"} onClose={() => setEditorOpen(false)} />}
     <section className="inspector-section"><div className="between"><h2>项目速览</h2><span className="tag">本机项目</span></div><div className="project-card"><div className="row"><span className="tile-icon"><Icon name="folder" /></span><div className="grow"><div className="name">{projectName || "尚未选择项目"}</div><div className="path cut" title={projectPath}>{projectPath || "添加本机目录后开始"}</div></div><button className="iconbtn small" disabled aria-label="项目设置（尚未接入）"><Icon name="settings" /></button></div><div className="project-meta"><span className="branch"><Icon name="shield" />只读</span><span className="vline" /><span>本机分区</span></div></div></section>
     <section className="inspector-section"><div className="between"><h2>{tab==="files"?"项目文件":tab==="diff"?"值得你过目":"执行与验证"}</h2><button className="linkbtn" disabled={busy || !projectId} onClick={()=>setRevision((n)=>n+1)}>刷新</button></div>
     {tab==="files" && (file || directory) && <div className="between"><button className="linkbtn" onClick={()=>file?setFile(""):setDirectory(directory.split("/").slice(0,-1).join("/"))}>上一级</button><span className="cut muted">{file || directory}</span></div>}

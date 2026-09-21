@@ -7,6 +7,15 @@ import { once } from "node:events";
 import test from "node:test";
 import { acquireOwnership } from "../packages/host/ownership.mjs";
 
+test("concurrent release callers share one ownership release", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-release-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const lease = await acquireOwnership(root, "session", "shared-release");
+  await Promise.all([lease.release(), lease.release(), lease.release()]);
+  const next = await acquireOwnership(root, "session", "shared-release");
+  await next.release();
+});
+
 test("separate CLI/GUI processes compete for canonical project and session; crash is fail-closed", async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-ownership-"));
   t.after(() => fs.rm(root, { recursive: true, force: true }));

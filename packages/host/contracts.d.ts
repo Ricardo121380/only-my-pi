@@ -1,4 +1,7 @@
 export type HostCommand =
+  | { type: "enterManual"; projectId: string }
+  | { type: "leaveManual"; projectId: string; manualId: string }
+  | { type: "saveFile"; projectId: string; manualId: string; path: string; version: string; text: string }
   | { type: "addProject"; path: string }
   | { type: "startTask"; requestId: string; projectId: string; accountId: string; model: string; prompt: string; mode?: "readonly" | "controlled"; resumeSessionKey?: string }
   | { type: "answerApproval"; taskId: string; approvalId: string; value: string | boolean }

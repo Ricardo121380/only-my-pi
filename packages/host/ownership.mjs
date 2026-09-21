@@ -52,11 +52,14 @@ export async function acquireOwnership(configRoot, kind, key, { recover } = {}) 
   }
   try { await atomicWriteJson(configRoot, ownerFile, owner); }
   catch (error) { await fs.rmdir(directory).catch(() => {}); throw error; }
-  let released = false;
-  return { owner, async release() {
-    if (released) return;
-    const current = await readJsonObject(configRoot, ownerFile);
-    if (current.token !== owner.token) throw ownershipError("OWNERSHIP_LOST");
-    await fs.unlink(ownerFile); await fs.rmdir(directory); released = true;
+  let released = false, releasing;
+  return { owner, release() {
+    if (released) return Promise.resolve();
+    releasing ??= (async () => {
+      const current = await readJsonObject(configRoot, ownerFile);
+      if (current.token !== owner.token) throw ownershipError("OWNERSHIP_LOST");
+      await fs.unlink(ownerFile); await fs.rmdir(directory); released = true;
+    })().finally(() => { releasing = null; });
+    return releasing;
   } };
 }

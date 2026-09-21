@@ -135,3 +135,12 @@
 - 续接仅接受 catalog sessionKey，不接受路径；重新核验文件、项目和 session ID，先取得会话锁再启动新 worker，SDK SessionManager.open 读取原历史，原进程授权不恢复。请求摘要包含续接目标。历史界面新增显式只读续接选择，必须重新明确账号；默认仍新建会话。
 - 真实 SDK 本地模拟服务测试覆盖三种账号的停止/续接、同 session ID、旧消息实际进入下一请求。目录身份漂移和越项目拒绝；任务级测试证明 CLI 占用时 worker 不启动、活动会话拒绝并发、释放后可续接。
 - Host 回归 59 PASS / 2 完整候选场景 SKIP；Web 20 PASS；Host/Web 类型检查 PASS；Direct/所有权/进程定向测试 PASS。新完整候选及浏览器续接待验收，2C 未完成，公开受控启动仍关闭。
+
+## 2026-09-22：2C 实际 TUI/GUI 交叉验收与 2D 私有编辑器
+
+- 完整候选 e2f2590 / stack 0a8350541347ac7053a9b4f6b88ab6829a65628a4225b0cfefb2beb5cd8ba36b 使用 Node 24.19.0、Pi 0.85.1。真实账号/RPC 测试 7/7 PASS，包括 scout 与 writer/reviewer/应用/验证；模型为本地脚本服务，不是外部真人 Provider。
+- Ego Lite TaskSpace 10 与真实 TUI 交叉：TUI 手动批准后实际写入 proof.txt；此时 GUI 受控任务因 OWNERSHIP_HELD 失败。TUI /exit 后新 GUI 任务成功；从页面选择原 TUI 历史、点击续接并明确选择账号/模型，成功保留 session ID 01a0c544-120e-73b9-a094-670d0da85fee。启动持锁冲突任务用 HTTP，续接走实际 UI，不混淆两类证据。临时服务退出确认 requests=5，proof 为 browser approved。
+- 新 ManualWorkspaces 接入私有 HTTP 命令：进入/退出手动模式、sha256 条件保存、原子替换、并发保存保护；复用 canonical project 锁，不授予 Agent 编程权限。拒绝符号链接、硬链接、越界、无效 UTF-8、NUL、大于 512KB 和旧版本。Host 关闭等待保存完成；重启不恢复手动租约。外部程序不遵守 OMP 锁，版本复查不等于操作系统 CAS 或沙箱。
+- Monaco 0.56.0 固定版本、同源 worker、按需加载；文件目录、多标签（最多 12）、语法高亮、文件内搜索、草稿/基线 diff、保存/重新读取、脏标签与关闭工作区确认。CSP 仅放开动态样式及同源 worker，脚本仍禁止 inline/eval；不加载 CDN。编辑器约 3.82MB 延迟包，首屏 JS 约 410KB；性能指标仍待 2F 实测，构建告警不隐藏。
+- Ego Lite 已验证中文实际落盘、多标签、搜索、外部改动冲突保留草稿、关闭脏标签提示、重新读取磁盘、390px 无文档横向溢出。截图在 ../artifacts/webui-phase2/editor-*.png。浏览器首轮点击不可见的 Monaco 内部 textfield 失败，转用截图定位实际编辑区完成，不把失败点击算通过。
+- 手动保存/HTTP/所有权定向测试 PASS，Web 20/20 回归、Host/Web 类型检查与生产构建 PASS。新编辑器仍在私有 allowControlled 门禁内；未晋升日常安装。2C 其余入口/异常清理审查及 2D 扩展回归继续，2E/2F 未完成，真实模型预算仍 0。

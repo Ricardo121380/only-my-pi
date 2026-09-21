@@ -3,8 +3,15 @@ import { constants } from "node:fs";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { createHash } from "node:crypto";
 import { hostError } from "./contracts.mjs";
 const exec = promisify(execFile);
+export const fileVersion = (bytes) => `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
+export function decodeText(bytes) {
+  if (bytes.includes(0)) throw hostError("BINARY_PREVIEW_UNAVAILABLE", 415);
+  try { return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes); }
+  catch { throw hostError("FILE_ENCODING_UNSUPPORTED", 415); }
+}
 const excluded = (name) => [".git", "node_modules", ".ssh", ".npmrc", "auth.json"].includes(name) || name === ".env" || name.startsWith(".env.") || /\.(pem|key)$/iu.test(name);
 export async function projectPath(project, relative = "") {
   if (typeof relative !== "string" || relative.length > 4096 || path.isAbsolute(relative) || /[\\\0\r\n]/u.test(relative) || relative.split("/").some((p) => p === ".." || excluded(p))) throw hostError("FILE_PATH_DENIED", 403);
@@ -32,8 +39,8 @@ export async function readFile(project, relative) {
     const stat = await handle.stat();
     if (!stat.isFile() || stat.size > 512 * 1024) throw hostError("FILE_PREVIEW_LIMIT", 413);
     const bytes = await handle.readFile();
-    if (bytes.includes(0)) throw hostError("BINARY_PREVIEW_UNAVAILABLE", 415);
-    return { path: relative, text: bytes.toString("utf8"), bytes: bytes.length };
+    if (bytes.length > 512 * 1024) throw hostError("FILE_PREVIEW_LIMIT", 413);
+    return { path: relative, text: decodeText(bytes), bytes: bytes.length, version: fileVersion(bytes) };
   } finally { await handle.close(); }
 }
 export async function gitDiff(project) {
