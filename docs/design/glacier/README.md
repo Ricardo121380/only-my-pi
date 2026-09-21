@@ -37,7 +37,7 @@
 
 ## 来源与保存
 
-用户从 ChatGPT「设计 Agent WebUI」下载的五份原件保存在本目录，未修改。与 `LOCAL_HOME/Downloads` 同名文件逐一 SHA-256 比对一致。PNG 未提供；以可运行 HTML、设计规范和契约为依据。
+用户从 ChatGPT「设计 Agent WebUI」下载的五份原件保存在本目录，未修改。与用户 Downloads 目录同名文件逐一 SHA-256 比对一致。PNG 未提供；以可运行 HTML、设计规范和契约为依据。
 
 - `pi-agent-glacier.html`：视觉原型，仅作参考，不作为生产入口。
 - `pi-agent-glacier-design-spec.md`：设计规范。
@@ -68,7 +68,7 @@
 - 实际浏览器检查：流式任务中收起输出区仍在运行；取消后显示已取消；检查区/输出区可同时打开；手机 Escape 关闭面板后保留检查页面并恢复焦点；深色截图已人工检查。
 - 本次未调用真实模型，未新增真实模型验收费用；未重新执行后端全量测试。
 
-本机截图位于 `LOCAL_HOME/Agentprojects/only-my-pi/artifacts/glacier/`：`desktop.png`、`desktop-panels.png`、`dark.png`、`mobile-dock.png`、`mobile.png`。这些是实际 React 页面，不是原型截图。
+本机截图位于仓库外项目工作目录的 `artifacts/glacier/`：`desktop.png`、`desktop-panels.png`、`dark.png`、`mobile-dock.png`、`mobile.png`。这些是实际 React 页面，不是原型截图。
 
 ## 范围限制与后续门槛
 
