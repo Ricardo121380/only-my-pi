@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createContextSnapshotProvider, createOmpRuntime } from "./runtime.mjs";
+import { projectExecutionState } from "../../packages/project-gates/index.mjs";
 
 const DIRECT_RUNTIME_EVENT = "only-my-pi:direct-runtime:v1";
 
@@ -25,6 +26,7 @@ export default function ompControl(pi: ExtensionAPI): void {
   pi.events.on("only-my-pi:host-interaction:v1", (payload: any) => {
     // Function-bearing capability can only come from the private SDK factory.
     if (typeof payload?.isHostAuthorized === "function") isHostAuthorized = payload.isHostAuthorized;
+    payload?.registerExecutionProbe?.(projectExecutionState);
   });
 
   const publishDirectRuntime = (status: "READY" | "UNAVAILABLE", orchestrator?: any) => {

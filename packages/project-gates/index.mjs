@@ -11,6 +11,12 @@ const ENV_NAME = /^[A-Z][A-Z0-9_]{0,63}$/u;
 const SECRET_ENV = /(?:KEY|TOKEN|SECRET|PASSWORD|COOKIE|AUTH)/u;
 const MAX_OUTPUT_BYTES = 2_097_152;
 const DEFAULT_ENV = Object.freeze({ CI: "1", NO_COLOR: "1", PI_TELEMETRY: "0", npm_config_audit: "false", npm_config_fund: "false", npm_config_update_notifier: "false" });
+// Module-owned evidence, shared by all gate/clone executors in this runtime.
+// An unconfirmed termination remains registered even after its promise settles.
+const executions = new Set();
+export function projectExecutionState() {
+  return { active: executions.size, unconfirmed: [...executions].some((entry) => entry.unconfirmed) };
+}
 
 function fail(code, message, details = {}) { const error = new Error(message); error.code = code; Object.assign(error, details); throw error; }
 function object(value, label) { if (!value || typeof value !== "object" || Array.isArray(value)) fail("PROJECT_GATE_MANIFEST_INVALID", `${label} must be an object`); return value; }
@@ -290,6 +296,8 @@ export function createNodeExecAdapter({ spawnImpl = nodeSpawn, maxOutputBytes = 
       return;
     }
     const output = { stdout: [], stderr: [] };
+    const execution = { unconfirmed: false };
+    executions.add(execution);
     let bytes = 0;
     let killed = false;
     let reason = null;
@@ -323,6 +331,8 @@ export function createNodeExecAdapter({ spawnImpl = nodeSpawn, maxOutputBytes = 
       clearTimeout(settleTimer);
       clearInterval(pollTimer);
       options.signal?.removeEventListener?.("abort", abort);
+      if (value.terminationUnconfirmed === true) execution.unconfirmed = true;
+      else executions.delete(execution);
       resolve(value);
     };
     const result = (code, extra = {}) => ({ stdout: options.encoding === "buffer" ? Buffer.concat(output.stdout) : Buffer.concat(output.stdout).toString("utf8"), stderr: options.encoding === "buffer" ? Buffer.concat(output.stderr) : Buffer.concat(output.stderr).toString("utf8"), code: Number.isInteger(code) ? code : 1, killed, started: true, reason, outputLimitExceeded, ...extra });

@@ -254,6 +254,29 @@ test("a pending approval cannot regrant coding after revocation", async (t) => {
   assert.equal(controller.hasCodingAccess(), false);
 });
 
+test("shared project ownership failure and revocation during acquisition never grant coding", async (t) => {
+  const configRoot = await tempConfig(t);
+  const request = { taskSummary: "fix", complexity: "simple", scope: ["src/**"], riskFlags: [], verification: [], orchestration: { useReadOnlyScouts: false, useManagedCloneWriter: false, useFreshReviewer: false } };
+  for (const scenario of ["held", "revoke"]) {
+    let entered, release;
+    const acquired = new Promise((resolve) => { entered = resolve; });
+    const ctx = makeContext({ select: async (_title, options) => options[0] });
+    const controller = new DirectSessionController({ pi: makePi(), configRoot,
+      environment: { ONLY_MY_PI_DIRECT: "1", ONLY_MY_PI_MODEL_EXPLICIT: "1" },
+      acquireProject: async () => {
+        if (scenario === "held") throw Object.assign(new Error("held"), { code: "OWNERSHIP_HELD" });
+        await new Promise((resolve) => { release = resolve; entered(); });
+      },
+    });
+    await controller.start({}, { ...ctx, model: model("provider", "ready") });
+    const pending = controller.requestCodingAccess(request, ctx);
+    if (scenario === "revoke") { await acquired; controller.accessCommand("revoke", ctx); release(); }
+    assert.equal((await pending).details.status, scenario === "held" ? "OWNERSHIP_HELD" : "CODING_ACCESS_STALE");
+    assert.equal(controller.hasCodingAccess(), false);
+    assert.equal(controller.state, DIRECT_SESSION_STATES.INSPECT);
+  }
+});
+
 test("a cancelled or superseded approval cannot change the current grant", async (t) => {
   const configRoot = await tempConfig(t);
   const pi = makePi();

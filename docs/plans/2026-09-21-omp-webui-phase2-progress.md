@@ -127,3 +127,11 @@
 - Ego Lite TaskSpace 10 使用 tests/fixtures/host-controlled-browser.mjs：真实 Host/SDK、候选 fb 的审计扩展、临时项目/账号、本地模拟服务。待审批时刷新后仍可见同一审批；页面点击批准后临时 proof.txt 为 browser approved，任务结束、审批清空、授权不保留。启动由 fixture 的真实 HTTP 命令完成，不宣称受控启动选择器已开放。页面检查发现受控会话仍显示只读分析，已改为受控执行标识。
 - 2C 仍有重要进程归属缺口：project-gates 的 detached 进程组独立于 RPC worker；仅证明 worker 组退出不能证明这些执行组退出。CLI 写入尚未统一持锁。公开受控入口继续关闭，修复与验证后再开放。
 - 真实模型预算已用 0；未修改日常安装。2C–2F 未验收，M2 未完成。
+
+## 2026-09-22：2C 所有权与停止会话续接基础
+
+- CLI/TUI 编程批准后先取得与 Host 相同的 canonical project 锁，取得会话锁后才启动会话；锁取得期间再次核对撤权、身份和代次。撤权不释放项目锁；退出时已登记执行尚活跃或清理不明则保留锁。尚需完整安装 TUI/GUI 跨进程交叉验收，不能仅凭辅助类测试宣称门禁完成。
+- project-gates 记录当前运行与未确认终止；私有 Host SDK shutdown 回执检查执行探针，RpcWorker 执行过 prompt 后没有匹配回执即保留占用。新增负例证明 worker 组已死也不能替代清理回执。Host 重启遇到受控遗留 worker 时拒绝自动释放项目/会话锁，要求 reconciliation；尚未提供自动核对未知独立进程组的能力。
+- 续接仅接受 catalog sessionKey，不接受路径；重新核验文件、项目和 session ID，先取得会话锁再启动新 worker，SDK SessionManager.open 读取原历史，原进程授权不恢复。请求摘要包含续接目标。历史界面新增显式只读续接选择，必须重新明确账号；默认仍新建会话。
+- 真实 SDK 本地模拟服务测试覆盖三种账号的停止/续接、同 session ID、旧消息实际进入下一请求。目录身份漂移和越项目拒绝；任务级测试证明 CLI 占用时 worker 不启动、活动会话拒绝并发、释放后可续接。
+- Host 回归 59 PASS / 2 完整候选场景 SKIP；Web 20 PASS；Host/Web 类型检查 PASS；Direct/所有权/进程定向测试 PASS。新完整候选及浏览器续接待验收，2C 未完成，公开受控启动仍关闭。

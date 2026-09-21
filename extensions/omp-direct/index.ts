@@ -1,6 +1,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import os from "node:os";
 import path from "node:path";
+import { DirectSessionOwnership } from "../../packages/direct-agent/ownership.mjs";
 
 import {
   DIRECT_READ_ONLY_AGENTS,
@@ -60,7 +61,10 @@ const ManagedWriterParameters = {
 export default function ompDirect(pi: ExtensionAPI): void {
   if (process.env.ONLY_MY_PI_DIRECT !== "1") return;
   const configRoot = process.env.PI_CODING_AGENT_DIR ?? path.join(os.homedir(), ".pi", "agent");
-  const controller = createDirectSessionController({ pi, configRoot, environment: process.env });
+  const ownership = new DirectSessionOwnership(configRoot);
+  const controller = createDirectSessionController({ pi, configRoot, environment: process.env,
+    acquireProject: async (ctx: any) => { if (ctx.mode === "tui") await ownership.acquire("project", ctx.cwd); },
+  });
 
   // Only the trusted SDK bootstrap publishes this process-local object. No
   // environment flag or serializable RPC command can create this capability.
@@ -134,9 +138,16 @@ export default function ompDirect(pi: ExtensionAPI): void {
 
   pi.on("session_start", async (event, ctx) => {
     controller.hostInteraction?.bind(ctx);
+    if (ctx.mode === "tui") {
+      try { await ownership.acquire("session", ctx.sessionManager.getSessionId()); }
+      catch { controller.shutdown(ctx); ctx.ui.notify("SESSION_OWNERSHIP_UNAVAILABLE: this session is owned elsewhere or needs reconciliation.", "error"); ctx.shutdown(); return; }
+    }
     await controller.start(event, ctx);
   });
-  pi.on("session_shutdown", (_event, ctx) => { controller.hostInteraction?.invalidate(); controller.shutdown(ctx); });
+  pi.on("session_shutdown", async (_event, ctx) => {
+    controller.hostInteraction?.invalidate(); controller.shutdown(ctx);
+    if (ctx.mode === "tui") await ownership.close();
+  });
   pi.on("before_agent_start", (event) => controller.beforeAgentStart(event));
   pi.on("tool_call", (event) => controller.blockToolCall(event));
   pi.on("user_bash", (event) => controller.inspectUserBash(event));

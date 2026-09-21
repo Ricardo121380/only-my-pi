@@ -19,12 +19,13 @@ export function App() {
   const [projectId, setProjectId] = useState(""), [session, setSession] = useState<Session | null>(null), [taskId, setTaskId] = useState<string | null>(() => sessionStorage.getItem("omp.selectedTask"));
   const { snapshot, task, connection, error, setError, setTask } = useHost(taskId);
   const [selectedModel, setSelectedModel] = useState("");
+  const [resumeSessionKey, setResumeSessionKey] = useState<string | undefined>();
   const [accounts, setAccounts] = useState<AccountDirectory | null>(null), [accountId, setAccountId] = useState("");
   const [accountRevision, setAccountRevision] = useState(0);
   const [addError, setAddError] = useState(""), [exploreOpen, setExploreOpen] = useState(false);
   const [models, setModels] = useState<ModelChoice[]>([]), [sessions, setSessions] = useState<Session[]>([]), [historyPage, setHistoryPage] = useState<HistoryPage>({ messages: [], nextOffset: null });
   const [historyBusy, setHistoryBusy] = useState(false), [pageOffset, setPageOffset] = useState(0), [projectPath, setProjectPath] = useState(""), [adding, setAdding] = useState(false), [addOpen, setAddOpen] = useState(false), [panel, setPanel] = useState("chat"), [follow, setFollow] = useState(true), [revision, setRevision] = useState(0);
-  const scroller = useRef<HTMLDivElement>(null), pending = useRef<{ model: string; prompt: string; projectId: string; accountId: string; requestId: string } | null>(null);
+  const scroller = useRef<HTMLDivElement>(null), pending = useRef<{ model: string; prompt: string; projectId: string; accountId: string; requestId: string; resumeSessionKey?: string } | null>(null);
   const cancelPending = useRef(false);
   const [inspectOpen, setInspectOpen] = useState(() => window.innerWidth > 1100), [dockOpen, setDockOpen] = useState(false), [search, setSearch] = useState("");
   const [width, setWidth] = useState(window.innerWidth), [sidebarHidden, setSidebarHidden] = useState(false), [partitionOpen, setPartitionOpen] = useState(true), [folded, setFolded] = useState(false), [feedTab, setFeedTab] = useState("chat");
@@ -70,15 +71,16 @@ export function App() {
     return () => controller.abort();
   }, [session, pageOffset, revision]);
   useEffect(() => { if (follow && visibleTask && scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight; }, [visibleTask, follow]);
-  function chooseProject(item: Project) { setProjectId(item.projectId); setSession(null); setTaskId(null); setSessions([]); setSuggestion(undefined); pending.current = null; setPanel("chat"); }
-  function fresh() { setSession(null); setTaskId(null); setSuggestion({text:"",key:Date.now()}); pending.current = null; setPanel("chat"); requestAnimationFrame(() => document.getElementById("prompt")?.focus()); }
+  function chooseProject(item: Project) { setResumeSessionKey(undefined); setProjectId(item.projectId); setSession(null); setTaskId(null); setSessions([]); setSuggestion(undefined); pending.current = null; setPanel("chat"); }
+  function fresh() { setResumeSessionKey(undefined); setSession(null); setTaskId(null); setSuggestion({text:"",key:Date.now()}); pending.current = null; setPanel("chat"); requestAnimationFrame(() => document.getElementById("prompt")?.focus()); }
   async function send(model: string, prompt: string) {
     if (!project) throw new Error("PROJECT_REQUIRED");
     if (!accountId) throw new Error("ACCOUNT_BINDING_REQUIRED");
     const previous = pending.current;
-    const command = previous?.model === model && previous.prompt === prompt && previous.projectId === projectId && previous.accountId === accountId ? previous : { model, prompt, projectId, accountId, requestId: crypto.randomUUID() };
+    const resumeKey = session?.sessionKey === resumeSessionKey ? resumeSessionKey : undefined;
+    const command = previous?.model === model && previous.prompt === prompt && previous.projectId === projectId && previous.accountId === accountId && previous.resumeSessionKey === resumeKey ? previous : { model, prompt, projectId, accountId, requestId: crypto.randomUUID(), ...(resumeKey ? { resumeSessionKey: resumeKey } : {}) };
     pending.current = command;
-    try { const result = await api<HostTask>("/api/command", { type: "startTask", ...command }); setSession(null); setTaskId(result.taskId); setTask(result); setFollow(true); pending.current = null; setError(""); }
+    try { const result = await api<HostTask>("/api/command", { type: "startTask", ...command }); setResumeSessionKey(undefined); setSession(null); setTaskId(result.taskId); setTask(result); setFollow(true); pending.current = null; setError(""); }
     catch (cause) { setError(errorText(cause)); throw cause; }
   }
   async function cancel() { if (!visibleTask || cancelPending.current) return; cancelPending.current = true; setTask({ ...visibleTask, status: "cancelling" }); try { const result = await api<HostTask>("/api/command", { type: "cancelTask", taskId: visibleTask.taskId }); setTask((current) => current?.taskId === result.taskId && active(current.status) ? result : current); } catch (cause) { setError(errorText(cause)); setTask((current) => current?.taskId === visibleTask.taskId && active(current.status) ? visibleTask : current); } finally { cancelPending.current = false; } }
@@ -95,7 +97,7 @@ export function App() {
     const key = (e: KeyboardEvent) => { if (document.querySelector("dialog[open]")) return; if (e.key === "Escape") { e.preventDefault(); setPanel("chat"); setInspectOpen(false); } if (e.key === "Tab") { const items = focusables(), first = items[0], last = items[items.length - 1]; if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); } } };
     window.addEventListener("keydown", key); return () => { window.removeEventListener("keydown", key); target.removeAttribute("role"); target.removeAttribute("aria-modal"); requestAnimationFrame(() => previous?.isConnected && previous.focus()); };
   }, [overlayTarget]);
-  function openHistory(item: Session) { setSession(item); setTaskId(null); setPageOffset(0); setPanel("chat"); }
+  function openHistory(item: Session) { setResumeSessionKey(undefined); setSession(item); setTaskId(null); setPageOffset(0); setPanel("chat"); }
   function toggleNavigation() { if (width <= 760) { setPanel(panel === "projects" ? "chat" : "projects"); setInspectOpen(false); } else setSidebarHidden(!sidebarHidden); }
   const showSidebar = width <= 760 ? panel === "projects" : !sidebarHidden;
   const overlay = width <= 760 && showSidebar ? "sidebar" : width <= 1100 && inspectOpen ? "inspector" : null;
@@ -127,6 +129,7 @@ export function App() {
         {visibleTask && <TaskControl key={visibleTask.taskId} task={visibleTask} connected={connected} />}
       </section>
       {!follow && visibleTask && <button className="pill host-latest" onClick={() => setFollow(true)}>回到最新</button>}
+      {session && <div className="account-picker"><button className="softbtn" disabled={!connected || snapshot?.tasks.some((item) => item.sessionId === session.sessionId && active(item.status))} onClick={() => { setResumeSessionKey(resumeSessionKey ? undefined : session.sessionKey); pending.current = null; }}>{resumeSessionKey ? "取消续接" : "续接此会话（只读）"}</button><span role="status">{resumeSessionKey ? "下一条消息续接此历史；请明确选择账号和模型，不恢复旧授权。" : "当前仅查看历史；发送默认创建新会话。"}</span></div>}
       <div className="account-picker"><label>运行账号<select aria-label="运行账号" value={accountId} disabled={!connected || active(visibleTask?.status)} onChange={(e) => { setAccountId(e.target.value); setModels([]); setSelectedModel(""); pending.current = null; }}><option value="">请选择账号（不自动回退）</option>{accounts && <option value={accounts.cliReference.accountId}>{accounts.cliReference.name}</option>}{accounts?.accounts.map((item) => <option key={item.accountId} value={item.accountId}>{item.name} · {item.providerId}</option>)}</select></label>{visibleTask && <span className="metric-fine">本次绑定：{accounts?.accounts.find((a) => a.accountId === visibleTask.accountId)?.name ?? (visibleTask.accountId === "cli-readonly" ? "CLI 只读引用" : visibleTask.accountId ?? "历史未绑定")}</span>}</div>
       <Composer key={projectId} projectName={project?.name} suggestion={suggestion} selectedModel={selectedModel} onSelectModel={setSelectedModel} models={models} disabled={!project?.available || !connected || !accountId} running={active(visibleTask?.status)} cancelling={visibleTask?.status === "cancelling"} onSend={send} onCancel={cancel} onModels={loadModels} />
     </main>

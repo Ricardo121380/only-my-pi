@@ -7,7 +7,7 @@ import { createControlledExtension } from "./controlled-extension.mjs";
 
 // Host-owned arguments contain identities and audited paths, never credentials.
 try {
-  const [stackRoot, configRoot, accountId, modelId, sessionRoot, mode, ...extensions] = process.argv.slice(2);
+  const [stackRoot, configRoot, accountId, modelId, sessionRoot, mode, resumeFile, ...extensions] = process.argv.slice(2);
   if (!["readonly", "controlled"].includes(mode)) throw new Error();
   const controlled = mode === "controlled";
   if (controlled && !process.send) throw new Error();
@@ -51,7 +51,9 @@ try {
     return { ...created, services, diagnostics: services.diagnostics };
   };
   const cwd = process.cwd();
-  const runtime = await sdk.createAgentSessionRuntime(createRuntime, { cwd, agentDir: configRoot, sessionManager: sdk.SessionManager.create(cwd, sessionRoot) });
+  if (resumeFile && !path.isAbsolute(resumeFile)) throw new Error();
+  const sessionManager = resumeFile ? sdk.SessionManager.open(resumeFile, sessionRoot, cwd) : sdk.SessionManager.create(cwd, sessionRoot);
+  const runtime = await sdk.createAgentSessionRuntime(createRuntime, { cwd, agentDir: configRoot, sessionManager });
   await sdk.runRpcMode(runtime);
 } catch {
   process.stdout.write(JSON.stringify({ type: "extension_error", code: "ACCOUNT_RPC_START_FAILED" }) + "\n");

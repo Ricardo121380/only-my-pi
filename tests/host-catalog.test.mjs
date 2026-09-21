@@ -30,6 +30,10 @@ test("history follows the active Pi branch, pages output lazily and never rewrit
   const output = await catalog.toolOutput(s.sessionKey, "tool"); assert.equal(output.text.length, 65536); assert.equal(output.nextOffset, 65536);
   assert.equal((await catalog.toolOutput(s.sessionKey, "tool", output.nextOffset)).text.length, 4464);
   assert.equal(await fs.readFile(file, "utf8"), bytes);
+  assert.deepEqual(await catalog.resume(s.sessionKey, p.projectId), { sessionId: "history", file });
+  await assert.rejects(catalog.resume(s.sessionKey, "other-project"), { code: "SESSION_NOT_FOUND" });
+  await fs.writeFile(file, bytes.replace('"id":"history"', '"id":"different"'));
+  await assert.rejects(catalog.resume(s.sessionKey, p.projectId), { code: "SESSION_IDENTITY_CHANGED" });
 });
 test("Git diff disables repository external diff, text conversion and clean filters", async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-inspector-git-"))); t.after(() => fs.rm(root, { recursive: true, force: true }));

@@ -6,7 +6,7 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 
-import { createNodeExecAdapter } from "../packages/project-gates/index.mjs";
+import { createNodeExecAdapter, projectExecutionState } from "../packages/project-gates/index.mjs";
 
 test("a gate cancelled before admission never spawns a process", async () => {
   let spawns = 0;
@@ -95,4 +95,12 @@ test("shared process supervision preserves binary output and an explicit environ
   assert.equal(result.started, true);
   assert.deepEqual([...result.stdout], [0, 65, 10]);
   assert.equal(result.stderr.toString("utf8"), "fixture");
+});
+
+test("execution lifecycle projection stays occupied until confirmed exit", async () => {
+  assert.deepEqual(projectExecutionState(), { active: 0, unconfirmed: false });
+  const running = createNodeExecAdapter()(process.execPath, ["-e", "setTimeout(()=>{},100)"], {});
+  assert.equal(projectExecutionState().active, 1);
+  await running;
+  assert.deepEqual(projectExecutionState(), { active: 0, unconfirmed: false });
 });

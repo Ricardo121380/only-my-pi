@@ -42,6 +42,9 @@ async function recoverWorkers(configRoot, previous) {
         for (let attempt = 0; attempt < 20 && groupAlive(worker.pid); attempt++) await pause(50);
       }
       if (groupAlive(worker.pid)) throw hostError("ORPHAN_WORKER_REQUIRES_RECONCILIATION", 409);
+      // A controlled worker may have owned independent execution groups. Its
+      // death is not a cleanup receipt; preserve both project and session locks.
+      if (task.mode === "controlled") throw hostError("CONTROLLED_ORPHAN_REQUIRES_RECONCILIATION", 409);
     }
     if (task.sessionId) {
       const digest = createHash("sha256").update(String(task.sessionId)).digest("hex");

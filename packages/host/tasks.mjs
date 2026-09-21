@@ -21,6 +21,7 @@ export class HostTasks extends EventEmitter {
     const state = await readJsonObject(this.configRoot, this.file).catch((error) => { if (error.code === "ENOENT") return null; throw error; });
     if (state && (!Array.isArray(state.tasks) || state.tasks.length > 1000)) throw hostError("TASK_STATE_INVALID");
     for (const task of state?.tasks ?? []) {
+      if (task.mode === "controlled" && task.worker) throw hostError("CONTROLLED_ORPHAN_REQUIRES_RECONCILIATION", 409);
       if (task.worker && (!Number.isSafeInteger(task.worker.pid) || task.worker.pid < 1 || groupAlive(task.worker.pid))) throw hostError("WORKER_RECONCILIATION_REQUIRED", 409);
       if (task.error === "RPC_TERMINATION_UNCONFIRMED" && !task.worker) throw hostError("WORKER_RECONCILIATION_REQUIRED", 409);
       if (!terminal(task.status)) { task.status = "interrupted"; task.error = "HOST_RESTARTED"; }
@@ -52,12 +53,14 @@ export class HostTasks extends EventEmitter {
     if (this.closing) throw hostError("HOST_STOPPING", 409);
     if (this.persistenceError) throw hostError("HOST_STORAGE_FAILED", 503);
     const prior = this.requests.get(command.requestId);
-    const requestDigest = createHash("sha256").update(JSON.stringify([command.projectId, command.model, command.prompt, ...(this.accounts ? [command.accountId] : []), ...(mode === "controlled" ? [mode] : [])])).digest("hex");
+    const requestDigest = createHash("sha256").update(JSON.stringify([command.projectId, command.model, command.prompt, ...(this.accounts ? [command.accountId] : []), ...(mode === "controlled" ? [mode] : []), ...(command.resumeSessionKey ? [command.resumeSessionKey] : [])])).digest("hex");
     const existing = (id) => { const task = this.tasks.get(id); if (task.requestDigest !== requestDigest) throw hostError("REQUEST_ID_CONFLICT", 409); return this.public(task); };
     if (prior) return existing(prior);
     if (this.tasks.size >= 1000 || this.workers.size >= 4) throw hostError("TASK_CAPACITY_REACHED", 429);
     const project = this.catalog.project(command.projectId);
     if (!project.available) throw hostError("PROJECT_UNAVAILABLE", 409);
+    const resume = command.resumeSessionKey ? await this.catalog.resume(command.resumeSessionKey, project.projectId) : null;
+    if (resume && [...this.tasks.values()].some((task) => task.sessionId === resume.sessionId && (!terminal(task.status) || task.worker))) throw hostError("SESSION_IN_USE", 409);
     const release = this.accounts?.beginUse(command.accountId);
     let transferred = false;
     try {
@@ -70,7 +73,7 @@ export class HostTasks extends EventEmitter {
     if (this.closing) throw hostError("HOST_STOPPING", 409);
     if ([...this.tasks.values()].filter((t) => !terminal(t.status)).length >= 4) throw hostError("TASK_CAPACITY_REACHED", 429);
     const task = { taskId: randomUUID(), requestId: command.requestId, requestDigest, projectId: project.projectId, model: command.model, ...(this.accounts ? { accountId: command.accountId } : {}),
-      mode, access: "inspect", approvals: [], prompt: command.prompt, status: "starting", sessionId: null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      mode, access: "inspect", approvals: [], prompt: command.prompt, status: "starting", sessionId: resume?.sessionId ?? null, resumeSessionKey: command.resumeSessionKey ?? null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     this.requests.set(command.requestId, task.taskId); this.tasks.set(task.taskId, task);
     try { await this.persist(); }
     catch {
@@ -80,17 +83,17 @@ export class HostTasks extends EventEmitter {
     }
     if (release) { this.accountReleases.set(task.taskId, release); transferred = true; }
     this.changed(task);
-    const running = this.run(task, project).catch(async () => { task.status = "failed"; task.error = "TASK_INTERNAL_FAILURE"; this.changed(task); await this.persist().catch(() => {}); }).finally(() => this.running.delete(task.taskId));
+    const running = this.run(task, project, resume).catch(async () => { task.status = "failed"; task.error = "TASK_INTERNAL_FAILURE"; this.changed(task); await this.persist().catch(() => {}); }).finally(() => this.running.delete(task.taskId));
     this.running.set(task.taskId, running);
     return this.public(task);
     } finally { if (!transferred) release?.(); }
   }
-  async run(task, project) {
+  async run(task, project, resume = null) {
     let lease;
     const sessionRoot = path.join(this.catalog.sessionRoot, `omp-${project.projectId}`);
     let worker;
     try {
-      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, accountId: task.accountId, controlled: task.mode === "controlled", sessionRoot, env: this.env,
+      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, accountId: task.accountId, controlled: task.mode === "controlled", sessionRoot, resumeFile: resume?.file, env: this.env,
         onIdentity: async (identity) => { task.worker = identity; await this.persist(); } });
     } catch (error) { this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId); throw error; }
     this.workers.set(task.taskId, worker);
@@ -133,9 +136,16 @@ export class HostTasks extends EventEmitter {
         await this.persist();
       }
       if (this.closing) { task.status = "cancelling"; throw hostError("HOST_STOPPING"); }
+      if (resume) {
+        lease = await acquireOwnership(this.configRoot, "session", resume.sessionId);
+        this.leases.set(task.taskId, lease);
+        const current = await this.catalog.resume(task.resumeSessionKey, task.projectId);
+        if (current.sessionId !== resume.sessionId || current.file !== resume.file) throw hostError("SESSION_IDENTITY_CHANGED", 409);
+      }
       const state = await worker.start();
+      if (resume && state.sessionId !== resume.sessionId) throw hostError("SESSION_IDENTITY_CHANGED", 409);
       task.worker = worker.identity; task.sessionId = state.sessionId;
-      lease = await acquireOwnership(this.configRoot, "session", String(state.sessionId));
+      lease ??= await acquireOwnership(this.configRoot, "session", String(state.sessionId));
       this.leases.set(task.taskId, lease);
       await this.persist();
       if (task.status === "cancelling" || this.closing) { stopping = true; await worker.cancel(); task.status = "cancelled"; return; }

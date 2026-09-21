@@ -41,7 +41,8 @@ test("real account RPC requests keep two stored identities and readonly tool reg
     const paths = key === "fixture-cli" ? { authPath: path.join(root, "auth.json"), modelsPath: path.join(root, "models.json") } : await catalog.runtimePaths(account.accountId);
     await fs.writeFile(paths.authPath, JSON.stringify({ fixture: { type: "api_key", key } }));
     await fs.writeFile(paths.modelsPath, JSON.stringify({ providers: { fixture: { baseUrl: `http://127.0.0.1:${server.address().port}/v1`, api: "openai-completions", models: [{ id: "fixture", name: "Fixture", reasoning: false, input: ["text"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 32000, maxTokens: 128 }] } } }));
-    const worker = new RpcWorker({ stack: installedStack ?? { root, nodePath: process.execPath, piCliPath: "unused", stackId: `sha256:${"a".repeat(64)}` }, configRoot: root, cwd: root, model: "fixture/fixture", accountId: account.accountId, sessionRoot: path.join(root, "sessions"), env: { PATH: process.env.PATH }, ...(installedStack ? {} : { extensionResolver: async () => ({ extensions: [extension] }) }) });
+    const workerOptions = { stack: installedStack ?? { root, nodePath: process.execPath, piCliPath: "unused", stackId: `sha256:${"a".repeat(64)}` }, configRoot: root, cwd: root, model: "fixture/fixture", accountId: account.accountId, sessionRoot: path.join(root, "sessions"), env: { PATH: process.env.PATH }, ...(installedStack ? {} : { extensionResolver: async () => ({ extensions: [extension] }) }) };
+    const worker = new RpcWorker(workerOptions);
     const extensionErrors = [];
     worker.on("event", (event) => { if (event.type === "extension_error") extensionErrors.push(event.code ?? event.event ?? "extension_error"); });
     t.after(() => worker.stop());
@@ -77,8 +78,15 @@ test("real account RPC requests keep two stored identities and readonly tool reg
     assert.ok(session, "the bound session must be persisted");
     const entries = (await fs.readFile(path.join(root, "sessions", session), "utf8")).trim().split("\n").map((line) => JSON.parse(line));
     assert.ok(entries.some((entry) => entry.customType === "omp-account-binding" && entry.data.accountId === account.accountId));
+    await fs.writeFile(paths.authPath, JSON.stringify({ fixture: { type: "api_key", key } }));
+    const resumed = new RpcWorker({ ...workerOptions, resumeFile: path.join(root, "sessions", session) });
+    t.after(() => resumed.stop());
+    assert.equal((await resumed.start()).sessionId, state.sessionId);
+    const resumedDone = new Promise((resolve) => resumed.on("event", (event) => { if (event.type === "agent_settled") resolve(); }));
+    await resumed.command("prompt", { message: "Continue the stopped fixture session" }); await resumedDone; await resumed.stop();
+    assert.ok(received.at(-1).body.messages.some((message) => message.role === "assistant" && JSON.stringify(message.content).includes("fixture done")), "the real SDK must load prior history, not silently create a new session");
   }
-  assert.deepEqual(received.map((r) => r.key), [...Array(4).fill("Bearer fixture-a"), ...Array(4).fill("Bearer fixture-b"), ...Array(4).fill("Bearer fixture-cli")]);
+  assert.deepEqual(received.map((r) => r.key), [...Array(5).fill("Bearer fixture-a"), ...Array(5).fill("Bearer fixture-b"), ...Array(5).fill("Bearer fixture-cli")]);
   for (const request of received) {
     const tools = request.body.tools.map((tool) => tool.function.name).sort();
     assert.deepEqual(tools, ["find", "grep", "ls", "read"]);

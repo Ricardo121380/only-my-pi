@@ -35,3 +35,18 @@ test("private writer authority is bound to a live grant, project and session", (
   handlers.get("session_shutdown")();
   assert.equal(payload.isHostAuthorized(context), false);
 });
+
+test("controlled shutdown requires all registered execution probes to confirm cleanup", () => {
+  for (const active of [0, 1]) {
+    const transport = new EventEmitter(), handlers = new Map(), sent = [];
+    transport.send = (message) => sent.push(message);
+    const controller = { context: null, hasCodingAccess: () => false, invalidateCodingAuthority() {} };
+    createControlledExtension({ transport })({
+      events: { emit(_name, value) { value.register(controller); value.registerExecutionProbe(() => ({ active, unconfirmed: active > 0 })); } },
+      on(name, handler) { handlers.set(name, handler); },
+    });
+    transport.emit("message", { type: "prepare_shutdown", id: "bound-exit" });
+    handlers.get("session_shutdown")();
+    assert.deepEqual(sent.find((entry) => entry.type === "shutdown_confirmed"), { type: "shutdown_confirmed", id: "bound-exit", clean: active === 0 });
+  }
+});

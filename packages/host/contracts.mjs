@@ -6,7 +6,7 @@ const id = { type: "string", pattern: "^[a-zA-Z0-9_-]{1,128}$" };
 const schema = { oneOf: [
   { type: "object", additionalProperties: false, required: ["type", "path"], properties: { type: { const: "addProject" }, path: { type: "string", minLength: 1, maxLength: 4096 } } },
   { type: "object", additionalProperties: false, required: ["type", "requestId", "projectId", "accountId", "model", "prompt"], properties: {
-    type: { const: "startTask" }, mode: { enum: ["readonly", "controlled"] }, requestId: id, projectId: id, accountId: id, model: { type: "string", pattern: "^[^\\s/]+/.{1,256}$" }, prompt: { type: "string", minLength: 1, maxLength: 32768 } } },
+    type: { const: "startTask" }, mode: { enum: ["readonly", "controlled"] }, resumeSessionKey: id, requestId: id, projectId: id, accountId: id, model: { type: "string", pattern: "^[^\\s/]+/.{1,256}$" }, prompt: { type: "string", minLength: 1, maxLength: 32768 } } },
   { type: "object", additionalProperties: false, required: ["type", "taskId"], properties: { type: { const: "cancelTask" }, taskId: id } },
   { type: "object", additionalProperties: false, required: ["type", "taskId"], properties: { type: { const: "revokeTask" }, taskId: id } },
   { type: "object", additionalProperties: false, required: ["type", "taskId", "approvalId", "value"], properties: { type: { const: "answerApproval" }, taskId: id, approvalId: id, value: { anyOf: [{ type: "boolean" }, { type: "string", maxLength: 2048 }] } } },

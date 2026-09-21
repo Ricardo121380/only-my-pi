@@ -186,7 +186,7 @@ function toolResult(status, message, details = {}) {
 }
 
 export class DirectSessionController {
-  constructor({ pi, configRoot, environment = process.env, now = () => new Date().toISOString(), captureBaseline = captureWorkspaceBaseline, hostInteraction = null } = {}) {
+  constructor({ pi, configRoot, environment = process.env, now = () => new Date().toISOString(), captureBaseline = captureWorkspaceBaseline, hostInteraction = null, acquireProject } = {}) {
     if (!pi || typeof pi.getActiveTools !== "function" || typeof pi.setActiveTools !== "function") throw new TypeError("DirectSessionController requires Pi tool controls");
     if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("DirectSessionController requires an absolute configRoot");
     this.pi = pi;
@@ -211,6 +211,7 @@ export class DirectSessionController {
     this.orchestrator = null;
     this.unsafePermissionNotified = false;
     this.hostInteraction = hostInteraction;
+    this.acquireProject = acquireProject;
   }
 
   isDirect() { return this.environment.ONLY_MY_PI_DIRECT === "1"; }
@@ -487,6 +488,18 @@ export class DirectSessionController {
     const afterApproval = this.enforcePermissionBoundary(ctx);
     if (!afterApproval.ok) return toolResult(afterApproval.code, "Permission mode changed to YOLO while approval was pending; coding access was not granted.");
     if (choice === ACCESS_OPTIONS[0]) {
+      try { await this.acquireProject?.(ctx); }
+      catch (error) {
+        if (this.lifecycleEpoch === lifecycle && this.approvalEpoch === approval) { this.invalidateCodingAuthority(); this.transition(DIRECT_SESSION_STATES.INSPECT, ctx); }
+        return toolResult(error?.code ?? "PROJECT_OWNERSHIP_UNAVAILABLE", "Project writing is owned elsewhere or cannot be reconciled. No coding access was granted.");
+      }
+      // Acquiring the shared lease is asynchronous: revocation/session change
+      // during lock I/O must not turn an obsolete approval into fresh authority.
+      if (signal?.aborted || this.lifecycleEpoch !== lifecycle || this.approvalEpoch !== approval || identity !== this.sessionIdentity(this.context)
+        || (hostInteractive && this.hostInteraction?.allows(ctx) !== true) || !this.enforcePermissionBoundary(ctx).ok) {
+        if (this.lifecycleEpoch === lifecycle && this.approvalEpoch === approval) { this.invalidateCodingAuthority(); this.transition(DIRECT_SESSION_STATES.INSPECT, ctx); }
+        return toolResult("CODING_ACCESS_STALE", "Authority changed while acquiring project ownership; remain read-only.");
+      }
       this.explicitPlan = false;
       this.approvedRequest = request;
       this.approvedScope = [...request.scope];

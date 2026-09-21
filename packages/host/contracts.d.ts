@@ -1,6 +1,6 @@
 export type HostCommand =
   | { type: "addProject"; path: string }
-  | { type: "startTask"; requestId: string; projectId: string; accountId: string; model: string; prompt: string; mode?: "readonly" | "controlled" }
+  | { type: "startTask"; requestId: string; projectId: string; accountId: string; model: string; prompt: string; mode?: "readonly" | "controlled"; resumeSessionKey?: string }
   | { type: "answerApproval"; taskId: string; approvalId: string; value: string | boolean }
   | { type: "revokeTask"; taskId: string }
   | { type: "cancelTask"; taskId: string };

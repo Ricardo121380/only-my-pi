@@ -8,10 +8,14 @@ export function createControlledExtension({ transport = process } = {}) {
   const capability = createHostInteraction();
   let controller;
   let closed = false;
+  let shutdownId;
+  let managedRuntimeSeen = false;
+  const executionProbes = [];
   return (pi) => {
     pi.events.emit("only-my-pi:host-interaction:v1", {
       capability,
       register(value) { if (controller) throw new Error("HOST_CONTROLLER_DUPLICATE"); controller = value; },
+      registerExecutionProbe(probe) { if (typeof probe !== "function") throw new Error("HOST_EXECUTION_PROBE_INVALID"); executionProbes.push(probe); },
       isHostAuthorized(context) {
         return !closed && capability.allows(controller?.context) && controller.hasCodingAccess()
           && !controller.grantAbort?.signal.aborted && controller.grantBinding !== null
@@ -23,6 +27,7 @@ export function createControlledExtension({ transport = process } = {}) {
     let previous;
     const publish = () => {
       if (closed || transport.connected === false) return;
+      managedRuntimeSeen ||= !!controller.orchestrator;
       const state = projectControlState({ access: controller.hasCodingAccess() ? "coding" : "inspect", orchestration: controller.orchestrator?.snapshot?.() });
       const encoded = JSON.stringify(state);
       if (encoded !== previous) { previous = encoded; transport.send({ type: "control_state", state }, () => {}); }
@@ -37,12 +42,20 @@ export function createControlledExtension({ transport = process } = {}) {
       else controller.invalidateCodingAuthority();
     };
     const receive = (message) => {
+      if (!closed && message?.type === "prepare_shutdown" && typeof message.id === "string") {
+        shutdownId = message.id; revoke(); return;
+      }
       if (closed || message?.type !== "revoke" || typeof message.id !== "string") return;
       revoke(); publish(); transport.send({ type: "revoked", id: message.id });
     };
     const disconnect = () => { closed = true; clearInterval(projectionTimer); capability.invalidate(); revoke(); transport.exit?.(1); };
     transport.on("message", receive); transport.once("disconnect", disconnect);
     pi.on("session_shutdown", () => {
+      // OMP control's earlier shutdown handler disposes the shared runtime.
+      // Never turn a detached gate's unconfirmed exit into released ownership.
+      const clean = (!managedRuntimeSeen || executionProbes.length > 0)
+        && executionProbes.every((probe) => { const state = probe(); return state.active === 0 && state.unconfirmed === false; });
+      if (shutdownId && transport.connected !== false) transport.send({ type: "shutdown_confirmed", id: shutdownId, clean });
       publish(); closed = true; clearInterval(projectionTimer); capability.invalidate();
       transport.off("message", receive); transport.off("disconnect", disconnect);
     });

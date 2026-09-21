@@ -4,6 +4,7 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { createInterface } from "node:readline";
 import { hostError, textContent } from "./contracts.mjs";
+import { assertSafeContainedPath } from "../config-runtime/index.mjs";
 
 const key = (value) => createHash("sha256").update(value).digest("hex");
 export const projectIdFor = (root) => key(root);
@@ -84,6 +85,18 @@ export class ProjectCatalog {
   listProjects() { return [...this.projects.values()].sort((a, b) => a.name.localeCompare(b.name)); }
   listSessions(projectId) { return [...this.sessions.values()].filter((s) => s.projectId === projectId).map(({ file, ...s }) => s).sort((a, b) => b.timestamp.localeCompare(a.timestamp)); }
   project(id) { const result = this.projects.get(id); if (!result) throw hostError("PROJECT_NOT_FOUND", 404); return result; }
+  async resume(sessionKey, projectId) {
+    const session = this.sessions.get(sessionKey);
+    if (!session || session.projectId !== projectId) throw hostError("SESSION_NOT_FOUND", 404);
+    await assertSafeContainedPath(this.sessionRoot, session.file);
+    const handle = await regular(session.file, 128 * 1024 * 1024);
+    try {
+      const buffer = Buffer.alloc(16384), { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
+      const header = JSON.parse(buffer.subarray(0, bytesRead).toString().split("\n")[0]);
+      if (header.type !== "session" || header.id !== session.sessionId || await fs.realpath(header.cwd) !== this.project(projectId).path) throw hostError("SESSION_IDENTITY_CHANGED", 409);
+      return { sessionId: session.sessionId, file: session.file };
+    } finally { await handle.close(); }
+  }
   async history(sessionKey, offset = 0, limit = 50) {
     const session = this.sessions.get(sessionKey); if (!session) throw hostError("SESSION_NOT_FOUND", 404);
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000) throw hostError("PAGE_INVALID");
