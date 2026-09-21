@@ -3,28 +3,32 @@ import { randomUUID, createHash } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { atomicWriteJson, readJsonObject } from "../config-runtime/index.mjs";
 import { RpcWorker } from "./rpc-worker.mjs";
-import { acquireOwnership } from "./ownership.mjs";
-import { hostError, terminal, textContent } from "./contracts.mjs";
+import { acquireOwnership, groupAlive } from "./ownership.mjs";
+import { hostError, terminal, textContent, CLI_ACCOUNT_ID } from "./contracts.mjs";
 import { projectPath } from "./inspector.mjs";
 
 export class HostTasks extends EventEmitter {
-  constructor({ configRoot, stack, catalog, models, workerFactory = (options) => new RpcWorker(options), env = process.env }) {
-    super(); Object.assign(this, { configRoot, stack, catalog, models, workerFactory, env });
+  constructor({ configRoot, stack, catalog, models, accounts, workerFactory = (options) => new RpcWorker(options), env = process.env }) {
+    super(); Object.assign(this, { configRoot, stack, catalog, models, accounts, workerFactory, env });
     this.tasks = new Map(); this.workers = new Map(); this.requests = new Map(); this.saving = Promise.resolve(); this.closing = false;
     this.running = new Map();
+    this.accountReleases = new Map();
+    this.leases = new Map();
     this.file = path.join(configRoot, "only-my-pi/host/tasks.json");
   }
   async load() {
     const state = await readJsonObject(this.configRoot, this.file).catch((error) => { if (error.code === "ENOENT") return null; throw error; });
     if (state && (!Array.isArray(state.tasks) || state.tasks.length > 1000)) throw hostError("TASK_STATE_INVALID");
     for (const task of state?.tasks ?? []) {
+      if (task.worker && (!Number.isSafeInteger(task.worker.pid) || task.worker.pid < 1 || groupAlive(task.worker.pid))) throw hostError("WORKER_RECONCILIATION_REQUIRED", 409);
+      if (task.error === "RPC_TERMINATION_UNCONFIRMED" && !task.worker) throw hostError("WORKER_RECONCILIATION_REQUIRED", 409);
       if (!terminal(task.status)) { task.status = "interrupted"; task.error = "HOST_RESTARTED"; }
       task.worker = null;
       this.tasks.set(task.taskId, task); this.requests.set(task.requestId, task.taskId);
     }
     await this.persist();
   }
-  summary(task) { return { taskId: task.taskId, requestId: task.requestId, projectId: task.projectId, model: task.model, prompt: task.prompt.slice(0, 200), status: task.status,
+  summary(task) { return { taskId: task.taskId, requestId: task.requestId, projectId: task.projectId, accountId: task.accountId ?? null, model: task.model, prompt: task.prompt.slice(0, 200), status: task.status,
     sessionId: task.sessionId, createdAt: task.createdAt, updatedAt: task.updatedAt, error: task.error ?? null, tool: task.tool ?? null }; }
   public(task) { return structuredClone({ ...this.summary(task), prompt: task.prompt, partial: task.partial ?? "", messages: task.messages.slice(-50).map((m) => ({ ...m, text: m.text.slice(0, 16384) })) }); }
   snapshot() { return [...this.tasks.values()].slice(-100).map((t) => this.summary(t)); }
@@ -39,32 +43,52 @@ export class HostTasks extends EventEmitter {
     if (!this.checkpoint) this.checkpoint = setTimeout(() => { this.checkpoint = null; void this.persist().catch(() => { this.persistenceError = true; }); }, 250);
   }
   async start(command) {
+    if (this.accounts && (typeof command.accountId !== "string" || !command.accountId)) throw hostError("ACCOUNT_BINDING_REQUIRED", 409);
+    if (!this.accounts && command.accountId !== undefined) throw hostError("ACCOUNT_BINDING_UNAVAILABLE", 409);
     if (this.closing) throw hostError("HOST_STOPPING", 409);
     if (this.persistenceError) throw hostError("HOST_STORAGE_FAILED", 503);
     const prior = this.requests.get(command.requestId);
-    const requestDigest = createHash("sha256").update(JSON.stringify([command.projectId, command.model, command.prompt])).digest("hex");
+    const requestDigest = createHash("sha256").update(JSON.stringify([command.projectId, command.model, command.prompt, ...(this.accounts ? [command.accountId] : [])])).digest("hex");
     const existing = (id) => { const task = this.tasks.get(id); if (task.requestDigest !== requestDigest) throw hostError("REQUEST_ID_CONFLICT", 409); return this.public(task); };
     if (prior) return existing(prior);
     if (this.tasks.size >= 1000 || this.workers.size >= 4) throw hostError("TASK_CAPACITY_REACHED", 429);
     const project = this.catalog.project(command.projectId);
     if (!project.available) throw hostError("PROJECT_UNAVAILABLE", 409);
-    if (!(await this.models()).some((m) => m.id === command.model)) throw hostError("MODEL_UNAVAILABLE", 409);
+    const release = this.accounts?.beginUse(command.accountId);
+    let transferred = false;
+    try {
+    if (this.accounts && command.accountId !== CLI_ACCOUNT_ID) {
+      const account = await this.accounts.get(command.accountId);
+      if (!command.model.startsWith(`${account.providerId}/`)) throw hostError("ACCOUNT_MODEL_MISMATCH", 409);
+    }
+    if (!(await this.models(command.accountId)).some((m) => m.id === command.model)) throw hostError("MODEL_UNAVAILABLE", 409);
     if (this.requests.has(command.requestId)) return existing(this.requests.get(command.requestId));
     if (this.closing) throw hostError("HOST_STOPPING", 409);
     if ([...this.tasks.values()].filter((t) => !terminal(t.status)).length >= 4) throw hostError("TASK_CAPACITY_REACHED", 429);
-    const task = { taskId: randomUUID(), requestId: command.requestId, requestDigest, projectId: project.projectId, model: command.model,
+    const task = { taskId: randomUUID(), requestId: command.requestId, requestDigest, projectId: project.projectId, model: command.model, ...(this.accounts ? { accountId: command.accountId } : {}),
       prompt: command.prompt, status: "starting", sessionId: null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     this.requests.set(command.requestId, task.taskId); this.tasks.set(task.taskId, task);
-    await this.persist(); this.changed(task);
+    try { await this.persist(); }
+    catch {
+      this.persistenceError = true;
+      this.requests.delete(command.requestId); this.tasks.delete(task.taskId);
+      throw hostError("HOST_STORAGE_FAILED", 503);
+    }
+    if (release) { this.accountReleases.set(task.taskId, release); transferred = true; }
+    this.changed(task);
     const running = this.run(task, project).catch(async () => { task.status = "failed"; task.error = "TASK_INTERNAL_FAILURE"; this.changed(task); await this.persist().catch(() => {}); }).finally(() => this.running.delete(task.taskId));
     this.running.set(task.taskId, running);
     return this.public(task);
+    } finally { if (!transferred) release?.(); }
   }
   async run(task, project) {
     let lease;
     const sessionRoot = path.join(this.catalog.sessionRoot, `omp-${project.projectId}`);
-    const worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, sessionRoot, env: this.env,
-      onIdentity: async (identity) => { task.worker = identity; await this.persist(); } });
+    let worker;
+    try {
+      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, accountId: task.accountId, sessionRoot, env: this.env,
+        onIdentity: async (identity) => { task.worker = identity; await this.persist(); } });
+    } catch (error) { this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId); throw error; }
     this.workers.set(task.taskId, worker);
     let settledResolve, failed = false, stopping = false;
     const settled = new Promise((resolve) => { settledResolve = resolve; });
@@ -96,6 +120,7 @@ export class HostTasks extends EventEmitter {
       const state = await worker.start();
       task.worker = worker.identity; task.sessionId = state.sessionId;
       lease = await acquireOwnership(this.configRoot, "session", String(state.sessionId));
+      this.leases.set(task.taskId, lease);
       await this.persist();
       if (task.status === "cancelling" || this.closing) { stopping = true; await worker.cancel(); task.status = "cancelled"; return; }
       task.status = "running"; this.changed(task);
@@ -109,10 +134,15 @@ export class HostTasks extends EventEmitter {
     finally {
       clearTimeout(deadline);
       stopping = true;
-      try { await worker.stop(); task.worker = null; }
+      let terminationConfirmed = false;
+      try { await worker.stop(); task.worker = null; terminationConfirmed = true; }
       catch { task.status = "failed"; task.error = "RPC_TERMINATION_UNCONFIRMED"; }
-      if (!task.worker) try { await lease?.release(); } catch { task.status = "failed"; task.error = "SESSION_RELEASE_FAILED"; }
-      this.workers.delete(task.taskId); task.updatedAt = new Date().toISOString(); this.changed(task); await this.persist();
+      if (terminationConfirmed) {
+        this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId);
+        try { await lease?.release(); this.leases.delete(task.taskId); } catch { task.status = "failed"; task.error = "SESSION_RELEASE_FAILED"; }
+        this.workers.delete(task.taskId);
+      }
+      task.updatedAt = new Date().toISOString(); this.changed(task); await this.persist();
       await this.catalog.scan().catch(() => {});
     }
   }
@@ -129,7 +159,16 @@ export class HostTasks extends EventEmitter {
     for (const task of this.tasks.values()) if (!terminal(task.status)) await this.cancel(task.taskId);
     await Promise.all([...this.workers.values()].map((w) => w.stop()));
     await Promise.all([...this.running.values()]);
+    // A previously unconfirmed stop can succeed during Host shutdown. Only now
+    // release its reservation and persist the reconciled process state.
+    for (const [id] of this.workers) {
+      const task = this.tasks.get(id); task.worker = null;
+      if (task.error === "RPC_TERMINATION_UNCONFIRMED") task.error = "RPC_TERMINATION_RECOVERED";
+      this.accountReleases.get(id)?.(); this.accountReleases.delete(id);
+      await this.leases.get(id)?.release(); this.leases.delete(id);
+      this.workers.delete(id);
+    }
     clearTimeout(this.checkpoint); this.checkpoint = null;
-    await this.saving;
+    await this.persist();
   }
 }

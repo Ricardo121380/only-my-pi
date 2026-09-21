@@ -60,7 +60,7 @@ it("Markdown neither executes HTML nor loads remote images or unsafe links", () 
   expect(container.querySelector("script")).toBeNull(); expect(container.querySelector("img")).toBeNull();
   expect(container.querySelectorAll("a").length).toBe(1); expect(container.querySelector("a")?.rel).toBe("noopener noreferrer");
 });
-const snapshot: HostSnapshot = { protocol: 1, version: "phase1-v1", epoch: "epoch", seq: 1, indexing: false, runtime: { stackId: "fixture", sourceCommit: null }, projects: [], tasks: [], diagnostics: [] };
+const snapshot: HostSnapshot = { protocol: 2, version: "phase2-v1", epoch: "epoch", seq: 1, indexing: false, runtime: { stackId: "fixture", sourceCommit: null }, projects: [], tasks: [], diagnostics: [] };
 it("duplicate events are ignored; gap/old host require new snapshot", () => {
   expect(applyEvent(snapshot, { type: "projects", epoch: "epoch", seq: 1, data: [] })).toBe(snapshot);
   expect(() => applyEvent(snapshot, { type: "projects", epoch: "epoch", seq: 4, data: [] })).toThrow("EVENT_GAP");

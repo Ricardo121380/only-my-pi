@@ -15,9 +15,10 @@ export function useHost(taskId: string | null) {
     const controller = new AbortController();
     async function connect() {
       try {
-        await api("/api/state", undefined, controller.signal);
+        const state = await api<HostSnapshot>("/api/state", undefined, controller.signal);
+        if (state.protocol !== 2) throw new Error("PROTOCOL_MISMATCH");
         if (disposed) return;
-        socket = new WebSocket(`${location.origin.replace(/^http/, "ws")}/events?protocol=1`);
+        socket = new WebSocket(`${location.origin.replace(/^http/, "ws")}/events?protocol=2`);
         socket.onmessage = ({ data }) => {
           try {
             const event = JSON.parse(data) as HostEvent;

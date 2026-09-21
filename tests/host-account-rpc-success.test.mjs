@@ -1,0 +1,86 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import http from "node:http";
+import { fileURLToPath } from "node:url";
+import { RpcWorker } from "../packages/host/rpc-worker.mjs";
+import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { loadDistribution } from "../packages/distribution/runtime.mjs";
+
+test("real account RPC requests keep two stored identities and readonly tool registry", { timeout: 30000 }, async (t) => {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-rpc-accounts-")));
+  t.after(() => fs.rm(root, { recursive: true }));
+  const received = [];
+  let rejectAuth = false;
+  let requestWrite = false;
+  const server = http.createServer(async (req, res) => {
+    let body = ""; for await (const chunk of req) body += chunk;
+    received.push({ key: req.headers.authorization, body: JSON.parse(body) });
+    if (rejectAuth) { res.writeHead(401, { "content-type": "application/json" }); res.end(JSON.stringify({ error: { message: "fixture credential revoked", type: "authentication_error" } })); return; }
+    res.writeHead(200, { "content-type": "text/event-stream" });
+    const choices = requestWrite ? [
+      { delta: { role: "assistant", tool_calls: [{ index: 0, id: "write-attempt", type: "function", function: { name: "write", arguments: JSON.stringify({ path: path.join(root, "forbidden.txt"), content: "must not exist" }) } }] }, finish_reason: null },
+      { delta: {}, finish_reason: "tool_calls" },
+    ] : [{ delta: { role: "assistant", content: "fixture done" }, finish_reason: null }, { delta: {}, finish_reason: "stop" }];
+    requestWrite = false;
+    for (const choice of choices) res.write(`data: ${JSON.stringify({ id: "fixture", object: "chat.completion.chunk", created: 1, model: "fixture", choices: [{ index: 0, ...choice }] })}\n\n`);
+    res.end("data: [DONE]\n\n");
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise((resolve) => { server.closeAllConnections(); server.close(resolve); }));
+  await fs.symlink(path.dirname(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")))), path.join(root, "pi"));
+  const extension = path.join(root, "fixture.mjs");
+  await fs.writeFile(extension, 'export default function(pi) { pi.registerFlag("perm", {description:"Fixture flag", type:"string"}); }');
+  const catalog = new AccountCatalog(root);
+  const installedStack = process.env.OMP_TEST_STACK_PACKAGE ? await loadDistribution({ packageRoot: process.env.OMP_TEST_STACK_PACKAGE }) : null;
+  if (process.env.OMP_TEST_STACK_PACKAGE) assert.ok(installedStack, "explicit installed stack must resolve");
+  for (const key of ["fixture-a", "fixture-b", "fixture-cli"]) {
+    const account = key === "fixture-cli" ? { accountId: "cli-readonly" } : await catalog.create({ providerId: "fixture", name: key, authType: "api_key" });
+    const paths = key === "fixture-cli" ? { authPath: path.join(root, "auth.json"), modelsPath: path.join(root, "models.json") } : await catalog.runtimePaths(account.accountId);
+    await fs.writeFile(paths.authPath, JSON.stringify({ fixture: { type: "api_key", key } }));
+    await fs.writeFile(paths.modelsPath, JSON.stringify({ providers: { fixture: { baseUrl: `http://127.0.0.1:${server.address().port}/v1`, api: "openai-completions", models: [{ id: "fixture", name: "Fixture", reasoning: false, input: ["text"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 32000, maxTokens: 128 }] } } }));
+    const worker = new RpcWorker({ stack: installedStack ?? { root, nodePath: process.execPath, piCliPath: "unused", stackId: `sha256:${"a".repeat(64)}` }, configRoot: root, cwd: root, model: "fixture/fixture", accountId: account.accountId, sessionRoot: path.join(root, "sessions"), env: { PATH: process.env.PATH }, ...(installedStack ? {} : { extensionResolver: async () => ({ extensions: [extension] }) }) });
+    const extensionErrors = [];
+    worker.on("event", (event) => { if (event.type === "extension_error") extensionErrors.push(event.code ?? event.event ?? "extension_error"); });
+    t.after(() => worker.stop());
+    const state = await worker.start(); assert.equal(state.model.provider, "fixture");
+    const prompt = async () => {
+      const messages = [];
+      let onEvent;
+      const settled = new Promise((resolve) => {
+        onEvent = (event) => { if (event.type === "message_end") messages.push(event.message); if (event.type === "agent_settled") resolve(); };
+        worker.on("event", onEvent);
+      });
+      try { await worker.command("prompt", { message: "Say done" }); await settled; return messages; }
+      finally { worker.off("event", onEvent); }
+    };
+    assert.ok((await prompt()).some((m) => m.role === "assistant" && m.stopReason === "stop"));
+    rejectAuth = true;
+    const denied = await prompt();
+    assert.ok(denied.some((m) => m.role === "assistant" && m.stopReason === "error"));
+    rejectAuth = false;
+    requestWrite = true;
+    const writeAttempt = await prompt();
+    assert.ok(writeAttempt.some((m) => m.role === "toolResult" && m.isError === true));
+    await assert.rejects(fs.access(path.join(root, "forbidden.txt")), { code: "ENOENT" });
+    const beforeRemoval = received.length;
+    await fs.unlink(paths.authPath);
+    const removed = await prompt();
+    assert.ok(removed.some((m) => m.role === "assistant" && m.stopReason === "error"));
+    assert.equal(received.length, beforeRemoval, "removed credentials must prevent another HTTP request");
+    await worker.stop();
+    assert.deepEqual(extensionErrors, [], "every audited extension must initialize, not just the model stream");
+    const files = await fs.readdir(path.join(root, "sessions"));
+    const session = files.find((file) => file.endsWith(`${state.sessionId}.jsonl`));
+    assert.ok(session, "the bound session must be persisted");
+    const entries = (await fs.readFile(path.join(root, "sessions", session), "utf8")).trim().split("\n").map((line) => JSON.parse(line));
+    assert.ok(entries.some((entry) => entry.customType === "omp-account-binding" && entry.data.accountId === account.accountId));
+  }
+  assert.deepEqual(received.map((r) => r.key), [...Array(4).fill("Bearer fixture-a"), ...Array(4).fill("Bearer fixture-b"), ...Array(4).fill("Bearer fixture-cli")]);
+  for (const request of received) {
+    const tools = request.body.tools.map((tool) => tool.function.name).sort();
+    assert.deepEqual(tools, ["find", "grep", "ls", "read"]);
+  }
+});

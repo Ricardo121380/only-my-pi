@@ -8,9 +8,13 @@ import { atomicWriteJson, ensureConfigDirectory, readJsonObject } from "../confi
 import { acquireOwnership, processIdentity, groupAlive } from "./ownership.mjs";
 import { ProjectCatalog } from "./catalog.mjs";
 import { HostTasks } from "./tasks.mjs";
+import { AccountCatalog } from "./accounts.mjs";
+import { accountAuth } from "./account-auth.mjs";
+import { AccountOAuth } from "./account-oauth.mjs";
+import { recoverAuthProcesses } from "./auth-process.mjs";
 import { listModels } from "./models.mjs";
 import { listFiles, readFile, gitDiff } from "./inspector.mjs";
-import { HOST_PROTOCOL, HOST_VERSION, hostError, validateCommand, terminal } from "./contracts.mjs";
+import { HOST_PROTOCOL, HOST_VERSION, CLI_ACCOUNT_ID, hostError, validateCommand, terminal } from "./contracts.mjs";
 import { projectRunRecord } from "../direct-agent/contracts.mjs";
 import { createRunRecordStore } from "../run-management/index.mjs";
 
@@ -53,6 +57,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
   await fs.access(path.join(assetsRoot, "index.html"));
   await ensureConfigDirectory(configRoot, "only-my-pi/host");
   const lock = await acquireOwnership(configRoot, "host", "singleton", { recover: (old) => recoverWorkers(configRoot, old) });
+  try { await recoverAuthProcesses(configRoot); } catch (error) { await lock.release(); throw error; }
   const root = path.join(configRoot, "only-my-pi/host"), endpointFile = path.join(root, "endpoint.json");
   const epoch = randomUUID(), controlToken = secret(), cookieName = `omp_${epoch.replaceAll("-", "")}`;
   const sessions = new Set(), pairs = new Map(), clients = new Set();
@@ -61,13 +66,24 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
   const projectsFile = path.join(root, "projects.json");
   const previous = await readJsonObject(configRoot, projectsFile).catch(async (e) => { if (e.code === "ENOENT") return null; await lock.release(); throw e; });
   const catalog = new ProjectCatalog({ sessionRoot, projects: previous?.projects ?? [] });
+  const accounts = new AccountCatalog(configRoot);
+  const oauth = new AccountOAuth({ stack, configRoot, accounts, env });
   let modelCache, modelTime = 0;
   const modelAbort = new AbortController();
+  const authAbort = new AbortController(), authOperations = new Set();
   const modelList = () => {
-    if (!modelCache || Date.now() - modelTime > 10000) { modelTime = Date.now(); modelCache = Promise.resolve().then(() => modelsProvider ? modelsProvider() : listModels({ stack, configRoot, env, signal: modelAbort.signal })).catch((error) => { modelCache = null; throw error; }); }
+    if (!modelCache || Date.now() - modelTime > 10000) { modelTime = Date.now(); modelCache = Promise.resolve().then(() => modelsProvider ? modelsProvider() : listModels({ stack, configRoot, accountId: CLI_ACCOUNT_ID, env, signal: modelAbort.signal })).catch((error) => { modelCache = null; throw error; }); }
     return modelCache;
   };
-  const tasks = new HostTasks({ configRoot, stack, catalog, workerFactory, models: modelList, env });
+  const accountModels = async (accountId) => {
+    if (accountId === CLI_ACCOUNT_ID) return modelList();
+    const release = accounts.beginUse(accountId);
+    try {
+      await accounts.get(accountId);
+      return await (modelsProvider ? modelsProvider(accountId) : listModels({ stack, configRoot, accountId, env, signal: modelAbort.signal }));
+    } finally { release(); }
+  };
+  const tasks = new HostTasks({ configRoot, stack, catalog, accounts, workerFactory, models: accountModels, env });
   try { await tasks.load(); } catch (error) { await lock.release(); throw error; }
   const snapshot = () => ({ protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, seq, indexing: scanRunning,
     runtime: { stackId: stack.stackId, sourceCommit: stack.distribution?.sourceCommit ?? null }, projects: catalog.listProjects(), tasks: tasks.snapshot(), diagnostics: catalog.diagnostics });
@@ -117,9 +133,42 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
         return response(res, 200, { protocol: HOST_PROTOCOL });
       }
       if (url.pathname.startsWith("/api/")) {
+        if (stopping) throw hostError("HOST_STOPPING", 503);
         if (!authenticated(req)) throw hostError("AUTH_REQUIRED", 401);
+        if (url.pathname === "/api/accounts") {
+          if (req.method === "GET") return response(res, 200, { protocol: 1, authentication: "api_key", cliReference: { accountId: CLI_ACCOUNT_ID, name: "CLI 配置（只读引用）", readOnly: true }, accounts: await accounts.list() });
+          if (req.method !== "POST") throw hostError("METHOD_DENIED", 405);
+          if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
+          if (req.headers["x-omp-account-protocol"] !== "1") throw hostError("ACCOUNT_PROTOCOL_MISMATCH", 409);
+          const input = await body(req);
+          if (input?.authType === "oauth" && !(await oauth.providers()).some((p) => p.providerId === input.providerId)) throw hostError("ACCOUNT_PROVIDER_UNSUPPORTED", 400);
+          return response(res, 201, { protocol: 1, authentication: "not_connected", account: await accounts.create(input) });
+        }
+        if (url.pathname === "/api/account-action") {
+          if (req.method !== "POST") throw hostError("METHOD_DENIED", 405);
+          if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
+          if (req.headers["x-omp-account-protocol"] !== "1") throw hostError("ACCOUNT_PROTOCOL_MISMATCH", 409);
+          const input = await body(req);
+          if (!input || typeof input.accountId !== "string" || Object.keys(input).some((key) => !["accountId", "action"].includes(key)) || !input.action || typeof input.action !== "object") throw hostError("ACCOUNT_INPUT_INVALID");
+          const { accountId, action } = input;
+          if (action.type === "oauthStart" && Object.keys(action).join() === "type") return response(res, 202, await oauth.start(accountId));
+          if (["oauthAnswer", "oauthCancel"].includes(action.type)) {
+            const keys = Object.keys(action).sort().join();
+            if ((action.type === "oauthAnswer" && keys !== "flowId,promptId,type,value") || (action.type === "oauthCancel" && keys !== "flowId,type")) throw hostError("ACCOUNT_INPUT_INVALID");
+            if (oauth.snapshot(action.flowId).accountId !== accountId) throw hostError("ACCOUNT_AUTH_FLOW_EXPIRED", 409);
+            return response(res, 200, action.type === "oauthCancel" ? await oauth.cancel(action.flowId) : oauth.answer(action.flowId, action.promptId, action.value));
+          }
+          if (action.type === "configure" && Object.keys(action).sort().join() === "config,type") return response(res, 200, await accounts.configure(accountId, action.config));
+          if (action.type === "rename" && Object.keys(action).sort().join() === "name,type") return response(res, 200, await accounts.rename(accountId, action.name));
+          if (action.type === "remove" && Object.keys(action).join() === "type") return response(res, 200, await accounts.remove(accountId));
+          const operation = accountAuth({ stack, configRoot, accounts, accountId, input: action, env, signal: authAbort.signal });
+          authOperations.add(operation);
+          try { return response(res, 200, await operation); }
+          finally { authOperations.delete(operation); }
+        }
         if (req.method === "POST" && url.pathname === "/api/command") {
           if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
+          if (req.headers["x-omp-host-protocol"] !== String(HOST_PROTOCOL)) throw hostError("PROTOCOL_MISMATCH", 409);
           const command = validateCommand(await body(req));
           if (command.type === "addProject") { const project = await catalog.add(command.path); await atomicWriteJson(configRoot, projectsFile, { projects: catalog.listProjects() }); publish("projects", catalog.listProjects()); return response(res, 200, project); }
           if (command.type === "startTask") return response(res, 202, await tasks.start(command));
@@ -127,7 +176,13 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
         }
         if (req.method !== "GET") throw hostError("METHOD_DENIED", 405);
         if (url.pathname === "/api/state") return response(res, 200, snapshot());
-        if (url.pathname === "/api/models") return response(res, 200, { models: await modelList() });
+        if (url.pathname === "/api/oauth-providers") return response(res, 200, { providers: await oauth.providers() });
+        if (url.pathname === "/api/oauth-flow") return response(res, 200, oauth.snapshot(url.searchParams.get("flowId")));
+        if (url.pathname === "/api/models") {
+          const accountId = url.searchParams.get("accountId");
+          if (!accountId) throw hostError("ACCOUNT_BINDING_REQUIRED", 409);
+          return response(res, 200, { accountId, models: await accountModels(accountId) });
+        }
         if (url.pathname === "/api/sessions") return response(res, 200, { sessions: catalog.listSessions(url.searchParams.get("projectId")) });
         if (url.pathname === "/api/history") return response(res, 200, await catalog.history(url.searchParams.get("sessionKey"), Number(url.searchParams.get("offset") ?? 0)));
         if (url.pathname === "/api/tool-output") return response(res, 200, await catalog.toolOutput(url.searchParams.get("sessionKey"), url.searchParams.get("entryId"), Number(url.searchParams.get("offset") ?? 0)));
@@ -173,6 +228,8 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
     stopping = true;
     closed = (async () => {
       clearInterval(scanTimer); clearTimeout(flushTimer); modelAbort.abort();
+      authAbort.abort();
+      await Promise.allSettled([...authOperations, oauth.stop()]);
       try { await tasks.stop(); }
       finally {
         while (scanRunning) await pause(10);

@@ -62,6 +62,15 @@ export default function ompDirect(pi: ExtensionAPI): void {
   const configRoot = process.env.PI_CODING_AGENT_DIR ?? path.join(os.homedir(), ".pi", "agent");
   const controller = createDirectSessionController({ pi, configRoot, environment: process.env });
 
+  // Only the trusted SDK bootstrap publishes this process-local object. No
+  // environment flag or serializable RPC command can create this capability.
+  pi.events.on("only-my-pi:host-interaction:v1", (payload: any) => {
+    if (controller.hostInteraction || !payload?.capability || typeof payload.register !== "function") return;
+    if (!["bind", "allows", "invalidate"].every((key) => typeof payload.capability[key] === "function")) return;
+    controller.hostInteraction = payload.capability;
+    payload.register(controller);
+  });
+
   pi.events.on(DIRECT_RUNTIME_EVENT, (payload: any) => {
     controller.attachOrchestrator(payload?.formatVersion === 1 && payload?.status === "READY" ? payload.orchestrator : null);
   });
@@ -75,6 +84,7 @@ export default function ompDirect(pi: ExtensionAPI): void {
     parameters: CodingAccessParameters,
     executionMode: "sequential",
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
+      controller.hostInteraction?.bind(ctx);
       return controller.requestCodingAccess(params, ctx, signal) as any;
     },
   });
@@ -123,9 +133,10 @@ export default function ompDirect(pi: ExtensionAPI): void {
   });
 
   pi.on("session_start", async (event, ctx) => {
+    controller.hostInteraction?.bind(ctx);
     await controller.start(event, ctx);
   });
-  pi.on("session_shutdown", (_event, ctx) => controller.shutdown(ctx));
+  pi.on("session_shutdown", (_event, ctx) => { controller.hostInteraction?.invalidate(); controller.shutdown(ctx); });
   pi.on("before_agent_start", (event) => controller.beforeAgentStart(event));
   pi.on("tool_call", (event) => controller.blockToolCall(event));
   pi.on("user_bash", (event) => controller.inspectUserBash(event));

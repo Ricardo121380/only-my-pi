@@ -6,6 +6,8 @@ import { spawn } from "node:child_process";
 import test from "node:test";
 import { RpcWorker } from "../packages/host/rpc-worker.mjs";
 import { groupAlive } from "../packages/host/ownership.mjs";
+import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { fileURLToPath } from "node:url";
 
 async function fixture(t, malformed = false) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-rpc-wire-"))); t.after(() => fs.rm(root, { recursive: true, force: true }));
@@ -33,4 +35,22 @@ test("account switching waits for old process termination before starting a new 
   await a.cancel(); assert.equal(groupAlive(oldPid), false);
   await b.start(); assert.notEqual(b.identity.pid, oldPid); assert.equal(groupAlive(oldPid), false);
   await b.cancel();
+});
+test("account RPC entry fails closed without stored auth despite ambient and CLI credentials", async (t) => {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-account-rpc-")));
+  t.after(() => fs.rm(root, { recursive: true }));
+  await fs.symlink(path.dirname(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")))), path.join(root, "pi"));
+  const catalog = new AccountCatalog(root);
+  const account = await catalog.create({ providerId: "openai", name: "Empty", authType: "api_key" });
+  const sentinel = JSON.stringify({ openai: { type: "api_key", key: "cli-sentinel" } });
+  await fs.writeFile(path.join(root, "auth.json"), sentinel);
+  const extension = path.join(root, "never-loaded.mjs");
+  const worker = new RpcWorker({ stack: { root, nodePath: process.execPath, piCliPath: "unused", stackId: `sha256:${"a".repeat(64)}` }, configRoot: root, cwd: root, model: "openai/test", accountId: account.accountId, sessionRoot: path.join(root, "sessions"), env: { PATH: process.env.PATH, OPENAI_API_KEY: "ambient-sentinel" }, extensionResolver: async () => ({ extensions: [extension] }) });
+  t.after(() => worker.stop());
+  const events = []; worker.on("event", (event) => events.push(event));
+  await assert.rejects(worker.start());
+  await worker.stop();
+  assert.deepEqual(events, [{ type: "extension_error", code: "ACCOUNT_RPC_START_FAILED" }]);
+  assert.equal(groupAlive(worker.child.pid), false);
+  assert.equal(await fs.readFile(path.join(root, "auth.json"), "utf8"), sentinel);
 });

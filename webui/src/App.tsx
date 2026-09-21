@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { HostTask, Message, ModelChoice, Project, Session, TaskStatus } from "../../packages/host/contracts";
+import type { AccountDirectory, HostTask, Message, ModelChoice, Project, Session, TaskStatus } from "../../packages/host/contracts";
 import { api, errorText, query } from "./api";
 import { useHost } from "./useHost";
 import { Inspector } from "./Inspector";
@@ -18,10 +18,12 @@ export function App() {
   const [projectId, setProjectId] = useState(""), [session, setSession] = useState<Session | null>(null), [taskId, setTaskId] = useState<string | null>(() => sessionStorage.getItem("omp.selectedTask"));
   const { snapshot, task, connection, error, setError, setTask } = useHost(taskId);
   const [selectedModel, setSelectedModel] = useState("");
+  const [accounts, setAccounts] = useState<AccountDirectory | null>(null), [accountId, setAccountId] = useState("");
+  const [accountRevision, setAccountRevision] = useState(0);
   const [addError, setAddError] = useState(""), [exploreOpen, setExploreOpen] = useState(false);
   const [models, setModels] = useState<ModelChoice[]>([]), [sessions, setSessions] = useState<Session[]>([]), [historyPage, setHistoryPage] = useState<HistoryPage>({ messages: [], nextOffset: null });
   const [historyBusy, setHistoryBusy] = useState(false), [pageOffset, setPageOffset] = useState(0), [projectPath, setProjectPath] = useState(""), [adding, setAdding] = useState(false), [addOpen, setAddOpen] = useState(false), [panel, setPanel] = useState("chat"), [follow, setFollow] = useState(true), [revision, setRevision] = useState(0);
-  const scroller = useRef<HTMLDivElement>(null), pending = useRef<{ model: string; prompt: string; projectId: string; requestId: string } | null>(null);
+  const scroller = useRef<HTMLDivElement>(null), pending = useRef<{ model: string; prompt: string; projectId: string; accountId: string; requestId: string } | null>(null);
   const cancelPending = useRef(false);
   const [inspectOpen, setInspectOpen] = useState(() => window.innerWidth > 1100), [dockOpen, setDockOpen] = useState(false), [search, setSearch] = useState("");
   const [width, setWidth] = useState(window.innerWidth), [sidebarHidden, setSidebarHidden] = useState(false), [partitionOpen, setPartitionOpen] = useState(true), [folded, setFolded] = useState(false), [feedTab, setFeedTab] = useState("chat");
@@ -35,8 +37,19 @@ export function App() {
   const visibleTask = task?.projectId === projectId && !session ? task : null;
   const projectTasks = snapshot?.tasks.filter((item) => item.projectId === projectId) ?? [];
   const connected = connection === "已连接";
-  async function loadModels() { try { setModels((await api<{ models: ModelChoice[] }>("/api/models")).models); } catch (cause) { setError(errorText(cause)); } }
-  useEffect(() => { if (connected) void loadModels(); }, [connected]);
+  const modelRequest = useRef(0);
+  async function loadModels() {
+    const version = ++modelRequest.current;
+    if (!accountId) { setModels([]); return; }
+    try { const result = await api<{ models: ModelChoice[] }>(query("models", { accountId })); if (version === modelRequest.current) setModels(result.models); }
+    catch (cause) { if (version === modelRequest.current) { setModels([]); setError(errorText(cause)); } }
+  }
+  useEffect(() => {
+    const controller = new AbortController();
+    if (connected) void api<AccountDirectory>("/api/accounts", undefined, controller.signal).then((value) => { if (!controller.signal.aborted) { setAccounts(value); setAccountId((id) => id === value.cliReference.accountId || value.accounts.some((a) => a.accountId === id) ? id : ""); } }).catch((cause) => { if (!controller.signal.aborted) setError(errorText(cause)); });
+    return () => controller.abort();
+  }, [connected, accountRevision]);
+  useEffect(() => { setModels([]); setSelectedModel(""); if (connected) void loadModels(); return () => { modelRequest.current++; }; }, [connected, accountId, accountRevision]);
   useEffect(() => {
     if (!snapshot || projectId) return;
     const restored = snapshot.tasks.find((item) => item.taskId === taskId);
@@ -60,8 +73,9 @@ export function App() {
   function fresh() { setSession(null); setTaskId(null); setSuggestion({text:"",key:Date.now()}); pending.current = null; setPanel("chat"); requestAnimationFrame(() => document.getElementById("prompt")?.focus()); }
   async function send(model: string, prompt: string) {
     if (!project) throw new Error("PROJECT_REQUIRED");
+    if (!accountId) throw new Error("ACCOUNT_BINDING_REQUIRED");
     const previous = pending.current;
-    const command = previous?.model === model && previous.prompt === prompt && previous.projectId === projectId ? previous : { model, prompt, projectId, requestId: crypto.randomUUID() };
+    const command = previous?.model === model && previous.prompt === prompt && previous.projectId === projectId && previous.accountId === accountId ? previous : { model, prompt, projectId, accountId, requestId: crypto.randomUUID() };
     pending.current = command;
     try { const result = await api<HostTask>("/api/command", { type: "startTask", ...command }); setSession(null); setTaskId(result.taskId); setTask(result); setFollow(true); pending.current = null; setError(""); }
     catch (cause) { setError(errorText(cause)); throw cause; }
@@ -95,7 +109,7 @@ export function App() {
       {item.projectId === projectId && !folded && <div className="sessions">{projectTasks.slice(0, 15).map((item) => <button className={`session-item ${taskId === item.taskId && !session ? "selected" : ""}`} key={item.taskId} onClick={() => { setSession(null); setTaskId(item.taskId); setPanel("chat"); }}><Icon name="file" /><span className="grow"><span className="session-name cut host-block">{item.prompt || "只读分析"}</span><span className="session-meta">{labels[item.status]}</span></span>{active(item.status) && <span className="dot accent" />}</button>)}
       <div className="between host-history-label"><span>完整历史</span><button className="linkbtn" onClick={() => setRevision((n) => n + 1)}>刷新</button></div>
       {sessions.map((item) => <button className={`session-item ${session?.sessionKey === item.sessionKey ? "selected" : ""}`} key={item.sessionKey} onClick={() => openHistory(item)}><Icon name="file" /><span className="grow"><span className="session-name cut host-block">{item.name}</span><span className="session-meta">只读历史</span></span></button>)}{!sessions.length && !projectTasks.length && <div className="empty-tree">还没有会话</div>}</div>}</div>)}{!snapshot?.projects.length && <button className="linkbtn" onClick={() => setAddOpen(true)}>+ 新建第一个项目</button>}</div>}</section></nav>
-      <div className="profile"><div className="avatar">O</div><div className="grow"><div className="profile-name">OMP</div><div className="profile-sub">本机运行 · 只读分析</div></div><Appearance /></div>
+      <div className="profile"><div className="avatar">O</div><div className="grow"><div className="profile-name">OMP</div><div className="profile-sub">本机运行 · 只读分析</div></div><Appearance onAccountsChanged={() => setAccountRevision((n) => n + 1)} /></div>
     </aside>
     <main className="canvas" inert={!!overlay}>
       <header className="main-header"><button className="iconbtn round" aria-label="切换导航" aria-expanded={showSidebar} onClick={toggleNavigation}><Icon name="sidebar" /></button><div className="grow"><h1 className="main-title cut">{session?.name || visibleTask?.prompt || project?.name || "Pi Agent"}</h1><div className="breadcrumbs"><span>本机</span><span className="crumb-divider">/</span><button className="crumb cut" onClick={fresh}>{project?.name || "选择项目"}</button><span className="crumb-divider">/</span><span>{session || visibleTask ? "会话" : "概览"}</span></div></div><div className="header-actions"><span className="status-pill" role="status"><span className={`dot ${connected ? "" : "attention"}`} />{connection}</span><button className="iconbtn round" aria-label="会话操作（尚未接入）" disabled><Icon name="more" /></button><div className="view-controls" aria-label="面板控制"><button className="iconbtn round" ref={dockButton} aria-label="切换底部输出" aria-expanded={dockOpen} onClick={() => { setDockOpen(!dockOpen); if (width <= 1100) { setInspectOpen(false); setPanel("chat"); } }}><Icon name="panel-bottom" /></button><span className="control-divider" /><button className="iconbtn round" aria-label="切换项目检查" aria-expanded={inspectOpen} onClick={() => { setInspectOpen(!inspectOpen); setPanel("chat"); }}><Icon name="panel-right" /></button></div></div></header>
@@ -111,7 +125,8 @@ export function App() {
         {visibleTask && <div className="run-status task-status" role="status"><Icon name={active(visibleTask.status) ? "clock" : visibleTask.status === "succeeded" ? "check" : "info"} /><span>{labels[visibleTask.status]}{visibleTask.tool ? ` · 正在调用 ${visibleTask.tool.name}` : ""}{visibleTask.error && <p>{errorText(new Error(visibleTask.error))}</p>}</span></div>}</div></div>}
       </section>
       {!follow && visibleTask && <button className="pill host-latest" onClick={() => setFollow(true)}>回到最新</button>}
-      <Composer key={projectId} projectName={project?.name} suggestion={suggestion} selectedModel={selectedModel} onSelectModel={setSelectedModel} models={models} disabled={!project?.available || !connected} running={active(visibleTask?.status)} cancelling={visibleTask?.status === "cancelling"} onSend={send} onCancel={cancel} onModels={loadModels} />
+      <div className="account-picker"><label>运行账号<select aria-label="运行账号" value={accountId} disabled={!connected || active(visibleTask?.status)} onChange={(e) => { setAccountId(e.target.value); setModels([]); setSelectedModel(""); pending.current = null; }}><option value="">请选择账号（不自动回退）</option>{accounts && <option value={accounts.cliReference.accountId}>{accounts.cliReference.name}</option>}{accounts?.accounts.map((item) => <option key={item.accountId} value={item.accountId}>{item.name} · {item.providerId}</option>)}</select></label>{visibleTask && <span className="metric-fine">本次绑定：{accounts?.accounts.find((a) => a.accountId === visibleTask.accountId)?.name ?? (visibleTask.accountId === "cli-readonly" ? "CLI 只读引用" : visibleTask.accountId ?? "历史未绑定")}</span>}</div>
+      <Composer key={projectId} projectName={project?.name} suggestion={suggestion} selectedModel={selectedModel} onSelectModel={setSelectedModel} models={models} disabled={!project?.available || !connected || !accountId} running={active(visibleTask?.status)} cancelling={visibleTask?.status === "cancelling"} onSend={send} onCancel={cancel} onModels={loadModels} />
     </main>
     <Inspector key={projectId} projectId={projectId} projectName={project?.name} projectPath={project?.path} sessionId={session?.sessionId || visibleTask?.sessionId} hidden={!inspectOpen || overlay === "sidebar"} onClose={() => setInspectOpen(false)} />
     {dockOpen && <OutputDock messages={messages} onClose={closeDock} />}

@@ -4,12 +4,15 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
+import { AccountCatalog } from "../packages/host/accounts.mjs";
 const { fauxProvider, fauxAssistantMessage } = await import(new URL("../node_modules/@earendil-works/pi-ai/dist/index.js", import.meta.resolve("@earendil-works/pi-coding-agent")).href);
 
 test("public ModelRuntime isolates same-provider stored accounts, serialized refresh and sync failure", async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-account-probe-"));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   let refreshes = 0;
+  const catalog = new AccountCatalog(root);
+  const accountPaths = new Map();
   let failSync = false;
   const faux = fauxProvider({ provider: "same-provider" });
   const provider = { ...faux.provider, auth: {
@@ -19,8 +22,9 @@ test("public ModelRuntime isolates same-provider stored accounts, serialized ref
       refresh: async (credential) => { refreshes++; await new Promise((resolve) => setTimeout(resolve, 20)); return { ...credential, access: "refreshed-fixture", expires: Date.now() + 3600000 }; }, toAuth: async (credential) => ({ apiKey: credential.access }) },
   } };
   async function account(id) {
-    const directory = path.join(root, id); await fs.mkdir(directory);
-    const runtime = await ModelRuntime.create({ authPath: path.join(directory, "auth.json"), modelsPath: null, allowModelNetwork: false });
+    const entry = await catalog.create({ providerId: provider.id, name: id, authType: "api_key" });
+    const paths = await catalog.runtimePaths(entry.accountId); accountPaths.set(id, paths);
+    const runtime = await ModelRuntime.create({ ...paths, allowModelNetwork: false });
     runtime.registerNativeProvider(provider); await runtime.refresh({ allowNetwork: false }); return runtime;
   }
   const a = await account("a"); const b = await account("b");
@@ -41,12 +45,12 @@ test("public ModelRuntime isolates same-provider stored accounts, serialized ref
   await a.login(provider.id, "oauth", interaction("unused"));
   refreshes = 0;
   // Re-seed an expired *fixture* credential; never reads or copies user tokens.
-  await fs.writeFile(path.join(root, "a/auth.json"), JSON.stringify({ [provider.id]: { type: "oauth", refresh: "fixture-refresh", access: "expired", expires: 1 } }));
+  await fs.writeFile(accountPaths.get("a").authPath, JSON.stringify({ [provider.id]: { type: "oauth", refresh: "fixture-refresh", access: "expired", expires: 1 } }));
   const auth = await Promise.all(Array.from({ length: 8 }, () => a.getAuth(provider.id)));
   assert.equal(refreshes, 1);
   assert.ok(auth.every((entry) => entry.auth.apiKey === "refreshed-fixture"));
   failSync = true;
   await assert.rejects(b.login(provider.id, "api_key", interaction("stored-before-sync")), (error) => error.name === "CredentialSynchronizationError");
-  const persisted = JSON.parse(await fs.readFile(path.join(root, "b/auth.json"), "utf8"));
+  const persisted = JSON.parse(await fs.readFile(accountPaths.get("b").authPath, "utf8"));
   assert.equal(persisted[provider.id].key, "stored-before-sync");
 });

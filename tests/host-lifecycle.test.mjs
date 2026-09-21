@@ -38,9 +38,9 @@ try { const host=await startHost({configRoot:${JSON.stringify(config)},assetsRoo
   const endpoint = await hostEndpoint(config); const paired = await hostControl(endpoint, "pair", "POST");
   const pair = await fetch(endpoint.origin + "/pair", { method: "POST", headers: { Origin: endpoint.origin, "content-type": "application/json" }, body: JSON.stringify({ token: new URL(paired.url).hash.slice(6) }) });
   const cookie = pair.headers.get("set-cookie").split(";")[0];
-  const request = (body) => fetch(endpoint.origin + "/api/command", { method: "POST", headers: { Origin: endpoint.origin, Cookie: cookie, "content-type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
+  const request = (body) => fetch(endpoint.origin + "/api/command", { method: "POST", headers: { Origin: endpoint.origin, Cookie: cookie, "content-type": "application/json", "x-omp-host-protocol": "2" }, body: JSON.stringify(body) }).then((r) => r.json());
   const p = await request({ type: "addProject", path: project });
-  const task = await request({ type: "startTask", projectId: p.projectId, requestId: "never-replay", model: "mock/test", prompt: "read only" });
+  const task = await request({ type: "startTask", projectId: p.projectId, accountId: "cli-readonly", requestId: "never-replay", model: "mock/test", prompt: "read only" });
   for (let n = 0; n < 100; n++) {
     const state = JSON.parse(await fs.readFile(path.join(config, "only-my-pi/host/tasks.json"), "utf8"));
     if (state.tasks[0]?.worker && state.tasks[0]?.sessionId) break;

@@ -1,11 +1,12 @@
 import Ajv from "ajv";
-export const HOST_PROTOCOL = 1;
-export const HOST_VERSION = "phase1-v1";
+export const HOST_PROTOCOL = 2;
+export const HOST_VERSION = "phase2-v1";
+export const CLI_ACCOUNT_ID = "cli-readonly";
 const id = { type: "string", pattern: "^[a-zA-Z0-9_-]{1,128}$" };
 const schema = { oneOf: [
   { type: "object", additionalProperties: false, required: ["type", "path"], properties: { type: { const: "addProject" }, path: { type: "string", minLength: 1, maxLength: 4096 } } },
-  { type: "object", additionalProperties: false, required: ["type", "requestId", "projectId", "model", "prompt"], properties: {
-    type: { const: "startTask" }, requestId: id, projectId: id, model: { type: "string", pattern: "^[^\\s/]+/.{1,256}$" }, prompt: { type: "string", minLength: 1, maxLength: 32768 } } },
+  { type: "object", additionalProperties: false, required: ["type", "requestId", "projectId", "accountId", "model", "prompt"], properties: {
+    type: { const: "startTask" }, requestId: id, projectId: id, accountId: id, model: { type: "string", pattern: "^[^\\s/]+/.{1,256}$" }, prompt: { type: "string", minLength: 1, maxLength: 32768 } } },
   { type: "object", additionalProperties: false, required: ["type", "taskId"], properties: { type: { const: "cancelTask" }, taskId: id } },
 ] };
 const validate = new Ajv({ strict: true }).compile(schema);

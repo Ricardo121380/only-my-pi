@@ -1,5 +1,19 @@
 /* Host-only content constraints. Visual tokens and product geometry come from prototype.css. */
 #root { height:100%; }
+.account-picker { width:min(100%,944px); margin-inline:auto; padding:4px 22px; display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:11px; }
+.account-picker label { display:flex; align-items:center; gap:8px; min-width:0; }
+.account-picker select { max-width:min(300px,65vw); }
+.account-picker select,.account-settings select { color:var(--text); background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:8px; }
+.account-settings { border-bottom:1px solid var(--line); padding-bottom:20px; margin-bottom:20px; }
+.account-settings fieldset { min-width:0; border:1px solid var(--line); border-radius:14px; margin:12px 0; padding:12px; }
+.account-settings legend { font-size:12px; padding:0 6px; }
+.account-settings form + form,.account-settings details { margin-top:12px; }
+.account-settings summary { cursor:pointer; padding:10px 0; }
+.account-settings .account-list,.account-actions { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+.account-settings [aria-pressed="true"] { outline:2px solid var(--accent); }
+.account-settings p { overflow-wrap:anywhere; margin:8px 0; }
+.account-settings input { min-width:0; max-width:100%; }
+.account-settings :is(button,input,select):focus-visible,.account-picker select:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 .host-block { display:block; }
 .host-history-label { font-size:10px; color:var(--muted); }
 .host-history-label .linkbtn { font-size:10px; }

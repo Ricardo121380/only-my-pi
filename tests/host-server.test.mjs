@@ -36,7 +36,7 @@ async function fixture(t) {
     assert.equal(r.status, 200); return r.headers.get("set-cookie").split(";")[0];
   }
   let cookie = await pair();
-  const request = (route, data, extra = {}) => fetch(host.origin + route, { method: data ? "POST" : "GET", headers: { Origin: host.origin, Cookie: cookie, ...(data ? { "content-type": "application/json" } : {}), ...extra }, ...(data ? { body: JSON.stringify(data) } : {}) });
+  const request = (route, data, extra = {}) => fetch(host.origin + route, { method: data ? "POST" : "GET", headers: { Origin: host.origin, Cookie: cookie, ...(data ? { "content-type": "application/json", "x-omp-host-protocol": "2" } : {}), ...extra }, ...(data ? { body: JSON.stringify(data) } : {}) });
   return { root, project, configRoot, options, get host() { return host; }, get cookie() { return cookie; }, request, launches: () => launches,
     async restart() { await host.stop(); host = await startHost(options); cookie = await pair(); } };
 }
@@ -67,10 +67,34 @@ test("project inspector rejects escapes and symlinks, and never offers writes", 
   assert.equal((await f.request(`/api/file?projectId=${project.projectId}&path=.env`)).status, 403);
   assert.equal((await f.request("/api/command", { type: "startTask", requestId: "a", projectId: project.projectId, model: "mock/test", prompt: "read", permission: "write" })).status, 400);
 });
+test("account metadata API requires pairing, origin and explicit protocol without accepting secrets", async (t) => {
+  const f = await fixture(t);
+  const input = { providerId: "mock", name: "First", authType: "api_key" };
+  const headers = { "x-omp-account-protocol": "1" };
+  assert.equal((await fetch(f.host.origin + "/api/accounts")).status, 401);
+  assert.equal((await f.request("/api/accounts", input)).status, 409);
+  assert.equal((await f.request("/api/accounts", input, { ...headers, Origin: "https://attacker.invalid" })).status, 403);
+  assert.equal((await f.request("/api/accounts", { ...input, apiKey: "never-persist" }, headers)).status, 400);
+  const a = await f.request("/api/accounts", input, headers);
+  assert.equal(a.status, 201);
+  const first = await a.json();
+  assert.equal(first.authentication, "not_connected");
+  const second = await (await f.request("/api/accounts", { ...input, name: "Second" }, headers)).json();
+  assert.notEqual(first.account.accountId, second.account.accountId);
+  await f.restart();
+  const listing = await (await f.request("/api/accounts")).json();
+  assert.deepEqual(listing.accounts, [first.account, second.account]);
+  assert.equal(JSON.stringify(listing).includes("never-persist"), false);
+  assert.equal(f.launches(), 0);
+  const missing = await f.request("/api/models?accountId=missing");
+  assert.equal(missing.status, 404);
+  assert.equal((await missing.json()).code, "ACCOUNT_NOT_FOUND");
+  await assert.rejects(fs.access(path.join(f.configRoot, "auth.json")), { code: "ENOENT" });
+});
 test("tasks deduplicate, cancel to a real terminal state and do not replay after restart", async (t) => {
   const f = await fixture(t);
   const project = await (await f.request("/api/command", { type: "addProject", path: f.project })).json();
-  const input = { type: "startTask", requestId: "test-request", projectId: project.projectId, model: "mock/test", prompt: "只读分析" };
+  const input = { type: "startTask", requestId: "test-request", projectId: project.projectId, accountId: "cli-readonly", model: "mock/test", prompt: "只读分析" };
   const [first, repeated] = await Promise.all([f.request("/api/command", input).then((r) => r.json()), f.request("/api/command", input).then((r) => r.json())]);
   assert.equal(first.taskId, repeated.taskId);
   await f.request("/api/command", { type: "cancelTask", taskId: first.taskId });
@@ -85,7 +109,7 @@ test("invalid project does not prevent a later task or retry", async (t) => {
   const project = await (await f.request("/api/command", { type: "addProject", path: f.project })).json();
   const invalid = await f.request("/api/command", { type: "addProject", path: path.join(f.root, "missing") });
   assert.equal((await invalid.json()).code, "ENOENT");
-  const input = { type: "startTask", requestId: "after-invalid", projectId: project.projectId, model: "mock/test", prompt: "只读分析" };
+  const input = { type: "startTask", requestId: "after-invalid", projectId: project.projectId, accountId: "cli-readonly", model: "mock/test", prompt: "只读分析" };
   const rejected = await f.request("/api/command", { ...input, model: "missing/model" });
   assert.equal((await rejected.json()).code, "MODEL_UNAVAILABLE");
   const result = await f.request("/api/command", input);
@@ -96,7 +120,7 @@ test("invalid project does not prevent a later task or retry", async (t) => {
 });
 test("WebSocket requires auth, Origin and protocol; reconnect begins with an authoritative snapshot", async (t) => {
   const f = await fixture(t);
-  const url = f.host.origin.replace("http:", "ws:") + "/events?protocol=1";
+  const url = f.host.origin.replace("http:", "ws:") + "/events?protocol=2";
   const denied = new WebSocket(url, { headers: { Origin: f.host.origin } });
   const [error] = await once(denied, "error"); assert.match(error.message, /403/u);
   const socket = new WebSocket(url, { headers: { Origin: f.host.origin, Cookie: f.cookie } });
@@ -106,4 +130,29 @@ test("WebSocket requires auth, Origin and protocol; reconnect begins with an aut
   const reconnect = new WebSocket(url, { headers: { Origin: f.host.origin, Cookie: f.cookie } });
   const [next] = await once(reconnect, "message"); assert.equal(JSON.parse(next.toString()).type, "snapshot");
   reconnect.close(); await once(reconnect, "close");
+});
+
+test("public account binding rejects old protocol, missing identity and CLI mutations", async (t) => {
+  const f = await fixture(t);
+  const project = await (await f.request("/api/command", { type: "addProject", path: f.project })).json();
+  const input = { type: "startTask", requestId: "bound", projectId: project.projectId, model: "mock/test", prompt: "inspect" };
+  assert.equal((await f.request("/api/command", input, { "x-omp-host-protocol": "1" })).status, 409);
+  assert.equal((await f.request("/api/command", input)).status, 400);
+  assert.equal((await f.request("/api/models")).status, 409);
+  const headers = { "x-omp-account-protocol": "1" };
+  for (const action of [{ type: "rename", name: "Changed" }, { type: "remove" }, { type: "logout" }]) {
+    const response = await f.request("/api/account-action", { accountId: "cli-readonly", action }, headers);
+    assert.equal(response.status, 403); assert.equal((await response.json()).code, "ACCOUNT_READ_ONLY");
+  }
+  const { account } = await (await f.request("/api/accounts", { providerId: "mock", name: "GUI", authType: "api_key" }, headers)).json();
+  const response = await f.request("/api/command", { ...input, accountId: account.accountId });
+  assert.equal(response.status, 202);
+  const task = await response.json(); assert.equal(task.accountId, account.accountId);
+  assert.equal((await f.request("/api/account-action", { accountId: account.accountId, action: { type: "remove" } }, headers)).status, 409);
+  await waitTask(f, task.taskId, ["succeeded"]);
+  // The terminal projection is delivered only after worker exit and account release.
+  assert.equal((await f.request("/api/account-action", { accountId: account.accountId, action: { type: "rename", name: "Released" } }, headers)).status, 200);
+  assert.equal((await f.request("/api/command", { ...input, accountId: "cli-readonly" })).status, 409);
+  const oldSocket = new WebSocket(f.host.origin.replace("http:", "ws:") + "/events?protocol=1", { headers: { Origin: f.host.origin, Cookie: f.cookie } });
+  assert.match((await once(oldSocket, "error"))[0].message, /403/u);
 });
