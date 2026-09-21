@@ -8,6 +8,7 @@ import { buildDirectPiInvocation, resolveDirectExtensionSet } from "../direct-ag
 import { processIdentity, groupAlive } from "./ownership.mjs";
 import { hostError } from "./contracts.mjs";
 import { ApprovalBridge } from "./approval-bridge.mjs";
+import { projectControlState } from "./control-state.mjs";
 function waitBounded(promise, ms, required = false) {
   let timer;
   return Promise.race([promise, new Promise((resolve, reject) => { timer = setTimeout(() => required ? reject(hostError("RPC_TERMINATION_UNCONFIRMED")) : resolve(), ms); })]).finally(() => clearTimeout(timer));
@@ -27,6 +28,9 @@ export class RpcWorker extends EventEmitter {
     const argv = this.accountId === undefined ? invocation.argv.slice(1) : [fileURLToPath(new URL("./account-rpc-entry.mjs", import.meta.url)), this.stack.root, this.configRoot, this.accountId, this.model, this.sessionRoot, this.controlled ? "controlled" : "readonly", ...set.extensions];
     const child = this.spawnImpl(invocation.executable, argv, { cwd: this.cwd, env: invocation.env, detached: true, stdio: this.controlled ? ["pipe", "pipe", "pipe", "ipc"] : ["pipe", "pipe", "pipe"] });
     this.child = child;
+    if (this.controlled) child.on("message", (message) => {
+      if (message?.type === "control_state" && !this.closed && !this.stopRequested) this.emit("control", projectControlState(message.state));
+    });
     this.exited = new Promise((resolve) => child.once("close", (code, signal) => { this.closed = true; this.approvals.close(); for (const p of this.pending.values()) { clearTimeout(p.timeout); p.reject(hostError("RPC_WORKER_EXITED")); } this.pending.clear(); this.emit("exit", { code, signal }); resolve({ code, signal }); }));
     child.on("error", () => this.emit("fault", { code: "RPC_SPAWN_FAILED" }));
     child.stdin.on("error", () => {});

@@ -52,7 +52,7 @@ async function recoverWorkers(configRoot, previous) {
   }
 }
 
-export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = path.join(configRoot, "sessions"), workerFactory, modelsProvider, env = process.env }) {
+export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = path.join(configRoot, "sessions"), workerFactory, modelsProvider, allowControlled = false, env = process.env }) {
   if (![configRoot, sessionRoot, assetsRoot].every((p) => typeof p === "string" && path.isAbsolute(p))) throw hostError("HOST_PATH_INVALID");
   await fs.access(path.join(assetsRoot, "index.html"));
   await ensureConfigDirectory(configRoot, "only-my-pi/host");
@@ -83,7 +83,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
       return await (modelsProvider ? modelsProvider(accountId) : listModels({ stack, configRoot, accountId, env, signal: modelAbort.signal }));
     } finally { release(); }
   };
-  const tasks = new HostTasks({ configRoot, stack, catalog, accounts, workerFactory, models: accountModels, env });
+  const tasks = new HostTasks({ configRoot, stack, catalog, accounts, workerFactory, models: accountModels, allowControlled, env });
   try { await tasks.load(); } catch (error) { await lock.release(); throw error; }
   const snapshot = () => ({ protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, seq, indexing: scanRunning,
     runtime: { stackId: stack.stackId, sourceCommit: stack.distribution?.sourceCommit ?? null }, projects: catalog.listProjects(), tasks: tasks.snapshot(), diagnostics: catalog.diagnostics });
@@ -172,6 +172,8 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           const command = validateCommand(await body(req));
           if (command.type === "addProject") { const project = await catalog.add(command.path); await atomicWriteJson(configRoot, projectsFile, { projects: catalog.listProjects() }); publish("projects", catalog.listProjects()); return response(res, 200, project); }
           if (command.type === "startTask") return response(res, 202, await tasks.start(command));
+          if (command.type === "answerApproval") return response(res, 200, await tasks.answerApproval(command.taskId, command.approvalId, command.value));
+          if (command.type === "revokeTask") return response(res, 200, await tasks.revoke(command.taskId));
           return response(res, 202, await tasks.cancel(command.taskId));
         }
         if (req.method !== "GET") throw hostError("METHOD_DENIED", 405);

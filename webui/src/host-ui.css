@@ -1,5 +1,12 @@
 /* Host-only content constraints. Visual tokens and product geometry come from prototype.css. */
 #root { height:100%; }
+.host-control { max-width:900px; margin:16px auto; padding:16px; border:1px solid var(--line); border-radius:16px; background:var(--surface); font-size:13px; line-height:1.6; overflow-wrap:anywhere; }
+.host-control .between { flex-wrap:wrap; gap:8px; }
+.host-control button { min-height:44px; white-space:normal; }
+.host-control button:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.host-control summary { cursor:pointer; padding:12px 0; }
+.host-approval { margin-top:12px; padding:12px; background:var(--surface2); border-radius:12px; }
+.host-approval pre { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; max-height:280px; overflow:auto; }
 .account-picker { width:min(100%,944px); margin-inline:auto; padding:4px 22px; display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:11px; }
 .account-picker label { display:flex; align-items:center; gap:8px; min-width:0; }
 .account-picker select { max-width:min(300px,65vw); }

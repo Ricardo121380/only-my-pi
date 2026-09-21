@@ -31,7 +31,7 @@ export class HostTasks extends EventEmitter {
     await this.persist();
   }
   summary(task) { return { taskId: task.taskId, requestId: task.requestId, projectId: task.projectId, accountId: task.accountId ?? null, model: task.model, prompt: task.prompt.slice(0, 200), status: task.status,
-    mode: task.mode ?? "readonly", access: task.access ?? "inspect", approvals: task.approvals ?? [], sessionId: task.sessionId, createdAt: task.createdAt, updatedAt: task.updatedAt, error: task.error ?? null, tool: task.tool ?? null }; }
+    mode: task.mode ?? "readonly", access: task.access ?? "inspect", approvals: task.approvals ?? [], orchestration: task.orchestration ?? null, sessionId: task.sessionId, createdAt: task.createdAt, updatedAt: task.updatedAt, error: task.error ?? null, tool: task.tool ?? null }; }
   public(task) { return structuredClone({ ...this.summary(task), prompt: task.prompt, partial: task.partial ?? "", messages: task.messages.slice(-50).map((m) => ({ ...m, text: m.text.slice(0, 16384) })) }); }
   snapshot() { return [...this.tasks.values()].slice(-100).map((t) => this.summary(t)); }
   persist() {
@@ -98,6 +98,10 @@ export class HostTasks extends EventEmitter {
     const settled = new Promise((resolve) => { settledResolve = resolve; });
     const deadline = setTimeout(() => { failed = true; task.error = "TASK_TIME_LIMIT"; settledResolve(); }, 15 * 60 * 1000);
     worker.on("approvals", (approvals) => { task.approvals = terminal(task.status) || task.status === "cancelling" ? [] : approvals; this.changed(task); });
+    worker.on("control", (state) => {
+      if (terminal(task.status) || task.status === "cancelling") return;
+      task.access = state.access; task.orchestration = state.orchestration; this.changed(task);
+    });
     worker.on("event", (event) => {
       if (terminal(task.status)) return;
       if (event?.type === "message_end" && ["user", "assistant"].includes(event.message?.role)) {

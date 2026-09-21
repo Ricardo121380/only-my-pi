@@ -33,8 +33,8 @@ for (const scenario of ["approve", "revoke", "late", "ordinary", "scout", "write
     let tool = scenario === "scout" ? { name: "delegate_readonly_agent", arguments: JSON.stringify({ agent: "omp-scout", task: "Reply done without tools." }) } : step === 0 ? { name: "request_coding_access", arguments: JSON.stringify(request) } : { name: "write", arguments: JSON.stringify({ path: "proof.txt", content: "controlled\n" }) };
     if (scenario === "writer") {
       if (step === 1) tool = { name: "delegate_managed_writer", arguments: "{}" };
-      if (step === 3) tool = { name: "structured_output", arguments: JSON.stringify({ status: "completed", changedPaths: ["proof.txt"], summary: "Updated proof", verification: [], followUp: [] }) };
-      if (step === 4) tool = { name: "structured_output", arguments: JSON.stringify({ verdict: "pass", findings: [], tested: ["fixture bytes"], unverified: [] }) };
+      if (step === 3) tool = { name: "structured_output", arguments: JSON.stringify({ value: { status: "completed", changedPaths: ["proof.txt"], summary: "Updated proof", verification: [], followUp: [] } }) };
+      if (step === 4) tool = { name: "structured_output", arguments: JSON.stringify({ value: { verdict: "pass", findings: [], tested: ["fixture bytes"], unverified: [] } }) };
     }
     res.writeHead(200, { "content-type": "text/event-stream" });
     const toolTurn = step < (scenario === "scout" ? 1 : scenario === "writer" ? 5 : 2);
@@ -76,6 +76,10 @@ for (const scenario of ["approve", "revoke", "late", "ordinary", "scout", "write
   assert.deepEqual(errors, []);
   if (scenario === "writer") {
     assert.equal(childResults[0]?.details?.status, "WRITER_PATCH_VERIFIED", JSON.stringify(childResults));
+    assert.equal(childResults[0].details.verificationReceipt.status, "PASS");
+    assert.equal(childResults[0].details.realVerificationReceipt.phase, "real-workspace");
+    assert.equal(childResults[0].details.realVerificationReceipt.status, "PASS");
+    assert.equal(received.length, 6, "parent, writer, fresh reviewer and continuation complete without a retry");
     assert.equal(answers.length, 3, "coding, clone verification, and real-worktree verification need separate approvals");
     assert.equal(await fs.readFile(path.join(project, "proof.txt"), "utf8"), "controlled\n");
     assert.ok(received.every((r) => r.key === "Bearer fixture"));

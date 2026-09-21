@@ -7,6 +7,7 @@ import { randomUUID } from "node:crypto";
 import { EventEmitter, once } from "node:events";
 import WebSocket from "ws";
 import { startHost } from "../packages/host/server.mjs";
+import { ApprovalBridge } from "../packages/host/approval-bridge.mjs";
 
 class FakeWorker extends EventEmitter {
   constructor() { super(); this.identity = { pid: 99999999, start: "fixture" }; this.closed = false; }
@@ -21,13 +22,13 @@ class FakeWorker extends EventEmitter {
   async cancel() { this.emit("event", { type: "agent_settled" }); await this.stop(); }
   async stop() { clearTimeout(this.timer); if (!this.closed) { this.closed = true; this.emit("exit", { code: 0 }); } }
 }
-async function fixture(t) {
+async function fixture(t, overrides = {}) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-host-test-")));
   const configRoot = path.join(root, "config"), assetsRoot = path.join(root, "assets"), project = path.join(root, "project");
   await fs.mkdir(assetsRoot); await fs.mkdir(project); await fs.writeFile(path.join(assetsRoot, "index.html"), "<!doctype html><title>fixture</title>");
   await fs.writeFile(path.join(project, "README.md"), "# fixture\n");
   let launches = 0;
-  const options = { configRoot, assetsRoot, stack: { stackId: `sha256:${"a".repeat(64)}` }, modelsProvider: async () => [{ id: "mock/test", name: "Fixture", provider: "mock" }], workerFactory: () => { launches++; return new FakeWorker(); } };
+  const options = { configRoot, assetsRoot, stack: { stackId: `sha256:${"a".repeat(64)}` }, modelsProvider: async () => [{ id: "mock/test", name: "Fixture", provider: "mock" }], workerFactory: () => { launches++; return new FakeWorker(); }, ...overrides };
   let host = await startHost(options);
   t.after(async () => { await host.stop(); await fs.rm(root, { recursive: true, force: true }); });
   async function pair() {
@@ -56,6 +57,55 @@ test("loopback host authenticates HTTP, consumes pairing once and rejects cross-
   assert.equal(JSON.stringify(state).includes(f.host.controlToken), false);
   const stat = await fs.stat(path.join(f.configRoot, "only-my-pi/host/endpoint.json")); assert.equal(stat.mode & 0o777, 0o600);
   await assert.rejects(startHost(f.options), { code: "OWNERSHIP_HELD" });
+});
+
+test("controlled HTTP approvals are authenticated, one-use and invalidated by revoke", async (t) => {
+  let worker;
+  class ControlledWorker extends FakeWorker {
+    constructor() {
+      super(); this.answers = [];
+      this.bridge = new ApprovalBridge({ send: (answer) => this.answers.push(answer), publish: (approvals) => this.emit("approvals", approvals) });
+    }
+    async command(type) {
+      if (type === "prompt") this.bridge.request({ id: "private-pi-id", method: "confirm", title: "Verify fixture", message: "Only this fixture" });
+      return {};
+    }
+    answerApproval(id, value) { this.bridge.answer(id, value); }
+    async revoke() { this.bridge.invalidate(); }
+    async stop() { this.bridge.close(); await super.stop(); }
+  }
+  const f = await fixture(t, { allowControlled: true, workerFactory: () => (worker = new ControlledWorker()) });
+  const project = await (await f.request("/api/command", { type: "addProject", path: f.project })).json();
+  const task = await (await f.request("/api/command", { type: "startTask", requestId: "controlled-http", projectId: project.projectId, accountId: "cli-readonly", model: "mock/test", prompt: "fixture", mode: "controlled" })).json();
+  const running = await waitTask(f, task.taskId, ["running"]);
+  assert.equal(running.approvals.length, 1);
+  assert.equal(JSON.stringify(running).includes("private-pi-id"), false);
+  const answer = { type: "answerApproval", taskId: task.taskId, approvalId: running.approvals[0].approvalId, value: true };
+  assert.equal((await f.request("/api/command", answer, { Cookie: "" })).status, 401);
+  assert.equal((await f.request("/api/command", answer, { Origin: "https://attacker.invalid" })).status, 403);
+  assert.equal((await f.request("/api/command", answer, { "x-omp-host-protocol": "1" })).status, 409);
+  assert.equal((await f.request("/api/command", { ...answer, unrestricted: true })).status, 400);
+  assert.equal(worker.answers.length, 0);
+  assert.equal((await f.request("/api/command", answer)).status, 200);
+  assert.equal((await f.request("/api/command", answer)).status, 409);
+  assert.deepEqual(worker.answers, [{ type: "extension_ui_response", id: "private-pi-id", confirmed: true }]);
+  worker.bridge.request({ id: "next-private-id", method: "confirm", title: "Second" });
+  const stale = worker.bridge.snapshot()[0].approvalId;
+  assert.equal((await f.request("/api/command", { type: "revokeTask", taskId: task.taskId })).status, 200);
+  assert.equal((await f.request("/api/command", { ...answer, approvalId: stale })).status, 409);
+  assert.equal(worker.answers.at(-1).cancelled, true);
+  await f.request("/api/command", { type: "cancelTask", taskId: task.taskId });
+  await waitTask(f, task.taskId, ["cancelled"]);
+  assert.equal((await f.request("/api/command", answer)).status, 409);
+});
+
+test("ordinary host refuses controlled tasks before launching a worker", async (t) => {
+  const f = await fixture(t);
+  const project = await (await f.request("/api/command", { type: "addProject", path: f.project })).json();
+  const result = await f.request("/api/command", { type: "startTask", requestId: "closed", projectId: project.projectId, accountId: "cli-readonly", model: "mock/test", prompt: "fixture", mode: "controlled" });
+  assert.equal(result.status, 409);
+  assert.equal((await result.json()).code, "CONTROLLED_MODE_UNAVAILABLE");
+  assert.equal(f.launches(), 0);
 });
 test("project inspector rejects escapes and symlinks, and never offers writes", async (t) => {
   const f = await fixture(t);

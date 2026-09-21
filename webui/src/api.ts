@@ -15,6 +15,10 @@ export const query = (route: string, values: Record<string, string | number>) =>
 export const errorText = (error: unknown) => {
   const code = error instanceof Error ? error.message : "HOST_REQUEST_FAILED";
   const accountMessages: Record<string, string> = {
+    APPROVAL_EXPIRED: "此审批已失效或已被处理，不能再次批准；请等待宿主状态更新。",
+    RPC_REVOKE_UNCONFIRMED: "撤权未得到确认，宿主已请求停止进程；请检查任务终态，不要重发写入。",
+    CONTROLLED_MODE_UNAVAILABLE: "当前宿主尚未开放受控编程，请继续只读分析。",
+    OWNERSHIP_HELD: "项目或会话正被其他任务占用，请等待其进程退出后再试。",
     ACCOUNT_BUSY: "账号正在被任务或认证操作使用，请停止任务并等待进程退出后重试。",
     ACCOUNT_READ_ONLY: "CLI 配置是只读引用，请在 CLI 中管理，WebUI 不会修改它。",
     ACCOUNT_NOT_FOUND: "账号已不存在，请刷新并重新选择。",

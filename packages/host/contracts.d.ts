@@ -1,6 +1,8 @@
 export type HostCommand =
   | { type: "addProject"; path: string }
-  | { type: "startTask"; requestId: string; projectId: string; accountId: string; model: string; prompt: string }
+  | { type: "startTask"; requestId: string; projectId: string; accountId: string; model: string; prompt: string; mode?: "readonly" | "controlled" }
+  | { type: "answerApproval"; taskId: string; approvalId: string; value: string | boolean }
+  | { type: "revokeTask"; taskId: string }
   | { type: "cancelTask"; taskId: string };
 export type TaskStatus = "starting" | "running" | "cancelling" | "succeeded" | "failed" | "cancelled" | "interrupted";
 export interface Project { projectId: string; path: string; name: string; available: boolean }
@@ -14,6 +16,9 @@ export interface OAuthFlow { flowId: string; accountId: string; status: "startin
 export interface AccountDirectory { protocol: 1; authentication: "api_key"; cliReference: { accountId: "cli-readonly"; name: string; readOnly: true }; accounts: GuiAccount[] }
 export interface Message { id: string; role: "user" | "assistant" | "toolResult"; text: string; toolName?: string; isError?: boolean; outputAvailable?: boolean; truncated?: boolean }
 export interface HostTask {
+  orchestration?: { maximumConcurrency: number | null; maximumChildren: number | null; totalChildren: number | null; writerUsed: boolean;
+    budget: { scope: "process-child-delegations"; mainAgentIncluded: false; status: string; limits: Record<string, number | null>; used: Record<string, number | null> };
+    children: { label: string; agent: string | null; status: string; toolCount: number | null; tokens: number | null }[] } | null;
   mode?: "readonly" | "controlled"; access?: "inspect" | "coding";
   approvals?: { approvalId: string; kind: "select" | "confirm"; title: string; message: string; options?: string[]; expiresAt: string }[];
   accountId?: string | null;

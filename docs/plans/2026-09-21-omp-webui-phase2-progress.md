@@ -117,3 +117,13 @@
 - 私有 SDK factory 提供函数形式、不可经 JSON 传入的当前会话授权判断；仅 writer 验证器使用。仍逐次确认克隆与真实工作区门禁，不更改 Pi 全局信任或加载项目扩展。撤权/会话变化/退出后授权失效。
 - TUI/RPC 验证器实际 argv 门禁、拒绝/漂移/撤权检查 2/2 PASS；相关 direct/session/project-gate 测试 58 PASS、2 个完整栈测试跳过；TypeScript PASS。新的完整 writer 候选仍待验收。
 - 新增项目锁退出不明负例 PASS：失败 shutdown 保留写锁，确认退出后才回收。开发变化未晋升日常安装。
+
+## 2026-09-22：2B 真实 writer 闭环与审批界面
+
+- 候选 fb00621 / stack 7ba2fb8f60fee1f3beb42feb7f07cd69049d1d924d6dca87b586d4f2b0a73de8 完成隔离构建。真实 SDK、栈内审计扩展、实际 writer/reviewer 子进程与本地模拟模型的 writer 测试 PASS：六次请求、三次独立批准、实际文件写入、副本 PASS 与真实工作区 PASS 回执，未重试。修正测试模型 structured_output 的 value 参数合同；并非放宽生产验证。
+- 新增私有 IPC 子代理/预算白名单投影，不传原始子任务文本、输出或认证。HTTP 增加类型化审批/撤权命令，startHost 默认 allowControlled=false；普通宿主仍不能创建受控任务。
+- HTTP/投影/授权身份测试 11/11 PASS；未配对、跨 Origin、旧协议、未知字段、重复审批、撤权后旧审批均拒绝。源码级 Host 入口测试不冒充完整候选安装验收。
+- Glacier 新增审批卡、撤权和子代理预算；断线禁用、单次提交、防重复点击，不把批准等同执行成功。执行回执结构化展示 application/verification，APPLICATION_UNKNOWN 明确禁止自动重试，无重试应用按钮。Web 组件 20/20 PASS，类型检查与生产构建 PASS。
+- Ego Lite TaskSpace 10 使用 tests/fixtures/host-controlled-browser.mjs：真实 Host/SDK、候选 fb 的审计扩展、临时项目/账号、本地模拟服务。待审批时刷新后仍可见同一审批；页面点击批准后临时 proof.txt 为 browser approved，任务结束、审批清空、授权不保留。启动由 fixture 的真实 HTTP 命令完成，不宣称受控启动选择器已开放。页面检查发现受控会话仍显示只读分析，已改为受控执行标识。
+- 2C 仍有重要进程归属缺口：project-gates 的 detached 进程组独立于 RPC worker；仅证明 worker 组退出不能证明这些执行组退出。CLI 写入尚未统一持锁。公开受控入口继续关闭，修复与验证后再开放。
+- 真实模型预算已用 0；未修改日常安装。2C–2F 未验收，M2 未完成。
