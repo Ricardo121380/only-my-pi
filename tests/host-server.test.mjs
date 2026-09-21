@@ -80,6 +80,20 @@ test("tasks deduplicate, cancel to a real terminal state and do not replay after
   assert.equal((await (await f.request("/api/command", input)).json()).taskId, first.taskId);
   assert.equal(f.launches(), 1);
 });
+test("invalid project does not prevent a later task or retry", async (t) => {
+  const f = await fixture(t);
+  const project = await (await f.request("/api/command", { type: "addProject", path: f.project })).json();
+  const invalid = await f.request("/api/command", { type: "addProject", path: path.join(f.root, "missing") });
+  assert.equal((await invalid.json()).code, "ENOENT");
+  const input = { type: "startTask", requestId: "after-invalid", projectId: project.projectId, model: "mock/test", prompt: "只读分析" };
+  const rejected = await f.request("/api/command", { ...input, model: "missing/model" });
+  assert.equal((await rejected.json()).code, "MODEL_UNAVAILABLE");
+  const result = await f.request("/api/command", input);
+  assert.equal(result.status, 202);
+  const task = await result.json();
+  assert.equal((await waitTask(f, task.taskId, ["succeeded", "failed"])).status, "succeeded");
+  assert.equal(f.launches(), 1);
+});
 test("WebSocket requires auth, Origin and protocol; reconnect begins with an authoritative snapshot", async (t) => {
   const f = await fixture(t);
   const url = f.host.origin.replace("http:", "ws:") + "/events?protocol=1";

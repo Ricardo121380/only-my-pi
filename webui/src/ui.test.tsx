@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Composer } from "./Composer";
 import { SafeMarkdown } from "./Messages";
@@ -6,9 +6,32 @@ import { applyEvent } from "./api";
 import { OutputDock } from "./OutputDock";
 import type { HostSnapshot } from "../../packages/host/contracts";
 afterEach(cleanup);
+beforeAll(() => {
+  HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+  HTMLDialogElement.prototype.close = function () { this.open = false; };
+});
 const models = [{ id: "fixture/model", name: "Fixture", provider: "fixture" }];
 const defaults = { models, disabled: false, running: false, cancelling: false, onSend: async () => {}, onCancel: () => {}, onModels: () => {} };
 describe("composer states", () => {
+  it("opens mode help independently from usage", () => {
+    const { container } = render(<Composer {...defaults} />);
+    fireEvent.click(container.querySelector("#modeButton")!);
+    expect(screen.getByRole("dialog", { name: "只读分析模式" })).toBeTruthy();
+    expect(screen.queryByRole("dialog", { name: "运行与用量" })).toBeNull();
+  });
+  it("keeps the controlled model across project remounts and refuses missing selections", async () => {
+    const onSend = vi.fn(async () => {});
+    const props = { ...defaults, models: [...models, { id: "fixture/second", name: "Second", provider: "fixture" }], selectedModel: "fixture/second", onSend };
+    const { rerender } = render(<Composer key="a" {...props} />);
+    rerender(<Composer key="b" {...props} />);
+    fireEvent.change(screen.getByLabelText("新的只读分析"), { target: { value: "检查" } });
+    fireEvent.click(screen.getByRole("button", { name: "开始分析" }));
+    await waitFor(() => expect(onSend).toHaveBeenCalledWith("fixture/second", "检查"));
+    rerender(<Composer key="c" {...props} models={models} />);
+    fireEvent.change(screen.getByLabelText("新的只读分析"), { target: { value: "检查" } });
+    expect((screen.getByRole("button", { name: "开始分析" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText("所选模型不可用，请重选")).toBeTruthy();
+  });
   it("does not send during Chinese IME composition; Ctrl+Enter sends once", async () => {
     const onSend = vi.fn(async () => {}); render(<Composer {...defaults} onSend={onSend} />);
     const input = screen.getByLabelText("新的只读分析");
