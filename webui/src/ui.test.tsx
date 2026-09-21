@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { Composer } from "./Composer";
 import { SafeMarkdown } from "./Messages";
 import { applyEvent } from "./api";
+import { OutputDock } from "./OutputDock";
 import type { HostSnapshot } from "../../packages/host/contracts";
 afterEach(cleanup);
 const models = [{ id: "fixture/model", name: "Fixture", provider: "fixture" }];
@@ -25,10 +26,10 @@ describe("composer states", () => {
   });
   it("cancelling is not presented as cancelled", () => {
     const onCancel = vi.fn(); render(<Composer {...defaults} running cancelling onCancel={onCancel} />);
-    const button = screen.getByText("正在取消…") as HTMLButtonElement; expect(button.disabled).toBe(true); fireEvent.click(button); expect(onCancel).not.toHaveBeenCalled();
+    const button = screen.getByRole("button", { name: "正在取消…" }) as HTMLButtonElement; expect(button.disabled).toBe(true); fireEvent.click(button); expect(onCancel).not.toHaveBeenCalled();
   });
   it("does not send without explicit model or connected project", () => {
-    render(<Composer {...defaults} models={[]} disabled />); fireEvent.change(screen.getByLabelText("新的只读分析"), { target: { value: "test" } }); expect((screen.getByText("开始分析") as HTMLButtonElement).disabled).toBe(true);
+    render(<Composer {...defaults} models={[]} disabled />); fireEvent.change(screen.getByLabelText("新的只读分析"), { target: { value: "test" } }); expect((screen.getByRole("button", { name: "开始分析" }) as HTMLButtonElement).disabled).toBe(true);
   });
 });
 it("Markdown neither executes HTML nor loads remote images or unsafe links", () => {
@@ -47,4 +48,19 @@ it("10,000 ordered events have bounded task projection", () => {
   let state: HostSnapshot | null = snapshot;
   for (let seq = 2; seq <= 10001; seq++) state = applyEvent(state, { type: "task", epoch: "epoch", seq, data: { taskId: `task-${seq % 150}`, requestId: "r", projectId: "p", model: "m", prompt: "p", status: "running", sessionId: null, createdAt: "", updatedAt: "", messages: [] } });
   expect(state?.seq).toBe(10001); expect(state?.tasks.length).toBe(100);
+});
+it("usage stays unknown instead of importing prototype metrics", () => {
+  render(<Composer {...defaults} />);
+  expect(screen.getByText("速率 — tok/s")).toBeTruthy();
+  expect(screen.getByText("本轮费用 —")).toBeTruthy();
+  expect(screen.queryByText(/237 tok\/s/)).toBeNull();
+});
+it("output dock shows only public tool results and closing only calls its view callback", () => {
+  const onClose = vi.fn();
+  const { container } = render(<OutputDock onClose={onClose} messages={[{ id: "a", role: "assistant", text: "对话正文" }, { id: "t", role: "toolResult", toolName: "read", text: "<script>not executable</script>" }]} />);
+  expect(screen.queryByText("对话正文")).toBeNull();
+  expect(screen.getByText("<script>not executable</script>")).toBeTruthy();
+  expect(container.querySelector("script")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "关闭底部输出" }));
+  expect(onClose).toHaveBeenCalledTimes(1);
 });
