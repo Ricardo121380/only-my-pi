@@ -21,6 +21,11 @@ export default function ompControl(pi: ExtensionAPI): void {
   let activeModeSnapshot: any;
   let modeRestoreStatus: string | undefined;
   const directSession = process.env.ONLY_MY_PI_DIRECT === "1";
+  let isHostAuthorized: ((ctx: any) => boolean) | undefined;
+  pi.events.on("only-my-pi:host-interaction:v1", (payload: any) => {
+    // Function-bearing capability can only come from the private SDK factory.
+    if (typeof payload?.isHostAuthorized === "function") isHostAuthorized = payload.isHostAuthorized;
+  });
 
   const publishDirectRuntime = (status: "READY" | "UNAVAILABLE", orchestrator?: any) => {
     if (!directSession) return;
@@ -133,6 +138,7 @@ export default function ompControl(pi: ExtensionAPI): void {
         rootDir,
         configRoot,
         getContext: () => context,
+        isHostAuthorized: (ctx: any) => isHostAuthorized?.(ctx) === true,
       });
       sessionRuntimeStatus = sessionComposer.status;
       runtimeServices = sessionComposer.enabled === true ? {

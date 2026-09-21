@@ -602,7 +602,7 @@ function wrapArtifactStore(base, configurationProvider) {
   });
 }
 
-export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, getContext, dependencies = {} } = {}) {
+export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, getContext, isHostAuthorized, dependencies = {} } = {}) {
   if (typeof rootDir !== "string" || !path.isAbsolute(rootDir)) throw new TypeError("session composer requires absolute rootDir");
   if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("session composer requires absolute configRoot");
   if (typeof getContext !== "function") throw new TypeError("session composer requires getContext()");
@@ -917,8 +917,8 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
         budget: configuration.budget,
         webAuthorizer,
         webEnabled: configuration.hardOverlays.includes("web"),
-        verifyWriter: createWriterVerification({ configRoot, getContext }),
-        verifyRealWorkspace: createRealWorkspaceVerification({ configRoot, getContext }),
+        verifyWriter: createWriterVerification({ configRoot, getContext, isHostAuthorized }),
+        verifyRealWorkspace: createRealWorkspaceVerification({ configRoot, getContext, isHostAuthorized }),
         recordStore,
         contextProvider,
       })

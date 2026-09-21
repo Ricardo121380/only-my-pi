@@ -11,6 +11,12 @@ export function createControlledExtension({ transport = process } = {}) {
     pi.events.emit("only-my-pi:host-interaction:v1", {
       capability,
       register(value) { if (controller) throw new Error("HOST_CONTROLLER_DUPLICATE"); controller = value; },
+      isHostAuthorized(context) {
+        return !closed && capability.allows(controller?.context) && controller.hasCodingAccess()
+          && !controller.grantAbort?.signal.aborted && controller.grantBinding !== null
+          && controller.grantBinding === controller.sessionIdentity(context)
+          && controller.grantBinding === controller.sessionIdentity(controller.context);
+      },
     });
     if (!controller) throw new Error("HOST_CONTROLLER_UNAVAILABLE");
     const revoke = () => {

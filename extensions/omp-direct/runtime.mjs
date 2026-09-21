@@ -563,7 +563,8 @@ export class DirectSessionController {
         || identity !== this.grantBinding || identity !== this.sessionIdentity(this.context)
         || identity !== this.sessionIdentity(ctx) || identity !== this.sessionIdentity(operationContext)
         || this.currentPermissionMode(this.context) === "yolo"
-        || this.context?.isProjectTrusted?.() !== true || operationContext?.isProjectTrusted?.() !== true) {
+        || ((this.context?.isProjectTrusted?.() !== true || operationContext?.isProjectTrusted?.() !== true)
+          && this.hostInteraction?.allows(this.context) !== true)) {
         fail("DIRECT_WRITER_AUTHORIZATION_REVOKED", "Managed writer authorization is no longer current.");
       }
     };

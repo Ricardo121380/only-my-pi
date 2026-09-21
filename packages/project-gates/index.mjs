@@ -116,12 +116,13 @@ async function gitRepository(exec, projectRoot, signal) {
 }
 
 export class ProjectGateService {
-  constructor({ configRoot, getContext, exec, environmentPath = process.env.PATH ?? "", clock = Date.now } = {}) {
+  constructor({ configRoot, getContext, exec, environmentPath = process.env.PATH ?? "", clock = Date.now, isContextTrusted = (ctx) => ctx?.isProjectTrusted?.() === true } = {}) {
     if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("ProjectGateService requires absolute configRoot");
     if (typeof getContext !== "function") throw new TypeError("ProjectGateService requires getContext()");
     if (typeof exec !== "function") throw new TypeError("ProjectGateService requires an exec adapter");
     this.configRoot = path.resolve(configRoot);
     this.getContext = getContext;
+    this.isContextTrusted = isContextTrusted;
     this.exec = exec;
     this.environmentPath = environmentPath;
     this.clock = clock;
@@ -138,7 +139,7 @@ export class ProjectGateService {
     if (options.signal?.aborted) fail("PROJECT_GATE_CANCELLED", "project gate planning was cancelled");
     const generation = this.generation;
     const ctx = this.getContext();
-    if (options.requireTrust !== false && ctx?.isProjectTrusted?.() !== true) fail("PROJECT_TRUST_REQUIRED", "project gate manifest is ignored until Pi Project Trust is active");
+    if (options.requireTrust !== false && this.isContextTrusted(ctx) !== true) fail("PROJECT_TRUST_REQUIRED", "project gate manifest requires current project authority");
     const sessionId = ctx?.sessionManager?.getSessionId?.();
     if (typeof sessionId !== "string" || !sessionId) fail("PI_SESSION_ID_UNAVAILABLE", "project gate authorization requires a Pi session id");
     const requestedRoot = path.resolve(options.projectRoot ?? ctx?.cwd ?? "");
@@ -217,7 +218,7 @@ export class ProjectGateService {
     if (signal?.aborted) fail("PROJECT_GATE_CANCELLED", "project gate was cancelled before execution");
     const gateHome = path.join(this.configRoot, "only-my-pi", "gate-home");
     await fs.mkdir(gateHome, { recursive: true, mode: 0o700 });
-    if (this.disposed || generation !== this.generation || this.grants.get(sessionId) !== grant || signal?.aborted || this.getContext()?.isProjectTrusted?.() !== true) fail("PROJECT_GATE_AUTHORIZATION_REQUIRED", "project gate authorization changed before execution");
+    if (this.disposed || generation !== this.generation || this.grants.get(sessionId) !== grant || signal?.aborted || this.isContextTrusted(this.getContext()) !== true) fail("PROJECT_GATE_AUTHORIZATION_REQUIRED", "project gate authorization changed before execution");
     const safePath = this.environmentPath.split(path.delimiter).filter((entry) => path.isAbsolute(entry)).slice(0, 64).join(path.delimiter);
     const envArgs = Object.entries({ ...DEFAULT_ENV, ...gate.env, PATH: safePath, HOME: gateHome, TMPDIR: os.tmpdir() }).map(([name, value]) => `${name}=${value}`);
     const started = this.clock();
@@ -229,7 +230,7 @@ export class ProjectGateService {
     let result;
     try {
       entry.done = Promise.resolve().then(() => {
-        if (this.disposed || generation !== this.generation || this.grants.get(sessionId) !== grant || combinedSignal.aborted || this.getContext()?.sessionManager?.getSessionId?.() !== sessionId || this.getContext()?.isProjectTrusted?.() !== true) fail("PROJECT_GATE_AUTHORIZATION_REQUIRED", "project gate authorization changed before process start");
+        if (this.disposed || generation !== this.generation || this.grants.get(sessionId) !== grant || combinedSignal.aborted || this.getContext()?.sessionManager?.getSessionId?.() !== sessionId || this.isContextTrusted(this.getContext()) !== true) fail("PROJECT_GATE_AUTHORIZATION_REQUIRED", "project gate authorization changed before process start");
         entry.started = true;
         return this.exec("/usr/bin/env", ["-i", ...envArgs, gate.executableRealpath, ...gate.args], { cwd: gate.cwd, timeout: gate.timeoutSeconds * 1000, signal: combinedSignal });
       });

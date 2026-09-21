@@ -5,16 +5,19 @@ import { createNodeExecAdapter, createProjectGateService } from "../project-gate
 import { captureWorkspaceBaseline } from "./workspace.mjs";
 
 const digest = (value) => `sha256:${createHash("sha256").update(value).digest("hex")}`;
+const authorized = (ctx, isHostAuthorized) => (ctx?.mode === "tui" && ctx.isProjectTrusted?.() === true)
+  || (ctx?.mode === "rpc" && ctx.hasUI === true && isHostAuthorized?.(ctx) === true);
 
 /** Runtime-owned results, never a receipt supplied by a writer or reviewer. */
-export function createWriterVerification({ configRoot, getContext, exec = createNodeExecAdapter(), createService = createProjectGateService } = {}) {
+export function createWriterVerification({ configRoot, getContext, isHostAuthorized, exec = createNodeExecAdapter(), createService = createProjectGateService } = {}) {
   return async ({ cloneRoot, patch, requestedVerification, signal }) => {
     const ctx = getContext();
-    if (ctx?.mode !== "tui" || ctx.isProjectTrusted?.() !== true || typeof ctx.ui?.confirm !== "function") {
+    if (!authorized(ctx, isHostAuthorized) || typeof ctx.ui?.confirm !== "function") {
       return { status: "BLOCKED", code: "WRITER_GATE_TRUST_REQUIRED" };
     }
-    const parent = createService({ configRoot, getContext: () => ctx, exec });
-    const clone = createService({ configRoot, getContext: () => ({ ...ctx, cwd: cloneRoot }), exec });
+    const isContextTrusted = () => getContext() === ctx && authorized(ctx, isHostAuthorized);
+    const parent = createService({ configRoot, getContext: () => ctx, exec, isContextTrusted });
+    const clone = createService({ configRoot, getContext: () => ({ ...ctx, cwd: cloneRoot }), exec, isContextTrusted });
     try {
       const original = await parent.plan(null, { signal });
       const plan = await clone.plan(null, { signal });
@@ -29,7 +32,7 @@ export function createWriterVerification({ configRoot, getContext, exec = create
       ].join("\n");
       if (!await ctx.ui.confirm("Run clone verification before integrating this patch?", description)) return { status: "BLOCKED", code: "WRITER_GATE_DENIED" };
       if (signal?.aborted) return { status: "BLOCKED", code: "WRITER_GATE_CANCELLED" };
-      if (getContext() !== ctx || ctx.isProjectTrusted?.() !== true) return { status: "BLOCKED", code: "WRITER_GATE_TRUST_REQUIRED" };
+      if (!isContextTrusted()) return { status: "BLOCKED", code: "WRITER_GATE_TRUST_REQUIRED" };
       await clone.grant(plan, { signal });
       const results = [];
       for (const gate of plan.gates) {
@@ -62,16 +65,16 @@ export function createWriterVerification({ configRoot, getContext, exec = create
 }
 
 /** A separate approval and receipt for checks in the worktree that received the patch. */
-export function createRealWorkspaceVerification({ configRoot, getContext, exec = createNodeExecAdapter(), createService = createProjectGateService, captureBaseline = captureWorkspaceBaseline } = {}) {
+export function createRealWorkspaceVerification({ configRoot, getContext, isHostAuthorized, exec = createNodeExecAdapter(), createService = createProjectGateService, captureBaseline = captureWorkspaceBaseline } = {}) {
   return async ({ repositoryRoot, patch, runId, cloneManifestDigest, signal }) => {
     const ctx = getContext();
     const sessionId = ctx?.sessionManager?.getSessionId?.();
-    if (ctx?.mode !== "tui" || ctx.isProjectTrusted?.() !== true || typeof ctx.ui?.confirm !== "function" || typeof sessionId !== "string" || !sessionId) return { status: "BLOCKED", code: "WRITER_REAL_GATE_TRUST_REQUIRED" };
+    if (!authorized(ctx, isHostAuthorized) || typeof ctx.ui?.confirm !== "function" || typeof sessionId !== "string" || !sessionId) return { status: "BLOCKED", code: "WRITER_REAL_GATE_TRUST_REQUIRED" };
     const root = await fs.realpath(repositoryRoot);
     if (await fs.realpath(ctx.cwd) !== root || !Array.isArray(patch?.changedPaths) || patch.changedPaths.length === 0 || patch.changedPaths.length > 64) return { status: "BLOCKED", code: "WRITER_REAL_GATE_INPUT_INVALID" };
     const identityCurrent = async () => {
       const current = getContext();
-      return current?.sessionManager?.getSessionId?.() === sessionId && await fs.realpath(current?.cwd ?? "").catch(() => null) === root && current?.isProjectTrusted?.() === true;
+      return current?.sessionManager?.getSessionId?.() === sessionId && await fs.realpath(current?.cwd ?? "").catch(() => null) === root && authorized(current, isHostAuthorized);
     };
     const sourceSnapshot = async (fixed = null) => {
       const baseline = await captureBaseline({ cwd: root, runGit: (cwd, args) => exec("git", args, { cwd, signal, timeout: 10_000 }) });
@@ -99,7 +102,7 @@ export function createRealWorkspaceVerification({ configRoot, getContext, exec =
       }
       return { paths, trackedPaths, scopeDigest: digest(JSON.stringify({ paths, trackedPaths })), sourceDigest: digest(JSON.stringify(entries)) };
     };
-    const service = createService({ configRoot, getContext, exec });
+    const service = createService({ configRoot, getContext, exec, isContextTrusted: (current) => authorized(current, isHostAuthorized) });
     let outcome;
     try {
       outcome = await (async () => {

@@ -40,3 +40,29 @@ test("internal controlled tasks hold project ownership and approvals; public def
   const restored = new HostTasks(options); await restored.load();
   assert.equal(restored.snapshot()[0].access, "inspect"); assert.deepEqual(restored.snapshot()[0].approvals, []); await restored.stop();
 });
+
+test("controlled task retains writer ownership when process termination is unconfirmed", async (t) => {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-control-owner-")));
+  t.after(() => fs.rm(root, { recursive: true }));
+  const accounts = new AccountCatalog(root), account = await accounts.create({ providerId: "fixture", name: "Fixture", authType: "api_key" });
+  let stoppable = false;
+  class Worker extends EventEmitter {
+    identity = null;
+    async start() { return { sessionId: "uncertain-controlled" }; }
+    async command() { this.emit("event", { type: "agent_settled" }); }
+    async stop() { if (!stoppable) throw new Error("fixture stop unconfirmed"); }
+  }
+  const tasks = new HostTasks({ configRoot: root, stack: {}, accounts, allowControlled: true,
+    catalog: { sessionRoot: root, project: () => ({ projectId: "project", path: root, available: true }), scan: async () => {} },
+    models: async () => [{ id: "fixture/model" }], workerFactory: () => new Worker() });
+  t.after(async () => { stoppable = true; await tasks.stop(); });
+  await tasks.load();
+  const task = await tasks.start({ requestId: "uncertain", projectId: "project", accountId: account.accountId, model: "fixture/model", mode: "controlled", prompt: "fixture" });
+  await Promise.all([...tasks.running.values()]);
+  assert.equal(tasks.tasks.get(task.taskId).error, "RPC_TERMINATION_UNCONFIRMED");
+  await assert.rejects(acquireOwnership(root, "project", root), { code: "OWNERSHIP_HELD" });
+  await assert.rejects(tasks.stop());
+  await assert.rejects(acquireOwnership(root, "project", root), { code: "OWNERSHIP_HELD" });
+  stoppable = true; await tasks.stop();
+  const lease = await acquireOwnership(root, "project", root); await lease.release();
+});

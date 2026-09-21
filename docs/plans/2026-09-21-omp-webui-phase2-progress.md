@@ -109,3 +109,11 @@
 - 候选 069ddb1 的隔离构建目录依赖使用软链接，npm pack 只带直接依赖，漏掉 ssri 的 minipass；直接导入解包 composer 确认 MODULE_NOT_FOUND。该候选未安装，已拒绝；仓库外保留 candidate-069ddb1-rejected.md，删除本轮可重建失败产物以回收容量。
 - 构建器增加解包后的依赖加载检查；缺少传递依赖负例与修复正例 PASS。隔离构建依赖改用物理副本，不修改主仓依赖或用户安装。
 - 2B 完整子代理链仍未通过；不能以基础写入通过替代受管闭环。真实模型预算已用 0，M2 未完成。
+
+## 2026-09-22：完整 scout 通过，受管 writer 继续接入
+
+- 新候选 6ed3a02 / stack 71cbfa6a664293b79a4130e3e69678c01e18afdd10984af88fc32a9ecb85100e 通过解包运行依赖检查。嵌入式 Node 24.19.0、Pi 0.85.1 全审计扩展下账号测试及批准/撤权/迟到/普通/scout 合计 6/6 PASS。scout 为真实子进程，本地模拟服务确认父、子、续接三请求均为绑定账号。
+- 新 writer 闭环测试复现 DIRECT_WRITER_AUTHORIZATION_REVOKED：旧路径要求 TUI Project Trust，尚未接入私有 GUI 授权。未通过前继续关闭公开编程入口。
+- 私有 SDK factory 提供函数形式、不可经 JSON 传入的当前会话授权判断；仅 writer 验证器使用。仍逐次确认克隆与真实工作区门禁，不更改 Pi 全局信任或加载项目扩展。撤权/会话变化/退出后授权失效。
+- TUI/RPC 验证器实际 argv 门禁、拒绝/漂移/撤权检查 2/2 PASS；相关 direct/session/project-gate 测试 58 PASS、2 个完整栈测试跳过；TypeScript PASS。新的完整 writer 候选仍待验收。
+- 新增项目锁退出不明负例 PASS：失败 shutdown 保留写锁，确认退出后才回收。开发变化未晋升日常安装。
