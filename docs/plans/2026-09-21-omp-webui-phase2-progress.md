@@ -101,3 +101,11 @@
 - 发现 pi-subagents 不继承主进程 ModelRuntime，实际子进程继承 process.env 后启动独立 CLI。为避免回读 CLI 认证，使用其既有 `PI_SUBAGENT_PI_BINARY` 接缝增加 `bin/omp-account-child.mjs`，由公共 parseArgs/ModelRuntime/会话服务/runPrintMode 注入同一账号；不改 Pi 或外部包。仅支持子代理约定的 JSON-print 参数，未知参数失败关闭；保持工具列表、生成扩展和任务文件输入。
 - child 入口绑定信息仅为账号 ID/配置根，固定于独立 worker 整个生命周期，不在并发任务间临时改写，不传递密钥。新测试确认两个真实子进程各自发出绑定身份、工具仅 read、移除账号凭据后拒绝请求且 CLI 哨兵不变。
 - 当前回归：Host **50/50 PASS**，受影响 direct/session/orchestration/M12 合同 **38/38 PASS**，TypeScript 与 diff 检查 PASS。完整受控栈的子代理 route/预算/受管应用和 GUI 结果投影仍 **NOT_RUN**；2B–2F 未完成，不能据此宣称二阶段完成。
+
+## 2026-09-22：2B 内部任务投影及候选失败门禁
+
+- 私有 HostTasks 开关接入受控模式、一次性审批和撤权投影；受控任务持有项目锁直到 worker 确认退出，撤权不提前释放。恢复时清空授权与审批。公开 HTTP 仍未启用。
+- 内部任务测试 PASS；基础生产 RPC 批准/撤权/迟到/普通只读 4/4 PASS。完整栈新增 scout 测试实际失败，错误 DIRECT_ORCHESTRATION_UNAVAILABLE。
+- 候选 069ddb1 的隔离构建目录依赖使用软链接，npm pack 只带直接依赖，漏掉 ssri 的 minipass；直接导入解包 composer 确认 MODULE_NOT_FOUND。该候选未安装，已拒绝；仓库外保留 candidate-069ddb1-rejected.md，删除本轮可重建失败产物以回收容量。
+- 构建器增加解包后的依赖加载检查；缺少传递依赖负例与修复正例 PASS。隔离构建依赖改用物理副本，不修改主仓依赖或用户安装。
+- 2B 完整子代理链仍未通过；不能以基础写入通过替代受管闭环。真实模型预算已用 0，M2 未完成。

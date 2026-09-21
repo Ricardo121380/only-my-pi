@@ -45,7 +45,7 @@ try {
     if (services.diagnostics.some((d) => d.type === "error") || services.resourceLoader.getExtensions().errors.length) throw new Error();
     const model = modelRuntime.getAvailableSnapshot().find((m) => `${m.provider}/${m.id}` === modelId);
     if (!model) throw new Error();
-    const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model, tools: controlled ? ["read", "grep", "find", "ls", "edit", "write", "bash", "request_coding_access"] : ["read", "grep", "find", "ls"] });
+    const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model, tools: controlled ? ["read", "grep", "find", "ls", "edit", "write", "bash", "request_coding_access", "delegate_readonly_agent", "delegate_managed_writer"] : ["read", "grep", "find", "ls"] });
     if (created.modelFallbackMessage || `${created.session.model?.provider}/${created.session.model?.id}` !== modelId) throw new Error();
     sessionManager.appendCustomEntry("omp-account-binding", { version: 1, accountId: account.accountId, providerId: account.providerId });
     return { ...created, services, diagnostics: services.diagnostics };

@@ -5,8 +5,20 @@ import path from "node:path";
 import test from "node:test";
 
 import { createReleasePayloadStager } from "../packages/release-stack/index.mjs";
+import { verifyBundledRuntime } from "../packages/release-stack/release-payload-stager.mjs";
 
 const SOURCE = "a".repeat(40);
+
+test("extracted runtime smoke rejects missing transitive dependencies", async (t) => {
+  const root = await temporary(t, "omp-bundled-runtime-");
+  const dependency = path.join(root, "node_modules", "fixture-parent");
+  await fs.mkdir(dependency, { recursive: true });
+  await fs.writeFile(path.join(root, "package.json"), JSON.stringify({ dependencies: { "fixture-parent": "1.0.0" } }));
+  await fs.writeFile(path.join(dependency, "index.js"), "module.exports = require('fixture-missing-child');\n");
+  await assert.rejects(verifyBundledRuntime({ packageRoot: root, node: process.execPath, env: {} }), { code: "RELEASE_STAGE_COMMAND_FAILED" });
+  await fs.writeFile(path.join(dependency, "index.js"), "module.exports = {};\n");
+  await verifyBundledRuntime({ packageRoot: root, node: process.execPath, env: {} });
+});
 
 async function temporary(t, prefix) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), prefix)));

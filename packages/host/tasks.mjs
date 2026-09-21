@@ -8,12 +8,13 @@ import { hostError, terminal, textContent, CLI_ACCOUNT_ID } from "./contracts.mj
 import { projectPath } from "./inspector.mjs";
 
 export class HostTasks extends EventEmitter {
-  constructor({ configRoot, stack, catalog, models, accounts, workerFactory = (options) => new RpcWorker(options), env = process.env }) {
-    super(); Object.assign(this, { configRoot, stack, catalog, models, accounts, workerFactory, env });
+  constructor({ configRoot, stack, catalog, models, accounts, allowControlled = false, workerFactory = (options) => new RpcWorker(options), env = process.env }) {
+    super(); Object.assign(this, { configRoot, stack, catalog, models, accounts, allowControlled, workerFactory, env });
     this.tasks = new Map(); this.workers = new Map(); this.requests = new Map(); this.saving = Promise.resolve(); this.closing = false;
     this.running = new Map();
     this.accountReleases = new Map();
     this.leases = new Map();
+    this.projectLeases = new Map();
     this.file = path.join(configRoot, "only-my-pi/host/tasks.json");
   }
   async load() {
@@ -23,13 +24,14 @@ export class HostTasks extends EventEmitter {
       if (task.worker && (!Number.isSafeInteger(task.worker.pid) || task.worker.pid < 1 || groupAlive(task.worker.pid))) throw hostError("WORKER_RECONCILIATION_REQUIRED", 409);
       if (task.error === "RPC_TERMINATION_UNCONFIRMED" && !task.worker) throw hostError("WORKER_RECONCILIATION_REQUIRED", 409);
       if (!terminal(task.status)) { task.status = "interrupted"; task.error = "HOST_RESTARTED"; }
+      task.approvals = []; task.access = "inspect";
       task.worker = null;
       this.tasks.set(task.taskId, task); this.requests.set(task.requestId, task.taskId);
     }
     await this.persist();
   }
   summary(task) { return { taskId: task.taskId, requestId: task.requestId, projectId: task.projectId, accountId: task.accountId ?? null, model: task.model, prompt: task.prompt.slice(0, 200), status: task.status,
-    sessionId: task.sessionId, createdAt: task.createdAt, updatedAt: task.updatedAt, error: task.error ?? null, tool: task.tool ?? null }; }
+    mode: task.mode ?? "readonly", access: task.access ?? "inspect", approvals: task.approvals ?? [], sessionId: task.sessionId, createdAt: task.createdAt, updatedAt: task.updatedAt, error: task.error ?? null, tool: task.tool ?? null }; }
   public(task) { return structuredClone({ ...this.summary(task), prompt: task.prompt, partial: task.partial ?? "", messages: task.messages.slice(-50).map((m) => ({ ...m, text: m.text.slice(0, 16384) })) }); }
   snapshot() { return [...this.tasks.values()].slice(-100).map((t) => this.summary(t)); }
   persist() {
@@ -43,12 +45,14 @@ export class HostTasks extends EventEmitter {
     if (!this.checkpoint) this.checkpoint = setTimeout(() => { this.checkpoint = null; void this.persist().catch(() => { this.persistenceError = true; }); }, 250);
   }
   async start(command) {
+    const mode = command.mode ?? "readonly";
+    if (!["readonly", "controlled"].includes(mode) || (mode === "controlled" && !this.allowControlled)) throw hostError("CONTROLLED_MODE_UNAVAILABLE", 409);
     if (this.accounts && (typeof command.accountId !== "string" || !command.accountId)) throw hostError("ACCOUNT_BINDING_REQUIRED", 409);
     if (!this.accounts && command.accountId !== undefined) throw hostError("ACCOUNT_BINDING_UNAVAILABLE", 409);
     if (this.closing) throw hostError("HOST_STOPPING", 409);
     if (this.persistenceError) throw hostError("HOST_STORAGE_FAILED", 503);
     const prior = this.requests.get(command.requestId);
-    const requestDigest = createHash("sha256").update(JSON.stringify([command.projectId, command.model, command.prompt, ...(this.accounts ? [command.accountId] : [])])).digest("hex");
+    const requestDigest = createHash("sha256").update(JSON.stringify([command.projectId, command.model, command.prompt, ...(this.accounts ? [command.accountId] : []), ...(mode === "controlled" ? [mode] : [])])).digest("hex");
     const existing = (id) => { const task = this.tasks.get(id); if (task.requestDigest !== requestDigest) throw hostError("REQUEST_ID_CONFLICT", 409); return this.public(task); };
     if (prior) return existing(prior);
     if (this.tasks.size >= 1000 || this.workers.size >= 4) throw hostError("TASK_CAPACITY_REACHED", 429);
@@ -66,7 +70,7 @@ export class HostTasks extends EventEmitter {
     if (this.closing) throw hostError("HOST_STOPPING", 409);
     if ([...this.tasks.values()].filter((t) => !terminal(t.status)).length >= 4) throw hostError("TASK_CAPACITY_REACHED", 429);
     const task = { taskId: randomUUID(), requestId: command.requestId, requestDigest, projectId: project.projectId, model: command.model, ...(this.accounts ? { accountId: command.accountId } : {}),
-      prompt: command.prompt, status: "starting", sessionId: null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      mode, access: "inspect", approvals: [], prompt: command.prompt, status: "starting", sessionId: null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     this.requests.set(command.requestId, task.taskId); this.tasks.set(task.taskId, task);
     try { await this.persist(); }
     catch {
@@ -86,13 +90,14 @@ export class HostTasks extends EventEmitter {
     const sessionRoot = path.join(this.catalog.sessionRoot, `omp-${project.projectId}`);
     let worker;
     try {
-      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, accountId: task.accountId, sessionRoot, env: this.env,
+      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, accountId: task.accountId, controlled: task.mode === "controlled", sessionRoot, env: this.env,
         onIdentity: async (identity) => { task.worker = identity; await this.persist(); } });
     } catch (error) { this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId); throw error; }
     this.workers.set(task.taskId, worker);
     let settledResolve, failed = false, stopping = false;
     const settled = new Promise((resolve) => { settledResolve = resolve; });
     const deadline = setTimeout(() => { failed = true; task.error = "TASK_TIME_LIMIT"; settledResolve(); }, 15 * 60 * 1000);
+    worker.on("approvals", (approvals) => { task.approvals = terminal(task.status) || task.status === "cancelling" ? [] : approvals; this.changed(task); });
     worker.on("event", (event) => {
       if (terminal(task.status)) return;
       if (event?.type === "message_end" && ["user", "assistant"].includes(event.message?.role)) {
@@ -105,6 +110,7 @@ export class HostTasks extends EventEmitter {
       } else if (event?.type === "tool_execution_start") {
         task.tool = { name: String(event.toolName).slice(0, 128), status: "running" };
       } else if (event?.type === "tool_execution_end") {
+        if (event.toolName === "request_coding_access" && event.result?.details?.status === "CODING_ACCESS_GRANTED" && !event.isError) task.access = "coding";
         task.messages.push({ id: randomUUID(), role: "toolResult", toolName: String(event.toolName).slice(0, 128), text: textContent(event.result?.content), isError: event.isError === true });
         task.tool = null;
       } else if (event?.type === "extension_error") { failed = true; task.error = "EXTENSION_FAILED"; settledResolve(); }
@@ -116,6 +122,12 @@ export class HostTasks extends EventEmitter {
     worker.on("exit", () => { if (!stopping && !terminal(task.status) && task.status !== "cancelling") { failed = true; task.error = "WORKER_EXITED"; } settledResolve(); });
     try {
       await projectPath(project);
+      if (task.mode === "controlled") {
+        const projectLease = await acquireOwnership(this.configRoot, "project", project.path);
+        this.projectLeases.set(task.taskId, projectLease);
+        task.projectPath = project.path; task.projectOwnerToken = projectLease.owner.token;
+        await this.persist();
+      }
       if (this.closing) { task.status = "cancelling"; throw hostError("HOST_STOPPING"); }
       const state = await worker.start();
       task.worker = worker.identity; task.sessionId = state.sessionId;
@@ -124,7 +136,7 @@ export class HostTasks extends EventEmitter {
       await this.persist();
       if (task.status === "cancelling" || this.closing) { stopping = true; await worker.cancel(); task.status = "cancelled"; return; }
       task.status = "running"; this.changed(task);
-      await worker.command("prompt", { message: `只读分析请求。不要修改项目文件。\n\n${task.prompt}` });
+      await worker.command("prompt", { message: task.mode === "controlled" ? task.prompt : `只读分析请求。不要修改项目文件。\n\n${task.prompt}` });
       await settled;
       stopping = true;
       await worker.stop();
@@ -140,8 +152,10 @@ export class HostTasks extends EventEmitter {
       if (terminationConfirmed) {
         this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId);
         try { await lease?.release(); this.leases.delete(task.taskId); } catch { task.status = "failed"; task.error = "SESSION_RELEASE_FAILED"; }
+        try { await this.projectLeases.get(task.taskId)?.release(); this.projectLeases.delete(task.taskId); } catch { task.status = "failed"; task.error = "PROJECT_RELEASE_FAILED"; }
         this.workers.delete(task.taskId);
       }
+      task.approvals = []; task.access = "inspect";
       task.updatedAt = new Date().toISOString(); this.changed(task); await this.persist();
       await this.catalog.scan().catch(() => {});
     }
@@ -153,6 +167,18 @@ export class HostTasks extends EventEmitter {
     const worker = this.workers.get(id);
     if (worker?.identity) void worker.cancel().catch(() => { if (!terminal(task.status)) task.error = "RPC_TERMINATION_UNCONFIRMED"; });
     return this.public(task);
+  }
+  async answerApproval(id, approvalId, value) {
+    const task = this.tasks.get(id), worker = this.workers.get(id);
+    if (!task || terminal(task.status) || task.status === "cancelling" || !worker || task.mode !== "controlled") throw hostError("APPROVAL_EXPIRED", 409);
+    worker.answerApproval(approvalId, value);
+    return this.public(task);
+  }
+  async revoke(id) {
+    const task = this.tasks.get(id), worker = this.workers.get(id);
+    if (!task || terminal(task.status) || task.status === "cancelling" || !worker || task.mode !== "controlled") throw hostError("RPC_CONTROL_UNAVAILABLE", 409);
+    await worker.revoke(); task.access = "inspect"; task.approvals = [];
+    this.changed(task); await this.persist(); return this.public(task);
   }
   async stop() {
     this.closing = true;
@@ -166,6 +192,7 @@ export class HostTasks extends EventEmitter {
       if (task.error === "RPC_TERMINATION_UNCONFIRMED") task.error = "RPC_TERMINATION_RECOVERED";
       this.accountReleases.get(id)?.(); this.accountReleases.delete(id);
       await this.leases.get(id)?.release(); this.leases.delete(id);
+      await this.projectLeases.get(id)?.release(); this.projectLeases.delete(id);
       this.workers.delete(id);
     }
     clearTimeout(this.checkpoint); this.checkpoint = null;

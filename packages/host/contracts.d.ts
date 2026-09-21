@@ -14,6 +14,8 @@ export interface OAuthFlow { flowId: string; accountId: string; status: "startin
 export interface AccountDirectory { protocol: 1; authentication: "api_key"; cliReference: { accountId: "cli-readonly"; name: string; readOnly: true }; accounts: GuiAccount[] }
 export interface Message { id: string; role: "user" | "assistant" | "toolResult"; text: string; toolName?: string; isError?: boolean; outputAvailable?: boolean; truncated?: boolean }
 export interface HostTask {
+  mode?: "readonly" | "controlled"; access?: "inspect" | "coding";
+  approvals?: { approvalId: string; kind: "select" | "confirm"; title: string; message: string; options?: string[]; expiresAt: string }[];
   accountId?: string | null;
   taskId: string; requestId: string; projectId: string; model: string; prompt: string;
   status: TaskStatus; sessionId: string | null; messages: Message[]; partial?: string; error?: string | null;

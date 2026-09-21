@@ -125,6 +125,22 @@ export async function installPi({ work, resolved, node, npm, env, run, download,
   return { pi, archive, artifactRoot: packageRoot, verified };
 }
 
+export async function verifyBundledRuntime({ packageRoot, node, env, run = runNode }) {
+  // Exercise the extracted artifact, never the checkout's dependency graph.
+  await run(node, ["--input-type=module", "-e", `
+    import { createRequire } from "node:module";
+    import path from "node:path";
+    const root = process.cwd();
+    const require = createRequire(path.join(root, "package.json"));
+    const manifest = require("./package.json");
+    for (const name of Object.keys(manifest.dependencies ?? {})) {
+      const relative = path.relative(root, require.resolve(name));
+      if (relative.startsWith("..") || path.isAbsolute(relative)) throw new Error("Bundled dependency escaped artifact");
+      require(name);
+    }
+  `], { cwd: packageRoot, env });
+}
+
 async function buildOnlyMyPi({ rootDir, sourceCommit, work, resolved, node, npm, env, run, extract }) {
   // Build ignored assets explicitly from this clean source before packaging.
   // No dependency lifecycle scripts or implicit npm hooks are executed.
@@ -144,6 +160,7 @@ async function buildOnlyMyPi({ rootDir, sourceCommit, work, resolved, node, npm,
   const packageRoot = await singleDirectory(extracted, "package");
   const manifest = JSON.parse(await fs.readFile(path.join(packageRoot, "package.json"), "utf8"));
   if (manifest.name !== "only-my-pi") fail("RELEASE_OMP_PACK_INVALID", "source artifact is not only-my-pi");
+  await verifyBundledRuntime({ packageRoot, node, env, run });
   await fs.writeFile(path.join(packageRoot, "artifact-identity.json"), `${JSON.stringify({ formatVersion: 1, kind: "only-my-pi-source-identity", sourceCommit }, null, 2)}\n`, { mode: 0o600, flag: "wx" });
   const output = path.join(resolved, "only-my-pi.tgz");
   await createDeterministicTarGzip({ rootDir: packageRoot, outputPath: output, rootName: "package" });
