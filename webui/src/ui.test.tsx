@@ -13,10 +13,25 @@ beforeAll(() => {
 const models = [{ id: "fixture/model", name: "Fixture", provider: "fixture" }];
 const defaults = { models, disabled: false, running: false, cancelling: false, onSend: async () => {}, onCancel: () => {}, onModels: () => {} };
 describe("composer states", () => {
+  it("requires a Host capability and explicit choice for controlled mode; failure keeps the draft", async () => {
+    const onSend = vi.fn(async () => { throw new Error("OWNERSHIP_HELD"); });
+    const { container, rerender } = render(<Composer {...defaults} onSend={onSend} />);
+    fireEvent.click(container.querySelector("#modeButton")!);
+    expect((screen.getByRole("button", { name: /受控编程 显式审批/ }) as HTMLButtonElement).disabled).toBe(true);
+    rerender(<Composer {...defaults} controlledAvailable onSend={onSend} />);
+    fireEvent.click(screen.getByRole("button", { name: /受控编程 显式审批/ }));
+    const input = screen.getByLabelText("新的受控编程") as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: "修改临时文件" } });
+    fireEvent.click(screen.getByRole("button", { name: "开始受控任务" }));
+    await waitFor(() => expect(onSend).toHaveBeenCalledWith("fixture/model", "修改临时文件", "controlled"));
+    expect(input.value).toBe("修改临时文件");
+    rerender(<Composer {...defaults} onSend={onSend} />);
+    expect(screen.getByLabelText("新的只读分析")).toBeTruthy();
+  });
   it("opens mode help independently from usage", () => {
     const { container } = render(<Composer {...defaults} />);
     fireEvent.click(container.querySelector("#modeButton")!);
-    expect(screen.getByRole("dialog", { name: "只读分析模式" })).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "选择执行模式" })).toBeTruthy();
     expect(screen.queryByRole("dialog", { name: "运行与用量" })).toBeNull();
   });
   it("keeps the controlled model across project remounts and refuses missing selections", async () => {
@@ -26,7 +41,7 @@ describe("composer states", () => {
     rerender(<Composer key="b" {...props} />);
     fireEvent.change(screen.getByLabelText("新的只读分析"), { target: { value: "检查" } });
     fireEvent.click(screen.getByRole("button", { name: "开始分析" }));
-    await waitFor(() => expect(onSend).toHaveBeenCalledWith("fixture/second", "检查"));
+    await waitFor(() => expect(onSend).toHaveBeenCalledWith("fixture/second", "检查", "readonly"));
     rerender(<Composer key="c" {...props} models={models} />);
     fireEvent.change(screen.getByLabelText("新的只读分析"), { target: { value: "检查" } });
     expect((screen.getByRole("button", { name: "开始分析" }) as HTMLButtonElement).disabled).toBe(true);
@@ -39,7 +54,7 @@ describe("composer states", () => {
     fireEvent.keyDown(input, { key: "Enter", ctrlKey: true }); expect(onSend).not.toHaveBeenCalled();
     fireEvent.compositionEnd(input); fireEvent.keyDown(input, { key: "Enter", ctrlKey: true }); fireEvent.keyDown(input, { key: "Enter", ctrlKey: true });
     await waitFor(() => expect(onSend).toHaveBeenCalledTimes(1));
-    expect(onSend).toHaveBeenCalledWith("fixture/model", "检查项目");
+    expect(onSend).toHaveBeenCalledWith("fixture/model", "检查项目", "readonly");
   });
   it("keeps text after submission failure", async () => {
     render(<Composer {...defaults} onSend={async () => { throw new Error("offline"); }} />);

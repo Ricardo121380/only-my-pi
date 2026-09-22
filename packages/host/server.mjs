@@ -90,7 +90,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
   };
   const tasks = new HostTasks({ configRoot, stack, catalog, accounts, workerFactory, models: accountModels, allowControlled, env });
   try { await tasks.load(); } catch (error) { await lock.release(); throw error; }
-  const snapshot = () => ({ protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, seq, indexing: scanRunning,
+  const snapshot = () => ({ protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, seq, indexing: scanRunning, capabilities: { controlled: allowControlled },
     runtime: { stackId: stack.stackId, sourceCommit: stack.distribution?.sourceCommit ?? null }, projects: catalog.listProjects(), tasks: tasks.snapshot(), diagnostics: catalog.diagnostics });
   const send = (client, value) => { if (client.readyState !== 1) return; if (client.bufferedAmount > 1024 * 1024) client.close(1013, "Reconnect for snapshot"); else client.send(JSON.stringify(value)); };
   const publish = (type, data) => { const event = { type, epoch, seq: ++seq, data }; for (const client of clients) send(client, event); };
