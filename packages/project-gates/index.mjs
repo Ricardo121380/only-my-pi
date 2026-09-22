@@ -365,6 +365,7 @@ export function createNodeExecAdapter({ spawnImpl = nodeSpawn, maxOutputBytes = 
       bytes += chunk.length;
       if (bytes > maxOutputBytes) { outputLimitExceeded = true; stop("output-limit"); return; }
       output[field].push(Buffer.from(chunk));
+      options.onData?.(Buffer.from(chunk));
     };
     child.stdout?.on("data", (chunk) => append("stdout", chunk));
     child.stderr?.on("data", (chunk) => append("stderr", chunk));
@@ -373,6 +374,9 @@ export function createNodeExecAdapter({ spawnImpl = nodeSpawn, maxOutputBytes = 
     if (options.signal?.aborted) abort();
     if (options.timeout && !killed) timer = setTimeout(() => stop("timeout"), options.timeout);
     child.once("error", (error) => finish({ stdout: options.encoding === "buffer" ? Buffer.alloc(0) : "", stderr: options.encoding === "buffer" ? Buffer.from(error.message) : error.message, code: 1, killed, started: true, reason: "spawn-failed", outputLimitExceeded }));
+    // Descendants can retain the shell's pipes after the shell itself exits.
+    // Do not wait forever for close before starting group cleanup.
+    child.once("exit", () => { if (!settled && groupAlive()) stop("descendant-active"); });
     child.once("close", (code) => { closedCode = code; maybeFinish(); });
   });
 }

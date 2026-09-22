@@ -1,7 +1,8 @@
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { type BashOperations, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import os from "node:os";
 import path from "node:path";
 import { DirectSessionOwnership } from "../../packages/direct-agent/ownership.mjs";
+import { createOwnedBashOperations } from "../../packages/direct-agent/shell.mjs";
 
 import {
   DIRECT_READ_ONLY_AGENTS,
@@ -62,9 +63,26 @@ export default function ompDirect(pi: ExtensionAPI): void {
   if (process.env.ONLY_MY_PI_DIRECT !== "1") return;
   const configRoot = process.env.PI_CODING_AGENT_DIR ?? path.join(os.homedir(), ".pi", "agent");
   const ownership = new DirectSessionOwnership(configRoot);
-  const controller = createDirectSessionController({ pi, configRoot, environment: process.env,
-    acquireProject: async (ctx: any) => { if (ctx.mode === "tui") await ownership.acquire("project", ctx.cwd); },
+  let ownsSession: ((ctx: any) => boolean) | undefined;
+  let ownsDirectSession: ((ctx: any) => boolean) | undefined;
+  let ownershipReady = false;
+  pi.events.on("only-my-pi:host-session-owner:v1", (payload: any) => {
+    if (typeof payload?.ownsSession === "function") ownsSession = payload.ownsSession;
   });
+  pi.events.on("only-my-pi:direct-session-owner:v1", (payload: any) => {
+    if (typeof payload?.ownsSession === "function") ownsDirectSession = payload.ownsSession;
+  });
+  const ownedShell = createOwnedBashOperations();
+  const controller = createDirectSessionController({ pi, configRoot, environment: process.env,
+    acquireProject: async (ctx: any) => { if (!ownsSession?.(ctx)) await ownership.acquire("project", ctx.cwd); },
+  });
+  const shellOperations: BashOperations = { exec: (command, cwd, options) => ownedShell.exec(command, cwd, {
+    ...options, signal: AbortSignal.any([options.signal, controller.grantAbort?.signal].filter((signal): signal is AbortSignal => !!signal)),
+  }) };
+  let shellReady = false;
+  // The permission extension remains the sole bash tool owner, preserving its
+  // sandbox and policy. The pinned build adapter delegates its process launch.
+  pi.events.emit("only-my-pi:owned-shell:v1", { operations: shellOperations, accept: () => { shellReady = true; } });
 
   // Only the trusted SDK bootstrap publishes this process-local object. No
   // environment flag or serializable RPC command can create this capability.
@@ -138,19 +156,35 @@ export default function ompDirect(pi: ExtensionAPI): void {
 
   pi.on("session_start", async (event, ctx) => {
     controller.hostInteraction?.bind(ctx);
-    if (ctx.mode === "tui") {
-      try { await ownership.acquire("session", ctx.sessionManager.getSessionId()); }
-      catch { controller.shutdown(ctx); ctx.ui.notify("SESSION_OWNERSHIP_UNAVAILABLE: this session is owned elsewhere or needs reconciliation.", "error"); ctx.shutdown(); return; }
+    ownershipReady = false;
+    if (!shellReady && process.env.ONLY_MY_PI_HEADLESS !== "1") {
+      ctx.ui.notify("OWNED_SHELL_UNAVAILABLE: rebuild the controlled runtime", "error");
+      ctx.shutdown();
+      return;
     }
+    if (!ownsSession?.(ctx) && !ownsDirectSession?.(ctx)) {
+      try { await ownership.acquire("session", ctx.sessionManager.getSessionId()); }
+      catch {
+        controller.shutdown(ctx);
+        ctx.ui.notify("SESSION_OWNERSHIP_UNAVAILABLE: this session is owned elsewhere or needs reconciliation.", "error");
+        // Print mode's shutdown callback may be a no-op. The input/tool guards
+        // below still prevent it from submitting a model request or executing.
+        if (ctx.mode === "print" || ctx.mode === "json") { process.stderr.write("SESSION_OWNERSHIP_UNAVAILABLE\n"); process.exitCode = 1; }
+        ctx.shutdown(); return;
+      }
+    }
+    ownershipReady = true;
     await controller.start(event, ctx);
   });
   pi.on("session_shutdown", async (_event, ctx) => {
     controller.hostInteraction?.invalidate(); controller.shutdown(ctx);
-    if (ctx.mode === "tui") await ownership.close();
+    ownershipReady = false;
+    await ownership.close();
   });
+  pi.on("input", () => ownershipReady ? undefined : { action: "handled" as const });
   pi.on("before_agent_start", (event) => controller.beforeAgentStart(event));
-  pi.on("tool_call", (event) => controller.blockToolCall(event));
-  pi.on("user_bash", (event) => controller.inspectUserBash(event));
+  pi.on("tool_call", (event) => ownershipReady ? controller.blockToolCall(event) : { block: true, reason: "SESSION_OWNERSHIP_UNAVAILABLE" });
+  pi.on("user_bash", (event) => !ownershipReady ? { result: { output: "SESSION_OWNERSHIP_UNAVAILABLE", exitCode: 126, cancelled: false, truncated: false } } : controller.inspectUserBash(event) ?? { operations: shellOperations });
   pi.on("model_select", async (event) => {
     await controller.rememberModel(event.model).catch(() => {});
   });

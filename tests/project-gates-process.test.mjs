@@ -48,13 +48,13 @@ test("a gate whose descendant holds output pipes is stopped as one owned group",
   const code = "const {spawn}=require('node:child_process'); spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{stdio:['ignore','inherit','inherit']}); process.exit(0)";
   let timer;
   const result = await Promise.race([
-    exec(process.execPath, ["-e", code], { timeout: 100 }),
+    exec(process.execPath, ["-e", code], { timeout: 2000 }),
     new Promise((resolve) => { timer = setTimeout(() => resolve("unsettled"), 3000); }),
   ]);
   clearTimeout(timer);
   assert.notEqual(result, "unsettled");
   assert.equal(result.killed, true);
-  assert.equal(result.reason, "timeout");
+  assert.equal(result.reason, "descendant-active");
   assert.equal(result.terminationUnconfirmed, undefined);
 });
 

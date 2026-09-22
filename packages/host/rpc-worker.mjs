@@ -23,7 +23,7 @@ export class RpcWorker extends EventEmitter {
   async start() {
     if (this.controlled && !this.accountId) throw hostError("ACCOUNT_BINDING_REQUIRED");
     const set = await this.extensionResolver({ stack: this.stack, configRoot: this.configRoot, headless: !this.controlled });
-    const invocation = buildDirectPiInvocation({ stack: this.stack, extensionPaths: set.extensions,
+    const invocation = buildDirectPiInvocation({ stack: this.stack, extensionPaths: set.extensions, runtimeOwner: "host",
       argv: ["--mode", "rpc", "--model", this.model, "--session-dir", this.sessionRoot], env: { ...(this.accountId === undefined ? this.env : accountWorkerEnvironment(this.env)), PI_CODING_AGENT_DIR: this.configRoot } });
     if (this.stopRequested) throw hostError("RPC_CANCELLED_BEFORE_START");
     const argv = this.accountId === undefined ? invocation.argv.slice(1) : [fileURLToPath(new URL("./account-rpc-entry.mjs", import.meta.url)), this.stack.root, this.configRoot, this.accountId, this.model, this.sessionRoot, this.controlled ? "controlled" : "readonly", this.resumeFile ?? "", ...set.extensions];

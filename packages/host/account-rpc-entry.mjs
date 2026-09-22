@@ -40,7 +40,10 @@ try {
       cwd, agentDir: configRoot, modelRuntime,
       settingsManager: sdk.SettingsManager.create(cwd, configRoot, { projectTrusted: false }),
       extensionFlagValues: new Map([["perm", controlled ? "build" : "plan"]]),
-      resourceLoaderOptions: { noExtensions: true, additionalExtensionPaths: extensions, ...(controlled ? { extensionFactories: [createControlledExtension()] } : {}) },
+      resourceLoaderOptions: { noExtensions: true, additionalExtensionPaths: extensions, extensionFactories: [
+        (pi) => pi.events.emit("only-my-pi:host-session-owner:v1", { ownsSession: (ctx) => ctx.mode === "rpc" && ctx.sessionManager.getSessionId() === sessionManager.getSessionId() }),
+        ...(controlled ? [createControlledExtension()] : []),
+      ] },
     });
     if (services.diagnostics.some((d) => d.type === "error") || services.resourceLoader.getExtensions().errors.length) throw new Error();
     const model = modelRuntime.getAvailableSnapshot().find((m) => `${m.provider}/${m.id}` === modelId);

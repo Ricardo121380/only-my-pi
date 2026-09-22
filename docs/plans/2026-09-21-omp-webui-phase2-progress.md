@@ -144,3 +144,193 @@
 - Monaco 0.56.0 固定版本、同源 worker、按需加载；文件目录、多标签（最多 12）、语法高亮、文件内搜索、草稿/基线 diff、保存/重新读取、脏标签与关闭工作区确认。CSP 仅放开动态样式及同源 worker，脚本仍禁止 inline/eval；不加载 CDN。编辑器约 3.82MB 延迟包，首屏 JS 约 410KB；性能指标仍待 2F 实测，构建告警不隐藏。
 - Ego Lite 已验证中文实际落盘、多标签、搜索、外部改动冲突保留草稿、关闭脏标签提示、重新读取磁盘、390px 无文档横向溢出。截图在 ../artifacts/webui-phase2/editor-*.png。浏览器首轮点击不可见的 Monaco 内部 textfield 失败，转用截图定位实际编辑区完成，不把失败点击算通过。
 - 手动保存/HTTP/所有权定向测试 PASS，Web 20/20 回归、Host/Web 类型检查与生产构建 PASS。新编辑器仍在私有 allowControlled 门禁内；未晋升日常安装。2C 其余入口/异常清理审查及 2D 扩展回归继续，2E/2F 未完成，真实模型预算仍 0。
+
+## 2026-09-22：2C 提前写入竞态——阶段阻断，不能验收
+
+- 编辑器批次已提交 6ca0c4b。随后补齐 OMP bash 的公共 BashOperations 适配：Agent bash 与 TUI user_bash 使用共享执行注册表，流式输出上限 5MB；撤权合并 abort signal，shell 主进程退出时立即清理仍活跃的同组后代，而不是等待其继承管道关闭。不是 OS 沙箱，不声称能管理主动逃逸到其他 session 的任意守护进程。
+- 最新 Host 回归 **62 PASS / 2 完整候选场景 SKIP**，根/Host/Web 类型检查 PASS。共享执行测试原先期待 timeout，现在更早得到 descendant-active；改为验证此更严格退出原因并保留退出确认断言。新 bash 适配尚未重建完整候选或安装，不用旧候选证明它。
+- 新 `tests/direct-headless-ownership.test.mjs` 真实 Pi CLI 负例 **FAIL**：另一进程持有目标 session 锁时，CLI 退出码 1 且模型请求 0，但既有 JSONL 被追加 model_change 和 thinking_level_change。原始会话仅 header，追加内容由 SDK 初始化产生。最初测试等 stdin EOF 超时，关闭测试子进程 stdin 后重现真实竞态；没有把测试超时当产品错误。
+- 原因：Pi 0.85.1 `dist/core/sdk.js:239–253` 在 extension session_start 前追加元数据；`dist/core/session-manager.js:671–678` 的打开/迁移也可能重写文件。`main.js:531–558,570–680` 没有提供初始化写入前的公开扩展 hook。TUI 后续切换有 session_before_switch/fork，可取消但不能解决初始 --resume/--continue/--session 的提前写入。只增加 session_start 锁或 input 拦截均不足。
+- 独立只读探子 m2_early_session_lock_scout 核验同一结论：若不修改/升级 Pi，要保证整个初始化边界，需 OMP 自有 CLI/TUI 启动与会话选择层，覆盖初始及运行中切换，并重新验收原 CLI 行为。此举扩大已完成 CLI 的兼容性改动范围，需要明确路线后实施；未 monkeypatch Pi、未修改全局配置、未取消失败断言。
+- 当前 **M2 未完成**：2C 被上述 FAIL 阻断，2D 仍只私有开放，2E/2F 未验收。失败测试与局部补强保留工作树，日常安装未动。不要通过跳过该断言、降级“同会话单写”标准或仅观察无模型请求来给阶段 PASS。
+
+## 2026-09-22：显式 headless 历史正式启动链局部修复
+
+- 用户确认薄启动层路线后，先完成 SessionAdmissions 原型、运行中恢复、新 ID 预留、完整历史分支与最近历史组件；细分证据见 tasks 的 C04–C06。没有改 Pi 内部或升级依赖。
+- 本次将 `launcher.mjs` 的绝对历史路径 print/json 接到 `session-entry.mjs`：先只读解析并取得锁，再加载公开 SDK main。完整审计 argv 原样保留，启动前检查新入口/SDK 栈内路径。其他选择模式未改路由，不声称全 CLI 已修复。
+- `omp-direct/index.ts` 增加独立的进程内“会话已持锁”能力，只跳过重复 session 加锁，不跳过项目写锁或编程授权。
+- 原失败测试 `direct-headless-ownership.test.mjs` 现在通过实际 buildDirectPiInvocation 生成参数并启动真实子进程；保留退出码 1、模型请求 0、文件逐字节不变三个断言，结果 PASS。此前 raw Pi 失败证据仍有效；本次测试边界改为已接入的 OMP 入口，不代表 raw Pi 被修改。
+- `node --test tests/direct-agent-launcher.test.mjs tests/direct-headless-ownership.test.mjs tests/direct-session-admission.test.mjs tests/direct-session-create.test.mjs tests/direct-session-switch.test.mjs tests/direct-session-ownership.test.mjs tests/omp-direct-session.test.mjs tests/host-ownership.test.mjs`：48 PASS。`tsc --noEmit` PASS。真实 Pi + 第一方 omp-direct 的正常 print/json 本地模型请求持锁、正常释放通过；没有验证全安装扩展集。模型为本地服务，外部预算使用 0。
+- 实际 Pi 硬启动错误跳过 finally 时，下一进程得到 OWNER_RECONCILIATION_REQUIRED：保留锁而非误释放。自动核验清理仍未实现。
+- 仍待完成：TUI/相对路径/ID/continue/resume/fork 正式启动接入、原生选择器与 entry 分支语义、异常恢复、完整候选与安装态。2C/M2 未验收，日常安装未更新。
+
+## 2026-09-22：C05 非交互选择正式接入（最新）
+
+- `packages/direct-agent/session-selection.mjs` 统一路径、ID/唯一前缀、session-id、continue 和默认新建。已有历史先只读选择并持锁；新建先预留 ID，再将固定 ID/目录交给公共 main。continue 使用文件 mtime，最新文件被占用即拒绝，不回退。目录遵循参数、对应发行版环境变量、设置、默认目录优先级。
+- 修改 `launcher.mjs`、`session-entry.mjs`、`session-admission.mjs`，扩大持久化 headless 路由并绑定已核验 SDK；保留工具、权限、扩展及提示词参数。TUI/RPC/resume/fork 等未覆盖入口不据此宣称修复。
+- 选择参数为空、重复或冲突时拒绝；前缀多匹配拒绝，跨项目 ID 要求显式 fork，避免静默改变历史。独立只读核验发现空值误新建/误选目录问题，主线程修复并增加零历史写入负例。
+- 修改 launcher、headless-ownership、session-admission 测试，新增 `tests/direct-session-selection.test.mjs`。实际参数构造链下绝对/相对/前缀/ID/continue 争锁均验证退出 1、零模型请求、原文件字节不变；真实 Pi 与第一方扩展正常请求期间持锁、退出释放及指定新 ID 创建通过。
+- 验证命令：`node --test tests/direct-agent-launcher.test.mjs tests/direct-headless-ownership.test.mjs tests/direct-session-admission.test.mjs tests/direct-session-create.test.mjs tests/direct-session-switch.test.mjs tests/direct-session-selection.test.mjs tests/direct-session-ownership.test.mjs tests/omp-direct-session.test.mjs tests/host-ownership.test.mjs`：**65 PASS，0 FAIL，0 SKIP**。`tsc --noEmit` PASS。环境 Node 26.8.2、Pi 0.85.1；模型请求使用本地替身，外部模型调用 0。
+- 风险与边界：唯一前缀要求比原生自动选首项更严格；硬退出仍保留 durable lease 并要求 reconciliation，自动核验清理未实现。未覆盖实体 TUI、全安装扩展集、嵌入式 Node 或 Windows；未更新日常安装、未发布。下一步为 TUI/resume 选择和运行时生命周期；2C/M2 仍未验收。
+
+## 2026-09-22：C05 只读 resume 选择器与 PTY 验证
+
+- 重新核对 Pi 0.85.1：`dist/modes/interactive/components/session-selector.js` 的默认删除回调直接 trash/unlink，未经过 session_before_switch；`dist/modes/interactive/interactive-mode.js` 的普通 shutdown 在 dispose 后 process.exit；`dist/core/agent-session-runtime.js` 的 new/fork 在内部生成 ID。不能仅扩大 main 包装路由便宣称完整 TUI 单写成立。
+- 新增 `packages/direct-agent/session-picker.mjs`，复用公共 SessionSelectorComponent 和由目标 SDK 解析的 pi-tui；删除回调替换为只读提示，不注册重命名。选择期间只提供默认深色主题及搜索/范围/排序快捷键，不运行主题包发现；main 在准入后加载正常配置。未宣称自定义启动主题/快捷键完全兼容。
+- 修改 `session-selection.mjs`、`session-entry.mjs`、`launcher.mjs`：print/json 的 resume 先选择后准入；取消不进入 main、不新建；冲突参数及非 TTY 拒绝。完整交互式 TUI/RPC/fork 路由不变。没有修改 Pi 内部、全局配置或日常安装。
+- 新增 `tests/direct-session-picker.test.mjs`、`tests/fixtures/direct-resume-pty.mjs`，扩展 selection/admission/launcher 回归。执行上节九文件命令并加入 `tests/direct-session-picker.test.mjs`：**71 PASS / 0 FAIL / 0 SKIP**。`tsc --noEmit` PASS。
+- 真实 PTY 手动执行 `node tests/fixtures/direct-resume-pty.mjs select|cancel|occupied` 三个独立场景：Enter 选择后本地模拟请求 1 次、请求期间锁存在、结束后可再获取；Escape 取消和占用拒绝均请求 0 次、v1 文件字节不变。三项均输出对应 PTY_*_PASS。
+- 首轮 PTY 夹具使用 launcher 的完整 argv，但缺少注册 --perm 的第三方扩展，失败为 Unknown option。修正夹具为显式 SDK 入口 + 第一方 omp-direct 后执行上述三项；启动参数构造另由单元测试覆盖，不将修正后的测试冒充完整扩展集验收。尝试从仓库根直接解析 pi-tui 不存在；实际入口从已选 SDK 的依赖目录解析，PTY 已验证成功。
+- 本轮只完成恢复选择组件与 headless resume 接入，不是整个交互 TUI 验收；二阶段未完成。下一步接管运行时替换与退出边界，再逐项覆盖新建/分支/导入和异常回收。真实模型预算 0，用户 Glacier 审计文档未改。
+
+## 2026-09-22：C05 OMP 拥有的运行时恢复与退出边界
+
+- 新增 `packages/direct-agent/session-runtime.mjs`：在初始 SessionManager.open 前准入，返回公共 AgentSessionRuntime 的 OMP 子类；仅调用 SDK 公共方法，未修改 Pi 原型、私有字段或源码。switchSession 先准入目标再委托 SDK，保留取消语义和 rebind 回调，重叠替换直接拒绝；之前访问的历史持续持锁。
+- dispose 在接受请求时立即拒绝后续切换，等待已进入的替换、Agent abort 和全部 SDK shutdown/dispose 完成后才关闭 SessionAdmissions；并发 dispose 返回同一结果。Pi ExtensionRunner.emit 会吞掉 handler 异常，因此通过公开 onError 捕获 shutdown/before-switch 异常，按生命周期不明保留锁。替换工厂失败、未确认执行清理均不自动重试或释放。
+- 新增 `tests/direct-session-runtime.test.mjs` 9 项真实 SDK 定向测试：初始占用无迁移、恢复/回切与退出写入、未支持操作拒绝、取消保持原会话、并发切换与退出、异步退出处理、被 SDK 吞掉的 shutdown 异常、执行清理不明及替换工厂失败。无外部模型请求。
+- `node --test tests/direct-session-runtime.test.mjs tests/direct-session-switch.test.mjs tests/direct-session-admission.test.mjs tests/direct-session-create.test.mjs`：**35 PASS / 0 FAIL / 0 SKIP**。其中新运行时 9 项，不将本轮 35 项与上轮 71 项相加冒充不同测试总数。仅新增 JS 与测试/文档，未重复运行无关前端构建或全仓类型检查。
+- 新增 `tests/fixtures/direct-runtime-pty.mjs`，真实 PTY 分别执行 quit、resume、crash：通过 Pi InteractiveMode 的 /quit 退出；通过私有 /fixture-resume 调公共运行时替换并再 /quit；父进程只对自己的夹具子进程发 SIGKILL。三项 RUNTIME_PTY_*_PASS。正常退出后历史包含 shutdown-proof 且共享锁可重获；SIGKILL 后获取锁返回 OWNER_RECONCILIATION_REQUIRED。测试环境为本机 Node 26.8.2/Pi 0.85.1，私有无工具运行时，没有验证完整审计扩展或嵌入式 Node。fd 不存在时 Pi 按离线模式跳过下载，未安装依赖。
+- 一轮默认只读探子定位 InteractiveMode 的公共/私有界限；主线程核对声明：构造 options 没有 selector 替换入口，原生 selector 的 rename 会打开文件写元数据，showSessionSelector 是私有方法。独立 SessionSelectorComponent 的公开 getSessionList 回调仍可受控使用（上轮已实现），但不能据此声称能替换 InteractiveMode 内部 picker。
+- 风险与后续：new/fork/import 仍返回 SESSION_OPERATION_NOT_ADMITTED；旧运行时替换失败不恢复旧对象或重试；异常自动回收未实现。正常 TUI launcher 尚未改路由，必须先接管交互选择调用并逐项兼容新建/分支/导入，再做完整候选与安装态验收。未改全局配置、Pi、日常安装及用户 Glacier 审计文档；2C/M2 未完成。
+
+## 2026-09-22：C05 受控导入与同 ID 副本
+
+- 修改 `packages/direct-agent/session-runtime.mjs`：恢复与导入共用并发替换门禁；importFromJsonl 先只读准入源文件，再调用 Pi 公共 importFromJsonl。Pi 导入保留 ID，因此复制、v1 迁移和新运行时初始化均受源 ID 锁保护；仍由 Pi 负责取消事件、COPYFILE_EXCL 和文件名后缀，不把导入偷换为恢复源文件。
+- 修改 `session-admission.mjs`：增加校验 ID/文件身份的 admitOwnedCopy，共享源租约以支持导入副本回切；仅导入显式启用 allowOwnedId，允许当前会话的外部副本共享已持 ID 锁，默认恢复准入不放宽。不同 ID、硬链接及身份变化拒绝，关闭时复用原有幂等 release。`session-selection.mjs` 只导出已有 resolveLocalPath 供导入复用，未复制另一套路径转换。
+- `tests/direct-session-runtime.test.mjs` 新增 8 项导入测试：不覆盖/回切、取消无副本、占用/缺失/空源、已存文件、当前 ID 外部副本、非法副本、并发退出及工厂失败保留证据。运行时共 17 项。执行 `node --test tests/direct-session-runtime.test.mjs tests/direct-session-switch.test.mjs tests/direct-session-admission.test.mjs tests/direct-session-create.test.mjs tests/direct-session-selection.test.mjs`：**54 PASS / 0 FAIL / 0 SKIP**。
+- 扩展 `tests/fixtures/direct-runtime-pty.mjs` 的 import 场景：真实 PTY 输入原生 `/import incoming/target.jsonl`，看到确认弹窗并选择 Yes，再 `/quit`。输出 RUNTIME_PTY_IMPORT_PASS；断言副本 target-1.jsonl 保留 imported ID、退出证明已写入、原输入及已有 target.jsonl 字节不变、锁可重获。本机 Node 26.8.2 / Pi 0.85.1，私有无工具运行时，未使用外部模型。
+- 边界：没有更新 launcher 或日常安装；完整审计扩展集、Windows 路径、缺失 cwd 后的原生交互纠正重试尚未验收。源缺失在准入层以 ENOENT 拒绝，不能声称完全兼容 Pi 专用错误类型；进入 SDK 后发生异常仍将生命周期标为不明并保留部分副本/锁，不自动清理或重试。新建/分支与完整 TUI 选择器仍待完成；2C/M2 未完成。未改用户 Glacier 审计文档。
+
+## 2026-09-22：C05 受控新建与公开运行时组合
+
+- 修改 `packages/direct-agent/session-runtime.mjs`：由继承改为组合公开 AgentSessionRuntime，通过公共 getters 和 setter 保持 TUI 运行时合同；恢复、导入、退出继续委托 SDK。只接管 newSession：before-switch(new) → 预留 ID 并创建 manager → abort/shutdown(new) → 同步 UI invalidate → dispose → 工厂 session_start(new) → setup/重建 messages → rebind → withSession。没有访问 Pi 私有字段或把 new 偷换成 resume。
+- 修改 `packages/direct-agent/session-admission.mjs`：create 支持一次性传入 parentSession，与预留 ID 一并交给公共 SessionManager.create。不再需要调用 manager.newSession 生成第二个未锁 ID。取消不预留、不持久化；工厂/setup/生命周期异常保留锁并拒绝重试，退出等待在途替换。未改变现有保守失败策略。
+- 扩展 `tests/direct-session-runtime.test.mjs`：验证 ID 在工厂初始化前被持有、父会话、new 事件、setup 与 UI/context 回调顺序、取消零写入、新建后恢复/导入回调继续生效、并发与退出等待、工厂/setup 异常、被 SDK 吞掉的 before/shutdown 异常。运行时文件 23 个顶层测试及 4 个嵌套测试。
+- 执行 `node --test tests/direct-session-runtime.test.mjs tests/direct-session-create.test.mjs tests/direct-session-admission.test.mjs tests/direct-session-selection.test.mjs tests/direct-session-switch.test.mjs`：**64 PASS / 0 FAIL / 0 SKIP**，统计含嵌套测试；不是与上轮 54 项相加。`git diff --check` PASS；无外部模型调用，未执行无关前端构建。
+- 扩展 `tests/fixtures/direct-runtime-pty.mjs`：工厂前检查持锁，IPC 记录 start/shutdown。实际 PTY 执行 `node tests/fixtures/direct-runtime-pty.mjs new`，输入原生 `/new`，观察 New session started，再 `/quit`：**RUNTIME_PTY_NEW_PASS**。验证 source:new、唯一新 ID 的 start(new)/quit 及退出后新 ID 可再获取；空新会话沿用 Pi 延迟持久化，不为测试强行写入假对话。环境为本机 Node 26.8.2 / Pi 0.85.1，离线无工具夹具。
+- 限制：没有更新 launcher、完整审计扩展或日常安装；不宣称无持久化入口、原生 fork、内部选择器、错误交互与自动异常回收已兼容。下一步实现选定 entry 的 fork 身份预留与分支语义。2C/M2 未完成；用户 Glacier 审计文档未改。
+
+## 2026-09-22：C05 选定消息 fork 与真实 TUI 验证
+
+- `packages/direct-agent/session-admission.mjs` 的 create 增加 leafId 路径：源文件先准入，目标 ID 先预留；公开 SessionManager.inMemory + createBranchedSession 负责分支、标签重建与 compaction 指针，生成的中间 ID 仅存在内存。目标使用预留 ID/header，以 wx、0600 保存快照后交给公开 SessionManager.open。保留原始 entry ID，父会话指向源文件；测试确认投影不修改源字节。
+- `packages/direct-agent/session-runtime.mjs` 实现 fork(before/at)：保留 before-fork 取消、根消息前空分支、selectedText、shutdown/start(fork)、invalidate/rebind/withSession。无效 entry 不预留目标且旧会话可用；工厂或生命周期不明保留锁，不重试。公共 onError 增加 before-fork 异常检查。替换动作延迟到微任务，使并发门禁在同步扩展回调执行前已生效，防止重入绕过。
+- 新增 `tests/direct-session-runtime.test.mjs` 7 项及 `tests/direct-session-create.test.mjs` 2 项：before/at、空根分支、取消/重入、工厂失败、hook 失败、在途退出、标签/压缩指针、无 assistant 快照首条回复不重复 header。执行 `node --test tests/direct-session-runtime.test.mjs tests/direct-session-create.test.mjs tests/direct-session-admission.test.mjs tests/direct-session-selection.test.mjs tests/direct-session-switch.test.mjs`，最终 **73 PASS / 0 FAIL / 0 SKIP**（含既有嵌套测试）。`git diff --check` 与改动 JS 语法检查 PASS。
+- 扩展 `tests/fixtures/direct-runtime-pty.mjs` fork 场景，真实 PTY 输入原生 `/fork`，选择第二条消息，观察新会话只呈现第一条历史、第二条内容回填输入框；Ctrl-U 清空后 `/quit`。输出 **RUNTIME_PTY_FORK_PASS**，断言 fork start/shutdown、父会话、目标只含选定点前路径及退出后 ID 锁可重获。使用离线无工具夹具，无外部模型请求，不是完整安装扩展集验收。
+- 兼容性差异：非空选定路径即使没有 assistant 也立即保存快照；原生对此延迟保存。此差异明确保留，首次 assistant 追加单 header 已验证；根节点前空分支仍采用公共新建的延迟持久化。未宣称 --no-session、全 TUI 恢复选择器或错误纠正流程完成。
+- 下一项：接管完整恢复选择器，阻断删除/重命名绕过准入；再做错误交互、异常回收与候选交叉验收。未改 Pi、全局配置、日常安装或用户 Glacier 审计文档；2C/M2 未完成。
+
+## 2026-09-22：C05 公开编辑器恢复入口与只读选择整合
+
+- 新增 `packages/direct-agent/session-resume-ui.mjs`：复用公开 CustomEditor，在公开 handleInput 中接管 `/resume` 提交及 app.session.resume 动作，其他提交继续交给原回调。避免覆盖 InteractiveMode 私有方法；Pi 在创建编辑器后复制回调，因此路由放在输入处理时完成。每次 session_start 安装适配器，ui.custom 复用已有只读选择组件，再调用 admitted runtime.switchSession。取消/过期选择不切换、重复打开拒绝、错误输出限定为错误码。
+- 新增 `tests/direct-session-resume-ui.test.mjs` 三项，覆盖原生回调复制后路由、取消/过期选择和错误脱敏。执行 `node --test tests/direct-session-resume-ui.test.mjs tests/direct-session-picker.test.mjs tests/direct-session-runtime.test.mjs tests/direct-session-create.test.mjs tests/direct-session-admission.test.mjs tests/direct-session-selection.test.mjs tests/direct-session-switch.test.mjs`：**78 PASS / 0 FAIL / 0 SKIP**。`git diff --check` 和新增 JS 语法检查 PASS。
+- `tests/fixtures/direct-runtime-pty.mjs` 每次工厂加载该扩展；真实 PTY 两轮执行 resume 模式，均输入 `/resume`（不是 fixture-resume），选择 target 后 `/quit`，输出 RUNTIME_PTY_RESUME_PASS。第二轮在选择前 Ctrl-D/Enter 确认删除，观察只读拒绝后仍能恢复 target，父进程验证 source/target 的退出证明与锁可重获。没有外部模型请求，没有更新日常安装。
+- 限制：这是私有无工具扩展栈，其他扩展可通过公开 API 更换编辑器，不能据此保证完整栈没有绕过路径；必须核验编辑器归属。原生组件 delete 提示仍显示，但回调拒绝写入；自定义恢复快捷键没有默认按键，仅验证动作路由合同。占用、cwd 纠正、reload 后重新安装以及完整历史渲染还需实体流程验证。错误期间不恢复已失效运行时，仍沿用保守锁策略。
+- 下一步收口编辑器冲突与选择器错误交互，再做异常回收和候选验收。2C/M2 未完成；未修改 Pi、全局配置或用户 Glacier 审计文档。
+
+## 2026-09-22：C05 reload 选择器失效与错误白名单
+
+- 核对 Pi AgentSession.reload：旧 runner 在 shutdown 后失效，再建立新 runner，而 Session 对象保持不变。原先仅比较 runtime.session 无法拒绝 reload 期间的迟到选择。`session-resume-ui.mjs` 增加每次 session_start 的代次标记，shutdown 使其失效；打开选择器前、返回后及错误通知前均检查代次，旧编辑器回调不得操作新上下文。
+- 错误码由大写正则改为明确允许集合，未知 code 统一 SESSION_RESUME_FAILED，避免任意全大写秘密字符串进入通知。没有修改 SDK 私有字段或全局配置。
+- 更新 `tests/direct-session-resume-ui.test.mjs`：同会话 shutdown 后迟到结果拒绝、旧回调不能打开选择器、reload 新编辑器可用、未知大写错误码脱敏。执行 `node --test tests/direct-session-resume-ui.test.mjs tests/direct-session-picker.test.mjs`：**6 PASS / 0 FAIL**。仅受影响定向集，不把上轮 78 项称为本轮重跑。diff 检查 PASS。
+- 真实 PTY 使用现有 resume 夹具，实际输入 `/reload → /resume → 选择 target → /quit`，输出 RUNTIME_PTY_RESUME_PASS，验证正常恢复及退出持锁/释放。未调用外部模型，未更新日常安装。
+- `extensions`、`packages` 内检索未发现适配器以外的 setEditorComponent/getEditorComponent 使用，但这不覆盖安装态第三方扩展。完整扩展栈归属、缺失 cwd 纠正、异常回收及候选验收仍未完成；2C/M2 不晋升。
+
+## 2026-09-22：C05 恢复拒绝与草稿保留
+
+- `session-resume-ui.mjs` 在实际切换前保存编辑器草稿；争锁失败或 before-switch 取消时，仅在原会话/代次仍有效的情况下恢复，不写入已失效 UI。选择器取消不动草稿，成功切换仍清空。不是失败后自动重试。
+- 更新 `tests/direct-session-resume-ui.test.mjs`，增加草稿在选择取消、扩展取消、占用拒绝与成功切换的四种断言。执行 `node --test tests/direct-session-resume-ui.test.mjs tests/direct-session-picker.test.mjs`：**7 PASS / 0 FAIL**；diff 检查 PASS。未重跑全仓测试。
+- `tests/fixtures/direct-runtime-pty.mjs` 增加 occupied 场景，由父进程持有目标锁。真实 PTY 输入 `/resume`，确认选中 target 后 Enter，观察 SESSION_OWNERSHIP_UNAVAILABLE，再 `/quit`，输出 **RUNTIME_PTY_OCCUPIED_PASS**。断言 target v1 字节不变、只启动 source、目标仍由原持有者占用且 source 正常退出释放；父进程最后仅释放自己创建的夹具锁。
+- 草稿保留由定向测试验证，本次实体流程输入的是 /resume 而非带草稿快捷键，不混称同一证据。未改 Pi、日常安装或用户审计文档，无外部模型调用。完整扩展栈编辑器兼容、缺失 cwd 纠正、异常回收和候选验收仍待完成，2C/M2 未完成。
+
+## 2026-09-22：缺失 cwd 纠正与阶段剩余门禁核验
+
+- `session-admission.mjs` 增加只读 readSessionCwd；`session-runtime.mjs` 在已持目标锁、尚未进入 SDK.open/迁移之前检查目标 cwd 为实际目录。缺失目录返回 SESSION_CWD_INVALID，不将旧运行时标为生命周期不明。`session-resume-ui.mjs` 仅对此前置错误展示确认，明确选择后使用当前项目 cwdOverride；取消保留草稿，不自动重试未知失败。
+- 新增运行时测试验证 v1 目标目录缺失时字节不变、原会话未 shutdown，显式纠正后可恢复；UI 测试验证拒绝只调用一次，确认才调用带 cwdOverride 的第二次。七文件相关回归 **82 PASS / 0 FAIL / 0 SKIP**：runtime、resume-ui、admission、create、selection、picker、switch。cwd 纠正的真实弹窗流程尚未执行，不标实体验收。diff 检查 PASS。
+- 两个一次性默认探子分别只读定位终端接缝和扩展栈。终端仍只有 OutputDock 禁用占位，没有 xterm/node-pty 依赖和 terminal 命令合同；需在 Host contracts/server、独立终端生命周期及 OutputDock 实做，现有 RPC stop/ownership 模式可参考，不把 task 终态直接当终端退出。
+- 主线程调用 resolveControlledStack/resolveDirectExtensionSet 成功核验当前受控路径及 12 个扩展入口；安装栈 Pi 0.85.1。对解析出的 permission-modes、subagents、agent-extensions 四个过滤入口及 lsp/usage 源码做编辑器/恢复注册文本检索未发现直接匹配；这不等于动态完整栈无冲突，也没有把私有适配器接入生产 launcher。
+- 环境：df 显示可用空间约 2.0 GiB；项目 artifacts 总计约 18 GiB，webui-phase2 3.0 GiB、webui-phase1 6.1 GiB。未删除任何产物。完整构建/安装前需处理空间风险，不能删掉历史证据来凑验收。2C、2D 集成、2E 实做及 2F 验收仍未完成，未更新日常安装或调用外部模型。
+
+## 2026-09-22：cwd 纠正实体流程验收
+
+- 经用户明确授权，前轮已清理五个旧候选中的 24 个展开依赖目录，释放约 3.95 GiB，保留报告、日志、源码、归档、manifest/SBOM；46 个元数据文件哈希复核通过。清单位于仓库外 `artifacts/cleanup-2026-09-22-receipt.json`。本轮 df 实测可用约 5.8 GiB，不再沿用 2 GiB 的旧环境判断。
+- `tests/fixtures/direct-runtime-pty.mjs` 增加 cwd/cwd-cancel：目标 v1 历史指向已不存在的目录；真实 `/resume` 切换 All 后选 target，在提示中确认或 Escape，再 `/quit`。最终分别输出 RUNTIME_PTY_CWD_PASS 与 RUNTIME_PTY_CWD-CANCEL_PASS。
+- 确认分支验证 start 事件对应 target 且运行 cwd 为当前项目，历史头仍保留原 cwd，退出后锁可重获；取消分支验证目标字节完全不变、仅 source 启动且目标租约正常释放。首次确认场景失败是夹具错误假定 cwdOverride 会改写历史头；主线程核对公开 SessionManager.open 实现后修正断言并重跑通过，未为迎合测试改动生产语义。
+- 本轮仅修改夹具/文档；语法检查与 git diff --check PASS，没有重复运行既有 82 项回归，也没有外部模型调用。下一项为完整受控 TUI 启动栈接入与交叉验收，异常恢复及 2E/2F 仍未完成；日常安装不变，2C/M2 未晋升。
+
+## 2026-09-22：启动及导入目录前置校验
+
+- 后续检查发现初始启动仍先 SessionManager.open 后检查目录，导入也缺少同等前置校验。统一使用 validateSessionCwd，在持锁后、SDK 迁移/复制/生命周期切换前拒绝缺失或非目录路径。
+- 新增真实 SDK 回归：初始缺失目录不得迁移历史或创建运行时；导入缺失目录不得复制、迁移或关闭原会话，显式 cwdOverride 后可成功导入且源文件字节不变。
+- 七文件回归命令：`node --test tests/direct-session-runtime.test.mjs tests/direct-session-resume-ui.test.mjs tests/direct-session-admission.test.mjs tests/direct-session-create.test.mjs tests/direct-session-selection.test.mjs tests/direct-session-picker.test.mjs tests/direct-session-switch.test.mjs`，结果 **84 PASS / 0 FAIL / 0 SKIP**。未请求外部模型。
+- 改动限 session-runtime.mjs、对应测试及进度文档。普通 TUI 入口仍未接入，2C/M2 未完成；该补丁不意味着日常安装已更新。
+
+## 2026-09-22：新会话启动接缝与完整扩展注册冲突
+
+- 新建选择返回原始预留 SessionManager；SessionAdmissions 以对象身份验证并一次性移交，拒绝未持锁、重复消费、ID/path 改变的 manager。运行时可启动尚未保存的空会话，不重新生成 ID，也不制造空历史文件。
+- 完整 12 扩展源栈 PTY 首次失败：permission-modes 与 omp-direct 同时注册 bash，Pi 拒绝加载 omp-direct。此前简化运行时证据没有覆盖此冲突，不能据其宣称完整栈兼容。
+- 修复：permission-modes 继续独占 bash、维持原审批及 sandbox 包装；字节绑定的候选构建补丁将沙箱/非沙箱执行委托到 OMP BashOperations，保留撤权信号及进程组回收。omp-direct 不再注册第二个 bash，通过进程内能力握手接入；交互入口缺少适配器时拒绝继续。
+- 新增 `packages/distribution/permission-shell-patch.mjs`；`runtime-patches.mjs` 对精确 2.2.0 index/sandbox 输入打补丁，私有构建预期从 2 项更新为 3 项，旧 mountpoint 所有权清理仍保留。未改 Pi 或用户全局 npm 包，未更新日常安装。
+- `node tests/fixtures/permission-shell-build-probe.mjs` PASS：三项字节绑定补丁、旧 mount 清理保留、二次应用拒绝、原外部包字节不变。
+- 真实 PTY：`node tests/fixtures/direct-runtime-pty.mjs quit --full-stack`、`resume --full-stack`（/fixture-resume 后 /quit）、`shell --full-stack`（/fixture-shell 后 /quit）分别 PASS。shell 实际调用唯一注册 bash，普通输出成功，后台 sleep 引发 SHELL_DESCENDANT_ACTIVE 并完成进程组回收。工具直接调用仅为隔离执行器测试，不作为模型授权闭环证据。
+- 限制：源栈夹具采用临时 HOME/config 与复制后打补丁的 permission 包；OMP 编排器提示 RUNTIME_PACKAGE_BINDING_MISSING，fd 离线缺失。因此上述 PASS 仅代表扩展加载、生命周期与执行器，不代表完整编排器、候选安装或真实模型已验收。
+- 12 文件回归（session runtime/resume-ui/admission/create/selection/picker/switch、shell、distribution-sandbox、launcher、omp-direct-session、m12-direct-agent-error-paths）：**123 PASS / 0 FAIL / 0 SKIP**。外部模型调用为 0。
+- 2C 仍未关闭：正式 TUI bootstrap 与完整候选绑定/异常恢复仍待接入验证；2D 公开集成、2E PTY、2F 整体验收不提前开放。
+
+## 2026-09-22：公开 SDK 候选 TUI 入口、启动 fork 与信任选择
+
+- 新增 `packages/direct-agent/tui-runtime.mjs` / `tui-entry.mjs`，由 OMP 组合公开 SDK 服务、模型选择、生命周期与 InteractiveMode；不修改 Pi 私有字段，不在失败时退回 native main。仍为私有候选，日常 TUI launcher 未改路由。
+- 模型、思考强度、名称、初始消息及工具集合在新建/恢复后保留；无法解析的模型拒绝，公开 SDK 支持的 custom model ID 保留警告而非换模型。未支持的启动模式明确拒绝。
+- 共享选择器支持显式 `--fork`：复制前持源锁，目标 ID 在创建前预留；headless fork 已接入 session-entry，源历史字节不变，目标保留 parentSession。冲突和已占用源不会创建目标。
+- 未知项目资源信任采用默认拒绝的真实终端选择器，可仅本次同意，不写永久信任记录；会话内 new 沿用显式选择。恢复路径传递公开 UI 信任上下文。项目资源信任不构成编程授权。
+- 13 文件相关回归：`node --test tests/direct-tui-runtime.test.mjs tests/direct-session-runtime.test.mjs tests/direct-session-resume-ui.test.mjs tests/direct-session-admission.test.mjs tests/direct-session-create.test.mjs tests/direct-session-selection.test.mjs tests/direct-session-picker.test.mjs tests/direct-session-switch.test.mjs tests/direct-shell-ownership.test.mjs tests/distribution-sandbox-ownership.test.mjs tests/direct-agent-launcher.test.mjs tests/omp-direct-session.test.mjs tests/m12-direct-agent-error-paths.test.mjs`，**135 PASS / 0 FAIL / 0 SKIP**。包含本地模拟 Provider 的真实 Pi fork 请求，不计入外部真实模型任务。
+- 实际执行新入口的 PTY：`node tests/fixtures/direct-tui-entry-pty.mjs trust-no` 与 `trust-yes`，手动选择后 `/quit`，均 PASS；验证公开 session_start 信任状态、shutdown 和退出后锁可重获。
+- 补齐 `--offline` 在服务初始化前设置子进程 PI_OFFLINE；新增 `offline` PTY 模式不从父进程继承该变量，仅传启动参数，退出输出 **DIRECT_TUI_ENTRY_OFFLINE_PTY_PASS**。未改变父进程或持久配置。
+- 剩余门禁：完整候选绑定/编排器、启动目录纠正、其他受支持启动方式与异常恢复；@file/无持久化/RPC 尚未由新候选接入，未知跨目录 import 信任交互仍需收口。**2C/M2 未完成**；2D 公开集成、2E、2F 未冒充通过。外部模型调用 0，日常安装及用户审计文档未改。
+
+## 2026-09-22：恢复/导入吞异常后的生命周期阻断
+
+- 新增负例先复现：Pi 的公开 runtime 在 before-switch/shutdown 扩展回调抛错后仍创建目标运行时，OMP 原先只在返回后检查错误。两分支的 factory 次数均为 2 而非预期 1，测试 FAIL；不能以“最终抛错且仍持锁”代替“未启动目标扩展”。
+- `session-runtime.mjs` 以公开 SessionManager、extensionRunner 和 factory 组合恢复步骤，在 before-switch 与 shutdown 后分别检查状态；不修改或继承 Pi 私有实现。switch/import 共用该步骤，保留取消、cwd、生命周期回调、rebind 及上下文语义。
+- import 仍先持源 ID 锁，选择不覆盖目标，COPYFILE_EXCL 后验证副本身份，再迁移/切换；前置事件报错不复制，退出事件报错不加载目标扩展。并发创建目标的负例验证不会覆盖用户文件，原源字节保持不变。
+- 四文件回归 `node --test tests/direct-session-runtime.test.mjs tests/direct-tui-runtime.test.mjs tests/direct-session-resume-ui.test.mjs tests/direct-session-switch.test.mjs`：**65 PASS / 0 FAIL / 0 SKIP**。这是新增补丁后的定向集，不将前述 135 项称为此次全量重跑。
+- 真实 PTY `direct-runtime-pty.mjs resume`（/fixture-resume → /quit）与 `import`（/import incoming/target.jsonl → 确认 → /quit）均 PASS；验证源保留、目标生命周期、非覆盖复制与退出后锁可重获。最初简化夹具误传只有完整权限扩展才注册的 --perm，初始化失败；已按是否加载完整扩展传参并重跑，不改变生产参数校验。
+- 语法检查及 git diff --check PASS。未验证该异常的完整 UI 恢复体验、完整候选/安装态，不开放 2D/2E；2C/M2 仍未完成。
+
+## 2026-09-22：跨目录信任前置与启动目录兼容
+
+- 恢复及 import 在旧 runner/UI 仍有效时先完成目标项目资源信任确认，再复制/迁移、关闭源会话、创建目标运行时；候选 bootstrap 缓存本次选择，拒绝只意味着不加载项目资源，不隐式授予编程权限或持久信任。
+- 四种定向分支覆盖 resume/import × 同意/拒绝，检查确认时源会话仍在、历史尚未迁移、import 尚未复制、永久信任记录为空。新入口真实 PTY `import-trust-no`、`import-trust-yes` 均 PASS（/import other/target.jsonl → 确认 import → 选择信任 → /quit），目标模型/思考强度保留、源字节不变、退出后锁可重获。
+- 初始恢复的缺失 cwd 现在提供默认取消的只读提示；仅明确同意时以当前目录重建，历史头原 cwd 保留。取消不迁移，入口正常释放准入锁。`cwd-no` 与 `cwd-yes` 两个新入口真实 PTY 均 PASS。
+- 显式 `--session-dir` 兼容负例先 FAIL：打开外部历史时错误使用其所在目录。修复共享选择结果携带有效 sessionDir，由初始公开 SessionManager.open 接收，后续 new 保留该目录。未改变无覆盖参数时的路径推导。
+- 最新五文件回归 `node --test tests/direct-tui-runtime.test.mjs tests/direct-session-runtime.test.mjs tests/direct-session-selection.test.mjs tests/direct-session-resume-ui.test.mjs tests/direct-session-picker.test.mjs`：**82 PASS / 0 FAIL / 0 SKIP**。git diff --check PASS，磁盘可用约 5.9 GiB。
+- 上述关闭启动目录纠正与跨目录 import 信任交互的已知局部缺口；尚缺 @file/无持久化/RPC 等启动兼容、异常 UI/恢复及完整候选绑定与安装态。2C/M2 未完成，未更新日常安装。
+
+## 2026-09-22：初始附件与编排器就绪证据
+
+- 新增 `packages/direct-agent/initial-input.mjs`，不导入 Pi 私有 file-processor；文本完整读取并去 BOM、跳过空文件，图片使用公开检测/转换/缩放接口。首条消息与附件组合，后续消息保留顺序；读取失败显式报错，转换失败显示省略提示。候选 TUI 不再一律拒绝 @file。
+- `tests/direct-tui-input.test.mjs` 与 bootstrap 定向测试 **19 PASS**。首次图片测试失败源于夹具 PNG 数据损坏，已用有效 CRC 的 1×1 PNG 替换后通过；未降低缩放断言或改动 SDK。
+- `direct-tui-entry-pty.mjs attachment` 实际启动候选、读取 @input.txt、请求仅监听 localhost 的模拟 Provider、显示回复并 /quit，输出 **DIRECT_TUI_ENTRY_ATTACHMENT_PTY_PASS**。断言请求包含附件和首条提示、请求时持会话锁、回复保存到历史、退出后锁可重获。不是外部真实模型验收，预算使用仍为 0。
+- 最终 14 文件联合回归：上一 135 项命令增加 `tests/direct-tui-input.test.mjs`，覆盖更新后的 runtime/selection/bootstrap、生命周期错误与目录/信任分支，**151 PASS / 0 FAIL / 0 SKIP**；生产及夹具语法检查、git diff --check PASS。
+- 完整源扩展 PTY 夹具不再缺少编排器依赖绑定：仅复制已核验的 subagents/web-access 包及其绑定元数据到临时 config，启动前由生产解析器重新哈希校验。不复制凭据、不修改原包。记录每次 READY 与 shutdown 的 UNAVAILABLE 撤权事件。
+- `direct-runtime-pty.mjs resume --full-stack` 实体恢复及退出 PASS，断言 source 和 target 每次启动均 READY、退出均撤权。首次新断言错误禁止了所有 UNAVAILABLE，经核对 `omp-control/index.ts` 的正常 shutdown 撤权语义后改为严格生命周期序列，重跑通过。
+- 这关闭了隔离源栈 RUNTIME_PACKAGE_BINDING_MISSING 的测试缺口，**不等于打包候选/日常安装通过**，也未验收模型驱动的编排器任务。当前仍是 2C 开发态；无持久化/RPC、异常 UI/恢复与完整候选集成待完成，2D 公开接入、2E、2F 尚未放行。
+
+## 2026-09-22：临时会话、RPC 候选与致命错误退出
+
+- `SessionAdmissions.createMemory` 先预留 ID，再用公共 inMemory 创建临时会话；new/fork 保持非持久化，分支标签投影复用 Pi，源内存历史不变。无目标目录时 import 在复制/关闭前拒绝；显式 resume 可切换到已准入的持久化历史。`--no-session --fork` 拒绝，明确 ID 被占用时零初始化。
+- 私有 `rpc-entry.mjs` 复用候选 bootstrap 与已准入 runtime，固定 plan/只读工具及不加载项目资源。真实子进程覆盖持久化/临时会话 × EOF/SIGTERM、新建/恢复、被占用目标拒绝且历史字节不变、启动前占用负例。尚未改日常 launcher 的 TUI/RPC 路由。
+- 首轮 RPC 测试发现 Pi 0.85.1 的 runtime 回调与 RPC 命令重复 bind，产生双 session_start。新增仅用于传输层的公共 API view，使每个 session 对象的 bind 幂等；不改 Pi 文件/实例方法，不干预内部 reload。恢复每次仅一次 start 的严格断言后通过，非接受双启动为完成标准。
+- runtime 致命转换错误在 action settled 后交由入口处理，避免 dispose 等待自身；TUI 先停止公开 renderer、输出固定错误码，再限时清理、非零退出。RPC 同样清理并在 stderr 输出固定诊断。任何不确认的生命周期仍留锁，死亡 owner 返回 OWNER_RECONCILIATION_REQUIRED；不按年龄或 PID 消失自动回收。
+- 实体 PTY `direct-tui-entry-pty.mjs no-session`（/new → /quit）PASS；`lifecycle-error`（/new 触发 before-switch 错误）PASS，验证 shutdown、非零退出、无新历史及锁需 reconciliation。最初错误退出夹具 FAIL：Pi 原生 fatal handler 会在异步清理前直接 exit；已改为转换 settle 后等待入口退出处理，不再使用全局异常拦截。
+- 四文件回归曾发生一次清理 ENOTEMPTY；残留为仅含测试数据的 config/auth.json，来源是 Provider 注册后的异步认证刷新。bootstrap 单元测试改用注入的内存 CredentialStore/models store，进程级 RPC/PTY 仍覆盖真实独立配置；未修改生产认证行为、未使用删除重试掩盖竞态。
+- 最终 15 文件联合回归（上一 151 项命令增加 `tests/direct-rpc-runtime.test.mjs`）：**161 PASS / 0 FAIL / 0 SKIP**。包含 fatal disposal 非自等待测试。磁盘约 5.8 GiB 可用；外部真实模型使用仍为 0。
+- 当前限制：这些是源码候选测试，不是完整打包或安装态验收。C05/C06、2C/M2 不标完成；完整栈兼容、异常 owner 核对与正式入口路由还需收口，后续仍是 2D → 2E → 2F。
+
+## 2026-09-22：完整源码栈与正式路由接入
+
+- 新候选入口加载 12 项完整审计扩展，真实 PTY quit、no-session（/new）、resume、resume-occupied 四项 PASS；每个启动 READY、每个 shutdown 撤权。占用目标 v1 历史保持原始字节，不触发迁移；目标历史恢复成功后可释放。
+- `OMP_TEST_DIRECT_FULL_STACK=1 node --test tests/direct-rpc-runtime.test.mjs`：**7 PASS**。使用隔离的经校验依赖副本与模拟 Provider，不复制凭据，不修改用户原包；检查每个会话仅一次启动、EOF/SIGTERM 和失败留锁。
+- launcher 的普通 TUI/RPC 转到新的入口，版本/导出保留工具路径，print/json 沿用已有准入入口。实际非 TTY 输入/输出按 Pi 语义识别为 headless，防止管道任务误用交互工具上限；--mode text 仍允许交互。
+- Host 回归首先发现共享参数构造器意外给 Host worker 套 direct 准入的问题；增加仅内部的 runtimeOwner 区分，Host 保留自身账号入口与所有权，不新增用户参数或环境绕过。修复后 `node --test tests/host-*.test.mjs tests/project-gates-process.test.mjs`：**69 PASS / 0 FAIL / 2 SKIP**，跳过项仍是原有 scout/writer 受保护实测条件。
+- 使用安装栈 Node **24.19.0** 执行前述 15 文件联合回归：**162 PASS / 0 FAIL / 0 SKIP**。这验证该 Node 下的源码与开发 SDK，不冒充新打包候选；`npm run typecheck`、语法与 diff 检查 PASS。
+- 当前准备独立干净源码候选。日常安装未切换，用户 Glacier 审计文档未修改；2C 最终候选门禁及 2D–2F 仍未完成。

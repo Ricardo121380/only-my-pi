@@ -117,9 +117,10 @@ test("Pi invocation loads the audited interactive ceiling while admission starts
     env: { PATH: "/usr/bin", UNDEFINED: undefined, PI_PERMISSION_MODE: "yolo", ONLY_MY_PI_OLD: "stale" },
     randomUUIDImpl: () => UUID,
   });
-  assert.deepEqual(interactive.argv.slice(0, 12), [
+  assert.deepEqual(interactive.argv.slice(0, 13), [
     stack.nodePath,
-    stack.piCliPath,
+    path.join(stack.ompPackageRoot, "packages/direct-agent/tui-entry.mjs"),
+    path.join(stack.root, "pi/dist/index.js"),
     "--no-extensions",
     "--extension",
     EXTENSIONS[0],
@@ -158,10 +159,54 @@ test("Pi invocation loads the audited interactive ceiling while admission starts
 
   const headless = buildDirectPiInvocation({ argv: ["-p", "review"], stack, extensionPaths: EXTENSIONS, randomUUIDImpl: () => UUID });
   assert.equal(headless.headless, true);
-  assert.deepEqual(headless.argv.slice(7, 11), ["--tools", "read,grep,find,ls", "--perm", "plan"]);
+  assert.deepEqual(headless.argv.slice(8, 12), ["--tools", "read,grep,find,ls", "--perm", "plan"]);
   assert.throws(() => buildDirectPiInvocation({ argv: [], stack, extensionPaths: [], randomUUIDImpl: () => UUID }), {
     code: "OMP_DIRECT_EXTENSION_SET_INVALID",
   });
+});
+
+test("explicit headless session routes through admission without dropping audited options", async (t) => {
+  const value = await fakeStack(t);
+  const stack = await resolveControlledStack({ stackRoot: value.root, homeDir: value.home });
+  const argv = ["--print", "--session", "/history/task.jsonl", "--model", "fixture/model", "review"];
+  const result = buildDirectPiInvocation({ argv, stack, extensionPaths: EXTENSIONS });
+  assert.deepEqual(result.argv.slice(1, 3), [
+    path.join(stack.ompPackageRoot, "packages/direct-agent/session-entry.mjs"),
+    path.join(stack.root, "pi/dist/index.js"),
+  ]);
+  assert.deepEqual(result.argv.slice(3), ["--no-extensions", ...EXTENSIONS.flatMap((p) => ["--extension", p]),
+    "--tools", "read,grep,find,ls", "--perm", "plan", ...argv]);
+  assert.throws(() => buildDirectPiInvocation({ argv: [...argv, "--session", "/other.jsonl"], stack, extensionPaths: EXTENSIONS }), { code: "OMP_AGENT_OPTION_INVALID" });
+  for (const extra of [["--no-session"]]) {
+    const unchanged = buildDirectPiInvocation({ argv: [...argv, ...extra], stack, extensionPaths: EXTENSIONS });
+    assert.equal(unchanged.argv[1], stack.piCliPath);
+  }
+  const fork = buildDirectPiInvocation({ argv: ["-p", "--fork", "/history/source.jsonl", "review"], stack, extensionPaths: EXTENSIONS });
+  assert.equal(fork.argv[1], path.join(stack.ompPackageRoot, "packages/direct-agent/session-entry.mjs"));
+  assert.deepEqual(fork.argv.slice(-4), ["-p", "--fork", "/history/source.jsonl", "review"]);
+  const resume = buildDirectPiInvocation({ argv: ["-p", "--resume", "review"], stack, extensionPaths: EXTENSIONS });
+  assert.equal(resume.argv[1], path.join(stack.ompPackageRoot, "packages/direct-agent/session-entry.mjs"));
+  assert.deepEqual(resume.argv.slice(-3), ["-p", "--resume", "review"]);
+  const interactiveResume = buildDirectPiInvocation({ argv: ["--resume"], stack, extensionPaths: EXTENSIONS });
+  assert.equal(interactiveResume.argv[1], path.join(stack.ompPackageRoot, "packages/direct-agent/tui-entry.mjs"));
+});
+
+test("RPC and implicit piped print select admitted entries while utility commands preserve native behavior", async (t) => {
+  const value = await fakeStack(t), stack = await resolveControlledStack({ stackRoot: value.root, homeDir: value.home });
+  const build = (argv, interactive = true) => buildDirectPiInvocation({ argv, stack, extensionPaths: EXTENSIONS, interactive });
+  for (const argv of [["--mode", "rpc"], ["--mode", "rpc", "--no-session"]]) {
+    const invocation = build(argv);
+    assert.equal(invocation.argv[1], path.join(stack.ompPackageRoot, "packages/direct-agent/rpc-entry.mjs"));
+    assert.equal(invocation.env.ONLY_MY_PI_HEADLESS, "1");
+  }
+  const piped = build(["review stdin"], false);
+  assert.equal(piped.argv[1], path.join(stack.ompPackageRoot, "packages/direct-agent/session-entry.mjs"));
+  assert.equal(piped.env.ONLY_MY_PI_HEADLESS, "1");
+  assert.deepEqual(piped.argv.slice(8, 12), ["--tools", "read,grep,find,ls", "--perm", "plan"]);
+  for (const argv of [["--version"], ["--export", "/history/session.jsonl"]]) assert.equal(build(argv).argv[1], stack.piCliPath);
+  const host = buildDirectPiInvocation({ argv: ["--mode", "rpc"], stack, extensionPaths: EXTENSIONS, runtimeOwner: "host" });
+  assert.equal(host.argv[1], stack.piCliPath);
+  assert.equal(host.env.ONLY_MY_PI_HEADLESS, "1");
 });
 
 test("direct extension resolution disables ambient discovery and admits only audited owners", async (t) => {

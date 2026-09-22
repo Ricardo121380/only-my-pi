@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
+import { patchPermissionShellIndex, patchPermissionShellSandbox } from "./permission-shell-patch.mjs";
 
 const digest = (bytes) => `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
 function once(text, before, after) {
@@ -22,6 +23,8 @@ export async function applyRuntimePatches({ runtimeRoot, version, platform, runt
     await fs.writeFile(filename, changed);
     patches.push({ packageName, packageVersion, path: `node_modules/${relative}`, upstreamSha256: digest(original), patchedSha256: digest(changed) });
   }
+  await patch("pi-permission-modes/src/index.ts", "pi-permission-modes", "2.2.0",
+    "fd4462a3b7ba986af734c2e17ba8ea7178df56c933e87ed444ba90ba24c2fd5b", patchPermissionShellIndex);
   await patch("pi-permission-modes/src/paths.ts", "pi-permission-modes", "2.2.0",
     "6fd6416b685fa260ad4ea89f64f448398a5605ca4ee4490c677e81cae5b5c307", (text) => {
       const match = text.match(/export function removeSandboxPlaceholders\(root: string\): number \{[\s\S]*?\n\}/u);
@@ -30,6 +33,7 @@ export async function applyRuntimePatches({ runtimeRoot, version, platform, runt
     });
   await patch("pi-permission-modes/src/sandbox.ts", "pi-permission-modes", "2.2.0",
     "57a71b9ace6e00787c187a5d4ac70696e080acf47e154ec1e0ec637327700c54", (text) => {
+      text = patchPermissionShellSandbox(text);
       text = 'import { beginSandboxMountLease } from "../../../../only-my-pi/package/packages/distribution/sandbox-mount-ownership.mjs";\n' + text;
       text = once(text, "      try {\n        const wrapped = await SandboxManager.wrapWithSandbox(command, undefined, customConfig as never);",
         "      const releaseOwnedMounts = beginSandboxMountLease();\n      let sandboxWrapped = false;\n      try {\n        const wrapped = await SandboxManager.wrapWithSandbox(command, undefined, customConfig as never);\n        sandboxWrapped = true;");
@@ -49,6 +53,6 @@ export async function applyRuntimePatches({ runtimeRoot, version, platform, runt
       });
   }
   await fs.writeFile(path.join(runtimeRoot, "external-npm/omp-runtime-patches.json"), `${JSON.stringify({ formatVersion: 1,
-    reason: "Preserve existing empty files and defer owned mountpoint cleanup until overlapping commands finish", patches }, null, 2)}\n`);
+    reason: "Preserve existing empty files and owned mount cleanup; delegate permission-shell execution to OMP without replacing sandbox policy", patches }, null, 2)}\n`);
   return patches;
 }

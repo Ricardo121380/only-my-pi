@@ -156,7 +156,7 @@ export function classifyOmpInvocation(argv = []) {
   return Object.freeze({ kind: "agent", argv: [...argv], compatibilityAlias: false });
 }
 
-export function inspectDirectAgentArguments(argv) {
+export function inspectDirectAgentArguments(argv, { interactive = true } = {}) {
   if (!Array.isArray(argv) || argv.length > 128) fail("OMP_ARGUMENTS_INVALID", "too many Agent arguments");
   let separator = false;
   for (let index = 0; index < argv.length; index += 1) {
@@ -184,7 +184,7 @@ export function inspectDirectAgentArguments(argv) {
   }
 
   const outputMode = flagValue(argv, "--mode");
-  const headless = hasFlag(argv, "--print", "-p") || outputMode === "json" || outputMode === "rpc";
+  const headless = !interactive || hasFlag(argv, "--print", "-p") || outputMode === "json" || outputMode === "rpc";
   const explicitModel = hasFlag(argv, "--model");
   return Object.freeze({ headless, explicitModel });
 }
@@ -349,8 +349,9 @@ export async function resolveDirectExtensionSet({
   });
 }
 
-export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = process.env, randomUUIDImpl = randomUUID } = {}) {
-  const inspected = inspectDirectAgentArguments(argv ?? []);
+export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = process.env, randomUUIDImpl = randomUUID, interactive = true, runtimeOwner = "direct" } = {}) {
+  if (!["direct", "host"].includes(runtimeOwner)) fail("OMP_CONTROLLED_STACK_INVALID", "unknown runtime owner");
+  const inspected = inspectDirectAgentArguments(argv ?? [], { interactive });
   if (!stack || typeof stack.nodePath !== "string" || typeof stack.piCliPath !== "string" || !/^sha256:[a-f0-9]{64}$/u.test(stack.stackId ?? "")) {
     fail("OMP_CONTROLLED_STACK_INVALID", "direct Agent launch requires a verified controlled stack");
   }
@@ -373,6 +374,22 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = pro
     inspected.headless ? "plan" : "build",
     ...(argv ?? []),
   ];
+  const mode = flagValue(argv ?? [], "--mode");
+  const utility = hasFlag(argv ?? [], "--export", "--version", "-v");
+  // Host owns admission and its account-specific SDK entry. This internal
+  // ownership distinction is not a CLI flag or an environment override.
+  const entry = utility || runtimeOwner === "host" ? undefined : mode === "rpc" ? "rpc-entry.mjs"
+    : !inspected.headless && [undefined, "text"].includes(mode) ? "tui-entry.mjs"
+    : inspected.headless && [undefined, "text", "json"].includes(mode)
+      && !hasFlag(argv ?? [], "--no-session") ? "session-entry.mjs" : undefined;
+  if (entry) {
+    const beforeSeparator = (argv ?? []).slice(0, (argv ?? []).includes("--") ? argv.indexOf("--") : undefined);
+    if (["--mode", "--session"].some((flag) => beforeSeparator.filter((token) => token === flag).length > 1))
+      fail("OMP_AGENT_OPTION_INVALID", "duplicate session/mode options cannot be admitted unambiguously");
+    if (!path.isAbsolute(stack.ompPackageRoot ?? "")) fail("OMP_CONTROLLED_STACK_INVALID", "admission requires the controlled package root");
+    piArgs.splice(0, 1, path.join(stack.ompPackageRoot, "packages/direct-agent", entry),
+      path.resolve(path.dirname(stack.piCliPath), "../index.js"));
+  }
   const childEnv = {
     ...cleanEnvironment(env),
     ...(stack.distribution ? { PATH: `${path.join(stack.root, "pi/vendor-tools/bin")}${path.delimiter}${env.PATH ?? "/usr/bin:/bin"}`,
@@ -399,8 +416,13 @@ export async function launchDirectAgent({ argv = [], packageRoot, homeDir, stack
     await requireSystemDependencies({ env });
   }
   const configRoot = resolveDirectConfigRoot({ env, homeDir });
-  const directExtensions = await resolveDirectExtensionSet({ stack, configRoot, headless: inspectDirectAgentArguments(argv).headless });
-  const invocation = buildDirectPiInvocation({ argv, stack, extensionPaths: directExtensions.extensions, env, randomUUIDImpl });
+  const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+  const directExtensions = await resolveDirectExtensionSet({ stack, configRoot, headless: inspectDirectAgentArguments(argv, { interactive }).headless });
+  const invocation = buildDirectPiInvocation({ argv, stack, extensionPaths: directExtensions.extensions, env, randomUUIDImpl, interactive });
+  if (invocation.argv[1] !== stack.piCliPath) {
+    await resolveContainedRegularFile(stack.ompPackageRoot, path.relative(stack.ompPackageRoot, invocation.argv[1]), "session admission entry");
+    await resolveContainedRegularFile(stack.root, "pi/dist/index.js", "controlled Pi SDK");
+  }
   execve(invocation.executable, [...invocation.argv], { ...invocation.env });
   fail("OMP_EXECVE_RETURNED", "controlled Pi process replacement returned unexpectedly");
 }

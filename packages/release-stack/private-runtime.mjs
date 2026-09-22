@@ -16,7 +16,7 @@ export async function preparePrivateRuntime({ rootDir, resolved, sourceCommit, w
   await stageToolchain({ rootDir, runtimeRoot: resolved, work, platform: "darwin-arm64" });
   await stagePiBranding(path.join(resolved, "pi"));
   const patches = await applyRuntimePatches({ runtimeRoot: resolved, version: "0.3.0-preview.1", platform: "darwin-arm64", runtimeContract: "phase1-pi0851" });
-  if (patches.length !== 2) throw new Error("private runtime is missing its reviewed patch set");
+  if (patches.length !== 3) throw new Error("private runtime is missing its reviewed patch set");
   const graph = await buildGenerationPlan({ rootDir, profileId: "daily", sourceCommit });
   const inventory = JSON.parse(await fs.readFile(path.join(rootDir, "inventory/packages.lock.json"), "utf8"));
   const packageFilters = Object.fromEntries(inventory.packages.filter((entry) => entry.installed === true).map((entry) => [entry.id, entry.resourceFilter ?? []]));
