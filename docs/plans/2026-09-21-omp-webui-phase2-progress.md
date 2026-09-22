@@ -334,3 +334,35 @@
 - Host 回归首先发现共享参数构造器意外给 Host worker 套 direct 准入的问题；增加仅内部的 runtimeOwner 区分，Host 保留自身账号入口与所有权，不新增用户参数或环境绕过。修复后 `node --test tests/host-*.test.mjs tests/project-gates-process.test.mjs`：**69 PASS / 0 FAIL / 2 SKIP**，跳过项仍是原有 scout/writer 受保护实测条件。
 - 使用安装栈 Node **24.19.0** 执行前述 15 文件联合回归：**162 PASS / 0 FAIL / 0 SKIP**。这验证该 Node 下的源码与开发 SDK，不冒充新打包候选；`npm run typecheck`、语法与 diff 检查 PASS。
 - 当前准备独立干净源码候选。日常安装未切换，用户 Glacier 审计文档未修改；2C 最终候选门禁及 2D–2F 仍未完成。
+
+## 2026-09-22：2C 完整候选技术门禁通过
+
+- 源码检查点 `9b7da336219ccfb52fa1403291ee078275e0e6b4`，独立干净 worktree 构建 Pi 0.85.1 / Node 24.19.0，完整栈 ID `sha256:3b8ba42a5b0f0dd642b5fd7e11bbcf15d75ee1de218eb49d48d42e79cf3b03af`。产物位于仓库外 `artifacts/webui-phase2/candidate-9b7da33`；构建日志保留在同级 `candidate-9b7da33-build.log`。
+- `scripts/phase1-stack-rehearsal.mjs` 对此 Full 候选执行隔离安装、实际 RPC get_state/abort、回滚、同候选再应用：PASS。证据 `artifacts/webui-phase2/isolated-install-w7Th8H/rehearsal.json`。仅借用既有事务测试脚本，不把它称为整个 M2 验收。
+- 通过 `OMP_TEST_STACK_PACKAGE` 和候选自带 Node 运行 `host-account-rpc-success` / `host-controlled-rpc`：7 PASS，覆盖双账号/CLI 只读引用、凭据失效不回退、审批/撤权/迟到批准、真实子任务与受管 writer/审查/真实工作区验证。服务只监听本机，外部模型预算仍为 0。
+- 新夹具 `direct-test-runtime.mjs` 校验候选完整 manifest、内嵌 Node 和审计扩展集，再直接执行候选 SDK/入口，不混入源码文件、不二次修改候选。候选 `direct-rpc-runtime` 7 PASS；实体候选 TUI resume、resume-occupied、lifecycle-error 三项 PASS。占用目标字节不变；致命转换已 shutdown、非零退出、下一进程要求 reconciliation。
+- Host 所有权、续接、受控任务、生命周期、手动编辑 HTTP/文件、headless 争锁、shell 后代回收 8 文件定向集：17 PASS。独立只读审查未确认 RPC 绑定/退出死锁或错误放锁问题，属于静态复核，不另计运行测试。
+- **2C 技术门禁 PASS**，允许继续 2D 集成。边界：仅 OMP 受控入口参与锁；raw Pi、任意外部编辑器不受此协议约束。旧历史保守持锁到整个运行时退出；未知/失败所有者不自动回收，必须核对执行组。以上不是全 CLI 等价声明，也不代表日常安装已更新。
+- 新入口直调 PTY 夹具没有注入正式 launcher 的 vendor-tools PATH，打印 fd 离线缺失提示；相关生命周期断言通过，不以该夹具证明文件查找工具。正式安装 RPC/Host 测试经过各自启动环境构造。
+- 后续改动开始开放已验证候选合同下的受控 Host/手动编辑，前端通过 Host capabilities 显式选择模式，保持只读默认及审批边界。2D 浏览器收口、2E 真实终端与 2F 整体验收仍待完成。用户审计文档、日常安装、真实凭据均未改。
+
+## 2026-09-22：2D 集成与真实浏览器定向验收
+
+- `entry.mjs` 在已校验的 Pi 0.85.1 候选合同下启用受控能力；`server.mjs` 的快照公开 capability。`Composer.tsx` 默认只读，只有 Host 明确支持时才允许选择受控编程；切换模式不等于授权，续接不恢复旧授权。`App.tsx` 把 mode 纳入请求及幂等复用比较，失败保留草稿。沿用 Glacier 布局和样式，没有重新设计工作台。
+- Ego Lite TaskSpace 10 / p1、1440×1000，使用源码 Host/WebUI + `9b7da33` 候选 worker 的隔离夹具。账号是假凭据、模型仅 localhost、项目为临时目录，未使用真实账号或用户项目。显式选择受控任务 → 待审批 → 刷新恢复审批 → 批准后写文件：PASS。夹具结束回执为 `requests: 3, proof: "browser approved\\n", stopped: true`；这 3 次是本地模拟请求，外部模型预算仍为 0。
+- 受控任务仍占用项目时，编辑器进入手动模式返回 OWNERSHIP_HELD；任务结束后进入成功。Monaco 使用真实鼠标/键盘输入及 Ctrl/Cmd+S，核对临时 `example.ts` 字节确实改变。未直接修改浏览器 Monaco model 来伪造输入。
+- 脏标签关闭显示确认，选择保留草稿后内容仍在；随后从外部修改夹具文件，浏览器保存返回 FILE_VERSION_CONFLICT，磁盘保持外部版本、草稿保留。确认放弃并关闭编辑器后 `/api/manual` 返回空 workspaces：PASS。首次第二次编辑因布局移动点错位置未产生脏状态，已纠正坐标并等待脏标签后重测，不计入通过证据。
+- 截图保留于 `artifacts/webui-phase2/m2-editor-current.png`、`m2-control-editor-closed.png`，已查看。截图是上述开发态，不是最终安装态；本次新增模式路径只测 1440px，先前响应式证据不冒充本次全量重测。
+- `npm run test:web`：21 PASS；`npm run typecheck`：PASS；`npm run build:web`：PASS（Monaco 独立大 chunk 警告保留）。后续两处说明文案更新再次通过 21 项组件测试和类型检查，未重新截图。候选 Node 24 的 `host-manual-http` PASS，覆盖 Origin/协议/配对、写锁和重启不恢复手动模式。
+- **2D 开发态定向通过**，日常安装未变、最终候选待 2F。浏览器测试服务已按确切 PID 停止，夹具自行清理临时账号/项目；截图、构建及验收日志保留。
+
+## 2026-09-22：2E 原生依赖与终端生命周期负例
+
+- 锁定 `node-pty@1.1.0`、`@xterm/xterm@6.0.0`、`@xterm/addon-fit@0.11.0` 及 lockfile SRI；node-pty 及其 node-addon-api 纳入 bundled dependencies。不升级 Pi，不执行依赖生命周期脚本。
+- scripts-disabled 安装的 darwin-arm64 spawn-helper 原始 mode 0644，真实 spawn 报 `posix_spawnp failed`。`release-payload-stager.mjs` 新增仅作用于提取后候选的校验/权限规范化：固定版本、拒绝路径重定向、设为 0755，再进行哈希和重打包；不在已校验的安装栈里补改第三方文件。
+- bundled runtime smoke 增加真实 PTY `/bin/sh` 输出/退出探针，避免仅 require 原生模块即宣称可用。当前 checkout 依赖通过候选内嵌 Node 24.19.0 原生烟测；这不是包含新依赖的完整候选打包验收。
+- `tests/host-pty-lifetime-probe.test.mjs` 固化反例：zsh 后台 `sleep` 的 PGID 不同于 PTY 根，disown 后杀死 PTY 根并收到 onExit，子进程身份仍存在。测试结束仅终止身份校验一致的测试 sleep，并等待退出；不操作用户进程。**负例测试 PASS 表示缺陷可复现，不是终端能力验收 PASS。**
+- Node 26 下发布 stager + 反例：6 PASS；Node 24.19.0 下同集增加 manual HTTP：7 PASS。脚本禁用的 staged 权限正例、版本漂移/符号链接拒绝均通过；`git diff --check` PASS。
+- 独立进程探针也观察到 disown 子进程在 PTY 关闭后变为 PPID 1、TTY `??`；因此关闭后按 TTY 查找不足。关闭前保留 supervisor、扫描 TTY/后代并核对身份可改善普通任务清理，但轮询本身不能保证发现两次采样之间主动脱离的守护进程。macOS SDK 头文件明确 NOTE_TRACK/NOTE_CHILD 自 10.5 不再支持，不能把 kqueue 当作现成的全后代跟踪能力。
+- 已提出需确认的产品边界：推荐本机协作式终端，明确非沙箱、普通后台任务回收、清理未知保留锁并人工核对；若要求任意脱离进程也强隔离，需引入容器/虚拟机并调整范围。在确认前不开放真终端、不把根退出当作放锁证据。2E 与 M2 **未完成**。
+- 当前 npm audit 提示 dompurify/monaco-editor、fast-uri 相关 3 个包告警，列入 F02；未执行 audit fix --force。F04/F05 已将思考强度/真实用量映射为明确验收项，仍未接通。

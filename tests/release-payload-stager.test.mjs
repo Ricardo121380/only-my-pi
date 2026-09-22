@@ -5,9 +5,29 @@ import path from "node:path";
 import test from "node:test";
 
 import { createReleasePayloadStager } from "../packages/release-stack/index.mjs";
-import { verifyBundledRuntime } from "../packages/release-stack/release-payload-stager.mjs";
+import { prepareBundledPty, verifyBundledRuntime } from "../packages/release-stack/release-payload-stager.mjs";
 
 const SOURCE = "a".repeat(40);
+
+test("staged PTY helper gets executable mode without scripts or redirected writes", async (t) => {
+  const root = await temporary(t, "omp-pty-stage-");
+  const dependency = path.join(root, "node_modules/node-pty");
+  const helper = path.join(dependency, "prebuilds/darwin-arm64/spawn-helper");
+  await fs.mkdir(path.dirname(helper), { recursive: true });
+  await fs.writeFile(path.join(root, "package.json"), JSON.stringify({ dependencies: { "node-pty": "1.1.0" } }));
+  await fs.writeFile(path.join(dependency, "package.json"), JSON.stringify({ name: "node-pty", version: "1.1.0" }));
+  await fs.writeFile(helper, "fixture", { mode: 0o644 });
+  await prepareBundledPty(root);
+  assert.equal((await fs.stat(helper)).mode & 0o777, 0o755);
+  assert.equal(await fs.readFile(helper, "utf8"), "fixture");
+  await fs.writeFile(path.join(dependency, "package.json"), JSON.stringify({ name: "node-pty", version: "other" }));
+  await assert.rejects(prepareBundledPty(root), { code: "RELEASE_PTY_VERSION_INVALID" });
+  const redirected = path.join(root, "outside-helper");
+  await fs.writeFile(redirected, "outside", { mode: 0o600 });
+  await fs.unlink(helper); await fs.symlink(redirected, helper);
+  await assert.rejects(prepareBundledPty(root), { code: "RELEASE_PTY_LAYOUT_INVALID" });
+  assert.equal((await fs.stat(redirected)).mode & 0o777, 0o600);
+});
 
 test("extracted runtime smoke rejects missing transitive dependencies", async (t) => {
   const root = await temporary(t, "omp-bundled-runtime-");
