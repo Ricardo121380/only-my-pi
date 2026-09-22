@@ -6,14 +6,13 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import http from "node:http";
 import { acquireOwnership } from "../../packages/host/ownership.mjs";
-import { prepareDirectSourceStack } from "./direct-source-stack.mjs";
+import { prepareDirectTestRuntime } from "./direct-test-runtime.mjs";
 
 assert.ok(process.stdin.isTTY && process.stdout.isTTY);
 const mode = process.argv[2] ?? "quit";
-const fullStack = process.argv.includes("--full-stack");
+const fullStack = process.argv.includes("--full-stack") || !!process.env.OMP_TEST_STACK_PACKAGE;
 assert.ok(["quit", "trust-yes", "trust-no", "offline", "import-trust-yes", "import-trust-no", "cwd-yes", "cwd-no", "attachment", "no-session", "lifecycle-error", "resume", "resume-occupied"].includes(mode));
 const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-tui-entry-")));
 const config = path.join(root, "config"), sessions = path.join(root, "sessions");
@@ -62,7 +61,8 @@ try {
     await fs.writeFile(path.join(other, "target.jsonl"), importedBytes);
   }
   await fs.writeFile(path.join(config, "settings.json"), JSON.stringify({ quietStartup: true, enableAnalytics: false }));
-  const extensions = fullStack ? await prepareDirectSourceStack(root, config) : [];
+  const runtime = await prepareDirectTestRuntime(root, config, { fullStack, headless: false });
+  const { extensions } = runtime;
   const extension = path.join(root, "fixture.mjs");
   await fs.writeFile(extension, `export default pi => {
     ${mode === "lifecycle-error" ? `pi.on("session_before_switch", () => { throw new Error("fixture lifecycle failure"); });` : ""}
@@ -80,8 +80,8 @@ try {
     });
   };`);
   const messages = [];
-  const child = spawn(process.execPath, [fileURLToPath(new URL("../../packages/direct-agent/tui-entry.mjs", import.meta.url)),
-    fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")), "--no-extensions",
+  const child = spawn(runtime.node, [path.join(runtime.packageRoot, "packages/direct-agent/tui-entry.mjs"),
+    runtime.sdk, "--no-extensions",
     ...[...extensions, extension].flatMap(entry => ["--extension", entry]),
     "--tools", fullStack ? "read,grep,find,ls,edit,write,bash,request_coding_access,delegate_readonly_agent,delegate_managed_writer" : "read,ls", "--perm", "build", "--session-dir", sessions,
     ...(missingCwdBytes ? ["--session", missingCwdFile] : ["--session-id", "entry-smoke"]),

@@ -3,21 +3,21 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline";
 import test from "node:test";
 import { acquireOwnership } from "../packages/host/ownership.mjs";
 import { createRpcRuntimeView } from "../packages/direct-agent/rpc-runtime-view.mjs";
-import { prepareDirectSourceStack } from "./fixtures/direct-source-stack.mjs";
+import { prepareDirectTestRuntime } from "./fixtures/direct-test-runtime.mjs";
 
-const fullStack = process.env.OMP_TEST_DIRECT_FULL_STACK === "1";
+const fullStack = process.env.OMP_TEST_DIRECT_FULL_STACK === "1" || !!process.env.OMP_TEST_STACK_PACKAGE;
 
 async function fixture(t, { memory = false, occupied = false, lifecycleError = false } = {}) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-direct-rpc-")));
   const config = path.join(root, "config"), sessions = path.join(root, "sessions");
   await fs.mkdir(config); await fs.mkdir(sessions);
   await fs.writeFile(path.join(config, "settings.json"), JSON.stringify({ quietStartup: true, enableAnalytics: false }));
-  const extensions = fullStack ? await prepareDirectSourceStack(root, config) : [];
+  const runtime = await prepareDirectTestRuntime(root, config, { fullStack, headless: true });
+  const { extensions } = runtime;
   const target = path.join(sessions, "target.jsonl");
   const bytes = JSON.stringify({ type: "session", version: 1, id: "target", cwd: root, timestamp: new Date().toISOString() }) + "\n";
   await fs.writeFile(target, bytes);
@@ -37,8 +37,8 @@ async function fixture(t, { memory = false, occupied = false, lifecycleError = f
     });
   };`);
   const owner = occupied ? await acquireOwnership(config, "session", "target") : undefined;
-  const child = spawn(process.execPath, [fileURLToPath(new URL("../packages/direct-agent/rpc-entry.mjs", import.meta.url)),
-    fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")), "--mode", "rpc", "--offline",
+  const child = spawn(runtime.node, [path.join(runtime.packageRoot, "packages/direct-agent/rpc-entry.mjs"),
+    runtime.sdk, "--mode", "rpc", "--offline",
     "--no-extensions", ...[...extensions, extension].flatMap(entry => ["--extension", entry]),
     "--tools", "read,grep,find,ls", "--perm", "plan", "--session-dir", sessions,
     ...(occupied ? ["--session", target] : ["--session-id", "initial"]),
