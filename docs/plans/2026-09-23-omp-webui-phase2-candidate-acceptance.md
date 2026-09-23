@@ -26,7 +26,7 @@
 
 同一 Ego Lite TaskSpace 3、同一 bb4111e 安装页面，在长历史、大输出和长 diff 打开时，以原生逐字输入到双 rAF 计时，持续 `Page.startScreencast` 并确认帧：30 样本 **P95 26.2 ms**，最大 100.7 ms。空白原生 textarea 同条件 30 样本 **P95 6.3 ms**。证据：`perf-bb4111e/input-capture-active.json`、`blank-capture-active.json`。
 
-这是**指定绘制条件下达标**。关闭采集后此前的可见、已聚焦窗口样本仍达 **P95 1,002.1 ms**（`input-visible-window.json`），与空白页约 1 秒异常相符。采集改变了绘制调度条件，尚未证明普通用户前台窗口不受此影响；双 rAF 也不是物理屏幕呈现测量。没有修改产品或浏览器全局配置、没有放宽 100 ms 门槛，因此 F01 仍待确认。
+这是**指定绘制条件下达标**。关闭采集后此前的可见、已聚焦窗口样本仍达 **P95 1,002.1 ms**（`input-visible-window.json`）。本轮将 Ego Lite 置于 macOS 系统前台、确认窗口正常可见且页面 `visibility=visible`/`document.hasFocus()=true`，同一安装夹具无采集重测为 **P95 917.2 ms、最大 1,876.4 ms**（`perf-9130d02/input-frontmost-no-capture.json`）。因此“ChatGPT 位于系统前台”已排除，但持续 Screencast 仍会将 P95 降至 26.2ms，说明 Ego/Chromium 绘制调度或采集条件改变了节奏，尚不能归因于 React 业务代码或证明普通用户屏幕回显。没有修改产品或浏览器全局配置、没有放宽 100 ms 门槛，因此 F01 仍待确认；性能夹具已停止。
 
 ## bb4111e 历史候选与范围
 

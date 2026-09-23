@@ -420,6 +420,7 @@
 - 新完整候选：Pi0.85.1、Node24.19.0；stack `sha256:7444c7fb3a6a91bbe077ba2e15bd157b63265f368a480db8b81f959b43d9aea0`。安装根 `isolated-install-d8iuXc`，安装/回滚/再应用PASS；账号、完整受控扩展和安装Host/PTY联合12 PASS / 0 FAIL / 0 SKIP。构建器首次拒绝短SHA，改为完整SHA后通过，没有跳过检查。
 - 依既有清理授权，仅清理无进程使用的旧9b7da33构建内容、干净源码worktree及旧隔离安装的`.local`；日志、收据、manifest/ledger和`.pi`保留。回执 `retained-9b7da33/cleanup.json`。未清理当前候选或用户项目文件。
 - Ego空间3的持续采集条件下，长历史/大输出/diff页面30次输入双rAF **P95 26.2ms**，空白原生输入 **6.3ms**；无采集条件仍约1秒。这是调度条件对照，未关闭普通前台输入门禁，不将双rAF声称为物理屏幕呈现时间。
+- 追加前台核验：将 Ego Lite 置于 macOS 系统前台并确认页面可见/聚焦后，无采集输入仍 **P95 917.2ms、最大1876.4ms**（`perf-9130d02/input-frontmost-no-capture.json`）。因此已排除 ChatGPT 前台这一干扰；持续 Screencast 改变绘制节奏的事实仍保留，根因暂不能归咎 React。性能夹具已停止，F01不放行。
 - 用户选择现有CPAR路由；临时GUI账号通过公共认证接口创建，安装页面选择`cpar-grok-build/grok-4.5`/low执行小型修改。Pi回读low后返回 **503 CredentialUnavailable: no credential is available**，任务失败，无审批/工具/写入，proof.txt仍为before。截图已查看；真实用量未知，成功执行/受管writer/撤权取消未验收。
 - 真实任务阶段累计 **1/3，失败重试0/1**。关闭自动重试，不自动改Provider；待CPAR恢复后用保留的失败重试和2个剩余小任务完成原矩阵。脚本重启不能重置阶段额度。
 - 新进程到安装Host就绪和配对 **4075.7ms**，不含首屏或OS缓存清理；Host+真实worker每2秒采样峰值 **436240384 bytes（约416MiB）**，不含共享浏览器。Full解包占用616062976bytes，相对bb4111e增加4096bytes；压缩更新下载量仍未测。
