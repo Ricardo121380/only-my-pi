@@ -15,6 +15,7 @@ import { recoverAuthProcesses } from "./auth-process.mjs";
 import { listModels } from "./models.mjs";
 import { listFiles, readFile, gitDiff } from "./inspector.mjs";
 import { ManualWorkspaces } from "./manual-workspaces.mjs";
+import { HostTerminals } from "./terminals.mjs";
 import { HOST_PROTOCOL, HOST_VERSION, CLI_ACCOUNT_ID, hostError, validateCommand, terminal } from "./contracts.mjs";
 import { projectRunRecord } from "../direct-agent/contracts.mjs";
 import { createRunRecordStore } from "../run-management/index.mjs";
@@ -71,6 +72,8 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
   const previous = await readJsonObject(configRoot, projectsFile).catch(async (e) => { if (e.code === "ENOENT") return null; await lock.release(); throw e; });
   const catalog = new ProjectCatalog({ sessionRoot, projects: previous?.projects ?? [] });
   const manual = new ManualWorkspaces({ configRoot, catalog });
+  const terminals = new HostTerminals({ configRoot, catalog, env });
+  try { await terminals.load(); } catch (error) { await lock.release(); throw error; }
   const accounts = new AccountCatalog(configRoot);
   const oauth = new AccountOAuth({ stack, configRoot, accounts, env });
   let modelCache, modelTime = 0;
@@ -175,6 +178,14 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
           if (req.headers["x-omp-host-protocol"] !== String(HOST_PROTOCOL)) throw hostError("PROTOCOL_MISMATCH", 409);
           const command = validateCommand(await body(req, 4 * 1024 * 1024));
+          if (["openTerminal", "writeTerminal", "resizeTerminal", "closeTerminal"].includes(command.type)) {
+            if (!allowControlled) throw hostError("CONTROLLED_MODE_UNAVAILABLE", 409);
+            const result = command.type === "openTerminal" ? await terminals.open(command.projectId, command.cols, command.rows)
+              : command.type === "writeTerminal" ? terminals.write(command.terminalId, command.seq, command.data)
+              : command.type === "resizeTerminal" ? terminals.resize(command.terminalId, command.cols, command.rows)
+              : await terminals.close(command.terminalId);
+            return response(res, 200, result);
+          }
           if (["enterManual", "leaveManual", "saveFile"].includes(command.type)) {
             if (!allowControlled) throw hostError("CONTROLLED_MODE_UNAVAILABLE", 409);
             const result = command.type === "enterManual" ? await manual.enter(command.projectId) : command.type === "leaveManual" ? await manual.leave(command.projectId, command.manualId) : await manual.save(command);
@@ -189,6 +200,8 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
         if (req.method !== "GET") throw hostError("METHOD_DENIED", 405);
         if (url.pathname === "/api/state") return response(res, 200, snapshot());
         if (url.pathname === "/api/manual") return response(res, 200, { workspaces: manual.snapshot(), available: allowControlled });
+        if (url.pathname === "/api/terminals") return response(res, 200, { terminals: terminals.snapshot(), available: allowControlled });
+        if (url.pathname === "/api/terminal") return response(res, 200, terminals.read(url.searchParams.get("terminalId"), Number(url.searchParams.get("offset") ?? 0)));
         if (url.pathname === "/api/oauth-providers") return response(res, 200, { providers: await oauth.providers() });
         if (url.pathname === "/api/oauth-flow") return response(res, 200, oauth.snapshot(url.searchParams.get("flowId")));
         if (url.pathname === "/api/models") {
@@ -244,7 +257,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
       authAbort.abort();
       await Promise.allSettled([...authOperations, oauth.stop()]);
       try {
-        const results = await Promise.allSettled([tasks.stop(), manual.stop()]);
+        const results = await Promise.allSettled([tasks.stop(), manual.stop(), terminals.stop()]);
         const failure = results.find((result) => result.status === "rejected");
         if (failure) throw failure.reason;
       }

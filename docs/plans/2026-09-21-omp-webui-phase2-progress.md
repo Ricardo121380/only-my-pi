@@ -366,3 +366,13 @@
 - 独立进程探针也观察到 disown 子进程在 PTY 关闭后变为 PPID 1、TTY `??`；因此关闭后按 TTY 查找不足。关闭前保留 supervisor、扫描 TTY/后代并核对身份可改善普通任务清理，但轮询本身不能保证发现两次采样之间主动脱离的守护进程。macOS SDK 头文件明确 NOTE_TRACK/NOTE_CHILD 自 10.5 不再支持，不能把 kqueue 当作现成的全后代跟踪能力。
 - 已提出需确认的产品边界：推荐本机协作式终端，明确非沙箱、普通后台任务回收、清理未知保留锁并人工核对；若要求任意脱离进程也强隔离，需引入容器/虚拟机并调整范围。在确认前不开放真终端、不把根退出当作放锁证据。2E 与 M2 **未完成**。
 - 当前 npm audit 提示 dompurify/monaco-editor、fast-uri 相关 3 个包告警，列入 F02；未执行 audit fix --force。F04/F05 已将思考强度/真实用量映射为明确验收项，仍未接通。
+
+## 2026-09-23：2E 本机协作式终端实现与定向验证
+
+- 用户已接受本机协作式方案：xterm + Host/node-pty，Pi RPC 保持原职责；终端为本机 shell，非沙箱。以 supervisor 保持 PTY 根，采样已确认的后代关系并记录进程身份；不凭相同 TTY 杀死未知进程。关闭先 TERM 后有界等待/KILL；只有匹配的私有清理收据才释放共享项目锁。
+- `terminal-processes.mjs`、`terminal-supervisor.mjs`、`terminals.mjs` 实现生命周期；Host 重启不自动生成终端、不重放命令。旧 Host 已死、原 supervisor 已退出且收据匹配时，界面“核对清理结果”可恢复锁；缺少证据继续保留占用。后台主动逃离采样的任意守护进程不在保证范围内，协议不是防恶意用户篡改的安全隔离。
+- 每项目最多一个活动终端、Host 最多四个；输出内存环限制 1,048,576 个 UTF-16 代码单元（不是字节），不落盘；输入序号及摘要防重复，未知发送结果暂停输入、不自动重试。环境采用白名单，默认 `zsh -f`，不自动加载个人 shell 配置。xterm 禁用 OSC 52 剪贴板写入。
+- 原生测试覆盖真实文件/cwd/resize、环境过滤、输入重复/冲突、正常退出、disown 子进程清理、强杀 supervisor 留锁、大输出截断、Host 崩溃后凭匹配收据核对；HTTP 测试覆盖配对、Origin、协议、注入、尺寸、受控 capability 和手动模式互斥。最新 Node 26 定向结果 7 PASS；最终 Node 24.19.0 运行 terminal/HTTP/manual/ownership/lifecycle 五文件联合 **12 PASS / 0 FAIL / 0 SKIP**。
+- 前端 22 项组件测试、类型检查、构建通过。独立终端 chunk 约 336KB（gzip 85KB）；Monaco 大 chunk 提示仍保留。修正原型 `.terminal` 样式与 xterm 同名类冲突，沿用 Glacier 视觉。
+- Ego Lite TaskSpace 2/p1，隔离源码 Host/WebUI + 已有 Node 24/Pi 0.85.1 候选 worker，本地假账号/模拟模型，真实外部模型调用 0。真实键盘输入落盘 `terminal-proof.txt`，中断前台 sleep、刷新恢复同一 terminalId、隐藏后重新显示、disown 后关闭确认及子进程消失全部通过；390×844 活动终端输入 `mobile-ok`，页面无水平溢出。截图 `artifacts/webui-phase2/terminal-mobile-active.png` 已查看。终端关闭后界面显示已释放占用。
+- 这些结果是开发态定向证据，日常安装未变；最终候选尚不包含本轮终端代码。F04/F05、2F 仍待完成，M2 不标完成。用户已有 Glacier 审计文档改动未纳入本轮提交。

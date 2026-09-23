@@ -1,4 +1,8 @@
 export type HostCommand =
+  | { type: "openTerminal"; projectId: string; cols: number; rows: number }
+  | { type: "writeTerminal"; terminalId: string; seq: number; data: string }
+  | { type: "resizeTerminal"; terminalId: string; cols: number; rows: number }
+  | { type: "closeTerminal"; terminalId: string }
   | { type: "enterManual"; projectId: string }
   | { type: "leaveManual"; projectId: string; manualId: string }
   | { type: "saveFile"; projectId: string; manualId: string; path: string; version: string; text: string }
@@ -9,6 +13,8 @@ export type HostCommand =
   | { type: "cancelTask"; taskId: string };
 export type TaskStatus = "starting" | "running" | "cancelling" | "succeeded" | "failed" | "cancelled" | "interrupted";
 export interface Project { projectId: string; path: string; name: string; available: boolean }
+export interface TerminalState { terminalId: string; projectId: string; status: "starting" | "running" | "closing" | "closed" | "reconciliation"; cols: number; rows: number; inputSeq: number; exitCode: number | null; error: string | null }
+export interface TerminalOutput extends TerminalState { base: number; end: number; truncated: boolean; output: string }
 export interface ModelChoice { id: string; name: string; provider: string }
 /** Metadata only; creating an account does not authenticate it. */
 export interface AccountInput { providerId: string; name: string; authType: "api_key" | "oauth" }

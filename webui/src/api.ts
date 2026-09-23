@@ -15,6 +15,11 @@ export const query = (route: string, values: Record<string, string | number>) =>
 export const errorText = (error: unknown) => {
   const code = error instanceof Error ? error.message : "HOST_REQUEST_FAILED";
   const accountMessages: Record<string, string> = {
+    TERMINAL_RECONCILIATION_REQUIRED: "终端清理尚未确认，项目占用仍保留。请核对遗留程序；重新连接不会抢锁或重启命令。",
+    TERMINAL_INPUT_CONFLICT: "终端输入序号冲突，可能有另一个页面正在输入。已暂停发送，请重新连接；不会重放命令。",
+    TERMINAL_INPUT_LIMIT: "输入过大或发送积压，已暂停发送。请重新连接后分段输入；不会自动重试。",
+    TERMINAL_NOT_RUNNING: "终端已经停止或正在清理，不能继续输入。",
+    TERMINAL_LIMIT: "最多同时运行 4 个终端，请先结束一个终端。",
     FILE_VERSION_CONFLICT: "磁盘内容已变化，未覆盖文件，草稿已保留。请先复制所需草稿，再重新读取并合并；不会强制覆盖。",
     FILE_ENCODING_UNSUPPORTED: "文件不是有效 UTF-8 文本，不能安全编辑。请使用支持原编码的本机编辑器。",
     MANUAL_MODE_REQUIRED: "手动模式已失效或由其他页面退出。草稿仍在，请重新进入手动模式再保存。",

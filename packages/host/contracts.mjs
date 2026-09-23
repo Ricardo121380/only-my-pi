@@ -3,7 +3,12 @@ export const HOST_PROTOCOL = 2;
 export const HOST_VERSION = "phase2-v1";
 export const CLI_ACCOUNT_ID = "cli-readonly";
 const id = { type: "string", pattern: "^[a-zA-Z0-9_-]{1,128}$" };
+const size = { type: "integer", minimum: 2, maximum: 300 };
 const schema = { oneOf: [
+  { type: "object", additionalProperties: false, required: ["type", "projectId", "cols", "rows"], properties: { type: { const: "openTerminal" }, projectId: id, cols: size, rows: size } },
+  { type: "object", additionalProperties: false, required: ["type", "terminalId", "seq", "data"], properties: { type: { const: "writeTerminal" }, terminalId: id, seq: { type: "integer", minimum: 1, maximum: 9007199254740991 }, data: { type: "string", minLength: 1, maxLength: 16384 } } },
+  { type: "object", additionalProperties: false, required: ["type", "terminalId", "cols", "rows"], properties: { type: { const: "resizeTerminal" }, terminalId: id, cols: size, rows: size } },
+  { type: "object", additionalProperties: false, required: ["type", "terminalId"], properties: { type: { const: "closeTerminal" }, terminalId: id } },
   { type: "object", additionalProperties: false, required: ["type", "projectId"], properties: { type: { const: "enterManual" }, projectId: id } },
   { type: "object", additionalProperties: false, required: ["type", "projectId", "manualId"], properties: { type: { const: "leaveManual" }, projectId: id, manualId: id } },
   { type: "object", additionalProperties: false, required: ["type", "projectId", "manualId", "path", "version", "text"], properties: { type: { const: "saveFile" }, projectId: id, manualId: id, path: { type: "string", minLength: 1, maxLength: 4096 }, version: { type: "string", pattern: "^sha256:[a-f0-9]{64}$" }, text: { type: "string", maxLength: 524288 } } },
