@@ -397,6 +397,18 @@
 - 候选源码检查点 `bb4111ef59278105f3c28a9ccb597c4c3343a534`，完整候选位于仓库外 `artifacts/webui-phase2/candidate-bb4111e`，构建日志同名保存；候选 Pi **0.85.1**、嵌入式 Node **24.19.0**，stack ID `sha256:2459d86c65820a7fc82e38b927e764f65d15ed92f777396907b95d6bd7279d77`。
 - `phase1-stack-rehearsal.mjs` 对候选完整 payload 执行安装、版本/真实 RPC、回滚、同候选再应用：**PASS**。回执 `artifacts/webui-phase2/isolated-install-s4S26k/rehearsal.json`；安装验证没有写入用户日常目录，外部模型调用 0。
 - 候选嵌入 Node 24 运行账号/模型目录、真实账号 RPC、思考强度、用量、终端生命周期与终端 HTTP 集：**13 PASS / 0 FAIL**。曾用错误 packageRoot 跑出 1 个 harness 错误，修正到候选安装的 `only-my-pi/package` 后完整通过；错误不属于产品失败。
-- 性能夹具 `artifacts/webui-phase2/perf-bb4111e/web-fixture-r6NVtq/startup.json`：10,000 条事件、5 MiB 工具输出、3,000 行 diff；Node 24 arm64 Host 初始索引 **56.0 ms**、进程 RSS **109,051,904 bytes（约 104 MiB）**、模型请求 0。该数值是本机确定性夹具样本，不是跨设备 SLA；前端长消息仍采用分页/有界消息投影，未宣称完整虚拟化。
-- 依赖检查、WebUI 24 项、typecheck、build、host/release 定向集通过；构建仍有 Monaco 3.8 MiB 独立 chunk 的既有提示。当前 2F 技术门禁通过，日常安装未更新，真实外部模型和真人 OAuth 仍 NOT_RUN。
-- **M2 阶段状态：开发与候选技术验收通过，日常安装晋升及真实 Provider 限额内验收未执行，因此不将 M2 标为产品发布完成。** 下一步是用户明确安排的日常安装晋升或进入 M3 Electron；本轮不自动切换安装栈。
+- 性能夹具 `artifacts/webui-phase2/perf-bb4111e/web-fixture-r6NVtq/startup.json` 创建了含 10,000 条历史记录、5 MiB 工具输出、3,000 行文件的样本；Node 24 arm64 Host 初始索引 **56.0 ms**、单 Host 进程 RSS **109,051,904 bytes（约 104 MiB）**、模型请求 0。该初始化样本尚未完成浏览器输入/取消 P95、进程树 RSS 或长 diff 渲染验收；文件存在不等于 diff 已渲染，不能据此给 F01 PASS。
+- 依赖检查、WebUI 24 项、typecheck、build 通过；最终 Node 24 Host/release 联合集 **78 PASS / 0 FAIL / 2 SKIP**，保护式 scout/writer 跳过项不计实测。构建仍有 Monaco 3.8 MiB 独立 chunk 的既有提示。候选 13 项集使用源码 Host 测试 + 候选 Node/Pi/扩展；终端管理器不是从打包产物导入，不能将它们描述为全部安装态终端测试。
+- **M2 阶段状态：2F 部分通过，阶段未完成。** 尚需输入/取消 P95、进程树内存、长 diff 与大输出实际页面验证、完整安装态 GUI/PTY、真实 Provider 限额内矩阵；日常安装未切换。既有计划已授权三项小型真实任务及一次失败重试，无需重复批准同一范围；先核实可用路由和活动进程。不得提前进入 M3。
+- 窄屏测试确认页面宽度 390，无横向溢出，但点击用量入口未完成：原右侧面板在宽度变化后成为覆盖层；尚未凭截图确认原因，不能将其直接归因于测试脚本。前一条“2F 技术门禁通过”结论已在以上记录中纠正。
+
+### 2F 安装态实测与门禁纠正（本轮后续）
+
+- 新增 `tests/host-installed-runtime.test.mjs`，直接从 bb4111e 安装包导入 Host/ownership，使用同栈 Node 24：真实 PTY 文件写入、持锁和关闭释放 PASS。首次因测试 after 钩子先删目录再 stop 失败，修正清理顺序后 1 PASS；不修改生产锁保护。新增树内存/关闭耗时记录后再跑 1 PASS。
+- 完整候选 SDK/扩展 approve、revoke、late、ordinary、scout、writer 六场景均通过本地模拟服务；此前的两项 SKIP 现有独立实测，原 78/2 记录仍保留其原始口径。
+- 性能夹具可导入安装 Host/UI，并实际生成长 diff。Ego Lite 空间 3：10,000 历史首两页各 50 条、5MiB 工具输出分段、174,318 字符 diff、390px 正确用量弹窗通过。确认窄屏覆盖来自打开的项目面板，关闭后按钮可操作。
+- 安装态 xterm 原生输入写入 `installed-ui-ok`，刷新保持同一 terminalId，结束清理释放 PASS；Monaco 进入手动模式、实际编辑为 `installed-ui-ok-edited`、保存落盘及关闭释放 PASS。均在隔离测试项目。
+- 取消点击至“正在取消” DOM 确认 30 次 P95 **2.4ms**。Host+真实 PTY 树 RSS 样本 **244,449,280 bytes**，含测试开销；空闲 PTY 关闭 **1,365ms**，不是 P95。实际进程树和界面确认不混用。
+- 输入首帧 30 次前台样本 P95 **973.8ms**，未通过100ms门槛。相同 Ego 环境下空白原生输入框也复现约1秒延迟，指向绘制/节流条件但根因未定；不能用 JS 处理快代替回显通过，也未换浏览器绕过。
+- 当前有效 `LOCAL_HOME/.pi/agent` 无环境覆盖，GUI 账号0、CLI只读模型目录0；已询问可用已有账号/配置路径，不读取秘密。真实任务预算仍0/3、重试0/1。完整冷启动/真实模型执行树与日常晋升待完成。
+- 详细证据和下一步见 [候选验收记录](2026-09-23-omp-webui-phase2-candidate-acceptance.md)。**M2 继续 IN_PROGRESS，不提前进入 M3。**
