@@ -391,3 +391,12 @@
 - Ego Lite TaskSpace 2/p1，1440×1000，源码 Host/WebUI + Node 24/Pi 0.85.1 候选 worker：选择 low → 发送 → 用量面板显示实际低、120 token/70 输入/20 输出/30 缓存读，费用未知，PASS。截图 `artifacts/webui-phase2/m2-metrics-desktop.png` 已查看。UI 以模型回合计数，不宣称 HTTP 重试次数；部分用量和部分价格有明确标识，不含子代理或历史轮次。
 - WebUI **24 PASS**、typecheck/build PASS。Host 全集首次 **77 PASS / 1 FAIL / 2 SKIP**，唯一失败是故障测试清理空闲 shell 时进程已自行退出导致 ESRCH；收敛测试清理的已退出分支，终端 6 项再跑全部 PASS。保护式 scout/writer 两项仍按既有条件跳过，不冒充实测。
 - F02 依赖：Monaco 0.56.0 固定 DOMPurify 3.4.8，定向 override 到 3.4.13；Ajv 的兼容传递依赖 fast-uri 锁到 3.1.8。仅更新这两条 lock 记录，不升级 Pi/Monaco，不运行 install scripts。当前根依赖树 `npm audit` **0 vulnerabilities**，这不是外部完整发行栈所有依赖的独立安全认证。依据：[DOMPurify 官方公告](https://github.com/cure53/DOMPurify/security/advisories/GHSA-55q2-fjhq-7xh7)、[fast-uri 官方公告](https://github.com/fastify/fast-uri/security/advisories/GHSA-f65p-4m7j-42xc)。
+
+## 2026-09-23：2F 候选、性能与安装回归
+
+- 候选源码检查点 `bb4111ef59278105f3c28a9ccb597c4c3343a534`，完整候选位于仓库外 `artifacts/webui-phase2/candidate-bb4111e`，构建日志同名保存；候选 Pi **0.85.1**、嵌入式 Node **24.19.0**，stack ID `sha256:2459d86c65820a7fc82e38b927e764f65d15ed92f777396907b95d6bd7279d77`。
+- `phase1-stack-rehearsal.mjs` 对候选完整 payload 执行安装、版本/真实 RPC、回滚、同候选再应用：**PASS**。回执 `artifacts/webui-phase2/isolated-install-s4S26k/rehearsal.json`；安装验证没有写入用户日常目录，外部模型调用 0。
+- 候选嵌入 Node 24 运行账号/模型目录、真实账号 RPC、思考强度、用量、终端生命周期与终端 HTTP 集：**13 PASS / 0 FAIL**。曾用错误 packageRoot 跑出 1 个 harness 错误，修正到候选安装的 `only-my-pi/package` 后完整通过；错误不属于产品失败。
+- 性能夹具 `artifacts/webui-phase2/perf-bb4111e/web-fixture-r6NVtq/startup.json`：10,000 条事件、5 MiB 工具输出、3,000 行 diff；Node 24 arm64 Host 初始索引 **56.0 ms**、进程 RSS **109,051,904 bytes（约 104 MiB）**、模型请求 0。该数值是本机确定性夹具样本，不是跨设备 SLA；前端长消息仍采用分页/有界消息投影，未宣称完整虚拟化。
+- 依赖检查、WebUI 24 项、typecheck、build、host/release 定向集通过；构建仍有 Monaco 3.8 MiB 独立 chunk 的既有提示。当前 2F 技术门禁通过，日常安装未更新，真实外部模型和真人 OAuth 仍 NOT_RUN。
+- **M2 阶段状态：开发与候选技术验收通过，日常安装晋升及真实 Provider 限额内验收未执行，因此不将 M2 标为产品发布完成。** 下一步是用户明确安排的日常安装晋升或进入 M3 Electron；本轮不自动切换安装栈。
