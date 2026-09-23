@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import { AccountCatalog } from "./accounts.mjs";
 import { CLI_ACCOUNT_ID } from "./contracts.mjs";
 import { createControlledExtension } from "./controlled-extension.mjs";
+import { hasAccountCredential } from "./account-credential.mjs";
 
 // Host-owned arguments contain identities and audited paths, never credentials.
 try {
@@ -33,8 +34,7 @@ try {
   sdk.initTheme(undefined, false);
   const paths = accountId === CLI_ACCOUNT_ID ? { authPath: path.join(configRoot, "auth.json"), modelsPath: path.join(configRoot, "models.json"), modelsStorePath: path.join(configRoot, "only-my-pi/host/cli-models-store.json") } : await catalog.runtimePaths(accountId);
   const modelRuntime = await sdk.ModelRuntime.create({ ...paths, allowModelNetwork: false, refreshOnCreate: false });
-  const stored = (await modelRuntime.listCredentials()).some((entry) => entry.providerId === account.providerId && (accountId === CLI_ACCOUNT_ID || entry.type === account.authType));
-  if (!stored) throw new Error();
+  if (!await hasAccountCredential(modelRuntime, accountId, account)) throw new Error();
   const createRuntime = async ({ cwd, sessionManager, sessionStartEvent }) => {
     const services = await sdk.createAgentSessionServices({
       cwd, agentDir: configRoot, modelRuntime,

@@ -47,4 +47,14 @@ test("JSON print child uses its bound account, tool ceiling and prompt files, ne
     assert.ok(JSON.stringify(request.body.messages).includes("Task: child prompt fixture"));
   }
   assert.equal(await fs.readFile(path.join(root, "auth.json"), "utf8"), cli);
+  await fs.writeFile(path.join(root, "auth.json"), "{}");
+  const cliModels = JSON.stringify({ providers: { fixture: { apiKey: "child-cli-configured", baseUrl: `http://127.0.0.1:${server.address().port}/v1`, api: "openai-completions", models: [{ id: "fixture", contextWindow: 32000, maxTokens: 128 }] } } });
+  await fs.writeFile(path.join(root, "models.json"), cliModels);
+  await launch("cli-readonly", ["--mode", "json", "-p", "--no-session", "--model", "fixture/fixture", "--no-extensions", "--no-skills", "--no-context-files", "--tools", "read", "Say done"]);
+  assert.equal(received.at(-1).key, "Bearer child-cli-configured");
+  assert.equal(await fs.readFile(path.join(root, "auth.json"), "utf8"), "{}");
+  await fs.writeFile(path.join(root, "models.json"), cliModels.replace('"apiKey":"child-cli-configured",', ""));
+  const count = received.length;
+  await assert.rejects(launch("cli-readonly", ["--mode", "json", "-p", "--no-session", "--model", "fixture/fixture", "--no-extensions", "--no-tools", "Say done"]));
+  assert.equal(received.length, count);
 });

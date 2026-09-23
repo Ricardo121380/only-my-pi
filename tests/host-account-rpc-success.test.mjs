@@ -38,11 +38,14 @@ test("real account RPC requests keep two stored identities and readonly tool reg
   const catalog = new AccountCatalog(root);
   const installedStack = process.env.OMP_TEST_STACK_PACKAGE ? await loadDistribution({ packageRoot: process.env.OMP_TEST_STACK_PACKAGE }) : null;
   if (process.env.OMP_TEST_STACK_PACKAGE) assert.ok(installedStack, "explicit installed stack must resolve");
-  for (const key of ["fixture-a", "fixture-b", "fixture-cli"]) {
-    const account = key === "fixture-cli" ? { accountId: "cli-readonly" } : await catalog.create({ providerId: "fixture", name: key, authType: "api_key" });
-    const paths = key === "fixture-cli" ? { authPath: path.join(root, "auth.json"), modelsPath: path.join(root, "models.json") } : await catalog.runtimePaths(account.accountId);
-    await fs.writeFile(paths.authPath, JSON.stringify({ fixture: { type: "api_key", key } }));
-    await fs.writeFile(paths.modelsPath, JSON.stringify({ providers: { fixture: { baseUrl: `http://127.0.0.1:${server.address().port}/v1`, api: "openai-completions", models: [{ id: "fixture", name: "Fixture", reasoning: true, input: ["text"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 32000, maxTokens: 128 }] } } }));
+  for (const key of ["fixture-a", "fixture-b", "fixture-cli", "fixture-cli-configured"]) {
+    const configuredKey = key === "fixture-cli-configured", cli = key.startsWith("fixture-cli");
+    const account = cli ? { accountId: "cli-readonly" } : await catalog.create({ providerId: "fixture", name: key, authType: "api_key" });
+    const paths = cli ? { authPath: path.join(root, "auth.json"), modelsPath: path.join(root, "models.json") } : await catalog.runtimePaths(account.accountId);
+    const auth = JSON.stringify(configuredKey ? {} : { fixture: { type: "api_key", key } });
+    await fs.writeFile(paths.authPath, auth);
+    const models = JSON.stringify({ providers: { fixture: { ...(configuredKey ? { apiKey: key } : {}), baseUrl: `http://127.0.0.1:${server.address().port}/v1`, api: "openai-completions", models: [{ id: "fixture", name: "Fixture", reasoning: true, input: ["text"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 32000, maxTokens: 128 }] } } });
+    await fs.writeFile(paths.modelsPath, models);
     const workerOptions = { stack: installedStack ?? { root, nodePath: process.execPath, piCliPath: "unused", stackId: `sha256:${"a".repeat(64)}` }, configRoot: root, cwd: root, model: "fixture/fixture", accountId: account.accountId, sessionRoot: path.join(root, "sessions"), env: { PATH: process.env.PATH }, ...(installedStack ? {} : { extensionResolver: async () => ({ extensions: [extension] }) }) };
     const worker = new RpcWorker(workerOptions);
     const extensionErrors = [];
@@ -80,10 +83,15 @@ test("real account RPC requests keep two stored identities and readonly tool reg
     assert.ok(writeAttempt.some((m) => m.role === "toolResult" && m.isError === true));
     await assert.rejects(fs.access(path.join(root, "forbidden.txt")), { code: "ENOENT" });
     const beforeRemoval = received.length;
-    await fs.unlink(paths.authPath);
-    const removed = await prompt();
-    assert.ok(removed.some((m) => m.role === "assistant" && m.stopReason === "error"));
-    assert.equal(received.length, beforeRemoval, "removed credentials must prevent another HTTP request");
+    if (!configuredKey) {
+      await fs.unlink(paths.authPath);
+      const removed = await prompt();
+      assert.ok(removed.some((m) => m.role === "assistant" && m.stopReason === "error"));
+      assert.equal(received.length, beforeRemoval, "removed credentials must prevent another HTTP request");
+    } else {
+      assert.equal(await fs.readFile(paths.authPath, "utf8"), auth, "CLI static key is never copied to auth storage");
+      assert.equal(await fs.readFile(paths.modelsPath, "utf8"), models);
+    }
     await worker.stop();
     assert.deepEqual(extensionErrors, [], "every audited extension must initialize, not just the model stream");
     const files = await fs.readdir(path.join(root, "sessions"));
@@ -91,7 +99,7 @@ test("real account RPC requests keep two stored identities and readonly tool reg
     assert.ok(session, "the bound session must be persisted");
     const entries = (await fs.readFile(path.join(root, "sessions", session), "utf8")).trim().split("\n").map((line) => JSON.parse(line));
     assert.ok(entries.some((entry) => entry.customType === "omp-account-binding" && entry.data.accountId === account.accountId));
-    await fs.writeFile(paths.authPath, JSON.stringify({ fixture: { type: "api_key", key } }));
+    await fs.writeFile(paths.authPath, auth);
     const resumed = new RpcWorker({ ...workerOptions, resumeFile: path.join(root, "sessions", session) });
     t.after(() => resumed.stop());
     const resumedState = await resumed.start();
@@ -100,8 +108,15 @@ test("real account RPC requests keep two stored identities and readonly tool reg
     const resumedDone = new Promise((resolve) => resumed.on("event", (event) => { if (event.type === "agent_settled") resolve(); }));
     await resumed.command("prompt", { message: "Continue the stopped fixture session" }); await resumedDone; await resumed.stop();
     assert.ok(received.at(-1).body.messages.some((message) => message.role === "assistant" && JSON.stringify(message.content).includes("fixture done")), "the real SDK must load prior history, not silently create a new session");
+    if (configuredKey) {
+      await fs.writeFile(paths.modelsPath, models.replace(`"apiKey":"${key}",`, ""));
+      const removed = new RpcWorker(workerOptions); t.after(() => removed.stop());
+      const count = received.length;
+      await assert.rejects(removed.start()); await removed.stop();
+      assert.equal(received.length, count, "new worker must reject removed configured identity");
+    }
   }
-  assert.deepEqual(received.map((r) => r.key), [...Array(5).fill("Bearer fixture-a"), ...Array(5).fill("Bearer fixture-b"), ...Array(5).fill("Bearer fixture-cli")]);
+  assert.deepEqual(received.map((r) => r.key), [...Array(5).fill("Bearer fixture-a"), ...Array(5).fill("Bearer fixture-b"), ...Array(5).fill("Bearer fixture-cli"), ...Array(5).fill("Bearer fixture-cli-configured")]);
   for (const request of received) {
     const tools = request.body.tools.map((tool) => tool.function.name).sort();
     assert.deepEqual(tools, ["find", "grep", "ls", "read"]);

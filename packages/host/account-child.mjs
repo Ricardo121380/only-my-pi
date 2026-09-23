@@ -3,6 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { AccountCatalog } from "./accounts.mjs";
 import { CLI_ACCOUNT_ID } from "./contracts.mjs";
+import { hasAccountCredential } from "./account-credential.mjs";
 
 // Implements only the bounded JSON-print CLI contract emitted by pi-subagents.
 // Unknown CLI modes fail closed instead of falling back to the ordinary Pi CLI.
@@ -23,7 +24,7 @@ export async function runAccountChild({ stack, configRoot, accountId, argv, cwd 
   if (!args.model.startsWith(`${account.providerId}/`)) throw new Error("CHILD_ACCOUNT_MODEL_MISMATCH");
   const paths = accountId === CLI_ACCOUNT_ID ? { authPath: path.join(configRoot, "auth.json"), modelsPath: path.join(configRoot, "models.json"), modelsStorePath: path.join(configRoot, "only-my-pi/host/cli-models-store.json") } : await catalog.runtimePaths(accountId);
   const modelRuntime = await sdk.ModelRuntime.create({ ...paths, allowModelNetwork: false, refreshOnCreate: false });
-  if (!(await modelRuntime.listCredentials()).some((c) => c.providerId === account.providerId && (accountId === CLI_ACCOUNT_ID || c.type === account.authType))) throw new Error("CHILD_ACCOUNT_UNAVAILABLE");
+  if (!await hasAccountCredential(modelRuntime, accountId, account)) throw new Error("CHILD_ACCOUNT_UNAVAILABLE");
   sdk.initTheme(undefined, false);
   const sessionManager = args.noSession ? sdk.SessionManager.inMemory(cwd) : args.session ? sdk.SessionManager.open(args.session, args.sessionDir, cwd) : sdk.SessionManager.create(cwd, args.sessionDir);
   const runtime = await sdk.createAgentSessionRuntime(async ({ cwd, sessionManager, sessionStartEvent }) => {

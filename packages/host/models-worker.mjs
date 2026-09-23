@@ -4,6 +4,7 @@ import { findPackageJSON } from "node:module";
 import fs from "node:fs/promises";
 import { AccountCatalog } from "./accounts.mjs";
 import { CLI_ACCOUNT_ID } from "./contracts.mjs";
+import { hasAccountCredential } from "./account-credential.mjs";
 const [stackRoot, configRoot, accountId] = process.argv.slice(2);
 try {
   if (![stackRoot, configRoot].every((p) => typeof p === "string" && path.isAbsolute(p))) throw new Error("invalid runtime paths");
@@ -25,8 +26,9 @@ try {
     if (stored) { await runtime.refresh({ allowNetwork: false }); available = runtime.getAvailableSnapshot().filter((m) => m.provider === account.providerId); }
     else available = [];
   } else if (accountId === CLI_ACCOUNT_ID) {
-    const stored = new Set((await runtime.listCredentials()).map((entry) => entry.providerId));
-    await runtime.refresh({ allowNetwork: false }); available = runtime.getAvailableSnapshot().filter((m) => stored.has(m.provider));
+    const admitted = new Set();
+    for (const provider of runtime.getProviders()) if (await hasAccountCredential(runtime, accountId, { providerId: provider.id })) admitted.add(provider.id);
+    await runtime.refresh({ allowNetwork: false }); available = runtime.getAvailableSnapshot().filter((m) => admitted.has(m.provider));
   } else available = runtime.getAvailableSnapshot();
   const models = available.map((m) => ({ id: `${m.provider}/${m.id}`, name: String(m.name ?? m.id).slice(0, 256), provider: m.provider,
     thinkingLevels: m.reasoning ? getSupportedThinkingLevels(m) : [], contextWindow: m.contextWindow }));
