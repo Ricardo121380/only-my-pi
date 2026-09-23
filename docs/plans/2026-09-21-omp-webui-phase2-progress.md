@@ -425,3 +425,12 @@
 - 真实任务阶段累计 **1/3，失败重试0/1**。关闭自动重试，不自动改Provider；待CPAR恢复后用保留的失败重试和2个剩余小任务完成原矩阵。脚本重启不能重置阶段额度。
 - 新进程到安装Host就绪和配对 **4075.7ms**，不含首屏或OS缓存清理；Host+真实worker每2秒采样峰值 **436240384 bytes（约416MiB）**，不含共享浏览器。Full解包占用616062976bytes，相对bb4111e增加4096bytes；压缩更新下载量仍未测。
 - 测试Host均已停止；临时凭据副本删除且扫描无残留，原CLI models.json摘要一致；未更改CPAR服务或日常安装。详见候选验收记录及 `live-cpar-9130d02/report.json`。**M2仍IN_PROGRESS：外部路由和普通绘制条件未解决，不晋升、不进入M3。**
+
+## 2026-09-24：CPAR 修复后真实重试与配置阻断定位
+
+- 用户告知 CPAR 已修复，沿用9130d02安装候选和已选 `cpar-grok-build/grok-4.5`，Ego Lite空间3，low思考强度，在合成临时项目重试原小型修改。返回 **400 ClientRequestError**，审批/工具均0、proof.txt保持before；全零usage仍为未知。未换路由或关闭思考绕过验收。
+- 阶段累计 **任务1/3、失败重试1/1**。其余两个小任务仍用于受管写入、撤权/取消；再次重做失败项需要新增授权，脚本重启不重置额度。证据 `live-cpar-sep24/report.json`、`retry-result.json`、已查看的`failed-retry.png`。
+- 只读核对 CPAR 运行二进制SHA与3a8e5af部署收据一致；对应生产请求记录为ClientRequestError。只读查询当前配置，Grok Build / grok-4.5 / canonical_bridge候选仍含 `{"allow_unlisted_model":true,"reasoning":false}`，没有查询凭据表。
+- 同一安装候选、假Key、localhost端点捕获一次完整合成请求；包含low、summary:auto、encrypted_content include、cache key与当前六个工具。修复后的CPAR源码离线解析/投影/Build编解码均PASS，语义保持；去掉Reasoning能力后确定性复现ReasoningUnsupported。生产没有该debug枚举日志，因此该定位依据配置+代码+离线反例，不假称读取到具体生产拒绝原因；解除后仍可能存在后续上游问题。
+- 建议通过CPAR正常草稿/验证/激活流程移除目标candidate的reasoning:false。需先核实Chat兼容范围，因为恢复Reasoning会触发该网关对Chat→Reasoning目标的拒绝；不得直接改SQLite或随意增加候选。具体差异、范围、授权和回滚前提见[复测报告](2026-09-24-omp-cpar-retest.md)。
+- 测试Host已停止，临时凭据和配对清单删除，扫描无泄漏，原CLI配置摘要一致。保留合成项目和证据；未改产品源码、CPAR源码/生产配置、日常安装或全局设置。M2继续IN_PROGRESS，F01普通绘制门禁未变化。
