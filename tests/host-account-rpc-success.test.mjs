@@ -40,13 +40,17 @@ test("real account RPC requests keep two stored identities and readonly tool reg
     const account = key === "fixture-cli" ? { accountId: "cli-readonly" } : await catalog.create({ providerId: "fixture", name: key, authType: "api_key" });
     const paths = key === "fixture-cli" ? { authPath: path.join(root, "auth.json"), modelsPath: path.join(root, "models.json") } : await catalog.runtimePaths(account.accountId);
     await fs.writeFile(paths.authPath, JSON.stringify({ fixture: { type: "api_key", key } }));
-    await fs.writeFile(paths.modelsPath, JSON.stringify({ providers: { fixture: { baseUrl: `http://127.0.0.1:${server.address().port}/v1`, api: "openai-completions", models: [{ id: "fixture", name: "Fixture", reasoning: false, input: ["text"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 32000, maxTokens: 128 }] } } }));
+    await fs.writeFile(paths.modelsPath, JSON.stringify({ providers: { fixture: { baseUrl: `http://127.0.0.1:${server.address().port}/v1`, api: "openai-completions", models: [{ id: "fixture", name: "Fixture", reasoning: true, input: ["text"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 32000, maxTokens: 128 }] } } }));
     const workerOptions = { stack: installedStack ?? { root, nodePath: process.execPath, piCliPath: "unused", stackId: `sha256:${"a".repeat(64)}` }, configRoot: root, cwd: root, model: "fixture/fixture", accountId: account.accountId, sessionRoot: path.join(root, "sessions"), env: { PATH: process.env.PATH }, ...(installedStack ? {} : { extensionResolver: async () => ({ extensions: [extension] }) }) };
     const worker = new RpcWorker(workerOptions);
     const extensionErrors = [];
     worker.on("event", (event) => { if (event.type === "extension_error") extensionErrors.push(event.code ?? event.event ?? "extension_error"); });
     t.after(() => worker.stop());
     const state = await worker.start(); assert.equal(state.model.provider, "fixture");
+    if (key === "fixture-a") {
+      await worker.command("set_thinking_level", { level: "low" });
+      assert.equal((await worker.command("get_state")).thinkingLevel, "low", "RPC must report the applied thinking level");
+    }
     const prompt = async () => {
       const messages = [];
       let onEvent;

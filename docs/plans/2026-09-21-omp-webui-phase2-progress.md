@@ -376,3 +376,10 @@
 - 前端 22 项组件测试、类型检查、构建通过。独立终端 chunk 约 336KB（gzip 85KB）；Monaco 大 chunk 提示仍保留。修正原型 `.terminal` 样式与 xterm 同名类冲突，沿用 Glacier 视觉。
 - Ego Lite TaskSpace 2/p1，隔离源码 Host/WebUI + 已有 Node 24/Pi 0.85.1 候选 worker，本地假账号/模拟模型，真实外部模型调用 0。真实键盘输入落盘 `terminal-proof.txt`，中断前台 sleep、刷新恢复同一 terminalId、隐藏后重新显示、disown 后关闭确认及子进程消失全部通过；390×844 活动终端输入 `mobile-ok`，页面无水平溢出。截图 `artifacts/webui-phase2/terminal-mobile-active.png` 已查看。终端关闭后界面显示已释放占用。
 - 这些结果是开发态定向证据，日常安装未变；最终候选尚不包含本轮终端代码。F04/F05、2F 仍待完成，M2 不标完成。用户已有 Glacier 审计文档改动未纳入本轮提交。
+
+## 2026-09-23：F04/F05 开发态接入
+
+- F04：Pi 模型目录通过已安装 SDK 的 `getSupportedThinkingLevels` 报告能力；WebUI 只展示当前模型支持的选项。任务请求把 `thinkingLevel` 纳入幂等摘要，Host 启动 RPC 后调用 `set_thinking_level`，再 `get_state` 回读；若实际值与请求不一致，任务失败并保持可诊断，不接受 SDK 静默降级。调用不使用 `persist`，不会改 CLI 默认。
+- F05：Host 从 assistant `message_end` 的真实 `usage` 回执聚合请求数、工具数、输入/输出/cache token 和 SDK 目录费用估算；没有回执或全零回执保持未知。范围是当前任务，不把历史会话或字符数换算为 token，不把模型目录费用称为账单。用量回执可部分到达，UI 同时显示已报告数量。
+- `tests/host-usage.test.mjs` 覆盖缺失/零值保持未知、真实非零回执聚合和零价格不计费；`npm run test:web` **22 PASS**；`npm run typecheck` PASS；Host 相关账号/RPC/任务回归 11 PASS，终端/HTTP/手动/所有权/生命周期 12 PASS。F04 的候选内置 Node 24 全量实际生效仍需在 2F 夹具中补一条可用 reasoning 模型证据。
+- F04/F05 是开发态实现，最终候选尚未重新构建，2F 性能、安全、安装晋升仍待完成；M2 不标完成。

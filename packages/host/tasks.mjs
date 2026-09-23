@@ -6,6 +6,7 @@ import { RpcWorker } from "./rpc-worker.mjs";
 import { acquireOwnership, groupAlive } from "./ownership.mjs";
 import { hostError, terminal, textContent, CLI_ACCOUNT_ID } from "./contracts.mjs";
 import { projectPath } from "./inspector.mjs";
+import { emptyUsage, recordUsage } from "./usage.mjs";
 
 export class HostTasks extends EventEmitter {
   constructor({ configRoot, stack, catalog, models, accounts, allowControlled = false, workerFactory = (options) => new RpcWorker(options), env = process.env }) {
@@ -32,6 +33,7 @@ export class HostTasks extends EventEmitter {
     await this.persist();
   }
   summary(task) { return { taskId: task.taskId, requestId: task.requestId, projectId: task.projectId, accountId: task.accountId ?? null, model: task.model, prompt: task.prompt.slice(0, 200), status: task.status,
+    thinkingLevel: task.thinkingLevel ?? null, requestedThinkingLevel: task.requestedThinkingLevel ?? null, usage: task.usage ?? null,
     mode: task.mode ?? "readonly", access: task.access ?? "inspect", approvals: task.approvals ?? [], orchestration: task.orchestration ?? null, sessionId: task.sessionId, createdAt: task.createdAt, updatedAt: task.updatedAt, error: task.error ?? null, tool: task.tool ?? null }; }
   public(task) { return structuredClone({ ...this.summary(task), prompt: task.prompt, partial: task.partial ?? "", messages: task.messages.slice(-50).map((m) => ({ ...m, text: m.text.slice(0, 16384) })) }); }
   snapshot() { return [...this.tasks.values()].slice(-100).map((t) => this.summary(t)); }
@@ -53,7 +55,7 @@ export class HostTasks extends EventEmitter {
     if (this.closing) throw hostError("HOST_STOPPING", 409);
     if (this.persistenceError) throw hostError("HOST_STORAGE_FAILED", 503);
     const prior = this.requests.get(command.requestId);
-    const requestDigest = createHash("sha256").update(JSON.stringify([command.projectId, command.model, command.prompt, ...(this.accounts ? [command.accountId] : []), ...(mode === "controlled" ? [mode] : []), ...(command.resumeSessionKey ? [command.resumeSessionKey] : [])])).digest("hex");
+    const requestDigest = createHash("sha256").update(JSON.stringify([command.projectId, command.model, command.prompt, ...(this.accounts ? [command.accountId] : []), ...(mode === "controlled" ? [mode] : []), ...(command.resumeSessionKey ? [command.resumeSessionKey] : []), ...(command.thinkingLevel !== undefined ? [{ thinkingLevel: command.thinkingLevel }] : [])])).digest("hex");
     const existing = (id) => { const task = this.tasks.get(id); if (task.requestDigest !== requestDigest) throw hostError("REQUEST_ID_CONFLICT", 409); return this.public(task); };
     if (prior) return existing(prior);
     if (this.tasks.size >= 1000 || this.workers.size >= 4) throw hostError("TASK_CAPACITY_REACHED", 429);
@@ -68,11 +70,14 @@ export class HostTasks extends EventEmitter {
       const account = await this.accounts.get(command.accountId);
       if (!command.model.startsWith(`${account.providerId}/`)) throw hostError("ACCOUNT_MODEL_MISMATCH", 409);
     }
-    if (!(await this.models(command.accountId)).some((m) => m.id === command.model)) throw hostError("MODEL_UNAVAILABLE", 409);
+    const model = (await this.models(command.accountId)).find((m) => m.id === command.model);
+    if (!model) throw hostError("MODEL_UNAVAILABLE", 409);
+    if (command.thinkingLevel !== undefined && !model.thinkingLevels?.includes(command.thinkingLevel)) throw hostError("THINKING_LEVEL_UNAVAILABLE", 409);
     if (this.requests.has(command.requestId)) return existing(this.requests.get(command.requestId));
     if (this.closing) throw hostError("HOST_STOPPING", 409);
     if ([...this.tasks.values()].filter((t) => !terminal(t.status)).length >= 4) throw hostError("TASK_CAPACITY_REACHED", 429);
     const task = { taskId: randomUUID(), requestId: command.requestId, requestDigest, projectId: project.projectId, model: command.model, ...(this.accounts ? { accountId: command.accountId } : {}),
+      requestedThinkingLevel: command.thinkingLevel ?? null, thinkingLevel: null, usage: emptyUsage(),
       mode, access: "inspect", approvals: [], prompt: command.prompt, status: "starting", sessionId: resume?.sessionId ?? null, resumeSessionKey: command.resumeSessionKey ?? null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     this.requests.set(command.requestId, task.taskId); this.tasks.set(task.taskId, task);
     try { await this.persist(); }
@@ -109,12 +114,14 @@ export class HostTasks extends EventEmitter {
       if (terminal(task.status)) return;
       if (event?.type === "message_end" && ["user", "assistant"].includes(event.message?.role)) {
         const message = event.message;
+        if (message.role === "assistant") recordUsage(task.usage, message);
         task.messages.push({ id: randomUUID(), role: message.role, text: textContent(message.content) });
         task.partial = "";
         if (message.stopReason === "error") { failed = true; task.error = "MODEL_REQUEST_FAILED"; }
       } else if (event?.type === "message_update" && event.assistantMessageEvent?.type === "text_delta") {
         task.partial = ((task.partial ?? "") + event.assistantMessageEvent.delta).slice(0, 65536);
       } else if (event?.type === "tool_execution_start") {
+        task.usage.tools++;
         task.tool = { name: String(event.toolName).slice(0, 128), status: "running" };
       } else if (event?.type === "tool_execution_end") {
         if (event.toolName === "request_coding_access" && event.result?.details?.status === "CODING_ACCESS_GRANTED" && !event.isError) task.access = "coding";
@@ -148,6 +155,13 @@ export class HostTasks extends EventEmitter {
       lease ??= await acquireOwnership(this.configRoot, "session", String(state.sessionId));
       this.leases.set(task.taskId, lease);
       await this.persist();
+      if (task.status === "cancelling" || this.closing) { stopping = true; await worker.cancel(); task.status = "cancelled"; return; }
+      if (task.requestedThinkingLevel !== null) {
+        await worker.command("set_thinking_level", { level: task.requestedThinkingLevel });
+        const effective = await worker.command("get_state");
+        if (effective.thinkingLevel !== task.requestedThinkingLevel) throw hostError("THINKING_LEVEL_MISMATCH", 409);
+        task.thinkingLevel = effective.thinkingLevel;
+      } else task.thinkingLevel = state.thinkingLevel ?? null;
       if (task.status === "cancelling" || this.closing) { stopping = true; await worker.cancel(); task.status = "cancelled"; return; }
       task.status = "running"; this.changed(task);
       await worker.command("prompt", { message: task.mode === "controlled" ? task.prompt : `只读分析请求。不要修改项目文件。\n\n${task.prompt}` });

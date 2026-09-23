@@ -62,7 +62,7 @@ export class RpcWorker extends EventEmitter {
     this.state = await this.command("get_state"); return this.state;
   }
   command(type, fields = {}) {
-    if (!["get_state", "prompt", "abort", "clear_queue"].includes(type) || !this.child || this.closed) return Promise.reject(hostError("RPC_COMMAND_DENIED"));
+    if (!["get_state", "set_thinking_level", "prompt", "abort", "clear_queue"].includes(type) || !this.child || this.closed) return Promise.reject(hostError("RPC_COMMAND_DENIED"));
     const id = randomUUID();
     if (type === "prompt") this.promptSent = true;
     return new Promise((resolve, reject) => {

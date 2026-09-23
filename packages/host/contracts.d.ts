@@ -7,7 +7,7 @@ export type HostCommand =
   | { type: "leaveManual"; projectId: string; manualId: string }
   | { type: "saveFile"; projectId: string; manualId: string; path: string; version: string; text: string }
   | { type: "addProject"; path: string }
-  | { type: "startTask"; requestId: string; projectId: string; accountId: string; model: string; prompt: string; mode?: "readonly" | "controlled"; resumeSessionKey?: string }
+  | { type: "startTask"; requestId: string; projectId: string; accountId: string; model: string; prompt: string; thinkingLevel?: ThinkingLevel; mode?: "readonly" | "controlled"; resumeSessionKey?: string }
   | { type: "answerApproval"; taskId: string; approvalId: string; value: string | boolean }
   | { type: "revokeTask"; taskId: string }
   | { type: "cancelTask"; taskId: string };
@@ -15,7 +15,13 @@ export type TaskStatus = "starting" | "running" | "cancelling" | "succeeded" | "
 export interface Project { projectId: string; path: string; name: string; available: boolean }
 export interface TerminalState { terminalId: string; projectId: string; status: "starting" | "running" | "closing" | "closed" | "reconciliation"; cols: number; rows: number; inputSeq: number; exitCode: number | null; error: string | null }
 export interface TerminalOutput extends TerminalState { base: number; end: number; truncated: boolean; output: string }
-export interface ModelChoice { id: string; name: string; provider: string }
+export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+export interface ModelChoice { id: string; name: string; provider: string; thinkingLevels?: ThinkingLevel[]; contextWindow?: number }
+export interface TaskUsage {
+  scope: "task"; responses: number; tools: number; reported: number; priced: number;
+  tokens: { input: number; output: number; cacheRead: number; cacheWrite: number; totalTokens: number } | null;
+  estimatedCost: number | null;
+}
 /** Metadata only; creating an account does not authenticate it. */
 export interface AccountInput { providerId: string; name: string; authType: "api_key" | "oauth" }
 export interface GuiAccount extends AccountInput { accountId: string }
@@ -31,6 +37,7 @@ export interface HostTask {
   mode?: "readonly" | "controlled"; access?: "inspect" | "coding";
   approvals?: { approvalId: string; kind: "select" | "confirm"; title: string; message: string; options?: string[]; expiresAt: string }[];
   accountId?: string | null;
+  thinkingLevel?: ThinkingLevel | null; requestedThinkingLevel?: ThinkingLevel | null; usage?: TaskUsage | null;
   taskId: string; requestId: string; projectId: string; model: string; prompt: string;
   status: TaskStatus; sessionId: string | null; messages: Message[]; partial?: string; error?: string | null;
   tool?: { name: string; status: "running" } | null; createdAt: string; updatedAt: string;
