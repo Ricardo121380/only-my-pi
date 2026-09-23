@@ -1,10 +1,11 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { useState } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Composer } from "./Composer";
 import { SafeMarkdown } from "./Messages";
 import { applyEvent } from "./api";
 import { OutputDock } from "./OutputDock";
-import type { HostSnapshot } from "../../packages/host/contracts";
+import type { HostSnapshot, ThinkingLevel } from "../../packages/host/contracts";
 afterEach(cleanup);
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function () { this.open = true; };
@@ -90,8 +91,34 @@ it("10,000 ordered events have bounded task projection", () => {
 it("usage stays unknown instead of importing prototype metrics", () => {
   render(<Composer {...defaults} />);
   expect(screen.getByText("速率 — tok/s")).toBeTruthy();
-  expect(screen.getByText("本轮费用 —")).toBeTruthy();
+  expect(screen.getByText("估算费用 —")).toBeTruthy();
   expect(screen.queryByText(/237 tok\/s/)).toBeNull();
+});
+it("thinking selection stays independent of past task values and only exposes supported levels", async () => {
+  const onSend = vi.fn(async () => {});
+  function Fixture() {
+    const [level, setLevel] = useState<ThinkingLevel | null>(null);
+    return <Composer {...defaults} models={[{ ...models[0], thinkingLevels: ["off", "low", "high"] }]} effectiveThinkingLevel="low" thinkingLevel={level} onThinkingLevel={setLevel} onSend={onSend} />;
+  }
+  render(<Fixture />);
+  expect(screen.getByRole("button", { name: "选择思考强度" }).textContent).toBe("默认强度");
+  fireEvent.click(screen.getByRole("button", { name: "选择思考强度" }));
+  expect(screen.queryByRole("button", { name: /极高/ })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "高 · high" }));
+  fireEvent.change(screen.getByLabelText("新的只读分析"), { target: { value: "verify" } });
+  fireEvent.click(screen.getByRole("button", { name: "开始分析" }));
+  await waitFor(() => expect(onSend).toHaveBeenCalledWith("fixture/model", "verify", "readonly", "high"));
+  fireEvent.click(screen.getByRole("button", { name: "选择思考强度" }));
+  fireEvent.click(screen.getByRole("button", { name: "使用默认强度" }));
+  expect(screen.getByRole("button", { name: "选择思考强度" }).textContent).toBe("默认强度");
+});
+it("partial usage is labeled and unknown costs are not rendered as free", () => {
+  render(<Composer {...defaults} usage={{ scope: "task", responses: 2, tools: 1, reported: 1, priced: 0, tokens: { input: 70, output: 20, cacheRead: 30, cacheWrite: 0, totalTokens: 120 }, estimatedCost: null }} />);
+  expect(screen.getByText("部分回执")).toBeTruthy();
+  expect(screen.getByText("120 tok")).toBeTruthy();
+  expect(screen.getByText("估算费用 —")).toBeTruthy();
+  fireEvent.click(screen.getByText("口径"));
+  expect(screen.getByText(/以下仅为已收到回执的部分合计/)).toBeTruthy();
 });
 it("output dock shows only public tool results and closing only calls its view callback", () => {
   const onClose = vi.fn();

@@ -15,6 +15,8 @@ export const query = (route: string, values: Record<string, string | number>) =>
 export const errorText = (error: unknown) => {
   const code = error instanceof Error ? error.message : "HOST_REQUEST_FAILED";
   const accountMessages: Record<string, string> = {
+    THINKING_LEVEL_UNAVAILABLE: "当前模型不支持所选思考强度，请刷新模型列表后重选。",
+    THINKING_LEVEL_MISMATCH: "运行时实际思考强度与选择不一致，任务已停止，未发送提示词。请刷新模型列表后重选。",
     TERMINAL_RECONCILIATION_REQUIRED: "终端清理尚未确认，项目占用仍保留。请核对遗留程序；重新连接不会抢锁或重启命令。",
     TERMINAL_INPUT_CONFLICT: "终端输入序号冲突，可能有另一个页面正在输入。已暂停发送，请重新连接；不会重放命令。",
     TERMINAL_INPUT_LIMIT: "输入过大或发送积压，已暂停发送。请重新连接后分段输入；不会自动重试。",

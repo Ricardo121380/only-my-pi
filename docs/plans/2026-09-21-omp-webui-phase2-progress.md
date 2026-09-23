@@ -383,3 +383,11 @@
 - F05：Host 从 assistant `message_end` 的真实 `usage` 回执聚合请求数、工具数、输入/输出/cache token 和 SDK 目录费用估算；没有回执或全零回执保持未知。范围是当前任务，不把历史会话或字符数换算为 token，不把模型目录费用称为账单。用量回执可部分到达，UI 同时显示已报告数量。
 - `tests/host-usage.test.mjs` 覆盖缺失/零值保持未知、真实非零回执聚合和零价格不计费；`npm run test:web` **22 PASS**；`npm run typecheck` PASS；Host 相关账号/RPC/任务回归 11 PASS，终端/HTTP/手动/所有权/生命周期 12 PASS。F04 的候选内置 Node 24 全量实际生效仍需在 2F 夹具中补一条可用 reasoning 模型证据。
 - F04/F05 是开发态实现，最终候选尚未重新构建，2F 性能、安全、安装晋升仍待完成；M2 不标完成。
+
+### F04/F05 边界补齐与 2F 安全收口
+
+- 补齐下一任务选择与上一任务实际强度的分离、账号变化重置、失败请求复用比较强度、恢复默认按钮和 Pi `max` 能力。发现 Pi 的 `compat` 子路径只有 ESM export，`require.resolve` 会让模型目录失败；改用所绑定 SDK 的实际包位置及公开 ESM export 解析。新增真实目录/请求测试覆盖此路径。
+- 真实 Pi RPC + 本地 SSE 验证 `reasoning_effort: low` 进入请求、续接保持 low、响应 120 token（输入 70、输出 20、缓存读 30）正确归一化；源码 Host 对照旧完整候选 Pi 的 Node 24 定向 **6 PASS**。Host 层另验证不支持拒绝、实际强度不符时不发送 prompt、幂等冲突与重启保留用量。
+- Ego Lite TaskSpace 2/p1，1440×1000，源码 Host/WebUI + Node 24/Pi 0.85.1 候选 worker：选择 low → 发送 → 用量面板显示实际低、120 token/70 输入/20 输出/30 缓存读，费用未知，PASS。截图 `artifacts/webui-phase2/m2-metrics-desktop.png` 已查看。UI 以模型回合计数，不宣称 HTTP 重试次数；部分用量和部分价格有明确标识，不含子代理或历史轮次。
+- WebUI **24 PASS**、typecheck/build PASS。Host 全集首次 **77 PASS / 1 FAIL / 2 SKIP**，唯一失败是故障测试清理空闲 shell 时进程已自行退出导致 ESRCH；收敛测试清理的已退出分支，终端 6 项再跑全部 PASS。保护式 scout/writer 两项仍按既有条件跳过，不冒充实测。
+- F02 依赖：Monaco 0.56.0 固定 DOMPurify 3.4.8，定向 override 到 3.4.13；Ajv 的兼容传递依赖 fast-uri 锁到 3.1.8。仅更新这两条 lock 记录，不升级 Pi/Monaco，不运行 install scripts。当前根依赖树 `npm audit` **0 vulnerabilities**，这不是外部完整发行栈所有依赖的独立安全认证。依据：[DOMPurify 官方公告](https://github.com/cure53/DOMPurify/security/advisories/GHSA-55q2-fjhq-7xh7)、[fast-uri 官方公告](https://github.com/fastify/fast-uri/security/advisories/GHSA-f65p-4m7j-42xc)。

@@ -15,7 +15,7 @@ export type TaskStatus = "starting" | "running" | "cancelling" | "succeeded" | "
 export interface Project { projectId: string; path: string; name: string; available: boolean }
 export interface TerminalState { terminalId: string; projectId: string; status: "starting" | "running" | "closing" | "closed" | "reconciliation"; cols: number; rows: number; inputSeq: number; exitCode: number | null; error: string | null }
 export interface TerminalOutput extends TerminalState { base: number; end: number; truncated: boolean; output: string }
-export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 export interface ModelChoice { id: string; name: string; provider: string; thinkingLevels?: ThinkingLevel[]; contextWindow?: number }
 export interface TaskUsage {
   scope: "task"; responses: number; tools: number; reported: number; priced: number;

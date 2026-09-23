@@ -14,17 +14,21 @@ await fs.mkdir(project);
 await fs.writeFile(path.join(project, "README.md"), "# Editor fixture\n\nOnly temporary project data.\n");
 await fs.writeFile(path.join(project, "example.ts"), "export const message = 'hello';\n");
 let requests = 0;
+const metrics = process.env.OMP_TEST_METRICS === "1", efforts = [];
 const model = http.createServer(async (req, res) => {
-  for await (const chunk of req) void chunk;
+  let body = ""; for await (const chunk of req) body += chunk;
   if (req.headers.authorization !== "Bearer fixture-control") { res.writeHead(401); res.end(); return; }
   const step = requests++;
+  if (metrics) efforts.push(JSON.parse(body).reasoning_effort ?? null);
   const tools = [
     { name: "request_coding_access", arguments: JSON.stringify({ taskSummary: "Browser approval fixture", complexity: "simple", scope: ["proof.txt"], riskFlags: [], verification: ["read proof.txt"], orchestration: { useReadOnlyScouts: false, useManagedCloneWriter: false, useFreshReviewer: false } }) },
     { name: "write", arguments: JSON.stringify({ path: "proof.txt", content: "browser approved\n" }) },
   ];
-  const delta = tools[step] ? { role: "assistant", tool_calls: [{ index: 0, id: `fixture-${step}`, type: "function", function: tools[step] }] } : { role: "assistant", content: "本地审批测试结束。写入与否请以实际文件为准。" };
+  const tool = !metrics && tools[step];
+  const delta = tool ? { role: "assistant", tool_calls: [{ index: 0, id: `fixture-${step}`, type: "function", function: tool }] } : { role: "assistant", content: metrics ? "本地用量回执验收完成。" : "本地审批测试结束。写入与否请以实际文件为准。" };
   res.writeHead(200, { "content-type": "text/event-stream" });
-  for (const choice of [{ delta, finish_reason: null }, { delta: {}, finish_reason: tools[step] ? "tool_calls" : "stop" }]) res.write(`data: ${JSON.stringify({ id: "fixture", object: "chat.completion.chunk", created: 1, model: "fixture", choices: [{ index: 0, ...choice }] })}\n\n`);
+  for (const choice of [{ delta, finish_reason: null }, { delta: {}, finish_reason: tool ? "tool_calls" : "stop" }]) res.write(`data: ${JSON.stringify({ id: "fixture", object: "chat.completion.chunk", created: 1, model: "fixture", choices: [{ index: 0, ...choice }] })}\n\n`);
+  if (metrics) res.write(`data: ${JSON.stringify({ id: "fixture", choices: [], usage: { prompt_tokens: 100, completion_tokens: 20, total_tokens: 120, prompt_tokens_details: { cached_tokens: 30 } } })}\n\n`);
   res.end("data: [DONE]\n\n");
 });
 await new Promise((resolve) => model.listen(0, "127.0.0.1", resolve));
@@ -32,7 +36,7 @@ const accounts = new AccountCatalog(configRoot);
 const account = await accounts.create({ providerId: "fixture", name: "Local control fixture", authType: "api_key" });
 const paths = await accounts.runtimePaths(account.accountId);
 await fs.writeFile(paths.authPath, JSON.stringify({ fixture: { type: "api_key", key: "fixture-control" } }));
-await fs.writeFile(paths.modelsPath, JSON.stringify({ providers: { fixture: { baseUrl: `http://127.0.0.1:${model.address().port}/v1`, api: "openai-completions", models: [{ id: "fixture", name: "Fixture", contextWindow: 32000, maxTokens: 128 }] } } }));
+await fs.writeFile(paths.modelsPath, JSON.stringify({ providers: { fixture: { baseUrl: `http://127.0.0.1:${model.address().port}/v1`, api: "openai-completions", models: [{ id: "fixture", name: "Fixture", reasoning: metrics, contextWindow: 32000, maxTokens: 128 }] } } }));
 const stack = await loadDistribution({ packageRoot: process.env.OMP_TEST_STACK_PACKAGE });
 if (!stack) throw Error("An explicit verified stack is required");
 if (process.env.OMP_TEST_CLI === "1") {
@@ -56,6 +60,6 @@ async function stop() {
   if (closing) return; closing = true;
   await host.stop(); await new Promise((resolve) => model.close(resolve));
   const proof = await fs.readFile(path.join(project, "proof.txt"), "utf8").catch(() => null);
-  await fs.rm(root, { recursive: true }); console.log(JSON.stringify({ requests, proof, stopped: true }));
+  await fs.rm(root, { recursive: true }); console.log(JSON.stringify({ requests, proof, ...(metrics ? { efforts } : {}), stopped: true }));
 }
 process.on("SIGTERM", () => void stop()); process.on("SIGINT", () => void stop());

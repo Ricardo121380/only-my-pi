@@ -218,6 +218,11 @@
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"
   },
+  "overrides": {
+    "monaco-editor": {
+      "dompurify": "3.4.13"
+    }
+  },
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "0.85.1",
     "@testing-library/react": "16.3.3",

@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { RpcWorker } from "../packages/host/rpc-worker.mjs";
 import { AccountCatalog } from "../packages/host/accounts.mjs";
 import { loadDistribution } from "../packages/distribution/runtime.mjs";
+import { listModels } from "../packages/host/models.mjs";
 
 test("real account RPC requests keep two stored identities and readonly tool registry", { timeout: 30000 }, async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-rpc-accounts-")));
@@ -26,6 +27,7 @@ test("real account RPC requests keep two stored identities and readonly tool reg
     ] : [{ delta: { role: "assistant", content: "fixture done" }, finish_reason: null }, { delta: {}, finish_reason: "stop" }];
     requestWrite = false;
     for (const choice of choices) res.write(`data: ${JSON.stringify({ id: "fixture", object: "chat.completion.chunk", created: 1, model: "fixture", choices: [{ index: 0, ...choice }] })}\n\n`);
+    res.write(`data: ${JSON.stringify({ id: "fixture", choices: [], usage: { prompt_tokens: 100, completion_tokens: 20, total_tokens: 120, prompt_tokens_details: { cached_tokens: 30 } } })}\n\n`);
     res.end("data: [DONE]\n\n");
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -48,6 +50,8 @@ test("real account RPC requests keep two stored identities and readonly tool reg
     t.after(() => worker.stop());
     const state = await worker.start(); assert.equal(state.model.provider, "fixture");
     if (key === "fixture-a") {
+      const catalogModels = await listModels({ stack: workerOptions.stack, configRoot: root, accountId: account.accountId, env: { PATH: process.env.PATH } });
+      assert.ok(catalogModels.find((m) => m.id === "fixture/fixture").thinkingLevels.includes("low"));
       await worker.command("set_thinking_level", { level: "low" });
       assert.equal((await worker.command("get_state")).thinkingLevel, "low", "RPC must report the applied thinking level");
     }
@@ -61,7 +65,12 @@ test("real account RPC requests keep two stored identities and readonly tool reg
       try { await worker.command("prompt", { message: "Say done" }); await settled; return messages; }
       finally { worker.off("event", onEvent); }
     };
-    assert.ok((await prompt()).some((m) => m.role === "assistant" && m.stopReason === "stop"));
+    const first = (await prompt()).find((m) => m.role === "assistant" && m.stopReason === "stop");
+    assert.ok(first);
+    assert.equal(first.usage.totalTokens, 120);
+    assert.equal(first.usage.output, 20);
+    assert.equal(first.usage.cacheRead, 30);
+    if (key === "fixture-a") assert.equal(received.at(-1).body.reasoning_effort, "low", "Provider must receive the selected effort");
     rejectAuth = true;
     const denied = await prompt();
     assert.ok(denied.some((m) => m.role === "assistant" && m.stopReason === "error"));
@@ -85,7 +94,9 @@ test("real account RPC requests keep two stored identities and readonly tool reg
     await fs.writeFile(paths.authPath, JSON.stringify({ fixture: { type: "api_key", key } }));
     const resumed = new RpcWorker({ ...workerOptions, resumeFile: path.join(root, "sessions", session) });
     t.after(() => resumed.stop());
-    assert.equal((await resumed.start()).sessionId, state.sessionId);
+    const resumedState = await resumed.start();
+    assert.equal(resumedState.sessionId, state.sessionId);
+    if (key === "fixture-a") assert.equal(resumedState.thinkingLevel, "low", "resume keeps transcript thinking without changing global defaults");
     const resumedDone = new Promise((resolve) => resumed.on("event", (event) => { if (event.type === "agent_settled") resolve(); }));
     await resumed.command("prompt", { message: "Continue the stopped fixture session" }); await resumedDone; await resumed.stop();
     assert.ok(received.at(-1).body.messages.some((message) => message.role === "assistant" && JSON.stringify(message.content).includes("fixture done")), "the real SDK must load prior history, not silently create a new session");

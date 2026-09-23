@@ -26,7 +26,7 @@ export function App() {
   const [models, setModels] = useState<ModelChoice[]>([]), [sessions, setSessions] = useState<Session[]>([]), [historyPage, setHistoryPage] = useState<HistoryPage>({ messages: [], nextOffset: null });
   const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel | null>(null);
   const [historyBusy, setHistoryBusy] = useState(false), [pageOffset, setPageOffset] = useState(0), [projectPath, setProjectPath] = useState(""), [adding, setAdding] = useState(false), [addOpen, setAddOpen] = useState(false), [panel, setPanel] = useState("chat"), [follow, setFollow] = useState(true), [revision, setRevision] = useState(0);
-  const scroller = useRef<HTMLDivElement>(null), pending = useRef<{ model: string; prompt: string; mode: "readonly" | "controlled"; projectId: string; accountId: string; requestId: string; resumeSessionKey?: string } | null>(null);
+  const scroller = useRef<HTMLDivElement>(null), pending = useRef<{ model: string; prompt: string; mode: "readonly" | "controlled"; projectId: string; accountId: string; requestId: string; resumeSessionKey?: string; thinkingLevel?: ThinkingLevel } | null>(null);
   const cancelPending = useRef(false);
   const [inspectOpen, setInspectOpen] = useState(() => window.innerWidth > 1100), [dockOpen, setDockOpen] = useState(false), [search, setSearch] = useState("");
   const [width, setWidth] = useState(window.innerWidth), [sidebarHidden, setSidebarHidden] = useState(false), [partitionOpen, setPartitionOpen] = useState(true), [folded, setFolded] = useState(false), [feedTab, setFeedTab] = useState("chat");
@@ -52,7 +52,7 @@ export function App() {
     if (connected) void api<AccountDirectory>("/api/accounts", undefined, controller.signal).then((value) => { if (!controller.signal.aborted) { setAccounts(value); setAccountId((id) => id === value.cliReference.accountId || value.accounts.some((a) => a.accountId === id) ? id : ""); } }).catch((cause) => { if (!controller.signal.aborted) setError(errorText(cause)); });
     return () => controller.abort();
   }, [connected, accountRevision]);
-  useEffect(() => { setModels([]); setSelectedModel(""); if (connected) void loadModels(); return () => { modelRequest.current++; }; }, [connected, accountId, accountRevision]);
+  useEffect(() => { setModels([]); setSelectedModel(""); setThinkingLevel(null); if (connected) void loadModels(); return () => { modelRequest.current++; }; }, [connected, accountId, accountRevision]);
   useEffect(() => {
     if (!snapshot || projectId) return;
     const restored = snapshot.tasks.find((item) => item.taskId === taskId);
@@ -79,7 +79,7 @@ export function App() {
     if (!accountId) throw new Error("ACCOUNT_BINDING_REQUIRED");
     const previous = pending.current;
     const resumeKey = session?.sessionKey === resumeSessionKey ? resumeSessionKey : undefined;
-    const command = previous?.model === model && previous.prompt === prompt && previous.mode === mode && previous.projectId === projectId && previous.accountId === accountId && previous.resumeSessionKey === resumeKey ? previous : { model, prompt, mode, projectId, accountId, requestId: crypto.randomUUID(), ...(requestedThinking ? { thinkingLevel: requestedThinking } : {}), ...(resumeKey ? { resumeSessionKey: resumeKey } : {}) };
+    const command = previous?.model === model && previous.prompt === prompt && previous.mode === mode && previous.projectId === projectId && previous.accountId === accountId && previous.resumeSessionKey === resumeKey && previous.thinkingLevel === requestedThinking ? previous : { model, prompt, mode, projectId, accountId, requestId: crypto.randomUUID(), ...(requestedThinking ? { thinkingLevel: requestedThinking } : {}), ...(resumeKey ? { resumeSessionKey: resumeKey } : {}) };
     pending.current = command;
     try { const result = await api<HostTask>("/api/command", { type: "startTask", ...command }); setResumeSessionKey(undefined); setSession(null); setTaskId(result.taskId); setTask(result); setFollow(true); pending.current = null; setError(""); }
     catch (cause) { setError(errorText(cause)); throw cause; }
@@ -132,7 +132,7 @@ export function App() {
       {!follow && visibleTask && <button className="pill host-latest" onClick={() => setFollow(true)}>回到最新</button>}
       {session && <div className="account-picker"><button className="softbtn" disabled={!connected || snapshot?.tasks.some((item) => item.sessionId === session.sessionId && active(item.status))} onClick={() => { setResumeSessionKey(resumeSessionKey ? undefined : session.sessionKey); pending.current = null; }}>{resumeSessionKey ? "取消续接" : "续接此会话"}</button><span role="status">{resumeSessionKey ? "下一条消息续接此历史；请明确选择账号和模型，不恢复旧授权。" : "当前仅查看历史；发送默认创建新会话。"}</span></div>}
       <div className="account-picker"><label>运行账号<select aria-label="运行账号" value={accountId} disabled={!connected || active(visibleTask?.status)} onChange={(e) => { setAccountId(e.target.value); setModels([]); setSelectedModel(""); pending.current = null; }}><option value="">请选择账号（不自动回退）</option>{accounts && <option value={accounts.cliReference.accountId}>{accounts.cliReference.name}</option>}{accounts?.accounts.map((item) => <option key={item.accountId} value={item.accountId}>{item.name} · {item.providerId}</option>)}</select></label>{visibleTask && <span className="metric-fine">本次绑定：{accounts?.accounts.find((a) => a.accountId === visibleTask.accountId)?.name ?? (visibleTask.accountId === "cli-readonly" ? "CLI 只读引用" : visibleTask.accountId ?? "历史未绑定")}</span>}</div>
-      <Composer key={projectId} controlledAvailable={snapshot?.capabilities?.controlled === true} projectName={project?.name} suggestion={suggestion} selectedModel={selectedModel} onSelectModel={(id) => { setSelectedModel(id); setThinkingLevel(null); }} models={models} disabled={!project?.available || !connected || !accountId} running={active(visibleTask?.status)} cancelling={visibleTask?.status === "cancelling"} thinkingLevel={visibleTask?.thinkingLevel ?? thinkingLevel} onThinkingLevel={setThinkingLevel} usage={visibleTask?.usage} onSend={send} onCancel={cancel} onModels={loadModels} />
+      <Composer key={projectId} controlledAvailable={snapshot?.capabilities?.controlled === true} projectName={project?.name} suggestion={suggestion} selectedModel={selectedModel} onSelectModel={(id) => { setSelectedModel(id); setThinkingLevel(null); }} models={models} disabled={!project?.available || !connected || !accountId} running={active(visibleTask?.status)} cancelling={visibleTask?.status === "cancelling"} thinkingLevel={thinkingLevel} effectiveThinkingLevel={visibleTask?.thinkingLevel} onThinkingLevel={setThinkingLevel} usage={visibleTask?.usage} onSend={send} onCancel={cancel} onModels={loadModels} />
     </main>
     <Inspector key={projectId} projectId={projectId} projectName={project?.name} projectPath={project?.path} sessionId={session?.sessionId || visibleTask?.sessionId} hidden={!inspectOpen || overlay === "sidebar"} onClose={() => setInspectOpen(false)} />
     {dockOpen && <OutputDock messages={messages} onClose={closeDock} projectId={project?.projectId} terminalAvailable={snapshot?.capabilities?.controlled === true} />}

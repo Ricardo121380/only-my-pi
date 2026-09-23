@@ -1,6 +1,7 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { createRequire } from "node:module";
+import { findPackageJSON } from "node:module";
+import fs from "node:fs/promises";
 import { AccountCatalog } from "./accounts.mjs";
 import { CLI_ACCOUNT_ID } from "./contracts.mjs";
 const [stackRoot, configRoot, accountId] = process.argv.slice(2);
@@ -8,7 +9,11 @@ try {
   if (![stackRoot, configRoot].every((p) => typeof p === "string" && path.isAbsolute(p))) throw new Error("invalid runtime paths");
   const sdk = pathToFileURL(path.join(stackRoot, "pi/dist/index.js"));
   const { ModelRuntime } = await import(sdk.href);
-  const { getSupportedThinkingLevels } = await import(pathToFileURL(createRequire(sdk).resolve("@earendil-works/pi-ai/compat")).href);
+  // pi-ai exposes this entry only under the ESM import condition. CommonJS
+  // require.resolve cannot resolve it, even though Pi itself can import it.
+  const aiPackage = findPackageJSON("@earendil-works/pi-ai", pathToFileURL(await fs.realpath(sdk)));
+  const aiManifest = JSON.parse(await fs.readFile(aiPackage, "utf8"));
+  const { getSupportedThinkingLevels } = await import(new URL(aiManifest.exports["./compat"].import, pathToFileURL(aiPackage)).href);
   const catalog = new AccountCatalog(configRoot);
   const account = accountId === undefined || accountId === CLI_ACCOUNT_ID ? null : await catalog.get(accountId);
   const paths = account ? await catalog.runtimePaths(account.accountId) : { authPath: path.join(configRoot, "auth.json"), modelsPath: path.join(configRoot, "models.json"),

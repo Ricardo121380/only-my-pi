@@ -77,13 +77,15 @@ test("natural shell exit cleans observed jobs, whereas supervisor kill retains l
   write("exit\r");
   await until(() => manager.get(id).status === "closed");
   const next = await manager.open("p", 80, 24);
-  // This fixture has only an idle shell. Kill the supervisor after explicitly
-  // ending that shell; no test-owned orphan should leak from the failure probe.
+  // This fixture has only an idle shell. After killing the supervisor, ensure
+  // its test-owned shell is gone (it may already have exited on PTY hangup).
   const entry = manager.get(next.terminalId);
   const { processTable } = await import("../packages/host/terminal-processes.mjs");
   const children = [...(await processTable()).values()].filter((p) => p.parent === entry.pty.pid);
   entry.pty.kill("SIGKILL");
-  for (const child of children) if ((await processTable()).get(child.pid)?.start === child.start) process.kill(child.pid, "SIGKILL");
+  for (const child of children) if ((await processTable()).get(child.pid)?.start === child.start) {
+    try { process.kill(child.pid, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+  }
   await until(() => entry.status === "reconciliation");
   await assert.rejects(acquireOwnership(configRoot, "project", project), { code: "OWNERSHIP_HELD" });
   const restarted = new HostTerminals(options); await restarted.load();
