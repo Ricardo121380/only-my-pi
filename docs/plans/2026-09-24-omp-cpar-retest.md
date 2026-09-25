@@ -1,5 +1,7 @@
 # CPAR 修复后 OMP 真实验收复测
 
+> 历史记录更新：9月25日生产reasoning覆盖已修复，OMP首轮与审批通过；新的阻断发生在含reasoning历史的第二轮入口解析。以下保留9月24日原始结果，当前状态见[9月25日多轮复测](2026-09-25-omp-cpar-continuation-retest.md)。
+
 结论：**CPAR 修复二进制已在生产运行，但 Grok Build 生产候选仍显式关闭 reasoning，OMP 的 low 请求继续受阻。M2 保持 IN_PROGRESS。** 本轮真实重试返回 HTTP 400 `ClientRequestError`；未执行工具或修改项目文件。当前没有证据要求修改 OMP 请求或绕过思考强度设置。
 
 ## 真实复测与预算

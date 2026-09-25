@@ -434,3 +434,12 @@
 - 同一安装候选、假Key、localhost端点捕获一次完整合成请求；包含low、summary:auto、encrypted_content include、cache key与当前六个工具。修复后的CPAR源码离线解析/投影/Build编解码均PASS，语义保持；去掉Reasoning能力后确定性复现ReasoningUnsupported。生产没有该debug枚举日志，因此该定位依据配置+代码+离线反例，不假称读取到具体生产拒绝原因；解除后仍可能存在后续上游问题。
 - 建议通过CPAR正常草稿/验证/激活流程移除目标candidate的reasoning:false。需先核实Chat兼容范围，因为恢复Reasoning会触发该网关对Chat→Reasoning目标的拒绝；不得直接改SQLite或随意增加候选。具体差异、范围、授权和回滚前提见[复测报告](2026-09-24-omp-cpar-retest.md)。
 - 测试Host已停止，临时凭据和配对清单删除，扫描无泄漏，原CLI配置摘要一致。保留合成项目和证据；未改产品源码、CPAR源码/生产配置、日常安装或全局设置。M2继续IN_PROGRESS，F01普通绘制门禁未变化。
+
+## 2026-09-25：CPAR 配置修复生效，定位多轮 reasoning 输入缺口
+
+- 用户再次要求修复后继续检查；明确按本次请求追加一次有界重试，不重置原额度。只读核对生产活动配置为production-grok-reasoning-20260925 rev1，Build候选reasoning:false已移除，运行二进制SHA仍匹配3a8e5af。未修改CPAR生产。
+- 同9130d02安装候选、Pi0.85.1、Node24.19.0，Ego Lite原空间3/p1，临时GUI账号与合成项目，CPAR Grok4.5/low。14:58:18发起原小型任务，真实request_coding_access卡出现；范围仅proof.txt、simple、无委派。页面批准后工具结果成功，首轮3209输入+176输出=3385 token，费用未知。
+- 批准后的第二轮返回400 ClientRequestError，未执行write/read，proof.txt仍为before。Host显示任务失败和不保留授权，页面显示2模型回合、1工具、部分用量回执；不是完整写入验收成功。服务端同窗口首轮attempt succeeded；未发现第二轮结构化request事件。
+- 同安装SDK利用合成验收历史离线重建续接请求，onPayload中止且fetch计数0，发现input含reasoning条目（content为reasoning_text，本次无encrypted_content）。CPAR decode_input_item在入口不接纳该type，发生在request context创建之前。完整重建与全合成最小样本均拒绝；各自仅删除reasoning条目的诊断副本均通过解析、投影、Build编解码。未将删历史用于产品绕过。
+- 新阻断归CPAR多轮Responses兼容：需保留reasoning输入并覆盖两轮工具往返、未知字段/边界和跨协议拒绝。精确入口路径、样本、范围与限制见[多轮复测报告](2026-09-25-omp-cpar-continuation-retest.md)。本轮未改双方产品源码，不将CPAR此前单轮canary充作完整Agent验收。
+- 累计任务1/3、失败重试2/2（原1+本次追加1）；两项新任务仍未使用，失败即停。测试Host停止，临时凭据及配对清单删除，扫描53文件无Key泄漏，CLI配置摘要一致，证据见live-cpar-sep25/cleanup.json。Ego更新仅提示、未执行；F01输入绘制仍未解决。M2保持IN_PROGRESS。
