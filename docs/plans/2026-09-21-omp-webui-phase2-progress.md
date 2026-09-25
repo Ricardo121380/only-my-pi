@@ -452,3 +452,14 @@
 - 第二轮request_id为p1-request-dfc70894ca60504883adeea4d1729128-1；CPAR日志确认request与attempt failed/provider/non_retryable，不再是入口400。现有日志缺少上游HTTP状态和错误字段，不能从客户端502推断上游状态或具体字段根因。
 - 使用同安装SDK离线重建续接历史，网络调用0；与部署相同crates源码对完整重建和全合成最小样本均完成入口/投影/Build往返并保留reasoning，PASS。该证据只证明本地合同，不代替真实上游接受。后续先补有界脱敏上游诊断、按证实差异修复，再授权原任务重试。
 - Host与测试进程已停止，临时凭据和配对清单移除；扫描52文件无Key泄漏，原CLI配置摘要一致。详细证据在live-cpar-agent-sep25及[最新报告](2026-09-25-omp-cpar-agent-retest.md)。本轮只更新文档与仓库外夹具，未改双方产品、生产服务、日常安装或全局设置；用户Glacier审计改动保留。F01普通绘制门禁独立未解，M2仍IN_PROGRESS。
+
+## 2026-09-26：CPAR 真实多轮成功、writer 收据与取消验收
+
+- CPAR生产4d5ce33、二进制45786a8649720cd513eee09ae86fcab7a0ac2eadd0a2e836446a925562e6f055已只读核对；修复native reasoning回放summary数组后，OMP小型修改实际批准→write→read→成功，4轮3工具15774token，SIMPLE_OK字节正确。4个CPAR请求均有成功日志，不再以此前502作为当前阻断。
+- 用户批准替代已不存在的Ego空间3，新建空间2/p1完成安装页面验收。OMP仍为9130d02、Pi0.85.1、Node24.19.0，选定CPAR Grok4.5/low，未换身份/路由。
+- writer首次Connection error，无审批/工具/写入；未知根因，healthz200不能证明可用或未计费。用户明确“追加一次并继续”后重试。1个writer和1个fresh reviewer完成，WRITER_PATCH_VERIFIED，scope仅proof.txt；副本gate40ms、真实gate38ms均PASS/exit0，文件精确MANAGED_OK换行。
+- 验收脚本在第5轮最终回复时同步递归cancel，RangeError后Host退出。会话有最终stop，原报告仍running/4轮17784token，真实Host/页面成功终态未验收。只读重建完整5轮23869token，子任务累计19730token，费用未知；不覆盖原报告。重试提示来自200字符公开摘要，实际完整审批计划核对通过，不称相同提示重放。
+- 仓库外脚本修复：取消先记一次、延迟执行，区分上限处stop和toolUse；安装Host离线回放正常5轮成功/继续工具只取消一次/双锁释放，以及重入、错误测试共4 PASS，零模型调用。首轮1个失败为替身过早agent_settled，修正后通过，原日志保留。未改产品代码，未再跑真实writer。
+- 原剩余取消任务：批准后撤权确认，在模型续接期间取消，Host cancelled、worker退出、双锁重获、迟到审批409；proof保持MANAGED_OK。点击至观察终态1112.6ms为单样本且含自动化等待，不是本地确认P95。等待文本误匹配prompt里的bash，实际没有开始shell，不能宣称运行中bash取消通过。2轮仅1份有效回执3510token。
+- 累计阶段任务3/3、重试5/5（原1+三次修复后各追加1+本次writer1），无剩余额度。临时Host/worker退出、凭据与配对文件删除、扫描无Key残留；simple/cancel原CLI摘要一致，writer异常没有前后摘要核验。writer孤儿锁和证据保留，未伪造正常释放；Ego专用空间已关闭。
+- 本轮只更新验收夹具、计划和报告，未晋升日常安装。M2继续IN_PROGRESS：下一优先F01普通输入绘制，其次资源/更新指标及writer真实终态补证；额外模型复测必须有新增额度。详见[完整验收](2026-09-26-omp-cpar-real-acceptance.md)。
