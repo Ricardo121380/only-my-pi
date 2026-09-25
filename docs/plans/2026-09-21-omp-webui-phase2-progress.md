@@ -443,3 +443,12 @@
 - 同安装SDK利用合成验收历史离线重建续接请求，onPayload中止且fetch计数0，发现input含reasoning条目（content为reasoning_text，本次无encrypted_content）。CPAR decode_input_item在入口不接纳该type，发生在request context创建之前。完整重建与全合成最小样本均拒绝；各自仅删除reasoning条目的诊断副本均通过解析、投影、Build编解码。未将删历史用于产品绕过。
 - 新阻断归CPAR多轮Responses兼容：需保留reasoning输入并覆盖两轮工具往返、未知字段/边界和跨协议拒绝。精确入口路径、样本、范围与限制见[多轮复测报告](2026-09-25-omp-cpar-continuation-retest.md)。本轮未改双方产品源码，不将CPAR此前单轮canary充作完整Agent验收。
 - 累计任务1/3、失败重试2/2（原1+本次追加1）；两项新任务仍未使用，失败即停。测试Host停止，临时凭据及配对清单删除，扫描53文件无Key泄漏，CLI配置摘要一致，证据见live-cpar-sep25/cleanup.json。Ego更新仅提示、未执行；F01输入绘制仍未解决。M2保持IN_PROGRESS。
+
+## 2026-09-25 晚：CPAR Agent 修复后真实续接仍受阻
+
+- 用户再次告知CPAR已修复，按本次要求追加一次有界失败重试，累计任务1/3、重试3/3（原1+两次追加各1）。原2个新任务保留，不用新任务额度覆盖失败项。
+- 只读核对运行二进制SHA为653659534f7f83d7e2ab54e8834c90e07eef55a9158ba17f11d42b47653a867c，匹配f4ebf4d部署；活动reasoning配置保持生效。9130d02安装候选、Node24.19.0/Pi0.85.1、Ego原空间3、CPAR Grok4.5/low、临时账号与合成项目均保持。
+- 21:06:56–21:07:26实际发起原任务，request_coding_access批准成功；第二轮HTTP502 ProviderPermanent，无write/read，proof.txt仍为before。首轮总3369token（输入3084+输出157+cacheRead128），部分回执、费用未知。
+- 第二轮request_id为p1-request-dfc70894ca60504883adeea4d1729128-1；CPAR日志确认request与attempt failed/provider/non_retryable，不再是入口400。现有日志缺少上游HTTP状态和错误字段，不能从客户端502推断上游状态或具体字段根因。
+- 使用同安装SDK离线重建续接历史，网络调用0；与部署相同crates源码对完整重建和全合成最小样本均完成入口/投影/Build往返并保留reasoning，PASS。该证据只证明本地合同，不代替真实上游接受。后续先补有界脱敏上游诊断、按证实差异修复，再授权原任务重试。
+- Host与测试进程已停止，临时凭据和配对清单移除；扫描52文件无Key泄漏，原CLI配置摘要一致。详细证据在live-cpar-agent-sep25及[最新报告](2026-09-25-omp-cpar-agent-retest.md)。本轮只更新文档与仓库外夹具，未改双方产品、生产服务、日常安装或全局设置；用户Glacier审计改动保留。F01普通绘制门禁独立未解，M2仍IN_PROGRESS。

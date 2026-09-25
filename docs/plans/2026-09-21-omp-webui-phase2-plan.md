@@ -1,6 +1,6 @@
 # OMP 第二阶段实施计划
 
-日期：2026-09-21；状态更新：2026-09-25。2A–2E、F04/F05已实现并有定向证据；9130d02候选安装/回滚及12项回归通过。CPAR配置修复后首轮、审批与非零用量通过，第二轮reasoning历史解析400；普通输入绘制仍待确认，M2未完成。
+日期：2026-09-21；状态更新：2026-09-25。2A–2E、F04/F05已实现并有定向证据；9130d02候选安装/回滚及12项回归通过。CPAR Agent修复后reasoning入口与离线往返通过，真实第二轮进入Provider尝试后502 ProviderPermanent；普通输入绘制仍待确认，M2未完成。
 
 依据：[总纲](2026-09-20-omp-webui-desktop-plan.md)、[M1 记录](2026-09-20-omp-webui-phase1-progress.md)、[账号隔离 ADR](../decisions/ADR-0015-gui-account-isolation.md)。沿用已确认决策，不重新开放产品范围。
 
@@ -86,6 +86,6 @@ M2 完成必须能在一个 WebUI 内配置账号、选择项目、受控编程�
 | 2E | 本机协作边界已实现；源码及 bb4111e 安装态真实 PTY/页面定向通过 |
 | F04/F05、2F | 强度/用量已实现；2F 部分通过，输入绘制与真实 Provider 门禁未完成 |
 
-下一执行项：CPAR配置阻断已解除，需补齐Responses reasoning历史输入并先做本地两轮工具回放；OMP真实原任务需修复后再授权重试。累计任务1/3、重试2/2（原1+9月25日追加1），不重置额度；通过后以原剩余2个新任务完成受管写入与撤权/取消。普通前台绘制门禁独立保留。详见[多轮复测](2026-09-25-omp-cpar-continuation-retest.md)和[候选验收记录](2026-09-23-omp-webui-phase2-candidate-acceptance.md)。
+下一执行项：CPAR reasoning历史入口修复已验证，真实第二轮仍在Provider尝试阶段返回502 ProviderPermanent。先依据request_id补上游安全诊断，再针对证实的差异修复，禁止无依据重复请求。累计任务1/3、重试3/3（原1+两次修复后各追加1），不重置额度；新增有界重试通过后，以原剩余2个新任务完成受管写入与撤权/取消。普通前台绘制门禁独立保留。详见[Agent修复后复测](2026-09-25-omp-cpar-agent-retest.md)和[候选验收记录](2026-09-23-omp-webui-phase2-candidate-acceptance.md)。
 
 2026-09-23 已确认终端边界：React/xterm → OMP Host/node-pty → 本机 shell，继续保留 Pi RPC，Electron 属于 M3。隐藏面板不关闭终端，重新连接不重发输入；结束需确认，普通后台任务清理成功才释放项目锁。进程跟踪不能保证捕获主动逃离采样的任意守护进程，不作为 OS 隔离或恶意代码防线；未知清理状态保留锁并显示核对入口。

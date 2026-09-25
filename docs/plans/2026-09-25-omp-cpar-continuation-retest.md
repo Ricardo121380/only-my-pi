@@ -1,5 +1,7 @@
 # CPAR reasoning 修复后的 OMP 多轮验收
 
+> 历史记录：本页记录9月25日14:58的入口400。当天21:06对新部署的Agent修复复测，入口问题已解除，第二轮改为Provider尝试阶段502；最新状态、预算与下一步见[Agent修复后复测](2026-09-25-omp-cpar-agent-retest.md)。
+
 结论：**上次的生产 reasoning 能力阻断已解除；OMP 首轮推理、真实审批和非零用量回执通过，但批准后的第二轮请求被 CPAR 的 Responses 输入解析器拒绝。M2 仍未完成。** 新阻断是 `input` 中的 `type:"reasoning"` 历史条目未被接纳，不再是 `reasoning:false` 配置问题。
 
 ## 实测过程与范围
