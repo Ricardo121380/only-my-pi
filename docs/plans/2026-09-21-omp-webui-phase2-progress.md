@@ -473,3 +473,15 @@
 - 新增 `scripts/browser-input-benchmark.mjs`，代码与本轮已实测的采样函数相同，保存完整样本与nearest-rank P95并拒绝覆盖证据。语法、文档链接及diff检查通过；产品代码未改，未重跑无关全量套件。
 - `perf-sep26/`保留全部慢/快样本、页面状态、浏览器版本、已查看截图及清理收据；Host72857退出，配对清单删除，专用Ego空间正常结束，合成项目保留。真实预算仍3/3、重试5/5。
 - 下一项：完整应用资源口径与最终更新下载量；writer真实Host/页面终态另待补证。M2保持IN_PROGRESS，日常安装未晋升。详见[本轮报告](2026-09-26-omp-input-performance-acceptance.md)。
+
+
+## 2026-09-26：资源口径与 Full 更新包体补齐
+
+- 新增 `scripts/measure-stack-transfer.mjs`，复用正式确定性tar/gzip、下载字节校验、安全解包和组件身份检查；本地离线测量，不制造release index或受保护验收回执。9130d02 Full为151,164,714bytes（144.16MiB），37,548条目，回放/解包后身份PASS。Thin18,530,154bytes仅包体对照，未验收私有栈现场重建和完整依赖下载。
+- M1 ac5761e同函数重打包为115,465,257bytes，SHA与9月20日历史归档一致；M2增加35,699,457bytes（30.92%）。解包增量主要在OMP依赖：node-pty65,003,520bytes；WebUI dist由446,464增至5,926,912bytes。不裁包、不改产品候选。当前仍Full整包事务，本地已有候选切换新增网络0，远端整包正文为144.16MiB，metadata/HTTP/TLS/重试未计。
+- 新增 `scripts/measure-process-resources.mjs`，只读pid/ppid/rss/comm，不记录argv/env。安装Host、7种Ego页面状态各20次/约10秒，共140个资源组合样本；Host树与共享Ego16进程组分列，V8目标堆另列，不相加为独占OMP成本。资源记录MEASURED，无内存硬阈值或跨设备SLA。
+- 长历史/输出首段/174318字符diff时Host树样本峰值104.72MiB；Monaco目标V8堆16.96MiB；真实PTY树峰值123.14MiB。Ego整体853.45–1024.45MiB包含用户其他空间，不可据场景差值判断OMP净开销。RSS会重复计算共享页，V8可能保留旧文档，不据短采样声称没有泄漏。
+- 实际xterm输入将RESOURCE_PTY_OK写入合成项目；结束确认后supervisor77522、shell77525退出，20个后续样本树回到Host一进程，项目锁重新获取/释放PASS。一次点击到观察结束1510.3ms含自动化等待，不是本地取消P95。截图已查看；Host76929正常退出、Ego空间4已finish、配对清单删除。
+- 既有真实CPAR成功/受管writer/取消报告重新读取，Host+worker采样峰值分别495.31/524.36/485.30MiB；不含浏览器，不拼为同时峰值。完整入口启动4075.7ms沿用明确范围的已有证据，夹具54.5ms初始化不替代完整启动。
+- 辅助函数真实子进程/RSS汇总/边界/缺失Host检查PASS；两个新增脚本语法检查通过，产品未改，未跑无关全量测试。证据在resources-sep26与resources-sep26-transfer，见[完整报告](2026-09-26-omp-resource-transfer-acceptance.md)。
+- 下一优先writer真实Host/页面成功终态，需明确追加一次有界复测额度；阶段预算仍任务3/3、重试5/5，本轮新增模型0。运行中shell取消仍未由本轮空闲PTY关闭覆盖。M2保持IN_PROGRESS，日常安装未晋升，保留原有Glacier审计改动。
