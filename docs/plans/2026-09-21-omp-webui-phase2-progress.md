@@ -485,3 +485,13 @@
 - 既有真实CPAR成功/受管writer/取消报告重新读取，Host+worker采样峰值分别495.31/524.36/485.30MiB；不含浏览器，不拼为同时峰值。完整入口启动4075.7ms沿用明确范围的已有证据，夹具54.5ms初始化不替代完整启动。
 - 辅助函数真实子进程/RSS汇总/边界/缺失Host检查PASS；两个新增脚本语法检查通过，产品未改，未跑无关全量测试。证据在resources-sep26与resources-sep26-transfer，见[完整报告](2026-09-26-omp-resource-transfer-acceptance.md)。
 - 下一优先writer真实Host/页面成功终态，需明确追加一次有界复测额度；阶段预算仍任务3/3、重试5/5，本轮新增模型0。运行中shell取消仍未由本轮空闲PTY关闭覆盖。M2保持IN_PROGRESS，日常安装未晋升，保留原有Glacier审计改动。
+
+
+## 2026-09-26：writer 完整终态与日常安装收口，M2 PASS
+
+- 用户“开始开发下一步吧”承接上轮追加一次writer终态复测，执行前明确一次有界额度；保留累计账本，任务3/3、重试6/6。本轮完整818字提示及提交载荷绑定，不再从200字摘要复原；原脚本重入与回合边界离线预检4 PASS。
+- 同9130d02安装候选、CPAR Grok4.5/low、临时GUI账号、合成项目，Ego空间5实际提交三次审批。任务caf113b7-4f29-4916-8c5a-a1ece5870cdf最终succeeded，页面已完成；1 writer + 1 fresh reviewer、克隆gate34ms和真实gate36ms均PASS，仅proof.txt变为MANAGED_OK换行。worker退出、双锁重获、access回Inspect、原CLI摘要一致；清理95文件扫描无Key残留。主Agent3轮/2工具/13670token，子代理预算21883token，费用未知。
+- 日常安装预检：旧active 0b9e9e1c…ffe8847 / b5d4674，内容验真PASS，无Host/Pi活动会话，约15.4GiB空闲。受支持Full事务实际升级a595ddf0、回滚到本次升级前active、同候选重新应用2d63d5af全部通过，最终active 7444c7fb…9aea0 / 9130d02，无未完成事务。
+- Ego空间6从日常Host配对，检查账号管理、CLI只读引用的9模型、Grok4.5/low、受控模式、只读编辑工作区和终端面板就绪，截图已查看。本段零新增模型、零保存/新PTY；用户现有项目仅展示。原设置、auth/models和58个历史文件摘要在事务及页面前后相同；raw Pi身份和用户npm根inode未变。
+- 两个专用空间正常finish，测试及日常Host均停止，私有配对文件已移除；运行omp web可启动二阶段日常版。产品代码未改，保留用户Glacier审计改动，不推送或发布。
+- **M2 PASS**，下一批3A Electron承载。真实OAuth仍NOT_RUN；真实取消限定模型续接场景，运行中shell清理仍按本地模拟/真实PTY证据分别说明；非沙箱、非全部原型入口实现。详见[writer复测](2026-09-26-omp-writer-terminal-acceptance.md)和[完成验收](2026-09-26-omp-webui-phase2-closeout.md)。

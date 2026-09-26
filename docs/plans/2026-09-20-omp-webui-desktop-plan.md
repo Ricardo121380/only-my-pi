@@ -1,6 +1,6 @@
 # OMP WebUI → Electron 分阶段开发与自动验收计划
 
-日期：2026-09-20。状态：用户已确认方案与共同理解；第一阶段实施已开始，详见[实施记录](2026-09-20-omp-webui-phase1-progress.md)。
+日期：2026-09-20；状态更新：2026-09-26。M1与M2均完成，日常安装为9130d02；下一批为3A。历史与本轮依据分别见[M1记录](2026-09-20-omp-webui-phase1-progress.md)和[M2完成验收](2026-09-26-omp-webui-phase2-closeout.md)。
 
 本计划依据 [Q1–Q22 最终选择](2026-09-20-web-desktop-discussion.md)整理。相关决策见 [ADR-0014](../decisions/ADR-0014-webui-to-electron.md)、[ADR-0015](../decisions/ADR-0015-gui-account-isolation.md)、[ADR-0016](../decisions/ADR-0016-host-lifecycle-and-project-writer-ownership.md)；术语以 [CONTEXT.md](../../CONTEXT.md)为准。文档落盘不代表已修改产品代码、升级 Pi 或完成任何阶段验收。
 
@@ -240,10 +240,10 @@ K3 辅助产物需落实为布局、组件状态和交互规则，并通过实�
 
 | 里程碑 | 交付物 | 当前实施状态 | 验收状态 |
 | --- | --- | --- | --- |
-| M1-T | 可运行 Host、只读 WebUI、固定候选运行核心、兼容与技术验证证据 | 1A 已完成，1B 实施中 | NOT_RUN |
-| M1-I（M1 完成） | 日常 CLI 升级、回滚及同候选重新应用，最终安装态检查 | 待 M1-T | NOT_RUN |
-| M2 | 可日用 WebUI、完整 GUI 多账号、基础编辑器与终端、端到端验收报告 | 9130d02候选安装回滚及12项回归通过；CPAR小型修改与模型续接撤权/取消通过，writer应用/双gate通过但真实Host终态待验；[普通窗口输入](2026-09-26-omp-input-performance-acceptance.md)P95 8.4ms、复测9.1ms通过。[资源/Full更新体积](2026-09-26-omp-resource-transfer-acceptance.md)已记录，Full144.16MiB且校验/解包身份PASS；writer终态和最终安装待补；任务3/3、重试5/5，见[真实任务验收](2026-09-26-omp-cpar-real-acceptance.md) | IN_PROGRESS |
-| M3 | macOS arm64 自用安装包、本地升级回滚能力、安装态验收及使用说明 | 待 M2 门禁通过 | NOT_RUN |
+| M1-T | 可运行 Host、只读 WebUI、固定候选运行核心、兼容与技术验证证据 | ac5761e历史候选通过，见M1实施记录 | PASS（2026-09-20） |
+| M1-I（M1 完成） | 日常 CLI 升级、回滚及同候选重新应用，最终安装态检查 | 历史日常晋升及CLI真实任务通过，见M1实施记录 | PASS（2026-09-20） |
+| M2 | 可日用 WebUI、完整 GUI 多账号、基础编辑器与终端、端到端验收报告 | 9130d02已晋升日常安装，真实writer完整终态、输入/资源与Full记录、升级/回滚/再应用和页面检查通过；任务3/3、重试6/6；[完成验收及明确限制](2026-09-26-omp-webui-phase2-closeout.md) | PASS（2026-09-26） |
+| M3 | macOS arm64 自用安装包、本地升级回滚能力、安装态验收及使用说明 | M2已通过，下一批3A Electron承载 | NOT_RUN |
 
 由于增加了多账号、完整认证、编辑器与 PTY，旧的 **16–27 人周估算不再作为当前承诺**。执行按上述批次管理，M1 后根据实际兼容与集成结果重估剩余工作量。
 
