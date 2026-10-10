@@ -4,6 +4,7 @@ export type McpServer = { name: string; credentialRefs: Record<string, string>; 
   | { transport: "streamable-http"; url: string; tools: { name: string; effect: "remote" }[] });
 export declare const isMcpOAuthActive: (status: string) => boolean;
 export declare const isMcpOAuthStored: (status: string) => boolean;
+export declare const isMcpOAuthBlocked: (flow: McpOAuthFlow | null | undefined) => boolean;
 export interface McpOAuthFlow { flowId: string; name: string; projectPath: string; targetDigest: string; ref: string | null; kind: "login" | "refresh"; status: "starting" | "waiting" | "refreshing" | "cancelling" | "stored" | "stored_sync_failed" | "publication_unconfirmed" | "failed" | "cancelled" | "timed_out" | "interrupted"; updatedAt: string; events: { status: string; at: string }[]; authorizationOrigin?: string; opened?: boolean; code?: string; bindingConfirmed?: boolean }
 export interface McpAuthentication { state: "not_connected" | "connected" | "token" | "expired" | "revoked" | "binding_changed" | "refresh_required"; ref: string | null; flow?: McpOAuthFlow }
 export interface McpSnapshot { protocol: 1; revision: number; projectPath: string | null; servers: (McpServer & { source: "default" | "project"; targetDigest: string })[]; authentication?: Record<string, McpAuthentication> }

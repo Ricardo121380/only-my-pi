@@ -4,7 +4,7 @@ import { randomUUID, createHash } from "node:crypto";
 // Real HTTP/OAuth/PKCE endpoints. The ledger stores grant identities, never
 // authorization URLs, codes, state, verifiers or token values.
 export async function createOAuthMcpServer({ expiresIn = 3600 } = {}) {
-  const clients = new Map(), codes = new Map(), tokens = new Map(), refresh = new Map(), management = new Map(), sockets = new Set(), received = [];
+  const clients = new Map(), codes = new Map(), tokens = new Map(), refresh = new Map(), management = new Map(), sockets = new Set(), unauthorized = new Set(), received = [];
   let origin, mode = "normal", lastCallback;
   const json = (res, status, value) => { res.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" }); res.end(JSON.stringify(value)); };
   const server = http.createServer(async (req, res) => {
@@ -53,7 +53,11 @@ export async function createOAuthMcpServer({ expiresIn = 3600 } = {}) {
       if (url.pathname === "/mcp") {
         const identity = tokens.get((req.headers.authorization ?? "").replace(/^Bearer /u, "")), message = text ? JSON.parse(text) : null;
         received.push({ type: "mcp", rpc: message?.method ?? null, grant: identity?.grant ?? null, valid: Boolean(identity && !identity.revoked), args: message?.params?.arguments });
-        if (!identity || identity.revoked) return json(res, 401, { error: "invalid_token" });
+        if (!identity || identity.revoked) {
+          if (mode === "unauthorized_pause") await new Promise((resolve) => { unauthorized.add(resolve); res.once("close", () => { unauthorized.delete(resolve); resolve(); }); });
+          if (!res.destroyed) return json(res, 401, { error: "invalid_token" });
+          return;
+        }
         if (req.method === "DELETE") { res.writeHead(204).end(); return; }
         if (!message?.id) { res.writeHead(202).end(); return; }
         let result;
@@ -70,6 +74,7 @@ export async function createOAuthMcpServer({ expiresIn = 3600 } = {}) {
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve)); origin = `http://127.0.0.1:${server.address().port}`;
   return { url: `${origin}/mcp`, received, setMode: (value) => { mode = value; },
     setExpiresIn: (value) => { expiresIn = value; }, revoke: () => { for (const identity of tokens.values()) identity.revoked = true; },
+    releaseUnauthorized: () => { for (const resolve of unauthorized) resolve(); unauthorized.clear(); },
     // Private helpers are used only to drive protocol negatives, never output.
     get lastCallback() { return lastCallback; }, get privateValues() { return [...codes.keys(), ...tokens.keys(), ...refresh.keys(), ...management.values()]; },
     close: async () => { for (const socket of sockets) socket.destroy(); await new Promise((resolve) => server.close(resolve)); } };

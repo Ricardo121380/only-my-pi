@@ -6,6 +6,7 @@ import { createMcpHost, until, providerReply } from "./fixtures/mcp-host.mjs";
 import { createOAuthMcpServer } from "./fixtures/mcp-oauth-server.mjs";
 import { McpCatalog } from "../packages/mcp/catalog.mjs";
 import { McpOAuth } from "../packages/mcp/oauth.mjs";
+import { withConfigLock } from "../packages/config-runtime/index.mjs";
 
 const respond = ({ body, res }) => providerReply(res, body.messages.at(-1).role === "tool" ? null : "mcp__remote__echo", { value: "OAuth approved input" });
 async function configure(f, service) {
@@ -266,4 +267,24 @@ test("a dynamic registration management token echoed by a real MCP tool never en
   for (const secret of service.privateValues) assert.ok(!publicData.includes(secret), "registered private value leaked");
   assert.match(publicData, /MCP_SECRET_OUTPUT_REJECTED/u);
   assert.equal(service.received.filter((row) => row.rpc === "tools/call").length, 1);
+});
+
+test("issuer invalidation under an occupied configuration lock blocks later requests across Host restart", { timeout: 50000 }, async (t) => {
+  const service = await createOAuthMcpServer(); t.after(() => service.close());
+  const f = await createMcpHost({ respond }); t.after(() => f.close()); await login(f, await configure(f, service));
+  service.revoke(); service.setMode("unauthorized_pause");
+  const first = await f.start(); await until(() => service.received, (rows) => rows.some((row) => row.type === "mcp" && !row.valid), "physical invalid initialize pending", 20000);
+  let release, acquired; const held = new Promise((resolve) => { release = resolve; }), ready = new Promise((resolve) => { acquired = resolve; });
+  const lock = withConfigLock(f.config, "controlled-invalid-auth-lock", async () => { acquired(); await held; });
+  t.after(async () => { release(); await lock; }); await ready; service.releaseUnauthorized();
+  const failed = await until(() => f.task(first.taskId), (value) => value.status === "failed", "401 recorded while config lock held", 20000);
+  assert.match(JSON.stringify(failed), /MCP_HTTP_AUTH_REQUIRED/u);
+  assert.equal((await f.mcp({ type: "list" })).authentication.remote.state, "expired");
+  release(); await lock; service.setMode("normal"); const count = service.received.filter((row) => row.type === "mcp").length;
+  for (const restart of [false, true]) {
+    if (restart) await f.restart();
+    const next = await f.start(); await until(() => f.task(next.taskId), (value) => value.status === "failed", "known invalid identity admission", 20000);
+    assert.equal(service.received.filter((row) => row.type === "mcp").length, count);
+  }
+  assert.equal(service.received.filter((row) => row.rpc === "tools/call").length, 0); assert.equal(f.requests.length, 0);
 });

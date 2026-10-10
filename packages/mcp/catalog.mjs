@@ -1,7 +1,7 @@
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { atomicWriteJson, readJsonObject, withConfigLock } from "../config-runtime/index.mjs";
-import { isMcpOAuthStored } from "./contracts.mjs";
+import { isMcpOAuthBlocked } from "./contracts.mjs";
 
 export const MCP_PROTOCOL = 1;
 export const MCP_LIMITS = Object.freeze({ inputBytes: 16384, outputBytes: 65536, serverFileBytes: 65536, storageBytes: 8388608, calls: 32, timeoutMs: 10000, tools: 32, concurrency: 1 });
@@ -78,10 +78,10 @@ export class McpCatalog {
       if (ref) {
         try {
           const credential = await this.boundCredential(server, projectPath, state);
-          status = credential.oauth ? credential.oauth.tokensExpireAt !== undefined && credential.oauth.tokensExpireAt <= Date.now() || state.invalidCredentials?.[ref] ? "expired" : "connected" : "token";
+          status = credential.oauth ? credential.oauth.tokensExpireAt !== undefined && credential.oauth.tokensExpireAt <= Date.now() || state.invalidCredentials?.[ref] || await this.oauthInvalidated(server, projectPath) ? "expired" : "connected" : "token";
         } catch { status = state.revokedCredentials?.[ref] ? "revoked" : "binding_changed"; }
       }
-      if ((ownFlow?.status === "publication_unconfirmed" || ownFlow?.kind === "refresh" && !isMcpOAuthStored(ownFlow.status)) && !["revoked", "binding_changed"].includes(status)) status = "refresh_required";
+      if (isMcpOAuthBlocked(ownFlow) && !["revoked", "binding_changed"].includes(status)) status = "refresh_required";
       authentication[server.name] = { state: status, ref, ...(ownFlow ? { flow: ownFlow } : {}) };
     }
     return { protocol: MCP_PROTOCOL, revision: state.revision, projectPath: projectPath ?? null, limits: MCP_LIMITS,
@@ -212,14 +212,24 @@ export class McpCatalog {
   }
   async invalidateOAuth(server, projectPath) {
     const ref = server.credentialRefs?.MCP_TOKEN ?? server.ref; if (!ref) return;
-    await withConfigLock(this.configRoot, "mcp-config", async () => {
-      const state = await this.read(), current = state.projects[digest(projectPath)]?.[server.name] ?? state.defaults[server.name];
-      if (!current || current.credentialRefs.MCP_TOKEN !== ref || targetDigest(current) !== (server.targetDigest ?? targetDigest(server))) return;
-      const credential = await this.boundCredential(current, projectPath, state);
-      if (!credential.oauth) return;
-      state.invalidCredentials ??= {}; state.invalidCredentials[ref] = true; state.revision++;
-      await atomicWriteJson(this.configRoot, this.file, state);
-    });
+    const state = await this.read(), current = state.projects[digest(projectPath)]?.[server.name] ?? state.defaults[server.name];
+    if (!current || current.credentialRefs.MCP_TOKEN !== ref || targetDigest(current) !== (server.targetDigest ?? targetDigest(server))) return;
+    const credential = await this.boundCredential(current, projectPath, state);
+    if (!credential.oauth) return;
+    // A reference is immutable. Its invalidation only moves forward and must
+    // survive configuration-writer contention without replacing that config.
+    const receipt = { version: 1, projectPath, name: server.name, targetDigest: targetDigest(current), ref };
+    try { await atomicWriteJson(this.configRoot, path.join(this.configRoot, "only-my-pi/mcp/credentials", `${ref}.invalid.json`), receipt, { exclusive: true }); }
+    catch (error) {
+      if (error.code === "EEXIST" && await this.oauthInvalidated(current, projectPath).catch(() => false)) return;
+      throw mcpError("MCP_OAUTH_INVALIDATION_UNCONFIRMED", 409);
+    }
+  }
+  async oauthInvalidated(server, projectPath, ref = server.credentialRefs.MCP_TOKEN) {
+    const receipt = await readJsonObject(this.configRoot, path.join(this.configRoot, "only-my-pi/mcp/credentials", `${ref}.invalid.json`), { allowMissing: true }).catch(() => { throw mcpError("MCP_OAUTH_INVALIDATION_INVALID", 409); });
+    if (!receipt) return false;
+    if (receipt.version !== 1 || receipt.ref !== ref || receipt.projectPath !== projectPath || receipt.name !== server.name || receipt.targetDigest !== (server.targetDigest ?? targetDigest(server))) throw mcpError("MCP_OAUTH_INVALIDATION_INVALID", 409);
+    return true;
   }
   async credentials(server, projectPath) {
     const env = {}, secrets = [], state = await this.read();
@@ -227,8 +237,8 @@ export class McpCatalog {
       const credential = await this.boundCredential(server, projectPath, state, ref);
       if (credential.oauth) {
         const flow = (await this.oauthFlows())[this.key(projectPath, server.name)];
-        if (state.invalidCredentials?.[ref] || credential.oauth.tokensExpireAt !== undefined && credential.oauth.tokensExpireAt <= Date.now()
-          || flow?.ref === ref && flow.targetDigest === server.targetDigest && (flow.status === "publication_unconfirmed" || flow.kind === "refresh" && !isMcpOAuthStored(flow.status))) throw mcpError("MCP_OAUTH_LOGIN_REQUIRED", 409);
+        if (state.invalidCredentials?.[ref] || await this.oauthInvalidated(server, projectPath, ref) || credential.oauth.tokensExpireAt !== undefined && credential.oauth.tokensExpireAt <= Date.now()
+          || flow?.ref === ref && flow.targetDigest === server.targetDigest && isMcpOAuthBlocked(flow)) throw mcpError("MCP_OAUTH_LOGIN_REQUIRED", 409);
         secrets.push(...[credential.oauth.tokens?.refresh_token, credential.oauth.tokens?.id_token, credential.oauth.clientInformation?.client_secret, credential.oauth.clientInformation?.registration_access_token].filter(Boolean));
       }
       env[key] = credential.value; secrets.push(credential.value);
