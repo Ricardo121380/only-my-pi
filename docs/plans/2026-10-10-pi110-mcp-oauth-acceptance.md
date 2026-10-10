@@ -13,6 +13,7 @@
 - 显式刷新沿原绑定使用原生 refresh API，成功原子轮换引用；失败、取消或超时不能继续用未结束的旧身份。已知本地过期、错误绑定、撤销及刷新未结束在 MCP 初始化前阻断。发行方事先撤销但本机尚未知时，第一次初始化可能收到 401/403；OMP 持久记录失效，之后的请求不再发送。此过程没有业务工具执行或自动重新认证。
 - OAuth 状态、运行记录和配置是不同文件，分别使用对应的写锁；配置仍保持原有全局锁与版本冲突约束。运行清理不再占用配置锁，解决真实失败任务刚结束时立即撤销凭据的 `LOCK_HELD`。
 - CLI、TUI 与 WebUI 回读同一 Catalog 的可解释身份与撤销状态；本票实际登录入口为已认证 Host/WebUI。CLI/TUI 证据证明共享身份状态和后续准入，不声称独立 CLI/TUI 浏览器登录已在本票实现。
+- 已发布身份与公开状态写入分开处理：后者失败回读 `stored_sync_failed`，不会报告登录失败或取消，也不作废新引用。配置 rename 后的同步失败先回读实际绑定，记录 `publication_unconfirmed` 与非秘密的 bindingConfirmed；这不同于 confirmed durable。当前 Host 在安全快照中保留未能落盘的状态，其他进程按实际凭据与配置回读身份，不能假称失败的状态文件已经持久化。
 
 ## C / P
 
@@ -35,6 +36,11 @@
 | `69-candidate-web` | PASS 12 文件 / 96 项 |
 | `69-candidate-pack`、`69-candidate-scan`、`69-candidate-lint` | PASS；原生 OAuth 模块在打包清单内，扫描 0 findings |
 | `69-build-web` | PASS，保留既有 bundle-size 提示 |
+| `69-review-public-red` / `69-review-public-green` | 先 FAIL 6/6、修复后 PASS 6/6；原生回调并发取消、登录/刷新各两种发布故障及实际 Pi 的注册管理令牌回显 |
+| `69-review-typecheck` | FAIL：共享 runtime helper 的显式 .mjs 导入未匹配类型声明，保留原回执；后续回执另列 |
+| `69-review-typecheck-green`、`69-review-web-green` | PASS，四范围 typecheck、12 文件 / 96 项 WebUI |
+| `69-review-node22` | 修复后的支持矩阵 PASS 33/33：全部 23 项 OAuth 与原有 CLI/TUI、HTTP 评审、stdio 兼容；exit 0 |
+| `69-review-build`、`69-review-pack`、`69-review-scan`、`69-review-lint` | PASS；打包包含共享状态 helper，扫描及 lint 0 findings |
 
 负例均使用实际回调或受控协议服务：错误 state、错误回调 path、缺 code、错误 issuer、超时、刷新失败、刷新取消、发行方撤销、本地过期、跨项目引用、显式撤销、重复完成、取消后迟到的有效回调和 Host 重启。目标变更在令牌交换前拒绝；跨项目引用、已知过期、撤销及刷新未结束在真实 Pi MCP 请求前拒绝。重复完成只交换一次，重新登录生成不同的授权身份和私有引用。原生回调 timeout 用 200 ms 的实际 listener 验证，未使用虚拟时钟；物理刷新 10 秒边界使用生产默认值。
 
@@ -48,9 +54,15 @@
 
 自动化期间的 subtree root 格式/过期 ref、错误链接名称，以及从折叠 details 的 body.innerText 等待工具文本导致的 timeout，均属于定位或观察错误；检查实际页面后恢复，没有盲目重发业务。成功工具文本通过显式展开“公开步骤与来源”读取。接收端计数与持久记录不因自动化 timeout 被改写。
 
+评审修复后的浏览器证据另存 `69-review-browser/`，沿同一 TaskSpace 44 重新完成取消、成功、发行方失效和显式重新登录。实际源码身份保存在 `69-review-source-candidate.json`，运行副本身份在新 `69-browser-input.json`；新服务包含真实注册管理令牌，公开材料没有其值。物理停止回读为 **3 注册 / 2 授权页 / 2 换取令牌 / 2 不同 grant 的 approved tools/call / 1 invalid initialize / 3 stopped runs / 4 合成模型请求**。`cancelled`、`approval`、`success`、`expired`、`relogin-approval`、`relogin-success` PNG/snapshot 未覆盖首轮文件；`69-review-browser-readback` 再次联查源码、运行副本、接收端与持久状态。
+
+新 approval PNG 的当前视口未包含完整审批区，不以它替代参数证据；完整参数仍在实际页面 full_page snapshot 中，并由原始 `69-browser-approval.png`、`69-browser-approval-title.txt` 与公开审批测试支持。新 relogin-success PNG 已实际展开工具结果并核对。
+
 ## 独立完成边界
 
 C / P / B：PASS。Standards / Spec：待固定范围的独立评审；GitHub #69 关闭与回读：待评审完成。#68 的验收与完成结论保留在 [HTTP MCP 验收](./2026-10-10-pi110-http-mcp-acceptance.md)，不与本票 OAuth 结论合并。
+
+首轮固定 `dde6d76...d5e2325` 的独立 Standards 为 FAIL（hard 1 / smell 1），Spec 为 FAIL（2 项错误及相应负例缺口 / scope 0）。原文保存在 `69-review-first.md`。三项行为问题均先复现；管理令牌回显经过真实 Host/Pi/工具请求，取消竞态在实际原生 listener 的异步绑定检查处受控暂停，发布故障使用真实原子写的 AFTER_RENAME 注入与状态写故障接缝，后两类属于 C 故障验证，未冒充额外浏览器或第三方证据。活动状态谓词由服务端和 WebUI 共用；随后完整范围再次独立评审。
 
 带入历史全量结果为 **1626 总计 / 1616 pass / 3 fail / 1 cancelled / 6 skip，exit 1**。本批全量 Node 回归在 #69 代码与评审收敛后仅运行一次，当前尚未运行；不以局部 PASS 覆盖历史全量 FAIL。
 

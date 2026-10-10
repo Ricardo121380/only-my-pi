@@ -12,10 +12,10 @@ async function configure(f, service) {
   return f.mcp({ type: "save", revision: (await f.mcp({ type: "list" })).revision,
     server: { name: "remote", transport: "streamable-http", url: service.url, enabled: true, credentialRefs: {}, tools: [{ name: "echo", effect: "remote" }] } });
 }
-async function openAndAuthorize(f, flow, decision = "allow") {
-  const open = await fetch(`${f.host.origin}/api/mcp-oauth/open?flowId=${flow.flowId}`, { headers: { Origin: f.host.origin, Cookie: f.cookie }, redirect: "manual" });
-  assert.equal(open.status, 303);
-  const authorization = open.headers.get("location");
+async function openAndAuthorize(f, flow, decision = "allow", manager) {
+  const open = manager ? null : await fetch(`${f.host.origin}/api/mcp-oauth/open?flowId=${flow.flowId}`, { headers: { Origin: f.host.origin, Cookie: f.cookie }, redirect: "manual" });
+  if (open) assert.equal(open.status, 303);
+  const authorization = manager ? await manager.open(flow.flowId) : open.headers.get("location");
   const page = await fetch(authorization); assert.equal(page.status, 200);
   const answer = await fetch(authorization, { method: "POST", body: new URLSearchParams({ decision }), redirect: "manual" });
   assert.equal(answer.status, 303);
@@ -208,4 +208,62 @@ test("a physical refresh deadline settles finitely and cannot send with the unse
   assert.equal(failed.code, "MCP_OAUTH_REQUEST_TIMED_OUT"); assert.ok(Date.now() - before < 14000);
   assert.equal(service.received.filter((entry) => entry.type === "token" && entry.kind === "refresh_token").length, 1);
   assert.equal(service.received.filter((entry) => entry.type === "mcp").length, 0);
+});
+
+test("an authorization open paused at its binding check cannot revive a completed cancellation", { timeout: 30000 }, async (t) => {
+  const service = await createOAuthMcpServer(); t.after(() => service.close());
+  const f = await createMcpHost({ respond }); t.after(() => f.close()); const state = await configure(f, service);
+  const manager = new McpOAuth({ catalog: new McpCatalog(f.config), sdkFile: f.sdk }); t.after(() => manager.stop());
+  const flow = await manager.start("remote", f.project, state.revision);
+  let release, reached; const paused = new Promise((resolve) => { release = resolve; }), checking = new Promise((resolve) => { reached = resolve; });
+  const check = manager.assertBinding.bind(manager);
+  manager.assertBinding = async (value) => { await check(value); reached(); await paused; };
+  const opening = manager.open(flow.flowId); opening.catch(() => {}); await checking;
+  assert.equal((await manager.action({ type: "oauthCancel", flowId: flow.flowId }, f.project)).status, "cancelled");
+  release(); await assert.rejects(opening, { code: "MCP_OAUTH_FLOW_EXPIRED" });
+  assert.equal(manager.public(manager.own(flow.flowId, f.project)).status, "cancelled");
+  const next = await manager.start("remote", f.project, state.revision); assert.equal(next.status, "waiting");
+  await manager.action({ type: "oauthCancel", flowId: next.flowId }, f.project);
+  assert.equal(service.received.filter((row) => ["authorization_page", "token", "mcp"].includes(row.type)).length, 0);
+});
+
+for (const kind of ["login", "refresh"]) for (const fault of ["status-sync", "config-after-rename"]) test(`native ${kind} publication ${fault} is distinguished from failed authentication`, { timeout: 30000 }, async (t) => {
+  const service = await createOAuthMcpServer(); t.after(() => service.close());
+  const f = await createMcpHost({ respond }); t.after(() => f.close()); let state = await configure(f, service);
+  if (kind === "refresh") state = await login(f, state);
+  const catalog = new McpCatalog(f.config), manager = new McpOAuth({ catalog, sdkFile: f.sdk }); t.after(() => manager.stop());
+  if (fault === "status-sync") {
+    const save = catalog.saveOAuthFlow.bind(catalog);
+    catalog.saveOAuthFlow = async (flow) => { if (["stored", "stored_sync_failed"].includes(flow.status)) throw Object.assign(new Error("injected status write failure"), { code: "EIO" }); return save(flow); };
+  } else {
+    const mutate = catalog.mutate.bind(catalog);
+    catalog.mutate = (revision, update, options) => mutate(revision, update, { ...options, failAtPhase: "AFTER_RENAME" });
+  }
+  const flow = await manager.start("remote", f.project, state.revision, kind);
+  if (kind === "login") await openAndAuthorize(f, flow, "allow", manager);
+  await manager.own(flow.flowId, f.project).done;
+  const result = manager.public(manager.own(flow.flowId, f.project));
+  assert.equal(result.status, fault === "status-sync" ? "stored_sync_failed" : "publication_unconfirmed");
+  assert.equal(result.code, fault === "status-sync" ? "MCP_OAUTH_STATUS_SYNC_FAILED" : "MCP_OAUTH_PUBLICATION_UNCONFIRMED");
+  assert.equal((await manager.snapshot(f.project)).authentication.remote.flow.status, result.status);
+  if (fault === "config-after-rename") assert.equal(result.bindingConfirmed, true);
+  const snapshot = await f.mcp({ type: "list" }); assert.equal(snapshot.servers[0].credentialRefs.MCP_TOKEN, result.ref);
+  const credential = await catalog.boundCredential(snapshot.servers[0], f.project); assert.ok(credential.oauth.tokens.access_token);
+  assert.equal((await manager.action({ type: "oauthCancel", flowId: flow.flowId }, f.project)).status, result.status);
+  if (fault === "status-sync") assert.ok((await catalog.credentials(snapshot.servers[0], f.project)).env.MCP_TOKEN);
+  else await assert.rejects(catalog.credentials(snapshot.servers[0], f.project), { code: "MCP_OAUTH_LOGIN_REQUIRED" });
+  assert.equal(service.received.filter((row) => row.type === "mcp").length, 0);
+});
+
+test("a dynamic registration management token echoed by a real MCP tool never enters Pi history or public state", { timeout: 45000 }, async (t) => {
+  const service = await createOAuthMcpServer(); t.after(() => service.close());
+  const f = await createMcpHost({ respond, installedExtensions: true }); t.after(() => f.close());
+  await login(f, await configure(f, service)); service.setMode("registration_secret_echo");
+  const start = await f.start(), waiting = await until(() => f.task(start.taskId), (value) => value.approvals.length, "registration secret echo approval", 20000);
+  await f.request("/api/command", { type: "answerApproval", taskId: start.taskId, approvalId: waiting.approvals[0].approvalId, value: "仅本次" });
+  const ended = await until(() => f.task(start.taskId), (value) => ["succeeded", "failed"].includes(value.status), "secret echo terminal task", 20000);
+  const publicData = JSON.stringify([ended, await f.mcp({ type: "list" }), await f.mcp({ type: "status" }), f.requests.map((entry) => entry.body)]);
+  for (const secret of service.privateValues) assert.ok(!publicData.includes(secret), "registered private value leaked");
+  assert.match(publicData, /MCP_SECRET_OUTPUT_REJECTED/u);
+  assert.equal(service.received.filter((row) => row.rpc === "tools/call").length, 1);
 });

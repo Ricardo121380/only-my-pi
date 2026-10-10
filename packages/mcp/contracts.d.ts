@@ -2,7 +2,9 @@ export type McpToolScope = { name: string; pathArgument: string; paths: string[]
 export type McpServer = { name: string; credentialRefs: Record<string, string>; enabled: boolean } & (
   { transport: "stdio"; command: string; args: string[]; codePaths: string[]; cwd?: string; env: Record<string, string>; tools: McpToolScope[] }
   | { transport: "streamable-http"; url: string; tools: { name: string; effect: "remote" }[] });
-export interface McpOAuthFlow { flowId: string; name: string; projectPath: string; targetDigest: string; ref: string | null; kind: "login" | "refresh"; status: "starting" | "waiting" | "refreshing" | "cancelling" | "stored" | "failed" | "cancelled" | "timed_out" | "interrupted"; updatedAt: string; events: { status: string; at: string }[]; authorizationOrigin?: string; opened?: boolean; code?: string }
+export declare const isMcpOAuthActive: (status: string) => boolean;
+export declare const isMcpOAuthStored: (status: string) => boolean;
+export interface McpOAuthFlow { flowId: string; name: string; projectPath: string; targetDigest: string; ref: string | null; kind: "login" | "refresh"; status: "starting" | "waiting" | "refreshing" | "cancelling" | "stored" | "stored_sync_failed" | "publication_unconfirmed" | "failed" | "cancelled" | "timed_out" | "interrupted"; updatedAt: string; events: { status: string; at: string }[]; authorizationOrigin?: string; opened?: boolean; code?: string; bindingConfirmed?: boolean }
 export interface McpAuthentication { state: "not_connected" | "connected" | "token" | "expired" | "revoked" | "binding_changed" | "refresh_required"; ref: string | null; flow?: McpOAuthFlow }
 export interface McpSnapshot { protocol: 1; revision: number; projectPath: string | null; servers: (McpServer & { source: "default" | "project"; targetDigest: string })[]; authentication?: Record<string, McpAuthentication> }
 export interface McpPreview { protocol: 1; revision: number; digest: string; servers: McpServer[]; differences: { name: string; status: "new" | "existing" }[] }

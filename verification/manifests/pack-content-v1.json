@@ -105,6 +105,7 @@
     "CHANGELOG.md",
     "bin/omp.mjs",
     "packages/mcp/catalog.mjs",
+    "packages/mcp/contracts.mjs",
     "packages/mcp/commands.mjs",
     "packages/mcp/contracts.d.ts",
     "packages/mcp/extension.mjs",

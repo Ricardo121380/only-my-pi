@@ -4,7 +4,7 @@ import { randomUUID, createHash } from "node:crypto";
 // Real HTTP/OAuth/PKCE endpoints. The ledger stores grant identities, never
 // authorization URLs, codes, state, verifiers or token values.
 export async function createOAuthMcpServer({ expiresIn = 3600 } = {}) {
-  const clients = new Map(), codes = new Map(), tokens = new Map(), refresh = new Map(), sockets = new Set(), received = [];
+  const clients = new Map(), codes = new Map(), tokens = new Map(), refresh = new Map(), management = new Map(), sockets = new Set(), received = [];
   let origin, mode = "normal", lastCallback;
   const json = (res, status, value) => { res.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" }); res.end(JSON.stringify(value)); };
   const server = http.createServer(async (req, res) => {
@@ -14,8 +14,8 @@ export async function createOAuthMcpServer({ expiresIn = 3600 } = {}) {
       if (url.pathname === "/.well-known/oauth-authorization-server") return json(res, 200, { issuer: origin, authorization_endpoint: `${origin}/authorize`, token_endpoint: `${origin}/token`, registration_endpoint: `${origin}/register`, response_types_supported: ["code"], grant_types_supported: ["authorization_code", "refresh_token"], token_endpoint_auth_methods_supported: ["none"], code_challenge_methods_supported: ["S256"], authorization_response_iss_parameter_supported: true });
       if (url.pathname === "/register" && req.method === "POST") {
         const input = JSON.parse(text), client = `client_${randomUUID()}`;
-        clients.set(client, input); received.push({ type: "registration", client });
-        return json(res, 201, { client_id: client, redirect_uris: input.redirect_uris, token_endpoint_auth_method: "none" });
+        clients.set(client, input); management.set(client, `registration_${randomUUID()}`); received.push({ type: "registration", client });
+        return json(res, 201, { client_id: client, redirect_uris: input.redirect_uris, token_endpoint_auth_method: "none", registration_access_token: management.get(client) });
       }
       if (url.pathname === "/authorize") {
         if (req.method === "GET") {
@@ -59,7 +59,7 @@ export async function createOAuthMcpServer({ expiresIn = 3600 } = {}) {
         let result;
         if (message.method === "initialize") result = { protocolVersion: "2025-03-26", capabilities: { tools: {} }, serverInfo: { name: "controlled-oauth", version: "1" } };
         else if (message.method === "tools/list") result = { tools: [{ name: "echo", description: "Controlled OAuth remote action", inputSchema: { type: "object", properties: { value: { type: "string" } }, required: ["value"], additionalProperties: false } }] };
-        else if (message.method === "tools/call") result = { content: [{ type: "text", text: `OAuth result: ${message.params.arguments.value}` }] };
+        else if (message.method === "tools/call") result = { content: [{ type: "text", text: mode === "registration_secret_echo" ? management.get(identity.client) : `OAuth result: ${message.params.arguments.value}` }] };
         else return json(res, 400, { error: "unsupported_method" });
         return json(res, 200, { jsonrpc: "2.0", id: message.id, result });
       }
@@ -71,6 +71,6 @@ export async function createOAuthMcpServer({ expiresIn = 3600 } = {}) {
   return { url: `${origin}/mcp`, received, setMode: (value) => { mode = value; },
     setExpiresIn: (value) => { expiresIn = value; }, revoke: () => { for (const identity of tokens.values()) identity.revoked = true; },
     // Private helpers are used only to drive protocol negatives, never output.
-    get lastCallback() { return lastCallback; }, get privateValues() { return [...codes.keys(), ...tokens.keys(), ...refresh.keys()]; },
+    get lastCallback() { return lastCallback; }, get privateValues() { return [...codes.keys(), ...tokens.keys(), ...refresh.keys(), ...management.values()]; },
     close: async () => { for (const socket of sockets) socket.destroy(); await new Promise((resolve) => server.close(resolve)); } };
 }

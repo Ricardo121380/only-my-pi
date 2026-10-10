@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { loadNativeMcp } from "./native.mjs";
 import { httpTarget, mcpError, MCP_LIMITS } from "./catalog.mjs";
+import { isMcpOAuthActive as active } from "./contracts.mjs";
 
-const active = (status) => ["starting", "waiting", "refreshing", "cancelling"].includes(status);
 const endpoint = (input, authorization = false) => {
   const url = new URL(String(input));
   if (authorization) {
@@ -22,6 +22,14 @@ export class McpOAuth {
     for (const flow of Object.values(await this.catalog.oauthFlows())) if (active(flow.status)) await this.catalog.saveOAuthFlow({ ...flow, status: "interrupted", code: "MCP_OAUTH_INTERRUPTED", updatedAt: new Date().toISOString() });
   }
   public(flow) { return structuredClone(flow.visible ?? flow.data); }
+  async snapshot(projectPath) {
+    const snapshot = await this.catalog.snapshot(projectPath);
+    for (const flow of this.flows.values()) {
+      const value = this.public(flow), server = snapshot.servers.find((entry) => entry.name === value.name);
+      if (value.projectPath === projectPath && value.targetDigest === server?.targetDigest && value.ref === (server.credentialRefs.MCP_TOKEN ?? null)) snapshot.authentication[value.name].flow = value;
+    }
+    return snapshot;
+  }
   save(flow, status, errorCode) {
     flow.data.status = status; flow.data.updatedAt = new Date().toISOString();
     if (errorCode) flow.data.code = errorCode;
@@ -74,6 +82,7 @@ export class McpOAuth {
   async closeCallback(flow) { if (flow.callback) await (flow.callbackClosed ??= flow.callback.close()); }
   async run(flow) {
     const timer = setTimeout(() => { flow.timedOut = true; flow.abort.abort(); void this.closeCallback(flow).catch(() => {}); }, this.timeoutMs);
+    let publication;
     try {
       await this.save(flow, "starting");
       const native = await loadNativeMcp(this.sdkFile, "./oauth"), binding = flow.binding;
@@ -107,11 +116,18 @@ export class McpOAuth {
           resource: native.selectResource(binding.url, discovery.resourceMetadata), code: reply.code, codeVerifier: await provider.codeVerifier(), redirectUrl: provider.redirectUrl, fetch: options.fetch, signal: options.signal });
         await provider.saveTokens(tokens);
       }
-      flow.data.ref = await this.catalog.storeOAuth(binding, await provider.load(), flow.abort.signal);
-      await this.save(flow, "stored");
+      publication = await this.catalog.storeOAuth(binding, await provider.load(), flow.abort.signal);
+      flow.data.ref = publication.ref;
+      if (!publication.durable) flow.data.bindingConfirmed = publication.bindingConfirmed;
+      await this.save(flow, publication.durable ? "stored" : "publication_unconfirmed", publication.durable ? undefined : "MCP_OAUTH_PUBLICATION_UNCONFIRMED");
     } catch (error) {
-      if (flow.data.kind === "refresh") await this.catalog.invalidateOAuth(flow.binding, flow.binding.projectPath).catch(() => {});
-      await this.save(flow, flow.failureCode ? "failed" : flow.timedOut ? "timed_out" : flow.abort.signal.aborted ? "cancelled" : "failed", flow.failureCode ?? (flow.timedOut ? "MCP_OAUTH_TIMED_OUT" : flow.abort.signal.aborted ? "MCP_OAUTH_CANCELLED" : code(error)));
+      if (publication) {
+        const status = publication.durable ? "stored_sync_failed" : "publication_unconfirmed", errorCode = publication.durable ? "MCP_OAUTH_STATUS_SYNC_FAILED" : "MCP_OAUTH_PUBLICATION_UNCONFIRMED";
+        await this.save(flow, status, errorCode).catch(() => { flow.visible = structuredClone(flow.data); });
+      } else {
+        if (flow.data.kind === "refresh") await this.catalog.invalidateOAuth(flow.binding, flow.binding.projectPath).catch(() => {});
+        await this.save(flow, flow.failureCode ? "failed" : flow.timedOut ? "timed_out" : flow.abort.signal.aborted ? "cancelled" : "failed", flow.failureCode ?? (flow.timedOut ? "MCP_OAUTH_TIMED_OUT" : flow.abort.signal.aborted ? "MCP_OAUTH_CANCELLED" : code(error)));
+      }
     } finally {
       clearTimeout(timer); flow.authorizationUrl = null;
       await this.closeCallback(flow).catch(() => {}); flow.ready();
@@ -126,6 +142,7 @@ export class McpOAuth {
     try {
       await this.assertBinding(flow);
     } catch (error) { flow.failureCode = code(error); flow.abort.abort(); await this.closeCallback(flow); await flow.done; throw error; }
+    if (flow.data.status !== "waiting" || flow.abort.signal.aborted || flow.opened || !flow.authorizationUrl) throw mcpError("MCP_OAUTH_FLOW_EXPIRED", 409);
     flow.opened = true; flow.data.opened = true; await this.save(flow, "waiting"); return flow.authorizationUrl;
   }
   async action(input, projectPath) {

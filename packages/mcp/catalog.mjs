@@ -1,6 +1,7 @@
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { atomicWriteJson, readJsonObject, withConfigLock } from "../config-runtime/index.mjs";
+import { isMcpOAuthStored } from "./contracts.mjs";
 
 export const MCP_PROTOCOL = 1;
 export const MCP_LIMITS = Object.freeze({ inputBytes: 16384, outputBytes: 65536, serverFileBytes: 65536, storageBytes: 8388608, calls: 32, timeoutMs: 10000, tools: 32, concurrency: 1 });
@@ -80,7 +81,7 @@ export class McpCatalog {
           status = credential.oauth ? credential.oauth.tokensExpireAt !== undefined && credential.oauth.tokensExpireAt <= Date.now() || state.invalidCredentials?.[ref] ? "expired" : "connected" : "token";
         } catch { status = state.revokedCredentials?.[ref] ? "revoked" : "binding_changed"; }
       }
-      if (ownFlow?.kind === "refresh" && ownFlow.status !== "stored" && !["revoked", "binding_changed"].includes(status)) status = "refresh_required";
+      if ((ownFlow?.status === "publication_unconfirmed" || ownFlow?.kind === "refresh" && !isMcpOAuthStored(ownFlow.status)) && !["revoked", "binding_changed"].includes(status)) status = "refresh_required";
       authentication[server.name] = { state: status, ref, ...(ownFlow ? { flow: ownFlow } : {}) };
     }
     return { protocol: MCP_PROTOCOL, revision: state.revision, projectPath: projectPath ?? null, limits: MCP_LIMITS,
@@ -112,7 +113,9 @@ export class McpCatalog {
     return withConfigLock(this.configRoot, "mcp-config", async () => {
       const state = await this.read(); if (state.revision !== revision) throw mcpError("MCP_REVISION_CONFLICT", 409);
       await update(state); state.revision++;
-      await atomicWriteJson(this.configRoot, this.file, state, options); return state.revision;
+      try { await atomicWriteJson(this.configRoot, this.file, state, options); }
+      catch (error) { if (error.atomicPublication === "PUBLISHED_NOT_CONFIRMED_DURABLE") error.mcpConfigPublished = true; throw error; }
+      return state.revision;
     });
   }
   async action(input, projectPath) {
@@ -188,17 +191,24 @@ export class McpCatalog {
   }
   async storeOAuth(binding, oauth, signal) {
     if (Buffer.byteLength(JSON.stringify(oauth)) > MCP_LIMITS.outputBytes || !bounded(oauth.tokens?.access_token, 8192) || !oauth.tokens.access_token || oauth.tokens.token_type.toLowerCase() !== "bearer"
-      || oauth.tokens.refresh_token !== undefined && !bounded(oauth.tokens.refresh_token, 8192) || oauth.tokensExpireAt !== undefined && (!Number.isFinite(oauth.tokensExpireAt) || oauth.tokensExpireAt <= Date.now())) throw mcpError("MCP_OAUTH_TOKEN_INVALID");
+      || oauth.tokens.refresh_token !== undefined && !bounded(oauth.tokens.refresh_token, 8192) || oauth.clientInformation?.registration_access_token !== undefined && !bounded(oauth.clientInformation.registration_access_token, 8192)
+      || oauth.tokensExpireAt !== undefined && (!Number.isFinite(oauth.tokensExpireAt) || oauth.tokensExpireAt <= Date.now())) throw mcpError("MCP_OAUTH_TOKEN_INVALID");
     const ref = `c_${randomUUID().replaceAll("-", "")}`, check = () => { if (signal.aborted) throw mcpError("MCP_OAUTH_CANCELLED"); };
-    await this.mutate(binding.revision, async (state) => {
+    try { await this.mutate(binding.revision, async (state) => {
       check(); const key = digest(binding.projectPath), server = state.projects[key]?.[binding.name] ?? state.defaults[binding.name];
       if (!server || targetDigest(server) !== binding.targetDigest || (server.credentialRefs.MCP_TOKEN ?? null) !== binding.ref) throw mcpError("MCP_CREDENTIAL_BINDING_CHANGED", 409);
       const privateState = structuredClone(oauth); delete privateState.codeVerifier; delete privateState.oauthState;
       await atomicWriteJson(this.configRoot, path.join(this.configRoot, "only-my-pi/mcp/credentials", `${ref}.json`), { version: 1, projectPath: binding.projectPath, name: binding.name, targetDigest: binding.targetDigest, value: oauth.tokens.access_token, oauth: privateState });
       check(); state.revokedCredentials ??= {}; if (binding.ref) state.revokedCredentials[binding.ref] = true;
       state.projects[key] ??= {}; state.projects[key][binding.name] = { ...server, credentialRefs: { MCP_TOKEN: ref } };
-    }, { beforeRename: check });
-    return ref;
+    }, { beforeRename: check }); }
+    catch (error) {
+      if (!error.mcpConfigPublished) throw error;
+      const state = await this.read().catch(() => null), current = state?.projects[digest(binding.projectPath)]?.[binding.name] ?? state?.defaults[binding.name];
+      const bindingConfirmed = Boolean(current && current.credentialRefs.MCP_TOKEN === ref && targetDigest(current) === binding.targetDigest && await this.boundCredential(current, binding.projectPath, state).then(() => true, () => false));
+      return { ref, durable: false, bindingConfirmed };
+    }
+    return { ref, durable: true };
   }
   async invalidateOAuth(server, projectPath) {
     const ref = server.credentialRefs?.MCP_TOKEN ?? server.ref; if (!ref) return;
@@ -218,8 +228,8 @@ export class McpCatalog {
       if (credential.oauth) {
         const flow = (await this.oauthFlows())[this.key(projectPath, server.name)];
         if (state.invalidCredentials?.[ref] || credential.oauth.tokensExpireAt !== undefined && credential.oauth.tokensExpireAt <= Date.now()
-          || flow?.ref === ref && flow.targetDigest === server.targetDigest && flow.kind === "refresh" && flow.status !== "stored") throw mcpError("MCP_OAUTH_LOGIN_REQUIRED", 409);
-        secrets.push(...[credential.oauth.tokens?.refresh_token, credential.oauth.tokens?.id_token, credential.oauth.clientInformation?.client_secret].filter(Boolean));
+          || flow?.ref === ref && flow.targetDigest === server.targetDigest && (flow.status === "publication_unconfirmed" || flow.kind === "refresh" && !isMcpOAuthStored(flow.status))) throw mcpError("MCP_OAUTH_LOGIN_REQUIRED", 409);
+        secrets.push(...[credential.oauth.tokens?.refresh_token, credential.oauth.tokens?.id_token, credential.oauth.clientInformation?.client_secret, credential.oauth.clientInformation?.registration_access_token].filter(Boolean));
       }
       env[key] = credential.value; secrets.push(credential.value);
     }

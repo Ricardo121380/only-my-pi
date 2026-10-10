@@ -218,7 +218,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           const input = await authorizedBody(req);
           const project = input?.projectId ? catalog.project(input.projectId) : null;
           if (project) await fs.access(project.path);
-          return response(res, 200, input.type === "status" ? await new McpRuns(configRoot).status(project?.path) : input.type?.startsWith("oauth") ? await mcpOAuth.action(input, project?.path) : await mcp.action(input, project?.path));
+          return response(res, 200, input.type === "list" ? await mcpOAuth.snapshot(project?.path) : input.type === "status" ? await new McpRuns(configRoot).status(project?.path) : input.type?.startsWith("oauth") ? await mcpOAuth.action(input, project?.path) : await mcp.action(input, project?.path));
         }
         if (req.method === "POST" && url.pathname === "/api/logout") {
           if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
