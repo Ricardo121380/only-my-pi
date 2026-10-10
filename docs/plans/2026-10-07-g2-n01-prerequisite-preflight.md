@@ -37,7 +37,7 @@
 
 当前 F01 合同与材料配方的摘要仍分别为 `sha256:a7f342d5ce2ead6610fb5cc2624307ca90c31a0f6540fb1b64a63fd2475edb70`和 `sha256:5a168315d9bdb6198f9e94cd72ae2a5adadbd239f1c63c18ca819d61339c37e5`。原材料校验 `scripts/probes/lib/resource-source-materials.mjs`继续保留 `sourceBuildCorrespondence=UNVERIFIED`、`licensingClosure=INCOMPLETE`，没有改为 PASS。
 
-另有当前输入状态问题：历史报告记录的 documents 临时根 `/privateLOCAL_TMP/omp-u0-parser-package-LUbTGo/installed`虽仍是目录，其记录的 `node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs`当前不存在。通过公开 `verifyParserResources`入口进行只读实物校验，两侧 Node 均先因缺少 manifest/精确 lock 返回 `PARSER_RESOURCE_LOCK_INVALID`、exit 1；images 树未进入后续核验。日志为 `historical-roots-node22.log`和 `historical-roots-node24.log`。
+另有当时的输入状态问题：历史报告记录的 documents 临时根当时虽仍是目录，其记录的 `node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs`不存在。确切原路径保留在 `$runRoot/historical-roots-node22.log:5` 和 `$runRoot/historical-roots-node24.log:5`，不在仓库报告重复设备临时路径。通过公开 `verifyParserResources`入口进行只读实物校验，两侧 Node 均先因缺少 manifest/精确 lock 返回 `PARSER_RESOURCE_LOCK_INVALID`、exit 1；images 树未进入后续核验。原日志及历史失败结论保留。
 
 这个失败只说明上述历史临时根当前不能复验 F01，不证明其他候选或日常安装损坏，也不追溯否定历史执行。原采集 CLI 会先做同一资源校验、随后获取材料；本次没有重跑联网采集、补写临时根或更换旧资源。完整资源树重新取得/生成与核验仍待前置满足后绑定当前身份。
 
