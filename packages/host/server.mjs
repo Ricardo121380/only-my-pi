@@ -37,8 +37,13 @@ async function body(request, limit = 65536) {
 }
 async function recoverWorkers(configRoot, previous) {
   const state = await readJsonObject(configRoot, path.join(configRoot, "only-my-pi/host/tasks.json")).catch((e) => { if (e.code === "ENOENT") return null; throw e; });
+  const mcpRuns = new McpRuns(configRoot);
+  const allMcpRuns = await mcpRuns.status();
+  if (allMcpRuns.runs.some((run) => run.status === "reconciliation" || run.processes.some((entry) => entry.alive))) {
+    throw hostError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
+  }
   for (const task of state?.tasks ?? []) {
-    if (terminal(task.status) && !task.worker) continue;
+    if (terminal(task.status) && !task.worker && !task.mcpSnapshot?.projectPath) continue;
     const worker = task.worker;
     if (worker) {
       const identity = await processIdentity(worker.pid);
@@ -52,6 +57,18 @@ async function recoverWorkers(configRoot, previous) {
       // A controlled worker may have owned independent execution groups. Its
       // death is not a cleanup receipt; preserve both project and session locks.
       if (task.mode === "controlled") throw hostError("CONTROLLED_ORPHAN_REQUIRES_RECONCILIATION", 409);
+    }
+    // MCP services are detached from the Pi worker and therefore are not
+    // covered by the worker process-group check above.  A dead owner or a
+    // live service is an unresolved execution boundary even if configuration
+    // was subsequently disabled.  Refuse to release session ownership until
+    // the durable MCP runs have been reconciled explicitly.
+    const projectPath = task.mcpSnapshot?.projectPath;
+    if (projectPath) {
+      const mcpStatus = await mcpRuns.status(projectPath);
+      if (mcpStatus.runs.some((run) => run.status === "reconciliation" || run.processes.some((entry) => entry.alive))) {
+        throw hostError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
+      }
     }
     if (task.sessionId) {
       const digest = createHash("sha256").update(String(task.sessionId)).digest("hex");

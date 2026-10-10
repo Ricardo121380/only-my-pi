@@ -76,14 +76,20 @@ Node 24.19.0 与 Node 22.19.0 均用实际官方支持矩阵路径运行；运�
 
 浏览器夹具通过自己的 HTTP 控制端点停止并保存证据，退出码为 0。`66-final-b/` 的预演和过期的一次性配对尝试只是夹具过程记录，不计为完整 B 通过；最终实际证据是 `66-verified-b/`。
 
+## 第三轮评审与恢复边界修复
+
+第三轮 Spec **PASS**（限定 #66 的 macOS 受控 stdio 只读切片）。第三轮 Standards 发现一项 P1：Host 恢复只检查 Pi worker，停用 MCP 后可能释放 session 而绕过仍存活的独立 MCP 进程组；工具名称及前两轮持久化/stdout 问题已确认修复。发现记录保留于 `66-second-standards.md`、`66-second-spec.md` 及本轮代理回执。
+
+主线程在真实 Pi/MCP 夹具中重现了该路径：Pi 崩溃、保存停用后旧服务组仍存活，原代码 Host 重启成功（`66-red-recovery.log`）。`packages/host/server.mjs` 现在在任何锁恢复前读取全部持久 MCP runs，只要发现存活进程或 reconciliation 就返回 `MCP_PROCESS_RECONCILIATION_REQUIRED`；按任务核对仍保留。`66-green-recovery-final.log` 1/1 PASS，并断言 session owner.json 字节保持不变。未做通用孤儿清理。
+
 ## Standards
 
-待独立差量评审；评审基点为任务起点 HEAD，范围仅本票提交及其实际工作树证据。
+第三轮修复后的独立差量评审待重新取回；基点仍为 `f411c29a2d9fa438c442344f6b9f0cd5248a9690`，范围仅本票提交及其实际工作树证据。
 
 ## Spec
 
-待独立按 #19/#66 逐项评审，审查 C/P/B、负例和上述限制。
+第三轮独立评审为 PASS；验收限定为 #66 的 macOS 受控 stdio 只读切片，未把写入、完整安装、外部 Provider 或 GP110-05 汇总写成通过。
 
 ## 完成结论
 
-实现与评审发现的修复均已有 C/P/B 证据；等待新的独立 Standards/Spec 评审。GitHub #66 暂不关闭，#67 尚未开始。
+恢复边界修复已有实际 RED/GREEN，等待修复后第三轮 Standards/Spec 评审及 GitHub 状态回读。#67 尚未开始。

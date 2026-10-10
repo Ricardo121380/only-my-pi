@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
-import { execFile } from "node:child_process";
+import { execFile, fork } from "node:child_process";
 import { promisify } from "node:util";
 import { createMcpHost, until, mcpReception, providerReply } from "./fixtures/mcp-host.mjs";
 const terminal = (task) => ["succeeded", "failed", "cancelled"].includes(task.status);
@@ -94,4 +94,32 @@ test("actual service has only fixed scratch slots and a kernel file size limit",
   assert.ok((await fs.stat(path.join(run.processes[0].runtimeDir, "scratch"))).size <= 65536);
   assert.ok(run.processes.every((entry) => entry.status === "stopped" && !entry.alive));
   assert.equal(received.filter((item) => item.type === "call").length, 0);
+});
+
+test("disabled MCP cannot hide independent service groups during actual Host crash recovery", { timeout: 30000 }, async (t) => {
+  const child = fork(new URL("./fixtures/mcp-host-orphan.mjs", import.meta.url), { execArgv: [], stdio: ["ignore", "ignore", "pipe", "ipc"] });
+  let stderr = "", host, fixture;
+  child.stderr.on("data", (bytes) => { stderr += bytes; });
+  const { groupAlive, processIdentity } = await import("../packages/host/ownership.mjs");
+  t.after(async () => {
+    if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+    if (!fixture) return;
+    await host?.stop();
+    for (const entry of fixture.run.processes) if (groupAlive(entry.pid) && await processIdentity(entry.pid) === entry.identity) process.kill(-entry.pid, "SIGKILL");
+    await until(() => fixture.run.processes.every((entry) => !groupAlive(entry.pid)), Boolean, "owned fixture process cleanup");
+    await fs.rm(fixture.root, { recursive: true, force: true, maxRetries: 10, retryDelay: 25 });
+  });
+  fixture = await new Promise((resolve, reject) => { child.once("message", resolve); child.once("exit", () => reject(new Error(stderr))); });
+  assert.equal(fixture.ended.error, "RPC_TERMINATION_UNCONFIRMED");
+  assert.ok(fixture.run.processes.some((entry) => groupAlive(entry.pid)));
+  const locks = path.join(fixture.config, "only-my-pi/host/locks");
+  const sessions = (await fs.readdir(locks)).filter((name) => name.startsWith("session-"));
+  assert.equal(sessions.length, 1);
+  const priorOwner = await fs.readFile(path.join(locks, sessions[0], "owner.json"));
+  const exited = new Promise((resolve) => child.once("exit", resolve)); child.kill("SIGKILL"); await exited;
+  const { startHost } = await import("../packages/host/server.mjs");
+  let failure;
+  try { host = await startHost({ configRoot: fixture.config, stack: fixture.stack, assetsRoot: path.join(fixture.root, "assets") }); } catch (error) { failure = error; }
+  assert.equal(failure?.code, "MCP_PROCESS_RECONCILIATION_REQUIRED", "actual Host must refuse recovery with MCP disabled and independent group alive");
+  assert.deepEqual(await fs.readFile(path.join(locks, sessions[0], "owner.json")), priorOwner, "session reservation cannot be released before MCP reconciliation");
 });
