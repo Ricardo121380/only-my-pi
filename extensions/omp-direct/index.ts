@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { DirectSessionOwnership } from "../../packages/direct-agent/ownership.mjs";
 import { createOwnedBashOperations } from "../../packages/direct-agent/shell.mjs";
+import { disableOmpCacheWarming } from "../../packages/direct-agent/cache-warming-policy.mjs";
 
 import {
   DIRECT_READ_ONLY_AGENTS,
@@ -61,6 +62,8 @@ const ManagedWriterParameters = {
 
 export default function ompDirect(pi: ExtensionAPI): void {
   if (process.env.ONLY_MY_PI_DIRECT !== "1") return;
+  // Also covers the native CLI's ephemeral --no-session path and legacy RPC.
+  disableOmpCacheWarming(pi);
   const configRoot = process.env.PI_CODING_AGENT_DIR ?? path.join(os.homedir(), ".pi", "agent");
   const ownership = new DirectSessionOwnership(configRoot);
   let ownsSession: ((ctx: any) => boolean) | undefined;

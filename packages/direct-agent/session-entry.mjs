@@ -4,6 +4,7 @@ import { SessionAdmissions } from "./session-admission.mjs";
 import { resolveDirectConfigRoot } from "./launcher.mjs";
 import { prepareHeadlessSession } from "./session-selection.mjs";
 import { selectResumeSession } from "./session-picker.mjs";
+import { disableOmpCacheWarming } from "./cache-warming-policy.mjs";
 
 // Arguments are constructed by the controlled launcher, including all audited
 // extension paths/tools. This entry never reconstructs or drops those options.
@@ -29,7 +30,7 @@ try {
       });
       pi.on("session_before_switch", () => ({ cancel: true }));
       pi.on("session_before_fork", () => ({ cancel: true }));
-    }] });
+    }, disableOmpCacheWarming] });
   }
 } catch (error) {
   process.stderr.write(`${/^[A-Z_]+$/.test(error.code ?? "") ? error.code : "DIRECT_SESSION_START_FAILED"}\n`);

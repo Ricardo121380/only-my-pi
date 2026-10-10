@@ -5,6 +5,7 @@ import { AccountCatalog } from "./accounts.mjs";
 import { CLI_ACCOUNT_ID } from "./contracts.mjs";
 import { createControlledExtension } from "./controlled-extension.mjs";
 import { hasAccountCredential } from "./account-credential.mjs";
+import { disableOmpCacheWarming } from "../direct-agent/cache-warming-policy.mjs";
 
 // Host-owned arguments contain identities and audited paths, never credentials.
 try {
@@ -43,6 +44,7 @@ try {
       resourceLoaderOptions: { noExtensions: true, additionalExtensionPaths: extensions, extensionFactories: [
         (pi) => pi.events.emit("only-my-pi:host-session-owner:v1", { ownsSession: (ctx) => ctx.mode === "rpc" && ctx.sessionManager.getSessionId() === sessionManager.getSessionId() }),
         ...(controlled ? [createControlledExtension()] : []),
+        disableOmpCacheWarming,
       ] },
     });
     if (services.diagnostics.some((d) => d.type === "error") || services.resourceLoader.getExtensions().errors.length) throw new Error();

@@ -7,6 +7,7 @@ import { createDirectTuiRuntime } from "./tui-runtime.mjs";
 import { exitFailedDirectRuntime } from "./fatal-exit.mjs";
 
 // Private candidate entry. No fallback to native main on admission failure.
+let ui, runtime;
 try {
   const [sdkFile, ...args] = process.argv.slice(2);
   if (!process.stdin.isTTY || !process.stdout.isTTY) throw Object.assign(new Error(), { code: "TUI_TTY_REQUIRED" });
@@ -18,7 +19,6 @@ try {
   if (sdk.parseArgs(args).offline) process.env.PI_OFFLINE = "1";
   const configRoot = resolveDirectConfigRoot();
   const admissions = new SessionAdmissions(configRoot, { loadSdk: async () => sdk });
-  let ui, runtime;
   const started = await createDirectTuiRuntime({ sdk, args, configRoot, admissions,
     onFatal: () => exitFailedDirectRuntime({ getRuntime: () => runtime, stop: () => ui?.stop(),
       report: () => process.stderr.write("SESSION_LIFECYCLE_UNCONFIRMED: stopped; session ownership requires reconciliation.\n") }),
@@ -32,8 +32,10 @@ try {
     await ui.run();
   }
 } catch (error) {
-  // Initialization may have partly executed an extension. Retain durable locks
-  // for reconciliation instead of claiming all process descendants have exited.
-  process.stderr.write(`${/^[A-Z_]+$/.test(error.code ?? "") ? error.code : "DIRECT_TUI_START_FAILED"}\n`);
+  // An admitted runtime can perform its checked teardown. Partial initialization
+  // and unconfirmed teardown retain durable locks for reconciliation.
+  const report = () => process.stderr.write(`${/^[A-Z_]+$/.test(error.code ?? "") ? error.code : "DIRECT_TUI_START_FAILED"}\n`);
+  if (runtime) await exitFailedDirectRuntime({ getRuntime: () => runtime, stop: () => ui?.stop(), report });
+  report();
   process.exitCode = 1;
 }

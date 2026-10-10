@@ -3,9 +3,7 @@ import path from "node:path";
 import { ModelRuntime, SettingsManager, SessionManager, createAgentSessionServices, createAgentSessionFromServices, createAgentSessionRuntime, runRpcMode } from "@earendil-works/pi-coding-agent";
 import { DirectSessionController } from "../../extensions/omp-direct/runtime.mjs";
 import { createHostInteraction } from "../../packages/host/interaction.mjs";
-// Resolve the public pi-ai entry from the SDK's private dependency installation.
-const aiEntry = new URL("../node_modules/@earendil-works/pi-ai/dist/index.js", import.meta.resolve("@earendil-works/pi-coding-agent"));
-const { fauxProvider, fauxAssistantMessage, fauxToolCall } = await import(aiEntry.href);
+import { fauxProvider, fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
 const [cwd, agentDir, scenario] = process.argv.slice(2);
 const capability = createHostInteraction();
 const request = { taskSummary: "Write fixture", complexity: "simple", scope: ["proof.txt"], riskFlags: [], verification: ["read proof.txt"], orchestration: { useReadOnlyScouts: false, useManagedCloneWriter: false, useFreshReviewer: false } };

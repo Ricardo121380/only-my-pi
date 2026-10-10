@@ -81,6 +81,7 @@ Daily Agent:
   omp -r                      Choose a session to resume
   omp -p "review this repo"   Run a read-only non-interactive task
   omp --model <provider/id>   Select a model without the startup picker
+  omp --tui-mode regular      Use the scrollback terminal (default: fullscreen)
   omp web                     Open the local read-only workbench
   omp web status              Inspect the local Host
   omp web stop                Stop the Host and its tasks
@@ -159,6 +160,7 @@ export function classifyOmpInvocation(argv = []) {
 export function inspectDirectAgentArguments(argv, { interactive = true } = {}) {
   if (!Array.isArray(argv) || argv.length > 128) fail("OMP_ARGUMENTS_INVALID", "too many Agent arguments");
   let separator = false;
+  let tuiMode;
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     if (typeof token !== "string" || token.includes("\0") || token.includes("\n") || token.includes("\r")) {
@@ -176,6 +178,11 @@ export function inspectDirectAgentArguments(argv, { interactive = true } = {}) {
       const value = argv[index + 1];
       if (typeof value !== "string" || value.startsWith("-") || value.includes("\0") || value.includes("\n") || value.includes("\r")) {
         fail("OMP_AGENT_OPTION_INVALID", `${token} requires a bounded value`);
+      }
+      if (token === "--tui-mode") {
+        if (tuiMode !== undefined || !["fullscreen", "regular"].includes(value))
+          fail("OMP_AGENT_OPTION_INVALID", "--tui-mode requires one fullscreen or regular value");
+        tuiMode = value;
       }
       index += 1;
       continue;
@@ -410,14 +417,15 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = pro
 
 export async function launchDirectAgent({ argv = [], packageRoot, homeDir, stackRoot, env = process.env, execve = process.execve, randomUUIDImpl } = {}) {
   if (typeof execve !== "function") fail("OMP_EXECVE_UNAVAILABLE", "this Node runtime does not support process.execve()");
+  const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+  const inspected = inspectDirectAgentArguments(argv, { interactive });
   const stack = await resolveControlledStack({ packageRoot, homeDir, stackRoot });
   if (stack.distribution) {
     const { requireSystemDependencies } = await import("../distribution/system-dependencies.mjs");
     await requireSystemDependencies({ env });
   }
   const configRoot = resolveDirectConfigRoot({ env, homeDir });
-  const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
-  const directExtensions = await resolveDirectExtensionSet({ stack, configRoot, headless: inspectDirectAgentArguments(argv, { interactive }).headless });
+  const directExtensions = await resolveDirectExtensionSet({ stack, configRoot, headless: inspected.headless });
   const invocation = buildDirectPiInvocation({ argv, stack, extensionPaths: directExtensions.extensions, env, randomUUIDImpl, interactive });
   if (invocation.argv[1] !== stack.piCliPath) {
     await resolveContainedRegularFile(stack.ompPackageRoot, path.relative(stack.ompPackageRoot, invocation.argv[1]), "session admission entry");

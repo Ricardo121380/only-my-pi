@@ -4,6 +4,7 @@ import { inspectSessionSelection, prepareHeadlessSession } from "./session-selec
 import { createAdmittedSessionRuntime } from "./session-runtime.mjs";
 import { createResumeUiExtension } from "./session-resume-ui.mjs";
 import { prepareTuiInput } from "./initial-input.mjs";
+import { disableOmpCacheWarming } from "./cache-warming-policy.mjs";
 
 // Candidate bootstrap using only Pi's public SDK. Not routed from the daily
 // launcher until the remaining CLI compatibility cases pass acceptance.
@@ -63,7 +64,7 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
       resourceLoaderOptions: { noExtensions: true, additionalExtensionPaths: parsed.extensions,
         extensionFactories: [(pi) => pi.events.emit("only-my-pi:direct-session-owner:v1", {
           ownsSession: (ctx) => !admissions.closing && ctx.mode === mode && ctx.sessionManager === sessionManager,
-        }), ...(mode === "tui" ? [createResumeUiExtension({ sdk, getRuntime: () => runtime })] : [])] } });
+        }), ...(mode === "tui" ? [createResumeUiExtension({ sdk, getRuntime: () => runtime })] : []), disableOmpCacheWarming] } });
     if (services.diagnostics.some((entry) => entry.type === "error") || services.resourceLoader.getExtensions().errors.length)
       throw ownershipError("TUI_EXTENSION_LOAD_FAILED");
     const diagnostics = [...parsed.diagnostics, ...services.diagnostics];
@@ -105,6 +106,6 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
   const input = await prepareTuiInput({ sdk, files: parsed.fileArgs, messages: parsed.messages, cwd,
     autoResizeImages: runtime.services.settingsManager.getImageAutoResize() });
   return { cancelled: false, runtime, options: { ...input, verbose: parsed.verbose,
-    tuiMode: parsed.tuiMode, initialThemeSetting: parsed.useTheme, startupDiagnostics: runtime.diagnostics,
+    tuiMode: parsed.tuiMode ?? "fullscreen", initialThemeSetting: parsed.useTheme, startupDiagnostics: runtime.diagnostics,
     modelFallbackMessage: runtime.modelFallbackMessage } };
 }

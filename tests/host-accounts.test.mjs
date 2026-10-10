@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { AccountCatalog } from "../packages/host/accounts.mjs";
-const { fauxProvider, fauxAssistantMessage } = await import(new URL("../node_modules/@earendil-works/pi-ai/dist/index.js", import.meta.resolve("@earendil-works/pi-coding-agent")).href);
+import { fauxProvider, fauxAssistantMessage } from "@earendil-works/pi-ai";
 
 test("public ModelRuntime isolates same-provider stored accounts, serialized refresh and sync failure", async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-account-probe-"));
