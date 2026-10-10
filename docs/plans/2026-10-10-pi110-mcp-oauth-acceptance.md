@@ -82,7 +82,7 @@ Host 初始化兼容修复后的 `c770fd56572f85b5ad3ffbb0d663083e6f1fd0d0` 另�
 
 ## 独立完成边界
 
-C / P / B：PASS。第四轮独立完整范围 Standards：PASS（hard 0 / 非阻断 smell 1）；Spec：PASS（missing 0 / partial 0 / scope 0 / wrong 0）。GitHub #69 于 **2026-10-10 17:02:44Z** 关闭为 CLOSED / completed；7 条条件、完整正文和[完成评论](https://github.com/Ricardo121380/only-my-pi/issues/69#issuecomment-6100003567)均精确回读，唯一前置 #68 已 CLOSED，#19 正文 SHA 保持（`69-remote/after.json`、`verification.json`、`deps-after.json`、`19-after.json`）。#68 的验收与完成结论保留在 [HTTP MCP 验收](./2026-10-10-pi110-http-mcp-acceptance.md)，不与本票 OAuth 结论合并。
+C / P / B：PASS。第五轮独立完整范围 Standards：PASS（hard 0 / 非阻断 smell 1）；Spec：PASS（missing 0 / partial 0 / scope 0 / wrong 0）。GitHub #69 于 **2026-10-10 17:02:44Z** 关闭为 CLOSED / completed；7 条条件、完整正文和[完成评论](https://github.com/Ricardo121380/only-my-pi/issues/69#issuecomment-6100003567)均精确回读，唯一前置 #68 已 CLOSED，#19 正文 SHA 保持（`69-remote/after.json`、`verification.json`、`deps-after.json`、`19-after.json`）。#68 的验收与完成结论保留在 [HTTP MCP 验收](./2026-10-10-pi110-http-mcp-acceptance.md)，不与本票 OAuth 结论合并。
 
 首轮固定 `dde6d76...d5e2325` 的独立 Standards 为 FAIL（hard 1 / smell 1），Spec 为 FAIL（2 项错误及相应负例缺口 / scope 0）。原文保存在 `69-review-first.md`。三项行为问题均先复现；管理令牌回显经过真实 Host/Pi/工具请求，取消竞态在实际原生 listener 的异步绑定检查处受控暂停，发布故障使用真实原子写的 AFTER_RENAME 注入与状态写故障接缝，后两类属于 C 故障验证，未冒充额外浏览器或第三方证据。活动状态谓词由服务端和 WebUI 共用；随后完整范围再次独立评审。
 
@@ -92,8 +92,10 @@ C / P / B：PASS。第四轮独立完整范围 Standards：PASS（hard 0 / 非�
 
 第四轮固定 `dde6d7682d854341cf540aaba35366ce9f3f8a11...0c2132fb8eff60ec19ae79d70a60ef21820fb64c`：20 路径、891 新增 / 17 删除，原有 dirty 排除于新增差异；Standards PASS（hard 0 / 非阻断 smell 1），Spec PASS（missing 0 / partial 0 / scope 0 / wrong 0）。两位只读探子均终态 complete，分别核对全范围及相关规则/完整规格；原文摘记保存在 `69-review-fourth.md`。已知失效条件在 Catalog 展示与准入重复是非阻断维护建议，没有证据表明当前错误；不以无关重构扩大本票。第四轮评审时的实现提交为 `d5e2325`、`dff3ad0`、`024cc6c`、`0c2132f`。
 
-带入历史全量结果为 **1626 总计 / 1616 pass / 3 fail / 1 cancelled / 6 skip，exit 1**。首次批末全量在 `6a60cebab917f2636efab84f724d3ad85b17e0f8` 的实际工作树运行：**1678 总计 / 1653 pass / 19 fail / 0 cancelled / 6 skip，exit 1，370.36 秒**（`batch-full-node24.json` / `.log`）。全量期间 1660 个候选文件 SHA 无漂移；19 个失败都来自新 Host OAuth 构造器对 stack.root 的无条件 path.join，使原有注入入口不能启动，完整错误保存在 `batch-full-node24-failures.json`。历史三项失败及一项取消在该候选通过。最小修复仅让 SDK 路径在根路径存在时构造；显式 OAuth 操作仍由 loadNativeMcp 对绑定缺失拒绝，不把假 SDK 注入旧夹具、不弱化断言。修复后原有六文件在 Node22/24 分别 **42/42 PASS**，四范围 typecheck PASS（`69-host-compat-node22`、`69-host-compat-node24`、`69-host-compat-typecheck`）。
+第五轮固定 `dde6d7682d854341cf540aaba35366ce9f3f8a11...bb110b7feee562f5b9ebfc0d80462ad39b6fa93f`：23 路径、906 新增 / 21 删除，包含完整七提交累计差异。Standards PASS（hard 0 / 非阻断 smell 1），Spec PASS（missing 0 / partial 0 / scope 0 / wrong 0）；两位探子均终态 complete，原文摘记分别保存在 `69-review-fifth.md`。除再次核验完整本票需求，还核对旧注入 Host 启动兼容与显式 OAuth 缺运行绑定拒绝；最新运行结果来自现存回执核读，未把静态评审当成新测试。
 
-原计划全量一次；新增回归要求修复并验证最终候选，因此首次 FAIL 保留为修复前证据，后续实际 Pi/浏览器与完整范围评审重新核对，再为最终候选执行全量。最新补充 C/P/B 已 PASS，完整范围第五轮评审待完成，最终全量尚未运行；不以定点 PASS 或本票既有 PASS 覆盖上述 FAIL。
+带入历史全量结果为 **1626 总计 / 1616 pass / 3 fail / 1 cancelled / 6 skip，exit 1**。首次批末全量在 `6a60cebab917f2636efab84f724d3ad85b17e0f8` 的实际工作树运行：**1678 总计 / 1653 pass / 19 fail / 0 cancelled / 6 skip，exit 1，370.36 秒**（`batch-full-node24.json` / `.log`）。全量期间 1660 个候选文件 SHA 无漂移；19 个失败都来自新 Host OAuth 构造器对 stack.root 的无条件 path.join，使原有注入入口不能启动，完整错误保存在 `batch-full-node24-failures.json`。历史失败基线保持独立，不以本轮新失败覆盖原始原因。最小修复仅让 SDK 路径在根路径存在时构造；显式 OAuth 操作仍由 loadNativeMcp 对绑定缺失拒绝，不把假 SDK 注入旧夹具、不弱化断言。修复后原有六文件在 Node22/24 分别 **42/42 PASS**，四范围 typecheck PASS（`69-host-compat-node22`、`69-host-compat-node24`、`69-host-compat-typecheck`）。
+
+原计划全量一次；新增回归要求修复并验证最终候选，因此首次 FAIL 保留为修复前证据，后续实际 Pi/浏览器与完整范围评审重新核对，再为最终候选执行全量。最新补充 C/P/B 与第五轮 Standards/Spec 已 PASS，最终全量尚未运行；不以定点 PASS 或本票既有 PASS 覆盖上述 FAIL。
 
 I / 完整候选安装、L / 真实第三方 OAuth 或实际外部服务、remote CI、Full / 发布分发、U2：NOT_RUN。受控协议与浏览器证据不代实际第三方登录；#19 总规格和其他工单仍各自按其验收与依赖推进。
