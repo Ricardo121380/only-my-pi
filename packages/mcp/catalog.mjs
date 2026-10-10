@@ -67,7 +67,24 @@ export class McpCatalog {
   async snapshot(projectPath) {
     const state = await this.read(), key = projectPath ? digest(projectPath) : null, project = key ? state.projects[key] ?? {} : {};
     const entries = { ...state.defaults, ...project };
+    const flows = await this.oauthFlows(), authentication = {};
+    for (const server of Object.values(entries)) {
+      if (server.transport !== "streamable-http") continue;
+      const ref = server.credentialRefs.MCP_TOKEN ?? null, target = targetDigest(server);
+      const flow = flows[this.key(projectPath, server.name)];
+      const ownFlow = flow?.targetDigest === target && flow.ref === ref ? flow : null;
+      let status = "not_connected";
+      if (ref) {
+        try {
+          const credential = await this.boundCredential(server, projectPath, state);
+          status = credential.oauth ? credential.oauth.tokensExpireAt !== undefined && credential.oauth.tokensExpireAt <= Date.now() || state.invalidCredentials?.[ref] ? "expired" : "connected" : "token";
+        } catch { status = state.revokedCredentials?.[ref] ? "revoked" : "binding_changed"; }
+      }
+      if (ownFlow?.kind === "refresh" && ownFlow.status !== "stored" && !["revoked", "binding_changed"].includes(status)) status = "refresh_required";
+      authentication[server.name] = { state: status, ref, ...(ownFlow ? { flow: ownFlow } : {}) };
+    }
     return { protocol: MCP_PROTOCOL, revision: state.revision, projectPath: projectPath ?? null, limits: MCP_LIMITS,
+      authentication,
       servers: Object.values(entries).map((server) => ({ ...server, source: Object.hasOwn(project, server.name) ? "project" : "default",
         revocations: Object.fromEntries((Object.hasOwn(project, server.name) ? [this.key(projectPath, server.name)] : [this.key(null, server.name), this.key(projectPath, server.name)]).map((key) => [key, state.revoked[key] ?? 0])), targetDigest: targetDigest(server) })) };
   }
@@ -90,12 +107,12 @@ export class McpCatalog {
     return { protocol: MCP_PROTOCOL, revision: current.revision, digest: digest(source), servers,
       differences: servers.map((server) => ({ name: server.name, status: current.servers.some((old) => old.name === server.name) ? "existing" : "new" })) };
   }
-  async mutate(revision, update) {
+  async mutate(revision, update, options) {
     if (!Number.isSafeInteger(revision) || revision < 0) throw mcpError("MCP_REVISION_INVALID");
     return withConfigLock(this.configRoot, "mcp-config", async () => {
       const state = await this.read(); if (state.revision !== revision) throw mcpError("MCP_REVISION_CONFLICT", 409);
       await update(state); state.revision++;
-      await atomicWriteJson(this.configRoot, this.file, state); return state.revision;
+      await atomicWriteJson(this.configRoot, this.file, state, options); return state.revision;
     });
   }
   async action(input, projectPath) {
@@ -153,11 +170,57 @@ export class McpCatalog {
     return this.snapshot(projectPath);
   }
   async current(server) { const state = await this.read(); return Object.entries(server.revocations).every(([key, epoch]) => (state.revoked[key] ?? 0) === epoch); }
+  async oauthFlows() {
+    return (await readJsonObject(this.configRoot, path.join(this.configRoot, "only-my-pi/mcp/oauth-status.json"), { allowMissing: true }))?.flows ?? {};
+  }
+  async saveOAuthFlow(flow) {
+    await withConfigLock(this.configRoot, { lockDirectory: path.join(this.configRoot, "only-my-pi/locks/mcp-oauth-status.lock") }, async () => {
+      const flows = await this.oauthFlows(); flows[this.key(flow.projectPath, flow.name)] = flow;
+      const entries = Object.entries(flows).sort((a, b) => b[1].updatedAt.localeCompare(a[1].updatedAt)).slice(0, 32);
+      await atomicWriteJson(this.configRoot, path.join(this.configRoot, "only-my-pi/mcp/oauth-status.json"), { version: 1, flows: Object.fromEntries(entries) });
+    });
+  }
+  async boundCredential(server, projectPath, state, ref = server.credentialRefs.MCP_TOKEN) {
+    state ??= await this.read();
+    const credential = await readJsonObject(this.configRoot, path.join(this.configRoot, "only-my-pi/mcp/credentials", `${ref}.json`));
+    if (state.revokedCredentials?.[ref] || credential.version !== 1 || credential.projectPath !== projectPath || credential.name !== server.name || credential.targetDigest !== (server.targetDigest ?? targetDigest(server)) || typeof credential.value !== "string") throw mcpError("MCP_CREDENTIAL_BINDING_CHANGED", 409);
+    return credential;
+  }
+  async storeOAuth(binding, oauth, signal) {
+    if (Buffer.byteLength(JSON.stringify(oauth)) > MCP_LIMITS.outputBytes || !bounded(oauth.tokens?.access_token, 8192) || !oauth.tokens.access_token || oauth.tokens.token_type.toLowerCase() !== "bearer"
+      || oauth.tokens.refresh_token !== undefined && !bounded(oauth.tokens.refresh_token, 8192) || oauth.tokensExpireAt !== undefined && (!Number.isFinite(oauth.tokensExpireAt) || oauth.tokensExpireAt <= Date.now())) throw mcpError("MCP_OAUTH_TOKEN_INVALID");
+    const ref = `c_${randomUUID().replaceAll("-", "")}`, check = () => { if (signal.aborted) throw mcpError("MCP_OAUTH_CANCELLED"); };
+    await this.mutate(binding.revision, async (state) => {
+      check(); const key = digest(binding.projectPath), server = state.projects[key]?.[binding.name] ?? state.defaults[binding.name];
+      if (!server || targetDigest(server) !== binding.targetDigest || (server.credentialRefs.MCP_TOKEN ?? null) !== binding.ref) throw mcpError("MCP_CREDENTIAL_BINDING_CHANGED", 409);
+      const privateState = structuredClone(oauth); delete privateState.codeVerifier; delete privateState.oauthState;
+      await atomicWriteJson(this.configRoot, path.join(this.configRoot, "only-my-pi/mcp/credentials", `${ref}.json`), { version: 1, projectPath: binding.projectPath, name: binding.name, targetDigest: binding.targetDigest, value: oauth.tokens.access_token, oauth: privateState });
+      check(); state.revokedCredentials ??= {}; if (binding.ref) state.revokedCredentials[binding.ref] = true;
+      state.projects[key] ??= {}; state.projects[key][binding.name] = { ...server, credentialRefs: { MCP_TOKEN: ref } };
+    }, { beforeRename: check });
+    return ref;
+  }
+  async invalidateOAuth(server, projectPath) {
+    const ref = server.credentialRefs?.MCP_TOKEN ?? server.ref; if (!ref) return;
+    await withConfigLock(this.configRoot, "mcp-config", async () => {
+      const state = await this.read(), current = state.projects[digest(projectPath)]?.[server.name] ?? state.defaults[server.name];
+      if (!current || current.credentialRefs.MCP_TOKEN !== ref || targetDigest(current) !== (server.targetDigest ?? targetDigest(server))) return;
+      const credential = await this.boundCredential(current, projectPath, state);
+      if (!credential.oauth) return;
+      state.invalidCredentials ??= {}; state.invalidCredentials[ref] = true; state.revision++;
+      await atomicWriteJson(this.configRoot, this.file, state);
+    });
+  }
   async credentials(server, projectPath) {
     const env = {}, secrets = [], state = await this.read();
     for (const [key, ref] of Object.entries(server.credentialRefs)) {
-      const credential = await readJsonObject(this.configRoot, path.join(this.configRoot, "only-my-pi/mcp/credentials", `${ref}.json`));
-      if (state.revokedCredentials?.[ref] || credential.version !== 1 || credential.projectPath !== projectPath || credential.name !== server.name || credential.targetDigest !== server.targetDigest || typeof credential.value !== "string") throw mcpError("MCP_CREDENTIAL_BINDING_CHANGED", 409);
+      const credential = await this.boundCredential(server, projectPath, state, ref);
+      if (credential.oauth) {
+        const flow = (await this.oauthFlows())[this.key(projectPath, server.name)];
+        if (state.invalidCredentials?.[ref] || credential.oauth.tokensExpireAt !== undefined && credential.oauth.tokensExpireAt <= Date.now()
+          || flow?.ref === ref && flow.targetDigest === server.targetDigest && flow.kind === "refresh" && flow.status !== "stored") throw mcpError("MCP_OAUTH_LOGIN_REQUIRED", 409);
+        secrets.push(...[credential.oauth.tokens?.refresh_token, credential.oauth.tokens?.id_token, credential.oauth.clientInformation?.client_secret].filter(Boolean));
+      }
       env[key] = credential.value; secrets.push(credential.value);
     }
     return { env, secrets };

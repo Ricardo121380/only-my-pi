@@ -24,6 +24,7 @@ import { projectRunRecord } from "../direct-agent/contracts.mjs";
 import { createRunRecordStore } from "../run-management/index.mjs";
 import { McpCatalog } from "../mcp/catalog.mjs";
 import { McpRuns } from "../mcp/runs.mjs";
+import { McpOAuth } from "../mcp/oauth.mjs";
 
 const secret = () => randomBytes(32).toString("hex");
 const equal = (a, b) => typeof a === "string" && typeof b === "string" && timingSafeEqual(createHash("sha256").update(a).digest(), createHash("sha256").update(b).digest());
@@ -106,6 +107,8 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
   try { await terminals.load(); } catch (error) { await inputs.close(); await lock.release(); throw error; }
   const accounts = new AccountCatalog(configRoot);
   const mcp = new McpCatalog(configRoot);
+  const mcpOAuth = new McpOAuth({ catalog: mcp, sdkFile: path.join(stack.root, "pi/dist/index.js") });
+  try { await mcpOAuth.initialize(); } catch (error) { await inputs.close(); await lock.release(); throw error; }
   const oauth = new AccountOAuth({ stack, configRoot, accounts, env });
   let modelCache, modelTime = 0;
   const modelAbort = new AbortController();
@@ -203,6 +206,11 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
       if (url.pathname.startsWith("/api/")) {
         if (stopping) throw hostError("HOST_STOPPING", 503);
         if (!authenticated(req)) throw hostError("AUTH_REQUIRED", 401);
+        if (url.pathname === "/api/mcp-oauth/open") {
+          if (req.method !== "GET" || req.headers["sec-fetch-site"] === "cross-site" || [...url.searchParams.keys()].join() !== "flowId") throw hostError("HOST_ORIGIN_DENIED", 403);
+          const location = await mcpOAuth.open(url.searchParams.get("flowId"));
+          res.writeHead(303, { location, "cache-control": "no-store", "referrer-policy": "no-referrer" }); return res.end();
+        }
         if (url.pathname === "/api/mcp") {
           if (req.method !== "POST") throw hostError("METHOD_DENIED", 405);
           if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
@@ -210,7 +218,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           const input = await authorizedBody(req);
           const project = input?.projectId ? catalog.project(input.projectId) : null;
           if (project) await fs.access(project.path);
-          return response(res, 200, input.type === "status" ? await new McpRuns(configRoot).status(project?.path) : await mcp.action(input, project?.path));
+          return response(res, 200, input.type === "status" ? await new McpRuns(configRoot).status(project?.path) : input.type?.startsWith("oauth") ? await mcpOAuth.action(input, project?.path) : await mcp.action(input, project?.path));
         }
         if (req.method === "POST" && url.pathname === "/api/logout") {
           if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
@@ -347,7 +355,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
     closed = (async () => {
       clearInterval(scanTimer); clearInterval(sessionTimer); clearTimeout(flushTimer); modelAbort.abort();
       authAbort.abort();
-      await Promise.allSettled([...authOperations, oauth.stop()]);
+      await Promise.allSettled([...authOperations, oauth.stop(), mcpOAuth.stop()]);
       try {
         const results = await Promise.allSettled([tasks.stop(), manual.stop(), terminals.stop()]);
         await inputController.close();

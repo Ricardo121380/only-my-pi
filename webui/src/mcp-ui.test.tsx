@@ -13,6 +13,28 @@ it("readonly MCP has explicit decisions, blocks duplicate answers and claims no 
   expect(fetch).toHaveBeenCalledTimes(1); expect(JSON.parse(String(fetch.mock.calls[0][1]?.body))).toEqual({ type: "answerApproval", taskId: "task", approvalId: "mcp-approval", value: "仅本次" });
   expect(screen.queryByText("已完成")).toBeNull();
 });
+
+it("MCP OAuth opens only after explicit login and exposes cancellation without storing an authorization URL", async () => {
+  HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+  HTMLDialogElement.prototype.close = function () { this.open = false; };
+  let started = false;
+  const flow = { flowId: "flow", name: "remote", projectPath: "/project", targetDigest: "target", ref: null, kind: "login", status: "waiting", events: [], authorizationOrigin: "https://issuer.example" };
+  const configuration = () => ({ protocol: 1, revision: 1, projectPath: "/project", servers: [{ name: "remote", transport: "streamable-http", url: "https://mcp.example/mcp", enabled: false, credentialRefs: {}, tools: [], source: "project", targetDigest: "target" }], authentication: { remote: { state: "not_connected", ref: null, ...(started ? { flow } : {}) } } });
+  const fetch = vi.fn(async (_url: string, init?: RequestInit) => {
+    const input = JSON.parse(String(init?.body));
+    if (input.type === "oauthStart") { started = true; return { ok: true, json: async () => flow }; }
+    return { ok: true, json: async () => input.type === "list" ? configuration() : { protocol: 1, runs: [] } };
+  }); vi.stubGlobal("fetch", fetch);
+  render(<McpPanel projectId="project" onClose={() => {}} />);
+  await screen.findByText("开始 OAuth 登录");
+  expect(fetch.mock.calls.some(([, init]) => String(init?.body).includes("oauthStart"))).toBe(false);
+  expect(screen.queryByText("打开授权页面")).toBeNull();
+  fireEvent.click(screen.getByText("开始 OAuth 登录")); fireEvent.click(screen.getByText("开始 OAuth 登录"));
+  const link = await screen.findByText("打开授权页面");
+  expect(link.getAttribute("href")).toBe("/api/mcp-oauth/open?flowId=flow");
+  expect(screen.getByText("取消 OAuth 登录")).toBeTruthy();
+  expect(fetch.mock.calls.filter(([, init]) => String(init?.body).includes("oauthStart"))).toHaveLength(1);
+});
 it("readonly MCP cannot approve when disconnected or after cancellation", () => {
   const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
   const { rerender } = render(<TaskControl task={task} connected={false} />);

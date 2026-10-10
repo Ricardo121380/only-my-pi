@@ -1,6 +1,8 @@
 .mcp-dialog { width:min(760px,calc(100vw - 24px)); }
 .mcp-panel { font-size:14px; line-height:1.6; overflow-wrap:anywhere; }
 .mcp-panel :is(button,input,select,summary) { min-height:44px; }
+.mcp-panel a.softbtn { display:inline-flex; align-items:center; min-height:44px; text-decoration:none; }
+.mcp-panel a.softbtn:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 .mcp-panel :is(button,input,select,textarea,summary):focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 .mcp-panel .field { display:flex; flex-direction:column; gap:6px; margin:12px 0; }
 .mcp-panel :is(input,select,textarea) { width:100%; min-width:0; color:var(--text); background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:10px; font:inherit; }

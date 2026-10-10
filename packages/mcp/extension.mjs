@@ -54,6 +54,7 @@ export function installOmpMcp(pi, { configRoot, controller }) {
     const remote = server.transport === "streamable-http";
     const record = { server: server.name, transport: server.transport, targetDigest: server.targetDigest, callId, kind: callId ? remote ? "remote" : writeHandle ? "write" : "read" : "discovery", pid: null, status: "starting" };
     const transport = remote ? new ControlledHttpTransport({ NativeTransport: NativeHttpTransport, server, ...credentials, record, save, signal,
+      onUnauthorized: () => catalog.invalidateOAuth(server, snapshot.projectPath),
       authorize: async (expected) => {
         if (closing || revoked || !await catalog.current(server)) throw mcpError("MCP_AUTHORIZATION_REVOKED");
         if (digest((await catalog.credentials(server, snapshot.projectPath)).env) !== expected) throw mcpError("MCP_CREDENTIAL_BINDING_CHANGED");

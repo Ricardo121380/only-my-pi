@@ -41,7 +41,7 @@ export async function createMcpHost({ respond = ({ body, res }) => providerReply
   const project = await request("/api/command", { type: "addProject", path: f.project });
   const serverFile = fileURLToPath(new URL("./mcp-server.mjs", import.meta.url));
   const server = { name: "local", transport: "stdio", enabled: false, command: process.execPath, args: [serverFile], codePaths: [serverFile], env: {}, credentialRefs: {}, tools: [{ name: "read_file", effect: "read", pathArgument: "path", paths: ["README.md"] }] };
-  return { ...f, root, requests, providerOrigin, stack, server, projectId: project.projectId, get host() { return host; }, request,
+  return { ...f, root, requests, providerOrigin, stack, server, projectId: project.projectId, get host() { return host; }, get cookie() { return cookie; }, request,
     mcp: (input, expected) => request("/api/mcp", { ...input, projectId: project.projectId }, expected),
     start: (extra = {}) => request("/api/command", { type: "startTask", requestId: randomUUID(), projectId: project.projectId, accountId: "cli-readonly", model: "fixture/one", prompt: "read selected file via MCP", ...extra }, 202),
     task: (id) => request(`/api/task?taskId=${id}`),

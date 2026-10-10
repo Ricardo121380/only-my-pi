@@ -6,8 +6,8 @@ const safeError = (error) => mcpError(/^[A-Z_]+$/u.test(error?.code ?? "") ? err
 // Pi owns Streamable HTTP protocol semantics. OMP fixes the exact target,
 // credential binding and physical request bounds, and never retries a POST.
 export class ControlledHttpTransport {
-  constructor({ NativeTransport, server, env, secrets, record, save, authorize, signal }) {
-    Object.assign(this, { server, secrets, record, save, authorize, signal });
+  constructor({ NativeTransport, server, env, secrets, record, save, authorize, onUnauthorized, signal }) {
+    Object.assign(this, { server, secrets, record, save, authorize, onUnauthorized, signal });
     this.credentialDigest = digest(env); this.errors = new Set(); this.abort = new AbortController();
     this.native = new NativeTransport({ url: server.url, headers: env.MCP_TOKEN ? { Authorization: `Bearer ${env.MCP_TOKEN}` } : {},
       fetch: (input, init) => this.fetch(input, init), openGetStream: false, reconnect: { maxRetries: 0 }, maxMessageBytes: MCP_LIMITS.outputBytes });
@@ -48,7 +48,7 @@ export class ControlledHttpTransport {
       }
       response = await fetch(target, { ...init, redirect: "manual", signal });
       if (response.status >= 300 && response.status < 400) throw mcpError("MCP_HTTP_REDIRECT_DENIED");
-      if (response.status === 401 || response.status === 403) throw mcpError("MCP_HTTP_AUTH_REQUIRED");
+      if (response.status === 401 || response.status === 403) { await this.onUnauthorized?.(); throw mcpError("MCP_HTTP_AUTH_REQUIRED"); }
       const session = response.headers.get("mcp-session-id");
       if (session && (session.length > 512 || /[\0\r\n]/u.test(session))) throw mcpError("MCP_HTTP_SESSION_INVALID");
       const reader = response.body?.getReader(), chunks = []; let bytes = 0;
