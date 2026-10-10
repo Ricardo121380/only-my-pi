@@ -29,8 +29,11 @@ export interface StaticProvider { baseUrl: string; api: "openai-completions" | "
 export type AccountAction = { type: "status" | "logout" | "remove" | "oauthStart" } | { type: "apiKey"; key: string } | { type: "rename"; name: string } | { type: "configure"; config: StaticProvider } | { type: "oauthAnswer"; flowId: string; promptId: string; value: string } | { type: "oauthCancel"; flowId: string };
 export interface OAuthFlow { flowId: string; accountId: string; status: "starting" | "waiting" | "awaiting_input" | "cancelling" | "stored" | "stored_sync_failed" | "failed" | "cancelled" | "timed_out"; prompt: { promptId: string; type: "text" | "secret" | "manual_code" | "select"; options?: { id: string; label: string }[] } | null; event: { type: "auth_url" | "device_code"; url: string; userCode?: string } | null }
 export interface AccountDirectory { protocol: 1; authentication: "api_key"; cliReference: { accountId: "cli-readonly"; name: string; readOnly: true }; accounts: GuiAccount[] }
-export interface Message { id: string; role: "user" | "assistant" | "toolResult"; text: string; toolName?: string; isError?: boolean; outputAvailable?: boolean; truncated?: boolean }
+export interface Message { id: string; role: "user" | "assistant" | "toolResult"; text: string; toolName?: string; isError?: boolean; outputAvailable?: boolean; truncated?: boolean; durationMs?: number; stopReason?: string | null }
 export interface HostTask {
+  settlement?: { aborted: boolean } | null;
+  inputFeedback?: { inputId: string | null; source: "pi-prompt" | "omp-custom-message"; disposition: "handled" | "queued" | "started" }[] | null;
+  inputId?: string; originDraftInputId?: string; originDraftSessionId?: string | null;
   orchestration?: { maximumConcurrency: number | null; maximumChildren: number | null; totalChildren: number | null; writerUsed: boolean;
     budget: { scope: "process-child-delegations"; mainAgentIncluded: false; status: string; limits: Record<string, number | null>; used: Record<string, number | null> };
     children: { label: string; agent: string | null; status: string; toolCount: number | null; tokens: number | null }[] } | null;
@@ -45,8 +48,50 @@ export interface HostTask {
 export type TaskSummary = Omit<HostTask, "messages" | "partial">;
 export interface Session { sessionKey: string; sessionId: string; projectId: string; timestamp: string; name: string; readOnly: true }
 export interface HostSnapshot { protocol: number; version: string; epoch: string; seq: number; indexing: boolean;
-  capabilities?: { controlled: boolean };
+  capabilities?: { controlled: boolean; inputs?: { protocol: 1; materials: false; resourceRevision: number } };
   runtime: { stackId: string; sourceCommit: string | null }; projects: Project[]; tasks: TaskSummary[]; diagnostics: { code: string; sessionKey?: string }[] }
 export type HostEvent = ({ type: "snapshot" } & HostSnapshot)
   | { type: "task"; epoch: string; seq: number; data: HostTask }
   | { type: "projects"; epoch: string; seq: number; data: Project[] };
+
+/** Host-private input storage; not an executable browser command or a grant. */
+export interface InputScopeV1 { projectId: string; sessionId: string | null }
+export interface InputBindingV1 {
+  accountId: string; modelId: string; thinking: ThinkingLevel;
+  mode: "readonly" | "controlled"; resourceRevision: number;
+}
+export interface InputContentV1 {
+  inputId: string; delivery: "prompt" | "steer" | "queue"; text: string;
+  materialSnapshotIds: string[]; binding: InputBindingV1;
+}
+export type InputStateV1 = "draft" | "queued" | "dispatching" | "accepted" | "consumed" | "paused" | "unknown" | "removed";
+export interface InputRecordV1 extends InputContentV1, InputScopeV1 {
+  schemaVersion: 1; revision: number; taskId: string | null; contentDigest: string;
+  state: InputStateV1; consumedEntryId: string | null; pauseReason: string | null;
+  createdAt: string; updatedAt: string;
+}
+export interface DraftShardV1 { schemaVersion: 1; kind: "draft"; revision: number; scope: InputScopeV1; draft: InputRecordV1 | null }
+export interface QueueShardV1 { schemaVersion: 1; kind: "queue"; revision: number; scope: InputScopeV1; items: InputRecordV1[] }
+export type InputShardV1 = DraftShardV1 | QueueShardV1;
+export interface InputRevision { expectedRevision: number }
+export interface InputItemRevision extends InputRevision { expectedInputRevision: number }
+export interface InputTransition extends InputItemRevision {
+  state: Exclude<InputStateV1, "draft">; taskId?: string; consumedEntryId?: string; pauseReason?: string;
+}
+
+/** Targets are resolved by Host; a browser cannot supply a history file path. */
+export type InputTargetV1 = { projectId: string; sessionKey: string | null } | { projectId: string; taskId: string };
+export type InputCommandV1 =
+  | { type: "getInputs"; target: InputTargetV1 }
+  | { type: "submitPrompt"; target: { projectId: string; sessionKey: string | null }; requestId: string; input: InputContentV1; expectedRevision: number; expectedInputRevision: number }
+  | { type: "saveDraft"; target: InputTargetV1; input: InputContentV1; expectedRevision: number }
+  | { type: "clearDraft"; target: InputTargetV1; expectedRevision: number }
+  | { type: "enqueueInput"; target: InputTargetV1; predecessorTaskId: string; input: InputContentV1; expectedRevision: number }
+  | { type: "deliverSupplement"; target: InputTargetV1; taskId: string; input: InputContentV1; expectedRevision: number }
+  | { type: "editQueuedInput"; target: InputTargetV1; input: InputContentV1; expectedRevision: number; expectedInputRevision: number }
+  | { type: "removeQueuedInput"; target: InputTargetV1; inputId: string; expectedRevision: number; expectedInputRevision: number }
+  | { type: "resumeQueue"; target: InputTargetV1; expectedRevision: number }
+  | { type: "reconcileInput"; target: InputTargetV1; inputId: string };
+export interface InputReceiptV1 { inputId: string; taskId: string; contentDigest: string; entryId: string }
+export interface InputDeliveryV1 { status: "accepted" | "consumed" | "unknown"; receipt?: InputReceiptV1; feedback?: { source: "omp-custom-message"; disposition: "queued" | "started" } }
+export interface InputDirtyEventV1 { type: "inputs"; inputProtocol: 1; epoch: string; inputSeq: number; data: { scope: InputScopeV1 } }

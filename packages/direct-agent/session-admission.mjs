@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { acquireOwnership, ownershipError } from "../host/ownership.mjs";
+import { readSessionSnapshot, openValidatedSession } from "./session-history.mjs";
 import { projectExecutionState } from "../project-gates/index.mjs";
 
 // Admission reads bytes only. SessionManager.open is deliberately forbidden here:
@@ -115,10 +116,10 @@ export class SessionAdmissions {
         for (const file of files.filter((file) => file.endsWith(".jsonl"))) {
           if ((await readIdentity(path.join(sessionDir, file))).id === id) throw ownershipError("SESSION_ID_EXISTS");
         }
-        const { SessionManager } = await this.loadSdk();
+        const sdk = await this.loadSdk(), { SessionManager } = sdk;
         if (leafId !== undefined && !sourceFile) throw ownershipError("SESSION_TARGET_INVALID");
         if (leafId !== undefined) {
-          const original = SessionManager.open((await source).file);
+          const { manager: original } = await readSessionSnapshot((await source).file, sdk);
           // Let Pi project labels, compaction pointers and the selected branch.
           // Its generated ID exists only in memory, never as an unlocked file.
           const projection = SessionManager.inMemory(cwd, undefined,
@@ -135,6 +136,7 @@ export class SessionAdmissions {
           this.#createdManagers.add(manager);
           return manager;
         }
+        if (sourceFile) await readSessionSnapshot((await source).file, sdk);
         const manager = sourceFile
           ? SessionManager.forkFrom((await source).file, cwd, sessionDir, { id })
           : SessionManager.create(cwd, sessionDir, { id, parentSession });
@@ -210,7 +212,7 @@ export class SessionAdmissions {
     return operation;
   }
   async continueRecent(cwd, sessionDir) {
-    const { SessionManager } = await this.loadSdk();
+    const sdk = await this.loadSdk(), { SessionManager } = sdk;
     // Pi's picker sorts conversation activity; --continue instead uses file
     // mtime. Re-sort discovery results rather than opening candidates to inspect.
     const sessions = await SessionManager.list(cwd, sessionDir);
@@ -221,7 +223,7 @@ export class SessionAdmissions {
     if (!candidates.length) return this.create(cwd, sessionDir);
     const lease = await this.admit(candidates[0].file);
     // No fallback to an older session when the most recent one is occupied.
-    return SessionManager.open(lease.file, sessionDir);
+    return openValidatedSession(lease.file, sdk, sessionDir, undefined, this.configRoot);
   }
   async close() {
     this.closing = true;

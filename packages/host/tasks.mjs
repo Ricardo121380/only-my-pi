@@ -7,10 +7,15 @@ import { acquireOwnership, groupAlive } from "./ownership.mjs";
 import { hostError, terminal, textContent, CLI_ACCOUNT_ID } from "./contracts.mjs";
 import { projectPath } from "./inspector.mjs";
 import { emptyUsage, recordUsage } from "./usage.mjs";
+import { INPUT_CARRIER } from "./input-protocol.mjs";
+import { supportsThinking } from "./models.mjs";
+
+const duration = (value) => typeof value === "number" && Number.isFinite(value) && value >= 0 ? { durationMs: value } : {};
 
 export class HostTasks extends EventEmitter {
   constructor({ configRoot, stack, catalog, models, accounts, allowControlled = false, workerFactory = (options) => new RpcWorker(options), env = process.env }) {
     super(); Object.assign(this, { configRoot, stack, catalog, models, accounts, allowControlled, workerFactory, env });
+    this.models = models;
     this.tasks = new Map(); this.workers = new Map(); this.requests = new Map(); this.saving = Promise.resolve(); this.closing = false;
     this.running = new Map();
     this.accountReleases = new Map();
@@ -34,7 +39,7 @@ export class HostTasks extends EventEmitter {
   }
   summary(task) { return { taskId: task.taskId, requestId: task.requestId, projectId: task.projectId, accountId: task.accountId ?? null, model: task.model, prompt: task.prompt.slice(0, 200), status: task.status,
     thinkingLevel: task.thinkingLevel ?? null, requestedThinkingLevel: task.requestedThinkingLevel ?? null, usage: task.usage ?? null,
-    mode: task.mode ?? "readonly", access: task.access ?? "inspect", approvals: task.approvals ?? [], orchestration: task.orchestration ?? null, sessionId: task.sessionId, createdAt: task.createdAt, updatedAt: task.updatedAt, error: task.error ?? null, tool: task.tool ?? null }; }
+    mode: task.mode ?? "readonly", access: task.access ?? "inspect", approvals: task.approvals ?? [], orchestration: task.orchestration ?? null, sessionId: task.sessionId, settlement: task.settlement ?? null, inputFeedback: task.inputFeedback ?? null, ...(task.inputId ? { inputId: task.inputId, originDraftInputId: task.originDraftInputId, originDraftSessionId: task.originDraftSessionId } : {}), createdAt: task.createdAt, updatedAt: task.updatedAt, error: task.error ?? null, tool: task.tool ?? null }; }
   public(task) { return structuredClone({ ...this.summary(task), prompt: task.prompt, partial: task.partial ?? "", messages: task.messages.slice(-50).map((m) => ({ ...m, text: m.text.slice(0, 16384) })) }); }
   snapshot() { return [...this.tasks.values()].slice(-100).map((t) => this.summary(t)); }
   persist() {
@@ -47,7 +52,8 @@ export class HostTasks extends EventEmitter {
     this.emit("change", this.public(task));
     if (!this.checkpoint) this.checkpoint = setTimeout(() => { this.checkpoint = null; void this.persist().catch(() => { this.persistenceError = true; }); }, 250);
   }
-  async start(command) {
+  /** @param {any} command @param {{inputRecord?: import('./contracts.d.ts').InputRecordV1; beforeRun?: (task: any) => Promise<import('./contracts.d.ts').InputRecordV1 | undefined>; submission?: {inputId:string; originDraftInputId:string; originDraftSessionId:string|null}; beforePrompt?: (task: any) => Promise<import('./contracts.d.ts').InputRecordV1>}} [options] */
+  async start(command, { inputRecord, beforeRun, submission, beforePrompt } = {}) {
     const mode = command.mode ?? "readonly";
     if (!["readonly", "controlled"].includes(mode) || (mode === "controlled" && !this.allowControlled)) throw hostError("CONTROLLED_MODE_UNAVAILABLE", 409);
     if (this.accounts && (typeof command.accountId !== "string" || !command.accountId)) throw hostError("ACCOUNT_BINDING_REQUIRED", 409);
@@ -55,7 +61,7 @@ export class HostTasks extends EventEmitter {
     if (this.closing) throw hostError("HOST_STOPPING", 409);
     if (this.persistenceError) throw hostError("HOST_STORAGE_FAILED", 503);
     const prior = this.requests.get(command.requestId);
-    const requestDigest = createHash("sha256").update(JSON.stringify([command.projectId, command.model, command.prompt, ...(this.accounts ? [command.accountId] : []), ...(mode === "controlled" ? [mode] : []), ...(command.resumeSessionKey ? [command.resumeSessionKey] : []), ...(command.thinkingLevel !== undefined ? [{ thinkingLevel: command.thinkingLevel }] : [])])).digest("hex");
+    const requestDigest = createHash("sha256").update(JSON.stringify([command.projectId, command.model, command.prompt, ...(this.accounts ? [command.accountId] : []), ...(mode === "controlled" ? [mode] : []), ...(command.resumeSessionKey ? [command.resumeSessionKey] : []), ...(command.thinkingLevel !== undefined ? [{ thinkingLevel: command.thinkingLevel }] : []), ...(inputRecord ? [inputRecord.contentDigest] : []), ...(submission ? [submission.inputId, submission.originDraftInputId, submission.originDraftSessionId] : [])])).digest("hex");
     const existing = (id) => { const task = this.tasks.get(id); if (task.requestDigest !== requestDigest) throw hostError("REQUEST_ID_CONFLICT", 409); return this.public(task); };
     if (prior) return existing(prior);
     if (this.tasks.size >= 1000 || this.workers.size >= 4) throw hostError("TASK_CAPACITY_REACHED", 429);
@@ -72,13 +78,13 @@ export class HostTasks extends EventEmitter {
     }
     const model = (await this.models(command.accountId)).find((m) => m.id === command.model);
     if (!model) throw hostError("MODEL_UNAVAILABLE", 409);
-    if (command.thinkingLevel !== undefined && !model.thinkingLevels?.includes(command.thinkingLevel)) throw hostError("THINKING_LEVEL_UNAVAILABLE", 409);
+    if (command.thinkingLevel !== undefined && !supportsThinking(model, command.thinkingLevel)) throw hostError("THINKING_LEVEL_UNAVAILABLE", 409);
     if (this.requests.has(command.requestId)) return existing(this.requests.get(command.requestId));
     if (this.closing) throw hostError("HOST_STOPPING", 409);
     if ([...this.tasks.values()].filter((t) => !terminal(t.status)).length >= 4) throw hostError("TASK_CAPACITY_REACHED", 429);
     const task = { taskId: randomUUID(), requestId: command.requestId, requestDigest, projectId: project.projectId, model: command.model, ...(this.accounts ? { accountId: command.accountId } : {}),
       requestedThinkingLevel: command.thinkingLevel ?? null, thinkingLevel: null, usage: emptyUsage(),
-      mode, access: "inspect", approvals: [], prompt: command.prompt, status: "starting", sessionId: resume?.sessionId ?? null, resumeSessionKey: command.resumeSessionKey ?? null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      mode, access: "inspect", approvals: [], resourceRevision: inputRecord?.binding.resourceRevision ?? 0, ...(submission ?? {}), prompt: command.prompt, status: "starting", sessionId: resume?.sessionId ?? null, resumeSessionKey: command.resumeSessionKey ?? null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     this.requests.set(command.requestId, task.taskId); this.tasks.set(task.taskId, task);
     try { await this.persist(); }
     catch {
@@ -87,22 +93,40 @@ export class HostTasks extends EventEmitter {
       throw hostError("HOST_STORAGE_FAILED", 503);
     }
     if (release) { this.accountReleases.set(task.taskId, release); transferred = true; }
+    if (beforeRun) {
+      try { inputRecord = await beforeRun(task); if (!inputRecord || inputRecord.taskId !== task.taskId || inputRecord.state !== "dispatching") throw hostError("INPUT_STATE_INVALID"); }
+      catch (error) {
+        task.status = "failed"; task.error = "INPUT_ADMISSION_FAILED";
+        this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId);
+        await this.persist(); this.changed(task); throw error;
+      }
+    }
     this.changed(task);
-    const running = this.run(task, project, resume).catch(async () => { task.status = "failed"; task.error = "TASK_INTERNAL_FAILURE"; this.changed(task); await this.persist().catch(() => {}); }).finally(() => this.running.delete(task.taskId));
+    const running = this.run(task, project, resume, inputRecord, beforePrompt).catch(async () => { task.status = "failed"; task.error = "TASK_INTERNAL_FAILURE"; this.changed(task); await this.persist().catch(() => {}); }).finally(() => this.running.delete(task.taskId));
     this.running.set(task.taskId, running);
     return this.public(task);
     } finally { if (!transferred) release?.(); }
   }
-  async run(task, project, resume = null) {
+  async recordInputFeedback(taskId, inputId, feedback) {
+    if (!feedback) return;
+    const task = this.tasks.get(taskId);
+    if (!task || !["pi-prompt", "omp-custom-message"].includes(feedback.source) || !["handled", "queued", "started"].includes(feedback.disposition)) throw hostError("INPUT_DELIVERY_UNCONFIRMED");
+    task.inputFeedback ??= [];
+    const prior = task.inputFeedback.find(item => item.inputId === inputId);
+    if (prior && (prior.source !== feedback.source || prior.disposition !== feedback.disposition)) throw hostError("INPUT_RECEIPT_CONFLICT");
+    if (!prior) task.inputFeedback.push({ inputId, source: feedback.source, disposition: feedback.disposition });
+    await this.persist(); this.changed(task);
+  }
+  async run(task, project, resume = null, inputRecord, beforePrompt) {
     let lease;
     const sessionRoot = path.join(this.catalog.sessionRoot, `omp-${project.projectId}`);
     let worker;
     try {
-      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, accountId: task.accountId, controlled: task.mode === "controlled", sessionRoot, resumeFile: resume?.file, env: this.env,
+      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, taskId: task.taskId, accountId: task.accountId, controlled: task.mode === "controlled", sessionRoot, resumeFile: resume?.file, env: this.env,
         onIdentity: async (identity) => { task.worker = identity; await this.persist(); } });
     } catch (error) { this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId); throw error; }
     this.workers.set(task.taskId, worker);
-    let settledResolve, failed = false, stopping = false;
+    let settledResolve, failed = false, aborted = false, stopping = false;
     const settled = new Promise((resolve) => { settledResolve = resolve; });
     const deadline = setTimeout(() => { failed = true; task.error = "TASK_TIME_LIMIT"; settledResolve(); }, 15 * 60 * 1000);
     worker.on("approvals", (approvals) => { task.approvals = terminal(task.status) || task.status === "cancelling" ? [] : approvals; this.changed(task); });
@@ -110,12 +134,14 @@ export class HostTasks extends EventEmitter {
       if (terminal(task.status) || task.status === "cancelling") return;
       task.access = state.access; task.orchestration = state.orchestration; this.changed(task);
     });
+    worker.on("input", (receipt) => this.emit("input", { taskId: task.taskId, receipt }));
     worker.on("event", (event) => {
       if (terminal(task.status)) return;
-      if (event?.type === "message_end" && ["user", "assistant"].includes(event.message?.role)) {
-        const message = event.message;
+      if (event?.type === "message_end" && (["user", "assistant"].includes(event.message?.role) || (event.message?.role === "custom" && event.message.customType === INPUT_CARRIER))) {
+        const message = event.message.role === "custom" ? { ...event.message, role: "user" } : event.message;
         if (message.role === "assistant") recordUsage(task.usage, message);
-        task.messages.push({ id: randomUUID(), role: message.role, text: textContent(message.content) });
+        task.messages.push({ id: randomUUID(), role: message.role, text: textContent(message.content), ...duration(message.durationMs), ...(message.role === "assistant" ? { stopReason: message.stopReason ?? null } : {}) });
+        if (message.stopReason === "aborted") aborted = true;
         task.partial = "";
         if (message.stopReason === "error") { failed = true; task.error = "MODEL_REQUEST_FAILED"; }
       } else if (event?.type === "message_update" && event.assistantMessageEvent?.type === "text_delta") {
@@ -125,10 +151,13 @@ export class HostTasks extends EventEmitter {
         task.tool = { name: String(event.toolName).slice(0, 128), status: "running" };
       } else if (event?.type === "tool_execution_end") {
         if (event.toolName === "request_coding_access" && event.result?.details?.status === "CODING_ACCESS_GRANTED" && !event.isError) task.access = "coding";
-        task.messages.push({ id: randomUUID(), role: "toolResult", toolName: String(event.toolName).slice(0, 128), text: textContent(event.result?.content), isError: event.isError === true });
+        task.messages.push({ id: randomUUID(), role: "toolResult", toolName: String(event.toolName).slice(0, 128), text: textContent(event.result?.content), isError: event.isError === true, ...duration(event.durationMs) });
         task.tool = null;
       } else if (event?.type === "extension_error") { failed = true; task.error = "EXTENSION_FAILED"; settledResolve(); }
-      else if (event?.type === "agent_settled") settledResolve();
+      else if (event?.type === "agent_settled") {
+        if (typeof event.aborted === "boolean") { task.settlement = { aborted: event.aborted }; aborted ||= event.aborted; }
+        settledResolve();
+      }
       task.messages = task.messages.slice(-200);
       task.updatedAt = new Date().toISOString(); this.changed(task);
     });
@@ -163,12 +192,28 @@ export class HostTasks extends EventEmitter {
         task.thinkingLevel = effective.thinkingLevel;
       } else task.thinkingLevel = state.thinkingLevel ?? null;
       if (task.status === "cancelling" || this.closing) { stopping = true; await worker.cancel(); task.status = "cancelled"; return; }
+      if (beforePrompt) {
+        inputRecord = await beforePrompt(task);
+        if (!inputRecord || inputRecord.taskId !== task.taskId || inputRecord.sessionId !== task.sessionId || inputRecord.state !== "dispatching") throw hostError("INPUT_STATE_INVALID");
+      }
+      if (task.status === "cancelling" || this.closing) { stopping = true; await worker.cancel(); task.status = "cancelled"; return; }
       task.status = "running"; this.changed(task);
-      await worker.command("prompt", { message: task.mode === "controlled" ? task.prompt : `只读分析请求。不要修改项目文件。\n\n${task.prompt}` });
+      if (inputRecord) {
+        const response = await worker.deliverInput(inputRecord);
+        if (!["accepted", "consumed"].includes(response?.status)) throw hostError("INPUT_DELIVERY_UNCONFIRMED");
+        await this.recordInputFeedback(task.taskId, inputRecord.inputId, response.feedback);
+        this.emit("inputAccepted", { taskId: task.taskId, inputId: inputRecord.inputId });
+      } else {
+        const response = await worker.command("prompt", { message: task.mode === "controlled" ? task.prompt : `只读分析请求。不要修改项目文件。\n\n${task.prompt}` });
+        if (response?.disposition !== undefined) {
+          await this.recordInputFeedback(task.taskId, null, { source: "pi-prompt", disposition: response.disposition });
+          if (response.disposition === "handled") settledResolve();
+        }
+      }
       await settled;
       stopping = true;
       await worker.stop();
-      task.status = task.status === "cancelling" ? "cancelled" : failed ? "failed" : "succeeded";
+      task.status = task.status === "cancelling" || aborted ? "cancelled" : failed ? "failed" : "succeeded";
       if (task.status === "cancelled") task.error = null;
     } catch (error) { task.status = task.status === "cancelling" ? "cancelled" : "failed"; task.error = /^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "TASK_FAILED"; }
     finally {
@@ -205,6 +250,7 @@ export class HostTasks extends EventEmitter {
   async revoke(id) {
     const task = this.tasks.get(id), worker = this.workers.get(id);
     if (!task || terminal(task.status) || task.status === "cancelling" || !worker || task.mode !== "controlled") throw hostError("RPC_CONTROL_UNAVAILABLE", 409);
+    task.inputRevoked = true; this.changed(task);
     await worker.revoke(); task.access = "inspect"; task.approvals = [];
     this.changed(task); await this.persist(); return this.public(task);
   }

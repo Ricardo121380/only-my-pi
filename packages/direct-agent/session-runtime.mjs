@@ -3,6 +3,7 @@ import { constants } from "node:fs";
 import path from "node:path";
 import { ownershipError } from "../host/ownership.mjs";
 import { resolveLocalPath } from "./session-selection.mjs";
+import { openValidatedSession } from "./session-history.mjs";
 import { readSessionCwd } from "./session-admission.mjs";
 
 async function validateCwd(cwd) {
@@ -32,7 +33,7 @@ export async function createAdmittedSessionRuntime({ sdk, admissions, sessionFil
   } else {
     const lease = await admissions.admit(sessionFile);
     await validateSessionCwd(lease.file, cwdOverride);
-    manager = sdk.SessionManager.open(lease.file, sessionDir, cwdOverride);
+    manager = await openValidatedSession(lease.file, sdk, sessionDir, cwdOverride, admissions.configRoot);
   }
 
   let unsafe = false;
@@ -144,7 +145,7 @@ export async function createAdmittedSessionRuntime({ sdk, admissions, sessionFil
         // lifecycle begins, an error can leave cleanup unconfirmed.
         try {
           return await this.#resume(target.file, targetCwd,
-            () => sdk.SessionManager.open(target.file, undefined, options?.cwdOverride), options);
+            () => openValidatedSession(target.file, sdk, undefined, options?.cwdOverride, admissions.configRoot), options);
         } catch (error) { this.#fail(error); throw error; }
       });
     }
@@ -247,7 +248,7 @@ export async function createAdmittedSessionRuntime({ sdk, admissions, sessionFil
               await fs.copyFile(source.file, destination, constants.COPYFILE_EXCL);
             }
             await admissions.admitOwnedCopy(source.file, destination);
-            return sdk.SessionManager.open(destination, sessionDir, cwdOverride);
+            return openValidatedSession(destination, sdk, sessionDir, cwdOverride, admissions.configRoot);
           });
         } catch (error) { this.#fail(error); throw error; }
       });

@@ -8,6 +8,9 @@ import { atomicWriteJson, ensureConfigDirectory, readJsonObject } from "../confi
 import { acquireOwnership, processIdentity, groupAlive } from "./ownership.mjs";
 import { ProjectCatalog } from "./catalog.mjs";
 import { HostTasks } from "./tasks.mjs";
+import { HostInputStore } from "./input-store.mjs";
+import { HostInputController } from "./input-controller.mjs";
+import { INPUT_PROTOCOL } from "./input-protocol.mjs";
 import { AccountCatalog } from "./accounts.mjs";
 import { accountAuth } from "./account-auth.mjs";
 import { AccountOAuth } from "./account-oauth.mjs";
@@ -57,7 +60,7 @@ async function recoverWorkers(configRoot, previous) {
   }
 }
 
-export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = path.join(configRoot, "sessions"), workerFactory, modelsProvider, allowControlled = false, env = process.env }) {
+export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = path.join(configRoot, "sessions"), workerFactory, modelsProvider, allowControlled = false, env = process.env, now = Date.now }) {
   if (![configRoot, sessionRoot, assetsRoot].every((p) => typeof p === "string" && path.isAbsolute(p))) throw hostError("HOST_PATH_INVALID");
   await fs.access(path.join(assetsRoot, "index.html"));
   await ensureConfigDirectory(configRoot, "only-my-pi/host");
@@ -65,15 +68,18 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
   try { await recoverAuthProcesses(configRoot); } catch (error) { await lock.release(); throw error; }
   const root = path.join(configRoot, "only-my-pi/host"), endpointFile = path.join(root, "endpoint.json");
   const epoch = randomUUID(), controlToken = secret(), cookieName = `omp_${epoch.replaceAll("-", "")}`;
-  const sessions = new Set(), pairs = new Map(), clients = new Set();
-  let seq = 0, origin, stopping = false, scanRunning = false, closed, scanTimer, flushTimer;
+  const sessions = new Map(), pairs = new Map(), clients = new Set(), clientSessions = new WeakMap(), inputClients = new WeakSet();
+  const sessionLifetime = 24 * 60 * 60 * 1000;
+  let seq = 0, inputSeq = 0, origin, stopping = false, scanRunning = false, closed, scanTimer, flushTimer, sessionTimer;
   const updates = new Map();
   const projectsFile = path.join(root, "projects.json");
   const previous = await readJsonObject(configRoot, projectsFile).catch(async (e) => { if (e.code === "ENOENT") return null; await lock.release(); throw e; });
   const catalog = new ProjectCatalog({ sessionRoot, projects: previous?.projects ?? [] });
+  const inputs = new HostInputStore({ configRoot, now: () => new Date(now()).toISOString() });
+  try { await inputs.load(); } catch (error) { await lock.release(); throw error; }
   const manual = new ManualWorkspaces({ configRoot, catalog });
   const terminals = new HostTerminals({ configRoot, catalog, env });
-  try { await terminals.load(); } catch (error) { await lock.release(); throw error; }
+  try { await terminals.load(); } catch (error) { await inputs.close(); await lock.release(); throw error; }
   const accounts = new AccountCatalog(configRoot);
   const oauth = new AccountOAuth({ stack, configRoot, accounts, env });
   let modelCache, modelTime = 0;
@@ -92,18 +98,44 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
     } finally { release(); }
   };
   const tasks = new HostTasks({ configRoot, stack, catalog, accounts, workerFactory, models: accountModels, allowControlled, env });
-  try { await tasks.load(); } catch (error) { await lock.release(); throw error; }
-  const snapshot = () => ({ protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, seq, indexing: scanRunning, capabilities: { controlled: allowControlled },
+  try { await tasks.load(); } catch (error) { await inputs.close(); await lock.release(); throw error; }
+  const inputController = new HostInputController({ store: inputs, tasks, catalog });
+  const snapshot = () => ({ protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, seq, indexing: scanRunning, capabilities: { controlled: allowControlled, inputs: { protocol: INPUT_PROTOCOL, materials: false, resourceRevision: 0 } },
     runtime: { stackId: stack.stackId, sourceCommit: stack.distribution?.sourceCommit ?? null }, projects: catalog.listProjects(), tasks: tasks.snapshot(), diagnostics: catalog.diagnostics });
-  const send = (client, value) => { if (client.readyState !== 1) return; if (client.bufferedAmount > 1024 * 1024) client.close(1013, "Reconnect for snapshot"); else client.send(JSON.stringify(value)); };
+  const send = (client, value) => {
+    if (client.readyState !== 1) return;
+    if ((sessions.get(clientSessions.get(client)) ?? 0) <= now()) { revokeSession(clientSessions.get(client)); return; }
+    if (client.bufferedAmount > 1024 * 1024) client.close(1013, "Reconnect for snapshot"); else client.send(JSON.stringify(value));
+  };
   const publish = (type, data) => { const event = { type, epoch, seq: ++seq, data }; for (const client of clients) send(client, event); };
+  inputController.on("change", (data) => {
+    // Opt-in dirty notification only. Old protocol-2 clients never receive an
+    // unknown event, and a 16 MiB ledger is never broadcast over WebSocket.
+    // A separate cursor avoids gaps in the legacy task/project event stream.
+    const event = { type: "inputs", inputProtocol: INPUT_PROTOCOL, epoch, inputSeq: ++inputSeq, data };
+    for (const client of clients) if (inputClients.has(client)) send(client, event);
+  });
   tasks.on("change", (task) => {
     updates.set(task.taskId, task);
     if (!flushTimer) flushTimer = setTimeout(() => { flushTimer = null; for (const task of updates.values()) publish("task", task); updates.clear(); }, 40);
   });
-  const authenticated = (request) => {
+  const revokeSession = (token) => {
+    sessions.delete(token);
+    for (const client of clients) if (clientSessions.get(client) === token) client.close(4401, "Authentication expired; pair again");
+  };
+  const pruneSessions = () => { for (const [token, expires] of sessions) if (expires <= now()) revokeSession(token); };
+  const sessionToken = (request) => {
     const cookies = (request.headers.cookie ?? "").split(";").map((p) => p.trim().split("="));
-    return cookies.some(([name, value]) => name === cookieName && sessions.has(value));
+    return cookies.find(([name]) => name === cookieName)?.[1];
+  };
+  const authenticated = (request) => { pruneSessions(); return sessions.has(sessionToken(request)); };
+  const authorizedBody = async (request, limit) => {
+    const input = await body(request, limit);
+    // Receiving a body is asynchronous: revocation/expiry may occur after the
+    // route's initial check but before the command is admitted for execution.
+    if (!authenticated(request)) throw hostError("AUTH_REQUIRED", 401);
+    if (stopping) throw hostError("HOST_STOPPING", 503);
+    return input;
   };
   const controlled = (request) => equal(request.headers.authorization, `Bearer ${controlToken}`);
   const safeOrigin = (request, required = true) => request.headers.host === new URL(origin).host && (request.headers.origin === origin || (!required && request.headers.origin === undefined));
@@ -115,7 +147,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
     catch { catalog.diagnostics = [{ code: "SESSION_INDEX_UNAVAILABLE" }]; }
     finally { scanRunning = false; }
   }
-  const issuePair = () => { for (const [value, expires] of pairs) if (expires < Date.now()) pairs.delete(value); if (pairs.size >= 16) throw hostError("PAIR_LIMIT", 429); const token = secret(); pairs.set(token, Date.now() + 120000); return `${origin}/#pair=${token}`; };
+  const issuePair = () => { for (const [value, expires] of pairs) if (expires <= now()) pairs.delete(value); if (pairs.size >= 16) throw hostError("PAIR_LIMIT", 429); const token = secret(); pairs.set(token, now() + 120000); return `${origin}/#pair=${token}`; };
   let requests = 0;
   const server = http.createServer(async (req, res) => {
     requests++;
@@ -133,30 +165,43 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
       if (req.method === "POST" && url.pathname === "/pair") {
         if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
         const input = await body(req);
-        if (!input || Object.keys(input).join() !== "token" || typeof input.token !== "string" || (pairs.get(input.token) ?? 0) < Date.now()) throw hostError("PAIR_EXPIRED", 403);
+        if (!input || Object.keys(input).join() !== "token" || typeof input.token !== "string" || (pairs.get(input.token) ?? 0) <= now()) throw hostError("PAIR_EXPIRED", 403);
         pairs.delete(input.token);
+        pruneSessions();
+        const previousToken = sessionToken(req);
+        if (sessions.has(previousToken)) revokeSession(previousToken);
         if (sessions.size >= 32) throw hostError("SESSION_LIMIT", 429);
-        const token = secret(); sessions.add(token);
-        res.setHeader("set-cookie", `${cookieName}=${token}; HttpOnly; SameSite=Strict; Path=/`);
+        const token = secret(); sessions.set(token, now() + sessionLifetime);
+        res.setHeader("set-cookie", `${cookieName}=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${sessionLifetime / 1000}`);
         return response(res, 200, { protocol: HOST_PROTOCOL });
       }
       if (url.pathname.startsWith("/api/")) {
         if (stopping) throw hostError("HOST_STOPPING", 503);
         if (!authenticated(req)) throw hostError("AUTH_REQUIRED", 401);
+        if (req.method === "POST" && url.pathname === "/api/logout") {
+          if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
+          if (req.headers["x-omp-host-protocol"] !== String(HOST_PROTOCOL)) throw hostError("PROTOCOL_MISMATCH", 409);
+          const input = await authorizedBody(req);
+          if (!input || typeof input !== "object" || Array.isArray(input) || Object.keys(input).length) throw hostError("COMMAND_INVALID");
+          revokeSession(sessionToken(req));
+          res.setHeader("set-cookie", `${cookieName}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0`);
+          return response(res, 200, { status: "disconnected" });
+        }
         if (url.pathname === "/api/accounts") {
           if (req.method === "GET") return response(res, 200, { protocol: 1, authentication: "api_key", cliReference: { accountId: CLI_ACCOUNT_ID, name: "CLI 配置（只读引用）", readOnly: true }, accounts: await accounts.list() });
           if (req.method !== "POST") throw hostError("METHOD_DENIED", 405);
           if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
           if (req.headers["x-omp-account-protocol"] !== "1") throw hostError("ACCOUNT_PROTOCOL_MISMATCH", 409);
-          const input = await body(req);
+          const input = await authorizedBody(req);
           if (input?.authType === "oauth" && !(await oauth.providers()).some((p) => p.providerId === input.providerId)) throw hostError("ACCOUNT_PROVIDER_UNSUPPORTED", 400);
+          if (!authenticated(req)) throw hostError("AUTH_REQUIRED", 401);
           return response(res, 201, { protocol: 1, authentication: "not_connected", account: await accounts.create(input) });
         }
         if (url.pathname === "/api/account-action") {
           if (req.method !== "POST") throw hostError("METHOD_DENIED", 405);
           if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
           if (req.headers["x-omp-account-protocol"] !== "1") throw hostError("ACCOUNT_PROTOCOL_MISMATCH", 409);
-          const input = await body(req);
+          const input = await authorizedBody(req);
           if (!input || typeof input.accountId !== "string" || Object.keys(input).some((key) => !["accountId", "action"].includes(key)) || !input.action || typeof input.action !== "object") throw hostError("ACCOUNT_INPUT_INVALID");
           const { accountId, action } = input;
           if (action.type === "oauthStart" && Object.keys(action).join() === "type") return response(res, 202, await oauth.start(accountId));
@@ -174,10 +219,17 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           try { return response(res, 200, await operation); }
           finally { authOperations.delete(operation); }
         }
+        if (url.pathname === "/api/input-command") {
+          if (req.method !== "POST") throw hostError("METHOD_DENIED", 405);
+          if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
+          if (req.headers["x-omp-host-protocol"] !== String(HOST_PROTOCOL)) throw hostError("PROTOCOL_MISMATCH", 409);
+          if (req.headers["x-omp-input-protocol"] !== String(INPUT_PROTOCOL)) throw hostError("INPUT_PROTOCOL_MISMATCH", 409);
+          return response(res, 200, await inputController.command(await authorizedBody(req, 256 * 1024), { isAuthorized: () => authenticated(req) && !stopping }));
+        }
         if (req.method === "POST" && url.pathname === "/api/command") {
           if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
           if (req.headers["x-omp-host-protocol"] !== String(HOST_PROTOCOL)) throw hostError("PROTOCOL_MISMATCH", 409);
-          const command = validateCommand(await body(req, 4 * 1024 * 1024));
+          const command = validateCommand(await authorizedBody(req, 4 * 1024 * 1024));
           if (["openTerminal", "writeTerminal", "resizeTerminal", "closeTerminal"].includes(command.type)) {
             if (!allowControlled) throw hostError("CONTROLLED_MODE_UNAVAILABLE", 409);
             const result = command.type === "openTerminal" ? await terminals.open(command.projectId, command.cols, command.rows)
@@ -244,7 +296,8 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
     const url = new URL(req.url, origin);
     if (!safeOrigin(req) || !authenticated(req) || url.pathname !== "/events" || url.searchParams.get("protocol") !== String(HOST_PROTOCOL) || clients.size >= 32) { socket.end("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n"); return; }
     wss.handleUpgrade(req, socket, head, (client) => {
-      clients.add(client); client.on("close", () => clients.delete(client)); client.on("error", () => client.terminate());
+      clients.add(client); clientSessions.set(client, sessionToken(req)); client.on("close", () => clients.delete(client)); client.on("error", () => client.terminate());
+      if (url.searchParams.get("inputs") === String(INPUT_PROTOCOL)) inputClients.add(client);
       client.on("message", () => client.close(1008, "Use typed HTTP commands"));
       send(client, { type: "snapshot", ...snapshot() });
     });
@@ -252,12 +305,15 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
   async function stop() {
     if (closed) return closed;
     stopping = true;
+    inputController.beginStop();
     closed = (async () => {
-      clearInterval(scanTimer); clearTimeout(flushTimer); modelAbort.abort();
+      clearInterval(scanTimer); clearInterval(sessionTimer); clearTimeout(flushTimer); modelAbort.abort();
       authAbort.abort();
       await Promise.allSettled([...authOperations, oauth.stop()]);
       try {
         const results = await Promise.allSettled([tasks.stop(), manual.stop(), terminals.stop()]);
+        await inputController.close();
+        await inputs.close();
         const failure = results.find((result) => result.status === "rejected");
         if (failure) throw failure.reason;
       }
@@ -277,6 +333,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
     origin = `http://127.0.0.1:${server.address().port}`;
     await atomicWriteJson(configRoot, endpointFile, { protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, origin, pid: process.pid, identity: lock.owner.identity, controlToken });
     void scan(); scanTimer = setInterval(() => void scan(), 10000); scanTimer.unref();
-    return { origin, epoch, controlToken, pairingUrl: issuePair(), tasks, catalog, snapshot, scan, stop };
-  } catch (error) { server.close(); await lock.release(); throw error; }
+    sessionTimer = setInterval(pruneSessions, 1000); sessionTimer.unref();
+    return { origin, epoch, controlToken, pairingUrl: issuePair(), tasks, inputs, inputController, catalog, snapshot, scan, stop };
+  } catch (error) { server.close(); await inputController.close(); await inputs.close(); await lock.release(); throw error; }
 }

@@ -6,6 +6,41 @@ import test from "node:test";
 import { execFileSync } from "node:child_process";
 import { ProjectCatalog } from "../packages/host/catalog.mjs";
 import { gitDiff } from "../packages/host/inspector.mjs";
+import { SessionManager } from "@earendil-works/pi-coding-agent";
+
+test("history exposes Pi's edited context separately from the original conversation", async (t) => {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-context-history-")));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const manager = SessionManager.create(root, root);
+  const user = manager.appendMessage({ role: "user", content: "original question", timestamp: 1 });
+  const answer = manager.appendMessage({ role: "assistant", content: [{ type: "text", text: "original answer" }], timestamp: 2 });
+  manager.appendContextEdit(user, { content: "redacted question" });
+  manager.appendContextEdit(answer, null);
+  manager.appendUsage("cache_warm", "fixture", "fixture", { input: 10, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 10, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } });
+  const original = await fs.readFile(manager.getSessionFile());
+  const catalog = new ProjectCatalog({ sessionRoot: root }); await catalog.scan();
+  const project = catalog.listProjects()[0], session = catalog.listSessions(project.projectId)[0];
+  const history = await catalog.history(session.sessionKey);
+  assert.deepEqual(history.messages.map(message => message.text), ["original question", "original answer"]);
+  assert.deepEqual(history.context.messages.map(message => message.text), ["redacted question"]);
+  assert.equal(history.context.minimumReader, "1.1.0");
+  assert.equal(history.context.usage[0].kind, "cache_warm");
+  assert.deepEqual(await fs.readFile(manager.getSessionFile()), original);
+});
+
+for (const bad of ["{broken", JSON.stringify({ type: "future_entry", id: "future", parentId: "a" })])
+  test(`unreadable history is refused without rewriting: ${bad}`, async (t) => {
+    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-history-refusal-")));
+    t.after(() => fs.rm(root, { recursive: true, force: true }));
+    const file = path.join(root, "history.jsonl");
+    const bytes = [JSON.stringify({ type: "session", version: 3, id: "history", cwd: root }), JSON.stringify({ type: "message", id: "a", parentId: null, message: { role: "user", content: "retain" } }), bad].join("\n") + "\n";
+    await fs.writeFile(file, bytes);
+    const catalog = new ProjectCatalog({ sessionRoot: root }); await catalog.scan();
+    const project = catalog.listProjects()[0], session = catalog.listSessions(project.projectId)[0];
+    for (const operation of [() => catalog.history(session.sessionKey), () => catalog.resume(session.sessionKey, project.projectId)])
+      await assert.rejects(operation(), { code: bad === "{broken" ? "SESSION_TREE_INVALID" : "SESSION_READER_UPGRADE_REQUIRED" });
+    assert.equal(await fs.readFile(file, "utf8"), bytes);
+  });
 
 test("history follows the active Pi branch, pages output lazily and never rewrites old sessions", async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-history-"))); t.after(() => fs.rm(root, { recursive: true, force: true }));

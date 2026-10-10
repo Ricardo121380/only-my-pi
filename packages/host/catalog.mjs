@@ -2,9 +2,10 @@ import fs from "node:fs/promises";
 import { constants } from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { createInterface } from "node:readline";
 import { hostError, textContent } from "./contracts.mjs";
 import { assertSafeContainedPath } from "../config-runtime/index.mjs";
+import { findInputReceipt, INPUT_CARRIER } from "./input-protocol.mjs";
+import { readSessionSnapshot } from "../direct-agent/session-history.mjs";
 
 const key = (value) => createHash("sha256").update(value).digest("hex");
 export const projectIdFor = (root) => key(root);
@@ -13,30 +14,6 @@ async function regular(file, maximum) {
   const stat = await handle.stat();
   if (!stat.isFile() || stat.size > maximum) { await handle.close(); throw hostError("FILE_TOO_LARGE_OR_UNSAFE"); }
   return handle;
-}
-async function sessionBranch(file) {
-  const handle = await regular(file, 128 * 1024 * 1024);
-  const stream = handle.createReadStream({ autoClose: false, encoding: "utf8", highWaterMark: 16384 });
-  const lines = createInterface({ input: stream, crlfDelay: Infinity });
-  const entries = new Map(); let leaf = null, sequence = 0;
-  try {
-    for await (const line of lines) {
-      if (line.length > 8 * 1024 * 1024 || entries.size > 100000) throw hostError("SESSION_ENTRY_TOO_LARGE");
-      let entry; try { entry = JSON.parse(line); } catch { continue; }
-      if (!entry || typeof entry !== "object" || entry.type === "session") continue;
-      const id = typeof entry.id === "string" ? entry.id : `legacy-${sequence++}`;
-      if (id.length > 256) throw hostError("SESSION_TREE_INVALID");
-      const parentId = entry.parentId === undefined ? leaf : entry.parentId;
-      if (parentId !== null && typeof parentId !== "string") throw hostError("SESSION_TREE_INVALID");
-      entries.set(id, { ...entry, id, parentId }); leaf = id;
-    }
-  } finally { lines.close(); stream.destroy(); await handle.close(); }
-  const branch = [], seen = new Set();
-  while (leaf !== null && entries.has(leaf)) {
-    if (seen.has(leaf)) throw hostError("SESSION_TREE_INVALID");
-    seen.add(leaf); const entry = entries.get(leaf); branch.push(entry); leaf = entry.parentId;
-  }
-  return branch.reverse();
 }
 export class ProjectCatalog {
   constructor({ sessionRoot, projects = [] }) {
@@ -89,29 +66,44 @@ export class ProjectCatalog {
     const session = this.sessions.get(sessionKey);
     if (!session || session.projectId !== projectId) throw hostError("SESSION_NOT_FOUND", 404);
     await assertSafeContainedPath(this.sessionRoot, session.file);
-    const handle = await regular(session.file, 128 * 1024 * 1024);
-    try {
-      const buffer = Buffer.alloc(16384), { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
-      const header = JSON.parse(buffer.subarray(0, bytesRead).toString().split("\n")[0]);
-      if (header.type !== "session" || header.id !== session.sessionId || await fs.realpath(header.cwd) !== this.project(projectId).path) throw hostError("SESSION_IDENTITY_CHANGED", 409);
-      return { sessionId: session.sessionId, file: session.file };
-    } finally { await handle.close(); }
+    const { header } = await readSessionSnapshot(session.file);
+    if (header.id !== session.sessionId || await fs.realpath(header.cwd) !== this.project(projectId).path) throw hostError("SESSION_IDENTITY_CHANGED", 409);
+    return { sessionId: session.sessionId, file: session.file };
   }
   async history(sessionKey, offset = 0, limit = 50) {
     const session = this.sessions.get(sessionKey); if (!session) throw hostError("SESSION_NOT_FOUND", 404);
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000) throw hostError("PAGE_INVALID");
-    const entries = (await sessionBranch(session.file)).filter((entry) => entry.type === "message" && ["user", "assistant", "toolResult"].includes(entry.message?.role));
+    const { manager } = await readSessionSnapshot(session.file);
+    const entries = manager.getBranch().map((entry) => entry.type === "custom_message" && entry.customType === INPUT_CARRIER
+      ? { ...entry, type: "message", message: { role: "user", content: entry.content } } : entry).filter((entry) => entry.type === "message" && ["user", "assistant", "toolResult"].includes(entry.message?.role));
     const messages = entries.slice(offset, offset + Math.min(50, limit)).map((entry) => {
       const m = entry.message, cap = m.role === "toolResult" ? 240 : 65536;
       return { id: entry.id, role: m.role, text: textContent(m.content, cap), toolName: typeof m.toolName === "string" ? m.toolName : undefined,
         timestamp: entry.timestamp, outputAvailable: m.role === "toolResult", truncated: textContent(m.content, cap + 1).length > cap };
     });
-    return { messages, nextOffset: offset + messages.length < entries.length ? offset + messages.length : null };
+    const projection = manager.buildSessionProjection();
+    const projectedMessages = projection.entries.flatMap(({ sourceEntry, messages }) => messages.map(message => ({ entryId: sourceEntry.id, message })));
+    const context = {
+      minimumReader: manager.getBranch().some(entry => ["context_edit", "usage"].includes(entry.type)) ? "1.1.0" : "0.85.1",
+      messages: projectedMessages.slice(offset, offset + Math.min(50, limit)).map(({ entryId, message }) => ({ id: entryId, role: message.role, text: textContent(message.content, 65536) })),
+      nextOffset: offset + Math.min(50, limit) < projectedMessages.length ? offset + Math.min(50, limit) : null,
+      usage: manager.getBranch().filter(entry => entry.type === "usage").slice(offset, offset + Math.min(50, limit)).map(({ id, kind, provider, model, usage, note }) => ({ id, kind, provider, model, usage, note })),
+    };
+    return { messages, nextOffset: offset + messages.length < entries.length ? offset + messages.length : null, context };
+  }
+  /** No SDK.open here: a missing or malformed history must never be recreated.
+   * @param {import('./contracts.d.ts').InputRecordV1} record */
+  async inputReceipt(record) {
+    const sessions = this.listSessions(record.projectId).filter((session) => session.sessionId === record.sessionId);
+    if (!sessions.length) return null;
+    if (sessions.length !== 1) throw hostError("SESSION_IDENTITY_CHANGED", 409);
+    const current = await this.resume(sessions[0].sessionKey, record.projectId);
+    return findInputReceipt((await readSessionSnapshot(current.file)).manager.getBranch(), record);
   }
   async toolOutput(sessionKey, entryId, offset = 0) {
     const session = this.sessions.get(sessionKey); if (!session) throw hostError("SESSION_NOT_FOUND", 404);
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > 8 * 1024 * 1024) throw hostError("PAGE_INVALID");
-    const entry = (await sessionBranch(session.file)).find((e) => e.id === entryId && e.type === "message" && e.message?.role === "toolResult");
+    const entry = (await readSessionSnapshot(session.file)).manager.getBranch().find((e) => e.id === entryId && e.type === "message" && e.message?.role === "toolResult");
     if (!entry) throw hostError("TOOL_OUTPUT_NOT_FOUND", 404);
     const text = textContent(entry.message.content, 8 * 1024 * 1024);
     return { text: text.slice(offset, offset + 65536), nextOffset: offset + 65536 < text.length ? offset + 65536 : null };

@@ -5,6 +5,9 @@ import { AccountCatalog } from "./accounts.mjs";
 import { CLI_ACCOUNT_ID } from "./contracts.mjs";
 import { createControlledExtension } from "./controlled-extension.mjs";
 import { hasAccountCredential } from "./account-credential.mjs";
+import { createPiInputBridge } from "./pi-input-bridge.mjs";
+import { openValidatedSession } from "../direct-agent/session-history.mjs";
+import { INPUT_PROTOCOL } from "./input-protocol.mjs";
 import { disableOmpCacheWarming } from "../direct-agent/cache-warming-policy.mjs";
 
 // Host-owned arguments contain identities and audited paths, never credentials.
@@ -57,8 +60,26 @@ try {
   };
   const cwd = process.cwd();
   if (resumeFile && !path.isAbsolute(resumeFile)) throw new Error();
-  const sessionManager = resumeFile ? sdk.SessionManager.open(resumeFile, sessionRoot, cwd) : sdk.SessionManager.create(cwd, sessionRoot);
+  const sessionManager = resumeFile ? await openValidatedSession(resumeFile, sdk, sessionRoot, cwd, configRoot) : sdk.SessionManager.create(cwd, sessionRoot);
   const runtime = await sdk.createAgentSessionRuntime(createRuntime, { cwd, agentDir: configRoot, sessionManager });
+  const taskId = process.env.OMP_HOST_INPUT_TASK_ID;
+  if (taskId !== undefined) {
+    if (!process.send || !/^[a-zA-Z0-9_-]{1,128}$/u.test(taskId)) throw new Error();
+    const send = (frame) => { if (process.connected) process.send(frame, () => {}); };
+    const bridge = createPiInputBridge({ session: runtime.session, taskId, accountId, modelId, mode, send });
+    process.on("message", (frame) => {
+      if (frame?.type !== "omp_input_command") return;
+      try {
+        if (frame.protocol !== INPUT_PROTOCOL || typeof frame.id !== "string" || frame.id.length > 128 || !["deliver", "lookup"].includes(frame.operation) || Object.keys(frame).sort().join() !== "id,operation,protocol,record,type") throw new Error();
+        const data = frame.operation === "deliver" ? bridge.deliver(frame.record) : bridge.lookup(frame.record);
+        send({ type: "omp_input_response", protocol: INPUT_PROTOCOL, id: frame.id, success: true, data });
+      } catch (error) {
+        const code = ["TASK_NOT_RUNNING", "INPUT_BINDING_CHANGED", "INPUT_ID_CONFLICT", "INPUT_STATE_INVALID", "INPUT_QUEUE_LIMIT"].includes(error?.code) ? error.code : "INPUT_DELIVERY_UNCONFIRMED";
+        send({ type: "omp_input_response", protocol: INPUT_PROTOCOL, id: frame?.id, success: false, code });
+      }
+    });
+    send({ type: "omp_input_ready", protocol: INPUT_PROTOCOL, taskId });
+  }
   await sdk.runRpcMode(runtime);
 } catch {
   process.stdout.write(JSON.stringify({ type: "extension_error", code: "ACCOUNT_RPC_START_FAILED" }) + "\n");

@@ -2,6 +2,11 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { hostError } from "./contracts.mjs";
+/** Empty levels explicitly mean a non-reasoning model, not an unknown catalog.
+ * @param {{thinkingLevels?: string[]}} model @param {string} level */
+export function supportsThinking(model, level) {
+  return Array.isArray(model.thinkingLevels) && (model.thinkingLevels.includes(level) || model.thinkingLevels.length === 0 && level === "off");
+}
 export function accountWorkerEnvironment(env) {
   // Allow operational settings, never ambient provider identities or Node injection.
   const names = ["HOME", "PATH", "TMPDIR", "LANG", "LC_ALL", "TZ", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "all_proxy", "no_proxy", "SSL_CERT_FILE", "SSL_CERT_DIR"];

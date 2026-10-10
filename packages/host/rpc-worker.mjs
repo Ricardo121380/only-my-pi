@@ -9,14 +9,15 @@ import { processIdentity, groupAlive } from "./ownership.mjs";
 import { hostError } from "./contracts.mjs";
 import { ApprovalBridge } from "./approval-bridge.mjs";
 import { projectControlState } from "./control-state.mjs";
+import { INPUT_PROTOCOL, validateDeliveryRecord, validateReceipt } from "./input-protocol.mjs";
 function waitBounded(promise, ms, required = false) {
   let timer;
   return Promise.race([promise, new Promise((resolve, reject) => { timer = setTimeout(() => required ? reject(hostError("RPC_TERMINATION_UNCONFIRMED")) : resolve(), ms); })]).finally(() => clearTimeout(timer));
 }
 
 export class RpcWorker extends EventEmitter {
-  constructor({ stack, configRoot, cwd, model, sessionRoot, resumeFile, accountId, controlled = false, env = process.env, onIdentity = async () => {}, spawnImpl = spawn, extensionResolver = resolveDirectExtensionSet }) {
-    super(); Object.assign(this, { stack, configRoot, cwd, model, sessionRoot, accountId, controlled, env, onIdentity, spawnImpl, extensionResolver }); this.pending = new Map(); this.child = null; this.stopping = null;
+  constructor({ stack, configRoot, cwd, model, sessionRoot, resumeFile, accountId, taskId, controlled = false, env = process.env, onIdentity = async () => {}, spawnImpl = spawn, extensionResolver = resolveDirectExtensionSet }) {
+    super(); Object.assign(this, { stack, configRoot, cwd, model, sessionRoot, accountId, taskId, controlled, env, onIdentity, spawnImpl, extensionResolver }); this.pending = new Map(); this.inputPending = new Map(); this.inputRecords = new Map(); this.child = null; this.stopping = null;
     this.approvals = new ApprovalBridge({ send: (frame) => { if (this.child && !this.closed && !this.child.stdin.destroyed) this.child.stdin.write(JSON.stringify(frame) + "\n"); }, publish: (approvals) => this.emit("approvals", approvals) });
     this.resumeFile = resumeFile;
   }
@@ -27,13 +28,32 @@ export class RpcWorker extends EventEmitter {
       argv: ["--mode", "rpc", "--model", this.model, "--session-dir", this.sessionRoot], env: { ...(this.accountId === undefined ? this.env : accountWorkerEnvironment(this.env)), PI_CODING_AGENT_DIR: this.configRoot } });
     if (this.stopRequested) throw hostError("RPC_CANCELLED_BEFORE_START");
     const argv = this.accountId === undefined ? invocation.argv.slice(1) : [fileURLToPath(new URL("./account-rpc-entry.mjs", import.meta.url)), this.stack.root, this.configRoot, this.accountId, this.model, this.sessionRoot, this.controlled ? "controlled" : "readonly", this.resumeFile ?? "", ...set.extensions];
-    const child = this.spawnImpl(invocation.executable, argv, { cwd: this.cwd, env: invocation.env, detached: true, stdio: this.controlled ? ["pipe", "pipe", "pipe", "ipc"] : ["pipe", "pipe", "pipe"] });
+    const childEnv = { ...invocation.env }; delete childEnv.OMP_HOST_INPUT_TASK_ID;
+    if (this.accountId && this.taskId) childEnv.OMP_HOST_INPUT_TASK_ID = this.taskId;
+    const child = this.spawnImpl(invocation.executable, argv, { cwd: this.cwd, env: childEnv, detached: true, stdio: this.controlled || this.accountId !== undefined ? ["pipe", "pipe", "pipe", "ipc"] : ["pipe", "pipe", "pipe"] });
     this.child = child;
-    if (this.controlled) child.on("message", (message) => {
-      if (message?.type === "control_state" && !this.closed && !this.stopRequested) this.emit("control", projectControlState(message.state));
-      if (message?.type === "shutdown_confirmed" && message.id === this.shutdownId && message.clean === true) this.shutdownConfirmed = true;
+    child.on("message", (message) => {
+      if (this.controlled && message?.type === "control_state" && !this.closed && !this.stopRequested) this.emit("control", projectControlState(message.state));
+      if (this.controlled && message?.type === "shutdown_confirmed" && message.id === this.shutdownId && message.clean === true) this.shutdownConfirmed = true;
+      if (message?.type === "omp_input_ready" && message.protocol === INPUT_PROTOCOL && message.taskId === this.taskId) this.inputReady = true;
+      if (message?.type === "omp_input_candidate" && message.protocol === INPUT_PROTOCOL && !this.closed) {
+        const record = this.inputRecords.get(message.receipt?.inputId);
+        try { if (!record) throw hostError("INPUT_RECEIPT_CONFLICT"); this.emit("input", validateReceipt(message.receipt, record)); }
+        catch { this.emit("fault", { code: "INPUT_RECEIPT_CONFLICT" }); }
+      }
+      if (message?.type === "omp_input_fault") this.emit("fault", { code: "INPUT_DELIVERY_FAILED" });
+      if (message?.type === "omp_input_response" && this.inputPending.has(message.id)) {
+        const waiter = this.inputPending.get(message.id); this.inputPending.delete(message.id); clearTimeout(waiter.timeout);
+        if (message.protocol === INPUT_PROTOCOL && message.success === false && ["TASK_NOT_RUNNING", "INPUT_BINDING_CHANGED", "INPUT_ID_CONFLICT", "INPUT_STATE_INVALID", "INPUT_QUEUE_LIMIT"].includes(message.code)) { waiter.reject(hostError(message.code, 409)); return; }
+        try {
+          if (message.protocol !== INPUT_PROTOCOL || message.success !== true || !["accepted", "consumed", "unknown"].includes(message.data?.status)) throw hostError("INPUT_DELIVERY_UNCONFIRMED");
+          if (message.data.feedback && (message.data.feedback.source !== "omp-custom-message" || message.data.feedback.disposition !== (waiter.record.delivery === "steer" ? "queued" : "started"))) throw hostError("INPUT_DELIVERY_UNCONFIRMED");
+          if (message.data.status === "consumed") validateReceipt(message.data.receipt, waiter.record);
+          waiter.resolve(message.data);
+        } catch { waiter.reject(hostError("INPUT_DELIVERY_UNCONFIRMED")); }
+      }
     });
-    this.exited = new Promise((resolve) => child.once("close", (code, signal) => { this.closed = true; this.approvals.close(); for (const p of this.pending.values()) { clearTimeout(p.timeout); p.reject(hostError("RPC_WORKER_EXITED")); } this.pending.clear(); this.emit("exit", { code, signal }); resolve({ code, signal }); }));
+    this.exited = new Promise((resolve) => child.once("close", (code, signal) => { this.closed = true; this.approvals.close(); for (const p of [...this.pending.values(), ...this.inputPending.values()]) { clearTimeout(p.timeout); p.reject(hostError("RPC_WORKER_EXITED")); } this.pending.clear(); this.inputPending.clear(); this.emit("exit", { code, signal }); resolve({ code, signal }); }));
     child.on("error", () => this.emit("fault", { code: "RPC_SPAWN_FAILED" }));
     child.stdin.on("error", () => {});
     child.stderr.on("data", () => {}); // Never forward raw provider/extension errors or secrets.
@@ -59,8 +79,31 @@ export class RpcWorker extends EventEmitter {
     this.identity = { pid: child.pid, start: await processIdentity(child.pid) };
     if (!this.identity.start) throw hostError("RPC_WORKER_EXITED");
     await this.onIdentity(this.identity);
-    this.state = await this.command("get_state"); return this.state;
+    this.state = await this.command("get_state");
+    if (this.accountId && this.taskId && !this.inputReady) {
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => { child.off("message", listener); reject(hostError("RPC_INPUT_UNAVAILABLE")); }, 3000);
+        const listener = () => { if (this.inputReady) { clearTimeout(timer); child.off("message", listener); resolve(); } }; child.on("message", listener); listener();
+      });
+    }
+    return this.state;
   }
+  inputCommand(operation, value) {
+    const record = structuredClone(validateDeliveryRecord(value));
+    if (!this.inputReady || !this.child?.connected || this.closed || this.stopRequested || record.taskId !== this.taskId) return Promise.reject(hostError("RPC_INPUT_UNAVAILABLE"));
+    const prior = this.inputRecords.get(record.inputId);
+    if (prior && prior.contentDigest !== record.contentDigest) return Promise.reject(hostError("INPUT_ID_CONFLICT"));
+    this.inputRecords.set(record.inputId, record);
+    if (operation === "deliver" && record.delivery !== "steer") this.promptSent = true;
+    const id = randomUUID();
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => { this.inputPending.delete(id); reject(hostError("INPUT_DELIVERY_UNCONFIRMED")); }, 5000);
+      this.inputPending.set(id, { record, resolve, reject, timeout });
+      this.child.send({ type: "omp_input_command", protocol: INPUT_PROTOCOL, id, operation, record }, (error) => { if (error && this.inputPending.delete(id)) { clearTimeout(timeout); reject(hostError("INPUT_DELIVERY_UNCONFIRMED")); } });
+    });
+  }
+  deliverInput(record) { return this.inputCommand("deliver", record); }
+  lookupInput(record) { return this.inputCommand("lookup", record); }
   command(type, fields = {}) {
     if (!["get_state", "set_thinking_level", "prompt", "abort", "clear_queue"].includes(type) || !this.child || this.closed) return Promise.reject(hostError("RPC_COMMAND_DENIED"));
     const id = randomUUID();
