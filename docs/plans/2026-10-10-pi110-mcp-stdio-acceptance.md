@@ -100,4 +100,4 @@ Node 24.19.0 与 Node 22.19.0 均用实际官方支持矩阵路径运行；运�
 
 最小修复把读取移到最后的去重/容量检查之前，检查与登记之间不再 await。保留原输入合同；handled 输入可能已在 fixture 首次观察前结束，fixture 仅对该情况接受 succeeded，原结果断言全部保留。`67-green-admission-final.log` **43/43 PASS**。共享准入修复后 Node 24 与 Node 22 的真实 Pi/MCP stdio 读、描述符写均 **2/2 PASS**，分别为 `67-admission-p-node24.log`、`67-admission-p-node22.log`。Ego Lite 新候选实际写入的准入差量证据见 `67-admission-b/`。
 
-这项共享修复纳入本批两轴独立复评，结论在 [#67 验收](2026-10-10-pi110-mcp-write-acceptance.md) 单独报告；原 #66 全量范围与历史源码身份不改写。全量原始 FAIL 和被人工结束的测试 fixture 身份永久保留，不把上述专项复验替代全量通过。
+共享准入修复提交为 `d5e63ba9463d9d3b7cdb71bb698ca50024e77ec1`，已纳入本批最终 `f15db67...526dc66` 的完整差量两轴独立复评，**Standards PASS / Spec PASS**；Standards 留一项锁文件地址重复构造的 P3 非阻断维护建议。结论在 [#67 验收](2026-10-10-pi110-mcp-write-acceptance.md) 单独报告，报告分别为 `67-standards-final.md`、`67-spec-final.md`；原 #66 全量评审范围与历史源码身份不改写。全量原始 FAIL 和被人工结束的测试 fixture 身份永久保留，不把上述专项复验替代全量通过。

@@ -84,4 +84,11 @@ Spec 结果修复后的 Ego Lite 差量 B 保存于 `67-owner-b/`。原生批准
 
 ## 独立评审与完成结论
 
-首轮固定范围 `f15db67...7173dab` 的 Standards **PASS**（一项锁文件路径构造重复的 P3 非阻断判断）；Spec **FAIL**（owner 崩溃后的应用结果矛盾 P2），分别保存于 `67-standards-first.md` 和 `67-spec-first.md`。上述主线程真实 RED→GREEN 与 Ego Lite 差量验证已完成，修复提交后再作双轴独立只读评审；最终评审尚待收回，本票此刻尚不宣称完成。
+首轮固定范围 `f15db67...7173dab` 的 Standards **PASS**（一项锁文件路径构造重复的 P3 非阻断判断）；Spec **FAIL**（owner 崩溃后的应用结果矛盾 P2），分别保存于 `67-standards-first.md` 和 `67-spec-first.md`。当时未宣称本票完成；随后主线程完成真实 RED→GREEN、Ego Lite 差量验证和修复提交，再作双轴独立只读评审。
+
+最终固定范围 `f15db67...526dc66`（25 个文件；`d5e63ba`、`7173dab`、`526dc66`）已由两位独立只读探子分别评审，TaskControl 均读取提交版本，未把用户的工作树差量纳入归责。
+
+- Standards **PASS**：硬规则违反 0；保留一项 P3 possible Duplicated Code，指出 Host 项目所有权核验中重复构造锁文件地址。它是维护建议，没有功能失败或文档硬违规，本次不引入无关重构。报告 `67-standards-final.md`。
+- Spec **PASS**：新增阻断发现 0，确认首轮 P2 已实质消除，且四项准入、实际隔离、撤权/取消、单写竞争、未知结果及无重放均符合当前切片。核对实际 B 的一次接收/效果、十一项模块与面板 hash，以及 28 条命令收据 hash；没有运行或声称额外测试。报告 `67-spec-final.md`。
+
+本票必需 **C / P / B 与 Standards / Spec PASS**，限定上述 macOS descriptor 范围。实现提交为 `7173dab48ee39a11c6c5de9afb3385eaf138aa18`，结果语义修复为 `526dc66c827d27821f5992f4e009062c3c794d5b`，前置共享准入修复为 `d5e63ba9463d9d3b7cdb71bb698ca50024e77ec1`。全量 **FAIL**、docs-links/secret:scan **FAIL**、I/L 与发行/远程 CI **NOT_RUN** 继续保留，不能据本票专项收口宣称全仓或 GP110-05 完成。GitHub 状态回填与关闭回读单独保存在本票证据目录。
