@@ -288,3 +288,25 @@ test("issuer invalidation under an occupied configuration lock blocks later requ
   }
   assert.equal(service.received.filter((row) => row.rpc === "tools/call").length, 0); assert.equal(f.requests.length, 0);
 });
+
+test("a pending issuer rejection survives a public target change and cannot revive when its original binding is restored", { timeout: 50000 }, async (t) => {
+  const service = await createOAuthMcpServer(), other = await createOAuthMcpServer(); t.after(async () => { await service.close(); await other.close(); });
+  const f = await createMcpHost({ respond }); t.after(() => f.close()); const state = await login(f, await configure(f, service));
+  const original = Object.fromEntries(Object.entries(state.servers[0]).filter(([key]) => !["source", "revocations", "targetDigest"].includes(key)));
+  service.revoke(); service.setMode("unauthorized_pause");
+  const first = await f.start(); await until(() => service.received, (rows) => rows.some((row) => row.type === "mcp" && !row.valid), "physical invalid initialize pending before target change", 20000);
+  const changed = await f.mcp({ type: "save", revision: state.revision, server: { ...original, url: other.url } });
+  assert.equal(changed.authentication.remote.state, "binding_changed");
+  service.releaseUnauthorized();
+  const failed = await until(() => f.task(first.taskId), (value) => value.status === "failed", "401 after public target change", 20000);
+  assert.match(JSON.stringify(failed), /MCP_HTTP_AUTH_REQUIRED/u);
+  const restored = await f.mcp({ type: "save", revision: changed.revision, server: original });
+  assert.equal(restored.authentication.remote.state, "expired");
+  service.setMode("normal"); const count = service.received.filter((row) => row.type === "mcp").length;
+  for (const restart of [false, true]) {
+    if (restart) await f.restart();
+    const next = await f.start(); await until(() => f.task(next.taskId), (value) => value.status === "failed", "restored invalid identity admission", 20000);
+    assert.equal(service.received.filter((row) => row.type === "mcp").length, count);
+  }
+  assert.equal(service.received.filter((row) => row.rpc === "tools/call").length, 0); assert.equal(other.received.length, 0); assert.equal(f.requests.length, 0);
+});

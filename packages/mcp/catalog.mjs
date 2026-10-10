@@ -212,16 +212,16 @@ export class McpCatalog {
   }
   async invalidateOAuth(server, projectPath) {
     const ref = server.credentialRefs?.MCP_TOKEN ?? server.ref; if (!ref) return;
-    const state = await this.read(), current = state.projects[digest(projectPath)]?.[server.name] ?? state.defaults[server.name];
-    if (!current || current.credentialRefs.MCP_TOKEN !== ref || targetDigest(current) !== (server.targetDigest ?? targetDigest(server))) return;
-    const credential = await this.boundCredential(current, projectPath, state);
+    const state = await this.read(); if (state.revokedCredentials?.[ref]) return;
+    const credential = await this.boundCredential(server, projectPath, state, ref);
     if (!credential.oauth) return;
     // A reference is immutable. Its invalidation only moves forward and must
-    // survive configuration-writer contention without replacing that config.
-    const receipt = { version: 1, projectPath, name: server.name, targetDigest: targetDigest(current), ref };
+    // survive configuration changes and writer contention. The rejection belongs
+    // to the request's captured binding, even if another target is now selected.
+    const receipt = { version: 1, projectPath, name: server.name, targetDigest: server.targetDigest ?? targetDigest(server), ref };
     try { await atomicWriteJson(this.configRoot, path.join(this.configRoot, "only-my-pi/mcp/credentials", `${ref}.invalid.json`), receipt, { exclusive: true }); }
     catch (error) {
-      if (error.code === "EEXIST" && await this.oauthInvalidated(current, projectPath).catch(() => false)) return;
+      if (error.code === "EEXIST" && await this.oauthInvalidated(server, projectPath, ref).catch(() => false)) return;
       throw mcpError("MCP_OAUTH_INVALIDATION_UNCONFIRMED", 409);
     }
   }

@@ -11,9 +11,10 @@
 - 每个物理 OAuth 请求前核对项目、连接、目标、引用与捕获配置版本；发布时再次执行同一 CAS。目标覆盖或冲突不会迁移旧身份。新凭据写入私有文件，删除一次性 verifier/state，再原子发布新引用并撤销旧引用。取消在发布前阻断；发布已经完成时如实返回 stored，后续撤销使用明确的凭据操作。
 - 每个 OAuth 请求限制 10 秒、16 KiB 输入、64 KiB 输出，拒绝重定向；登录整体限制 120 秒，最多 8 个同时进行的操作，公开历史最多 32 个连接状态。取消先显示 cancelling，等待请求、listener 与落盘结束再返回；Host 正常停止关闭回调，启动时将未结束状态标为 interrupted，不自动重启登录。
 - 显式刷新沿原绑定使用原生 refresh API，成功原子轮换引用；失败、取消或超时不能继续用未结束的旧身份。已知本地过期、错误绑定、撤销及刷新未结束在 MCP 初始化前阻断。发行方事先撤销但本机尚未知时，第一次初始化可能收到 401/403；OMP 持久记录失效，之后的请求不再发送。此过程没有业务工具执行或自动重新认证。
-- OAuth 状态、运行记录和配置是不同文件，分别使用对应的写锁；配置仍保持原有全局锁与版本冲突约束。运行清理不再占用配置锁，解决真实失败任务刚结束时立即撤销凭据的 `LOCK_HELD`。发行方失效另按不可变凭据引用原子保存绑定记录，不改写配置或竞争配置锁；读取与准入同时核对该记录，Host 重启不丢失已知失效事实。
+- OAuth 状态、运行记录和配置是不同文件，分别使用对应的写锁；配置仍保持原有全局锁与版本冲突约束。运行清理不再占用配置锁，解决真实失败任务刚结束时立即撤销凭据的 `LOCK_HELD`。发行方失效另按发出请求时的不可变凭据绑定原子保存记录，不改写配置或竞争配置锁；即使等待响应时已改写目标或引用，该失效事实也不会被跳过。读取与准入同时核对记录，恢复原目标及引用或重启 Host 都不会重新准入旧身份。
 - CLI、TUI 与 WebUI 回读同一 Catalog 的可解释身份与撤销状态；本票实际登录入口为已认证 Host/WebUI。CLI/TUI 证据证明共享身份状态和后续准入，不声称独立 CLI/TUI 浏览器登录已在本票实现。
 - 已发布身份与公开状态写入分开处理：后者失败回读 `stored_sync_failed`，不会报告登录失败或取消，也不作废新引用。配置 rename 后的同步失败先回读实际绑定，记录 `publication_unconfirmed` 与非秘密的 bindingConfirmed；这不同于 confirmed durable。当前 Host 在安全快照中保留未能落盘的状态，其他进程按实际凭据与配置回读身份，不能假称失败的状态文件已经持久化。
+- 使用注入的原生公共 StateStore 接口取得已保存 OAuth 状态；在公共 saveTokens 完成后发布，不依赖原生声明为 private 的 provider.load 方法。
 
 ## C / P
 
@@ -45,6 +46,10 @@
 | `69-invalidation-node22`、`69-invalidation-stdio-node22` | 分别 PASS 33/33 与 1/1；实际覆盖 24 项 OAuth、OAuth CLI/TUI、HTTP 评审、HTTP CLI/TUI 及独立 stdio 兼容 |
 | `69-invalidation-typecheck`、`69-invalidation-web` | PASS，四范围 typecheck、12 文件 / 96 项 WebUI |
 | `69-invalidation-pack`、`69-invalidation-scan`、`69-invalidation-lint` | PASS；1597 个打包文件，scan 与 lint 均 0 findings |
+| `69-invalidation-binding-red` / `69-invalidation-binding-green` | 先 FAIL 1/1，公开修改并恢复目标后旧身份错误变回 connected；修复后 PASS 2/2，同时覆盖配置锁竞争及目标改写，当前与重启后均 0 新增 MCP 请求 |
+| `69-final-node22` | PASS 35/35，25 项 OAuth、OAuth CLI/TUI、HTTP 评审、HTTP CLI/TUI 和 stdio；完整且正确的五个文件参数，exit 0 |
+| `69-final-typecheck`、`69-final-pack`、`69-final-scan`、`69-final-lint` | PASS，四范围 TypeScript、1597 个打包文件、0 scan/lint findings |
+| `69-final-browser-script`、`69-final-browser-readback` | PASS；Ego Lite TaskSpace 44 实际成功、取消、失效及重新登录，随后联合源码、运行副本、服务与持久记录回读 |
 
 `69-invalidation-node22` 的 stdio 参数曾写成不存在的 `host-mcp-readonly.test.mjs`，Node 实际仅计入 33 项。正确的 `host-mcp-stdio.test.mjs` 通过独立回执验证 1/1；不将前者冒充包含 stdio 的 34 项单次执行。
 
@@ -68,6 +73,8 @@
 
 最终浏览器轮次中等待错误按钮/回调文案的三个观察 timeout 原样记在 `automation-observation.txt`，恢复前均检查实际页面，未重复保存、授权或调用。认证失败任务的既有投递状态锁定了输入控件；按页面明确提供的“将保留内容作为新的草稿（不会自动发送）”恢复、替换文字后发起新任务，未重试旧请求。
 
+目标改写修复后的最终候选另存 `69-final-source-candidate.json` 与 `69-final-browser/`。同一 TaskSpace 44 的连续脚本在 **18.24 秒**内完成上述成功、取消、失效与重新显式登录，再物理停止夹具；没有该脚本的 timeout 或定位恢复。服务和持久计数保持 **3 注册 / 2 授权页 / 2 不同 grant 令牌交换 / 2 次批准调用 / 1 invalid initialize / 3 stopped runs / 4 合成模型请求**。完整参数及实际返回的最终 relogin PNG 均已查看，全部 19 路径及既有原子写依赖与运行副本 SHA 联合断言通过。
+
 ## 独立完成边界
 
 C / P / B：PASS。Standards / Spec：待固定范围的独立评审；GitHub #69 关闭与回读：待评审完成。#68 的验收与完成结论保留在 [HTTP MCP 验收](./2026-10-10-pi110-http-mcp-acceptance.md)，不与本票 OAuth 结论合并。
@@ -75,6 +82,8 @@ C / P / B：PASS。Standards / Spec：待固定范围的独立评审；GitHub #6
 首轮固定 `dde6d76...d5e2325` 的独立 Standards 为 FAIL（hard 1 / smell 1），Spec 为 FAIL（2 项错误及相应负例缺口 / scope 0）。原文保存在 `69-review-first.md`。三项行为问题均先复现；管理令牌回显经过真实 Host/Pi/工具请求，取消竞态在实际原生 listener 的异步绑定检查处受控暂停，发布故障使用真实原子写的 AFTER_RENAME 注入与状态写故障接缝，后两类属于 C 故障验证，未冒充额外浏览器或第三方证据。活动状态谓词由服务端和 WebUI 共用；随后完整范围再次独立评审。
 
 第二轮固定 `dde6d76...dff3ad0`：Standards PASS（hard 0 / 非阻断 smell 1），Spec FAIL（wrong 1 / partial 1 / scope 0，两项计数对应同一失效锁竞争及负例缺口）。结果摘记保存在 `69-review-second.md`。根代理在真实接收端暂停 initialize、实际持有配置锁后放行 401 复现，随后按引用持久化单向失效记录，避免配置锁竞争丢失事实，并共享 isMcpOAuthBlocked 消除重复判定；修复后再审完整本票范围。
+
+第三轮固定 `dde6d76...024cc6c`：Standards PASS（hard 0 / 非阻断 smell 1），Spec FAIL（wrong 1 / partial 1 / scope 0，两项计数对应等待 401 时目标改写丢弃失效事实及负例缺口）。独立结论分别保存在 `69-review-third.md`。根代理通过实际 Host save 将 A/ref 改为 B/ref，再放行真实 401 并恢复 A/ref 复现；修复改为核对发出请求时的原凭据绑定并记录失效，当前及重启后均阻断。Standards 的非阻断“已知失效”条件重复建议保留为明确判断，未将其当硬违反；同时移除 private load 调用。随后固定完整范围再次独立评审。
 
 带入历史全量结果为 **1626 总计 / 1616 pass / 3 fail / 1 cancelled / 6 skip，exit 1**。本批全量 Node 回归在 #69 代码与评审收敛后仅运行一次，当前尚未运行；不以局部 PASS 覆盖历史全量 FAIL。
 

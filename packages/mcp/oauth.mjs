@@ -116,7 +116,7 @@ export class McpOAuth {
           resource: native.selectResource(binding.url, discovery.resourceMetadata), code: reply.code, codeVerifier: await provider.codeVerifier(), redirectUrl: provider.redirectUrl, fetch: options.fetch, signal: options.signal });
         await provider.saveTokens(tokens);
       }
-      publication = await this.catalog.storeOAuth(binding, await provider.load(), flow.abort.signal);
+      publication = await this.catalog.storeOAuth(binding, privateState, flow.abort.signal);
       flow.data.ref = publication.ref;
       if (!publication.durable) flow.data.bindingConfirmed = publication.bindingConfirmed;
       await this.save(flow, publication.durable ? "stored" : "publication_unconfirmed", publication.durable ? undefined : "MCP_OAUTH_PUBLICATION_UNCONFIRMED");
