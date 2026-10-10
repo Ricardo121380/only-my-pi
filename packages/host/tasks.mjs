@@ -81,12 +81,13 @@ export class HostTasks extends EventEmitter {
     const model = (await this.models(command.accountId)).find((m) => m.id === command.model);
     if (!model) throw hostError("MODEL_UNAVAILABLE", 409);
     if (command.thinkingLevel !== undefined && !supportsThinking(model, command.thinkingLevel)) throw hostError("THINKING_LEVEL_UNAVAILABLE", 409);
+    const mcpSnapshot = await new McpCatalog(this.configRoot).snapshot(project.path);
     if (this.requests.has(command.requestId)) return existing(this.requests.get(command.requestId));
     if (this.closing) throw hostError("HOST_STOPPING", 409);
     if ([...this.tasks.values()].filter((t) => !terminal(t.status)).length >= 4) throw hostError("TASK_CAPACITY_REACHED", 429);
     const task = { taskId: randomUUID(), requestId: command.requestId, requestDigest, projectId: project.projectId, model: command.model, ...(this.accounts ? { accountId: command.accountId } : {}),
       requestedThinkingLevel: command.thinkingLevel ?? null, thinkingLevel: null, usage: emptyUsage(),
-      mode, mcpSnapshot: await new McpCatalog(this.configRoot).snapshot(project.path), access: "inspect", approvals: [], resourceRevision: inputRecord?.binding.resourceRevision ?? 0, ...(submission ?? {}), prompt: command.prompt, status: "starting", sessionId: resume?.sessionId ?? null, resumeSessionKey: command.resumeSessionKey ?? null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      mode, mcpSnapshot, access: "inspect", approvals: [], resourceRevision: inputRecord?.binding.resourceRevision ?? 0, ...(submission ?? {}), prompt: command.prompt, status: "starting", sessionId: resume?.sessionId ?? null, resumeSessionKey: command.resumeSessionKey ?? null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     this.requests.set(command.requestId, task.taskId); this.tasks.set(task.taskId, task);
     try { await this.persist(); }
     catch {

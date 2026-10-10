@@ -77,7 +77,8 @@ async function fixture(t, { mode = "readonly", thinking = "low", levels = [think
   f.tasks = tasks; await tasks.load();
   const controller = new HostInputController({ store, tasks, catalog, resourceRevision: () => f.resource }); f.controller = controller;
   const first = await tasks.start({ type: "startTask", requestId: "first", projectId: project.projectId, accountId: account.accountId, model: "fixture/fixture", thinkingLevel: thinking, mode, prompt: "first" });
-  const task = await until(() => tasks.tasks.get(first.taskId).status === "running" && tasks.tasks.get(first.taskId));
+  // A handled prompt can settle before the fixture observes its brief running state.
+  const task = await until(() => { const current = tasks.tasks.get(first.taskId); return (current.status === "running" || (promptDisposition === "handled" && current.status === "succeeded")) && current; });
   await catalog.scan();
   f.target = { projectId: project.projectId, taskId: task.taskId }; f.scope = { projectId: project.projectId, sessionId: task.sessionId }; f.task = task;
   f.input = (id, delivery = "queue") => content(id, delivery, id, { accountId: account.accountId, modelId: task.model, thinking, mode, resourceRevision: 0 });

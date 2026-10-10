@@ -1,6 +1,6 @@
 # PI110-N05 / #66：受控 stdio MCP 本地验收
 
-规格：[总规格 #19](https://github.com/Ricardo121380/only-my-pi/issues/19)；任务：[GitHub #66](https://github.com/Ricardo121380/only-my-pi/issues/66)。前置 #62 已关闭，当前实际 Pi/ai/mcp 均为 1.1.0。此票只交付 stdio 的配置与受控只读；写入仍明确拒绝，交给 #67。
+规格：[总规格 #19](https://github.com/Ricardo121380/only-my-pi/issues/19)；任务：[GitHub #66](https://github.com/Ricardo121380/only-my-pi/issues/66)。前置 #62 已关闭，当前实际 Pi/ai/mcp 均为 1.1.0。此票验收版本只交付 stdio 的配置与受控只读；当时写入明确拒绝，后续由 #67 单独交付。
 
 ## 源码、工作树与证据身份
 
@@ -72,7 +72,7 @@ Node 24.19.0 与 Node 22.19.0 均用实际官方支持矩阵路径运行；运�
 
 `66-final-boundaries.log` **7/7 PASS**，含真实安装扩展及六个新增边界用例；`66-affected-second-review.log` **23/23 PASS**；`66-green-task-snapshot.log` **1/1 PASS**；`66-green-termination-authority.log` **2/2 PASS**；`66-node22-second-review.log` **1/1 PASS**。类型检查 PASS。所有原失败组合命令仍保留。
 
-最终代码 B 单独保存于 `66-verified-b/`。Ego Lite 实际页面完成读取、崩溃 UNKNOWN、未批准停止、停用、Host 停止/重启与历史读回。`66-browser-runtime.json` 的三个运行实际服务接收数 **1 / 1 / 0**，状态 **completed / unknown / rejected**，全部进程组停止、原始 Pi 配置字节不变。`runtimeSourceHashes` 的 8 个模块与当前源码逐项一致，真实 Pi/McpClient 1.1.0、Node 24.19.0、安装扩展副本；模型服务为受控回环，不计为真实 Provider。最终页面截图已实际查看。
+最终代码 B 单独保存于 `66-verified-b/`。Ego Lite 实际页面完成读取、崩溃 UNKNOWN、未批准停止、停用、Host 停止/重启与历史读回。`66-browser-runtime.json` 的三个运行实际服务接收数 **1 / 1 / 0**，状态 **completed / unknown / rejected**，全部进程组停止、原始 Pi 配置字节不变。`runtimeSourceHashes` 的 8 个模块与 #66 当时验收候选逐项一致，真实 Pi/McpClient 1.1.0、Node 24.19.0、安装扩展副本；模型服务为受控回环，不计为真实 Provider。最终页面截图已实际查看。
 
 浏览器夹具通过自己的 HTTP 控制端点停止并保存证据，退出码为 0。`66-final-b/` 的预演和过期的一次性配对尝试只是夹具过程记录，不计为完整 B 通过；最终实际证据是 `66-verified-b/`。
 
@@ -92,4 +92,12 @@ Node 24.19.0 与 Node 22.19.0 均用实际官方支持矩阵路径运行；运�
 
 ## 完成结论
 
-本票必需 C/P/B 与 Standards/Spec **PASS**，实现提交 `e2a69d6`、`ed51539`、`0f54887`、`7b13374`。已准备 GitHub 状态回填；远端关闭必须以实际读回为准。#67 只在该读回后继续。docs-links/secret:scan 的原有全量失败与上述 NOT_RUN 边界继续保留。
+本票必需 C/P/B 与 Standards/Spec **PASS**，实现提交 `e2a69d6`、`ed51539`、`0f54887`、`7b13374`，记录提交 `f15db67`。GitHub 实际回读已于 **2026-10-10T11:45:04Z** CLOSED / completed，回填见 [状态评论](https://github.com/Ricardo121380/only-my-pi/issues/66#issuecomment-6097149823)。#67 在该读回后继续。docs-links/secret:scan 的原有全量失败与上述 NOT_RUN 边界继续保留。
+
+## 批次末共享准入追补
+
+#66→#67 批次唯一一次全量 Node 24 为 **FAIL**，1626 项中 1616 PASS / 3 FAIL / 1 CANCELLED / 6 SKIPPED。除四条既有 docs-links 越界链接外，还暴露 MCP 快照读取插在最终去重检查与任务登记之间的异步窗口。主线程在公开 HTTP 入口固定两次并发快照读取，`67-red-admission.log` 重现同 requestId 返回两个 taskId。
+
+最小修复把读取移到最后的去重/容量检查之前，检查与登记之间不再 await。保留原输入合同；handled 输入可能已在 fixture 首次观察前结束，fixture 仅对该情况接受 succeeded，原结果断言全部保留。`67-green-admission-final.log` **43/43 PASS**。共享准入修复后 Node 24 与 Node 22 的真实 Pi/MCP stdio 读、描述符写均 **2/2 PASS**，分别为 `67-admission-p-node24.log`、`67-admission-p-node22.log`。Ego Lite 新候选实际写入的准入差量证据见 `67-admission-b/`。
+
+这项共享修复纳入本批两轴独立复评，结论在 [#67 验收](2026-10-10-pi110-mcp-write-acceptance.md) 单独报告；原 #66 全量范围与历史源码身份不改写。全量原始 FAIL 和被人工结束的测试 fixture 身份永久保留，不把上述专项复验替代全量通过。
