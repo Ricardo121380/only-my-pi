@@ -20,7 +20,7 @@ Node 24.19.0 与 Node 22.19.0 均用实际官方支持矩阵路径运行；运�
 
 - OMP 自有 `only-my-pi/mcp/config.json`；protocol 1、CAS revision、默认与项目覆盖、origin 和 targetDigest。CLI `omp admin mcp list|status|preview|apply --project ...`、TUI `/mcp`、WebUI `/api/mcp` 共享接口。配置入口均不连接/执行服务器；导入保留原 Pi JSON 字节，所有导入项停用，同名冲突拒绝。
 - command/codePaths 为绝对且可核对文件身份，cwd 限于项目内；参数、非秘密 env、credentialRefs、工具 schema、路径、次数、并发、超时与输入/输出都有上限。启动器拒绝 ENV/BASH_ENV 等 shell 启动变量。凭据私有引用只绑定项目/服务器目标，可显式撤销；原始帧与解码后的键和值均检查秘密，JSON 转义不能绕过。
-- 任务固定配置快照，后续启用状态下的配置编辑只影响新任务；保存停用与独立撤权 epoch 和凭据撤销仍阻断旧任务后续调用。配置工具名称是 SDK 注册及 active ceiling 的上限，额外 MCP 名称没有许可或连接。
+- 每个用户任务固定配置快照，TUI 同一会话的下一条用户任务重新取快照并清空旧许可；后续启用状态下的配置编辑只影响新任务。保存停用与独立撤权 epoch 和凭据撤销仍阻断旧任务后续调用。配置工具名称是 active ceiling 的上限，额外 MCP 名称没有许可或连接。
 - 每次调用重新核对真实工具 schema、目标、代码身份、凭据与生命周期。`readOnlyHint` 只作描述。授权为拒绝/仅本次/本任务，本任务仅在当前 Agent 任务内复用。
 - 发现进程无项目内容读取权；获准的读使用独立短进程，只获得该次 canonical 文件路径读取权。macOS Seatbelt 自启动即生效，配置/秘密/项目写入/网络/子进程 fork 不允许。服务只可写两个固定 scratch/接收记录槽位，每个文件由不可提升的内核 RLIMIT_FSIZE 限为 64 KiB；OMP 运行记录有 8 MiB 写入上限。结束先核对进程组，再释放相关持有；无法确认的孤儿保留 reconciliation 并阻断替代。
 
@@ -61,6 +61,20 @@ Node 24.19.0 与 Node 22.19.0 均用实际官方支持矩阵路径运行；运�
 修复后 `66-recheck-node24.log` 为 15 PASS / 1 FAIL，失败发生在孤儿测试结束后的临时目录清理，功能断言已通过。清理只对 ENOTEMPTY 等临时文件竞态有限重试，`66-recheck-orphan.log` 1/1 PASS。`66-recheck-config.log` 4/4 PASS；`66-recheck-node22.log` 与 `66-recheck-tui.log` 各 1/1 PASS（实际安装扩展副本）。类型检查和 lint PASS。原失败日志保留，不将整条组合命令改写为通过。
 
 修复后的浏览器证据单独保留在 `66-recheck/`，其 `66-browser-input.json` 绑定实际复制运行的代码。页面重新保存/启用并成功读取一次，再通过“保存并停用”撤销待决定的旧任务。审批后实际接收数为零，历史读取与被拒绝的调用分别展示。原完整 B 的停止、重启、断开和窄屏证据仍保留，不替换其原始运行身份。
+
+## 第二轮评审修复与最终代码复验
+
+第二轮 Standards FAIL：P1 记录写入失败阻断物理停止及 Coding 撤权，P2 stdout 上限只覆盖单个未完成帧；工具名称重复映射为建议。第二轮 Spec FAIL：P1 工具 text 内嵌 JSON 的可恢复秘密泄露，P2 TUI 把整个会话当作配置快照边界。原报告分别保留于 `66-second-standards.md` 与 `66-second-spec.md`，实际 RED 见 `66-red-second-review.log`、`66-red-task-snapshot.log`。
+
+- 传输层对协议对象键和值及 text 内嵌 JSON 转义执行最多 16 层检查，超深编码拒绝。实际三种 JSON 转义秘密结果不进入公开任务或后续模型输入；不声称任意编码均可识别。stdout 对整个短进程累计计数，多个完整通知帧也不能突破 64 KiB。
+- 持久化超额不阻断 stdin 关闭、身份核对及 OS 终止；Coding 撤权先执行，MCP 的失败随后如实返回。物理进程已结束但持久状态未确认时，持有记录仍保留。真实只读取消和受控编程撤权均验证 Pi/MCP 进程停止，后者的实际权限回到 Inspect。
+- TUI 使用 Pi 公开的 post-bind registerTool 与 before_agent_start，每个用户任务重取快照、重建发现、结束后停止服务。实际同一 TUI 会话无需 `/new`：首个用户任务读 README（revision 2），随后配置修改，第二个读 ALT（revision 3）；任务 ID、targetDigest 不同，分别审批一次，服务独立接收各一次。旧审批不恢复。
+
+`66-final-boundaries.log` **7/7 PASS**，含真实安装扩展及六个新增边界用例；`66-affected-second-review.log` **23/23 PASS**；`66-green-task-snapshot.log` **1/1 PASS**；`66-green-termination-authority.log` **2/2 PASS**；`66-node22-second-review.log` **1/1 PASS**。类型检查 PASS。所有原失败组合命令仍保留。
+
+最终代码 B 单独保存于 `66-verified-b/`。Ego Lite 实际页面完成读取、崩溃 UNKNOWN、未批准停止、停用、Host 停止/重启与历史读回。`66-browser-runtime.json` 的三个运行实际服务接收数 **1 / 1 / 0**，状态 **completed / unknown / rejected**，全部进程组停止、原始 Pi 配置字节不变。`runtimeSourceHashes` 的 8 个模块与当前源码逐项一致，真实 Pi/McpClient 1.1.0、Node 24.19.0、安装扩展副本；模型服务为受控回环，不计为真实 Provider。最终页面截图已实际查看。
+
+浏览器夹具通过自己的 HTTP 控制端点停止并保存证据，退出码为 0。`66-final-b/` 的预演和过期的一次性配对尝试只是夹具过程记录，不计为完整 B 通过；最终实际证据是 `66-verified-b/`。
 
 ## Standards
 

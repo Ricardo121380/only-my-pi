@@ -129,11 +129,13 @@ export class RpcWorker extends EventEmitter {
     this.approvals.close();
     this.stopping ??= (async () => {
       if (!this.child) return;
-      if (this.mcpEnabled && this.child.connected && !this.closed) await this.mcpControl("mcp_prepare_shutdown");
       if (this.controlled && this.child.connected && !this.closed) {
         this.shutdownId = randomUUID();
         await waitBounded(new Promise((resolve) => this.child.send({ type: "prepare_shutdown", id: this.shutdownId }, () => resolve())), 500);
       }
+      // Failed MCP receipts retain ownership, but cannot suppress coding
+      // revocation, stdin closure or identity-checked OS termination.
+      if (this.mcpEnabled && this.child.connected && !this.closed) await this.mcpControl("mcp_prepare_shutdown").catch(() => {});
       if (!this.closed) this.child.stdin.end();
       await waitBounded(this.exited, 500);
       const pid = this.child.pid;
@@ -158,8 +160,7 @@ export class RpcWorker extends EventEmitter {
   }
   async revoke() {
     this.approvals.invalidate();
-    if (this.mcpEnabled) await this.mcpControl("mcp_revoke");
-    if (!this.controlled && this.mcpEnabled) return;
+    if (!this.controlled && this.mcpEnabled) { try { await this.mcpControl("mcp_revoke"); } catch (error) { await this.stop().catch(() => {}); throw error; } return; }
     if (!this.controlled || !this.child?.connected || this.closed) throw hostError("RPC_CONTROL_UNAVAILABLE", 409);
     const id = randomUUID(), child = this.child;
     let listener, timer;
@@ -170,7 +171,8 @@ export class RpcWorker extends EventEmitter {
         timer = setTimeout(() => reject(hostError("RPC_REVOKE_UNCONFIRMED", 503)), 3000);
         child.send({ type: "revoke", id }, (error) => { if (error) reject(hostError("RPC_REVOKE_UNCONFIRMED", 503)); });
       });
-    } catch (error) { await this.stop(); throw error; }
+      if (this.mcpEnabled) await this.mcpControl("mcp_revoke");
+    } catch (error) { await this.stop().catch(() => {}); throw error; }
     finally { clearTimeout(timer); child.off("message", listener); }
   }
   async mcpControl(type) {

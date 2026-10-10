@@ -90,7 +90,7 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     }
     const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model,
       thinkingLevel: parsed.thinking ?? thinkingLevel, scopedModels: scope.scopedModels.length ? scope.scopedModels : undefined,
-      tools: [...parsed.tools, ...mcpNames], excludeTools: parsed.excludeTools });
+      tools: [...parsed.tools, ...(mode === "tui" ? ["mcp__*"] : mcpNames)], excludeTools: parsed.excludeTools });
     if (!sessionStartEvent && name) sessionManager.appendSessionInfo(name);
     return { ...created, services, diagnostics };
   };

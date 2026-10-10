@@ -17,8 +17,19 @@ export async function launchIdentity(server) {
   return files;
 }
 const quote = (value) => JSON.stringify(value);
-const containsSecret = (value, secrets) => typeof value === "string" ? secrets.some((secret) => value.includes(secret))
-  : value && typeof value === "object" && Object.entries(value).some(([key, entry]) => containsSecret(key, secrets) || containsSecret(entry, secrets));
+const containsSecret = (value, secrets) => {
+  if (!secrets.length) return false;
+  if (typeof value !== "string") return value && typeof value === "object" && Object.entries(value).some(([key, entry]) => containsSecret(key, secrets) || containsSecret(entry, secrets));
+  // Tool text may itself contain JSON. Decode bounded JSON escapes as well as
+  // the protocol frame, including text that surrounds an embedded JSON value.
+  for (let depth = 0; depth < 16; depth++) {
+    if (secrets.some((secret) => value.includes(secret))) return true;
+    const decoded = value.replace(/\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])/gu, (escaped) => JSON.parse(`"${escaped}"`));
+    if (decoded === value) return false;
+    value = decoded;
+  }
+  throw mcpError("MCP_TEXT_ENCODING_LIMIT");
+};
 export function sandboxProfile({ files, readPaths, runtimeDir, configRoot, cwd }) {
   return `(version 1)
 (deny default)
@@ -63,8 +74,10 @@ export class ControlledStdioTransport {
       env: { HOME: runtimeDir, TMPDIR: runtimeDir, PATH: "/usr/bin:/bin", LANG: "en_US.UTF-8", ...this.server.env, ...this.env, OMP_MCP_RUNTIME_DIR: runtimeDir },
     });
     this.child = child; child.stdin.on("error", () => {});
-    let buffer = "", stderrBytes = 0; const decoder = new StringDecoder("utf8");
+    let buffer = "", stdoutBytes = 0, stderrBytes = 0; const decoder = new StringDecoder("utf8");
     child.stdout.on("data", (chunk) => {
+      stdoutBytes += chunk.length; this.record.stdoutBytes = stdoutBytes;
+      if (stdoutBytes > MCP_LIMITS.outputBytes) { this.emit("error", mcpError("MCP_OUTPUT_LIMIT")); void this.close().catch(() => {}); return; }
       buffer += decoder.write(chunk);
       if (Buffer.byteLength(buffer) > MCP_LIMITS.outputBytes) { this.emit("error", mcpError("MCP_OUTPUT_LIMIT")); void this.close().catch(() => {}); return; }
       let index;
@@ -98,21 +111,23 @@ export class ControlledStdioTransport {
   close() {
     this.closed = true;
     this.closing ??= (async () => {
-      if (!this.child) { this.record.status = "stopped"; await this.save(); return; }
+      let writeError;
+      const preserve = async () => { try { await this.save(); } catch (error) { writeError ??= error; } };
+      if (!this.child) { this.record.status = "stopped"; await preserve(); if (writeError) throw writeError; return; }
       await this.identityPending;
-      this.record.status = "stopping"; await this.save(); this.child.stdin.end();
+      this.record.status = "stopping"; this.child.stdin.end(); await preserve();
       await Promise.race([this.exited, delay(100)]);
       for (const signal of ["SIGTERM", "SIGKILL"]) {
         const pid = this.record.pid;
         if (!Number.isSafeInteger(pid) || pid < 1 || !groupAlive(pid)) break;
         if (!this.record.identity || await processIdentity(pid) !== this.record.identity) {
-          this.record.status = "reconciliation"; await this.save(); throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
+          this.record.status = "reconciliation"; await preserve(); throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
         }
         try { process.kill(-pid, signal); } catch (error) { if (error.code !== "ESRCH") throw error; }
         await Promise.race([this.exited, delay(signal === "SIGTERM" ? 200 : 1000)]);
       }
-      if (this.record.pid && groupAlive(this.record.pid)) { this.record.status = "reconciliation"; await this.save(); throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409); }
-      this.record.status = "stopped"; await this.save(); this.emit("close");
+      if (this.record.pid && groupAlive(this.record.pid)) { this.record.status = "reconciliation"; await preserve(); throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409); }
+      this.record.status = "stopped"; await preserve(); this.emit("close"); if (writeError) throw writeError;
     })();
     return this.closing;
   }

@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
+import http from "node:http";
 import { createMcpHost, mcpReception } from "./mcp-host.mjs";
 
 // Real source/installed-extension B/P harness, with isolated synthetic account
@@ -26,4 +27,20 @@ async function stop() {
   console.log(JSON.stringify({ stopped: true, runs: runs.runs.length, receptions: reception.map((entry) => entry.received.filter((item) => item.type === "call").length) }));
 }
 process.once("SIGTERM", () => void stop()); process.once("SIGINT", () => void stop());
-process.once("SIGUSR2", () => void stop());
+// SDK global signal handlers may be replaced. This fixture-owned endpoint is
+// independent of signals and only accepts its own Origin from the local runner.
+const control = http.createServer(async (req, res) => {
+  if (req.method !== "POST" || !["/stop", "/restart"].includes(req.url) || req.headers.origin !== controlOrigin) { res.writeHead(403).end(); return; }
+  if (req.url === "/restart") {
+    await f.restart();
+    const pair = await fetch(f.host.origin + "/internal/pair", { method: "POST", headers: { Origin: f.host.origin, Authorization: `Bearer ${f.host.controlToken}` } }).then((response) => response.json());
+    res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ pairingUrl: pair.url, origin: f.host.origin })); return;
+  }
+  res.once("finish", () => { control.close(); control.closeAllConnections(); });
+  try { await stop(); res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ stopped: true })); }
+  catch { res.writeHead(500).end(); }
+});
+await new Promise((resolve) => control.listen(0, "127.0.0.1", resolve));
+const controlOrigin = `http://127.0.0.1:${control.address().port}`;
+await fs.writeFile(path.join(evidence, "66-browser-control.json"), JSON.stringify({ origin: controlOrigin }));
+console.log(JSON.stringify({ fixtureControl: controlOrigin }));

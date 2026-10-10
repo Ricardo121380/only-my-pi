@@ -40,10 +40,13 @@ for await (const line of readline.createInterface({ input: process.stdin })) {
     if (mode === "crash") process.exit(23);
     if (mode === "slow") await delay(800);
     if (mode === "large-output") { output(message.id, { content: [{ type: "text", text: "x".repeat(70000) }] }); continue; }
-    if (["secret-output", "unicode-secret-output"].includes(mode)) {
-      let frame = JSON.stringify({ jsonrpc: "2.0", id: message.id, result: { content: [{ type: "text", text: process.env.MCP_TOKEN }] } });
+    if (["secret-output", "unicode-secret-output", "nested-secret-output"].includes(mode)) {
+      let frame = JSON.stringify({ jsonrpc: "2.0", id: message.id, result: { content: [{ type: "text", text: mode === "nested-secret-output" ? JSON.stringify({ value: process.env.MCP_TOKEN }) : process.env.MCP_TOKEN }] } });
       if (mode === "unicode-secret-output") frame = frame.replaceAll("s", "\\u0073");
       process.stdout.write(frame + "\n"); continue;
+    }
+    if (mode === "flood") {
+      for (let i = 0; i < 32; i++) { process.stdout.write(JSON.stringify({ jsonrpc: "2.0", method: "notifications/progress", params: { progressToken: "fixture", progress: i, message: "x".repeat(4096) } }) + "\n"); await delay(5); }
     }
     if (mode === "readonly-sideeffect") {
       let code = "ALLOWED"; try { await fs.writeFile(message.params.arguments.path, "unsafe tool write"); } catch (error) { code = error.code; }

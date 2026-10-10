@@ -11,7 +11,8 @@ const plain = (value) => value !== null && typeof value === "object" && !Array.i
 const bounded = (value, max = 4096) => typeof value === "string" && value.length <= max && !/[\0\r\n]/u.test(value);
 const scopePath = (value) => bounded(value, 512) && value.length > 0 && !path.isAbsolute(value) && !value.split(/[\\/]/u).some((part) => ["..", ".git", ".pi", ".env", ""].includes(part)) && !value.startsWith("~");
 const safeEnv = (key) => /^[A-Z][A-Z0-9_]{0,63}$/u.test(key) && !/(?:KEY|TOKEN|SECRET|PASS|AUTH|HOME|PATH|NODE|DYLD|LD_|PI_|OMP_|BASH|SHELL|ZDOTDIR)/u.test(key) && !["ENV", "IFS"].includes(key);
-export const mcpToolNames = (snapshot) => snapshot?.servers.filter((server) => server.enabled).flatMap((server) => server.tools.map((tool) => `mcp__${server.name}__${tool.name}`)) ?? [];
+export const mcpToolName = (server, tool) => `mcp__${server}__${tool}`;
+export const mcpToolNames = (snapshot) => snapshot?.servers.filter((server) => server.enabled).flatMap((server) => server.tools.map((tool) => mcpToolName(server.name, tool.name))) ?? [];
 export function validateServer(value) {
   if (!plain(value) || Object.keys(value).some((key) => !["name", "transport", "command", "args", "codePaths", "cwd", "env", "credentialRefs", "tools", "enabled"].includes(key)) || !id(value.name) || value.transport !== "stdio"
     || !bounded(value.command) || !path.isAbsolute(value.command) || typeof value.enabled !== "boolean") throw mcpError("MCP_CONFIG_INVALID");

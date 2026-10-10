@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import Ajv from "ajv";
-import { McpCatalog, MCP_LIMITS, digest, mcpError } from "./catalog.mjs";
+import { McpCatalog, MCP_LIMITS, digest, mcpError, mcpToolName } from "./catalog.mjs";
 import { McpRuns } from "./runs.mjs";
 import { ControlledStdioTransport, launchIdentity } from "./process.mjs";
 import { processIdentity } from "../host/ownership.mjs";
@@ -23,9 +23,9 @@ async function selectedPath(project, value, scopes) {
 // its native MCP client owns protocol semantics. OMP owns admission and state.
 export function installOmpMcp(pi, { configRoot, controller }) {
   const catalog = new McpCatalog(configRoot), store = new McpRuns(configRoot), connections = new Map(), processes = new Set(), grants = new Set(), parents = new Map();
-  let snapshot, run, McpClient, busy = false, revoked = false, closing = false, monitor, saved = Promise.resolve();
+  let snapshot, run, McpClient, busy = false, revoked = false, closing = false, monitor, saved = Promise.resolve(), tui = false, cleanupConfirmed = true, generation = 0;
   pi.events.on("only-my-pi:mcp-task:v1", (payload) => { snapshot = payload.snapshot; });
-  const save = () => { const copy = structuredClone(run); saved = saved.then(() => store.save(copy)); return saved; };
+  const save = () => { const copy = structuredClone(run); saved = saved.catch(() => {}).then(() => store.save(copy)); return saved; };
   const tools = () => [...connections.values()].flatMap((entry) => entry.names);
   pi.events.emit("only-my-pi:owned-mcp:v1", { admits: (name) => !closing && !revoked && tools().includes(name) });
   const check = async (server) => {
@@ -35,12 +35,17 @@ export function installOmpMcp(pi, { configRoot, controller }) {
   };
   const stop = async () => {
     closing = true; grants.clear(); clearInterval(monitor);
-    const outcomes = await Promise.allSettled([...processes].map(async (entry) => { entry.disarm?.(); await entry.client.close(); await entry.transport.close(); }));
+    cleanupConfirmed = false;
+    const outcomes = await Promise.allSettled([...processes].map(async (entry) => {
+      entry.disarm?.(); const closed = await Promise.allSettled([entry.client.close(), entry.transport.close()]);
+      if (closed.some((outcome) => outcome.status === "rejected")) throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
+    }));
     if (run) {
       for (const call of run.calls) if (call.status === "dispatched") call.status = "unknown";
       run.status = outcomes.some((entry) => entry.status === "rejected") ? "reconciliation" : "stopped"; await save();
     }
     if (outcomes.some((entry) => entry.status === "rejected")) throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
+    cleanupConfirmed = true;
   };
   const connect = async (server, files, credentials, readPaths, callId = null, signal) => {
     if (closing || revoked) throw mcpError("MCP_AUTHORIZATION_REVOKED");
@@ -115,13 +120,19 @@ export function installOmpMcp(pi, { configRoot, controller }) {
       busy = false;
     }
   };
-  pi.on("session_start", async (_event, ctx) => {
+  const startTask = async (ctx) => {
     const projectPath = await fs.realpath(ctx.cwd);
-    snapshot ??= await catalog.snapshot(projectPath);
+    if (tui) {
+      if (!cleanupConfirmed) throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
+      snapshot = await catalog.snapshot(projectPath); connections.clear(); processes.clear(); parents.clear(); run = undefined;
+      revoked = false; closing = false; generation++;
+    } else snapshot ??= await catalog.snapshot(projectPath);
     if (snapshot.projectPath !== projectPath) throw mcpError("MCP_PROJECT_BINDING_CHANGED");
+    controller.mcpTools = tools; controller.applyToolCeiling();
     const selected = snapshot.servers.filter((server) => server.enabled);
     if (!selected.length) return;
     run = await store.begin({ taskId: process.env.OMP_HOST_INPUT_TASK_ID ?? `cli_${randomUUID()}`, projectPath, revision: snapshot.revision });
+    cleanupConfirmed = false;
     try {
     ({ McpClient } = await loadNativeMcp(process.env.OMP_MCP_SDK_FILE));
     for (const server of selected) {
@@ -133,20 +144,28 @@ export function installOmpMcp(pi, { configRoot, controller }) {
       const available = await entry.client.listTools({ signal: AbortSignal.timeout(MCP_LIMITS.timeoutMs) }); if (available.length > MCP_LIMITS.tools) throw mcpError("MCP_TOOL_LIMIT");
       for (const policy of server.tools) {
         const tool = available.find((entry) => entry.name === policy.name); if (!tool) throw mcpError("MCP_TOOL_NOT_FOUND");
-        const name = `mcp__${server.name}__${policy.name}`; entry.names.push(name);
+        const name = mcpToolName(server.name, policy.name); entry.names.push(name);
         pi.registerTool({ name, label: `${server.name}/${policy.name}`, description: `OMP 受控只读工具；每次调用检查授权和路径。${tool.description ?? ""}`, parameters: tool.inputSchema, executionMode: "sequential",
           execute: (toolCallId, params, signal, _onUpdate, ctx) => call(server, policy, tool, toolCallId, params, signal, ctx) });
       }
     }
-    controller.mcpTools = tools; controller.applyToolCeiling();
-    monitor = setInterval(() => { void Promise.all([...connections.values()].map(({ server }) => check(server))).catch(async () => { revoked = true; await stop().catch(() => {}); }); }, 200); monitor.unref();
+    controller.applyToolCeiling();
+    const monitored = generation;
+    monitor = setInterval(() => { void Promise.all([...connections.values()].map(({ server }) => check(server))).catch(async () => { if (generation === monitored) { revoked = true; await stop().catch(() => {}); } }); }, 200); monitor.unref();
     if (process.connected) process.send({ type: "mcp_initialized", clean: true }, () => {});
     } catch (error) {
       await stop().catch(() => {});
       if (process.connected) process.send({ type: "mcp_initialized", clean: false, code: /^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "MCP_START_FAILED" }, () => {});
       throw error;
     }
+  };
+  pi.on("session_start", async (_event, ctx) => {
+    tui = ctx.mode === "tui";
+    if (!tui) await startTask(ctx);
   });
+  // A TUI conversation contains many user tasks. Pi's public post-bind tool
+  // registration refreshes the next request without inheriting old grants.
+  pi.on("before_agent_start", async (_event, ctx) => { if (tui) await startTask(ctx); });
   // All exposure paths execute the same registered handler. An extension's
   // extra MCP registration never creates a connection or receives a grant.
   pi.on("tool_call", (event) => {
@@ -155,15 +174,14 @@ export function installOmpMcp(pi, { configRoot, controller }) {
     if (event.parentToolCallId && (typeof event.parentToolCallId !== "string" || event.parentToolCallId.length > 256)) return { block: true, reason: "MCP_CALL_ID_INVALID" };
     parents.set(event.toolCallId, event.parentToolCallId ?? null);
   });
-  pi.on("agent_end", () => { grants.clear(); });
-  pi.on("agent_start", () => { if (run && !process.env.OMP_HOST_INPUT_TASK_ID) run.taskId = `cli_${randomUUID()}`; });
+  pi.on("agent_end", async () => { grants.clear(); if (tui) await stop(); });
   pi.on("session_shutdown", stop);
   const receive = async (message) => {
     if (!["mcp_revoke", "mcp_prepare_shutdown"].includes(message?.type) || typeof message.id !== "string") return;
     revoked = true; await stop().catch(() => {});
-    if (process.connected) process.send({ type: "mcp_stopped", id: message.id, clean: !run || run.status === "stopped" }, () => {});
+    if (process.connected) process.send({ type: "mcp_stopped", id: message.id, clean: !run || cleanupConfirmed }, () => {});
   };
   process.on("message", receive);
   pi.on("session_shutdown", () => process.off("message", receive));
-  return { tools, stop, clean: () => !run || run.status === "stopped" };
+  return { tools, stop, clean: () => !run || cleanupConfirmed };
 }
