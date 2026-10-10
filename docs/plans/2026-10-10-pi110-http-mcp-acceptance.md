@@ -1,6 +1,6 @@
 # PI110-N07 / #68：Streamable HTTP MCP 验收
 
-实施基线为 `e25f701`，批次初始 HEAD 为 `5d4ccda3c79629e6432d8b668ac435ad6f603f1c`，分支 `codex/webui-phase1`。本票必需 C/P/B 已完成；Standards、Spec 和 GitHub 关闭回读另行记录，未取得前不得称本票关闭。#69 须在本票关闭回读后实施。
+实施基线为 `e25f701`，批次初始 HEAD 为 `5d4ccda3c79629e6432d8b668ac435ad6f603f1c`，分支 `codex/webui-phase1`。本票必需 C/P/B、Standards、Spec 与 GitHub 关闭回读均已完成；#69 在本票关闭回读后实施。
 
 本地证据根：`LOCAL_WORKSPACE/artifacts/webui-optimization/pi110-http-oauth-1010-221428`。命令的完整 argv、UTC 时间、退出码、日志 SHA-256 保存在同名 `.json`；失败日志继续保留。`baseline.json`、`baseline-worktree.patch`、`baseline-index.patch` 和 `68-source-candidate.json` 记录当前工作树与实际源码身份。
 
@@ -68,7 +68,9 @@
 
 最终 Node22 分组出现一次重启后项目不存在。静态核对发现初始索引与 addProject 可并发将不同快照写入同一 projects.json；本轮将这两个现有写入口按顺序保存并在真正写入时读取最新项目列表。该因果关系属于源码推断，单独复核和修改前 8 次重启均未稳定复现原分组失败，原 FAIL 继续保留。修复后的分组回执另行记录，未以等待索引或自动重新注册项目来掩盖失败。
 
-当前 C/P/B：PASS。Standards：PENDING；Spec：PENDING；GitHub 关闭：PENDING。
+当前 C/P/B：PASS。第三轮独立 Standards：PASS（hard failures 0 / smells 0）；Spec：PASS（missing 0 / scope 0 / wrong 0）。评审固定范围为 `e25f701..a4dd750` 三个实现提交、15 个路径；原文保存在 `68-review-final.md`。最后的 `68-third-pack`、`68-third-scan`、`68-third-lint`、`68-third-docs` 均 exit 0，扫描 0 findings，docs-links 2/2。
+
+GitHub 关闭及回读：PASS；[#68 完成证据](https://github.com/Ricardo121380/only-my-pi/issues/68#issuecomment-6099061877)与正文完成状态于 2026-10-10 15:24:24Z 回读为 CLOSED / completed，#69 的原生依赖回读为 #68 closed。原件保存在 `68-remote/`；首次正文逐字断言仅因尾部空白失败，随后双方去除尾部空白的正文比较通过，没有重放关闭操作。
 
 I / 完整候选安装、L / 真实外部服务：NOT_RUN。本票不替代 #69 的 OAuth 验收，不证明 Full、发布、分发、remote CI 或 U2。当前源候选含用户原有未提交改动，不能将本地提交树称为完整安装候选。
 
