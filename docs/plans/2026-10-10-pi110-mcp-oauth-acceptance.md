@@ -50,6 +50,9 @@
 | `69-final-node22` | PASS 35/35，25 项 OAuth、OAuth CLI/TUI、HTTP 评审、HTTP CLI/TUI 和 stdio；完整且正确的五个文件参数，exit 0 |
 | `69-final-typecheck`、`69-final-pack`、`69-final-scan`、`69-final-lint` | PASS，四范围 TypeScript、1597 个打包文件、0 scan/lint findings |
 | `69-final-browser-script`、`69-final-browser-readback` | PASS；Ego Lite TaskSpace 44 实际成功、取消、失效及重新登录，随后联合源码、运行副本、服务与持久记录回读 |
+| `69-host-compat-node22`、`69-host-compat-node24` | 最小 Host 初始化修复后，两运行时分别 PASS 42/42，六个既有文件、原断言保持 |
+| `69-host-compat-mcp-node22`、`69-host-compat-typecheck` | 最新源码实际 Pi/MCP 定向矩阵 PASS 35/35；四范围 typecheck PASS |
+| `69-host-compat-browser-script`、`69-host-compat-browser-readback` | 最新源码 C/P/B 再验 PASS，同一 TaskSpace 44 的全流程与源码/副本/接收/持久回读 |
 
 `69-invalidation-node22` 的 stdio 参数曾写成不存在的 `host-mcp-readonly.test.mjs`，Node 实际仅计入 33 项。正确的 `host-mcp-stdio.test.mjs` 通过独立回执验证 1/1；不将前者冒充包含 stdio 的 34 项单次执行。
 
@@ -75,6 +78,8 @@
 
 目标改写修复后的最终候选另存 `69-final-source-candidate.json` 与 `69-final-browser/`。同一 TaskSpace 44 的连续脚本在 **18.24 秒**内完成上述成功、取消、失效与重新显式登录，再物理停止夹具；没有该脚本的 timeout 或定位恢复。服务和持久计数保持 **3 注册 / 2 授权页 / 2 不同 grant 令牌交换 / 2 次批准调用 / 1 invalid initialize / 3 stopped runs / 4 合成模型请求**。完整参数及实际返回的最终 relogin PNG 均已查看，全部 19 路径及既有原子写依赖与运行副本 SHA 联合断言通过。
 
+Host 初始化兼容修复后的 `c770fd56572f85b5ad3ffbb0d663083e6f1fd0d0` 另存 `69-host-compat-source-candidate.json` 与 `69-host-compat-browser/`。连续脚本 **23.68 秒**，无 timeout；相同 TaskSpace 44、相同原生 Pi 1.1.0，取消/成功/发行方失效/重新显式登录全部完成。实际计数仍为 **3 注册 / 2 授权页 / 2 不同 grant 令牌交换 / 2 次批准调用 / 1 invalid initialize / 3 stopped runs / 4 合成模型请求**。最终 relogin-approval 与 relogin-success PNG 已查看；19 个源码和关键运行副本及既有原子写依赖 SHA 一致，fixture 正常 exit 0。
+
 ## 独立完成边界
 
 C / P / B：PASS。第四轮独立完整范围 Standards：PASS（hard 0 / 非阻断 smell 1）；Spec：PASS（missing 0 / partial 0 / scope 0 / wrong 0）。GitHub #69 于 **2026-10-10 17:02:44Z** 关闭为 CLOSED / completed；7 条条件、完整正文和[完成评论](https://github.com/Ricardo121380/only-my-pi/issues/69#issuecomment-6100003567)均精确回读，唯一前置 #68 已 CLOSED，#19 正文 SHA 保持（`69-remote/after.json`、`verification.json`、`deps-after.json`、`19-after.json`）。#68 的验收与完成结论保留在 [HTTP MCP 验收](./2026-10-10-pi110-http-mcp-acceptance.md)，不与本票 OAuth 结论合并。
@@ -89,6 +94,6 @@ C / P / B：PASS。第四轮独立完整范围 Standards：PASS（hard 0 / 非�
 
 带入历史全量结果为 **1626 总计 / 1616 pass / 3 fail / 1 cancelled / 6 skip，exit 1**。首次批末全量在 `6a60cebab917f2636efab84f724d3ad85b17e0f8` 的实际工作树运行：**1678 总计 / 1653 pass / 19 fail / 0 cancelled / 6 skip，exit 1，370.36 秒**（`batch-full-node24.json` / `.log`）。全量期间 1660 个候选文件 SHA 无漂移；19 个失败都来自新 Host OAuth 构造器对 stack.root 的无条件 path.join，使原有注入入口不能启动，完整错误保存在 `batch-full-node24-failures.json`。历史三项失败及一项取消在该候选通过。最小修复仅让 SDK 路径在根路径存在时构造；显式 OAuth 操作仍由 loadNativeMcp 对绑定缺失拒绝，不把假 SDK 注入旧夹具、不弱化断言。修复后原有六文件在 Node22/24 分别 **42/42 PASS**，四范围 typecheck PASS（`69-host-compat-node22`、`69-host-compat-node24`、`69-host-compat-typecheck`）。
 
-原计划全量一次；新增回归要求修复并验证最终候选，因此首次 FAIL 保留为修复前证据，后续实际 Pi/浏览器与完整范围评审重新核对，再为最终候选执行全量。当前补充验证与评审待完成，最终全量尚未运行；不以定点 PASS 或本票既有 PASS 覆盖上述 FAIL。
+原计划全量一次；新增回归要求修复并验证最终候选，因此首次 FAIL 保留为修复前证据，后续实际 Pi/浏览器与完整范围评审重新核对，再为最终候选执行全量。最新补充 C/P/B 已 PASS，完整范围第五轮评审待完成，最终全量尚未运行；不以定点 PASS 或本票既有 PASS 覆盖上述 FAIL。
 
 I / 完整候选安装、L / 真实第三方 OAuth 或实际外部服务、remote CI、Full / 发布分发、U2：NOT_RUN。受控协议与浏览器证据不代实际第三方登录；#19 总规格和其他工单仍各自按其验收与依赖推进。
