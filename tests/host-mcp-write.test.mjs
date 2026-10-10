@@ -196,6 +196,13 @@ test("crashed coding owner keeps real MCP residual effects UNKNOWN and project o
   const ended = await until(() => f.task(started.taskId), terminal, "coding owner crash"); assert.equal(ended.error, "RPC_TERMINATION_UNCONFIRMED");
   await until(async () => fs.readFile(path.join(f.project, "README.md"), "utf8"), (value) => value === "approved MCP file bytes\n", "residual authorized descriptor effect");
   const orphan = (await f.mcp({ type: "status" })).runs.at(-1); assert.equal(orphan.status, "reconciliation"); assert.equal(orphan.calls[0].status, "unknown"); assert.ok(orphan.processes.some((entry) => entry.alive));
+  assert.equal(orphan.calls[0].application, "unknown"); assert.equal(orphan.calls[0].observedChange, undefined); assert.equal(orphan.calls[0].verification, "not_run");
+  const ledgerFile = path.join(f.config, "only-my-pi/mcp/runs.json"), ledger = JSON.parse(await fs.readFile(ledgerFile, "utf8"));
+  assert.equal(ledger.runs.at(-1).calls[0].application, "unknown", "writer startup is durably uncertain before the owner can crash");
+  ledger.runs.at(-1).calls[0].application = "not_applied";
+  await fs.writeFile(ledgerFile, JSON.stringify(ledger));
+  assert.equal((await f.mcp({ type: "status" })).runs.at(-1).calls[0].application, "unknown", "legacy dispatched writes are projected as uncertain without rewriting history");
+  assert.equal(JSON.parse(await fs.readFile(ledgerFile, "utf8")).runs.at(-1).calls[0].application, "not_applied");
   await assert.rejects(new DirectSessionOwnership(f.config).acquire("project", f.project), { code: "OWNERSHIP_HELD" });
   const received = await mcpReception(orphan); assert.equal(received.filter((entry) => entry.type === "call").length, 1); assert.equal(received.filter((entry) => entry.type === "effect").length, 1);
 });

@@ -114,7 +114,7 @@ export function installOmpMcp(pi, { configRoot, controller }) {
       const timeout = AbortSignal.timeout(MCP_LIMITS.timeoutMs), callSignal = AbortSignal.any([signal, timeout, authority?.signal].filter(Boolean));
       // An approved writer can mutate its descriptor during startup. Record the
       // attempted effect boundary before launch, even before tools/call exists.
-      if (write) { record.status = "dispatched"; await save(); await authority.assert(); await write.assert(); }
+      if (write) { record.status = "dispatched"; record.application = "unknown"; await save(); await authority.assert(); await write.assert(); }
       execution = await connect(server, entry.files, await catalog.credentials(server, snapshot.projectPath), write ? [] : [record.target], record.callId, callSignal, write?.handle);
       const fresh = (await execution.client.listTools({ signal: callSignal, timeoutMs: MCP_LIMITS.timeoutMs })).find((tool) => tool.name === policy.name);
       if (!fresh || digest(fresh) !== record.definitionDigest || execution.changed || entry.changed) throw mcpError("MCP_TOOL_DEFINITION_CHANGED");

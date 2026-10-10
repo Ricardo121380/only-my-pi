@@ -27,6 +27,8 @@ LOCAL_WORKSPACE/artifacts/webui-optimization/pi110-66-67-1010-mW7m1w
 
 `67-final-node24.log` **14/14 PASS**；`67-affected.log` **40/40 PASS**，覆盖 direct shell/session、Host terminals/manual/controlled/RPC/resume、OMP Direct 与 stdio/config 回归。新增 fixture 失败清理后，`67-full-failure-recheck.log` 的本票 15 项全部通过，但整条 57 项组合为 **56 PASS / 1 FAIL**，不能把该命令记为 PASS。随后共享准入竞态与 handled 输入观察修正，`67-green-admission-final.log` **43/43 PASS**。`67-final-node22.log` **1/1 PASS**，`67-cleanup-node22.log` **2/2 PASS**。WebUI `67-web-first.log` **94/94 PASS**；类型检查、lint、pack:check PASS，打包 **1594** 个文件。最终准入差量的类型检查、lint 及真实 P 另存 `67-typecheck-admission.log`、`67-lint-admission.log`、`67-admission-p-node24.log`、`67-admission-p-node22.log`，后两条均 **2/2 PASS**。
 
+Spec 首轮查出 owner SIGKILL 绕过 catch 后，孤儿写入会同时显示 UNKNOWN 与 not_applied。主线程在真实 Pi 崩溃用例补断言取得 RED（`67-red-owner-result.log`），再将启动前的 durable application 设为 unknown，并对旧 dispatched 写入作 unknown 的只读投影；不重写旧历史、不推测最终 digest。页面将 absent observedChange 显示为“字节变化尚未核对”。UI fixture 首次缺少 jsdom dialog 方法的失败独立保留，补齐后得到对应文案 RED（`67-red-owner-ui-boundary.log`）。修复后 Node 24 六个受影响真实 P 场景 **6/6 PASS**，Node 22 owner 崩溃 **1/1 PASS**，WebUI **95/95 PASS**，类型检查、lint、build:web PASS；见 `67-green-owner-node24.log`、`67-green-owner-node22.log`、`67-green-owner-web.log` 及 `67-*-owner.log`。真实崩溃用例还覆盖旧 application: not_applied 的 dispatched 记录能正确投影 unknown，磁盘历史保持原字节。
+
 ## P：真实 Pi、实际接收账本与文件效果
 
 受控 stdio 服务 `tests/fixtures/mcp-write-server.mjs` 独立记录启动、tools/call 接收和实际 effect，且故意声明 readOnlyHint: true。产品依据显式策略和物理权限判断，而不信任此 hint。
@@ -67,6 +69,8 @@ RED `67-red-write-clean.log` 保留最初尚不支持 write scope 的真实失�
 
 共享 Host 准入修复后的实际页面另保存在 `67-admission-b/`：重新启用、选择账号/模型/受控模式、原生批准 Coding 与 MCP，一次真实接收、一次真实文件效果，applied、字节变化与未运行项目验证分别展示。实际 fixture 停止 HTTP 200、退出码 0；记录增加 HostTasks 在内的十个 runtime 模块 hash，与修复候选一致。原完整 B 与此准入差量 B 分开绑定，不改写原始运行身份。
 
+Spec 结果修复后的 Ego Lite 差量 B 保存于 `67-owner-b/`。原生批准 Coding 和 MCP“仅本次”后，受控服务实际收到 tools/call，按已核实身份 SIGKILL 本 fixture 的 Pi owner；服务随后实际写入 README。页面与公开账本均为 reconciliation、unknown / application: unknown，且明确“字节变化尚未核对”，不把未经核对的变化说成没有变化。`67-browser-before-cleanup.json` 保存实际 **1 接收 / 1 effect**、文件字节和十一项 runtime 模块 hash，与候选一致；`67-owner-unknown-visible.png` 已查看。产品没有确认残留退出，继续保留写入所有权；留证后仅按 PID/start 身份清理本 fixture 的一个残留进程，见 `67-fixture-only-cleanup.json`。这次 fixture 关闭 HTTP 200、进程退出 0，不能将测试材料的身份清理写成产品自然完成或自动恢复。原 raw Pi 配置字节保持，所有 fixture 进程最终已退出。页面脚本曾因错误的入口/审批精确文字、重复匹配及选择到其他 dialog 而中断，均根据当前 DOM 在同一 TaskSpace 恢复；审批只提交一次，业务接收与效果未重放。
+
 ## 批次全量、失败基线与适用限制
 
 - 本次 #66→#67 批次唯一一次全量 Node 24 命令为 `node --test --test-concurrency=4`，实际退出 **1 / FAIL**：**1626 项，1616 PASS、3 FAIL、1 CANCELLED、6 SKIPPED**，见 `batch-full-node24.log`。原始结果永久保留；局部复验不把这次全量改写为 PASS，也没有再跑第二次全量。
@@ -80,4 +84,4 @@ RED `67-red-write-clean.log` 保留最初尚不支持 write scope 的真实失�
 
 ## 独立评审与完成结论
 
-Standards 与 Spec 将分别按固定基点 `f15db67a1e3b290cd0df0908b8da905d28f6e704` 至本票代码提交进行独立只读评审，结果单独保存。当前两轴 **NOT_RUN**，本票尚不宣称完成；发现问题由主线程复现、最小修复和验证后再收口。
+首轮固定范围 `f15db67...7173dab` 的 Standards **PASS**（一项锁文件路径构造重复的 P3 非阻断判断）；Spec **FAIL**（owner 崩溃后的应用结果矛盾 P2），分别保存于 `67-standards-first.md` 和 `67-spec-first.md`。上述主线程真实 RED→GREEN 与 Ego Lite 差量验证已完成，修复提交后再作双轴独立只读评审；最终评审尚待收回，本票此刻尚不宣称完成。
