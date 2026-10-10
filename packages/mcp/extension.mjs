@@ -8,6 +8,7 @@ import { ControlledStdioTransport, launchIdentity } from "./process.mjs";
 import { processIdentity } from "../host/ownership.mjs";
 import { loadNativeMcp } from "./native.mjs";
 import { openWriteTarget } from "./write-target.mjs";
+import { ControlledHttpTransport } from "./http.mjs";
 
 const result = (code) => ({ content: [{ type: "text", text: code }], details: { status: code } });
 async function selectedPath(project, value, scopes) {
@@ -24,7 +25,7 @@ async function selectedPath(project, value, scopes) {
 // its native MCP client owns protocol semantics. OMP owns admission and state.
 export function installOmpMcp(pi, { configRoot, controller }) {
   const catalog = new McpCatalog(configRoot), store = new McpRuns(configRoot), connections = new Map(), processes = new Set(), grants = new Set(), parents = new Map();
-  let snapshot, run, McpClient, busy = false, revoked = false, closing = false, monitor, saved = Promise.resolve(), tui = false, cleanupConfirmed = true, generation = 0;
+  let snapshot, run, McpClient, NativeHttpTransport, busy = false, revoked = false, closing = false, monitor, saved = Promise.resolve(), tui = false, cleanupConfirmed = true, generation = 0;
   pi.events.on("only-my-pi:mcp-task:v1", (payload) => { snapshot = payload.snapshot; });
   const save = () => { const copy = structuredClone(run); saved = saved.catch(() => {}).then(() => store.save(copy)); return saved; };
   const tools = () => [...connections.values()].flatMap((entry) => entry.names);
@@ -50,8 +51,13 @@ export function installOmpMcp(pi, { configRoot, controller }) {
   };
   const connect = async (server, files, credentials, readPaths, callId = null, signal, writeHandle) => {
     if (closing || revoked) throw mcpError("MCP_AUTHORIZATION_REVOKED");
-    const record = { server: server.name, targetDigest: server.targetDigest, callId, kind: callId ? writeHandle ? "write" : "read" : "discovery", pid: null, status: "starting" };
-    const transport = new ControlledStdioTransport({ server, files, readPaths, writeHandle, configRoot, ...credentials, record, save });
+    const remote = server.transport === "streamable-http";
+    const record = { server: server.name, transport: server.transport, targetDigest: server.targetDigest, callId, kind: callId ? remote ? "remote" : writeHandle ? "write" : "read" : "discovery", pid: null, status: "starting" };
+    const transport = remote ? new ControlledHttpTransport({ NativeTransport: NativeHttpTransport, server, ...credentials, record, save, signal,
+      authorize: async (expected) => {
+        if (closing || revoked || !await catalog.current(server)) throw mcpError("MCP_AUTHORIZATION_REVOKED");
+        if (digest((await catalog.credentials(server, snapshot.projectPath)).env) !== expected) throw mcpError("MCP_CREDENTIAL_BINDING_CHANGED");
+      } }) : new ControlledStdioTransport({ server, files, readPaths, writeHandle, configRoot, ...credentials, record, save });
     const client = new McpClient({ name: "only-my-pi", version: "1", requestTimeoutMs: MCP_LIMITS.timeoutMs });
     const connection = { client, transport, record, changed: false };
     if (signal) {
@@ -60,8 +66,10 @@ export function installOmpMcp(pi, { configRoot, controller }) {
       signal.addEventListener("abort", abort, { once: true }); connection.disarm = () => signal.removeEventListener("abort", abort);
     }
     processes.add(connection); run.processes.push(record); await save();
-    transport.cwd = await fs.realpath(path.resolve(snapshot.projectPath, server.cwd ?? "."));
-    if (transport.cwd !== snapshot.projectPath && !transport.cwd.startsWith(snapshot.projectPath + path.sep)) throw mcpError("MCP_CWD_NOT_ADMITTED");
+    if (!remote) {
+      transport.cwd = await fs.realpath(path.resolve(snapshot.projectPath, server.cwd ?? "."));
+      if (transport.cwd !== snapshot.projectPath && !transport.cwd.startsWith(snapshot.projectPath + path.sep)) throw mcpError("MCP_CWD_NOT_ADMITTED");
+    }
     client.onNotification("notifications/tools/list_changed", () => { connection.changed = true; grants.clear(); });
     try { await client.connect(transport); }
     catch (error) {
@@ -72,11 +80,12 @@ export function installOmpMcp(pi, { configRoot, controller }) {
     }
     // sandbox-exec legitimately changes comm during exec. The completed MCP
     // handshake pins the server lifetime after that transition.
-    transport.record.identity = await processIdentity(transport.record.pid);
+    if (!remote) transport.record.identity = await processIdentity(transport.record.pid);
     await save(); return connection;
   };
   const call = async (server, policy, initial, toolCallId, params, signal, ctx) => {
     const entry = connections.get(server.name);
+    const remote = server.transport === "streamable-http";
     if (typeof toolCallId !== "string" || !toolCallId || toolCallId.length > 256) return result("MCP_CALL_ID_INVALID");
     if (run.calls.some((call) => call.toolCallId === toolCallId)) return result("MCP_CALL_ALREADY_RECORDED");
     const record = { callId: randomUUID(), toolCallId, parentToolCallId: parents.get(toolCallId) ?? null, taskId: run.taskId, server: server.name, tool: policy.name, effect: policy.effect, targetDigest: server.targetDigest, revision: snapshot.revision, definitionDigest: digest(initial), inputDigest: digest(params), status: "checking", startedAt: new Date().toISOString() };
@@ -85,6 +94,7 @@ export function installOmpMcp(pi, { configRoot, controller }) {
     try {
       if (Buffer.byteLength(JSON.stringify(params)) > MCP_LIMITS.inputBytes) throw mcpError("MCP_INPUT_LIMIT");
       await check(server);
+      if (remote && (await store.status(snapshot.projectPath)).runs.some((prior) => prior.calls.some((call) => call.targetDigest === server.targetDigest && call.effect === "remote" && call.status === "unknown"))) throw mcpError("MCP_REMOTE_RECONCILIATION_REQUIRED", 409);
       const current = (await entry.client.listTools({ signal, timeoutMs: MCP_LIMITS.timeoutMs })).find((tool) => tool.name === policy.name);
       if (entry.changed || !current || digest(current) !== record.definitionDigest) throw mcpError("MCP_TOOL_DEFINITION_CHANGED");
       if (!new Ajv({ strict: false }).compile(current.inputSchema)(params)) throw mcpError("MCP_ARGUMENTS_INVALID");
@@ -96,21 +106,21 @@ export function installOmpMcp(pi, { configRoot, controller }) {
         if (prior.runs.some((item) => item.calls.some((call) => call.effect === "write" && call.status === "unknown"))) throw mcpError("MCP_WRITE_RECONCILIATION_REQUIRED", 409);
         write = await openWriteTarget({ project: snapshot.projectPath, value: params[policy.pathArgument], scopes: policy.paths, configRoot, files: entry.files, workspacePolicy: controller.workspacePolicy });
         record.target = write.target; record.beforeDigest = write.beforeDigest; record.fileIdentity = write.fileIdentity; record.projectOwnerIdentity = authority.ownerIdentity; record.application = "not_applied"; record.verification = "not_run";
-      } else record.target = await selectedPath(snapshot.projectPath, params[policy.pathArgument], policy.paths);
-      const key = digest([server.targetDigest, record.definitionDigest, record.target, write?.fileIdentity, snapshot.revision]);
+      } else record.target = remote ? server.url : await selectedPath(snapshot.projectPath, params[policy.pathArgument], policy.paths);
+      const key = digest([server.targetDigest, record.definitionDigest, record.target, write?.fileIdentity, snapshot.revision, ...(remote ? [record.inputDigest] : [])]);
       if (!grants.has(key)) {
         record.status = "awaiting_approval"; await save();
         if (!ctx.hasUI) throw mcpError("MCP_APPROVAL_REQUIRED");
-        const choice = await ctx.ui.select(`MCP · ${server.name}/${policy.name} · ${write ? "写入" : "只读"}\n${record.target}\n配置版本 ${snapshot.revision} · ${write ? "须同时持有编程授权与项目写入所有权，仅传递该文件描述符" : "仅允许声明路径"} · 10 秒 / 16 KiB 输入 / 64 KiB 输出`, ["拒绝", "仅本次", "本任务"]);
+        const choice = await ctx.ui.select(`MCP · ${server.name}/${policy.name} · ${remote ? "远程操作" : write ? "写入" : "只读"}\n${record.target}\n配置版本 ${snapshot.revision} · ${remote ? `输入摘要 ${record.inputDigest}；可能产生外部效果，不授予本机项目写入` : write ? "须同时持有编程授权与项目写入所有权，仅传递该文件描述符" : "仅允许声明路径"} · 10 秒 / 16 KiB 输入 / 64 KiB 输出`, ["拒绝", "仅本次", "本任务"]);
         if (!["仅本次", "本任务"].includes(choice)) throw mcpError("MCP_CALL_DENIED");
         await check(server);
         if (signal?.aborted) throw mcpError("MCP_CALL_CANCELLED");
         if (choice === "本任务") grants.add(key);
         record.authorization = choice === "本任务" ? "task" : "once";
       } else record.authorization = "task";
-      if (digest(await launchIdentity(server)) !== digest(entry.files)) throw mcpError("MCP_CODE_IDENTITY_CHANGED");
+      if (!remote && digest(await launchIdentity(server)) !== digest(entry.files)) throw mcpError("MCP_CODE_IDENTITY_CHANGED");
       if (write) { await authority.assert(); await write.assert(); }
-      else if (await selectedPath(snapshot.projectPath, params[policy.pathArgument], policy.paths) !== record.target) throw mcpError("MCP_TARGET_CHANGED");
+      else if (!remote && await selectedPath(snapshot.projectPath, params[policy.pathArgument], policy.paths) !== record.target) throw mcpError("MCP_TARGET_CHANGED");
       const timeout = AbortSignal.timeout(MCP_LIMITS.timeoutMs), callSignal = AbortSignal.any([signal, timeout, authority?.signal].filter(Boolean));
       // An approved writer can mutate its descriptor during startup. Record the
       // attempted effect boundary before launch, even before tools/call exists.
@@ -122,11 +132,11 @@ export function installOmpMcp(pi, { configRoot, controller }) {
         await check(server);
         if (callSignal.aborted || execution.changed || entry.changed) throw mcpError("MCP_AUTHORIZATION_REVOKED");
         if (write) { await authority.assert(); await write.assert(); }
-        else if (await selectedPath(snapshot.projectPath, params[policy.pathArgument], policy.paths) !== record.target) throw mcpError("MCP_TARGET_CHANGED");
+        else if (!remote && await selectedPath(snapshot.projectPath, params[policy.pathArgument], policy.paths) !== record.target) throw mcpError("MCP_TARGET_CHANGED");
       };
       record.status = "dispatched"; await save();
       await check(server);
-      const output = await execution.client.callTool(policy.name, { ...params, [policy.pathArgument]: write ? "/dev/fd/3" : record.target }, { signal: callSignal, timeoutMs: MCP_LIMITS.timeoutMs });
+      const output = await execution.client.callTool(policy.name, remote ? params : { ...params, [policy.pathArgument]: write ? "/dev/fd/3" : record.target }, { signal: callSignal, timeoutMs: MCP_LIMITS.timeoutMs });
       if (Buffer.byteLength(JSON.stringify(output)) > MCP_LIMITS.outputBytes || !Array.isArray(output.content) || output.content.some((block) => block.type !== "text" || typeof block.text !== "string")) throw mcpError("MCP_RESULT_NOT_ADMITTED");
       await execution.client.close(); await execution.transport.close();
       if (write) await write.verifyIdentity();
@@ -165,9 +175,9 @@ export function installOmpMcp(pi, { configRoot, controller }) {
     run = await store.begin({ taskId: process.env.OMP_HOST_INPUT_TASK_ID ?? `cli_${randomUUID()}`, projectPath, revision: snapshot.revision });
     cleanupConfirmed = false;
     try {
-    ({ McpClient } = await loadNativeMcp(process.env.OMP_MCP_SDK_FILE));
+    ({ McpClient, StreamableHttpTransport: NativeHttpTransport } = await loadNativeMcp(process.env.OMP_MCP_SDK_FILE));
     for (const server of selected) {
-      const files = await launchIdentity(server), credentials = await catalog.credentials(server, projectPath);
+      const files = server.transport === "streamable-http" ? [] : await launchIdentity(server), credentials = await catalog.credentials(server, projectPath);
       const discovery = await connect(server, files, credentials, []);
       const entry = { ...discovery, server, files, credentialDigest: digest(credentials.env), names: [] }; connections.set(server.name, entry);
       // Share the notification flag rather than a stale copied boolean.
@@ -176,7 +186,7 @@ export function installOmpMcp(pi, { configRoot, controller }) {
       for (const policy of server.tools) {
         const tool = available.find((entry) => entry.name === policy.name); if (!tool) throw mcpError("MCP_TOOL_NOT_FOUND");
         const name = mcpToolName(server.name, policy.name); entry.names.push(name);
-        pi.registerTool({ name, label: `${server.name}/${policy.name}`, description: `OMP 受控${policy.effect === "write" ? "描述符写入" : "只读"}工具；每次调用检查授权和路径，写入还须编程授权及实际项目所有权。${tool.description ?? ""}`, parameters: tool.inputSchema, executionMode: "sequential",
+        pi.registerTool({ name, label: `${server.name}/${policy.name}`, description: `${policy.effect === "remote" ? "OMP 受控远程操作；每次调用确认目标、输入和授权，可能产生外部效果，不授予本机项目写入。" : `OMP 受控${policy.effect === "write" ? "描述符写入" : "只读"}工具；每次调用检查授权和路径，写入还须编程授权及实际项目所有权。`}${tool.description ?? ""}`, parameters: tool.inputSchema, executionMode: "sequential",
           execute: (toolCallId, params, signal, _onUpdate, ctx) => call(server, policy, tool, toolCallId, params, signal, ctx) });
       }
     }

@@ -1,5 +1,7 @@
 export type McpToolScope = { name: string; pathArgument: string; paths: string[] } & ({ effect: "read"; writeMode?: never } | { effect: "write"; writeMode: "descriptor" });
-export interface McpServer { name: string; transport: "stdio"; command: string; args: string[]; codePaths: string[]; cwd?: string; env: Record<string, string>; credentialRefs: Record<string, string>; tools: McpToolScope[]; enabled: boolean }
+export type McpServer = { name: string; credentialRefs: Record<string, string>; enabled: boolean } & (
+  { transport: "stdio"; command: string; args: string[]; codePaths: string[]; cwd?: string; env: Record<string, string>; tools: McpToolScope[] }
+  | { transport: "streamable-http"; url: string; tools: { name: string; effect: "remote" }[] });
 export interface McpSnapshot { protocol: 1; revision: number; projectPath: string | null; servers: (McpServer & { source: "default" | "project"; targetDigest: string })[] }
 export interface McpPreview { protocol: 1; revision: number; digest: string; servers: McpServer[]; differences: { name: string; status: "new" | "existing" }[] }
 export type McpAction = { type: "list" | "status" }
@@ -10,5 +12,5 @@ export type McpAction = { type: "list" | "status" }
   | { type: "reset"; name: string; revision: number }
   | { type: "revokeCredential"; name: string; envName: string; revision: number }
   | { type: "credential"; name: string; envName: string; value: string; revision: number };
-export interface McpRun { runId: string; taskId: string; projectPath: string; revision: number; status: "running" | "stopped" | "reconciliation"; processes: { server: string; pid: number | null; status: "starting" | "running" | "stopping" | "stopped" | "reconciliation"; alive: boolean; runtimeDir?: string }[]; calls: { callId: string; toolCallId: string; parentToolCallId: string | null; taskId: string; server: string; tool: string; effect: "read" | "write"; revision: number; status: "checking" | "awaiting_approval" | "dispatched" | "completed" | "failed" | "rejected" | "unknown"; target?: string; code?: string; application?: "not_applied" | "applied" | "unknown"; verification?: "not_run"; observedChange?: boolean; beforeDigest?: string; afterDigest?: string | null }[] }
+export interface McpRun { runId: string; taskId: string; projectPath: string; revision: number; status: "running" | "stopped" | "reconciliation"; processes: { server: string; transport?: "stdio" | "streamable-http"; remoteState?: "unconfirmed"; pid: number | null; status: "starting" | "running" | "stopping" | "stopped" | "reconciliation"; alive: boolean; runtimeDir?: string }[]; calls: { callId: string; toolCallId: string; parentToolCallId: string | null; taskId: string; server: string; tool: string; effect: "read" | "write" | "remote"; revision: number; status: "checking" | "awaiting_approval" | "dispatched" | "completed" | "failed" | "rejected" | "unknown"; target?: string; code?: string; application?: "not_applied" | "applied" | "unknown"; verification?: "not_run"; observedChange?: boolean; beforeDigest?: string; afterDigest?: string | null }[] }
 export interface McpStatus { protocol: 1; runs: McpRun[] }

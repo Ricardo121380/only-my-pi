@@ -17,7 +17,7 @@ export async function launchIdentity(server) {
   return files;
 }
 const quote = (value) => JSON.stringify(value);
-const containsSecret = (value, secrets) => {
+export const containsSecret = (value, secrets) => {
   if (!secrets.length) return false;
   if (typeof value !== "string") return value && typeof value === "object" && Object.entries(value).some(([key, entry]) => containsSecret(key, secrets) || containsSecret(entry, secrets));
   // Tool text may itself contain JSON. Decode bounded JSON escapes as well as

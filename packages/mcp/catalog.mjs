@@ -13,7 +13,26 @@ const scopePath = (value) => bounded(value, 512) && value.length > 0 && !path.is
 const safeEnv = (key) => /^[A-Z][A-Z0-9_]{0,63}$/u.test(key) && !/(?:KEY|TOKEN|SECRET|PASS|AUTH|HOME|PATH|NODE|DYLD|LD_|PI_|OMP_|BASH|SHELL|ZDOTDIR)/u.test(key) && !["ENV", "IFS"].includes(key);
 export const mcpToolName = (server, tool) => `mcp__${server}__${tool}`;
 export const mcpToolNames = (snapshot) => snapshot?.servers.filter((server) => server.enabled).flatMap((server) => server.tools.map((tool) => mcpToolName(server.name, tool.name))) ?? [];
+export function httpTarget(value) {
+  if (!bounded(value, 2048)) throw mcpError("MCP_HTTP_TARGET_INVALID");
+  let url; try { url = new URL(value); } catch { throw mcpError("MCP_HTTP_TARGET_INVALID"); }
+  if (url.username || url.password || url.search || url.hash || !["https:", "http:"].includes(url.protocol)
+    || url.protocol === "http:" && !["127.0.0.1", "[::1]", "localhost"].includes(url.hostname)) throw mcpError("MCP_HTTP_TARGET_INVALID");
+  return url.href;
+}
 export function validateServer(value) {
+  if (value?.transport === "streamable-http") {
+    if (!plain(value) || Object.keys(value).some((key) => !["name", "transport", "url", "credentialRefs", "tools", "enabled"].includes(key)) || !id(value.name) || typeof value.enabled !== "boolean") throw mcpError("MCP_CONFIG_INVALID");
+    const url = httpTarget(value.url);
+    if (!plain(value.credentialRefs) || Object.keys(value.credentialRefs).some((key) => key !== "MCP_TOKEN") || Object.values(value.credentialRefs).some((ref) => !id(ref))) throw mcpError("MCP_CREDENTIAL_REF_INVALID");
+    const names = new Set();
+    if (!Array.isArray(value.tools) || value.tools.length > MCP_LIMITS.tools) throw mcpError("MCP_TOOL_SCOPE_INVALID");
+    for (const tool of value.tools) {
+      if (!plain(tool) || Object.keys(tool).some((key) => !["name", "effect"].includes(key)) || !id(tool.name) || names.has(tool.name) || tool.effect !== "remote") throw mcpError("MCP_HTTP_LOCAL_WRITE_NOT_ADMITTED");
+      names.add(tool.name);
+    }
+    return structuredClone({ ...value, url });
+  }
   if (!plain(value) || Object.keys(value).some((key) => !["name", "transport", "command", "args", "codePaths", "cwd", "env", "credentialRefs", "tools", "enabled"].includes(key)) || !id(value.name) || value.transport !== "stdio"
     || !bounded(value.command) || !path.isAbsolute(value.command) || typeof value.enabled !== "boolean") throw mcpError("MCP_CONFIG_INVALID");
   for (const [key, max] of [["args", 64], ["codePaths", 16], ["tools", MCP_LIMITS.tools]]) if (!Array.isArray(value[key]) || value[key].length > max) throw mcpError("MCP_CONFIG_INVALID");
@@ -29,7 +48,7 @@ export function validateServer(value) {
   }
   return structuredClone(value);
 }
-export const targetDigest = (server) => digest([server.command, server.args, server.codePaths, server.cwd ?? ".", server.env]);
+export const targetDigest = (server) => server.transport === "streamable-http" ? digest([server.transport, server.url]) : digest([server.command, server.args, server.codePaths, server.cwd ?? ".", server.env]);
 const empty = () => ({ version: 1, revision: 0, defaults: {}, projects: {}, revoked: {}, revokedCredentials: {} });
 
 // OMP owns this store; raw Pi configuration is never written or executed.
@@ -57,6 +76,10 @@ export class McpCatalog {
     let raw; try { raw = JSON.parse(source); } catch { throw mcpError("MCP_IMPORT_INVALID"); }
     if (!plain(raw) || !plain(raw.mcpServers) || Object.keys(raw.mcpServers).length > 16) throw mcpError("MCP_IMPORT_INVALID");
     return Object.entries(raw.mcpServers).map(([name, entry]) => {
+      if (entry?.url !== undefined) {
+        if (!plain(entry) || Object.keys(entry).some((key) => !["url", "enabled", "transport", "type"].includes(key)) || entry.transport && !["http", "streamable-http"].includes(entry.transport) || entry.type && !["http", "streamable-http"].includes(entry.type)) throw mcpError("MCP_IMPORT_NOT_ADMITTED");
+        return validateServer({ name, transport: "streamable-http", url: entry.url, credentialRefs: {}, tools: [], enabled: false });
+      }
       if (!plain(entry) || Object.keys(entry).some((key) => !["command", "args", "cwd", "env", "enabled", "transport", "type"].includes(key))) throw mcpError("MCP_IMPORT_NOT_ADMITTED");
       if (entry.transport && entry.transport !== "stdio" || entry.type && entry.type !== "stdio") throw mcpError("MCP_IMPORT_NOT_ADMITTED");
       return validateServer({ name, transport: "stdio", command: entry.command, args: entry.args ?? [], codePaths: [], cwd: entry.cwd ?? ".", env: entry.env ?? {}, credentialRefs: {}, tools: [], enabled: false });
@@ -85,6 +108,7 @@ export class McpCatalog {
       if (!projectPath || !id(input.name) || !/^MCP_[A-Z0-9_]{1,48}$/u.test(input.envName ?? "") || !bounded(input.value, 8192) || !input.value) throw mcpError("MCP_CREDENTIAL_INVALID");
       const snapshot = await this.snapshot(projectPath), server = snapshot.servers.find((entry) => entry.name === input.name);
       if (!server) throw mcpError("MCP_SERVER_NOT_FOUND", 404);
+      if (server.transport === "streamable-http" && input.envName !== "MCP_TOKEN") throw mcpError("MCP_CREDENTIAL_REF_INVALID");
       const ref = `c_${randomUUID().replaceAll("-", "")}`;
       await this.mutate(input.revision, async (state) => {
         state.revokedCredentials ??= {};

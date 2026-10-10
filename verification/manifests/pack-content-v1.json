@@ -108,6 +108,7 @@
     "packages/mcp/commands.mjs",
     "packages/mcp/contracts.d.ts",
     "packages/mcp/extension.mjs",
+    "packages/mcp/http.mjs",
     "packages/mcp/native.mjs",
     "packages/mcp/process.mjs",
     "packages/mcp/runs.mjs",

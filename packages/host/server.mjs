@@ -316,7 +316,11 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
       res.writeHead(200, { "content-type": `${mime}; charset=utf-8`, "cache-control": "no-store", "x-content-type-options": "nosniff", "referrer-policy": "no-referrer",
         "content-security-policy": "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self'; connect-src 'self'; img-src 'self' data:; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" });
       res.end(await fs.readFile(file));
-    } catch (error) { if (!res.headersSent) response(res, error.status ?? (error.code === "ENOENT" ? 404 : 500), { code: /^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "HOST_REQUEST_FAILED" }); else res.destroy(); }
+    } catch (error) {
+      const status = Number.isInteger(error.status) && error.status >= 400 && error.status <= 599
+        ? error.status : error.code === "LOCK_HELD" ? 409 : error.code === "ENOENT" ? 404 : 500;
+      if (!res.headersSent) response(res, status, { code: /^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "HOST_REQUEST_FAILED" }); else res.destroy();
+    }
     finally { requests--; }
   });
   server.headersTimeout = 5000; server.requestTimeout = 10000;

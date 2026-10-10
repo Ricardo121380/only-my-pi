@@ -22,7 +22,7 @@ export function TaskControl({ task, connected }: { task: HostTask; connected: bo
   if (task.mode !== "controlled" && !task.mcp?.enabled) return null;
   const orchestration = task.orchestration;
   return <section className="host-control" aria-label="受控执行">
-    <div className="between"><strong>{task.mode !== "controlled" ? `MCP 只读 · 配置版本 ${task.mcp?.revision}` : !running ? "本次运行已停止 · 不保留编程授权" : task.access === "coding" ? "本次进程已获编程授权" : "Inspect · 尚无编程授权"}</strong><button className="softbtn" disabled={!running || !connected || busy} onClick={() => void act()}>撤销授权</button></div>
+    <div className="between"><strong>{task.mode !== "controlled" ? `MCP 工具 · 配置版本 ${task.mcp?.revision}` : !running ? "本次运行已停止 · 不保留编程授权" : task.access === "coding" ? "本次进程已获编程授权" : "Inspect · 尚无编程授权"}</strong><button className="softbtn" disabled={!running || !connected || busy} onClick={() => void act()}>撤销授权</button></div>
     {!connected && <p role="status">连接已断开，审批暂停；重连后以宿主状态为准。</p>}
     {task.approvals?.map((approval) => <section className="host-approval" key={approval.approvalId} aria-label="待决定的操作">
       <strong>等待你的决定</strong><pre>{approval.title}{approval.message ? `\n${approval.message}` : ""}</pre>
