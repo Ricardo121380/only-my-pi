@@ -45,6 +45,23 @@ export class ControlledHttpTransport {
       const session = response.headers.get("mcp-session-id");
       if (session && (session.length > 512 || /[\0\r\n]/u.test(session))) throw mcpError("MCP_HTTP_SESSION_INVALID");
       const reader = response.body?.getReader(), chunks = []; let bytes = 0;
+      if (reader && response.ok && response.headers.get("content-type")?.split(";")[0].trim().toLowerCase() === "text/event-stream") {
+        // Pi parses complete events as they arrive. Waiting for EOF would erase
+        // a known result when a valid SSE stream stays open. The decoded message
+        // boundary above rejects secrets before delivery to the MCP client.
+        const stream = new ReadableStream({
+          async pull(controller) {
+            try {
+              const next = await reader.read();
+              if (next.done) { controller.close(); reader.releaseLock(); return; }
+              bytes += next.value.byteLength; if (bytes > MCP_LIMITS.outputBytes) throw mcpError("MCP_OUTPUT_LIMIT");
+              controller.enqueue(next.value);
+            } catch (error) { await reader.cancel().catch(() => {}); reader.releaseLock(); controller.error(safeError(error)); }
+          },
+          async cancel() { try { await reader.cancel(); } finally { reader.releaseLock(); } },
+        });
+        return new Response(stream, { status: response.status, headers: response.headers });
+      }
       if (reader) {
         try { for (;;) { const next = await reader.read(); if (next.done) break; bytes += next.value.byteLength; if (bytes > MCP_LIMITS.outputBytes) throw mcpError("MCP_OUTPUT_LIMIT"); chunks.push(next.value); } }
         finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }

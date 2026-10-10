@@ -8,7 +8,7 @@
 
 - URL 明确固定，支持 HTTPS 及 loopback HTTP；拒绝用户名、密码、query、fragment、重定向和旧 SSE 配置。HTTP 使用真实 Pi 1.1.0 公共 `StreamableHttpTransport`，同时接受有限 JSON 与有限 SSE 响应。
 - OMP 默认与项目覆盖沿用同一配置版本、任务快照及撤权机制。`MCP_TOKEN` 是项目/服务器/目标绑定的私有引用；公开状态及模型上下文不取得原值。CLI 动作文件原有的秘密值禁令保留，CLI/TUI 回读由已认证 Host 绑定的引用。
-- `remote` 工具按目标、定义、输入摘要与版本授权。服务器的只读声明不代替用户决定；HTTP 不准入本机写入策略。本机 stdio 的所有权、描述符、隔离合同保留。
+- `remote` 工具按项目、连接名称、凭据摘要、目标、定义、输入摘要与版本授权。服务器的只读声明不代替用户决定；HTTP 不准入本机写入策略。本机 stdio 的所有权、描述符、隔离合同保留。
 - 业务 POST 不自动重放。每次物理请求受 10 秒截止时间、16 KiB 输入、64 KiB 输出约束；每任务最多 32 次业务调用。断连、取消、超时或无法验证响应时记录 `unknown`。相同目标的未知效果跨重启阻断后续调用，需先独立核对。
 - 本机关闭连接不证明远端执行已结束，运行记录持续说明这一限制。配置锁竞争返回有效 HTTP 409，避免将领域状态 `OWNED` 作为状态码导致 Host 异常。
 
@@ -29,6 +29,11 @@
 | `68-ui-final`：MCP 与 conversation-flow 两文件 | PASS 16/16，标签修改后复核 |
 | `68-lint`、`68-pack`、`68-scan` | PASS；打包内容包括 HTTP transport，秘密/临时路径扫描 0 findings |
 | `68-build-web-closeout`：`npm run build:web` | PASS；保留原有 bundle-size 提示 |
+| `68-review-public-red`：真实 Host/Pi 接收端复现两项评审发现 | FAIL 2/2；跨连接授权与保持打开的 SSE 原始失败保留 |
+| `68-review-public-green`：相同两项真实链路 | PASS 2/2；第二连接批准前接收数 0，完整 SSE 结果约 260 ms 回读 completed |
+| `68-review-stream-bounds`：Node 24 新评审测试文件 | PASS 4/4；另验证流式秘密回显与 64 KiB 输出边界 |
+| `68-review-node22`：Node 22 评审、CLI/TUI 与 stdio 三文件 | PASS 6/6；真实 Pi 1.1.0，SSE 约 219 ms 回读 completed |
+| `68-review-typecheck`：修复后 `npm run typecheck` | PASS，exit 0 |
 
 真实接收端分别验证：未批准/拒绝、停用、撤销凭据、定义变化、审批期间取消、错误目标、跨项目引用及过大输入均为 0 次业务执行；批准后为 1 次认证业务执行。断连/超大结果/编码秘密回显均在已接收 1 次后保留未知，重启与新任务不重放。有限 SSE 成功；取消及物理超时保留未知而非假称回滚。
 
@@ -42,7 +47,11 @@
 
 `68-browser-runtime.json` 是物理停止后回读的持久状态与独立服务接收记录：4 个任务，业务调用总数 **2**（成功 1、接收后断连 1）；另两任务没有业务执行。原始 Pi `mcp.json` 字节保持一致。模型任务“已完成”仅表示模型回合结束，操作结果以 MCP 记录的 completed/unknown/rejected 为准。
 
+评审修复后仍使用同一 Ego Lite TaskSpace 44，另起真实 Pi/HTTP 隔离夹具，服务在发完完整 SSE 结果后保持流打开。页面显式批准一次并显示 `remote result: browser approved input`；物理停止回读 `68-review-browser-runtime.json` 为 1 次认证业务接收、调用 completed、本地连接 stopped、原 Pi 配置字节不变。源码身份保存在 `68-review-browser-input.json`，新 PNG/snapshot 使用 `68-review-browser-approval`、`68-review-browser-success` 前缀，未覆盖首轮浏览器材料。
+
 ## 独立完成边界
+
+第一轮独立评审为 Standards FAIL（P1，跨连接身份复用授权）、Spec FAIL（P2，等待 SSE EOF 导致完整结果误判未知）；原评审保存在 `68-review-first.md`。两项均先在真实公开 Host → Pi → HTTP 服务复现再修复。授权键增加项目、连接和凭据摘要；受控流按字节限额向原生 Pi 解析器及时交付事件，秘密仍在解码消息边界阻断。第一轮失败没有被后续 PASS 覆盖，最终评审结论另行记录。
 
 当前 C/P/B：PASS。Standards：PENDING；Spec：PENDING；GitHub 关闭：PENDING。
 

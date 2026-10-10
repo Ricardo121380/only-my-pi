@@ -2,14 +2,14 @@ import http from "node:http";
 import { randomUUID } from "node:crypto";
 
 // A real Streamable HTTP service. Its reception ledger is independent of OMP.
-export async function createHttpMcpServer({ token = "fixture-http-identity", mode = "json", delayMs = 15000, maxInputLength = 100 } = {}) {
+export async function createHttpMcpServer({ token = "fixture-http-identity", additionalTokens = [], mode = "json", delayMs = 15000, maxInputLength = 100 } = {}) {
   const received = [], sockets = new Set(), sessions = new Set();
   let schema = { type: "object", properties: { value: { type: "string", maxLength: maxInputLength } }, required: ["value"], additionalProperties: false };
   const server = http.createServer(async (req, res) => {
-    const identity = req.headers.authorization === `Bearer ${token}`;
+    const identityIndex = [token, ...additionalTokens].findIndex((value) => req.headers.authorization === `Bearer ${value}`), identity = identityIndex !== -1;
     let text = ""; for await (const bytes of req) text += bytes;
     const message = text ? JSON.parse(text) : null;
-    received.push({ path: req.url, method: req.method, identity, rpc: message?.method ?? null, args: message?.params?.arguments, session: Boolean(req.headers["mcp-session-id"]) });
+    received.push({ path: req.url, method: req.method, identity, identityIndex, rpc: message?.method ?? null, args: message?.params?.arguments, session: Boolean(req.headers["mcp-session-id"]) });
     if (!identity) { res.writeHead(401, { "www-authenticate": "Bearer" }); res.end(); return; }
     if (req.url !== "/mcp") { res.writeHead(404); res.end(); return; }
     if (req.method === "DELETE") { sessions.delete(req.headers["mcp-session-id"]); res.writeHead(204); res.end(); return; }
@@ -22,10 +22,14 @@ export async function createHttpMcpServer({ token = "fixture-http-identity", mod
     else if (message.method === "tools/call") {
       if (mode === "disconnect") { req.socket.destroy(); return; }
       if (mode === "delay") { await new Promise((resolve) => { const timer = setTimeout(resolve, delayMs); res.once("close", () => { clearTimeout(timer); resolve(); }); }); if (res.destroyed) return; }
-      result = { content: [{ type: "text", text: mode === "secret" ? JSON.stringify({ value: token }).replace(/./gu, (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`) : mode === "oversized" ? "x".repeat(70000) : `remote result: ${message.params.arguments.value}` }] };
+      result = { content: [{ type: "text", text: ["secret", "sse-secret"].includes(mode) ? JSON.stringify({ value: token }).replace(/./gu, (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`) : ["oversized", "sse-oversized"].includes(mode) ? "x".repeat(70000) : `remote result: ${message.params.arguments.value}` }] };
     } else { res.writeHead(400); res.end(); return; }
     const reply = { jsonrpc: "2.0", id: message.id, result };
-    if (mode === "sse" && message.method === "tools/call") { res.writeHead(200, { "content-type": "text/event-stream" }); res.end(`event: message\ndata: ${JSON.stringify(reply)}\n\n`); }
+    if (["sse", "sse-open", "sse-secret", "sse-oversized"].includes(mode) && message.method === "tools/call") {
+      res.writeHead(200, { "content-type": "text/event-stream" }); res.write(`event: message\ndata: ${JSON.stringify(reply)}\n\n`);
+      if (mode === "sse-open") await new Promise((resolve) => { const timer = setTimeout(resolve, delayMs); res.once("close", () => { clearTimeout(timer); resolve(); }); });
+      if (!res.destroyed) res.end();
+    }
     else { res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify(reply)); }
   });
   server.on("connection", (socket) => { sockets.add(socket); socket.once("close", () => sockets.delete(socket)); });

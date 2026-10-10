@@ -107,7 +107,7 @@ export function installOmpMcp(pi, { configRoot, controller }) {
         write = await openWriteTarget({ project: snapshot.projectPath, value: params[policy.pathArgument], scopes: policy.paths, configRoot, files: entry.files, workspacePolicy: controller.workspacePolicy });
         record.target = write.target; record.beforeDigest = write.beforeDigest; record.fileIdentity = write.fileIdentity; record.projectOwnerIdentity = authority.ownerIdentity; record.application = "not_applied"; record.verification = "not_run";
       } else record.target = remote ? server.url : await selectedPath(snapshot.projectPath, params[policy.pathArgument], policy.paths);
-      const key = digest([server.targetDigest, record.definitionDigest, record.target, write?.fileIdentity, snapshot.revision, ...(remote ? [record.inputDigest] : [])]);
+      const key = digest([snapshot.projectPath, server.name, entry.credentialDigest, server.targetDigest, record.definitionDigest, record.target, write?.fileIdentity, snapshot.revision, ...(remote ? [record.inputDigest] : [])]);
       if (!grants.has(key)) {
         record.status = "awaiting_approval"; await save();
         if (!ctx.hasUI) throw mcpError("MCP_APPROVAL_REQUIRED");
