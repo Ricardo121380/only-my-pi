@@ -96,6 +96,10 @@ C / P / B：PASS。第五轮独立完整范围 Standards：PASS（hard 0 / 非�
 
 带入历史全量结果为 **1626 总计 / 1616 pass / 3 fail / 1 cancelled / 6 skip，exit 1**。首次批末全量在 `6a60cebab917f2636efab84f724d3ad85b17e0f8` 的实际工作树运行：**1678 总计 / 1653 pass / 19 fail / 0 cancelled / 6 skip，exit 1，370.36 秒**（`batch-full-node24.json` / `.log`）。全量期间 1660 个候选文件 SHA 无漂移；19 个失败都来自新 Host OAuth 构造器对 stack.root 的无条件 path.join，使原有注入入口不能启动，完整错误保存在 `batch-full-node24-failures.json`。历史失败基线保持独立，不以本轮新失败覆盖原始原因。最小修复仅让 SDK 路径在根路径存在时构造；显式 OAuth 操作仍由 loadNativeMcp 对绑定缺失拒绝，不把假 SDK 注入旧夹具、不弱化断言。修复后原有六文件在 Node22/24 分别 **42/42 PASS**，四范围 typecheck PASS（`69-host-compat-node22`、`69-host-compat-node24`、`69-host-compat-typecheck`）。
 
-原计划全量一次；新增回归要求修复并验证最终候选，因此首次 FAIL 保留为修复前证据，后续实际 Pi/浏览器与完整范围评审重新核对，再为最终候选执行全量。最新补充 C/P/B 与第五轮 Standards/Spec 已 PASS，最终全量尚未运行；不以定点 PASS 或本票既有 PASS 覆盖上述 FAIL。
+原计划全量一次；新增回归要求修复并验证最终候选，因此首次 FAIL 保留为修复前证据，后续实际 Pi/浏览器与完整范围评审重新核对，再为最终候选执行全量。最新补充 C/P/B 与第五轮 Standards/Spec 已 PASS。最终候选全量也已独立运行并 PASS；首次 FAIL 的原文件、退出码、原因和身份保持，不由后续结果覆写。
+
+最终全量 `batch-final-full-node24`：**1678 总计 / 1672 pass / 0 fail / 0 cancelled / 6 skip，exit 0，356.84 秒**。命令为实际 Node **24.19.0** `--test --test-concurrency=4`，开始/结束 UTC、完整 argv 和日志 SHA 保存在 `.json`；候选 HEAD 为 **`16b39e44ed7960f092ac0e39dbba9372f59edc4e`**，实际代码与浏览器源身份为 **`c770fd56572f85b5ad3ffbb0d663083e6f1fd0d0`**，第五轮评审固定到 `bb110b7`。`batch-final-full-candidate-before.json` 与 `batch-final-full-node24-analysis.json` 核验 **1660 个实际工作树文件在全量期间 0 漂移**；首次启动回归的 19 项在最终全量全部通过。原有 304 项中 300 项字节一致、4 项为已记录的本批重叠修改、0 遗失；验收包含保持原样的未提交原子写依赖。全量结束后只更新完成报告和入口文案，代码不变。
+
+六个 SKIP 是 production SDK scout/writer 两项、真实 Pi 输入 Host SIGKILL 两项、完整安装 Host/UI/PTY 一项、Pi 0.85.1 历史续接一项；完整名称保存在 analysis JSON，均未计 PASS。必需 HTTP/OAuth C/P/B 使用本批实际 Pi 1.1.0 和受控服务独立验收。
 
 I / 完整候选安装、L / 真实第三方 OAuth 或实际外部服务、remote CI、Full / 发布分发、U2：NOT_RUN。受控协议与浏览器证据不代实际第三方登录；#19 总规格和其他工单仍各自按其验收与依赖推进。
