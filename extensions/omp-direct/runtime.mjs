@@ -239,7 +239,7 @@ export class DirectSessionController {
   }
 
   activeToolCeiling() {
-    return this.hasCodingAccess() ? CODING_TOOL_NAMES : INSPECTION_TOOL_NAMES;
+    return [...(this.hasCodingAccess() ? CODING_TOOL_NAMES : INSPECTION_TOOL_NAMES), ...(this.mcpTools?.() ?? [])];
   }
 
   applyToolCeiling() {

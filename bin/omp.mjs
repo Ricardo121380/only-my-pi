@@ -574,6 +574,12 @@ export async function runOmpEntrypoint(options = {}) {
       return OMP_EXIT_CODES.SUCCESS;
     }
     if (route.kind === "admin") {
+      if (route.argv[0] === "mcp") {
+        const { runMcpCli } = await import("../packages/mcp/commands.mjs");
+        const { resolveDirectConfigRoot } = await import("../packages/direct-agent/launcher.mjs");
+        const result = await runMcpCli({ argv: route.argv.slice(1), configRoot: resolveDirectConfigRoot({ env: options.env ?? process.env, homeDir: options.homedir ? options.homedir() : os.homedir() }) });
+        writeText(stdout, stringifyOmpJson(result)); return OMP_EXIT_CODES.SUCCESS;
+      }
       const runtime = await loadDistribution({ packageRoot: options.rootDir ?? DEFAULT_ROOT });
       if (runtime) {
         const native = await handleDistributionCommand({ runtime, argv: route.argv,

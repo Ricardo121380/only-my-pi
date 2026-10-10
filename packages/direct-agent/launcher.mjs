@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
 import { resolveBoundPackageRoot } from "../bootstrap/runtime-package-binding.mjs";
 import { loadDistribution, resolveDistributionPackage } from "../distribution/runtime.mjs";
 import { OMP_CONTROL_COMMANDS } from "../control-service/cli-parser.mjs";
+import { McpCatalog } from "../mcp/catalog.mjs";
 
 const STACK_DIRECTORY = /^[a-f0-9]{64}$/u;
 const UUID = /^[a-f0-9-]{36}$/u;
@@ -356,7 +358,7 @@ export async function resolveDirectExtensionSet({
   });
 }
 
-export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = process.env, randomUUIDImpl = randomUUID, interactive = true, runtimeOwner = "direct" } = {}) {
+export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames = [], env = process.env, randomUUIDImpl = randomUUID, interactive = true, runtimeOwner = "direct" } = {}) {
   if (!["direct", "host"].includes(runtimeOwner)) fail("OMP_CONTROLLED_STACK_INVALID", "unknown runtime owner");
   const inspected = inspectDirectAgentArguments(argv ?? [], { interactive });
   if (!stack || typeof stack.nodePath !== "string" || typeof stack.piCliPath !== "string" || !/^sha256:[a-f0-9]{64}$/u.test(stack.stackId ?? "")) {
@@ -374,9 +376,12 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = pro
   const piArgs = [
     stack.piCliPath,
     "--no-extensions",
+    // Pi 1.1 CLI otherwise starts its built-in MCP discovery independently of
+    // the audited extension allowlist. Older controlled stacks lack this flag.
+    ...(() => { try { return JSON.parse(readFileSync(path.join(stack.root, "pi/package.json"), "utf8")).version === "1.1.0" ? ["--no-mcp"] : []; } catch { return []; } })(),
     ...extensionPaths.flatMap((entry) => ["--extension", entry]),
     "--tools",
-    inspected.headless ? HEADLESS_TOOLS : INTERACTIVE_TOOLS,
+    [inspected.headless ? HEADLESS_TOOLS : INTERACTIVE_TOOLS, ...mcpNames].join(","),
     "--perm",
     inspected.headless ? "plan" : "build",
     ...(argv ?? []),
@@ -407,6 +412,7 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = pro
       OMP_CODING_AGENT_SESSION_DIR: env.PI_CODING_AGENT_SESSION_DIR ?? "",
       ONLY_MY_PI_DISTRIBUTION_VERSION: stack.distribution.version } : {}),
     ONLY_MY_PI_DIRECT: "1",
+    OMP_MCP_SDK_FILE: path.resolve(path.dirname(stack.piCliPath), "../index.js"),
     ONLY_MY_PI_HEADLESS: inspected.headless ? "1" : "0",
     ONLY_MY_PI_MODEL_EXPLICIT: inspected.explicitModel ? "1" : "0",
     ONLY_MY_PI_LAUNCH_ID: launchId,
@@ -426,7 +432,9 @@ export async function launchDirectAgent({ argv = [], packageRoot, homeDir, stack
   }
   const configRoot = resolveDirectConfigRoot({ env, homeDir });
   const directExtensions = await resolveDirectExtensionSet({ stack, configRoot, headless: inspected.headless });
-  const invocation = buildDirectPiInvocation({ argv, stack, extensionPaths: directExtensions.extensions, env, randomUUIDImpl, interactive });
+  const mcp = await new McpCatalog(configRoot).snapshot(await fs.realpath(process.cwd()));
+  const mcpNames = mcp.servers.filter((server) => server.enabled).flatMap((server) => server.tools.map((tool) => `mcp__${server.name}__${tool.name}`));
+  const invocation = buildDirectPiInvocation({ argv, stack, extensionPaths: directExtensions.extensions, mcpNames, env, randomUUIDImpl, interactive });
   if (invocation.argv[1] !== stack.piCliPath) {
     await resolveContainedRegularFile(stack.ompPackageRoot, path.relative(stack.ompPackageRoot, invocation.argv[1]), "session admission entry");
     await resolveContainedRegularFile(stack.root, "pi/dist/index.js", "controlled Pi SDK");

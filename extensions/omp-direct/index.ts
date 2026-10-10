@@ -4,6 +4,8 @@ import path from "node:path";
 import { DirectSessionOwnership } from "../../packages/direct-agent/ownership.mjs";
 import { createOwnedBashOperations } from "../../packages/direct-agent/shell.mjs";
 import { disableOmpCacheWarming } from "../../packages/direct-agent/cache-warming-policy.mjs";
+import { installOmpMcp } from "../../packages/mcp/extension.mjs";
+import { mcpCommand, prepareMcpCommand } from "../../packages/mcp/commands.mjs";
 
 import {
   DIRECT_READ_ONLY_AGENTS,
@@ -79,6 +81,7 @@ export default function ompDirect(pi: ExtensionAPI): void {
   const controller = createDirectSessionController({ pi, configRoot, environment: process.env,
     acquireProject: async (ctx: any) => { if (!ownsSession?.(ctx)) await ownership.acquire("project", ctx.cwd); },
   });
+  const mcp = installOmpMcp(pi, { configRoot, controller });
   const shellOperations: BashOperations = { exec: (command, cwd, options) => ownedShell.exec(command, cwd, {
     ...options, signal: AbortSignal.any([options.signal, controller.grantAbort?.signal].filter((signal): signal is AbortSignal => !!signal)),
   }) };
@@ -94,6 +97,7 @@ export default function ompDirect(pi: ExtensionAPI): void {
     if (!["bind", "allows", "invalidate"].every((key) => typeof payload.capability[key] === "function")) return;
     controller.hostInteraction = payload.capability;
     payload.register(controller);
+    payload.registerExecutionProbe?.(() => ({ active: mcp.clean() ? 0 : 1, unconfirmed: !mcp.clean() }));
   });
 
   pi.events.on(DIRECT_RUNTIME_EVENT, (payload: any) => {
@@ -156,6 +160,17 @@ export default function ompDirect(pi: ExtensionAPI): void {
     description: "Show automatic OMP child-agent activity",
     handler: async (_args, ctx) => controller.agentsCommand(ctx),
   });
+  pi.registerCommand("mcp", {
+    description: "OMP MCP: list, status, preview /absolute/raw.json, apply /absolute/action.json",
+    handler: async (args, ctx) => {
+      try {
+        const input = await prepareMcpCommand(args);
+        if (!["list", "status", "previewImport"].includes(input.type)
+          && !await ctx.ui.confirm("保存 MCP 配置", `操作 ${input.type}；仅影响后续任务，默认不取得工具授权。确认将此操作保存到当前项目？`)) return;
+        ctx.ui.notify(JSON.stringify(await mcpCommand(configRoot, input, ctx.cwd), null, 2), "info");
+      } catch (error: any) { ctx.ui.notify(/^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "MCP_COMMAND_FAILED", "error"); }
+    },
+  });
 
   pi.on("session_start", async (event, ctx) => {
     controller.hostInteraction?.bind(ctx);
@@ -182,6 +197,7 @@ export default function ompDirect(pi: ExtensionAPI): void {
   pi.on("session_shutdown", async (_event, ctx) => {
     controller.hostInteraction?.invalidate(); controller.shutdown(ctx);
     ownershipReady = false;
+    if (!mcp.clean()) throw new Error("MCP_PROCESS_RECONCILIATION_REQUIRED");
     await ownership.close();
   });
   pi.on("input", () => ownershipReady ? undefined : { action: "handled" as const });

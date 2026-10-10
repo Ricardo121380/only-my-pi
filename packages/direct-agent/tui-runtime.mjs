@@ -1,10 +1,12 @@
 import path from "node:path";
+import fs from "node:fs/promises";
 import { ownershipError } from "../host/ownership.mjs";
 import { inspectSessionSelection, prepareHeadlessSession } from "./session-selection.mjs";
 import { createAdmittedSessionRuntime } from "./session-runtime.mjs";
 import { createResumeUiExtension } from "./session-resume-ui.mjs";
 import { prepareTuiInput } from "./initial-input.mjs";
 import { disableOmpCacheWarming } from "./cache-warming-policy.mjs";
+import { McpCatalog } from "../mcp/catalog.mjs";
 
 // Candidate bootstrap using only Pi's public SDK. Not routed from the daily
 // launcher until the remaining CLI compatibility cases pass acceptance.
@@ -59,12 +61,14 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     const settingsManager = sdk.SettingsManager.create(effectiveCwd, agentDir, { projectTrusted });
     if (parsed.useTheme !== undefined) settingsManager.applyOverrides({ theme: parsed.useTheme });
     sdk.initTheme(settingsManager.getTheme(), false);
+    const mcpSnapshot = await new McpCatalog(configRoot).snapshot(await fs.realpath(effectiveCwd));
+    const mcpNames = mcpSnapshot.servers.filter((server) => server.enabled).flatMap((server) => server.tools.map((tool) => `mcp__${server.name}__${tool.name}`));
     const services = await sdk.createAgentSessionServices({ cwd: effectiveCwd, agentDir, settingsManager,
       modelRuntime, modelRuntimeSignal: AbortSignal.timeout(15_000), extensionFlagValues: parsed.unknownFlags,
       resourceLoaderOptions: { noExtensions: true, additionalExtensionPaths: parsed.extensions,
         extensionFactories: [(pi) => pi.events.emit("only-my-pi:direct-session-owner:v1", {
           ownsSession: (ctx) => !admissions.closing && ctx.mode === mode && ctx.sessionManager === sessionManager,
-        }), ...(mode === "tui" ? [createResumeUiExtension({ sdk, getRuntime: () => runtime })] : []), disableOmpCacheWarming] } });
+        }), (pi) => pi.events.emit("only-my-pi:mcp-task:v1", { snapshot: mcpSnapshot }), ...(mode === "tui" ? [createResumeUiExtension({ sdk, getRuntime: () => runtime })] : []), disableOmpCacheWarming] } });
     if (services.diagnostics.some((entry) => entry.type === "error") || services.resourceLoader.getExtensions().errors.length)
       throw ownershipError("TUI_EXTENSION_LOAD_FAILED");
     const diagnostics = [...parsed.diagnostics, ...services.diagnostics];
@@ -86,7 +90,7 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     }
     const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model,
       thinkingLevel: parsed.thinking ?? thinkingLevel, scopedModels: scope.scopedModels.length ? scope.scopedModels : undefined,
-      tools: parsed.tools, excludeTools: parsed.excludeTools });
+      tools: [...parsed.tools, ...mcpNames], excludeTools: parsed.excludeTools });
     if (!sessionStartEvent && name) sessionManager.appendSessionInfo(name);
     return { ...created, services, diagnostics };
   };

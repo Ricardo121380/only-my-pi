@@ -15,6 +15,8 @@ try {
   const [stackRoot, configRoot, accountId, modelId, sessionRoot, mode, resumeFile, ...extensions] = process.argv.slice(2);
   if (!["readonly", "controlled"].includes(mode)) throw new Error();
   const controlled = mode === "controlled";
+  const mcpSnapshot = process.env.OMP_HOST_MCP_SNAPSHOT ? JSON.parse(process.env.OMP_HOST_MCP_SNAPSHOT) : null;
+  const mcpNames = mcpSnapshot?.servers.filter((server) => server.enabled).flatMap((server) => server.tools.map((tool) => `mcp__${server.name}__${tool.name}`)) ?? [];
   if (controlled && !process.send) throw new Error();
   if (![stackRoot, configRoot, sessionRoot, ...extensions].every((p) => typeof p === "string" && path.isAbsolute(p)) || !extensions.length) throw new Error();
   if (controlled) {
@@ -46,6 +48,7 @@ try {
       extensionFlagValues: new Map([["perm", controlled ? "build" : "plan"]]),
       resourceLoaderOptions: { noExtensions: true, additionalExtensionPaths: extensions, extensionFactories: [
         (pi) => pi.events.emit("only-my-pi:host-session-owner:v1", { ownsSession: (ctx) => ctx.mode === "rpc" && ctx.sessionManager.getSessionId() === sessionManager.getSessionId() }),
+        (pi) => { if (mcpSnapshot) pi.events.emit("only-my-pi:mcp-task:v1", { snapshot: mcpSnapshot }); },
         ...(controlled ? [createControlledExtension()] : []),
         disableOmpCacheWarming,
       ] },
@@ -53,7 +56,7 @@ try {
     if (services.diagnostics.some((d) => d.type === "error") || services.resourceLoader.getExtensions().errors.length) throw new Error();
     const model = modelRuntime.getAvailableSnapshot().find((m) => `${m.provider}/${m.id}` === modelId);
     if (!model) throw new Error();
-    const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model, tools: controlled ? ["read", "grep", "find", "ls", "edit", "write", "bash", "request_coding_access", "delegate_readonly_agent", "delegate_managed_writer"] : ["read", "grep", "find", "ls"] });
+    const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model, tools: [...(controlled ? ["read", "grep", "find", "ls", "edit", "write", "bash", "request_coding_access", "delegate_readonly_agent", "delegate_managed_writer"] : ["read", "grep", "find", "ls"]), ...mcpNames] });
     if (created.modelFallbackMessage || `${created.session.model?.provider}/${created.session.model?.id}` !== modelId) throw new Error();
     sessionManager.appendCustomEntry("omp-account-binding", { version: 1, accountId: account.accountId, providerId: account.providerId });
     return { ...created, services, diagnostics: services.diagnostics };

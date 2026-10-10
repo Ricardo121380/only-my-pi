@@ -9,6 +9,7 @@ import { projectPath } from "./inspector.mjs";
 import { emptyUsage, recordUsage } from "./usage.mjs";
 import { INPUT_CARRIER } from "./input-protocol.mjs";
 import { supportsThinking } from "./models.mjs";
+import { McpCatalog } from "../mcp/catalog.mjs";
 
 const duration = (value) => typeof value === "number" && Number.isFinite(value) && value >= 0 ? { durationMs: value } : {};
 
@@ -38,6 +39,7 @@ export class HostTasks extends EventEmitter {
     await this.persist();
   }
   summary(task) { return { taskId: task.taskId, requestId: task.requestId, projectId: task.projectId, accountId: task.accountId ?? null, model: task.model, prompt: task.prompt.slice(0, 200), status: task.status,
+    ...(task.mcpSnapshot ? { mcp: { protocol: 1, revision: task.mcpSnapshot.revision, enabled: task.mcpSnapshot.servers.some((server) => server.enabled) } } : {}),
     thinkingLevel: task.thinkingLevel ?? null, requestedThinkingLevel: task.requestedThinkingLevel ?? null, usage: task.usage ?? null,
     mode: task.mode ?? "readonly", access: task.access ?? "inspect", approvals: task.approvals ?? [], orchestration: task.orchestration ?? null, sessionId: task.sessionId, settlement: task.settlement ?? null, inputFeedback: task.inputFeedback ?? null, ...(task.inputId ? { inputId: task.inputId, originDraftInputId: task.originDraftInputId, originDraftSessionId: task.originDraftSessionId } : {}), createdAt: task.createdAt, updatedAt: task.updatedAt, error: task.error ?? null, tool: task.tool ?? null }; }
   public(task) { return structuredClone({ ...this.summary(task), prompt: task.prompt, partial: task.partial ?? "", messages: task.messages.slice(-50).map((m) => ({ ...m, text: m.text.slice(0, 16384) })) }); }
@@ -84,7 +86,7 @@ export class HostTasks extends EventEmitter {
     if ([...this.tasks.values()].filter((t) => !terminal(t.status)).length >= 4) throw hostError("TASK_CAPACITY_REACHED", 429);
     const task = { taskId: randomUUID(), requestId: command.requestId, requestDigest, projectId: project.projectId, model: command.model, ...(this.accounts ? { accountId: command.accountId } : {}),
       requestedThinkingLevel: command.thinkingLevel ?? null, thinkingLevel: null, usage: emptyUsage(),
-      mode, access: "inspect", approvals: [], resourceRevision: inputRecord?.binding.resourceRevision ?? 0, ...(submission ?? {}), prompt: command.prompt, status: "starting", sessionId: resume?.sessionId ?? null, resumeSessionKey: command.resumeSessionKey ?? null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      mode, mcpSnapshot: await new McpCatalog(this.configRoot).snapshot(project.path), access: "inspect", approvals: [], resourceRevision: inputRecord?.binding.resourceRevision ?? 0, ...(submission ?? {}), prompt: command.prompt, status: "starting", sessionId: resume?.sessionId ?? null, resumeSessionKey: command.resumeSessionKey ?? null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     this.requests.set(command.requestId, task.taskId); this.tasks.set(task.taskId, task);
     try { await this.persist(); }
     catch {
@@ -122,7 +124,7 @@ export class HostTasks extends EventEmitter {
     const sessionRoot = path.join(this.catalog.sessionRoot, `omp-${project.projectId}`);
     let worker;
     try {
-      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, taskId: task.taskId, accountId: task.accountId, controlled: task.mode === "controlled", sessionRoot, resumeFile: resume?.file, env: this.env,
+      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, taskId: task.taskId, accountId: task.accountId, controlled: task.mode === "controlled", mcpSnapshot: task.mcpSnapshot, sessionRoot, resumeFile: resume?.file, env: this.env,
         onIdentity: async (identity) => { task.worker = identity; await this.persist(); } });
     } catch (error) { this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId); throw error; }
     this.workers.set(task.taskId, worker);
@@ -243,13 +245,13 @@ export class HostTasks extends EventEmitter {
   }
   async answerApproval(id, approvalId, value) {
     const task = this.tasks.get(id), worker = this.workers.get(id);
-    if (!task || terminal(task.status) || task.status === "cancelling" || !worker || task.mode !== "controlled") throw hostError("APPROVAL_EXPIRED", 409);
+    if (!task || terminal(task.status) || task.status === "cancelling" || !worker || (task.mode !== "controlled" && !worker.mcpEnabled)) throw hostError("APPROVAL_EXPIRED", 409);
     worker.answerApproval(approvalId, value);
     return this.public(task);
   }
   async revoke(id) {
     const task = this.tasks.get(id), worker = this.workers.get(id);
-    if (!task || terminal(task.status) || task.status === "cancelling" || !worker || task.mode !== "controlled") throw hostError("RPC_CONTROL_UNAVAILABLE", 409);
+    if (!task || terminal(task.status) || task.status === "cancelling" || !worker || (task.mode !== "controlled" && !worker.mcpEnabled)) throw hostError("RPC_CONTROL_UNAVAILABLE", 409);
     task.inputRevoked = true; this.changed(task);
     await worker.revoke(); task.access = "inspect"; task.approvals = [];
     this.changed(task); await this.persist(); return this.public(task);

@@ -16,10 +16,11 @@ function waitBounded(promise, ms, required = false) {
 }
 
 export class RpcWorker extends EventEmitter {
-  constructor({ stack, configRoot, cwd, model, sessionRoot, resumeFile, accountId, taskId, controlled = false, env = process.env, onIdentity = async () => {}, spawnImpl = spawn, extensionResolver = resolveDirectExtensionSet }) {
+  constructor({ stack, configRoot, cwd, model, sessionRoot, resumeFile, accountId, taskId, controlled = false, mcpSnapshot, env = process.env, onIdentity = async () => {}, spawnImpl = spawn, extensionResolver = resolveDirectExtensionSet }) {
     super(); Object.assign(this, { stack, configRoot, cwd, model, sessionRoot, accountId, taskId, controlled, env, onIdentity, spawnImpl, extensionResolver }); this.pending = new Map(); this.inputPending = new Map(); this.inputRecords = new Map(); this.child = null; this.stopping = null;
     this.approvals = new ApprovalBridge({ send: (frame) => { if (this.child && !this.closed && !this.child.stdin.destroyed) this.child.stdin.write(JSON.stringify(frame) + "\n"); }, publish: (approvals) => this.emit("approvals", approvals) });
     this.resumeFile = resumeFile;
+    this.mcpSnapshot = mcpSnapshot; this.mcpEnabled = mcpSnapshot?.servers.some((server) => server.enabled) === true;
   }
   async start() {
     if (this.controlled && !this.accountId) throw hostError("ACCOUNT_BINDING_REQUIRED");
@@ -29,10 +30,13 @@ export class RpcWorker extends EventEmitter {
     if (this.stopRequested) throw hostError("RPC_CANCELLED_BEFORE_START");
     const argv = this.accountId === undefined ? invocation.argv.slice(1) : [fileURLToPath(new URL("./account-rpc-entry.mjs", import.meta.url)), this.stack.root, this.configRoot, this.accountId, this.model, this.sessionRoot, this.controlled ? "controlled" : "readonly", this.resumeFile ?? "", ...set.extensions];
     const childEnv = { ...invocation.env }; delete childEnv.OMP_HOST_INPUT_TASK_ID;
+    delete childEnv.OMP_HOST_MCP_SNAPSHOT;
+    if (this.accountId && this.mcpSnapshot) childEnv.OMP_HOST_MCP_SNAPSHOT = JSON.stringify(this.mcpSnapshot);
     if (this.accountId && this.taskId) childEnv.OMP_HOST_INPUT_TASK_ID = this.taskId;
     const child = this.spawnImpl(invocation.executable, argv, { cwd: this.cwd, env: childEnv, detached: true, stdio: this.controlled || this.accountId !== undefined ? ["pipe", "pipe", "pipe", "ipc"] : ["pipe", "pipe", "pipe"] });
     this.child = child;
     child.on("message", (message) => {
+      if (message?.type === "mcp_initialized") this.mcpInitialized = message;
       if (this.controlled && message?.type === "control_state" && !this.closed && !this.stopRequested) this.emit("control", projectControlState(message.state));
       if (this.controlled && message?.type === "shutdown_confirmed" && message.id === this.shutdownId && message.clean === true) this.shutdownConfirmed = true;
       if (message?.type === "omp_input_ready" && message.protocol === INPUT_PROTOCOL && message.taskId === this.taskId) this.inputReady = true;
@@ -69,7 +73,7 @@ export class RpcWorker extends EventEmitter {
           const waiter = this.pending.get(value.id); this.pending.delete(value.id); clearTimeout(waiter.timeout);
           if (value.success === true && value.command === waiter.type) waiter.resolve(value.data); else waiter.reject(hostError("RPC_COMMAND_REJECTED"));
         } else if (value?.type === "extension_ui_request") {
-          if (this.controlled && !this.stopRequested) {
+          if ((this.controlled || (this.mcpEnabled && value.method === "select" && value.title?.startsWith("MCP · "))) && !this.stopRequested) {
             try { this.approvals.request(value); } catch { this.emit("fault", { code: "APPROVAL_REQUEST_INVALID" }); void this.stop().catch(() => {}); }
           } else if (value.id) child.stdin.write(JSON.stringify({ type: "extension_ui_response", id: value.id, cancelled: true }) + "\n");
         } else this.emit("event", value);
@@ -80,6 +84,7 @@ export class RpcWorker extends EventEmitter {
     if (!this.identity.start) throw hostError("RPC_WORKER_EXITED");
     await this.onIdentity(this.identity);
     this.state = await this.command("get_state");
+    if (this.mcpEnabled && !this.mcpInitialized?.clean) throw hostError(this.mcpInitialized?.code ?? "MCP_START_UNCONFIRMED", 409);
     if (this.accountId && this.taskId && !this.inputReady) {
       await new Promise((resolve, reject) => {
         const timer = setTimeout(() => { child.off("message", listener); reject(hostError("RPC_INPUT_UNAVAILABLE")); }, 3000);
@@ -124,6 +129,7 @@ export class RpcWorker extends EventEmitter {
     this.approvals.close();
     this.stopping ??= (async () => {
       if (!this.child) return;
+      if (this.mcpEnabled && this.child.connected && !this.closed) await this.mcpControl("mcp_prepare_shutdown");
       if (this.controlled && this.child.connected && !this.closed) {
         this.shutdownId = randomUUID();
         await waitBounded(new Promise((resolve) => this.child.send({ type: "prepare_shutdown", id: this.shutdownId }, () => resolve())), 500);
@@ -142,15 +148,18 @@ export class RpcWorker extends EventEmitter {
       await signalGroup("SIGKILL");
       await waitBounded(this.exited, 2000, true);
       if (pid && groupAlive(pid)) throw hostError("RPC_TERMINATION_UNCONFIRMED");
+      if (this.mcpEnabled && !this.mcpStopConfirmed) throw hostError("RPC_TERMINATION_UNCONFIRMED");
       if (this.controlled && this.promptSent && !this.shutdownConfirmed) throw hostError("RPC_TERMINATION_UNCONFIRMED");
     })(); return this.stopping;
   }
   answerApproval(id, value) {
-    if (!this.controlled || this.stopRequested) throw hostError("APPROVAL_EXPIRED", 409);
+    if ((!this.controlled && !this.mcpEnabled) || this.stopRequested) throw hostError("APPROVAL_EXPIRED", 409);
     this.approvals.answer(id, value);
   }
   async revoke() {
     this.approvals.invalidate();
+    if (this.mcpEnabled) await this.mcpControl("mcp_revoke");
+    if (!this.controlled && this.mcpEnabled) return;
     if (!this.controlled || !this.child?.connected || this.closed) throw hostError("RPC_CONTROL_UNAVAILABLE", 409);
     const id = randomUUID(), child = this.child;
     let listener, timer;
@@ -163,5 +172,17 @@ export class RpcWorker extends EventEmitter {
       });
     } catch (error) { await this.stop(); throw error; }
     finally { clearTimeout(timer); child.off("message", listener); }
+  }
+  async mcpControl(type) {
+    const child = this.child, id = randomUUID();
+    if (!child?.connected || this.closed) throw hostError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
+    let listener, timer;
+    try {
+      await new Promise((resolve, reject) => {
+        listener = (message) => { if (message?.type === "mcp_stopped" && message.id === id) { if (message.clean === true) { this.mcpStopConfirmed = true; resolve(); } else reject(hostError("RPC_TERMINATION_UNCONFIRMED", 409)); } };
+        child.on("message", listener); timer = setTimeout(() => reject(hostError("MCP_STOP_UNCONFIRMED", 503)), 4000);
+        child.send({ type, id }, (error) => { if (error) reject(hostError("MCP_STOP_UNCONFIRMED", 503)); });
+      });
+    } finally { clearTimeout(timer); child.off("message", listener); }
   }
 }
