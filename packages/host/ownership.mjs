@@ -20,6 +20,14 @@ export async function processIdentity(pid = process.pid) {
 export function groupAlive(pid) {
   try { process.kill(-pid, 0); return true; } catch (error) { return error.code !== "ESRCH"; }
 }
+export async function verifyOwnership(configRoot, kind, key, expected) {
+  const canonical = kind === "project" ? await fs.realpath(key) : key;
+  const digest = createHash("sha256").update(canonical).digest("hex");
+  const file = path.join(configRoot, "only-my-pi/host/locks", `${kind}-${digest}`, "owner.json");
+  const owner = await readJsonObject(configRoot, file);
+  if (!expected || owner.kind !== kind || owner.token !== expected.token || owner.pid !== expected.pid || owner.identity !== expected.identity || await processIdentity(owner.pid) !== owner.identity) throw ownershipError("OWNERSHIP_LOST");
+  return owner;
+}
 export async function acquireOwnership(configRoot, kind, key, { recover } = {}) {
   if (!["host", "project", "session"].includes(kind)) throw ownershipError("OWNERSHIP_KIND_INVALID");
   const canonicalKey = kind === "project" ? await fs.realpath(key) : key;

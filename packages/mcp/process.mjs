@@ -30,7 +30,7 @@ const containsSecret = (value, secrets) => {
   }
   throw mcpError("MCP_TEXT_ENCODING_LIMIT");
 };
-export function sandboxProfile({ files, readPaths, runtimeDir, configRoot, cwd }) {
+export function sandboxProfile({ files, readPaths, writeHandle, runtimeDir, configRoot, cwd }) {
   return `(version 1)
 (deny default)
 (deny process-fork)
@@ -45,14 +45,15 @@ export function sandboxProfile({ files, readPaths, runtimeDir, configRoot, cwd }
  ${readPaths.map((file) => `(subpath ${quote(file)})`).join("\n ")}
  (subpath ${quote(runtimeDir)}))
 (allow file-write* (literal ${quote(path.join(runtimeDir, "received.jsonl"))}) (literal ${quote(path.join(runtimeDir, "scratch"))}) (literal "/dev/null"))
+${writeHandle ? '(allow file-read-data file-write-data (literal "/dev/fd/3"))' : ""}
 (deny file-read* file-write* (subpath ${quote(configRoot)}) (regex #"(^|/)(\\.git|\\.pi|\\.env)(/|$|\\.)"))`;
 }
 
 // This is the public Pi McpTransport interface. Framing, startup and group
 // cleanup are OMP-owned so an exited leader cannot hide a surviving descendant.
 export class ControlledStdioTransport {
-  constructor({ server, files, readPaths, configRoot, env, secrets, record, save }) {
-    Object.assign(this, { server, files, readPaths, configRoot, env, secrets, record, save });
+  constructor({ server, files, readPaths, writeHandle, configRoot, env, secrets, record, save }) {
+    Object.assign(this, { server, files, readPaths, writeHandle, configRoot, env, secrets, record, save });
     this.listeners = { message: new Set(), error: new Set(), close: new Set() };
   }
   onMessage(fn) { this.listeners.message.add(fn); return () => this.listeners.message.delete(fn); }
@@ -70,7 +71,7 @@ export class ControlledStdioTransport {
     // The trusted launcher sets a hard kernel limit before executing the service.
     // Only two fixed writable slots exist; the service cannot create more files.
     const child = spawn("/bin/sh", ["-c", `ulimit -f ${MCP_LIMITS.serverFileBytes / 1024} || exit; exec "$@"`, "omp-mcp", "/usr/bin/sandbox-exec", "-f", path.join(runtimeDir, "sandbox.sb"), this.files[0].path, ...this.server.args], {
-      cwd: this.cwd, detached: true, stdio: ["pipe", "pipe", "pipe"],
+      cwd: this.cwd, detached: true, stdio: ["pipe", "pipe", "pipe", ...(this.writeHandle ? [this.writeHandle.fd] : [])],
       env: { HOME: runtimeDir, TMPDIR: runtimeDir, PATH: "/usr/bin:/bin", LANG: "en_US.UTF-8", ...this.server.env, ...this.env, OMP_MCP_RUNTIME_DIR: runtimeDir },
     });
     this.child = child; child.stdin.on("error", () => {});

@@ -10,6 +10,7 @@ import { openValidatedSession } from "../direct-agent/session-history.mjs";
 import { INPUT_PROTOCOL } from "./input-protocol.mjs";
 import { disableOmpCacheWarming } from "../direct-agent/cache-warming-policy.mjs";
 import { mcpToolNames } from "../mcp/catalog.mjs";
+import { hostProjectAuthority } from "./project-authority.mjs";
 
 // Host-owned arguments contain identities and audited paths, never credentials.
 try {
@@ -48,7 +49,7 @@ try {
       settingsManager: sdk.SettingsManager.create(cwd, configRoot, { projectTrusted: false }),
       extensionFlagValues: new Map([["perm", controlled ? "build" : "plan"]]),
       resourceLoaderOptions: { noExtensions: true, additionalExtensionPaths: extensions, extensionFactories: [
-        (pi) => pi.events.emit("only-my-pi:host-session-owner:v1", { ownsSession: (ctx) => ctx.mode === "rpc" && ctx.sessionManager.getSessionId() === sessionManager.getSessionId() }),
+        (pi) => pi.events.emit("only-my-pi:host-session-owner:v1", { ownsSession: (ctx) => ctx.mode === "rpc" && ctx.sessionManager.getSessionId() === sessionManager.getSessionId(), verifyProject: hostProjectAuthority({ configRoot, taskId: process.env.OMP_HOST_INPUT_TASK_ID, sessionManager }) }),
         (pi) => { if (mcpSnapshot) pi.events.emit("only-my-pi:mcp-task:v1", { snapshot: mcpSnapshot }); },
         ...(controlled ? [createControlledExtension()] : []),
         disableOmpCacheWarming,

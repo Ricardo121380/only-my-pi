@@ -69,10 +69,12 @@ export default function ompDirect(pi: ExtensionAPI): void {
   const configRoot = process.env.PI_CODING_AGENT_DIR ?? path.join(os.homedir(), ".pi", "agent");
   const ownership = new DirectSessionOwnership(configRoot);
   let ownsSession: ((ctx: any) => boolean) | undefined;
+  let verifyHostProject: ((ctx: any) => Promise<any>) | undefined;
   let ownsDirectSession: ((ctx: any) => boolean) | undefined;
   let ownershipReady = false;
   pi.events.on("only-my-pi:host-session-owner:v1", (payload: any) => {
     if (typeof payload?.ownsSession === "function") ownsSession = payload.ownsSession;
+    if (typeof payload?.verifyProject === "function") verifyHostProject = payload.verifyProject;
   });
   pi.events.on("only-my-pi:direct-session-owner:v1", (payload: any) => {
     if (typeof payload?.ownsSession === "function") ownsDirectSession = payload.ownsSession;
@@ -80,6 +82,7 @@ export default function ompDirect(pi: ExtensionAPI): void {
   const ownedShell = createOwnedBashOperations();
   const controller = createDirectSessionController({ pi, configRoot, environment: process.env,
     acquireProject: async (ctx: any) => { if (!ownsSession?.(ctx)) await ownership.acquire("project", ctx.cwd); },
+    verifyProject: async (ctx: any) => ownsSession?.(ctx) ? verifyHostProject?.(ctx) : ownership.verifyProject(ctx.cwd),
   });
   const mcp = installOmpMcp(pi, { configRoot, controller });
   const shellOperations: BashOperations = { exec: (command, cwd, options) => ownedShell.exec(command, cwd, {
@@ -203,6 +206,7 @@ export default function ompDirect(pi: ExtensionAPI): void {
   pi.on("input", () => ownershipReady ? undefined : { action: "handled" as const });
   pi.on("before_agent_start", (event) => controller.beforeAgentStart(event));
   pi.on("tool_call", (event) => ownershipReady ? controller.blockToolCall(event) : { block: true, reason: "SESSION_OWNERSHIP_UNAVAILABLE" });
+  pi.on("tool_result", (event) => { controller.mutationCalls.delete(event.toolCallId); });
   pi.on("user_bash", (event) => !ownershipReady ? { result: { output: "SESSION_OWNERSHIP_UNAVAILABLE", exitCode: 126, cancelled: false, truncated: false } } : controller.inspectUserBash(event) ?? { operations: shellOperations });
   pi.on("model_select", async (event) => {
     await controller.rememberModel(event.model).catch(() => {});

@@ -26,7 +26,7 @@ export function TaskControl({ task, connected }: { task: HostTask; connected: bo
     {!connected && <p role="status">连接已断开，审批暂停；重连后以宿主状态为准。</p>}
     {task.approvals?.map((approval) => <section className="host-approval" key={approval.approvalId} aria-label="待决定的操作">
       <strong>等待你的决定</strong><pre>{approval.title}{approval.message ? `\n${approval.message}` : ""}</pre>
-      <p>{approval.title.startsWith("MCP · ") ? "MCP 许可只覆盖上述工具、目标和任务。仅本次只调用一次；本任务许可在任务结束、撤销或定义变化后失效。" : "授权范围以上述说明为准；编程授权可持续至本进程结束或撤销。"}关闭页面或等待超时不会同意。</p>
+      <p>{approval.title.startsWith("MCP · ") ? "MCP 许可只覆盖上述工具、目标和任务。仅本次只调用一次；本任务许可在任务结束、撤销或定义变化后失效。写入还需有效编程授权、项目写入所有权及受限服务进程。" : "授权范围以上述说明为准；编程授权可持续至本进程结束或撤销。"}关闭页面或等待超时不会同意。</p>
       <div className="account-actions">{(approval.kind === "confirm" ? [{ label: "拒绝", value: false }, { label: "允许本次验证", value: true }] : (approval.options ?? []).map((value) => ({ label: value, value }))).map((choice) => <button className="softbtn" key={String(choice.value)} disabled={busy || !connected || !running || submitted.includes(approval.approvalId) || Date.now() >= Date.parse(approval.expiresAt)} onClick={() => void act(approval.approvalId, choice.value)}>{choice.label}</button>)}</div>
     </section>)}
     {notice && running && <p role="status">{notice}</p>}

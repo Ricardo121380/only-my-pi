@@ -9,6 +9,7 @@ import {
   createWorkspacePolicy,
 } from "../../packages/direct-agent/workspace.mjs";
 import { DIRECT_READ_ONLY_AGENTS } from "../../packages/direct-agent/orchestration.mjs";
+import { projectExecutionState } from "../../packages/project-gates/index.mjs";
 
 export { DIRECT_READ_ONLY_AGENTS };
 
@@ -186,7 +187,7 @@ function toolResult(status, message, details = {}) {
 }
 
 export class DirectSessionController {
-  constructor({ pi, configRoot, environment = process.env, now = () => new Date().toISOString(), captureBaseline = captureWorkspaceBaseline, hostInteraction = null, acquireProject } = {}) {
+  constructor({ pi, configRoot, environment = process.env, now = () => new Date().toISOString(), captureBaseline = captureWorkspaceBaseline, hostInteraction = null, acquireProject, verifyProject } = {}) {
     if (!pi || typeof pi.getActiveTools !== "function" || typeof pi.setActiveTools !== "function") throw new TypeError("DirectSessionController requires Pi tool controls");
     if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("DirectSessionController requires an absolute configRoot");
     this.pi = pi;
@@ -212,10 +213,27 @@ export class DirectSessionController {
     this.unsafePermissionNotified = false;
     this.hostInteraction = hostInteraction;
     this.acquireProject = acquireProject;
+    this.verifyProject = verifyProject;
+    this.mutationCalls = new Set();
+    this.mcpWriteActive = false;
   }
 
   isDirect() { return this.environment.ONLY_MY_PI_DIRECT === "1"; }
   hasCodingAccess() { return this.state === DIRECT_SESSION_STATES.CODING && (!this.headless || this.hostInteraction?.allows(this.context) === true); }
+  async projectWriteAuthority(ctx) {
+    const grant = this.grantAbort, epoch = this.grantEpoch, binding = this.grantBinding;
+    const assert = async () => {
+      const current = () => this.hasCodingAccess() && grant && !grant.signal.aborted && epoch === this.grantEpoch && binding === this.grantBinding && binding === this.sessionIdentity(ctx) && binding === this.sessionIdentity(this.context) && this.currentPermissionMode(ctx) === "build";
+      if (!current() || typeof this.verifyProject !== "function") throw Object.assign(new Error("MCP_CODING_AUTHORITY_REQUIRED"), { code: "MCP_CODING_AUTHORITY_REQUIRED" });
+      const execution = projectExecutionState();
+      if (execution.active !== 0 || execution.unconfirmed !== false || this.mutationCalls.size) throw Object.assign(new Error("MCP_WRITE_IN_PROGRESS"), { code: "MCP_WRITE_IN_PROGRESS" });
+      const owner = await this.verifyProject(ctx);
+      if (!owner || !current()) throw Object.assign(new Error("MCP_PROJECT_OWNERSHIP_REQUIRED"), { code: "MCP_PROJECT_OWNERSHIP_REQUIRED" });
+      return owner;
+    };
+    const owner = await assert();
+    return { signal: grant.signal, assert, ownerIdentity: owner.identity };
+  }
 
   invalidateCodingAuthority() {
     this.approvalEpoch += 1;
@@ -634,6 +652,7 @@ export class DirectSessionController {
 
   blockToolCall(event) {
     this.enforcePermissionBoundary(this.context);
+    if ((MUTATION_TOOL_NAMES.has(event.toolName) || CODING_AUTHORITY_TOOL_NAMES.has(event.toolName)) && this.mcpWriteActive) return { block: true, reason: "MCP_WRITE_IN_PROGRESS" };
     if (CODING_AUTHORITY_TOOL_NAMES.has(event.toolName) && !this.hasCodingAccess()) {
       return { block: true, reason: "OMP_CODING_ACCESS_REQUIRED: managed writing is disabled until request_coding_access is approved." };
     }
@@ -650,7 +669,9 @@ export class DirectSessionController {
         violation = { code: "UNSUPPORTED_MUTATION_TOOL", reason: `${event.toolName} is not an OMP coding tool` };
       }
       if (violation) return { block: true, reason: `${violation.code}: ${violation.reason}` };
+      this.mutationCalls.add(event.toolCallId);
     }
+    if (CODING_AUTHORITY_TOOL_NAMES.has(event.toolName) && this.hasCodingAccess()) this.mutationCalls.add(event.toolCallId);
     return undefined;
   }
 
@@ -668,6 +689,7 @@ export class DirectSessionController {
 
   inspectUserBash(event) {
     this.enforcePermissionBoundary(this.context);
+    if (this.mcpWriteActive) return { result: { output: "MCP_WRITE_IN_PROGRESS", exitCode: 126, cancelled: false, truncated: false } };
     if (!this.hasCodingAccess()) return this.blockUserBash(event);
     const violation = this.workspacePolicy.inspectCommand(event?.command);
     if (!violation) return undefined;

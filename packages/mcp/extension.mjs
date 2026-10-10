@@ -7,6 +7,7 @@ import { McpRuns } from "./runs.mjs";
 import { ControlledStdioTransport, launchIdentity } from "./process.mjs";
 import { processIdentity } from "../host/ownership.mjs";
 import { loadNativeMcp } from "./native.mjs";
+import { openWriteTarget } from "./write-target.mjs";
 
 const result = (code) => ({ content: [{ type: "text", text: code }], details: { status: code } });
 async function selectedPath(project, value, scopes) {
@@ -47,10 +48,10 @@ export function installOmpMcp(pi, { configRoot, controller }) {
     if (outcomes.some((entry) => entry.status === "rejected")) throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
     cleanupConfirmed = true;
   };
-  const connect = async (server, files, credentials, readPaths, callId = null, signal) => {
+  const connect = async (server, files, credentials, readPaths, callId = null, signal, writeHandle) => {
     if (closing || revoked) throw mcpError("MCP_AUTHORIZATION_REVOKED");
-    const record = { server: server.name, targetDigest: server.targetDigest, callId, kind: callId ? "read" : "discovery", pid: null, status: "starting" };
-    const transport = new ControlledStdioTransport({ server, files, readPaths, configRoot, ...credentials, record, save });
+    const record = { server: server.name, targetDigest: server.targetDigest, callId, kind: callId ? writeHandle ? "write" : "read" : "discovery", pid: null, status: "starting" };
+    const transport = new ControlledStdioTransport({ server, files, readPaths, writeHandle, configRoot, ...credentials, record, save });
     const client = new McpClient({ name: "only-my-pi", version: "1", requestTimeoutMs: MCP_LIMITS.timeoutMs });
     const connection = { client, transport, record, changed: false };
     if (signal) {
@@ -62,7 +63,13 @@ export function installOmpMcp(pi, { configRoot, controller }) {
     transport.cwd = await fs.realpath(path.resolve(snapshot.projectPath, server.cwd ?? "."));
     if (transport.cwd !== snapshot.projectPath && !transport.cwd.startsWith(snapshot.projectPath + path.sep)) throw mcpError("MCP_CWD_NOT_ADMITTED");
     client.onNotification("notifications/tools/list_changed", () => { connection.changed = true; grants.clear(); });
-    await client.connect(transport);
+    try { await client.connect(transport); }
+    catch (error) {
+      connection.disarm?.();
+      const closed = await Promise.allSettled([client.close(), transport.close()]);
+      if (closed.some((outcome) => outcome.status === "rejected")) throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
+      throw error;
+    }
     // sandbox-exec legitimately changes comm during exec. The completed MCP
     // handshake pins the server lifetime after that transition.
     transport.record.identity = await processIdentity(transport.record.pid);
@@ -72,21 +79,29 @@ export function installOmpMcp(pi, { configRoot, controller }) {
     const entry = connections.get(server.name);
     if (typeof toolCallId !== "string" || !toolCallId || toolCallId.length > 256) return result("MCP_CALL_ID_INVALID");
     if (run.calls.some((call) => call.toolCallId === toolCallId)) return result("MCP_CALL_ALREADY_RECORDED");
-    const record = { callId: randomUUID(), toolCallId, parentToolCallId: parents.get(toolCallId) ?? null, taskId: run.taskId, server: server.name, tool: policy.name, targetDigest: server.targetDigest, revision: snapshot.revision, definitionDigest: digest(initial), inputDigest: digest(params), status: "checking", startedAt: new Date().toISOString() };
+    const record = { callId: randomUUID(), toolCallId, parentToolCallId: parents.get(toolCallId) ?? null, taskId: run.taskId, server: server.name, tool: policy.name, effect: policy.effect, targetDigest: server.targetDigest, revision: snapshot.revision, definitionDigest: digest(initial), inputDigest: digest(params), status: "checking", startedAt: new Date().toISOString() };
     if (run.calls.length >= MCP_LIMITS.calls || busy) return result("MCP_CALL_LIMIT");
-    busy = true; run.calls.push(record); let execution;
+    busy = true; run.calls.push(record); let execution, write, authority;
     try {
       if (Buffer.byteLength(JSON.stringify(params)) > MCP_LIMITS.inputBytes) throw mcpError("MCP_INPUT_LIMIT");
       await check(server);
       const current = (await entry.client.listTools({ signal, timeoutMs: MCP_LIMITS.timeoutMs })).find((tool) => tool.name === policy.name);
       if (entry.changed || !current || digest(current) !== record.definitionDigest) throw mcpError("MCP_TOOL_DEFINITION_CHANGED");
       if (!new Ajv({ strict: false }).compile(current.inputSchema)(params)) throw mcpError("MCP_ARGUMENTS_INVALID");
-      record.target = await selectedPath(snapshot.projectPath, params[policy.pathArgument], policy.paths);
-      const key = digest([server.targetDigest, record.definitionDigest, record.target, snapshot.revision]);
+      if (policy.effect === "write") {
+        if (controller.mcpWriteActive || controller.mutationCalls.size) throw mcpError("MCP_WRITE_IN_PROGRESS");
+        controller.mcpWriteActive = true;
+        authority = await controller.projectWriteAuthority(ctx);
+        const prior = await store.status(snapshot.projectPath);
+        if (prior.runs.some((item) => item.calls.some((call) => call.effect === "write" && call.status === "unknown"))) throw mcpError("MCP_WRITE_RECONCILIATION_REQUIRED", 409);
+        write = await openWriteTarget({ project: snapshot.projectPath, value: params[policy.pathArgument], scopes: policy.paths, configRoot, files: entry.files, workspacePolicy: controller.workspacePolicy });
+        record.target = write.target; record.beforeDigest = write.beforeDigest; record.fileIdentity = write.fileIdentity; record.projectOwnerIdentity = authority.ownerIdentity; record.application = "not_applied"; record.verification = "not_run";
+      } else record.target = await selectedPath(snapshot.projectPath, params[policy.pathArgument], policy.paths);
+      const key = digest([server.targetDigest, record.definitionDigest, record.target, write?.fileIdentity, snapshot.revision]);
       if (!grants.has(key)) {
         record.status = "awaiting_approval"; await save();
         if (!ctx.hasUI) throw mcpError("MCP_APPROVAL_REQUIRED");
-        const choice = await ctx.ui.select(`MCP · ${server.name}/${policy.name} · 只读\n${record.target}\n配置版本 ${snapshot.revision} · 仅允许声明路径 · 10 秒 / 16 KiB 输入 / 64 KiB 输出`, ["拒绝", "仅本次", "本任务"]);
+        const choice = await ctx.ui.select(`MCP · ${server.name}/${policy.name} · ${write ? "写入" : "只读"}\n${record.target}\n配置版本 ${snapshot.revision} · ${write ? "须同时持有编程授权与项目写入所有权，仅传递该文件描述符" : "仅允许声明路径"} · 10 秒 / 16 KiB 输入 / 64 KiB 输出`, ["拒绝", "仅本次", "本任务"]);
         if (!["仅本次", "本任务"].includes(choice)) throw mcpError("MCP_CALL_DENIED");
         await check(server);
         if (signal?.aborted) throw mcpError("MCP_CALL_CANCELLED");
@@ -94,30 +109,46 @@ export function installOmpMcp(pi, { configRoot, controller }) {
         record.authorization = choice === "本任务" ? "task" : "once";
       } else record.authorization = "task";
       if (digest(await launchIdentity(server)) !== digest(entry.files)) throw mcpError("MCP_CODE_IDENTITY_CHANGED");
-      if (await selectedPath(snapshot.projectPath, params[policy.pathArgument], policy.paths) !== record.target) throw mcpError("MCP_TARGET_CHANGED");
-      const timeout = AbortSignal.timeout(MCP_LIMITS.timeoutMs), callSignal = signal ? AbortSignal.any([signal, timeout]) : timeout;
-      execution = await connect(server, entry.files, await catalog.credentials(server, snapshot.projectPath), [record.target], record.callId, callSignal);
+      if (write) { await authority.assert(); await write.assert(); }
+      else if (await selectedPath(snapshot.projectPath, params[policy.pathArgument], policy.paths) !== record.target) throw mcpError("MCP_TARGET_CHANGED");
+      const timeout = AbortSignal.timeout(MCP_LIMITS.timeoutMs), callSignal = AbortSignal.any([signal, timeout, authority?.signal].filter(Boolean));
+      // An approved writer can mutate its descriptor during startup. Record the
+      // attempted effect boundary before launch, even before tools/call exists.
+      if (write) { record.status = "dispatched"; await save(); await authority.assert(); await write.assert(); }
+      execution = await connect(server, entry.files, await catalog.credentials(server, snapshot.projectPath), write ? [] : [record.target], record.callId, callSignal, write?.handle);
       const fresh = (await execution.client.listTools({ signal: callSignal, timeoutMs: MCP_LIMITS.timeoutMs })).find((tool) => tool.name === policy.name);
       if (!fresh || digest(fresh) !== record.definitionDigest || execution.changed || entry.changed) throw mcpError("MCP_TOOL_DEFINITION_CHANGED");
       execution.transport.beforeToolCall = async () => {
         await check(server);
         if (callSignal.aborted || execution.changed || entry.changed) throw mcpError("MCP_AUTHORIZATION_REVOKED");
-        if (await selectedPath(snapshot.projectPath, params[policy.pathArgument], policy.paths) !== record.target) throw mcpError("MCP_TARGET_CHANGED");
+        if (write) { await authority.assert(); await write.assert(); }
+        else if (await selectedPath(snapshot.projectPath, params[policy.pathArgument], policy.paths) !== record.target) throw mcpError("MCP_TARGET_CHANGED");
       };
       record.status = "dispatched"; await save();
       await check(server);
-      const output = await execution.client.callTool(policy.name, { ...params, [policy.pathArgument]: record.target }, { signal: callSignal, timeoutMs: MCP_LIMITS.timeoutMs });
+      const output = await execution.client.callTool(policy.name, { ...params, [policy.pathArgument]: write ? "/dev/fd/3" : record.target }, { signal: callSignal, timeoutMs: MCP_LIMITS.timeoutMs });
       if (Buffer.byteLength(JSON.stringify(output)) > MCP_LIMITS.outputBytes || !Array.isArray(output.content) || output.content.some((block) => block.type !== "text" || typeof block.text !== "string")) throw mcpError("MCP_RESULT_NOT_ADMITTED");
       await execution.client.close(); await execution.transport.close();
-      record.status = output.isError ? "failed" : "completed"; record.completedAt = new Date().toISOString(); await save();
-      return { content: output.content, details: { callId: record.callId, status: record.status, revision: record.revision, server: server.name, tool: policy.name } };
+      if (write) await write.verifyIdentity();
+      record.status = output.isError ? "failed" : "completed"; record.completedAt = new Date().toISOString();
+      if (write) { record.afterDigest = await write.digest(); record.observedChange = record.afterDigest !== record.beforeDigest; record.application = record.observedChange ? "applied" : "not_applied"; }
+      await save();
+      return { content: output.content, details: { callId: record.callId, status: record.status, revision: record.revision, server: server.name, tool: policy.name, ...(write ? { application: record.application, verification: "not_run", beforeDigest: record.beforeDigest, afterDigest: record.afterDigest } : {}) } };
     } catch (error) {
       record.code = /^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "MCP_CALL_FAILED";
-      record.status = record.status === "dispatched" ? "unknown" : "rejected"; await save();
+      record.status = record.status === "dispatched" ? "unknown" : "rejected";
+      if (write) { record.application = record.status === "unknown" ? "unknown" : "not_applied"; }
+      await save();
       return result(`${record.code}${record.status === "unknown" ? ": 结果未知，不自动重试" : ""}`);
     } finally {
       if (execution) { execution.disarm?.(); await execution.client.close().catch(() => {}); await execution.transport.close().catch(() => {}); }
-      busy = false;
+      try {
+        if (write) { record.afterDigest ??= await write.digest().catch(() => null); record.observedChange = record.afterDigest !== null && record.afterDigest !== record.beforeDigest; await write.handle.close(); await save(); }
+      } finally {
+        const unresolved = write && [...processes].some((entry) => entry.record.kind === "write" && entry.record.status !== "stopped");
+        if (policy.effect === "write") controller.mcpWriteActive = Boolean(unresolved);
+        busy = Boolean(unresolved);
+      }
     }
   };
   const startTask = async (ctx) => {
@@ -145,7 +176,7 @@ export function installOmpMcp(pi, { configRoot, controller }) {
       for (const policy of server.tools) {
         const tool = available.find((entry) => entry.name === policy.name); if (!tool) throw mcpError("MCP_TOOL_NOT_FOUND");
         const name = mcpToolName(server.name, policy.name); entry.names.push(name);
-        pi.registerTool({ name, label: `${server.name}/${policy.name}`, description: `OMP 受控只读工具；每次调用检查授权和路径。${tool.description ?? ""}`, parameters: tool.inputSchema, executionMode: "sequential",
+        pi.registerTool({ name, label: `${server.name}/${policy.name}`, description: `OMP 受控${policy.effect === "write" ? "描述符写入" : "只读"}工具；每次调用检查授权和路径，写入还须编程授权及实际项目所有权。${tool.description ?? ""}`, parameters: tool.inputSchema, executionMode: "sequential",
           execute: (toolCallId, params, signal, _onUpdate, ctx) => call(server, policy, tool, toolCallId, params, signal, ctx) });
       }
     }

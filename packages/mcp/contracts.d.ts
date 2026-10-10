@@ -1,4 +1,4 @@
-export interface McpToolScope { name: string; effect: "read"; pathArgument: string; paths: string[] }
+export type McpToolScope = { name: string; pathArgument: string; paths: string[] } & ({ effect: "read"; writeMode?: never } | { effect: "write"; writeMode: "descriptor" });
 export interface McpServer { name: string; transport: "stdio"; command: string; args: string[]; codePaths: string[]; cwd?: string; env: Record<string, string>; credentialRefs: Record<string, string>; tools: McpToolScope[]; enabled: boolean }
 export interface McpSnapshot { protocol: 1; revision: number; projectPath: string | null; servers: (McpServer & { source: "default" | "project"; targetDigest: string })[] }
 export interface McpPreview { protocol: 1; revision: number; digest: string; servers: McpServer[]; differences: { name: string; status: "new" | "existing" }[] }
@@ -10,5 +10,5 @@ export type McpAction = { type: "list" | "status" }
   | { type: "reset"; name: string; revision: number }
   | { type: "revokeCredential"; name: string; envName: string; revision: number }
   | { type: "credential"; name: string; envName: string; value: string; revision: number };
-export interface McpRun { runId: string; taskId: string; projectPath: string; revision: number; status: string; processes: { server: string; pid: number | null; status: string; alive: boolean; runtimeDir?: string }[]; calls: { callId: string; toolCallId: string; taskId: string; server: string; tool: string; revision: number; status: string; target?: string; code?: string }[] }
+export interface McpRun { runId: string; taskId: string; projectPath: string; revision: number; status: "running" | "stopped" | "reconciliation"; processes: { server: string; pid: number | null; status: "starting" | "running" | "stopping" | "stopped" | "reconciliation"; alive: boolean; runtimeDir?: string }[]; calls: { callId: string; toolCallId: string; parentToolCallId: string | null; taskId: string; server: string; tool: string; effect: "read" | "write"; revision: number; status: "checking" | "awaiting_approval" | "dispatched" | "completed" | "failed" | "rejected" | "unknown"; target?: string; code?: string; application?: "not_applied" | "applied" | "unknown"; verification?: "not_run"; observedChange?: boolean; beforeDigest?: string; afterDigest?: string | null }[] }
 export interface McpStatus { protocol: 1; runs: McpRun[] }

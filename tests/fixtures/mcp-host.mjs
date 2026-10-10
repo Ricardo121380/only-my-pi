@@ -28,7 +28,8 @@ export async function createMcpHost({ respond = ({ body, res }) => providerReply
   const provider = http.createServer(async (req, res) => { let text = ""; for await (const bytes of req) text += bytes; const request = { body: JSON.parse(text), res }; requests.push(request); await respond(request, requests); });
   provider.on("connection", (socket) => { sockets.add(socket); socket.once("close", () => sockets.delete(socket)); });
   await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
-  const f = await createPi110SourceCli(root, { baseUrl: `http://127.0.0.1:${provider.address().port}/v1`, installedExtensions });
+  const providerOrigin = `http://127.0.0.1:${provider.address().port}`;
+  const f = await createPi110SourceCli(root, { baseUrl: `${providerOrigin}/v1`, installedExtensions });
   if (!assetsRoot) { assetsRoot = path.join(root, "assets"); await fs.mkdir(assetsRoot); await fs.writeFile(path.join(assetsRoot, "index.html"), "<!doctype html><title>MCP fixture</title>"); }
   const stack = { root: f.stack, ompPackageRoot: f.omp, nodePath: path.join(f.stack, "node/bin/node"), piCliPath: path.join(f.stack, "pi/dist/bundle/cli.js"), stackId: `sha256:${"a".repeat(64)}` };
   let host, closing;
@@ -40,14 +41,17 @@ export async function createMcpHost({ respond = ({ body, res }) => providerReply
   const project = await request("/api/command", { type: "addProject", path: f.project });
   const serverFile = fileURLToPath(new URL("./mcp-server.mjs", import.meta.url));
   const server = { name: "local", transport: "stdio", enabled: false, command: process.execPath, args: [serverFile], codePaths: [serverFile], env: {}, credentialRefs: {}, tools: [{ name: "read_file", effect: "read", pathArgument: "path", paths: ["README.md"] }] };
-  return { ...f, root, requests, stack, server, projectId: project.projectId, get host() { return host; }, request,
+  return { ...f, root, requests, providerOrigin, stack, server, projectId: project.projectId, get host() { return host; }, request,
     mcp: (input, expected) => request("/api/mcp", { ...input, projectId: project.projectId }, expected),
     start: (extra = {}) => request("/api/command", { type: "startTask", requestId: randomUUID(), projectId: project.projectId, accountId: "cli-readonly", model: "fixture/one", prompt: "read selected file via MCP", ...extra }, 202),
     task: (id) => request(`/api/task?taskId=${id}`),
     restart: async () => { await host.stop(); await open(); await pair(); },
     close: ({ keep = false, unconfirmed = false } = {}) => closing ??= (async () => {
-      try { await host.stop(); } catch (error) { if (!unconfirmed || error.code !== "RPC_TERMINATION_UNCONFIRMED") throw error; }
-      for (const socket of sockets) socket.destroy(); await new Promise((resolve) => provider.close(resolve));
+      try {
+        try { await host.stop(); } catch (error) { if (!unconfirmed || error.code !== "RPC_TERMINATION_UNCONFIRMED") throw error; }
+      } finally {
+        for (const socket of sockets) socket.destroy(); await new Promise((resolve) => provider.close(resolve));
+      }
       if (!keep) await fs.rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 25 });
     })(),
   };

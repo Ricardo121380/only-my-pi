@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { acquireOwnership, ownershipError } from "../host/ownership.mjs";
+import { acquireOwnership, ownershipError, verifyOwnership } from "../host/ownership.mjs";
 import { projectExecutionState } from "../project-gates/index.mjs";
 
 // TUI keeps project ownership after revoke: revoked authority does not prove
@@ -18,6 +18,11 @@ export class DirectSessionOwnership {
     });
     this.pending = operation.catch(() => {});
     return operation;
+  }
+  async verifyProject(key) {
+    const canonical = await fs.realpath(key), lease = this.leases.get(`project:${canonical}`);
+    if (this.closing || !lease) throw ownershipError("PROJECT_OWNERSHIP_REQUIRED");
+    return verifyOwnership(this.configRoot, "project", canonical, lease.owner);
   }
   async close() {
     this.closing = true;

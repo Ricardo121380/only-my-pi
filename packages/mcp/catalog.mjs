@@ -6,7 +6,7 @@ export const MCP_PROTOCOL = 1;
 export const MCP_LIMITS = Object.freeze({ inputBytes: 16384, outputBytes: 65536, serverFileBytes: 65536, storageBytes: 8388608, calls: 32, timeoutMs: 10000, tools: 32, concurrency: 1 });
 export const mcpError = (code, status = 400) => Object.assign(new Error(code), { code, status });
 export const digest = (value) => createHash("sha256").update(typeof value === "string" || Buffer.isBuffer(value) ? value : JSON.stringify(value)).digest("hex");
-const id = (value) => typeof value === "string" && /^[A-Za-z][A-Za-z0-9_-]{0,63}$/u.test(value);
+const id = (value) => typeof value === "string" && /^[A-Za-z][A-Za-z0-9_-]{0,63}$/u.test(value) && !value.includes("__");
 const plain = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const bounded = (value, max = 4096) => typeof value === "string" && value.length <= max && !/[\0\r\n]/u.test(value);
 const scopePath = (value) => bounded(value, 512) && value.length > 0 && !path.isAbsolute(value) && !value.split(/[\\/]/u).some((part) => ["..", ".git", ".pi", ".env", ""].includes(part)) && !value.startsWith("~");
@@ -23,7 +23,7 @@ export function validateServer(value) {
   if (!plain(value.credentialRefs) || Object.keys(value.credentialRefs).length > 8 || Object.entries(value.credentialRefs).some(([key, val]) => !/^MCP_[A-Z0-9_]{1,48}$/u.test(key) || !id(val))) throw mcpError("MCP_CREDENTIAL_REF_INVALID");
   const names = new Set();
   for (const tool of value.tools) {
-    if (!plain(tool) || Object.keys(tool).some((key) => !["name", "effect", "pathArgument", "paths"].includes(key)) || !id(tool.name) || names.has(tool.name) || tool.effect !== "read" || !id(tool.pathArgument)
+    if (!plain(tool) || Object.keys(tool).some((key) => !["name", "effect", "pathArgument", "paths", "writeMode"].includes(key)) || !id(tool.name) || names.has(tool.name) || !["read", "write"].includes(tool.effect) || (tool.effect === "write" ? tool.writeMode !== "descriptor" : tool.writeMode !== undefined) || !id(tool.pathArgument)
       || !Array.isArray(tool.paths) || !tool.paths.length || tool.paths.length > 16 || tool.paths.some((entry) => !scopePath(entry))) throw mcpError("MCP_TOOL_SCOPE_INVALID");
     names.add(tool.name);
   }
