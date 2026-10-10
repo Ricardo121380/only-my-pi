@@ -85,8 +85,10 @@ C / P / B：PASS。第四轮独立完整范围 Standards：PASS（hard 0 / 非�
 
 第三轮固定 `dde6d76...024cc6c`：Standards PASS（hard 0 / 非阻断 smell 1），Spec FAIL（wrong 1 / partial 1 / scope 0，两项计数对应等待 401 时目标改写丢弃失效事实及负例缺口）。独立结论分别保存在 `69-review-third.md`。根代理通过实际 Host save 将 A/ref 改为 B/ref，再放行真实 401 并恢复 A/ref 复现；修复改为核对发出请求时的原凭据绑定并记录失效，当前及重启后均阻断。Standards 的非阻断“已知失效”条件重复建议保留为明确判断，未将其当硬违反；同时移除 private load 调用。随后固定完整范围再次独立评审。
 
-第四轮固定 `dde6d7682d854341cf540aaba35366ce9f3f8a11...0c2132fb8eff60ec19ae79d70a60ef21820fb64c`：20 路径、891 新增 / 17 删除，原有 dirty 排除于新增差异；Standards PASS（hard 0 / 非阻断 smell 1），Spec PASS（missing 0 / partial 0 / scope 0 / wrong 0）。两位只读探子均终态 complete，分别核对全范围及相关规则/完整规格；原文摘记保存在 `69-review-fourth.md`。已知失效条件在 Catalog 展示与准入重复是非阻断维护建议，没有证据表明当前错误；不以无关重构扩大本票。最终实现提交为 `d5e2325`、`dff3ad0`、`024cc6c`、`0c2132f`。
+第四轮固定 `dde6d7682d854341cf540aaba35366ce9f3f8a11...0c2132fb8eff60ec19ae79d70a60ef21820fb64c`：20 路径、891 新增 / 17 删除，原有 dirty 排除于新增差异；Standards PASS（hard 0 / 非阻断 smell 1），Spec PASS（missing 0 / partial 0 / scope 0 / wrong 0）。两位只读探子均终态 complete，分别核对全范围及相关规则/完整规格；原文摘记保存在 `69-review-fourth.md`。已知失效条件在 Catalog 展示与准入重复是非阻断维护建议，没有证据表明当前错误；不以无关重构扩大本票。第四轮评审时的实现提交为 `d5e2325`、`dff3ad0`、`024cc6c`、`0c2132f`。
 
-带入历史全量结果为 **1626 总计 / 1616 pass / 3 fail / 1 cancelled / 6 skip，exit 1**。本批全量 Node 回归在 #69 代码与评审收敛后仅运行一次，当前尚未运行；不以局部 PASS 覆盖历史全量 FAIL。
+带入历史全量结果为 **1626 总计 / 1616 pass / 3 fail / 1 cancelled / 6 skip，exit 1**。首次批末全量在 `6a60cebab917f2636efab84f724d3ad85b17e0f8` 的实际工作树运行：**1678 总计 / 1653 pass / 19 fail / 0 cancelled / 6 skip，exit 1，370.36 秒**（`batch-full-node24.json` / `.log`）。全量期间 1660 个候选文件 SHA 无漂移；19 个失败都来自新 Host OAuth 构造器对 stack.root 的无条件 path.join，使原有注入入口不能启动，完整错误保存在 `batch-full-node24-failures.json`。历史三项失败及一项取消在该候选通过。最小修复仅让 SDK 路径在根路径存在时构造；显式 OAuth 操作仍由 loadNativeMcp 对绑定缺失拒绝，不把假 SDK 注入旧夹具、不弱化断言。修复后原有六文件在 Node22/24 分别 **42/42 PASS**，四范围 typecheck PASS（`69-host-compat-node22`、`69-host-compat-node24`、`69-host-compat-typecheck`）。
+
+原计划全量一次；新增回归要求修复并验证最终候选，因此首次 FAIL 保留为修复前证据，后续实际 Pi/浏览器与完整范围评审重新核对，再为最终候选执行全量。当前补充验证与评审待完成，最终全量尚未运行；不以定点 PASS 或本票既有 PASS 覆盖上述 FAIL。
 
 I / 完整候选安装、L / 真实第三方 OAuth 或实际外部服务、remote CI、Full / 发布分发、U2：NOT_RUN。受控协议与浏览器证据不代实际第三方登录；#19 总规格和其他工单仍各自按其验收与依赖推进。

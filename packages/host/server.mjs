@@ -107,7 +107,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
   try { await terminals.load(); } catch (error) { await inputs.close(); await lock.release(); throw error; }
   const accounts = new AccountCatalog(configRoot);
   const mcp = new McpCatalog(configRoot);
-  const mcpOAuth = new McpOAuth({ catalog: mcp, sdkFile: path.join(stack.root, "pi/dist/index.js") });
+  const mcpOAuth = new McpOAuth({ catalog: mcp, sdkFile: stack.root ? path.join(stack.root, "pi/dist/index.js") : undefined });
   try { await mcpOAuth.initialize(); } catch (error) { await inputs.close(); await lock.release(); throw error; }
   const oauth = new AccountOAuth({ stack, configRoot, accounts, env });
   let modelCache, modelTime = 0;
