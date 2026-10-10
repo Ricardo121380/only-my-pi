@@ -26,3 +26,4 @@ async function stop() {
   console.log(JSON.stringify({ stopped: true, runs: runs.runs.length, receptions: reception.map((entry) => entry.received.filter((item) => item.type === "call").length) }));
 }
 process.once("SIGTERM", () => void stop()); process.once("SIGINT", () => void stop());
+process.once("SIGUSR2", () => void stop());

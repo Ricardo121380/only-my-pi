@@ -48,7 +48,7 @@ export async function createMcpHost({ respond = ({ body, res }) => providerReply
     close: ({ keep = false, unconfirmed = false } = {}) => closing ??= (async () => {
       try { await host.stop(); } catch (error) { if (!unconfirmed || error.code !== "RPC_TERMINATION_UNCONFIRMED") throw error; }
       for (const socket of sockets) socket.destroy(); await new Promise((resolve) => provider.close(resolve));
-      if (!keep) await fs.rm(root, { recursive: true, force: true });
+      if (!keep) await fs.rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 25 });
     })(),
   };
 }

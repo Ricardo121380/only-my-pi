@@ -19,10 +19,10 @@ Node 24.19.0 与 Node 22.19.0 均用实际官方支持矩阵路径运行；运�
 ## C：合同与本地机制
 
 - OMP 自有 `only-my-pi/mcp/config.json`；protocol 1、CAS revision、默认与项目覆盖、origin 和 targetDigest。CLI `omp admin mcp list|status|preview|apply --project ...`、TUI `/mcp`、WebUI `/api/mcp` 共享接口。配置入口均不连接/执行服务器；导入保留原 Pi JSON 字节，所有导入项停用，同名冲突拒绝。
-- command/codePaths 为绝对且可核对文件身份，cwd 限于项目内；参数、非秘密 env、credentialRefs、工具 schema、路径、次数、并发、超时与输入/输出都有上限。凭据私有引用只绑定项目/服务器目标，可显式撤销，秘密输出被拒绝。
-- 任务固定配置快照，后续保存只影响新任务；独立撤权 epoch 和凭据撤销仍阻断旧任务后续调用。配置工具名称是 SDK 注册及 active ceiling 的上限，额外 MCP 名称没有许可或连接。
+- command/codePaths 为绝对且可核对文件身份，cwd 限于项目内；参数、非秘密 env、credentialRefs、工具 schema、路径、次数、并发、超时与输入/输出都有上限。启动器拒绝 ENV/BASH_ENV 等 shell 启动变量。凭据私有引用只绑定项目/服务器目标，可显式撤销；原始帧与解码后的键和值均检查秘密，JSON 转义不能绕过。
+- 任务固定配置快照，后续启用状态下的配置编辑只影响新任务；保存停用与独立撤权 epoch 和凭据撤销仍阻断旧任务后续调用。配置工具名称是 SDK 注册及 active ceiling 的上限，额外 MCP 名称没有许可或连接。
 - 每次调用重新核对真实工具 schema、目标、代码身份、凭据与生命周期。`readOnlyHint` 只作描述。授权为拒绝/仅本次/本任务，本任务仅在当前 Agent 任务内复用。
-- 发现进程无项目内容读取权；获准的读使用独立短进程，只获得该次 canonical 文件路径读取权。macOS Seatbelt 自启动即生效，配置/秘密/项目写入/网络/子进程 fork 不允许。结束先核对进程组，再释放相关持有；无法确认的孤儿保留 reconciliation 并阻断替代。
+- 发现进程无项目内容读取权；获准的读使用独立短进程，只获得该次 canonical 文件路径读取权。macOS Seatbelt 自启动即生效，配置/秘密/项目写入/网络/子进程 fork 不允许。服务只可写两个固定 scratch/接收记录槽位，每个文件由不可提升的内核 RLIMIT_FSIZE 限为 64 KiB；OMP 运行记录有 8 MiB 写入上限。结束先核对进程组，再释放相关持有；无法确认的孤儿保留 reconciliation 并阻断替代。
 
 `66-final-node24.log` 16/16 PASS；安装扩展后的权限守卫跟进见 `66-green-installed-guard.log` 1/1 PASS，真实 TUI 见 `66-final-installed-tui.log` 1/1 PASS。`66-affected.log` 36/36 PASS，`66-final-web.log` 94/94 PASS。类型检查、lint、pack:check PASS，打包 1592 文件且 MCP 模块为必需项。详细命令与实际退出码见 `66-command-receipts.json`。
 
@@ -48,9 +48,19 @@ Node 24.19.0 与 Node 22.19.0 均用实际官方支持矩阵路径运行；运�
 
 - 保留 RED 证据：原始发现进程启动偷读、fork 可生成子进程、崩溃 Pi 后 Host 错误释放残留，以及实际安装扩展在 MCP 审批前被通用工具守卫拒绝。分别有后续实际 GREEN。并发受控实验造成一次 TUI 启动等待不足，单独运行及明确延长启动等待后 PASS；没有删除失败日志。
 - docs-links **FAIL**：开始与本票末尾均 2 项中 1 PASS / 1 FAIL，同四条既有越界 artifacts 链接。未修复这些范围外文档，也不把专项绿写成全量绿。
-- secret:scan **FAIL**：既有 `2026-10-07-g2-n01-prerequisite-preflight.md:40` mac-temp-path；文件 hash 与任务开始一致。没有本票秘密泄露 finding。
+- secret:scan **FAIL**：既有 `2026-10-07-g2-n01-prerequisite-preflight.md:40` mac-temp-path；文件 hash 与任务开始一致。扫描的既有 finding 与本票无关；独立评审另发现实际 MCP 凭据转义泄露，已按下述负例修复，不能以静态扫描替代实际链路检查。
 - 全量 Node 测试尚未在 #66 独立收口处运行，将按 implement 工作流在本次 #66→#67 批次末尾运行并单独报告。当前不得称为全仓通过。
 - I 完整安装、L 外部服务、Linux/macOS 发行候选、发布、部署和日常切换 **NOT_RUN**。MCP 运行目前只对已实测 macOS Seatbelt 放行，其他平台明确不可用，不影响旧 Linux CLI 分支。GP110-05 还包含其他 MCP 票，不因本票通过而关闭。
+
+## 首轮评审修复与复验
+
+首轮 Standards FAIL：1 项 P1 规则违反（JSON 转义后秘密未过滤），另有 1 项工具名称重复映射建议。首轮 Spec FAIL：2 项 P1（秘密泄露、保存停用不撤权）与 1 项 P2（服务存储未限额）。摘要保存于 `66-first-review-summary.md`。主线程通过真实 Pi/MCP 复现；`66-red-review.log` 和 `66-red-storage.log` 保留失败。
+
+`66-green-review.log` 3/3 PASS：两种转义结果都不进入公开任务或随后模型输入；实际接收一次后 UNKNOWN 且不重放；保存停用后旧审批为零分派；任意额外临时文件遭 OS 拒绝、超额 scratch 写入停止且没有工具调用。工具名称映射已集中到 catalog。
+
+修复后 `66-recheck-node24.log` 为 15 PASS / 1 FAIL，失败发生在孤儿测试结束后的临时目录清理，功能断言已通过。清理只对 ENOTEMPTY 等临时文件竞态有限重试，`66-recheck-orphan.log` 1/1 PASS。`66-recheck-config.log` 4/4 PASS；`66-recheck-node22.log` 与 `66-recheck-tui.log` 各 1/1 PASS（实际安装扩展副本）。类型检查和 lint PASS。原失败日志保留，不将整条组合命令改写为通过。
+
+修复后的浏览器证据单独保留在 `66-recheck/`，其 `66-browser-input.json` 绑定实际复制运行的代码。页面重新保存/启用并成功读取一次，再通过“保存并停用”撤销待决定的旧任务。审批后实际接收数为零，历史读取与被拒绝的调用分别展示。原完整 B 的停止、重启、断开和窄屏证据仍保留，不替换其原始运行身份。
 
 ## Standards
 
@@ -62,4 +72,4 @@ Node 24.19.0 与 Node 22.19.0 均用实际官方支持矩阵路径运行；运�
 
 ## 完成结论
 
-实现及 C/P/B 证据已具备；独立评审尚未完成，GitHub #66 暂不关闭，#67 尚未开始。
+实现与评审发现的修复均已有 C/P/B 证据；等待新的独立 Standards/Spec 评审。GitHub #66 暂不关闭，#67 尚未开始。

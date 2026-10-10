@@ -3,14 +3,15 @@ import { createHash, randomUUID } from "node:crypto";
 import { atomicWriteJson, readJsonObject, withConfigLock } from "../config-runtime/index.mjs";
 
 export const MCP_PROTOCOL = 1;
-export const MCP_LIMITS = Object.freeze({ inputBytes: 16384, outputBytes: 65536, calls: 32, timeoutMs: 10000, tools: 32, concurrency: 1 });
+export const MCP_LIMITS = Object.freeze({ inputBytes: 16384, outputBytes: 65536, serverFileBytes: 65536, storageBytes: 8388608, calls: 32, timeoutMs: 10000, tools: 32, concurrency: 1 });
 export const mcpError = (code, status = 400) => Object.assign(new Error(code), { code, status });
 export const digest = (value) => createHash("sha256").update(typeof value === "string" || Buffer.isBuffer(value) ? value : JSON.stringify(value)).digest("hex");
 const id = (value) => typeof value === "string" && /^[A-Za-z][A-Za-z0-9_-]{0,63}$/u.test(value);
 const plain = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const bounded = (value, max = 4096) => typeof value === "string" && value.length <= max && !/[\0\r\n]/u.test(value);
 const scopePath = (value) => bounded(value, 512) && value.length > 0 && !path.isAbsolute(value) && !value.split(/[\\/]/u).some((part) => ["..", ".git", ".pi", ".env", ""].includes(part)) && !value.startsWith("~");
-const safeEnv = (key) => /^[A-Z][A-Z0-9_]{0,63}$/u.test(key) && !/(?:KEY|TOKEN|SECRET|PASS|AUTH|HOME|PATH|NODE|DYLD|LD_|PI_|OMP_)/u.test(key);
+const safeEnv = (key) => /^[A-Z][A-Z0-9_]{0,63}$/u.test(key) && !/(?:KEY|TOKEN|SECRET|PASS|AUTH|HOME|PATH|NODE|DYLD|LD_|PI_|OMP_|BASH|SHELL|ZDOTDIR)/u.test(key) && !["ENV", "IFS"].includes(key);
+export const mcpToolNames = (snapshot) => snapshot?.servers.filter((server) => server.enabled).flatMap((server) => server.tools.map((tool) => `mcp__${server.name}__${tool.name}`)) ?? [];
 export function validateServer(value) {
   if (!plain(value) || Object.keys(value).some((key) => !["name", "transport", "command", "args", "codePaths", "cwd", "env", "credentialRefs", "tools", "enabled"].includes(key)) || !id(value.name) || value.transport !== "stdio"
     || !bounded(value.command) || !path.isAbsolute(value.command) || typeof value.enabled !== "boolean") throw mcpError("MCP_CONFIG_INVALID");
@@ -100,7 +101,12 @@ export class McpCatalog {
           if (Object.hasOwn(scoped, server.name) || projectKey && Object.hasOwn(state.defaults, server.name)) throw mcpError("MCP_NAME_CONFLICT", 409);
           scoped[server.name] = server;
         }
-      } else if (input.type === "save") scoped[input.server?.name] = validateServer(input.server);
+      } else if (input.type === "save") {
+        const server = validateServer(input.server); scoped[server.name] = server;
+        if (!server.enabled) {
+          const key = this.key(projectPath, server.name); state.revoked[key] = (state.revoked[key] ?? 0) + 1;
+        }
+      }
       else if (input.type === "revokeCredential") {
         const server = scoped[input.name] ?? state.defaults[input.name], ref = server?.credentialRefs[input.envName];
         if (!projectPath || !ref) throw mcpError("MCP_CREDENTIAL_REF_INVALID");

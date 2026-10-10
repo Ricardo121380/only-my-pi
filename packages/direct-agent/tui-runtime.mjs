@@ -6,7 +6,7 @@ import { createAdmittedSessionRuntime } from "./session-runtime.mjs";
 import { createResumeUiExtension } from "./session-resume-ui.mjs";
 import { prepareTuiInput } from "./initial-input.mjs";
 import { disableOmpCacheWarming } from "./cache-warming-policy.mjs";
-import { McpCatalog } from "../mcp/catalog.mjs";
+import { McpCatalog, mcpToolNames } from "../mcp/catalog.mjs";
 
 // Candidate bootstrap using only Pi's public SDK. Not routed from the daily
 // launcher until the remaining CLI compatibility cases pass acceptance.
@@ -62,7 +62,7 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     if (parsed.useTheme !== undefined) settingsManager.applyOverrides({ theme: parsed.useTheme });
     sdk.initTheme(settingsManager.getTheme(), false);
     const mcpSnapshot = await new McpCatalog(configRoot).snapshot(await fs.realpath(effectiveCwd));
-    const mcpNames = mcpSnapshot.servers.filter((server) => server.enabled).flatMap((server) => server.tools.map((tool) => `mcp__${server.name}__${tool.name}`));
+    const mcpNames = mcpToolNames(mcpSnapshot);
     const services = await sdk.createAgentSessionServices({ cwd: effectiveCwd, agentDir, settingsManager,
       modelRuntime, modelRuntimeSignal: AbortSignal.timeout(15_000), extensionFlagValues: parsed.unknownFlags,
       resourceLoaderOptions: { noExtensions: true, additionalExtensionPaths: parsed.extensions,

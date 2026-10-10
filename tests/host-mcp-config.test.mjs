@@ -55,7 +55,7 @@ test("project overrides expose their origin and project-only revocation leaves o
 
 test("public admission rejects mutation tools, unbounded scopes, dynamic secrets and inherited environment", async (t) => {
   const f = await fixture(t);
-  for (const change of [{ tools: [{ ...baseServer.tools[0], effect: "write" }] }, { tools: [{ ...baseServer.tools[0], paths: [".."] }] }, { env: { AMBIENT_SECRET: "x" } }, { env: { CONFIG: "${SECRET}" } }, { env: { CONFIG: "!cat ~/.secret" } }, { inheritEnv: true }, { cwd: "../other" }]) {
+  for (const change of [{ tools: [{ ...baseServer.tools[0], effect: "write" }] }, { tools: [{ ...baseServer.tools[0], paths: [".."] }] }, { env: { AMBIENT_SECRET: "x" } }, { env: { CONFIG: "${SECRET}" } }, { env: { CONFIG: "!cat ~/.secret" } }, { env: { ENV: "/tmp/startup" } }, { env: { BASH_ENV: "/tmp/startup" } }, { inheritEnv: true }, { cwd: "../other" }]) {
     await f.request({ type: "save", revision: 0, server: { ...baseServer, ...change } }, 400);
     assert.equal((await f.request({ type: "list" })).revision, 0);
   }

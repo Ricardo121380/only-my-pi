@@ -7,7 +7,7 @@ import path from "node:path";
 import { resolveBoundPackageRoot } from "../bootstrap/runtime-package-binding.mjs";
 import { loadDistribution, resolveDistributionPackage } from "../distribution/runtime.mjs";
 import { OMP_CONTROL_COMMANDS } from "../control-service/cli-parser.mjs";
-import { McpCatalog } from "../mcp/catalog.mjs";
+import { McpCatalog, mcpToolNames } from "../mcp/catalog.mjs";
 
 const STACK_DIRECTORY = /^[a-f0-9]{64}$/u;
 const UUID = /^[a-f0-9-]{36}$/u;
@@ -433,7 +433,7 @@ export async function launchDirectAgent({ argv = [], packageRoot, homeDir, stack
   const configRoot = resolveDirectConfigRoot({ env, homeDir });
   const directExtensions = await resolveDirectExtensionSet({ stack, configRoot, headless: inspected.headless });
   const mcp = await new McpCatalog(configRoot).snapshot(await fs.realpath(process.cwd()));
-  const mcpNames = mcp.servers.filter((server) => server.enabled).flatMap((server) => server.tools.map((tool) => `mcp__${server.name}__${tool.name}`));
+  const mcpNames = mcpToolNames(mcp);
   const invocation = buildDirectPiInvocation({ argv, stack, extensionPaths: directExtensions.extensions, mcpNames, env, randomUUIDImpl, interactive });
   if (invocation.argv[1] !== stack.piCliPath) {
     await resolveContainedRegularFile(stack.ompPackageRoot, path.relative(stack.ompPackageRoot, invocation.argv[1]), "session admission entry");

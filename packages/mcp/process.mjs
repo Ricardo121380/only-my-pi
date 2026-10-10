@@ -17,6 +17,8 @@ export async function launchIdentity(server) {
   return files;
 }
 const quote = (value) => JSON.stringify(value);
+const containsSecret = (value, secrets) => typeof value === "string" ? secrets.some((secret) => value.includes(secret))
+  : value && typeof value === "object" && Object.entries(value).some(([key, entry]) => containsSecret(key, secrets) || containsSecret(entry, secrets));
 export function sandboxProfile({ files, readPaths, runtimeDir, configRoot, cwd }) {
   return `(version 1)
 (deny default)
@@ -31,7 +33,7 @@ export function sandboxProfile({ files, readPaths, runtimeDir, configRoot, cwd }
  ${files.map((file) => `(literal ${quote(file.path)})`).join("\n ")}
  ${readPaths.map((file) => `(subpath ${quote(file)})`).join("\n ")}
  (subpath ${quote(runtimeDir)}))
-(allow file-write* (subpath ${quote(runtimeDir)}) (literal "/dev/null"))
+(allow file-write* (literal ${quote(path.join(runtimeDir, "received.jsonl"))}) (literal ${quote(path.join(runtimeDir, "scratch"))}) (literal "/dev/null"))
 (deny file-read* file-write* (subpath ${quote(configRoot)}) (regex #"(^|/)(\\.git|\\.pi|\\.env)(/|$|\\.)"))`;
 }
 
@@ -54,7 +56,9 @@ export class ControlledStdioTransport {
     const profile = sandboxProfile({ ...this, runtimeDir });
     await fs.writeFile(path.join(runtimeDir, "sandbox.sb"), profile, { mode: 0o600 });
     if (this.closed) throw mcpError("MCP_AUTHORIZATION_REVOKED");
-    const child = spawn("/usr/bin/sandbox-exec", ["-f", path.join(runtimeDir, "sandbox.sb"), this.files[0].path, ...this.server.args], {
+    // The trusted launcher sets a hard kernel limit before executing the service.
+    // Only two fixed writable slots exist; the service cannot create more files.
+    const child = spawn("/bin/sh", ["-c", `ulimit -f ${MCP_LIMITS.serverFileBytes / 1024} || exit; exec "$@"`, "omp-mcp", "/usr/bin/sandbox-exec", "-f", path.join(runtimeDir, "sandbox.sb"), this.files[0].path, ...this.server.args], {
       cwd: this.cwd, detached: true, stdio: ["pipe", "pipe", "pipe"],
       env: { HOME: runtimeDir, TMPDIR: runtimeDir, PATH: "/usr/bin:/bin", LANG: "en_US.UTF-8", ...this.server.env, ...this.env, OMP_MCP_RUNTIME_DIR: runtimeDir },
     });
@@ -69,10 +73,11 @@ export class ControlledStdioTransport {
         try {
           if (this.secrets.some((secret) => line.includes(secret))) throw mcpError("MCP_SECRET_OUTPUT_REJECTED");
           const message = JSON.parse(line);
+          if (containsSecret(message, this.secrets)) throw mcpError("MCP_SECRET_OUTPUT_REJECTED");
           if (!message || typeof message !== "object" || message.jsonrpc !== "2.0") throw mcpError("MCP_FRAME_INVALID");
           if (message.result?.tools && (message.result.tools.length > MCP_LIMITS.tools || message.result.nextCursor !== undefined)) throw mcpError("MCP_TOOL_LIMIT");
           this.emit("message", message);
-        } catch (error) { this.emit("error", mcpError(error.code ?? "MCP_FRAME_INVALID")); void this.close().catch(() => {}); }
+        } catch (error) { this.emit("error", mcpError(error.code ?? "MCP_FRAME_INVALID")); void this.close().catch(() => {}); return; }
       }
     });
     child.stderr.on("data", (chunk) => { stderrBytes += chunk.length; if (stderrBytes > MCP_LIMITS.outputBytes) { this.emit("error", mcpError("MCP_OUTPUT_LIMIT")); void this.close().catch(() => {}); } });

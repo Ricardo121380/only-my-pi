@@ -9,6 +9,7 @@ import { createPiInputBridge } from "./pi-input-bridge.mjs";
 import { openValidatedSession } from "../direct-agent/session-history.mjs";
 import { INPUT_PROTOCOL } from "./input-protocol.mjs";
 import { disableOmpCacheWarming } from "../direct-agent/cache-warming-policy.mjs";
+import { mcpToolNames } from "../mcp/catalog.mjs";
 
 // Host-owned arguments contain identities and audited paths, never credentials.
 try {
@@ -16,7 +17,7 @@ try {
   if (!["readonly", "controlled"].includes(mode)) throw new Error();
   const controlled = mode === "controlled";
   const mcpSnapshot = process.env.OMP_HOST_MCP_SNAPSHOT ? JSON.parse(process.env.OMP_HOST_MCP_SNAPSHOT) : null;
-  const mcpNames = mcpSnapshot?.servers.filter((server) => server.enabled).flatMap((server) => server.tools.map((tool) => `mcp__${server.name}__${tool.name}`)) ?? [];
+  const mcpNames = mcpToolNames(mcpSnapshot);
   if (controlled && !process.send) throw new Error();
   if (![stackRoot, configRoot, sessionRoot, ...extensions].every((p) => typeof p === "string" && path.isAbsolute(p)) || !extensions.length) throw new Error();
   if (controlled) {

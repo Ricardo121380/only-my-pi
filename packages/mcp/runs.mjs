@@ -2,10 +2,14 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { atomicWriteJson, readJsonObject, withConfigLock } from "../config-runtime/index.mjs";
 import { processIdentity, groupAlive } from "../host/ownership.mjs";
-import { mcpError } from "./catalog.mjs";
+import { mcpError, MCP_LIMITS } from "./catalog.mjs";
 
 export class McpRuns {
   constructor(configRoot) { this.root = configRoot; this.file = path.join(configRoot, "only-my-pi/mcp/runs.json"); }
+  async write(state) {
+    if (Buffer.byteLength(JSON.stringify(state)) > MCP_LIMITS.storageBytes) throw mcpError("MCP_STORAGE_LIMIT", 409);
+    await atomicWriteJson(this.root, this.file, state);
+  }
   async read() {
     const state = await readJsonObject(this.root, this.file).catch((error) => { if (error.code === "ENOENT") return { version: 1, runs: [] }; throw error; });
     if (state.version !== 1 || !Array.isArray(state.runs) || state.runs.length > 100) throw mcpError("MCP_RUN_STATE_INVALID", 409);
@@ -29,7 +33,7 @@ export class McpRuns {
         if (prior.projectPath !== projectPath || prior.status === "stopped") continue;
         if (prior.ownerIdentity !== await processIdentity(prior.ownerPid) || prior.processes.some((entry) => entry.status === "reconciliation")) throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
       }
-      state.runs.push(run); await atomicWriteJson(this.root, this.file, state);
+      state.runs.push(run); await this.write(state);
     });
     return run;
   }
@@ -37,7 +41,7 @@ export class McpRuns {
     await withConfigLock(this.root, "mcp-runs", async () => {
       const state = await this.read(), index = state.runs.findIndex((entry) => entry.runId === run.runId);
       if (index === -1) throw mcpError("MCP_RUN_NOT_FOUND", 409);
-      state.runs[index] = structuredClone(run); await atomicWriteJson(this.root, this.file, state);
+      state.runs[index] = structuredClone(run); await this.write(state);
     });
   }
 }
