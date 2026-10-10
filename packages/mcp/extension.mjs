@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import Ajv from "ajv";
 import { McpCatalog, MCP_LIMITS, digest, mcpError, mcpToolName } from "./catalog.mjs";
 import { McpRuns } from "./runs.mjs";
-import { ControlledStdioTransport, launchIdentity } from "./process.mjs";
+import { ControlledStdioTransport, containsSecret, launchIdentity } from "./process.mjs";
 import { processIdentity } from "../host/ownership.mjs";
 import { loadNativeMcp } from "./native.mjs";
 import { openWriteTarget } from "./write-target.mjs";
@@ -94,6 +94,7 @@ export function installOmpMcp(pi, { configRoot, controller }) {
     try {
       if (Buffer.byteLength(JSON.stringify(params)) > MCP_LIMITS.inputBytes) throw mcpError("MCP_INPUT_LIMIT");
       await check(server);
+      if (remote && containsSecret(params, entry.transport.secrets)) throw mcpError("MCP_SECRET_INPUT_REJECTED");
       if (remote && (await store.status(snapshot.projectPath)).runs.some((prior) => prior.calls.some((call) => call.targetDigest === server.targetDigest && call.effect === "remote" && call.status === "unknown"))) throw mcpError("MCP_REMOTE_RECONCILIATION_REQUIRED", 409);
       const current = (await entry.client.listTools({ signal, timeoutMs: MCP_LIMITS.timeoutMs })).find((tool) => tool.name === policy.name);
       if (entry.changed || !current || digest(current) !== record.definitionDigest) throw mcpError("MCP_TOOL_DEFINITION_CHANGED");
@@ -111,7 +112,11 @@ export function installOmpMcp(pi, { configRoot, controller }) {
       if (!grants.has(key)) {
         record.status = "awaiting_approval"; await save();
         if (!ctx.hasUI) throw mcpError("MCP_APPROVAL_REQUIRED");
-        const choice = await ctx.ui.select(`MCP · ${server.name}/${policy.name} · ${remote ? "远程操作" : write ? "写入" : "只读"}\n${record.target}\n配置版本 ${snapshot.revision} · ${remote ? `输入摘要 ${record.inputDigest}；可能产生外部效果，不授予本机项目写入` : write ? "须同时持有编程授权与项目写入所有权，仅传递该文件描述符" : "仅允许声明路径"} · 10 秒 / 16 KiB 输入 / 64 KiB 输出`, ["拒绝", "仅本次", "本任务"]);
+        const title = `MCP · ${server.name}/${policy.name} · ${remote ? "远程操作" : write ? "写入" : "只读"}\n${record.target}\n配置版本 ${snapshot.revision} · ${remote ? `输入摘要 ${record.inputDigest}；可能产生外部效果，不授予本机项目写入\n操作参数：${JSON.stringify(params)}` : write ? "须同时持有编程授权与项目写入所有权，仅传递该文件描述符" : "仅允许声明路径"} · 10 秒 / 16 KiB 输入 / 64 KiB 输出`;
+        // Keep the complete proposed scope within Pi/Host's bounded approval.
+        // A digest or a truncated argument cannot substitute for review.
+        if (remote && title.length > MCP_LIMITS.inputBytes) throw mcpError("MCP_INPUT_LIMIT");
+        const choice = await ctx.ui.select(title, ["拒绝", "仅本次", "本任务"]);
         if (!["仅本次", "本任务"].includes(choice)) throw mcpError("MCP_CALL_DENIED");
         await check(server);
         if (signal?.aborted) throw mcpError("MCP_CALL_CANCELLED");
@@ -134,7 +139,8 @@ export function installOmpMcp(pi, { configRoot, controller }) {
         if (write) { await authority.assert(); await write.assert(); }
         else if (!remote && await selectedPath(snapshot.projectPath, params[policy.pathArgument], policy.paths) !== record.target) throw mcpError("MCP_TARGET_CHANGED");
       };
-      record.status = "dispatched"; await save();
+      if (remote) execution.transport.beforeDispatch = async () => { record.status = "dispatched"; await save(); };
+      else { record.status = "dispatched"; await save(); }
       await check(server);
       const output = await execution.client.callTool(policy.name, remote ? params : { ...params, [policy.pathArgument]: write ? "/dev/fd/3" : record.target }, { signal: callSignal, timeoutMs: MCP_LIMITS.timeoutMs });
       if (Buffer.byteLength(JSON.stringify(output)) > MCP_LIMITS.outputBytes || !Array.isArray(output.content) || output.content.some((block) => block.type !== "text" || typeof block.text !== "string")) throw mcpError("MCP_RESULT_NOT_ADMITTED");
@@ -146,7 +152,7 @@ export function installOmpMcp(pi, { configRoot, controller }) {
       return { content: output.content, details: { callId: record.callId, status: record.status, revision: record.revision, server: server.name, tool: policy.name, ...(write ? { application: record.application, verification: "not_run", beforeDigest: record.beforeDigest, afterDigest: record.afterDigest } : {}) } };
     } catch (error) {
       record.code = /^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "MCP_CALL_FAILED";
-      record.status = record.status === "dispatched" ? "unknown" : "rejected";
+      record.status = record.status === "dispatched" && (!remote || execution?.transport.businessAttempted) ? "unknown" : "rejected";
       if (write) { record.application = record.status === "unknown" ? "unknown" : "not_applied"; }
       await save();
       return result(`${record.code}${record.status === "unknown" ? ": 结果未知，不自动重试" : ""}`);

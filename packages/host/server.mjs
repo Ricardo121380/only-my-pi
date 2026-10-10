@@ -92,6 +92,11 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
   let seq = 0, inputSeq = 0, origin, stopping = false, scanRunning = false, closed, scanTimer, flushTimer, sessionTimer;
   const updates = new Map();
   const projectsFile = path.join(root, "projects.json");
+  let projectsSaved = Promise.resolve();
+  const saveProjects = () => {
+    const write = projectsSaved.then(() => atomicWriteJson(configRoot, projectsFile, { projects: catalog.listProjects() }));
+    projectsSaved = write.catch(() => {}); return write;
+  };
   const previous = await readJsonObject(configRoot, projectsFile).catch(async (e) => { if (e.code === "ENOENT") return null; await lock.release(); throw e; });
   const catalog = new ProjectCatalog({ sessionRoot, projects: previous?.projects ?? [] });
   const inputs = new HostInputStore({ configRoot, now: () => new Date(now()).toISOString() });
@@ -163,7 +168,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
   async function scan() {
     if (scanRunning || stopping) return;
     scanRunning = true;
-    try { await catalog.scan(); await atomicWriteJson(configRoot, projectsFile, { projects: catalog.listProjects() }); publish("projects", catalog.listProjects()); }
+    try { await catalog.scan(); await saveProjects(); publish("projects", catalog.listProjects()); }
     catch { catalog.diagnostics = [{ code: "SESSION_INDEX_UNAVAILABLE" }]; }
     finally { scanRunning = false; }
   }
@@ -272,7 +277,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
             const result = command.type === "enterManual" ? await manual.enter(command.projectId) : command.type === "leaveManual" ? await manual.leave(command.projectId, command.manualId) : await manual.save(command);
             return response(res, 200, result);
           }
-          if (command.type === "addProject") { const project = await catalog.add(command.path); await atomicWriteJson(configRoot, projectsFile, { projects: catalog.listProjects() }); publish("projects", catalog.listProjects()); return response(res, 200, project); }
+          if (command.type === "addProject") { const project = await catalog.add(command.path); await saveProjects(); publish("projects", catalog.listProjects()); return response(res, 200, project); }
           if (command.type === "startTask") return response(res, 202, await tasks.start(command));
           if (command.type === "answerApproval") return response(res, 200, await tasks.answerApproval(command.taskId, command.approvalId, command.value));
           if (command.type === "revokeTask") return response(res, 200, await tasks.revoke(command.taskId));

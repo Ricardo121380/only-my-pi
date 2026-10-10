@@ -50,3 +50,38 @@ for (const mode of ["sse-secret", "sse-oversized"]) test(`real ${mode} is bounde
   assert.ok(!JSON.stringify([ended, status, f.requests.map((entry) => entry.body)]).includes(service.token));
   assert.ok(!JSON.stringify(f.requests.map((entry) => entry.body)).includes("x".repeat(70000)));
 });
+
+test("a real RPC envelope rejected before send remains rejected and does not poison a later ordinary call", { timeout: 65000 }, async (t) => {
+  const service = await createHttpMcpServer({ maxInputLength: 20000 }); t.after(() => service.close()); let large = true;
+  const f = await createMcpHost({ installedExtensions: true, respond: ({ body, res }) => providerReply(res, body.messages.at(-1).role === "tool" ? null : "mcp__remote__echo", { value: large ? "x".repeat(16320) : "ordinary call after local rejection" }) }); t.after(() => f.close()); await configure(f, service);
+  const first = await f.start(), waiting = await until(() => f.task(first.taskId), (task) => task.approvals.length || ["succeeded", "failed"].includes(task.status), "envelope admission", 20000);
+  if (waiting.approvals.length) await f.request("/api/command", { type: "answerApproval", taskId: first.taskId, approvalId: waiting.approvals[0].approvalId, value: "仅本次" });
+  await until(() => f.task(first.taskId), (task) => ["succeeded", "failed"].includes(task.status), "envelope rejection", 20000);
+  const rejected = (await f.mcp({ type: "status" })).runs.at(-1).calls[0]; t.diagnostic(JSON.stringify({ status: rejected.status, code: rejected.code, receiverCalls: service.received.filter((entry) => entry.rpc === "tools/call").length }));
+  assert.equal(service.received.filter((entry) => entry.rpc === "tools/call").length, 0); assert.equal(rejected.status, "rejected");
+  await f.restart(); large = false;
+  const next = await f.start(), approval = await until(() => f.task(next.taskId), (task) => task.approvals.length || task.status === "failed", "ordinary call approval", 20000); assert.ok(approval.approvals.length, JSON.stringify(approval));
+  await f.request("/api/command", { type: "answerApproval", taskId: next.taskId, approvalId: approval.approvals[0].approvalId, value: "仅本次" });
+  await until(() => f.task(next.taskId), (task) => ["succeeded", "failed"].includes(task.status), "ordinary call finished", 20000);
+  assert.equal((await f.mcp({ type: "status" })).runs.at(-1).calls[0].status, "completed"); assert.equal(service.received.filter((entry) => entry.rpc === "tools/call").length, 1);
+});
+
+test("remote approval exposes the exact proposed argument scope before a user decision", { timeout: 45000 }, async (t) => {
+  const service = await createHttpMcpServer(); t.after(() => service.close()); const input = { value: "resource id: controlled-item-7" };
+  const f = await createMcpHost({ respond: ({ res }) => providerReply(res, "mcp__remote__echo", input) }); t.after(() => f.close()); await configure(f, service);
+  const start = await f.start(), waiting = await until(() => f.task(start.taskId), (task) => task.approvals.length, "reviewable remote approval", 20000);
+  assert.equal(service.received.filter((entry) => entry.rpc === "tools/call").length, 0); assert.ok(waiting.approvals[0].title.includes(JSON.stringify(input)), "approval must show arguments, in addition to their binding digest");
+  await f.request("/api/command", { type: "cancelTask", taskId: start.taskId }, 202);
+});
+
+test("registered HTTP projects survive real Host restarts during initial indexing", { timeout: 45000 }, async (t) => {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const f = await createMcpHost();
+    try {
+      await f.restart();
+      const state = await f.request("/api/state"); assert.ok(state.projects.some((project) => project.projectId === f.projectId));
+      assert.equal((await f.mcp({ type: "list" })).projectPath, f.project);
+    } finally { await f.close(); }
+  }
+  t.diagnostic("8 actual public project registrations and restart readbacks");
+});

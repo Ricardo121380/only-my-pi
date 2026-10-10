@@ -39,6 +39,13 @@ export class ControlledHttpTransport {
     if (signal.aborted) throw mcpError("MCP_CALL_CANCELLED");
     let response;
     try {
+      // The native client adds the RPC envelope. Only mark the effect attempt
+      // after exact-target, identity, full-body and abort checks have passed.
+      if (init.method === "POST" && init.body && JSON.parse(init.body).method === "tools/call") {
+        await this.beforeDispatch?.();
+        if (signal.aborted) throw mcpError("MCP_CALL_CANCELLED");
+        this.businessAttempted = true;
+      }
       response = await fetch(target, { ...init, redirect: "manual", signal });
       if (response.status >= 300 && response.status < 400) throw mcpError("MCP_HTTP_REDIRECT_DENIED");
       if (response.status === 401 || response.status === 403) throw mcpError("MCP_HTTP_AUTH_REQUIRED");
