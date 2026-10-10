@@ -77,13 +77,15 @@
 
 ## 独立完成边界
 
-C / P / B：PASS。Standards / Spec：待固定范围的独立评审；GitHub #69 关闭与回读：待评审完成。#68 的验收与完成结论保留在 [HTTP MCP 验收](./2026-10-10-pi110-http-mcp-acceptance.md)，不与本票 OAuth 结论合并。
+C / P / B：PASS。第四轮独立完整范围 Standards：PASS（hard 0 / 非阻断 smell 1）；Spec：PASS（missing 0 / partial 0 / scope 0 / wrong 0）。GitHub #69 于 **2026-10-10 17:02:44Z** 关闭为 CLOSED / completed；7 条条件、完整正文和[完成评论](https://github.com/Ricardo121380/only-my-pi/issues/69#issuecomment-6100003567)均精确回读，唯一前置 #68 已 CLOSED，#19 正文 SHA 保持（`69-remote/after.json`、`verification.json`、`deps-after.json`、`19-after.json`）。#68 的验收与完成结论保留在 [HTTP MCP 验收](./2026-10-10-pi110-http-mcp-acceptance.md)，不与本票 OAuth 结论合并。
 
 首轮固定 `dde6d76...d5e2325` 的独立 Standards 为 FAIL（hard 1 / smell 1），Spec 为 FAIL（2 项错误及相应负例缺口 / scope 0）。原文保存在 `69-review-first.md`。三项行为问题均先复现；管理令牌回显经过真实 Host/Pi/工具请求，取消竞态在实际原生 listener 的异步绑定检查处受控暂停，发布故障使用真实原子写的 AFTER_RENAME 注入与状态写故障接缝，后两类属于 C 故障验证，未冒充额外浏览器或第三方证据。活动状态谓词由服务端和 WebUI 共用；随后完整范围再次独立评审。
 
 第二轮固定 `dde6d76...dff3ad0`：Standards PASS（hard 0 / 非阻断 smell 1），Spec FAIL（wrong 1 / partial 1 / scope 0，两项计数对应同一失效锁竞争及负例缺口）。结果摘记保存在 `69-review-second.md`。根代理在真实接收端暂停 initialize、实际持有配置锁后放行 401 复现，随后按引用持久化单向失效记录，避免配置锁竞争丢失事实，并共享 isMcpOAuthBlocked 消除重复判定；修复后再审完整本票范围。
 
 第三轮固定 `dde6d76...024cc6c`：Standards PASS（hard 0 / 非阻断 smell 1），Spec FAIL（wrong 1 / partial 1 / scope 0，两项计数对应等待 401 时目标改写丢弃失效事实及负例缺口）。独立结论分别保存在 `69-review-third.md`。根代理通过实际 Host save 将 A/ref 改为 B/ref，再放行真实 401 并恢复 A/ref 复现；修复改为核对发出请求时的原凭据绑定并记录失效，当前及重启后均阻断。Standards 的非阻断“已知失效”条件重复建议保留为明确判断，未将其当硬违反；同时移除 private load 调用。随后固定完整范围再次独立评审。
+
+第四轮固定 `dde6d7682d854341cf540aaba35366ce9f3f8a11...0c2132fb8eff60ec19ae79d70a60ef21820fb64c`：20 路径、891 新增 / 17 删除，原有 dirty 排除于新增差异；Standards PASS（hard 0 / 非阻断 smell 1），Spec PASS（missing 0 / partial 0 / scope 0 / wrong 0）。两位只读探子均终态 complete，分别核对全范围及相关规则/完整规格；原文摘记保存在 `69-review-fourth.md`。已知失效条件在 Catalog 展示与准入重复是非阻断维护建议，没有证据表明当前错误；不以无关重构扩大本票。最终实现提交为 `d5e2325`、`dff3ad0`、`024cc6c`、`0c2132f`。
 
 带入历史全量结果为 **1626 总计 / 1616 pass / 3 fail / 1 cancelled / 6 skip，exit 1**。本批全量 Node 回归在 #69 代码与评审收敛后仅运行一次，当前尚未运行；不以局部 PASS 覆盖历史全量 FAIL。
 

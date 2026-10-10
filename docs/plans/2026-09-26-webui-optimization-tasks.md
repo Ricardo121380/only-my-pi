@@ -1,6 +1,6 @@
 # WebUI 优化 Task 看板
 
-**2026-10-10 当前方向：** [总规格 #19 对应本地正文](2026-10-01-webui-remaining-spec.md)与[适配共识](2026-10-10-pi-1.1.0-adaptation-consensus.md)确定 Pi 1.1.0 为开发目标，新增 MCP/codemode、分类与生图。独立适配可先行，材料链继续由 #20/#21/#22 推进；原 #20–#61 身份和 U2–U6 出口保留。下面 20/44 及历史 PASS 不代表新版本或新增范围通过，Q14 已批准并发布新增 #62–#75，补充 18 张既有正文，完整图为 56 张实施票、73 条依赖，详见[本轮实际映射](2026-10-10-pi-1.1.0-ticket-review.md)。当前 #62/#63/#64/#66/#67/#68 均已 CLOSED / completed；#68 必需 C/P/B、Standards/Spec 与关闭回读通过，当前实施入口为 #69（OAuth）。#65 仍为独立私有运行时入口。
+**2026-10-10 当前方向：** [总规格 #19 对应本地正文](2026-10-01-webui-remaining-spec.md)与[适配共识](2026-10-10-pi-1.1.0-adaptation-consensus.md)确定 Pi 1.1.0 为开发目标，新增 MCP/codemode、分类与生图。独立适配可先行，材料链继续由 #20/#21/#22 推进；原 #20–#61 身份和 U2–U6 出口保留。下面 20/44 及历史 PASS 不代表新版本或新增范围通过，Q14 已批准并发布新增 #62–#75，补充 18 张既有正文，完整图为 56 张实施票、73 条依赖，详见[本轮实际映射](2026-10-10-pi-1.1.0-ticket-review.md)。当前 #62/#63/#64/#66/#67/#68/#69 均已 CLOSED / completed；#68、#69 分别取得必需 C/P/B、Standards/Spec 与关闭回读，后续实施入口为 #70（codemode，前置 #66 已关闭）。#65 仍为独立私有运行时入口。
 
 日期：2026-09-26。依据：[完整计划](2026-09-26-webui-optimization-plan.md)、[Q1–Q23 讨论记录](2026-09-26-webui-optimization-discussion.md)、[报告核验与R1–R3决定](2026-09-26-webui-report-followup-discussion.md)、[验收矩阵](2026-09-26-webui-optimization-acceptance.md)。
 
@@ -149,7 +149,7 @@ Task：S0-?? / U?-??
 
 ## 当前具体下一步
 
-**2026-10-10 工程收尾及 HTTP 完成回读：** #62/#63/#64/#66/#67/#68 均已 CLOSED / completed；本批起点 `5d4ccda3c79629e6432d8b668ac435ad6f603f1c`。GP110-01、02、03 及 stdio 读/descriptor 写切片的必需证据和两轴评审分别通过，原源码身份与限制保留。逐票证据见[运行/终端验收](2026-10-10-pi110-runtime-terminal-acceptance.md)、[输入验收](2026-10-10-pi-1.1.0-input-acceptance.md)、[stdio 验收](2026-10-10-pi110-mcp-stdio-acceptance.md)、[写入验收](2026-10-10-pi110-mcp-write-acceptance.md)和[HTTP 验收](2026-10-10-pi110-http-mcp-acceptance.md)。#68 于 15:24:24Z 关闭并回读；#69 的直接前置已 CLOSED，当前实施入口为 #69。#65 为独立入口，#19/GP110-05 整体、材料链、Full/U2、真实服务和日常晋升门槛保持。上一批全量 FAIL 与历史检查失败不改写，本批末当前候选全量独立报告。下面发布时的“全部 OPEN”“下一项 #62”保留为历史快照。
+**2026-10-11 工程收尾及 HTTP / OAuth 完成回读：** #62/#63/#64/#66/#67/#68/#69 均已 CLOSED / completed；本批起点 `5d4ccda3c79629e6432d8b668ac435ad6f603f1c`。GP110-01、02、03 及 stdio 读/descriptor 写切片的必需证据和两轴评审分别通过，原源码身份与限制保留。逐票证据见[运行/终端验收](2026-10-10-pi110-runtime-terminal-acceptance.md)、[输入验收](2026-10-10-pi-1.1.0-input-acceptance.md)、[stdio 验收](2026-10-10-pi110-mcp-stdio-acceptance.md)、[写入验收](2026-10-10-pi110-mcp-write-acceptance.md)、[HTTP 验收](2026-10-10-pi110-http-mcp-acceptance.md)和[OAuth 验收](2026-10-10-pi110-mcp-oauth-acceptance.md)。#68 于 2026-10-10 15:24:24Z、#69 于 17:02:44Z 分别关闭并回读；本批两票分别完成。后续入口 #70 的直接前置 #66 已 CLOSED；#71 仍等待 #70。#65 为独立入口，#19/GP110-05 整体、材料链、Full/U2、真实服务和日常晋升门槛保持。上一批全量 FAIL 与历史检查失败不改写，本批末当前候选全量独立报告。下面发布时的“全部 OPEN”“下一项 #62”保留为历史快照。
 
 
 **2026-10-10 Pi 1.1.0 适配发布：** grill-with-docs Q1–Q14、to-spec 与 to-tickets 已完成。新增 [#62](https://github.com/Ricardo121380/only-my-pi/issues/62)–[#75](https://github.com/Ricardo121380/only-my-pi/issues/75) 及 18 张既有正文更新均已回读；50 条原依赖保留，新增 23 条，56 张实施票的完整图已验无环。下一项为 [#62 / PI110-N01](https://github.com/Ricardo121380/only-my-pi/issues/62)：在双 Node 上贯通真实 Pi 1.1.0 受控任务并以接收计数验证关闭缓存保温。[#65 / PI110-N04](https://github.com/Ricardo121380/only-my-pi/issues/65) 可独立推进私有运行时材料，#20/#21/#22 继续原材料链；它们不阻断 #62。新旧路线通过 #26←#65、#28←#62、#43←#74、#57←#75 汇合。全部工单保持 OPEN，历史 20/44、材料 PARTIAL/BLOCKED 与 Full NOT_RUN 未因发布而晋升。详见[完整映射](2026-10-10-pi-1.1.0-ticket-review.md)及[机器映射](2026-10-10-pi-1.1.0-ticket-proposal.json)。
