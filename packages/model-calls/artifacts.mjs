@@ -23,7 +23,7 @@ export function validateImage(block, maximum) {
   let at = 8, width, height, channels, ended = false, dataEnded = false, palette = false; const data = [];
   while (at < bytes.length) {
     if (at + 12 > bytes.length || ended) throw fail("IMAGE_CONTENT_INVALID");
-    const length = bytes.readUInt32BE(at), kind = bytes.toString("ascii", at + 4, at + 8), end = at + 12 + length;
+    const length = bytes.readUInt32BE(at), kind = bytes.toString("latin1", at + 4, at + 8), end = at + 12 + length;
     if (end > bytes.length || crc(bytes.subarray(at + 4, end - 4)) !== bytes.readUInt32BE(end - 4)) throw fail("IMAGE_CONTENT_INVALID");
     const chunk = bytes.subarray(at + 8, end - 4);
     if (!/^[A-Za-z]{2}[A-Z][A-Za-z]$/u.test(kind) || ["acTL", "fcTL", "fdAT"].includes(kind)) throw fail("IMAGE_FORMAT_UNSUPPORTED");

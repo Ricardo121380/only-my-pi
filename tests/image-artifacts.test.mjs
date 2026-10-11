@@ -19,6 +19,18 @@ test("PNG actual bytes are bounded and MIME, CRC and trailing data cannot substi
   for (const invalid of [{ ...block, mimeType: "image/jpeg" }, { ...block, data: "not base64" }, { ...block, data: corrupt.toString("base64") }, { ...block, data: Buffer.concat([Buffer.from(imageBase64, "base64"), Buffer.from("trailing")]).toString("base64") }]) assert.throws(() => validateImage(invalid, 1024), error => /^IMAGE_/u.test(error.code));
   assert.throws(() => validateImage(block, 32), error => error.code === "IMAGE_CONTENT_INVALID");
 });
+test("PNG chunk names must retain and reject every non-ASCII byte even with a valid CRC", () => {
+  for (let position = 12; position < 16; position++) {
+    const bytes = Buffer.from(imageBase64, "base64"); bytes[position] |= 0x80;
+    let checksum = 0xffffffff;
+    for (const byte of bytes.subarray(12, 29)) {
+      checksum ^= byte;
+      for (let bit = 0; bit < 8; bit++) checksum = checksum & 1 ? 0xedb88320 ^ checksum >>> 1 : checksum >>> 1;
+    }
+    bytes.writeUInt32BE((checksum ^ 0xffffffff) >>> 0, 29);
+    assert.throws(() => validateImage({ ...block, data: bytes.toString("base64") }, 1024), error => error.code === "IMAGE_FORMAT_UNSUPPORTED");
+  }
+});
 test("atomic publication keeps bytes and source metadata together and a corrupt or missing file cannot display", async t => {
   const f = await fixture(t), saved = await f.store.save(f.input), artifact = saved.artifacts[0];
   assert.equal(saved.bytes, 253); assert.equal((await f.store.read(f.input.projectPath, f.request.requestId, 0, artifact)).artifact.sha256, imageDigest);

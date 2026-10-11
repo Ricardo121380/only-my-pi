@@ -26,17 +26,19 @@ C/P 使用当前工作树源码；每次受控 fixture 复制 OMP、真实 Pi 1.
 
 | 证据层 | 已执行证据 | 结果与限制 |
 | --- | --- | --- |
-| C | `23-image-C-final.log` | 7/7 PASS：实际 PNG 边界、来源与字节、权限、损坏/缺失、ENOSPC/EDQUOT/低空间、发布后 fsync 不确定、ledger reader/来源保护。磁盘故障在隔离的公共 filesystem seam 注入，未填满真实磁盘。 |
+| C | `23-image-C-final.log`、`26-PNG-chunk-red.log`、`27-PNG-chunk-green.log` | 初轮 7/7 PASS；审查补充非法 PNG 块名高位反例，先 exit 1 复现再修复，最终 8/8 PASS。覆盖实际 PNG 边界、来源与字节、权限、损坏/缺失、ENOSPC/EDQUOT/低空间、发布后 fsync 不确定、ledger reader/来源保护。磁盘故障在隔离的公共 filesystem seam 注入，未填满真实磁盘。 |
 | P / Node 24 | `14-images-classifier-P.log` | 46 项中 45 PASS / 1 FAIL，保留失败：Host 终态在异步账本核对前短暂可见；没有把此轮记为全绿。 |
 | P / 修正后 | `16-P-terminal-fix.log`、`21-P-terminal-gate.log`、`24-image-P-core-final.log` | 10/10、1/1、4/4 PASS 及最终核心回归：延迟 outcome read 时公开任务仍 running，核对后失败；真实 Pi 图片/部分用量/保存失败，接收数、原请求及源摘要核对。其余已通过切片按源码/职责匹配保留，批次全套在 #74 后运行。 |
 | P / Node 22 | `17-image-p22.log` | 5/5 PASS：Host 正常图片、账号快照、未知结果、扩参拒绝、CLI/真实 PTY TUI。 |
 | B | Ego Lite TaskSpace 48；`B-image-*.png/json/txt`、`browser-image-*-receipt.json` | 图片 naturalWidth/Height=64、正常/部分用量、空输出、本地保存失败、缺失后恢复、账号 busy 拒绝。5 次显式发送；未知后重启及两次核对仍 5 次，原 ID/预占不变。 |
 | 复用回归 | `14` 的分类片、`20-web-slices.log`、`B-class-partial.json/png`、`browser-final-receipt.json` | 分类账号/三原生协议/部分价格用量/未知结果保留；Web 15/15 PASS；Ego 实际分类输入 12、输出 null，不补零，核对单次 reception。 |
-| 类型与构建 | `19-typecheck.log`、`18-build-web.log` | PASS。最终变更及审查修正另记录后续命令。 |
+| 类型与构建 | `19-typecheck.log`、`18-build-web.log`、`25-typecheck-final73.log`、`28-typecheck-specfix73.log` | PASS。PNG 修正只改变校验解码及反例，不改变页面构建。最终命令/退出码与源码摘要见 `commands-73.json`、`source-73.json`。 |
 | I / L / Full / Linux / remote CI / release | 本批未执行 | NOT_RUN；付费、外部模型、安装切换和 Full 仍遵守原授权边界。 |
 
 浏览器初轮包含一个等待超过 codemode 时限的账号 A 任务，未批准、无请求；单独保留其空账本，不能当成生成证据。实际生图由明确批准的后续任务执行。B 初轮 Host 早于终态竞态修正，页面模块与图片机制保持匹配；该竞态由后续当前源码 P 延迟读取用例直接验证，不将旧 B 记录当成新 Host 时序证明。
 
 ## 审查
 
-Standards：PENDING。Spec：PENDING。两轴按起始 HEAD 与本票精确提交分别审查，结论及修正将在关闭前补入。
+Standards：PASS。固定起始 HEAD 至 `5a7cc0c` 的 30 文件精确提交独立审查，无硬违规。P3 判断项为 UI 与 store 重复预算默认值/上限；当前一致，保留为维护事项，不扩大本批改动。
+
+Spec：PASS（修正后）。初审发现 P2：PNG 块名 ASCII 解码丢弃高位，合法 CRC 的非法块名可被保存。保留反例红灯日志；改为保留每个字节的 latin1 解码，再由块名正则拒绝，四个块名字节分别验证。独立只读复核确认缺口封堵且未见新缺陷；首轮其余 30 文件未发现缺项。原有 Host 终态竞态也保留失败与修正证据，不删除失败记录。
