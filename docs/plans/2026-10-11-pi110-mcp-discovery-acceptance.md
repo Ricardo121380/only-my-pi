@@ -6,7 +6,7 @@
 
 #71 基点 `c30ddb827b85f74440943d4231b17a6a413344d8`，分支 `codex/webui-phase1`。批次原始基点 `cf30fca4424799dfb05be41e106216bcb4ac0dba`，302 项既有工作树改动完整保留；301 个无关文件逐一比对 hash，TaskControl.tsx 的原有用户改动与 #70 增量分别保留。本票不再修改 TaskControl.tsx，只暂存明确属于本票的路径。
 
-最新全量通过基线为 `pi110-http-oauth-1010-221428/batch-final-full-node24`：1678 项、1672 PASS、0 FAIL、0 CANCELLED、6 SKIPPED。旧绿只证明批次起点，不能替代本批回归。第一次批次全量在本票实施和评审后运行，实际 FAIL；修复后全量当前 PENDING。两轮记录分别保留。
+批次起点的最新全量通过基线为 `pi110-http-oauth-1010-221428/batch-final-full-node24`：1678 项、1672 PASS、0 FAIL、0 CANCELLED、6 SKIPPED。旧绿只证明批次起点，不能替代本批回归。第一次批次全量在本票实施和评审后运行，实际 FAIL；新实质修复后的最终全量 **1713 项、1707 PASS、0 FAIL、0 CANCELLED、6 SKIPPED**，命令退出 0。两轮记录分别保留。
 
 本机证据目录：
 
@@ -38,7 +38,7 @@ LOCAL_WORKSPACE/artifacts/webui-optimization/pi110-codemode-discovery-1011
 
 初轮失败均保留：资源配置尚未支持；Host 初始工具名单遗漏新入口；成功返回的 undefined 回执字段；未知资源回执未绑定 URI；fixture 回填了不可接受的只读元字段。修复没有放宽接收数、授权、大小或结果断言。`71-native-http-boundaries` 的 **3 PASS / 4 FAIL** 是失败轮，不能写成全绿。
 
-`71-red-write-definition` 实际复现：旧定义审批完成后，工具调用虽被拒绝，FD 3 服务仍在启动时把临时项目文件改为 `startup effect`。修复后 `71-green-definition-node24` **12/12 PASS**，Node 22 `71-green-definition-node22` **1/1 PASS**：0 写入服务启动、0 effect、文件保持原字节、rejected/not_applied。`71-resource-metadata-node24` **1/1 PASS**：声明超大资源排除，0 审批、0 resources/read。最终固定源码的 `71-final-native-node22` **13/13 PASS**，0 FAIL/CANCELLED/SKIPPED；Node 24 的最终全量组合另行回填。
+`71-red-write-definition` 实际复现：旧定义审批完成后，工具调用虽被拒绝，FD 3 服务仍在启动时把临时项目文件改为 `startup effect`。修复后 `71-green-definition-node24` **12/12 PASS**，Node 22 `71-green-definition-node22` **1/1 PASS**：0 写入服务启动、0 effect、文件保持原字节、rejected/not_applied。`71-resource-metadata-node24` **1/1 PASS**：声明超大资源排除，0 审批、0 resources/read。该轮固定源码的 `71-final-native-node22` **13/13 PASS**，0 FAIL/CANCELLED/SKIPPED；Node 24 的最终全量组合见后续批次结果。
 
 Web 最终 `71-final-web` **14 文件 99/99 PASS**，覆盖真实/历史发现投影及防重复操作；四组类型检查 `71-post-definition-typecheck` PASS，`71-final-build` PASS。`71-lint`、`71-pack` PASS，包清单 1599 文件，含发现模块。打包检查不等同完整候选安装。
 
@@ -48,7 +48,7 @@ Web 最终 `71-final-web` **14 文件 99/99 PASS**，覆盖真实/历史发现�
 
 修复后 `71-review-fixed-web` **14 文件 100/100 PASS**，`71-review-fixed-types` 四组 PASS，`71-review-fixed-build`、`71-review-fixed-lint`、`71-review-fixed-pack` PASS；打包仍 1599 文件。
 
-第二轮独立评审为 Standards PASS / Spec FAIL，完整报告保留为 `71-standards-second.md` / `71-spec-second.md`。Spec 发现 HTTP 内部等待派发保存后，执行连接单独通知仍可绕过较早的 guard。`71-red-http-post-sse-send` 在真实 Pi 的同一条 POST SSE 流中先返回资源模板列表，再发出 resources/list_changed；发现 GET 连接不变，隔离副本只在 McpRuns.save 中受控等待，实际服务读取接收 **1**，预期 **0**。HTTP 在持久化等待后、物理 POST 前重复定义/权限 guard；`71-green-http-post-sse-send-node24` **1/1 PASS**，实际读取 **0**，明确 MCP_RESOURCE_DEFINITION_CHANGED。`71-http-guard-lint`、`71-http-guard-pack` PASS，包清单仍 1599 文件。最终 Node 22 `71-http-guard-native-node22` **19/19 PASS**，249.13 秒、0 FAIL/CANCELLED/SKIPPED；最终 Node 24 全量仍 PENDING。
+第二轮独立评审为 Standards PASS / Spec FAIL，完整报告保留为 `71-standards-second.md` / `71-spec-second.md`。Spec 发现 HTTP 内部等待派发保存后，执行连接单独通知仍可绕过较早的 guard。`71-red-http-post-sse-send` 在真实 Pi 的同一条 POST SSE 流中先返回资源模板列表，再发出 resources/list_changed；发现 GET 连接不变，隔离副本只在 McpRuns.save 中受控等待，实际服务读取接收 **1**，预期 **0**。HTTP 在持久化等待后、物理 POST 前重复定义/权限 guard；`71-green-http-post-sse-send-node24` **1/1 PASS**，实际读取 **0**，明确 MCP_RESOURCE_DEFINITION_CHANGED。`71-http-guard-lint`、`71-http-guard-pack` PASS，包清单仍 1599 文件。该轮 Node 22 `71-http-guard-native-node22` **19/19 PASS**，249.13 秒、0 FAIL/CANCELLED/SKIPPED；Node 24 最终全量见后续批次结果。
 
 第三轮独立评审 `c30ddb8...fc9c731` 为 Standards PASS / Spec FAIL，报告为 `71-standards-third.md` / `71-spec-third.md`。新发现是 stdio 工具发送 guard 检查定义之后，目标/所有权检查的异步等待仍可接收执行连接单独通知。`71-red-stdio-target-guard` 真实 tools/call 接收 **1**，预期 **0**；隔离副本只在该 guard 的 selectedPath 调用前加入 200 ms 等待和真实通知信号，原文件目标验证照常运行。修复将定义、连接及取消检查放到全部异步验证之后；`71-green-stdio-target-guard-node24` **1/1 PASS**，实际工具接收 **0**，MCP_AUTHORIZATION_REVOKED。`71-target-guard-lint` / `71-target-guard-pack` PASS，1599 文件。最新固定实现的 Node 22 `71-target-guard-native-node22` **20/20 PASS**，258.35 秒、0 FAIL/CANCELLED/SKIPPED。
 
@@ -74,10 +74,14 @@ HTTP 发送 guard 修复轮的 B 差量 `71-browser-http-guard-*`：同一 TaskS
 
 三个实际原因及最小修复：公开 Pi 1.1.0 的精确工具列表断言补入 #70 的 codemode，显式指定旧四工具的 account child 仍保持原断言；RpcWorker 版本探测在 stack.root 缺失时关闭 codemode 准入，恢复既有受控 worker 生命周期；OAuth fixture 保留身份/撤销核对后，对不支持的 GET 流明确返回原生 StreamableHttpTransport 支持的 405，不放宽生产传输错误处理。没有修改或暂存原有用户改动的 host-rpc-worker.test.mjs。
 
-六个受影响测试文件的 Node 24 `71-full-regression-native-node24` **51/51 PASS**（136.80 秒），Node 22 `71-full-regression-native-node22` **51/51 PASS**（136.61 秒），均 0 FAIL/CANCELLED/SKIPPED。它们包含完整 OAuth fixture、实际凭据回显扣留、真实 CLI/TUI、Host 崩溃恢复、无 ACK 不释放所有权及账号身份回归；保持业务接收数、认证、终端恢复、结果与无重放断言。`71-full-regression-lint` PASS（1427 文件、0 findings），`71-full-regression-pack` PASS（1599 文件）。Web/类型/构建源码未改变，沿用上述实际通过记录。最新 B 差量见上。新修复后的全量需要重新冻结并执行，当前 PENDING。
+六个受影响测试文件的 Node 24 `71-full-regression-native-node24` **51/51 PASS**（136.80 秒），Node 22 `71-full-regression-native-node22` **51/51 PASS**（136.61 秒），均 0 FAIL/CANCELLED/SKIPPED。它们包含完整 OAuth fixture、实际凭据回显扣留、真实 CLI/TUI、Host 崩溃恢复、无 ACK 不释放所有权及账号身份回归；保持业务接收数、认证、终端恢复、结果与无重放断言。`71-full-regression-lint` PASS（1427 文件、0 findings），`71-full-regression-pack` PASS（1599 文件）。Web/类型/构建源码未改变，沿用上述实际通过记录。最新 B 差量见上。
+
+修复后重新冻结 `f283c68350e62a58992d511faf028f5e153cb678`、1194 个源文件、37 个候选输入及独立评审报告，执行与基线一致的实际 Node 24.19.0 `--test --test-concurrency=4`。`batch-final-full-node24-after-regression` **PASS**：1713 项、1707 PASS、0 FAIL、0 CANCELLED、6 SKIPPED，命令退出 0、479.26 秒（测试 479.04 秒）。结束后源文件/候选 hash 无漂移，301 个无关原有文件保持，TaskControl 原有修改与 #70 增量保持，索引为空；第一次失败日志原 hash 未变。六项条件跳过与基线相同（可选 scout/writer、两项安装版崩溃输入、安装版 Host PTY、日常 Pi 0.85.1 历史），不记为通过；本票必需 C/P/B 没有缺证据或以跳过替代。完整输入、命令、日志与最终核验见 `batch-full-after-regression-entry.json`、`batch-final-full-node24-after-regression.json/log`、`batch-full-after-regression-verification.json`。
 
 ## 独立评审与完成状态
 
-首轮固定范围 `c30ddb8...d30598d`：Standards FAIL（P2 stdio 资源发送 guard 漏洞）；Spec FAIL（P1 二进制凭据、P2 通知流失效未投影）。第二轮 `c30ddb8...9c2faca`：Standards PASS / Spec FAIL（P2 HTTP 物理发送竞态）；第三轮 `c30ddb8...fc9c731`：Standards PASS / Spec FAIL（P2 stdio 工具 guard 内部异步窗口）。各项均已真实 RED → GREEN，报告和原失败证据保留。第四轮完整固定范围 `c30ddb8...132e5c4`（24 个提交路径）已由两位新的只读探子复评：**Standards PASS / Spec PASS**，完整报告 `71-standards-final.md` / `71-spec-final.md`。随后全量实际失败，引入上述五个文件的回归修复；最新提交的独立双轴复评与修复后全量仍 PENDING。必需 C/P/B、Node 22 20/20 原生组合与 Node 22/24 各 51/51 受影响回归已通过，当前不关闭本票。
+首轮固定范围 `c30ddb8...d30598d`：Standards FAIL（P2 stdio 资源发送 guard 漏洞）；Spec FAIL（P1 二进制凭据、P2 通知流失效未投影）。第二轮 `c30ddb8...9c2faca`：Standards PASS / Spec FAIL（P2 HTTP 物理发送竞态）；第三轮 `c30ddb8...fc9c731`：Standards PASS / Spec FAIL（P2 stdio 工具 guard 内部异步窗口）。各项均已真实 RED → GREEN，报告和原失败证据保留。第四轮完整固定范围 `c30ddb8...132e5c4`（24 个提交路径）已由两位新的只读探子复评：**Standards PASS / Spec PASS**，完整报告 `71-standards-final.md` / `71-spec-final.md`。随后全量实际失败，引入上述五个文件的回归修复。第五轮完整固定范围 `c30ddb8...f283c68`（29 个提交路径）的两位新只读探子独立结论为 **Standards PASS / 代码 Spec PASS**，报告 `71-standards-regression.md` / `71-spec-regression.md` 明确评审时全量尚 PENDING；主代理随后完成上述修复后全量 PASS，不改写原评审报告时间语义。
+
+最终必需 **C / P / B：PASS；Standards：PASS；Spec：PASS；批次全量：PASS**，均限定上述 macOS 真实 Pi/QuickJS 与受控 stdio/HTTP、Ego Lite 候选及实际源码身份。七项 AC 的实现和证据已核对。[完成评论](https://github.com/Ricardo121380/only-my-pi/issues/71#issuecomment-6105691567) 发布后逐字回读，再更新 DONE 与七项 AC 并回读，最后于 `2026-10-11T05:08:01Z` CLOSED/completed 并回读确认。`71-comment-readback.json`、`71-body-readback.json`、`71-close-readback.json` 分别保存三个操作的实际结果。`batch-github-final-readback.json` 确认 #70 先关闭，#19 / #72 / #73 保持 OPEN；本地实现和验收提交没有推送。
 
 I 完整候选安装、L 外部真实 Provider、远程 CI、发行、部署、日常安装切换：NOT_RUN。#19 及 #72/#73 不因本票的本地验收关闭。
