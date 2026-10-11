@@ -268,6 +268,11 @@ export class HostTasks extends EventEmitter {
     await worker.revoke(); task.access = "inspect"; task.approvals = [];
     this.changed(task); await this.persist(); return this.public(task);
   }
+  async discoverMcp(id, projectId, name) {
+    const task = this.tasks.get(id), worker = this.workers.get(id);
+    if (!task || task.projectId !== projectId || terminal(task.status) || task.status === "cancelling" || !worker?.mcpEnabled || task.inputRevoked || !task.mcpSnapshot.servers.some((server) => server.enabled && server.name === name)) throw hostError("MCP_DISCOVERY_UNAVAILABLE", 409);
+    await worker.discoverMcp(name);
+  }
   async stop() {
     this.closing = true;
     for (const task of this.tasks.values()) if (!terminal(task.status)) await this.cancel(task.taskId);

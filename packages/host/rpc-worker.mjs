@@ -195,6 +195,18 @@ export class RpcWorker extends EventEmitter {
       });
     } finally { clearTimeout(timer); child.off("message", listener); }
   }
+  async discoverMcp(name) {
+    const child = this.child, id = randomUUID();
+    if (!child?.connected || this.closed || this.stopRequested || this.identity?.start !== await processIdentity(child.pid)) throw hostError("MCP_DISCOVERY_UNAVAILABLE", 409);
+    let listener, timer;
+    try {
+      await new Promise((resolve, reject) => {
+        listener = (message) => { if (message?.type === "mcp_discovered" && message.id === id) message.clean === true ? resolve() : reject(hostError(message.code ?? "MCP_DISCOVERY_FAILED", 409)); };
+        child.on("message", listener); timer = setTimeout(() => reject(hostError("MCP_DISCOVERY_UNCONFIRMED", 503)), 22000);
+        child.send({ type: "mcp_discover", id, name }, (error) => { if (error) reject(hostError("MCP_DISCOVERY_UNCONFIRMED", 503)); });
+      });
+    } finally { clearTimeout(timer); child.off("message", listener); }
+  }
   async codemodeRevoke() {
     const child = this.child, id = randomUUID();
     if (!child?.connected || this.closed) throw hostError("RPC_CONTROL_UNAVAILABLE", 409);

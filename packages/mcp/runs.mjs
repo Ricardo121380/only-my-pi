@@ -21,6 +21,7 @@ export class McpRuns {
     return { protocol: 1, runs: await Promise.all(runs.filter((run) => !projectPath || run.projectPath === projectPath).map(async (run) => {
       const orphan = run.status !== "stopped" && run.ownerIdentity !== await processIdentity(run.ownerPid);
       return { ...run, status: orphan ? "reconciliation" : run.status,
+        discoveries: run.discoveries?.map((entry) => ({ ...entry, live: !orphan && run.status === "running", status: orphan && entry.status === "ready" ? "stale" : entry.status })),
         calls: run.calls.map((call) => orphan && call.status === "dispatched" ? { ...call, status: "unknown", ...(call.effect === "write" ? { application: "unknown" } : {}) } : call),
         processes: run.processes.map((entry) => ({ ...entry, status: orphan && entry.status !== "stopped" ? "reconciliation" : entry.status, alive: Boolean(entry.pid && groupAlive(entry.pid)) })) };
     })) };

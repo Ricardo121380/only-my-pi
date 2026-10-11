@@ -132,7 +132,7 @@ export async function installOmpCodemode(pi, { controller, sdkFile = process.env
     if (!run) return;
     try {
       check(run);
-      if (event.toolName.startsWith("mcp__")) return; // MCP performs its own scope/definition/target authorization.
+      if (controller.mcpTools?.().includes(event.toolName)) return; // MCP performs its own scope/definition/target authorization.
       if (!controller.activeToolCeiling().includes(event.toolName)) throw fail("CODEMODE_TOOL_NOT_ADMITTED");
       const definition = pi.getAllTools().find((tool) => tool.name === event.toolName);
       const target = await ordinaryTarget(ctx, event.input);

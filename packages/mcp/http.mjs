@@ -10,7 +10,7 @@ export class ControlledHttpTransport {
     Object.assign(this, { server, secrets, record, save, authorize, onUnauthorized, signal });
     this.credentialDigest = digest(env); this.errors = new Set(); this.abort = new AbortController();
     this.native = new NativeTransport({ url: server.url, headers: env.MCP_TOKEN ? { Authorization: `Bearer ${env.MCP_TOKEN}` } : {},
-      fetch: (input, init) => this.fetch(input, init), openGetStream: false, reconnect: { maxRetries: 0 }, maxMessageBytes: MCP_LIMITS.outputBytes });
+      fetch: (input, init) => this.fetch(input, init), openGetStream: record.kind === "discovery", reconnect: { maxRetries: 0 }, maxMessageBytes: MCP_LIMITS.outputBytes });
   }
   onMessage(listener) {
     return this.native.onMessage((message) => {
@@ -26,7 +26,7 @@ export class ControlledHttpTransport {
   setProtocolVersion(value) { this.native.setProtocolVersion(value); }
   async start() { await this.native.start(); this.record.status = "running"; this.record.remoteState = "unconfirmed"; await this.save(); }
   async send(message) {
-    try { if (message.method === "tools/call") await this.beforeToolCall?.(message); await this.native.send(message); }
+    try { if (["tools/call", "resources/read"].includes(message.method)) await this.beforeToolCall?.(message); await this.native.send(message); }
     catch (error) { throw safeError(error); }
   }
   async fetch(input, init = {}) {
@@ -35,13 +35,13 @@ export class ControlledHttpTransport {
     if (this.closed && init.method !== "DELETE") throw mcpError("MCP_CONNECTION_CLOSED");
     await this.authorize(this.credentialDigest);
     if (init.body && (typeof init.body !== "string" || Buffer.byteLength(init.body) > MCP_LIMITS.inputBytes)) throw mcpError("MCP_INPUT_LIMIT");
-    const signal = AbortSignal.any([this.abort.signal, this.signal, init.signal, AbortSignal.timeout(MCP_LIMITS.timeoutMs)].filter(Boolean));
+    const signal = AbortSignal.any([this.abort.signal, this.signal, init.signal, AbortSignal.timeout(init.method === "GET" ? MCP_LIMITS.discoveryStreamMs : MCP_LIMITS.timeoutMs)].filter(Boolean));
     if (signal.aborted) throw mcpError("MCP_CALL_CANCELLED");
     let response;
     try {
       // The native client adds the RPC envelope. Only mark the effect attempt
       // after exact-target, identity, full-body and abort checks have passed.
-      if (init.method === "POST" && init.body && JSON.parse(init.body).method === "tools/call") {
+      if (init.method === "POST" && init.body && ["tools/call", "resources/read"].includes(JSON.parse(init.body).method)) {
         await this.beforeDispatch?.();
         if (signal.aborted) throw mcpError("MCP_CALL_CANCELLED");
         this.businessAttempted = true;

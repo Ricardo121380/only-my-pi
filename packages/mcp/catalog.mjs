@@ -4,7 +4,7 @@ import { atomicWriteJson, readJsonObject, withConfigLock } from "../config-runti
 import { isMcpOAuthBlocked } from "./contracts.mjs";
 
 export const MCP_PROTOCOL = 1;
-export const MCP_LIMITS = Object.freeze({ inputBytes: 16384, outputBytes: 65536, serverFileBytes: 65536, storageBytes: 8388608, calls: 32, timeoutMs: 10000, tools: 32, concurrency: 1 });
+export const MCP_LIMITS = Object.freeze({ inputBytes: 16384, outputBytes: 65536, serverFileBytes: 65536, storageBytes: 8388608, calls: 32, timeoutMs: 10000, tools: 32, resources: 32, discoveries: 32, discoveryStreamMs: 60000, concurrency: 1 });
 export const mcpError = (code, status = 400) => Object.assign(new Error(code), { code, status });
 export const digest = (value) => createHash("sha256").update(typeof value === "string" || Buffer.isBuffer(value) ? value : JSON.stringify(value)).digest("hex");
 const id = (value) => typeof value === "string" && /^[A-Za-z][A-Za-z0-9_-]{0,63}$/u.test(value) && !value.includes("__");
@@ -14,8 +14,33 @@ const scopePath = (value) => bounded(value, 512) && value.length > 0 && !path.is
 const safeEnv = (key) => /^[A-Z][A-Z0-9_]{0,63}$/u.test(key) && !/(?:KEY|TOKEN|SECRET|PASS|AUTH|HOME|PATH|NODE|DYLD|LD_|PI_|OMP_|BASH|SHELL|ZDOTDIR)/u.test(key) && !["ENV", "IFS"].includes(key);
 export const mcpToolName = (server, tool) => `mcp__${server}__${tool}`;
 export const mcpToolEnabled = (tool) => tool.active !== false && tool.exposure !== "hidden";
-export const mcpToolNames = (snapshot) => snapshot?.servers.filter((server) => server.enabled).flatMap((server) => server.tools.filter(mcpToolEnabled).map((tool) => mcpToolName(server.name, tool.name))) ?? [];
+export const MCP_HELPERS = Object.freeze(["mcp_tool_search", "mcp_list_resources", "mcp_read_resource"]);
+export const mcpToolNames = (snapshot) => {
+  const selected = snapshot?.servers.filter((server) => server.enabled) ?? [];
+  return selected.flatMap((server) => server.tools.filter(mcpToolEnabled).map((tool) => mcpToolName(server.name, tool.name))).concat(selected.length ? MCP_HELPERS : []);
+};
 const validExposure = (tool) => (tool.exposure === undefined || ["direct", "deferred", "codemode", "hidden"].includes(tool.exposure)) && (tool.active === undefined || typeof tool.active === "boolean");
+export function resourceUri(uri, server) {
+  if (!bounded(uri, 2048)) throw mcpError("MCP_RESOURCE_NOT_ADMITTED");
+  let url; try { url = new URL(uri); } catch { throw mcpError("MCP_RESOURCE_NOT_ADMITTED"); }
+  if (url.protocol !== "mcp:" || url.hostname !== server || url.username || url.password || url.port || url.search || url.hash || url.href !== uri) throw mcpError("MCP_RESOURCE_NOT_ADMITTED");
+  return uri;
+}
+function resourcePolicies(server) {
+  if (server.resources === undefined) return;
+  if (!Array.isArray(server.resources) || server.resources.length > MCP_LIMITS.resources) throw mcpError("MCP_RESOURCE_SCOPE_INVALID");
+  const names = new Set();
+  for (const resource of server.resources) {
+    if (!plain(resource) || Object.keys(resource).some((key) => !["uri", "mimeTypes", "paths", "active"].includes(key)) || names.has(resource.uri) || resource.active !== undefined && typeof resource.active !== "boolean"
+      || !Array.isArray(resource.mimeTypes) || !resource.mimeTypes.length || resource.mimeTypes.some((mime) => !["text/plain", "text/markdown", "application/json", "application/octet-stream"].includes(mime))
+      || resource.paths !== undefined && (server.transport !== "stdio" || !Array.isArray(resource.paths) || resource.paths.length > 16 || resource.paths.some((entry) => !scopePath(entry)))) throw mcpError("MCP_RESOURCE_SCOPE_INVALID");
+    resourceUri(resource.uri, server.name); names.add(resource.uri);
+  }
+}
+function withdrawn(previous, next) {
+  return previous?.tools.some((old) => mcpToolEnabled(old) && !next.tools.some((tool) => mcpToolEnabled(tool) && tool.name === old.name && tool.effect === old.effect && digest(tool.paths ?? []) === digest(old.paths ?? []) && tool.pathArgument === old.pathArgument && tool.writeMode === old.writeMode))
+    || previous?.resources?.some((old) => old.active !== false && !next.resources?.some((item) => item.active !== false && item.uri === old.uri && old.mimeTypes.every((mime) => item.mimeTypes.includes(mime)) && digest(item.paths ?? []) === digest(old.paths ?? [])));
+}
 export function httpTarget(value) {
   if (!bounded(value, 2048)) throw mcpError("MCP_HTTP_TARGET_INVALID");
   let url; try { url = new URL(value); } catch { throw mcpError("MCP_HTTP_TARGET_INVALID"); }
@@ -24,8 +49,9 @@ export function httpTarget(value) {
   return url.href;
 }
 export function validateServer(value) {
+  resourcePolicies(value ?? {});
   if (value?.transport === "streamable-http") {
-    if (!plain(value) || Object.keys(value).some((key) => !["name", "transport", "url", "credentialRefs", "tools", "enabled"].includes(key)) || !id(value.name) || typeof value.enabled !== "boolean") throw mcpError("MCP_CONFIG_INVALID");
+    if (!plain(value) || Object.keys(value).some((key) => !["name", "transport", "url", "credentialRefs", "tools", "resources", "enabled"].includes(key)) || !id(value.name) || typeof value.enabled !== "boolean") throw mcpError("MCP_CONFIG_INVALID");
     const url = httpTarget(value.url);
     if (!plain(value.credentialRefs) || Object.keys(value.credentialRefs).some((key) => key !== "MCP_TOKEN") || Object.values(value.credentialRefs).some((ref) => !id(ref))) throw mcpError("MCP_CREDENTIAL_REF_INVALID");
     const names = new Set();
@@ -36,7 +62,7 @@ export function validateServer(value) {
     }
     return structuredClone({ ...value, url });
   }
-  if (!plain(value) || Object.keys(value).some((key) => !["name", "transport", "command", "args", "codePaths", "cwd", "env", "credentialRefs", "tools", "enabled"].includes(key)) || !id(value.name) || value.transport !== "stdio"
+  if (!plain(value) || Object.keys(value).some((key) => !["name", "transport", "command", "args", "codePaths", "cwd", "env", "credentialRefs", "tools", "resources", "enabled"].includes(key)) || !id(value.name) || value.transport !== "stdio"
     || !bounded(value.command) || !path.isAbsolute(value.command) || typeof value.enabled !== "boolean") throw mcpError("MCP_CONFIG_INVALID");
   for (const [key, max] of [["args", 64], ["codePaths", 16], ["tools", MCP_LIMITS.tools]]) if (!Array.isArray(value[key]) || value[key].length > max) throw mcpError("MCP_CONFIG_INVALID");
   if (value.args.some((arg) => !bounded(arg)) || value.codePaths.some((entry) => !bounded(entry) || !path.isAbsolute(entry))) throw mcpError("MCP_CONFIG_INVALID");
@@ -149,8 +175,8 @@ export class McpCatalog {
           scoped[server.name] = server;
         }
       } else if (input.type === "save") {
-        const server = validateServer(input.server); scoped[server.name] = server;
-        if (!server.enabled) {
+        const server = validateServer(input.server), previous = scoped[server.name] ?? state.defaults[server.name]; scoped[server.name] = server;
+        if (!server.enabled || withdrawn(previous, server)) {
           const key = this.key(projectPath, server.name); state.revoked[key] = (state.revoked[key] ?? 0) + 1;
         }
       }
@@ -169,7 +195,7 @@ export class McpCatalog {
           // Revocation is separate from revisions; current snapshots never change target.
           const key = this.key(projectPath, input.name); state.revoked[key] = (state.revoked[key] ?? 0) + 1;
         }
-      } else if (input.type === "reset") { if (!projectKey || !id(input.name)) throw mcpError("MCP_COMMAND_INVALID"); delete scoped[input.name]; }
+      } else if (input.type === "reset") { if (!projectKey || !id(input.name)) throw mcpError("MCP_COMMAND_INVALID"); delete scoped[input.name]; const key = this.key(projectPath, input.name); state.revoked[key] = (state.revoked[key] ?? 0) + 1; }
       else throw mcpError("MCP_COMMAND_INVALID");
     });
     return this.snapshot(projectPath);

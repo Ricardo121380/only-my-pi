@@ -218,6 +218,11 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           const input = await authorizedBody(req);
           const project = input?.projectId ? catalog.project(input.projectId) : null;
           if (project) await fs.access(project.path);
+          if (input.type === "discover") {
+            if (!project || Object.keys(input).some((key) => !["type", "projectId", "taskId", "name"].includes(key)) || typeof input.taskId !== "string" || !/^[A-Za-z][A-Za-z0-9_-]{0,63}$/u.test(input.name ?? "") || input.name.includes("__")) throw hostError("MCP_COMMAND_INVALID");
+            await tasks.discoverMcp(input.taskId, project.projectId, input.name);
+            return response(res, 200, await new McpRuns(configRoot).status(project.path));
+          }
           return response(res, 200, input.type === "list" ? await mcpOAuth.snapshot(project?.path) : input.type === "status" ? await new McpRuns(configRoot).status(project?.path) : input.type?.startsWith("oauth") ? await mcpOAuth.action(input, project?.path) : await mcp.action(input, project?.path));
         }
         if (req.method === "POST" && url.pathname === "/api/logout") {

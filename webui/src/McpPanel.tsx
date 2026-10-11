@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { McpAction, McpPreview, McpServer, McpSnapshot, McpStatus } from "../../packages/mcp/contracts";
 import { HostDialog } from "./HostDialog";
 import { McpOAuthControls } from "./McpOAuthControls";
+import { McpDiscoveryPanel } from "./McpDiscoveryPanel";
 import "./mcp.css";
 
 export async function mcpApi<T>(action: McpAction, projectId?: string, signal?: AbortSignal): Promise<T> {
@@ -11,8 +12,8 @@ export async function mcpApi<T>(action: McpAction, projectId?: string, signal?: 
 const template: McpServer = { name: "local", transport: "stdio", command: "", args: [], codePaths: [], cwd: ".", env: {}, credentialRefs: {}, tools: [{ name: "read_file", effect: "read", pathArgument: "path", paths: ["README.md"] }], enabled: false };
 const httpTemplate: McpServer = { name: "remote", transport: "streamable-http", url: "https://example.com/mcp", credentialRefs: {}, tools: [{ name: "echo", effect: "remote" }], enabled: false };
 const editable = (server: McpServer): McpServer => server.transport === "streamable-http"
-  ? { name: server.name, transport: server.transport, url: server.url, credentialRefs: server.credentialRefs, tools: server.tools, enabled: false }
-  : { name: server.name, transport: server.transport, command: server.command, args: server.args, codePaths: server.codePaths, cwd: server.cwd ?? ".", env: server.env, credentialRefs: server.credentialRefs, tools: server.tools, enabled: false };
+  ? { name: server.name, transport: server.transport, url: server.url, credentialRefs: server.credentialRefs, tools: server.tools, resources: server.resources, enabled: false }
+  : { name: server.name, transport: server.transport, command: server.command, args: server.args, codePaths: server.codePaths, cwd: server.cwd ?? ".", env: server.env, credentialRefs: server.credentialRefs, tools: server.tools, resources: server.resources, enabled: false };
 const label = (value: string) => ({ running: "运行中", stopped: "已停止", starting: "正在启动", stopping: "正在停止", reconciliation: "进程待核对，继续阻断", checking: "检查中", awaiting_approval: "等待决定", completed: "已完成", failed: "失败", rejected: "已拒绝", dispatched: "已发出，等待结果", unknown: "结果未知，不会自动重试" }[value] ?? value);
 
 export function McpPanel({ projectId, projectName, onClose }: { projectId?: string; projectName?: string; onClose: () => void }) {
@@ -40,7 +41,7 @@ export function McpPanel({ projectId, projectName, onClose }: { projectId?: stri
     try {
       const value = await mcpApi<T>(action, selectedId);
       const configuration = action.type.startsWith("oauth") ? await mcpApi<McpSnapshot>({ type: "list" }, selectedId) : value as McpSnapshot;
-      if (binding === activeScope.current) { if (action.type !== "previewImport") setSnapshot(configuration); setNotice(message); }
+      if (binding === activeScope.current) { if (action.type === "discover") setStatus(value as McpStatus); else if (action.type !== "previewImport") setSnapshot(configuration); setNotice(message); }
       return value;
     } catch (cause) { if (binding === activeScope.current) setError(cause instanceof Error ? cause.message : "MCP_REQUEST_FAILED"); }
     finally { pending.current = false; setBusy(false); }
@@ -54,6 +55,7 @@ export function McpPanel({ projectId, projectName, onClose }: { projectId?: stri
   }
   return <HostDialog open title="MCP 工具" onClose={onClose} className="mcp-dialog"><div className="mcp-panel">
     <p>支持本地 stdio 与 Streamable HTTP。保存与导入不会启动或连接服务器；新任务只使用启动时的配置，每次调用仍需你的决定。远程操作可能产生外部效果；本机写入还须当前编程授权与项目写入所有权。</p>
+    <p>发现只展示当前任务已准入服务器的实际定义。隐藏、撤回或定义变化会使旧许可失效。资源使用 resources 中的精确 mcp://服务器/ URI、mimeTypes 与 stdio 读路径；最多 64 KiB，只返回数据，不运行 HTML 或 MCP Apps。</p>
     <label className="field">配置范围<select aria-label="MCP 配置范围" value={scope} disabled={busy} onChange={(event) => setScope(event.target.value)}><option value="default">OMP 默认配置</option><option value="project" disabled={!projectId}>当前项目：{projectName ?? "未选择"}</option></select></label>
     {error && <p role="alert">{error === "MCP_REVISION_CONFLICT" ? "配置版本已变化，输入仍保留。请核对已保存版本再操作。" : error}</p>}
     {notice && <p role="status">{notice}</p>}
@@ -67,7 +69,7 @@ export function McpPanel({ projectId, projectName, onClose }: { projectId?: stri
       {scope === "project" && snapshot.servers.some((server) => Object.keys(server.credentialRefs).length > 0) && <section aria-label="已绑定的项目凭据"><h3>已绑定凭据</h3>{snapshot.servers.flatMap((server) => Object.keys(server.credentialRefs).map((key) => <p key={`${server.name}:${key}`}>{server.name} · {key} <button className="softbtn" disabled={busy} onClick={() => void act({ type: "revokeCredential", revision: snapshot.revision, name: server.name, envName: key }, "凭据已撤销；现有任务后续调用被阻断，正在关闭本机连接与核对本地进程。")}>撤销此凭据</button></p>))}</section>}
     </>}
     <h3>运行记录</h3><p>关闭页面不会取消已授权任务。停止任务会关闭本机连接并结束本地服务进程；远端执行状态须另行核对。停用会撤销后续调用。结果未知时先核对记录，不会自动重试或回滚。</p>
-    {status?.runs.slice(-8).reverse().map((run) => <details key={run.runId}><summary>版本 {run.revision} · {label(run.status)} · {run.taskId.slice(0, 8)}</summary><ul>{run.processes.map((process, index) => <li key={index}>{process.server} · {process.transport === "streamable-http" ? <>HTTP 连接：{label(process.status)}；远端执行状态不可由本机关闭确认</> : <>PID {process.pid ?? "尚未启动"} · {label(process.status)} · {process.alive ? "仍存在" : "未发现进程组"}</>}</li>)}</ul>{run.calls.map((call) => <p key={call.callId}>{call.server}/{call.tool}：{label(call.status)}<br />{call.target}{call.effect === "write" && <><br />{call.application === "unknown" ? "应用结果未知" : call.application === "applied" ? "已应用" : "尚未应用"} · {call.observedChange === undefined ? "字节变化尚未核对" : call.observedChange ? "已观测字节变化" : "未观测字节变化"} · 项目验证未运行</>}{call.code && <><br />{call.code}</>}</p>)}</details>)}
+    {status?.runs.slice(-8).reverse().map((run) => <details key={run.runId}><summary>版本 {run.revision} · {label(run.status)} · {run.taskId.slice(0, 8)}</summary><McpDiscoveryPanel run={run} busy={busy} canDiscover={scope === "project"} onDiscover={(name) => void act({ type: "discover", taskId: run.taskId, name }, "已重新读取实际定义；调用仍需独立授权。")} /><ul>{run.processes.map((process, index) => <li key={index}>{process.server} · {process.transport === "streamable-http" ? <>HTTP 连接：{label(process.status)}；远端执行状态不可由本机关闭确认</> : <>PID {process.pid ?? "尚未启动"} · {label(process.status)} · {process.alive ? "仍存在" : "未发现进程组"}</>}</li>)}</ul>{run.calls.map((call) => <p key={call.callId}>{call.server}/{call.tool}：{label(call.status)}<br />{call.target}{call.effect === "write" && <><br />{call.application === "unknown" ? "应用结果未知" : call.application === "applied" ? "已应用" : "尚未应用"} · {call.observedChange === undefined ? "字节变化尚未核对" : call.observedChange ? "已观测字节变化" : "未观测字节变化"} · 项目验证未运行</>}{call.code && <><br />{call.code}</>}</p>)}</details>)}
     {!status?.runs.length && <p>尚无实际运行记录。</p>}
   </div></HostDialog>;
 }
