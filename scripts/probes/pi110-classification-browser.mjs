@@ -12,7 +12,7 @@ const fixture = await createClassificationHost({ installedExtensions: true, asse
   return classificationCode;
 }, response: async ({ req, res, entry, received }) => {
   const { mode } = JSON.parse(await fs.readFile(scenarioFile, "utf8")); entry.scenario = mode;
-  await fs.writeFile(path.join(evidenceDir, "browser-received.json"), JSON.stringify(received.map(item => ({ requestId: item.requestId, scenario: item.scenario, account: item.key === "Bearer classification-fixture-a" ? "synthetic-A" : "unexpected", url: item.url, body: item.body })), null, 2));
+  await fs.writeFile(path.join(evidenceDir, "browser-received.json"), JSON.stringify(received.map(item => ({ requestId: item.requestId, scenario: item.scenario, account: item.key === "Bearer class-fixture-a" ? "synthetic-A" : "unexpected", url: item.url, body: item.body })), null, 2));
   if (mode === "drop") { req.socket.destroy(); return; }
   res.setHeader("content-type", "application/json"); res.end(JSON.stringify(mode === "missingUsage" ? { answers: classificationReply.answers } : classificationReply));
 } });

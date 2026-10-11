@@ -23,7 +23,7 @@ test("public configuration fixes a separate classifier account for native Pi and
   await f.request("/api/command", { type: "answerApproval", taskId: start.taskId, approvalId: waiting.approvals[0].approvalId, value: "本任务，按其他额度运行" });
   const done = await until(() => f.task(start.taskId), terminal, "classification result");
   assert.equal(f.received.length, 1, JSON.stringify(done));
-  assert.equal(f.received[0].key, "Bearer classification-fixture-a");
+  assert.equal(f.received[0].key, "Bearer class-fixture-a");
   assert.equal(f.received[0].body.model, "sentiment");
   assert.equal(f.received[0].body.state.text, "A helpful example");
   const ledger = (await f.calls()).tasks.find(task => task.taskId === start.taskId);
@@ -174,14 +174,14 @@ test("project changes bind only the next task while the active task retains its 
   const second = (await f.api("/api/accounts", { name: "分类账号 B", providerId: "fixtureclass", authType: "api_key" }, 201)).account;
   const configureB = action => f.api("/api/account-action", { accountId: second.accountId, action });
   await configureB({ type: "configure", config: { baseUrl: f.classifierOrigin, api: "typesafe-system-one", models: [{ type: "classifier", id: "sentiment", name: "Sentiment", contextWindow: 8192 }] } });
-  await configureB({ type: "apiKey", key: "classification-fixture-b" });
+  await configureB({ type: "apiKey", key: "class-fixture-b" });
   const first = await f.start(); await until(() => f.task(first.taskId), task => task.approvals.length, "original binding approval", 15000);
   const { classificationBudget } = await import("./fixtures/classification-host.mjs");
   await f.api("/api/model-calls", { type: "save", projectId: f.projectId, revision: 1, classifier: { accountId: second.accountId, model: "fixtureclass/sentiment", budget: classificationBudget } });
   await authorize(f, first.taskId); await done(f, first.taskId);
-  assert.equal(f.received[0].key, "Bearer classification-fixture-a");
+  assert.equal(f.received[0].key, "Bearer class-fixture-a");
   const next = await f.start(); await authorize(f, next.taskId); await done(f, next.taskId);
-  assert.equal(f.received[1].key, "Bearer classification-fixture-b");
+  assert.equal(f.received[1].key, "Bearer class-fixture-b");
   const tasks = (await f.calls()).tasks;
   assert.deepEqual(tasks.map(task => task.snapshot.revision), [1, 2]);
   assert.deepEqual(tasks.map(task => task.snapshot.classifier.accountId), [f.account.accountId, second.accountId]);

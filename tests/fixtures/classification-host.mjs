@@ -38,11 +38,11 @@ export async function createClassificationHost({ code = classificationCode, scri
     for (const task of ledger?.tasks ?? []) delete task.permission;
     return { scope: "LOCAL_CONTROLLED_SOURCE_HARNESS", node: process.version, pi: pi.version, nodeSha256: createHash("sha256").update(await fs.readFile(f.stack.nodePath)).digest("hex"), sources,
       sdkSha256: createHash("sha256").update(await fs.readFile(f.sdk)).digest("hex"), bindings: f.bindings, ledger,
-      received: received.map(entry => ({ url: entry.url, requestId: entry.requestId, account: entry.key === "Bearer classification-fixture-a" ? "synthetic-A" : entry.key === "Bearer classification-fixture-b" ? "synthetic-B" : "unexpected", body: entry.body })), receivedCount: received.length };
+      received: received.map(entry => ({ url: entry.url, requestId: entry.requestId, account: entry.key === "Bearer class-fixture-a" ? "synthetic-A" : entry.key === "Bearer class-fixture-b" ? "synthetic-B" : "unexpected", body: entry.body })), receivedCount: received.length };
   };
   return { ...f, get host() { return f.host; }, received, account, action, api: request,
     receipt, classifierOrigin: `http://127.0.0.1:${service.address().port}`,
-    configure: async () => { await action({ type: "configure", config: { baseUrl: `http://127.0.0.1:${service.address().port}`, api, models: [{ type: "classifier", id: "sentiment", name: "Sentiment", contextWindow: 8192 }] } }); await action({ type: "apiKey", key: "classification-fixture-a" }); },
+    configure: async () => { await action({ type: "configure", config: { baseUrl: `http://127.0.0.1:${service.address().port}`, api, models: [{ type: "classifier", id: "sentiment", name: "Sentiment", contextWindow: 8192 }] } }); await action({ type: "apiKey", key: "class-fixture-a" }); },
     select: (budget = classificationBudget, revision = 0) => request("/api/model-calls", { type: "save", projectId: f.projectId, revision, classifier: { accountId: account.accountId, model: "fixtureclass/sentiment", budget } }),
     calls: () => request(`/api/model-calls?projectId=${f.projectId}`),
     close: async (options) => {

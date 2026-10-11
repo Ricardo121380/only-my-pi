@@ -19,7 +19,15 @@ test("public CLI and real Pi TUI configure, enable, approve and read the same OM
   await fs.writeFile(action, JSON.stringify({ type: "enable", revision: 1, name: "local", enabled: true }));
   let output = "", exited;
   const terminal = pty.spawn(process.execPath, [f.cli, "--model", "fixture/one", "--no-session", "--tui-mode", "regular"], { cwd: f.project, env: f.env, cols: 120, rows: 36 });
-  terminal.onData((data) => { output += data; }); terminal.onExit((exit) => { exited = exit; }); t.after(async () => { if (!exited) { terminal.kill("SIGTERM"); await until(() => exited, Boolean, "owned TUI fixture exit"); } await f.close(); });
+  terminal.onData((data) => { output += data; }); terminal.onExit((exit) => { exited = exit; }); t.after(async () => {
+    try {
+      if (!exited) {
+        terminal.kill("SIGTERM");
+        try { await until(() => exited, Boolean, "owned TUI fixture exit"); }
+        catch (error) { terminal.kill("SIGKILL"); await until(() => exited, Boolean, "owned failed TUI fixture exit"); throw error; }
+      }
+    } finally { await f.close(); }
+  });
   await until(() => output, (text) => text.includes("Inspect") || exited, "TUI start", 30000);
   assert.equal(exited, undefined, output);
   terminal.write(`/mcp apply ${action}\r`);
@@ -37,11 +45,13 @@ test("public CLI and real Pi TUI configure, enable, approve and read the same OM
   await until(() => f.mcp({ type: "status" }), (state) => state.runs.at(-1).status === "stopped", "first TUI task stopped");
   await fs.writeFile(path.join(f.project, "ALT.md"), "MCP second revision result");
   await f.mcp({ type: "save", revision: 2, server: { ...f.server, enabled: true, env: { F_MODE: "second" }, tools: [{ ...f.server.tools[0], paths: ["ALT.md"] }] } });
-  terminal.write("MCP second read probe\r");
+  const nextTurnOutput = output.length; terminal.write("MCP second read probe\r");
   await until(() => f.mcp({ type: "status" }), (state) => state.runs.length === 2 && state.runs.at(-1).calls[0]?.status === "awaiting_approval", "same-session new revision approval");
+  await until(() => output.slice(nextTurnOutput), text => text.includes("仅本次") && text.includes("ALT.md"), "second TUI approval rendered");
   terminal.write("\x1b[B\r");
   await until(() => f.requests.length, (count) => count === 4, "second TUI response");
   assert.match(JSON.stringify(f.requests[3].body.messages), /MCP second revision result/);
+  await until(() => f.mcp({ type: "status" }), state => state.runs.at(-1).status === "stopped", "second TUI task stopped");
   terminal.write("\x04"); await until(() => exited, Boolean, "TUI exit"); assert.equal(exited.exitCode, 0);
   runs = await runCli(["status"]); assert.ok(runs.runs.every((run) => run.status === "stopped"));
   assert.deepEqual(runs.runs.map((run) => run.revision), [2, 3]); assert.notEqual(runs.runs[0].taskId, runs.runs[1].taskId);

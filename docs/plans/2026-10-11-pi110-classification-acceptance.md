@@ -37,7 +37,7 @@
 
 保存只改变后续任务；每次任务开始固定账号、模型定义摘要、预算、项目版本及撤权版本。聊天账号/模型与分类绑定分离。停用即时阻断新分类请求；修改项目选择不会把正在运行任务切到新账号。脚本无法改变绑定或扩额。
 
-`packages/model-calls/` 收拢目录/账号解析、持久账本和原生请求适配。控制点是 Pi codemode 实際使用的 ModelRegistry，覆盖普通 `tool_call` 之外的 `models.classify`；生命周期使用公开 `agent_start`，包括 WebUI 保存草稿后 `sendCustomMessage(triggerTurn)` 的真实路径。image namespace 保持禁用，交给 #73。
+`packages/model-calls/` 收拢目录/账号解析、持久账本和原生请求适配。控制点是 Pi codemode 实际使用的 ModelRegistry，覆盖普通 `tool_call` 之外的 `models.classify`；生命周期使用公开 `agent_start`，包括 WebUI 保存草稿后 `sendCustomMessage(triggerTurn)` 的真实路径。image namespace 保持禁用，交给 #73。
 
 当前开放三个单次 HTTP 分类协议：`typesafe-system-one`、`openai-decisions`、`cloudflare-workers-ai-system-one`，均核对原生 adapter 的真实请求/回执。其他分类协议显示不支持；例如需要多次模型 HTTP 调用的协议尚不能可靠对应一个请求预占，不能静默开放。账号配置中的分类定义保存为专用 `classifiers.json`，经 Pi 公开注册接口加载；不把 Pi 只创建 chat 模型的 `models.json` 当成分类目录。
 
@@ -92,7 +92,7 @@ npm run typecheck
 npm run build:web
 ```
 
-- Node 24.19.0：`LOCAL_HOME/.local/share/only-my-pi/stacks/7444c7fb3a6a91bbe077ba2e15bd157b63265f368a480db8b81f959b43d9aea0/node/bin/node`，SHA-256 `27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1`。
+- Node 24.19.0：`$HOME/.local/share/only-my-pi/stacks/7444c7fb3a6a91bbe077ba2e15bd157b63265f368a480db8b81f959b43d9aea0/node/bin/node`，SHA-256 `27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1`。
 - Node 22.19.0：`LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin/node`，SHA-256 `0d005c18e095027ca8f9fe1cc1126f767ee4ad7b004f4d6fb781ec4228a7c5d1`。
 - Pi SDK 文件 SHA-256 `5482298b995db935f7b96f5d6056fa1c36ac6fc80456be594ef65b83c62b0d30`；完整来源与被测源码摘要保存在逐夹具 receipt，最终工作树冻结另存 `final-source.json`。
 - `01`–`38` 日志保留全部阶段结果。早期暴露了原生目录全为 chat、账号注册缺失、QuickJS 异步模型选择、缺价格解析、canonical JSON 摘要、PTY 时机等实际问题；后续分别修复，不把 RED 删除或记 PASS。
