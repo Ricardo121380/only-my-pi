@@ -3,6 +3,8 @@ import { EventEmitter } from "node:events";
 import { StringDecoder } from "node:string_decoder";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { accountWorkerEnvironment } from "./models.mjs";
 import { buildDirectPiInvocation, resolveDirectExtensionSet } from "../direct-agent/launcher.mjs";
 import { processIdentity, groupAlive } from "./ownership.mjs";
@@ -21,9 +23,11 @@ export class RpcWorker extends EventEmitter {
     this.approvals = new ApprovalBridge({ send: (frame) => { if (this.child && !this.closed && !this.child.stdin.destroyed) this.child.stdin.write(JSON.stringify(frame) + "\n"); }, publish: (approvals) => this.emit("approvals", approvals) });
     this.resumeFile = resumeFile;
     this.mcpSnapshot = mcpSnapshot; this.mcpEnabled = mcpSnapshot?.servers.some((server) => server.enabled) === true;
+    this.codemodeEnabled = accountId !== undefined;
   }
   async start() {
     if (this.controlled && !this.accountId) throw hostError("ACCOUNT_BINDING_REQUIRED");
+    this.codemodeEnabled &&= await fs.readFile(path.join(this.stack.root, "pi/package.json"), "utf8").then((raw) => JSON.parse(raw).version === "1.1.0", () => false);
     const set = await this.extensionResolver({ stack: this.stack, configRoot: this.configRoot, headless: !this.controlled });
     const invocation = buildDirectPiInvocation({ stack: this.stack, extensionPaths: set.extensions, runtimeOwner: "host",
       argv: ["--mode", "rpc", "--model", this.model, "--session-dir", this.sessionRoot], env: { ...(this.accountId === undefined ? this.env : accountWorkerEnvironment(this.env)), PI_CODING_AGENT_DIR: this.configRoot } });
@@ -73,7 +77,7 @@ export class RpcWorker extends EventEmitter {
           const waiter = this.pending.get(value.id); this.pending.delete(value.id); clearTimeout(waiter.timeout);
           if (value.success === true && value.command === waiter.type) waiter.resolve(value.data); else waiter.reject(hostError("RPC_COMMAND_REJECTED"));
         } else if (value?.type === "extension_ui_request") {
-          if ((this.controlled || (this.mcpEnabled && value.method === "select" && value.title?.startsWith("MCP · "))) && !this.stopRequested) {
+          if ((this.controlled || (value.method === "select" && (this.mcpEnabled && value.title?.startsWith("MCP · ") || this.codemodeEnabled && value.title?.startsWith("Codemode · ")))) && !this.stopRequested) {
             try { this.approvals.request(value); } catch { this.emit("fault", { code: "APPROVAL_REQUEST_INVALID" }); void this.stop().catch(() => {}); }
           } else if (value.id) child.stdin.write(JSON.stringify({ type: "extension_ui_response", id: value.id, cancelled: true }) + "\n");
         } else this.emit("event", value);
@@ -155,12 +159,16 @@ export class RpcWorker extends EventEmitter {
     })(); return this.stopping;
   }
   answerApproval(id, value) {
-    if ((!this.controlled && !this.mcpEnabled) || this.stopRequested) throw hostError("APPROVAL_EXPIRED", 409);
+    if ((!this.controlled && !this.mcpEnabled && !this.codemodeEnabled) || this.stopRequested) throw hostError("APPROVAL_EXPIRED", 409);
     this.approvals.answer(id, value);
   }
   async revoke() {
     this.approvals.invalidate();
-    if (!this.controlled && this.mcpEnabled) { try { await this.mcpControl("mcp_revoke"); } catch (error) { await this.stop().catch(() => {}); throw error; } return; }
+    if (!this.controlled && (this.mcpEnabled || this.codemodeEnabled)) {
+      try { if (this.codemodeEnabled) await this.codemodeRevoke(); if (this.mcpEnabled) await this.mcpControl("mcp_revoke"); }
+      catch (error) { await this.stop().catch(() => {}); throw error; }
+      return;
+    }
     if (!this.controlled || !this.child?.connected || this.closed) throw hostError("RPC_CONTROL_UNAVAILABLE", 409);
     const id = randomUUID(), child = this.child;
     let listener, timer;
@@ -184,6 +192,18 @@ export class RpcWorker extends EventEmitter {
         listener = (message) => { if (message?.type === "mcp_stopped" && message.id === id) { if (message.clean === true) { this.mcpStopConfirmed = true; resolve(); } else reject(hostError("RPC_TERMINATION_UNCONFIRMED", 409)); } };
         child.on("message", listener); timer = setTimeout(() => reject(hostError("MCP_STOP_UNCONFIRMED", 503)), 4000);
         child.send({ type, id }, (error) => { if (error) reject(hostError("MCP_STOP_UNCONFIRMED", 503)); });
+      });
+    } finally { clearTimeout(timer); child.off("message", listener); }
+  }
+  async codemodeRevoke() {
+    const child = this.child, id = randomUUID();
+    if (!child?.connected || this.closed) throw hostError("RPC_CONTROL_UNAVAILABLE", 409);
+    let listener, timer;
+    try {
+      await new Promise((resolve, reject) => {
+        listener = (message) => { if (message?.type === "codemode_revoked" && message.id === id) resolve(); };
+        child.on("message", listener); timer = setTimeout(() => reject(hostError("RPC_REVOKE_UNCONFIRMED", 503)), 3000);
+        child.send({ type: "codemode_revoke", id }, (error) => { if (error) reject(hostError("RPC_REVOKE_UNCONFIRMED", 503)); });
       });
     } finally { clearTimeout(timer); child.off("message", listener); }
   }

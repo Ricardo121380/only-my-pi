@@ -7,6 +7,10 @@ import { setTimeout as delay } from "node:timers/promises";
 import { processIdentity, groupAlive } from "../host/ownership.mjs";
 import { digest, mcpError, MCP_LIMITS } from "./catalog.mjs";
 
+// The owner chooses this root before any script temporarily isolates its own
+// output. A nested codemode call must not place durable MCP receipts there.
+const runtimeRoot = os.tmpdir();
+
 export async function launchIdentity(server) {
   const files = await Promise.all([server.command, ...server.codePaths].map(async (file) => {
     const canonical = await fs.realpath(file), stat = await fs.lstat(canonical);
@@ -63,7 +67,7 @@ export class ControlledStdioTransport {
   async start() {
     if (process.platform !== "darwin") throw mcpError("MCP_PROCESS_ISOLATION_UNAVAILABLE", 409);
     if (this.child || this.closed) throw mcpError("MCP_PROCESS_STATE_INVALID");
-    const runtimeDir = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-mcp-runtime-")));
+    const runtimeDir = await fs.realpath(await fs.mkdtemp(path.join(runtimeRoot, "omp-mcp-runtime-")));
     this.record.runtimeDir = runtimeDir; this.record.status = "starting"; await this.save();
     const profile = sandboxProfile({ ...this, runtimeDir });
     await fs.writeFile(path.join(runtimeDir, "sandbox.sb"), profile, { mode: 0o600 });

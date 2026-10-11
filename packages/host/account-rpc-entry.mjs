@@ -36,7 +36,9 @@ try {
   const catalog = new AccountCatalog(configRoot);
   const account = accountId === CLI_ACCOUNT_ID ? { accountId, providerId: modelId.split("/")[0] } : await catalog.get(accountId);
   if (!modelId.startsWith(`${account.providerId}/`)) throw new Error();
-  const sdk = await import(pathToFileURL(path.join(stackRoot, "pi/dist/index.js")).href);
+  const sdkFile = await fs.realpath(path.join(stackRoot, "pi/dist/index.js"));
+  process.env.OMP_MCP_SDK_FILE = sdkFile;
+  const sdk = await import(pathToFileURL(sdkFile).href);
   // The SDK service factory does not perform the CLI's process-level theme setup.
   // Audited permission extensions still use theme helpers during RPC session_start.
   sdk.initTheme(undefined, false);
@@ -58,7 +60,7 @@ try {
     if (services.diagnostics.some((d) => d.type === "error") || services.resourceLoader.getExtensions().errors.length) throw new Error();
     const model = modelRuntime.getAvailableSnapshot().find((m) => `${m.provider}/${m.id}` === modelId);
     if (!model) throw new Error();
-    const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model, tools: [...(controlled ? ["read", "grep", "find", "ls", "edit", "write", "bash", "request_coding_access", "delegate_readonly_agent", "delegate_managed_writer"] : ["read", "grep", "find", "ls"]), ...mcpNames] });
+    const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model, tools: [...(controlled ? ["read", "grep", "find", "ls", "edit", "write", "bash", "request_coding_access", "delegate_readonly_agent", "delegate_managed_writer"] : ["read", "grep", "find", "ls"]), ...mcpNames, "codemode"] });
     if (created.modelFallbackMessage || `${created.session.model?.provider}/${created.session.model?.id}` !== modelId) throw new Error();
     sessionManager.appendCustomEntry("omp-account-binding", { version: 1, accountId: account.accountId, providerId: account.providerId });
     return { ...created, services, diagnostics: services.diagnostics };

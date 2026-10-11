@@ -31,6 +31,8 @@ export interface OAuthFlow { flowId: string; accountId: string; status: "startin
 export interface AccountDirectory { protocol: 1; authentication: "api_key"; cliReference: { accountId: "cli-readonly"; name: string; readOnly: true }; accounts: GuiAccount[] }
 export interface Message { id: string; role: "user" | "assistant" | "toolResult"; text: string; toolName?: string; isError?: boolean; outputAvailable?: boolean; truncated?: boolean; durationMs?: number; stopReason?: string | null }
 export interface HostTask {
+  codemode?: { enabled: true; classifier: false; image: false };
+  toolCalls?: { toolCallId: string; parentToolCallId: string | null; name: string; status: "running" | "completed" | "failed" | "cancelled" | "unknown"; startedAt: string; completedAt?: string; durationMs?: number; result?: string; error?: string }[];
   mcp?: { protocol: 1; revision: number; enabled: boolean };
   settlement?: { aborted: boolean } | null;
   inputFeedback?: { inputId: string | null; source: "pi-prompt" | "omp-custom-message"; disposition: "handled" | "queued" | "started" }[] | null;

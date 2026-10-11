@@ -4,6 +4,7 @@ import path from "node:path";
 import { DirectSessionOwnership } from "../../packages/direct-agent/ownership.mjs";
 import { createOwnedBashOperations } from "../../packages/direct-agent/shell.mjs";
 import { disableOmpCacheWarming } from "../../packages/direct-agent/cache-warming-policy.mjs";
+import { installOmpCodemode } from "../../packages/direct-agent/codemode.mjs";
 import { installOmpMcp } from "../../packages/mcp/extension.mjs";
 import { mcpCommand, prepareMcpCommand } from "../../packages/mcp/commands.mjs";
 
@@ -62,7 +63,7 @@ const ManagedWriterParameters = {
   },
 } as any;
 
-export default function ompDirect(pi: ExtensionAPI): void {
+export default async function ompDirect(pi: ExtensionAPI): Promise<void> {
   if (process.env.ONLY_MY_PI_DIRECT !== "1") return;
   // Also covers the native CLI's ephemeral --no-session path and legacy RPC.
   disableOmpCacheWarming(pi);
@@ -85,6 +86,7 @@ export default function ompDirect(pi: ExtensionAPI): void {
     verifyProject: async (ctx: any) => ownsSession?.(ctx) ? verifyHostProject?.(ctx) : ownership.verifyProject(ctx.cwd),
   });
   const mcp = installOmpMcp(pi, { configRoot, controller });
+  await installOmpCodemode(pi, { controller });
   const shellOperations: BashOperations = { exec: (command, cwd, options) => ownedShell.exec(command, cwd, {
     ...options, signal: AbortSignal.any([options.signal, controller.grantAbort?.signal].filter((signal): signal is AbortSignal => !!signal)),
   }) };

@@ -1,7 +1,8 @@
-export type McpToolScope = { name: string; pathArgument: string; paths: string[] } & ({ effect: "read"; writeMode?: never } | { effect: "write"; writeMode: "descriptor" });
+export interface McpExposure { exposure?: "direct" | "deferred" | "codemode" | "hidden"; active?: boolean }
+export type McpToolScope = McpExposure & { name: string; pathArgument: string; paths: string[] } & ({ effect: "read"; writeMode?: never } | { effect: "write"; writeMode: "descriptor" });
 export type McpServer = { name: string; credentialRefs: Record<string, string>; enabled: boolean } & (
   { transport: "stdio"; command: string; args: string[]; codePaths: string[]; cwd?: string; env: Record<string, string>; tools: McpToolScope[] }
-  | { transport: "streamable-http"; url: string; tools: { name: string; effect: "remote" }[] });
+  | { transport: "streamable-http"; url: string; tools: (McpExposure & { name: string; effect: "remote" })[] });
 export declare const isMcpOAuthActive: (status: string) => boolean;
 export declare const isMcpOAuthStored: (status: string) => boolean;
 export declare const isMcpOAuthBlocked: (flow: McpOAuthFlow | null | undefined) => boolean;

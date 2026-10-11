@@ -33,6 +33,7 @@ export class HostTasks extends EventEmitter {
       if (task.error === "RPC_TERMINATION_UNCONFIRMED" && !task.worker) throw hostError("WORKER_RECONCILIATION_REQUIRED", 409);
       if (!terminal(task.status)) { task.status = "interrupted"; task.error = "HOST_RESTARTED"; }
       task.approvals = []; task.access = "inspect";
+      for (const call of task.toolCalls ?? []) if (call.status === "running") { call.status = "unknown"; call.error = "HOST_RESTARTED"; }
       task.worker = null;
       this.tasks.set(task.taskId, task); this.requests.set(task.requestId, task.taskId);
     }
@@ -40,6 +41,7 @@ export class HostTasks extends EventEmitter {
   }
   summary(task) { return { taskId: task.taskId, requestId: task.requestId, projectId: task.projectId, accountId: task.accountId ?? null, model: task.model, prompt: task.prompt.slice(0, 200), status: task.status,
     ...(task.mcpSnapshot ? { mcp: { protocol: 1, revision: task.mcpSnapshot.revision, enabled: task.mcpSnapshot.servers.some((server) => server.enabled) } } : {}),
+    ...(task.codemode ? { codemode: task.codemode } : {}), toolCalls: task.toolCalls ?? [],
     thinkingLevel: task.thinkingLevel ?? null, requestedThinkingLevel: task.requestedThinkingLevel ?? null, usage: task.usage ?? null,
     mode: task.mode ?? "readonly", access: task.access ?? "inspect", approvals: task.approvals ?? [], orchestration: task.orchestration ?? null, sessionId: task.sessionId, settlement: task.settlement ?? null, inputFeedback: task.inputFeedback ?? null, ...(task.inputId ? { inputId: task.inputId, originDraftInputId: task.originDraftInputId, originDraftSessionId: task.originDraftSessionId } : {}), createdAt: task.createdAt, updatedAt: task.updatedAt, error: task.error ?? null, tool: task.tool ?? null }; }
   public(task) { return structuredClone({ ...this.summary(task), prompt: task.prompt, partial: task.partial ?? "", messages: task.messages.slice(-50).map((m) => ({ ...m, text: m.text.slice(0, 16384) })) }); }
@@ -152,7 +154,14 @@ export class HostTasks extends EventEmitter {
       } else if (event?.type === "tool_execution_start") {
         task.usage.tools++;
         task.tool = { name: String(event.toolName).slice(0, 128), status: "running" };
+        task.toolCalls ??= [];
+        if (typeof event.toolCallId === "string" && !task.toolCalls.some((call) => call.toolCallId === event.toolCallId)) {
+          task.toolCalls.push({ toolCallId: event.toolCallId.slice(0, 256), parentToolCallId: typeof event.parentToolCallId === "string" ? event.parentToolCallId.slice(0, 256) : null, name: String(event.toolName).slice(0, 128), status: "running", startedAt: new Date().toISOString() });
+          task.toolCalls = task.toolCalls.slice(-128);
+        }
       } else if (event?.type === "tool_execution_end") {
+        const call = task.toolCalls?.find((item) => item.toolCallId === event.toolCallId);
+        if (call) Object.assign(call, { status: event.result?.details?.status === "unknown" ? "unknown" : event.result?.details?.code === "CODEMODE_CANCELLED" ? "cancelled" : event.isError ? "failed" : "completed", completedAt: new Date().toISOString(), result: textContent(event.result?.content).slice(0, 16384), ...duration(event.durationMs) });
         if (event.toolName === "request_coding_access" && event.result?.details?.status === "CODING_ACCESS_GRANTED" && !event.isError) task.access = "coding";
         task.messages.push({ id: randomUUID(), role: "toolResult", toolName: String(event.toolName).slice(0, 128), text: textContent(event.result?.content), isError: event.isError === true, ...duration(event.durationMs) });
         task.tool = null;
@@ -182,6 +191,7 @@ export class HostTasks extends EventEmitter {
         if (current.sessionId !== resume.sessionId || current.file !== resume.file) throw hostError("SESSION_IDENTITY_CHANGED", 409);
       }
       const state = await worker.start();
+      if (worker.codemodeEnabled) task.codemode = { enabled: true, classifier: false, image: false };
       if (resume && state.sessionId !== resume.sessionId) throw hostError("SESSION_IDENTITY_CHANGED", 409);
       task.worker = worker.identity; task.sessionId = state.sessionId;
       lease ??= await acquireOwnership(this.configRoot, "session", String(state.sessionId));
@@ -232,6 +242,7 @@ export class HostTasks extends EventEmitter {
         this.workers.delete(task.taskId);
       }
       task.approvals = []; task.access = "inspect";
+      for (const call of task.toolCalls ?? []) if (call.status === "running") call.status = task.status === "cancelled" ? "cancelled" : "unknown";
       task.updatedAt = new Date().toISOString(); this.changed(task); await this.persist();
       await this.catalog.scan().catch(() => {});
     }
@@ -246,13 +257,13 @@ export class HostTasks extends EventEmitter {
   }
   async answerApproval(id, approvalId, value) {
     const task = this.tasks.get(id), worker = this.workers.get(id);
-    if (!task || terminal(task.status) || task.status === "cancelling" || !worker || (task.mode !== "controlled" && !worker.mcpEnabled)) throw hostError("APPROVAL_EXPIRED", 409);
+    if (!task || terminal(task.status) || task.status === "cancelling" || !worker || (task.mode !== "controlled" && !worker.mcpEnabled && !worker.codemodeEnabled)) throw hostError("APPROVAL_EXPIRED", 409);
     worker.answerApproval(approvalId, value);
     return this.public(task);
   }
   async revoke(id) {
     const task = this.tasks.get(id), worker = this.workers.get(id);
-    if (!task || terminal(task.status) || task.status === "cancelling" || !worker || (task.mode !== "controlled" && !worker.mcpEnabled)) throw hostError("RPC_CONTROL_UNAVAILABLE", 409);
+    if (!task || terminal(task.status) || task.status === "cancelling" || !worker || (task.mode !== "controlled" && !worker.mcpEnabled && !worker.codemodeEnabled)) throw hostError("RPC_CONTROL_UNAVAILABLE", 409);
     task.inputRevoked = true; this.changed(task);
     await worker.revoke(); task.access = "inspect"; task.approvals = [];
     this.changed(task); await this.persist(); return this.public(task);

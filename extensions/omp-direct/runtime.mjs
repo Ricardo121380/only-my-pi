@@ -257,12 +257,12 @@ export class DirectSessionController {
   }
 
   activeToolCeiling() {
-    return [...(this.hasCodingAccess() ? CODING_TOOL_NAMES : INSPECTION_TOOL_NAMES), ...(this.mcpTools?.() ?? [])];
+    return [...(this.hasCodingAccess() ? CODING_TOOL_NAMES : INSPECTION_TOOL_NAMES), ...(this.mcpTools?.() ?? []), ...(this.codemodeTools?.() ?? [])];
   }
 
   applyToolCeiling() {
     const configured = new Set(this.pi.getAllTools().map((tool) => tool.name));
-    const active = this.activeToolCeiling().filter((name) => configured.has(name));
+    const active = this.activeToolCeiling().filter((name) => configured.has(name) && this.mcpDeclared?.(name) !== false);
     if (this.headless && this.hostInteraction?.allows(this.context) !== true) {
       const index = active.indexOf("request_coding_access");
       if (index !== -1) active.splice(index, 1);

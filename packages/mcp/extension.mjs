@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import Ajv from "ajv";
-import { McpCatalog, MCP_LIMITS, digest, mcpError, mcpToolName } from "./catalog.mjs";
+import { McpCatalog, MCP_LIMITS, digest, mcpError, mcpToolName, mcpToolEnabled } from "./catalog.mjs";
 import { McpRuns } from "./runs.mjs";
 import { ControlledStdioTransport, containsSecret, launchIdentity } from "./process.mjs";
 import { processIdentity } from "../host/ownership.mjs";
@@ -10,7 +10,7 @@ import { loadNativeMcp } from "./native.mjs";
 import { openWriteTarget } from "./write-target.mjs";
 import { ControlledHttpTransport } from "./http.mjs";
 
-const result = (code) => ({ content: [{ type: "text", text: code }], details: { status: code } });
+const result = (code) => ({ isError: true, content: [{ type: "text", text: code }], details: { status: code } });
 async function selectedPath(project, value, scopes) {
   if (typeof value !== "string" || !value || value.length > 512 || path.isAbsolute(value) || /[\0\\]/u.test(value) || value.split("/").some((entry) => ["..", ".git", ".pi"].includes(entry))) throw mcpError("MCP_PATH_DENIED");
   const target = await fs.realpath(path.resolve(project, value));
@@ -85,6 +85,7 @@ export function installOmpMcp(pi, { configRoot, controller }) {
     await save(); return connection;
   };
   const call = async (server, policy, initial, toolCallId, params, signal, ctx) => {
+    if (!mcpToolEnabled(policy)) return result("MCP_TOOL_HIDDEN");
     const entry = connections.get(server.name);
     const remote = server.transport === "streamable-http";
     if (typeof toolCallId !== "string" || !toolCallId || toolCallId.length > 256) return result("MCP_CALL_ID_INVALID");
@@ -150,13 +151,13 @@ export function installOmpMcp(pi, { configRoot, controller }) {
       record.status = output.isError ? "failed" : "completed"; record.completedAt = new Date().toISOString();
       if (write) { record.afterDigest = await write.digest(); record.observedChange = record.afterDigest !== record.beforeDigest; record.application = record.observedChange ? "applied" : "not_applied"; }
       await save();
-      return { content: output.content, details: { callId: record.callId, status: record.status, revision: record.revision, server: server.name, tool: policy.name, ...(write ? { application: record.application, verification: "not_run", beforeDigest: record.beforeDigest, afterDigest: record.afterDigest } : {}) } };
+      return { ...(output.isError ? { isError: true } : {}), content: output.content, details: { callId: record.callId, status: record.status, revision: record.revision, server: server.name, tool: policy.name, ...(write ? { application: record.application, verification: "not_run", beforeDigest: record.beforeDigest, afterDigest: record.afterDigest } : {}) } };
     } catch (error) {
       record.code = /^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "MCP_CALL_FAILED";
       record.status = record.status === "dispatched" && (!remote || execution?.transport.businessAttempted) ? "unknown" : "rejected";
       if (write) { record.application = record.status === "unknown" ? "unknown" : "not_applied"; }
       await save();
-      return result(`${record.code}${record.status === "unknown" ? ": 结果未知，不自动重试" : ""}`);
+      return { ...result(`${record.code}${record.status === "unknown" ? ": 结果未知，不自动重试" : ""}`), details: { status: record.status, code: record.code, ...(write ? { application: record.application, verification: "not_run" } : {}) } };
     } finally {
       if (execution) { execution.disarm?.(); await execution.client.close().catch(() => {}); await execution.transport.close().catch(() => {}); }
       try {
@@ -192,11 +193,14 @@ export function installOmpMcp(pi, { configRoot, controller }) {
       const available = await entry.client.listTools({ signal: AbortSignal.timeout(MCP_LIMITS.timeoutMs) }); if (available.length > MCP_LIMITS.tools) throw mcpError("MCP_TOOL_LIMIT");
       for (const policy of server.tools) {
         const tool = available.find((entry) => entry.name === policy.name); if (!tool) throw mcpError("MCP_TOOL_NOT_FOUND");
-        const name = mcpToolName(server.name, policy.name); entry.names.push(name);
+        const name = mcpToolName(server.name, policy.name); if (mcpToolEnabled(policy)) entry.names.push(name);
         pi.registerTool({ name, label: `${server.name}/${policy.name}`, description: `${policy.effect === "remote" ? "OMP 受控远程操作；每次调用确认目标、输入和授权，可能产生外部效果，不授予本机项目写入。" : `OMP 受控${policy.effect === "write" ? "描述符写入" : "只读"}工具；每次调用检查授权和路径，写入还须编程授权及实际项目所有权。`}${tool.description ?? ""}`, parameters: tool.inputSchema, executionMode: "sequential",
+          exposure: policy.active === false ? "hidden" : policy.exposure ?? "direct",
           execute: (toolCallId, params, signal, _onUpdate, ctx) => call(server, policy, tool, toolCallId, params, signal, ctx) });
       }
     }
+    const declarations = new Map(snapshot.servers.flatMap((server) => server.tools.map((tool) => [mcpToolName(server.name, tool.name), mcpToolEnabled(tool) && (tool.exposure ?? "direct") === "direct"])));
+    controller.mcpDeclared = (name) => declarations.get(name) ?? true;
     controller.applyToolCeiling();
     const monitored = generation;
     monitor = setInterval(() => { void Promise.all([...connections.values()].map(({ server }) => check(server))).catch(async () => { if (generation === monitored) { revoked = true; await stop().catch(() => {}); } }); }, 200); monitor.unref();

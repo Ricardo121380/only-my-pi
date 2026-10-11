@@ -13,7 +13,9 @@ const bounded = (value, max = 4096) => typeof value === "string" && value.length
 const scopePath = (value) => bounded(value, 512) && value.length > 0 && !path.isAbsolute(value) && !value.split(/[\\/]/u).some((part) => ["..", ".git", ".pi", ".env", ""].includes(part)) && !value.startsWith("~");
 const safeEnv = (key) => /^[A-Z][A-Z0-9_]{0,63}$/u.test(key) && !/(?:KEY|TOKEN|SECRET|PASS|AUTH|HOME|PATH|NODE|DYLD|LD_|PI_|OMP_|BASH|SHELL|ZDOTDIR)/u.test(key) && !["ENV", "IFS"].includes(key);
 export const mcpToolName = (server, tool) => `mcp__${server}__${tool}`;
-export const mcpToolNames = (snapshot) => snapshot?.servers.filter((server) => server.enabled).flatMap((server) => server.tools.map((tool) => mcpToolName(server.name, tool.name))) ?? [];
+export const mcpToolEnabled = (tool) => tool.active !== false && tool.exposure !== "hidden";
+export const mcpToolNames = (snapshot) => snapshot?.servers.filter((server) => server.enabled).flatMap((server) => server.tools.filter(mcpToolEnabled).map((tool) => mcpToolName(server.name, tool.name))) ?? [];
+const validExposure = (tool) => (tool.exposure === undefined || ["direct", "deferred", "codemode", "hidden"].includes(tool.exposure)) && (tool.active === undefined || typeof tool.active === "boolean");
 export function httpTarget(value) {
   if (!bounded(value, 2048)) throw mcpError("MCP_HTTP_TARGET_INVALID");
   let url; try { url = new URL(value); } catch { throw mcpError("MCP_HTTP_TARGET_INVALID"); }
@@ -29,7 +31,7 @@ export function validateServer(value) {
     const names = new Set();
     if (!Array.isArray(value.tools) || value.tools.length > MCP_LIMITS.tools) throw mcpError("MCP_TOOL_SCOPE_INVALID");
     for (const tool of value.tools) {
-      if (!plain(tool) || Object.keys(tool).some((key) => !["name", "effect"].includes(key)) || !id(tool.name) || names.has(tool.name) || tool.effect !== "remote") throw mcpError("MCP_HTTP_LOCAL_WRITE_NOT_ADMITTED");
+      if (!plain(tool) || Object.keys(tool).some((key) => !["name", "effect", "exposure", "active"].includes(key)) || !validExposure(tool) || !id(tool.name) || names.has(tool.name) || tool.effect !== "remote") throw mcpError("MCP_HTTP_LOCAL_WRITE_NOT_ADMITTED");
       names.add(tool.name);
     }
     return structuredClone({ ...value, url });
@@ -43,7 +45,7 @@ export function validateServer(value) {
   if (!plain(value.credentialRefs) || Object.keys(value.credentialRefs).length > 8 || Object.entries(value.credentialRefs).some(([key, val]) => !/^MCP_[A-Z0-9_]{1,48}$/u.test(key) || !id(val))) throw mcpError("MCP_CREDENTIAL_REF_INVALID");
   const names = new Set();
   for (const tool of value.tools) {
-    if (!plain(tool) || Object.keys(tool).some((key) => !["name", "effect", "pathArgument", "paths", "writeMode"].includes(key)) || !id(tool.name) || names.has(tool.name) || !["read", "write"].includes(tool.effect) || (tool.effect === "write" ? tool.writeMode !== "descriptor" : tool.writeMode !== undefined) || !id(tool.pathArgument)
+    if (!plain(tool) || Object.keys(tool).some((key) => !["name", "effect", "pathArgument", "paths", "writeMode", "exposure", "active"].includes(key)) || !validExposure(tool) || !id(tool.name) || names.has(tool.name) || !["read", "write"].includes(tool.effect) || (tool.effect === "write" ? tool.writeMode !== "descriptor" : tool.writeMode !== undefined) || !id(tool.pathArgument)
       || !Array.isArray(tool.paths) || !tool.paths.length || tool.paths.length > 16 || tool.paths.some((entry) => !scopePath(entry))) throw mcpError("MCP_TOOL_SCOPE_INVALID");
     names.add(tool.name);
   }

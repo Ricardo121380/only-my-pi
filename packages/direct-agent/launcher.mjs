@@ -373,15 +373,16 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames 
   const launchId = randomUUIDImpl();
   if (typeof launchId !== "string" || !UUID.test(launchId)) fail("OMP_LAUNCH_ID_INVALID", "launch id generator returned an invalid UUID");
 
+  const pi110 = (() => { try { return JSON.parse(readFileSync(path.join(stack.root, "pi/package.json"), "utf8")).version === "1.1.0"; } catch { return false; } })();
   const piArgs = [
     stack.piCliPath,
     "--no-extensions",
     // Pi 1.1 CLI otherwise starts its built-in MCP discovery independently of
     // the audited extension allowlist. Older controlled stacks lack this flag.
-    ...(() => { try { return JSON.parse(readFileSync(path.join(stack.root, "pi/package.json"), "utf8")).version === "1.1.0" ? ["--no-mcp"] : []; } catch { return []; } })(),
+    ...(pi110 ? ["--no-mcp"] : []),
     ...extensionPaths.flatMap((entry) => ["--extension", entry]),
     "--tools",
-    [inspected.headless ? HEADLESS_TOOLS : INTERACTIVE_TOOLS, ...mcpNames].join(","),
+    [inspected.headless ? HEADLESS_TOOLS : INTERACTIVE_TOOLS, ...(pi110 ? ["codemode"] : []), ...mcpNames].join(","),
     "--perm",
     inspected.headless ? "plan" : "build",
     ...(argv ?? []),
