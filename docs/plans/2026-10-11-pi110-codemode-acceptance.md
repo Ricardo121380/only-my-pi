@@ -50,6 +50,6 @@ LOCAL_WORKSPACE/artifacts/webui-optimization/pi110-codemode-discovery-1011
 
 修复后 Node 22 `70-store-final-node22` **3/3 PASS**。同一 Ego Lite TaskSpace 的 `70-browser-storage-state.png` 展示两个真实脚本：首个 completed，累计超限的第二个 failed / CODEMODE_STORAGE_LIMIT；MCP 接收 0 次。截图已查看，实际任务和新源码 hash 保存于 `70-browser-storage-runtime.json`，与原先 1/0/0 B 的输入身份分别保留。
 
-最终 Standards / Spec：PENDING。独立双轴评审针对本票提交增量，排除用户原有工作树改动。评审通过并核对全部完成条件后才关闭 #70；GitHub 评论与关闭回读另留证据。
+最终固定范围 `cf30fca...3d2102f`（21 个提交路径）已由两位新的独立只读探子复评：**Standards PASS / Spec PASS**。硬规则违规与阻断发现为 0，Spec 确认首轮 P2 实质消除。Standards 保留上述非阻断 P3，不引入范围外重构。报告 `70-standards-final.md` / `70-spec-final.md`，提交版本和原有工作树差量分别核对。实现提交 `4e3e8a1`，存储修复 `3d2102f`；原始失败记录保留。GitHub 评论与关闭回读另留证据，本地提交没有推送。
 
 必需 C / P / B：PASS，限定上述实际 macOS 受控协议链路。批次全量：PENDING。I 完整候选安装、L 外部真实 Provider、远程 CI、发行、部署、日常安装切换：NOT_RUN。总规格 #19 与分类/生图后续票继续开放。
