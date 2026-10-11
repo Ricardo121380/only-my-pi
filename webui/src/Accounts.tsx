@@ -83,7 +83,7 @@ export function Accounts({ onChanged }: { onChanged?: () => void }) {
           <label className="field">模型 ID<input required maxLength={256} value={modelId} onChange={(e) => setModelId(e.target.value)} /></label>
           <label className="field">上下文窗口<input type="number" required min={1} max={10000000} value={contextWindow} onChange={(e) => setContextWindow(Number(e.target.value))} /></label>
           {!classifier && <label className="field">最大输出 token<input type="number" required min={1} max={1000000} value={maxTokens} onChange={(e) => setMaxTokens(Number(e.target.value))} /></label>}
-          {classifier && <p>分类协议没有单次生成 token 硬上限；项目预算和任务授权在“分类模型”中配置。分类与聊天模型列表分别保存。</p>}
+          {classifier && <p>分类协议没有单次生成 token 硬上限；项目预算在“分类模型”中配置。每个任务首次分类时仍需单独授权。分类与聊天模型列表分别保存。</p>}
           <button className="softbtn">保存静态配置</button>
         </form>
       </details>

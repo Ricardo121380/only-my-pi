@@ -19,9 +19,11 @@ function projectUsage(result, receipt, price) {
   const wire = receipt?.usage;
   // Pi treats malformed/missing token fields as zero; preserve that coverage gap
   // instead of upgrading the SDK's fallback zeros to reported provider facts.
-  const complete = wire && [wire.input_tokens, wire.output_tokens].every(value => Number.isSafeInteger(value) && value >= 0);
-  const tokens = complete ? { input: wire.input_tokens, output: wire.output_tokens, totalTokens: wire.input_tokens + wire.output_tokens } : null;
-  return { status: complete ? "reported" : "unknown", tokens, estimatedCost: complete && price && Number.isFinite(result.usage?.cost?.total) ? result.usage.cost.total : null, source: "provider receipt", costSource: "Pi SDK catalog estimate", bill: false };
+  const reported = value => Number.isSafeInteger(value) && value >= 0 ? value : null;
+  const coverage = { input: reported(wire?.input_tokens), output: reported(wire?.output_tokens) };
+  const complete = coverage.input !== null && coverage.output !== null;
+  const tokens = complete ? { ...coverage, totalTokens: coverage.input + coverage.output } : null;
+  return { status: complete ? "reported" : "unknown", tokens, coverage, estimatedCost: complete && price && Number.isFinite(result.usage?.cost?.total) ? result.usage.cost.total : null, source: "provider receipt", costSource: "Pi SDK catalog estimate", bill: false };
 }
 
 export function createClassificationControl(pi, { sdkFile, configRoot }) {
@@ -115,8 +117,11 @@ export function createClassificationControl(pi, { sdkFile, configRoot }) {
             if (result.stopReason === "stop") validateAnswers(result.answers, context.questions);
             const status = result.stopReason === "stop" ? "completed" : !dispatched ? "not_sent" : !responseComplete ? "unknown" : "failed";
             const safeResult = { api: result.api, provider: result.provider, model: result.model, answers: result.answers, stopReason: result.stopReason, timestamp: result.timestamp };
-            await store.update(taskId, request.requestId, { status, result: safeResult, usage: projectUsage(result, receipt, binding.choice.price), ...(status === "completed" ? {} : { error: status === "unknown" ? "MODEL_RESULT_UNKNOWN" : "CLASSIFIER_REQUEST_FAILED" }) });
-            return { ...safeResult, ...(result.usage && binding.choice.price ? { usage: result.usage } : {}), ...(status === "completed" ? {} : { errorMessage: status === "unknown" ? "MODEL_RESULT_UNKNOWN" : "CLASSIFIER_REQUEST_FAILED" }) };
+            const usage = projectUsage(result, receipt, binding.choice.price);
+            await store.update(taskId, request.requestId, { status, result: safeResult, usage, ...(status === "completed" ? {} : { error: status === "unknown" ? "MODEL_RESULT_UNKNOWN" : "CLASSIFIER_REQUEST_FAILED" }) });
+            // Native codemode sums result.usage into the parent tool. Keep the
+            // single ledger charge and expose its sourced, possibly partial facts.
+            return { ...safeResult, accounting: { requestId: request.requestId, usage, priceSnapshot: request.priceSnapshot }, ...(status === "completed" ? {} : { errorMessage: status === "unknown" ? "MODEL_RESULT_UNKNOWN" : "CLASSIFIER_REQUEST_FAILED" }) };
           } catch (error) {
             failure = /^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "CLASSIFIER_REQUEST_FAILED";
             await store.update(taskId, request.requestId, { status: dispatched ? "unknown" : "not_sent", error: failure });

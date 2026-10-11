@@ -49,6 +49,42 @@ test("public CLI saves the same project classifier and reports its durable ledge
   assert.deepEqual((await cli(["status"])).tasks, []);
 });
 
+test("active task protects its independent classifier account until worker termination", { timeout: 35000 }, async t => {
+  const f = await createClassificationHost(); t.after(() => f.close()); await f.configure(); await f.select();
+  const { taskId } = await f.start(); await until(() => f.task(taskId), task => task.approvals.length, "classifier account in use", 15000);
+  for (const action of [{ type: "logout" }, { type: "remove" }, { type: "apiKey", key: "synthetic-replacement" }]) {
+    const result = await f.api("/api/account-action", { accountId: f.account.accountId, action }, 409);
+    assert.equal(result.code, "ACCOUNT_BUSY");
+  }
+  await authorize(f, taskId, "拒绝"); await done(f, taskId);
+  assert.equal(f.received.length, 0); assert.equal((await f.action({ type: "logout" })).status, "missing");
+});
+
+for (const partial of [true, false]) test(`priced classifier ${partial ? "partial" : "complete"} usage has one sourced accounting record and no parent SDK charge`, { timeout: 35000 }, async t => {
+  const { classificationCode, classificationReply } = await import("./fixtures/classification-host.mjs");
+  const code = classificationCode.replace("text(await models.classify(model,", "const result = await models.classify(model,").replace(/\)\);$/u, '); text({nativeUsage: result.usage ?? null, accounting: result.accounting ?? null});');
+  const f = await createClassificationHost({ code, response: ({ res }) => res.end(JSON.stringify({ ...classificationReply, usage: partial ? { input_tokens: 12 } : classificationReply.usage })) });
+  t.after(() => f.close()); await f.configure();
+  const file = path.join(f.config, "only-my-pi/host/accounts", f.account.accountId, "classifiers.json");
+  const config = JSON.parse(await fs.readFile(file, "utf8"));
+  config.providers.fixtureclass.models[0].cost = { input: 1, output: 2, cacheRead: 0, cacheWrite: 0 };
+  await fs.writeFile(file, JSON.stringify(config)); await f.select();
+  const { taskId } = await f.start(); await authorize(f, taskId); const final = await done(f, taskId);
+  assert.equal(f.received.length, 1);
+  const record = (await f.calls()).tasks.at(-1).requests[0];
+  assert.ok(record.priceSnapshot.value);
+  assert.equal(record.usage.status, partial ? "unknown" : "reported");
+  assert.deepEqual(record.usage.coverage, { input: 12, output: partial ? null : 3 });
+  assert.equal(record.usage.estimatedCost === null, partial);
+  const text = final.toolCalls.find(call => call.name === "codemode").result;
+  assert.match(text, /^Script completed/u);
+  const output = JSON.parse(text.slice(text.indexOf("{")));
+  assert.equal(output.nativeUsage, null, "native codemode must not charge classification again");
+  assert.equal(output.accounting.requestId, record.requestId);
+  assert.deepEqual(output.accounting.usage, record.usage);
+  assert.deepEqual(output.accounting.priceSnapshot, record.priceSnapshot);
+});
+
 async function authorize(f, id, decision = "本任务，按其他额度运行") {
   const waiting = await until(() => f.task(id), task => task.approvals.length || terminal(task), "task classification consent", 15000);
   assert.equal(waiting.approvals.length, 1, JSON.stringify(waiting));
@@ -61,11 +97,11 @@ for (const denial of ["rejected", "revoked", "missing-credential", "input-limit"
   const code = denial === "wrong-model" ? 'text(await models.classify({type:"classifier",provider:"fixtureclass",id:"unselected"},{state:{},questions:{}}));' : classificationCode;
   const f = await createClassificationHost({ code }); t.after(() => f.close()); await f.configure();
   await f.select(denial === "input-limit" ? { ...classificationBudget, maxInputBytes: 1 } : classificationBudget);
+  if (denial === "missing-credential") await f.action({ type: "logout" });
   const { taskId } = await f.start();
   if (denial !== "wrong-model") {
     await until(() => f.task(taskId), task => task.approvals.length, "approval", 15000);
     if (denial === "revoked") await f.api("/api/model-calls", { type: "save", projectId: f.projectId, revision: 1, classifier: null });
-    if (denial === "missing-credential") await f.action({ type: "logout" });
     await authorize(f, taskId, denial === "rejected" ? "拒绝" : undefined);
   }
   const final = await done(f, taskId);

@@ -18,6 +18,7 @@ const active = request => ["reserved", "dispatched", "unknown"].includes(request
 const integer = value => Number.isSafeInteger(value) && value >= 0;
 function validUsage(usage) {
   return usage && ["reported", "unknown"].includes(usage.status)
+    && (!usage.coverage || [usage.coverage.input, usage.coverage.output].every(value => value === null || integer(value)))
     && (usage.status === "unknown" ? usage.tokens === null : usage.tokens && integer(usage.tokens.input) && integer(usage.tokens.output) && usage.tokens.totalTokens === usage.tokens.input + usage.tokens.output)
     && (usage.estimatedCost === null || typeof usage.estimatedCost === "number" && Number.isFinite(usage.estimatedCost) && usage.estimatedCost >= 0);
 }

@@ -75,6 +75,8 @@ export class HostTasks extends EventEmitter {
     const resume = command.resumeSessionKey ? await this.catalog.resume(command.resumeSessionKey, project.projectId) : null;
     if (resume && [...this.tasks.values()].some((task) => task.sessionId === resume.sessionId && (!terminal(task.status) || task.worker))) throw hostError("SESSION_IN_USE", 409);
     const release = this.accounts?.beginUse(command.accountId);
+    let classifierRelease;
+    const releaseAccounts = () => { release?.(); classifierRelease?.(); };
     let transferred = false;
     try {
     if (this.accounts && command.accountId !== CLI_ACCOUNT_ID) {
@@ -85,6 +87,8 @@ export class HostTasks extends EventEmitter {
     if (!model) throw hostError("MODEL_UNAVAILABLE", 409);
     if (command.thinkingLevel !== undefined && !supportsThinking(model, command.thinkingLevel)) throw hostError("THINKING_LEVEL_UNAVAILABLE", 409);
     const classifierSnapshot = await new ModelCallStore(this.configRoot).config(project.path);
+    const classifierAccountId = classifierSnapshot.classifier?.accountId;
+    if (classifierAccountId && classifierAccountId !== command.accountId) classifierRelease = this.accounts?.beginUse(classifierAccountId);
     const mcpSnapshot = await new McpCatalog(this.configRoot).snapshot(project.path);
     if (this.requests.has(command.requestId)) return existing(this.requests.get(command.requestId));
     if (this.closing) throw hostError("HOST_STOPPING", 409);
@@ -99,7 +103,7 @@ export class HostTasks extends EventEmitter {
       this.requests.delete(command.requestId); this.tasks.delete(task.taskId);
       throw hostError("HOST_STORAGE_FAILED", 503);
     }
-    if (release) { this.accountReleases.set(task.taskId, release); transferred = true; }
+    if (release || classifierRelease) { this.accountReleases.set(task.taskId, releaseAccounts); transferred = true; }
     if (beforeRun) {
       try { inputRecord = await beforeRun(task); if (!inputRecord || inputRecord.taskId !== task.taskId || inputRecord.state !== "dispatching") throw hostError("INPUT_STATE_INVALID"); }
       catch (error) {
@@ -112,7 +116,7 @@ export class HostTasks extends EventEmitter {
     const running = this.run(task, project, resume, inputRecord, beforePrompt).catch(async () => { task.status = "failed"; task.error = "TASK_INTERNAL_FAILURE"; this.changed(task); await this.persist().catch(() => {}); }).finally(() => this.running.delete(task.taskId));
     this.running.set(task.taskId, running);
     return this.public(task);
-    } finally { if (!transferred) release?.(); }
+    } finally { if (!transferred) releaseAccounts(); }
   }
   async recordInputFeedback(taskId, inputId, feedback) {
     if (!feedback) return;

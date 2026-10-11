@@ -34,3 +34,10 @@ it("unknown receipts keep reservations visible and refresh does not replay", asy
   expect(fetch.mock.calls.every((call: unknown[]) => !((call[1] as RequestInit)?.body))).toBe(true);
   expect(screen.queryByText("重试请求")).toBeNull();
 });
+it("partial provider tokens retain their coverage without filling missing output with zero", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ config: { revision: 1 }, tasks: [{ taskId: "t", snapshot: { revision: 1, classifier: { accountId: "class", model: "native/sentiment", budget } }, requests: [{ requestId: "partial", parentToolCallId: "parent", status: "completed", reservation: { inputBytes: 8192, outputBytes: 8192 }, usage: { status: "unknown", tokens: null, coverage: { input: 12, output: null }, estimatedCost: null } }] }] }))));
+  render(<ClassificationResults projectId="p" taskId="t" />);
+  await screen.findByText("部分回报：输入 12 · 输出 未知；未报告的字段不补零。");
+  expect(screen.getByText(/Provider 用量未知，不能记为零/)).toBeTruthy();
+  expect(screen.queryByText(/输出 0/)).toBeNull();
+});

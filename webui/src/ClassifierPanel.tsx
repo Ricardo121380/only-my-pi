@@ -90,6 +90,7 @@ export function ClassificationResults({ projectId, taskId, sessionId, running = 
           <p className="metric-fine">请求 {request.requestId} · 父脚本 {request.parentToolCallId}</p>
           {request.result?.answers && Object.keys(request.result.answers).length > 0 && <pre aria-label="结构化分类结果">{JSON.stringify(request.result.answers, null, 2)}</pre>}
           <p>{request.usage.tokens ? `Provider 回报 token：输入 ${request.usage.tokens.input} · 输出 ${request.usage.tokens.output}` : "Provider 用量未知，不能记为零"} · {request.usage.estimatedCost === null ? "费用未知" : `SDK 估算 $${request.usage.estimatedCost.toFixed(6)}（非账单）`}</p>
+          {!request.usage.tokens && request.usage.coverage && (request.usage.coverage.input !== null || request.usage.coverage.output !== null) && <p>部分回报：输入 {request.usage.coverage.input ?? "未知"} · 输出 {request.usage.coverage.output ?? "未知"}；未报告的字段不补零。</p>}
           {request.priceSnapshot && <details><summary>价格快照与来源</summary><p>来源：{request.priceSnapshot.source} · {request.priceSnapshot.at} · {request.priceSnapshot.currency} · 不构成费用硬上限</p><pre>{request.priceSnapshot.value ? JSON.stringify(request.priceSnapshot.value, null, 2) : "价格未提供；用量覆盖与估算费用分别记录。"}</pre></details>}
           {request.error && <p>{request.error}</p>}
         </details>)}
