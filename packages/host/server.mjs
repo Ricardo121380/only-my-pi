@@ -24,6 +24,8 @@ import { projectRunRecord } from "../direct-agent/contracts.mjs";
 import { createRunRecordStore } from "../run-management/index.mjs";
 import { ModelCallStore } from "../model-calls/store.mjs";
 import { ImageArtifacts } from "../model-calls/artifacts.mjs";
+import { SessionImages } from "../model-calls/history.mjs";
+import { ImageExports } from "./image-exports.mjs";
 import { McpCatalog } from "../mcp/catalog.mjs";
 import { McpRuns } from "../mcp/runs.mjs";
 import { McpOAuth } from "../mcp/oauth.mjs";
@@ -102,6 +104,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
   };
   const previous = await readJsonObject(configRoot, projectsFile).catch(async (e) => { if (e.code === "ENOENT") return null; await lock.release(); throw e; });
   const catalog = new ProjectCatalog({ sessionRoot, projects: previous?.projects ?? [] });
+  const images = new SessionImages(configRoot, catalog), imageExports = new ImageExports({ configRoot, catalog, images });
   const inputs = new HostInputStore({ configRoot, now: () => new Date(now()).toISOString() });
   try { await inputs.load(); } catch (error) { await lock.release(); throw error; }
   const manual = new ManualWorkspaces({ configRoot, catalog });
@@ -189,6 +192,14 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
         if (!controlled(req)) throw hostError("CONTROL_DENIED", 403);
         if (req.method === "GET" && url.pathname === "/internal/status") return response(res, 200, snapshot());
         if (req.method === "POST" && url.pathname === "/internal/pair") return response(res, 200, { url: issuePair() });
+        if (req.method === "POST" && url.pathname === "/internal/image-export") {
+          if (stopping || !allowControlled) throw hostError("CONTROLLED_MODE_UNAVAILABLE", 409);
+          if (req.headers["x-omp-image-export-protocol"] !== "1") throw hostError("IMAGE_EXPORT_PROTOCOL_MISMATCH", 409);
+          const input = await body(req);
+          if (!input || Object.keys(input).sort().join() !== "command,projectId" || typeof input.projectId !== "string") throw hostError("IMAGE_EXPORT_COMMAND_INVALID");
+          catalog.project(input.projectId);
+          return response(res, 200, imageExports.public(await imageExports.action(input.command, () => !stopping && controlled(req), input.projectId)));
+        }
         if (req.method === "POST" && url.pathname === "/internal/stop") { response(res, 202, { status: "stopping" }); void stop(); return; }
         throw hostError("NOT_FOUND", 404);
       }
@@ -287,6 +298,13 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           if (req.headers["x-omp-input-protocol"] !== String(INPUT_PROTOCOL)) throw hostError("INPUT_PROTOCOL_MISMATCH", 409);
           return response(res, 200, await inputController.command(await authorizedBody(req, 256 * 1024), { isAuthorized: () => authenticated(req) && !stopping }));
         }
+        if (url.pathname === "/api/image-export") {
+          if (req.method !== "POST" || !safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
+          if (req.headers["x-omp-host-protocol"] !== String(HOST_PROTOCOL) || req.headers["x-omp-image-export-protocol"] !== "1") throw hostError("IMAGE_EXPORT_PROTOCOL_MISMATCH", 409);
+          const input = await authorizedBody(req);
+          if (!allowControlled) throw hostError("CONTROLLED_MODE_UNAVAILABLE", 409);
+          return response(res, 200, imageExports.public(await imageExports.action(input, () => !stopping && authenticated(req))));
+        }
         if (req.method === "POST" && url.pathname === "/api/command") {
           if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
           if (req.headers["x-omp-host-protocol"] !== String(HOST_PROTOCOL)) throw hostError("PROTOCOL_MISMATCH", 409);
@@ -315,13 +333,21 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           if (req.headers["sec-fetch-site"] === "cross-site") throw hostError("HOST_ORIGIN_DENIED", 403);
           if (url.searchParams.getAll("index").length !== 1 || !/^[0-3]$/u.test(url.searchParams.get("index") ?? "")) throw hostError("IMAGE_ARTIFACT_ID_INVALID");
           const project = catalog.project(url.searchParams.get("projectId")), requestId = url.searchParams.get("requestId"), index = Number(url.searchParams.get("index"));
-          const ledger = await new ModelCallStore(configRoot).status(project.path);
-          const request = ledger.tasks.flatMap(task => task.requests).find(request => request.requestId === requestId && request.kind === "image");
-          const expected = request?.storage?.artifacts?.[index];
-          if (!expected) throw hostError("IMAGE_ARTIFACT_NOT_FOUND", 404);
-          const { bytes } = await new ImageArtifacts(configRoot).read(project.path, requestId, index, expected);
-          res.writeHead(200, { "content-type": "image/png", "content-length": bytes.length, "cache-control": "no-store", "x-content-type-options": "nosniff", "content-security-policy": "default-src 'none'" }); return res.end(bytes);
+          const sessionKey = url.searchParams.get("sessionKey"), entryId = url.searchParams.get("entryId");
+          if (url.searchParams.has("download") && (url.searchParams.getAll("download").length !== 1 || url.searchParams.get("download") !== "1" || !sessionKey || !entryId)) throw hostError("IMAGE_REFERENCE_REQUIRED");
+          let bytes;
+          if (sessionKey || entryId) ({ bytes } = await images.read({ projectId: project.projectId, sessionKey, entryId, requestId, index }));
+          else {
+            const ledger = await new ModelCallStore(configRoot).status(project.path);
+            const request = ledger.tasks.flatMap(task => task.requests).find(request => request.requestId === requestId && request.kind === "image");
+            const expected = request?.storage?.artifacts?.[index];
+            if (!expected) throw hostError("IMAGE_ARTIFACT_NOT_FOUND", 404);
+            ({ bytes } = await new ImageArtifacts(configRoot).read(project.path, requestId, index, expected));
+          }
+          res.writeHead(200, { "content-type": "image/png", "content-length": bytes.length, "cache-control": "no-store", "x-content-type-options": "nosniff", "content-security-policy": "default-src 'none'", ...(url.searchParams.has("download") ? { "content-disposition": `attachment; filename="image-${requestId}-${index}.png"` } : {}) }); return res.end(bytes);
         }
+        if (url.pathname === "/api/session-images") return response(res, 200, { ...(await images.list(url.searchParams.get("projectId"), url.searchParams.get("sessionKey"))), exportAvailable: allowControlled });
+        if (url.pathname === "/api/image-exports") return response(res, 200, { exports: (await imageExports.records(catalog.project(url.searchParams.get("projectId")).path)).map(record => imageExports.public(record)) });
         if (url.pathname === "/api/state") return response(res, 200, snapshot());
         if (url.pathname === "/api/manual") return response(res, 200, { workspaces: manual.snapshot(), available: allowControlled });
         if (url.pathname === "/api/terminals") return response(res, 200, { terminals: terminals.snapshot(), available: allowControlled });
@@ -389,7 +415,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
       authAbort.abort();
       await Promise.allSettled([...authOperations, oauth.stop(), mcpOAuth.stop()]);
       try {
-        const results = await Promise.allSettled([tasks.stop(), manual.stop(), terminals.stop()]);
+        const results = await Promise.allSettled([tasks.stop(), manual.stop(), terminals.stop(), imageExports.stop()]);
         await inputController.close();
         await inputs.close();
         const failure = results.find((result) => result.status === "rejected");

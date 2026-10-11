@@ -3,6 +3,7 @@ import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { ownershipError } from "../host/ownership.mjs";
+import { readSessionSnapshot } from "./session-history.mjs";
 
 const selectionValues = new Set(["--session", "--session-id", "--session-dir", "--fork"]);
 
@@ -90,6 +91,7 @@ export async function prepareHeadlessSession({ args, sdk, admissions, configRoot
       }
     }
   }
+  if (file) await readSessionSnapshot(file, sdk);
   let targetArgs, target, sessionManager;
   if (selection.fork) {
     sessionManager = await admissions.create(cwd, sessionDir, { sourceFile: file,

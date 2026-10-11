@@ -3,6 +3,7 @@ import { constants } from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { ownershipError } from "../host/ownership.mjs";
+import { IMAGE_ENTRY, validImageEntry } from "../model-calls/references.mjs";
 
 const entryTypes = new Set(["message", "thinking_level_change", "model_change", "usage", "compaction", "branch_summary", "custom", "custom_message", "context_edit", "label", "session_info"]);
 const roles = new Set(["system", "user", "assistant", "toolResult", "bashExecution", "custom", "hookMessage", "branchSummary", "compactionSummary"]);
@@ -38,6 +39,10 @@ export async function readSessionSnapshot(file, sdk = undefined) {
     if (entry.type === "message" && (!roles.has(entry.message?.role)
       || (["system", "user", "assistant", "toolResult", "custom", "hookMessage"].includes(entry.message.role) && !content(entry.message.content)))) throw ownershipError("SESSION_TREE_INVALID");
     if (entry.type === "custom_message" && !content(entry.content)) throw ownershipError("SESSION_TREE_INVALID");
+    if (entry.type === "custom" && entry.customType === IMAGE_ENTRY) {
+      if (entry.data?.version !== 1 || typeof sdk.SessionManager.prototype.buildSessionProjection !== "function") throw ownershipError("SESSION_READER_UPGRADE_REQUIRED");
+      if (!validImageEntry(entry.data)) throw ownershipError("SESSION_TREE_INVALID");
+    }
     if (["context_edit", "usage"].includes(entry.type) && typeof sdk.SessionManager.prototype.buildSessionProjection !== "function") throw ownershipError("SESSION_READER_UPGRADE_REQUIRED");
     if (entry.type === "context_edit" && (!ids.has(entry.targetId) || entry.targetId === entry.id || (entry.replacement !== null && !content(entry.replacement?.content)))) throw ownershipError("SESSION_TREE_INVALID");
     if (entry.type === "usage" && (![entry.kind, entry.provider, entry.model].every(value => typeof value === "string") || !entry.usage || typeof entry.usage !== "object")) throw ownershipError("SESSION_TREE_INVALID");

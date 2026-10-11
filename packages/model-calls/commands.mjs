@@ -4,6 +4,7 @@ import { AccountCatalog } from "../host/accounts.mjs";
 import { listModels } from "../host/models.mjs";
 import { CLI_ACCOUNT_ID, hostError } from "../host/contracts.mjs";
 import { ModelCallStore, MODEL_BUDGET, IMAGE_BUDGET } from "./store.mjs";
+import { imageArtifactCommand } from "./artifact-commands.mjs";
 
 export async function classifierCommand({ configRoot, stack, projectPath, args, kind = "classifier" }) {
   const prefix = kind === "image" ? "IMAGE" : "CLASSIFIER";
@@ -12,6 +13,7 @@ export async function classifierCommand({ configRoot, stack, projectPath, args, 
   const store = new ModelCallStore(configRoot);
   const models = accountId => listModels({ stack, configRoot, accountId, modelType: kind });
   if (args.length === 1 && args[0] === "status") return store.status(project);
+  if (kind === "image" && ["history", "download", "export"].includes(args[0])) return imageArtifactCommand({ configRoot, projectPath: project, args });
   if (args[0] === "list" && args.length === 2) return { models: await models(args[1]) };
   if (args[0] === "apply" && args.length === 2 && path.isAbsolute(args[1])) {
     const stat = await fs.lstat(args[1]);
@@ -35,6 +37,10 @@ export function registerClassifierCommand(pi, { configRoot, sdkFile, kind = "cla
     if (!ctx.hasUI) throw hostError(`${prefix}_UI_REQUIRED`);
     try {
       if (args.trim()) {
+        if (kind === "image" && args.trim() === "history") {
+          const file = ctx.sessionManager.getSessionFile(); if (!file) throw hostError("IMAGE_SESSION_REQUIRED");
+          await ctx.ui.editor("会话图片来源（只读，不重新生成）", JSON.stringify(await imageArtifactCommand({ configRoot, projectPath: await fs.realpath(ctx.cwd), args: ["history", file] }), null, 2)); return;
+        }
         const match = /^(status|list [^\s]+|apply \/[^\0\r\n]+)$/u.exec(args.trim());
         if (!match) throw hostError(`${prefix}_COMMAND_USAGE`);
         const [command, ...rest] = args.trim().split(" ");

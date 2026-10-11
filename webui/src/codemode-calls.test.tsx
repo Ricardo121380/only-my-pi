@@ -12,6 +12,6 @@ it("keeps a failed child and its result visible when the parent script completes
   render(<TaskControl task={task} connected />);
   expect(screen.getByText(/read · 失败 · 0.20 秒/)).toBeTruthy();
   expect(screen.getByText("CODEMODE_CALL_DENIED")).toBeTruthy();
-  expect(screen.getByText(/分类须先配置项目模型并取得本任务许可.*图片生成尚未启用/)).toBeTruthy();
+  expect(screen.getByText(/分类和生图须分别配置项目模型并取得本任务许可.*会话图片见各自账本/)).toBeTruthy();
   expect(screen.getByText(/子调用 script\/1 · 父调用 script/)).toBeTruthy();
 });

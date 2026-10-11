@@ -5,9 +5,9 @@ import "./classification.css";
 
 const states: Record<ModelRequest["status"], string> = { reserved: "已预占 · 未发出", dispatched: "生图请求已发出 · 等待回执", unknown: "生图结果未知 · 继续占额", not_sent: "生图未发出", completed: "Provider 生图请求已完成", failed: "Provider 生图请求失败" };
 const storageStates = { saved: "图片已保存为会话产物", partial: "部分图片已保存 · 输出不完整", failed: "本地保存失败 · 不重新生成", unknown: "本地保存结果待核对 · 不重新生成", invalid: "没有通过校验的图片" };
-export function SessionImageView({ projectId, artifact }: { projectId: string; artifact: SessionImage }) {
+export function SessionImageView({ projectId, artifact, sessionKey, entryId }: { projectId: string; artifact: SessionImage; sessionKey?: string; entryId?: string }) {
   const [state, setState] = useState("正在读取会话图片…");
-  const url = query("image-artifact", { projectId, requestId: artifact.requestId, index: String(artifact.index) });
+  const url = query("image-artifact", { projectId, requestId: artifact.requestId, index: String(artifact.index), ...(sessionKey && entryId ? { sessionKey, entryId } : {}) });
   return <figure className="session-image">
     <img src={url} width={artifact.width} height={artifact.height} loading="lazy" alt={`生成图片 ${artifact.index + 1} · ${artifact.model}`} onLoad={() => setState("")} onError={() => { void api(url).then(() => setState("图片无法显示，请核对内容状态。")).catch(error => setState(`会话图片不可用（${error instanceof Error ? error.message : "IMAGE_ARTIFACT_UNAVAILABLE"}）。原请求和来源保留，不重新生成。`)); }} />
     {state && <p role="status">{state}</p>}

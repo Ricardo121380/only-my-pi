@@ -6,6 +6,7 @@ import { hostError, textContent } from "./contracts.mjs";
 import { assertSafeContainedPath } from "../config-runtime/index.mjs";
 import { findInputReceipt, INPUT_CARRIER } from "./input-protocol.mjs";
 import { readSessionSnapshot } from "../direct-agent/session-history.mjs";
+import { IMAGE_ENTRY } from "../model-calls/references.mjs";
 
 const key = (value) => createHash("sha256").update(value).digest("hex");
 export const projectIdFor = (root) => key(root);
@@ -90,6 +91,16 @@ export class ProjectCatalog {
       usage: manager.getBranch().filter(entry => entry.type === "usage").slice(offset, offset + Math.min(50, limit)).map(({ id, kind, provider, model, usage, note }) => ({ id, kind, provider, model, usage, note })),
     };
     return { messages, nextOffset: offset + messages.length < entries.length ? offset + messages.length : null, context };
+  }
+  async imageReferences(sessionKey, projectId) {
+    const session = this.sessions.get(sessionKey);
+    if (!session || session.projectId !== projectId) throw hostError("SESSION_NOT_FOUND", 404);
+    await assertSafeContainedPath(this.sessionRoot, session.file);
+    const { manager, header } = await readSessionSnapshot(session.file);
+    if (header.id !== session.sessionId || (await fs.realpath(header.cwd).catch(() => header.cwd)) !== this.project(projectId).path) throw hostError("SESSION_IDENTITY_CHANGED", 409);
+    const entries = manager.getBranch().filter(entry => entry.type === "custom" && entry.customType === IMAGE_ENTRY);
+    if (entries.length > 256) throw hostError("IMAGE_HISTORY_LIMIT", 413);
+    return { sessionId: header.id, entries: entries.map(entry => ({ entryId: entry.id, artifacts: entry.data.artifacts })) };
   }
   /** No SDK.open here: a missing or malformed history must never be recreated.
    * @param {import('./contracts.d.ts').InputRecordV1} record */

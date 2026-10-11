@@ -32,23 +32,23 @@ export async function createImageHost({ code = imageCode, scripts, response, ass
   await new Promise(resolve => service.listen(0, "127.0.0.1", resolve));
   const f = await createMcpHost({ assetsRoot, installedExtensions, respond: ({ body, res }) => {
     const count = body.messages.filter(m => m.role === "tool").length;
-    const source = scripts ? scripts[count] : count ? null : typeof code === "function" ? code(body) : code;
+    const source = scripts ? typeof scripts === "function" ? scripts(body) : scripts[count] : count ? null : typeof code === "function" ? code(body) : code;
     providerReply(res, source ? "codemode" : null, { code: source });
   } });
   const request = async (route, input, status = 200) => {
-    const res = await fetch(f.host.origin + route, { method: input ? "POST" : "GET", headers: { Origin: f.host.origin, Cookie: f.cookie, "content-type": "application/json", "x-omp-account-protocol": "1", "x-omp-host-protocol": "2", "x-omp-input-protocol": "1" }, ...(input ? { body: JSON.stringify(input) } : {}) });
+    const res = await fetch(f.host.origin + route, { method: input ? "POST" : "GET", headers: { Origin: f.host.origin, Cookie: f.cookie, "content-type": "application/json", "x-omp-account-protocol": "1", "x-omp-host-protocol": "2", "x-omp-input-protocol": "1", "x-omp-image-export-protocol": "1" }, ...(input ? { body: JSON.stringify(input) } : {}) });
     const data = await res.json(); assert.equal(res.status, status, JSON.stringify(data)); return data;
   };
   const account = (await request("/api/accounts", { name: "生图账号 A", providerId: "fixtureimage", authType: "api_key" }, 201)).account;
   const action = action => request("/api/account-action", { accountId: account.accountId, action });
   const origin = `http://127.0.0.1:${service.address().port}/v1`;
   const receipt = async () => {
-    const files = ["packages/model-calls/models.mjs", "packages/model-calls/runtime.mjs", "packages/model-calls/store.mjs", "packages/model-calls/artifacts.mjs", "packages/direct-agent/codemode.mjs", "packages/host/tasks.mjs", "packages/host/server.mjs"];
+    const files = ["packages/model-calls/models.mjs", "packages/model-calls/runtime.mjs", "packages/model-calls/store.mjs", "packages/model-calls/artifacts.mjs", "packages/model-calls/references.mjs", "packages/model-calls/history.mjs", "packages/model-calls/artifact-commands.mjs", "packages/direct-agent/codemode.mjs", "packages/direct-agent/session-history.mjs", "packages/direct-agent/session-selection.mjs", "packages/host/tasks.mjs", "packages/host/server.mjs", "packages/host/catalog.mjs", "packages/host/image-exports.mjs", "packages/host/image-export-process.mjs", "packages/host/image-export-worker.mjs"];
     const sources = Object.fromEntries(await Promise.all(files.map(async file => [file, createHash("sha256").update(await fs.readFile(path.join(f.omp, file))).digest("hex")])));
     const ledger = await request(`/api/model-calls?projectId=${f.projectId}`);
     return { scope: "LOCAL_CONTROLLED_SOURCE_HARNESS", node: process.version, pi: "1.1.0", sources, bindings: f.bindings, ledger, sdkSha256: createHash("sha256").update(await fs.readFile(f.sdk)).digest("hex"), nodeSha256: createHash("sha256").update(await fs.readFile(f.stack.nodePath)).digest("hex"), received: received.map(entry => ({ url: entry.url, requestId: entry.requestId, account: entry.key === "Bearer image-fixture-a" ? "synthetic-A" : entry.key === "Bearer image-fixture-b" ? "synthetic-B" : "unexpected", body: entry.body })), receivedCount: received.length, imageDigest };
   };
-  return { ...f, get host() { return f.host; }, received, account, action, api: request, receipt, imageOrigin: origin,
+  return { ...f, get host() { return f.host; }, get cookie() { return f.cookie; }, received, account, action, api: request, receipt, imageOrigin: origin,
     configure: async () => { await action({ type: "configure", config: { baseUrl: origin, api: "openrouter-images", models: [{ type: "image", id: "checkerboard", name: "Synthetic checkerboard", contextWindow: 8192, input: ["text"], output: ["image", "text"] }] } }); await action({ type: "apiKey", key: "image-fixture-a" }); },
     select: (budget = imageBudget, revision = 0) => request("/api/model-calls", { type: "save", projectId: f.projectId, revision, image: { accountId: account.accountId, model: "fixtureimage/checkerboard", budget } }),
     calls: () => request(`/api/model-calls?projectId=${f.projectId}`),

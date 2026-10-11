@@ -14,6 +14,7 @@ import { TaskControl } from "./TaskControl";
 import { McpPanel } from "./McpPanel";
 import { ClassifierPanel, ClassificationResults } from "./ClassifierPanel";
 import { ImageResults } from "./ImageResults";
+import { HistoryImages } from "./HistoryImages";
 
 const labels: Record<TaskStatus, string> = { starting: "正在启动", running: "运行中", cancelling: "正在取消", succeeded: "已完成", failed: "任务失败", cancelled: "已取消", interrupted: "运行已中断" };
 const active = (status?: TaskStatus) => status === "starting" || status === "running" || status === "cancelling";
@@ -136,6 +137,7 @@ export function App() {
         {visibleTask && <TaskControl key={visibleTask.taskId} task={visibleTask} connected={connected} />}
         {projectId && (visibleTask || session) && <ClassificationResults key={`${projectId}:${taskId ?? session?.sessionId}`} projectId={projectId} taskId={visibleTask?.taskId} sessionId={session?.sessionId} running={active(visibleTask?.status)} />}
         {projectId && visibleTask && <ImageResults key={`images:${projectId}:${taskId}`} projectId={projectId} taskId={visibleTask.taskId} running={active(visibleTask.status)} />}
+        {projectId && session && <HistoryImages key={`history-images:${projectId}:${session.sessionKey}`} projectId={projectId} projectName={project?.name} sessionKey={session.sessionKey} connected={connected} revision={revision} />}
       </section>
       {!follow && visibleTask && <button className="pill host-latest" onClick={() => setFollow(true)}>回到最新</button>}
       {session && <div className="account-picker"><button className="softbtn" disabled={!connected || snapshot?.tasks.some((item) => item.sessionId === session.sessionId && active(item.status))} onClick={() => { setResumeSessionKey(resumeSessionKey ? undefined : session.sessionKey); pending.current = null; }}>{resumeSessionKey ? "取消续接" : "续接此会话"}</button><span role="status">{resumeSessionKey ? "下一条消息续接此历史；请明确选择账号和模型，不恢复旧授权。" : "当前仅查看历史；发送默认创建新会话。"}</span></div>}

@@ -580,7 +580,9 @@ export async function runOmpEntrypoint(options = {}) {
         const homeDir = options.homedir ? options.homedir() : os.homedir();
         const configRoot = resolveDirectConfigRoot({ env: options.env ?? process.env, homeDir });
         const stack = await resolveControlledStack({ packageRoot: options.rootDir ?? DEFAULT_ROOT, homeDir, stackRoot: options.stackRoot });
-        writeText(stdout, stringifyOmpJson(await runClassifierCli({ argv: route.argv.slice(1), configRoot, stack, kind: route.argv[0] })));
+        const result = await runClassifierCli({ argv: route.argv.slice(1), configRoot, stack, kind: route.argv[0] });
+        if (Buffer.isBuffer(result)) stdout.write(result);
+        else writeText(stdout, stringifyOmpJson(result));
         return OMP_EXIT_CODES.SUCCESS;
       }
       if (route.argv[0] === "mcp") {

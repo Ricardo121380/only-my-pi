@@ -11,8 +11,9 @@ import { until } from "./fixtures/mcp-host.mjs";
 test("public image CLI and real Pi TUI select independently, consent and persist actual image references", { timeout: 60000 }, async t => {
   const f = await createImageHost(); let output = "", exited, terminal;
   t.after(async () => {
-    if (process.env.OMP_IMAGE_EVIDENCE_DIR) await fs.writeFile(path.join(process.env.OMP_IMAGE_EVIDENCE_DIR, "image-tui-output.txt"), output.replace(/\x1b\[[0-9;?]*[A-Za-z]/gu, ""));
-    if (terminal && !exited) { terminal.kill("SIGTERM"); await until(() => exited, Boolean, "image TUI exit"); } await f.close();
+    try {
+      if (process.env.OMP_IMAGE_EVIDENCE_DIR) { await fs.mkdir(process.env.OMP_IMAGE_EVIDENCE_DIR, { recursive: true }); await fs.writeFile(path.join(process.env.OMP_IMAGE_EVIDENCE_DIR, "image-tui-output.txt"), output.replace(/\x1b\[[0-9;?]*[A-Za-z]/gu, "")); }
+    } finally { if (terminal && !exited) { terminal.kill("SIGTERM"); await until(() => exited, Boolean, "image TUI exit"); } await f.close(); }
   });
   await f.configure();
   const cli = async args => JSON.parse((await promisify(execFile)(f.stack.nodePath, [f.cli, "image", ...args, "--project", f.project], { env: f.env, timeout: 15000 })).stdout);
@@ -29,5 +30,10 @@ test("public image CLI and real Pi TUI select independently, consent and persist
   terminal.write("\x1b[B\r"); const ledger = await until(() => f.calls(), state => state.tasks.at(-1)?.requests[0]?.storage?.status === "saved", "TUI actual image", 15000);
   assert.equal(f.received.length, 1); assert.equal(ledger.tasks.at(-1).requests[0].storage.artifacts[0].sha256, imageDigest);
   await until(() => output, text => text.includes("\"sha256\"") && text.includes(imageDigest.slice(0, 16)), "TUI sourced image result"); await until(() => f.calls(), state => state.tasks.at(-1).status === "stopped", "image TUI settled");
+  const historyMarker = output.length; terminal.write("/omp-image history\r");
+  await until(() => output.slice(historyMarker), text => text.includes("会话图片来源"), "TUI read-only image history");
+  terminal.write("\x1b[A".repeat(30)); await until(() => output.slice(historyMarker), text => text.includes(imageDigest.slice(0, 16)), "TUI history source digest");
+  assert.equal(f.received.length, 1); const closeMarker = output.length; terminal.write("\x1b");
+  await until(() => output.slice(closeMarker), text => text.includes("Inspect"), "TUI history editor closed");
   terminal.write("\x04"); await until(() => exited, Boolean, "TUI clean image exit"); assert.equal(exited.exitCode, 0);
 });

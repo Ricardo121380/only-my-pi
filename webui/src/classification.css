@@ -11,4 +11,7 @@
 .session-image { margin: 16px 0; }
 .session-image img { display: block; max-width: 100%; max-height: 480px; width: auto; height: auto; object-fit: contain; border-radius: 8px; border: 1px solid var(--line); }
 .session-image figcaption { margin-top: 10px; overflow-wrap: anywhere; }
+.image-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.image-actions a { text-decoration: none; }
+.image-confirm { display: flex; gap: 8px; align-items: flex-start; margin: 12px 0; }
 @media (max-width: 600px) { .classifier-budgets { grid-template-columns: 1fr; } .classification-results .between { flex-wrap: wrap; gap: 8px; } }
