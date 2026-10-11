@@ -1,9 +1,38 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { providerReply, until } from "./fixtures/mcp-host.mjs";
 import { createResourceHost, finishResources, ended } from "./fixtures/mcp-resource-host.mjs";
 const waiting = (f, started) => until(() => f.task(started.taskId), (task) => task.approvals.length || ended(task), "resource approval", 25000);
+
+test("an execution-only HTTP POST SSE definition notification during persistence prevents the physical resource send", { timeout: 50000 }, async (t) => {
+  const fixture = await createResourceHost(); t.after(() => fixture.close()); const { f, service } = fixture;
+  service.setResourceMode("notify-at-send");
+  // Hold only the isolated fixture's durable save until a real notification
+  // has been sent on the execution connection's still-open POST SSE response.
+  const marker = path.join(f.config, "http-dispatch-waiting"), release = path.join(f.config, "http-dispatch-release");
+  const file = path.join(f.omp, "packages/mcp/runs.mjs"), source = await fs.readFile(file, "utf8"), anchor = "  async save(run) {\n";
+  assert.equal(source.split(anchor).length, 2);
+  await fs.writeFile(file, source.replace(anchor, anchor + `    if (!this.fixtureDelayed && run.calls.some((item) => item.kind === "resource" && item.status === "dispatched")) {
+      this.fixtureDelayed = true;
+      const fs = await import("node:fs/promises");
+      await fs.writeFile(${JSON.stringify(marker)}, "waiting");
+      for (let i = 0; i < 80 && !await fs.stat(${JSON.stringify(release)}).then(() => true, () => false); i++) await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+`));
+  const started = await f.start(), first = await waiting(f, started); assert.ok(first.approvals.length);
+  await f.request("/api/command", { type: "answerApproval", taskId: started.taskId, approvalId: first.approvals[0].approvalId, value: "仅本次" });
+  await until(() => fs.stat(marker).then(() => true, () => false), Boolean, "actual resource dispatch persistence", 7500);
+  assert.equal(service.notifyExecution(), 1, "notification must use the execution POST SSE stream");
+  await delay(150); await fs.writeFile(release, "release");
+  await until(() => f.task(started.taskId), ended, "resource notification race", 25000);
+  const run = (await f.mcp({ type: "status" })).runs.at(-1);
+  assert.equal(run.discoveries[0].epoch, 0, "discovery GET connection must remain unchanged");
+  assert.equal(service.received.filter((row) => row.rpc === "resources/read").length, 0, "stale execution must not receive a resource read");
+  assert.equal(run.calls[0].code, "MCP_RESOURCE_DEFINITION_CHANGED");
+});
 
 test("an admitted binary resource cannot return a base64 encoded credential to the script or model", { timeout: 50000 }, async (t) => {
   const fixture = await createResourceHost(); t.after(() => fixture.close()); const { f, service, server } = fixture;

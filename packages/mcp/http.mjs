@@ -43,6 +43,7 @@ export class ControlledHttpTransport {
       // after exact-target, identity, full-body and abort checks have passed.
       if (init.method === "POST" && init.body && ["tools/call", "resources/read"].includes(JSON.parse(init.body).method)) {
         await this.beforeDispatch?.();
+        await this.beforeToolCall?.(JSON.parse(init.body));
         if (signal.aborted) throw mcpError("MCP_CALL_CANCELLED");
         this.businessAttempted = true;
       }
