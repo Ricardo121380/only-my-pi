@@ -5,7 +5,8 @@ import fs from "node:fs/promises";
 import { AccountCatalog } from "./accounts.mjs";
 import { CLI_ACCOUNT_ID } from "./contracts.mjs";
 import { hasAccountCredential } from "./account-credential.mjs";
-const [stackRoot, configRoot, accountId] = process.argv.slice(2);
+import { classifierChoice, registerClassifiers } from "../model-calls/models.mjs";
+const [stackRoot, configRoot, accountId, modelType = "llm"] = process.argv.slice(2);
 try {
   if (![stackRoot, configRoot].every((p) => typeof p === "string" && path.isAbsolute(p))) throw new Error("invalid runtime paths");
   const sdk = pathToFileURL(path.join(stackRoot, "pi/dist/index.js"));
@@ -20,17 +21,19 @@ try {
   const paths = account ? await catalog.runtimePaths(account.accountId) : { authPath: path.join(configRoot, "auth.json"), modelsPath: path.join(configRoot, "models.json"),
     modelsStorePath: path.join(configRoot, "only-my-pi/host/cli-models-store.json") };
   const runtime = await ModelRuntime.create({ ...paths, allowModelNetwork: false, ...(accountId ? { refreshOnCreate: false } : {}) });
+  if (modelType === "classifier") await registerClassifiers(runtime, configRoot, paths.modelsPath, path.join(stackRoot, "pi/dist/index.js"));
   let available;
   if (account) {
     const stored = (await runtime.listCredentials()).some((entry) => entry.providerId === account.providerId && entry.type === account.authType);
-    if (stored) { await runtime.refresh({ allowNetwork: false }); available = runtime.getAvailableSnapshot().filter((m) => m.provider === account.providerId); }
+    if (stored) { await runtime.refresh({ allowNetwork: false }); available = (modelType === "classifier" ? await runtime.getAvailableOfType("classifier") : runtime.getAvailableSnapshot()).filter((m) => m.provider === account.providerId); }
     else available = [];
   } else if (accountId === CLI_ACCOUNT_ID) {
     const admitted = new Set();
     for (const provider of runtime.getProviders()) if (await hasAccountCredential(runtime, accountId, { providerId: provider.id })) admitted.add(provider.id);
-    await runtime.refresh({ allowNetwork: false }); available = runtime.getAvailableSnapshot().filter((m) => admitted.has(m.provider));
-  } else available = runtime.getAvailableSnapshot();
-  const models = available.map((m) => ({ id: `${m.provider}/${m.id}`, name: String(m.name ?? m.id).slice(0, 256), provider: m.provider,
+    await runtime.refresh({ allowNetwork: false }); available = (modelType === "classifier" ? await runtime.getAvailableOfType("classifier") : runtime.getAvailableSnapshot()).filter((m) => admitted.has(m.provider));
+  } else available = (modelType === "classifier" ? await runtime.getAvailableOfType("classifier") : runtime.getAvailableSnapshot());
+  if (!["llm", "classifier"].includes(modelType)) throw new Error();
+  const models = available.map((m) => modelType === "classifier" ? classifierChoice(m) : ({ id: `${m.provider}/${m.id}`, name: String(m.name ?? m.id).slice(0, 256), provider: m.provider,
     thinkingLevels: m.reasoning ? getSupportedThinkingLevels(m) : [], contextWindow: m.contextWindow }));
   process.stdout.write(JSON.stringify({ models }) + "\n");
 } catch { process.stdout.write(JSON.stringify({ code: "MODEL_CATALOG_UNAVAILABLE" }) + "\n"); process.exitCode = 1; }

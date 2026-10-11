@@ -12,7 +12,7 @@ export function CodemodeCalls({ task }: { task: HostTask }) {
   }
   return <details aria-label="工具组合调用" style={{ overflowWrap: "anywhere" }}>
     <summary>工具组合 · {parents.length} 次脚本 · 展开嵌套调用</summary>
-    <p>每个工具分别授权；脚本结束不代表全部子调用成功。分类和图片生成尚未启用。</p>
+    <p>每个工具分别授权；脚本结束不代表全部子调用成功。分类须先配置项目模型并取得本任务许可，结果和用量见分类账本。图片生成尚未启用。</p>
     {parents.map((parent) => <section key={parent.toolCallId} aria-label="脚本及子调用">
       <strong>脚本 · {labels[parent.status]}{parent.durationMs == null ? "" : ` · ${(parent.durationMs / 1000).toFixed(2)} 秒`}</strong>
       <p>调用 {parent.toolCallId}</p>

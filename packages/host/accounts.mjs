@@ -13,9 +13,9 @@ const fields = {
 const ajv = new Ajv({ strict: true });
 const validateInput = ajv.compile({ type: "object", additionalProperties: false, required: Object.keys(fields), properties: fields });
 const validateProvider = ajv.compile({ type: "object", additionalProperties: false, required: ["baseUrl", "api", "models"], properties: {
-  baseUrl: { type: "string", maxLength: 2048 }, api: { enum: ["openai-completions", "openai-responses", "anthropic-messages"] },
-  models: { type: "array", minItems: 1, maxItems: 100, items: { type: "object", additionalProperties: false, required: ["id", "name", "contextWindow", "maxTokens"], properties: {
-    id: { type: "string", minLength: 1, maxLength: 256 }, name: { type: "string", minLength: 1, maxLength: 256 },
+  baseUrl: { type: "string", maxLength: 2048 }, api: { enum: ["openai-completions", "openai-responses", "anthropic-messages", "typesafe-system-one", "openai-decisions", "cloudflare-workers-ai-system-one"] },
+  models: { type: "array", minItems: 1, maxItems: 100, items: { type: "object", additionalProperties: false, required: ["id", "name", "contextWindow"], properties: {
+    type: { enum: ["llm", "classifier"] }, id: { type: "string", minLength: 1, maxLength: 256 }, name: { type: "string", minLength: 1, maxLength: 256 },
     contextWindow: { type: "integer", minimum: 1, maximum: 10000000 }, maxTokens: { type: "integer", minimum: 1, maximum: 1000000 }, reasoning: { type: "boolean" },
   } } },
 } });
@@ -93,14 +93,16 @@ export class AccountCatalog {
     });
   }
   async configure(accountId, config) {
-    if (!validateProvider(config)) throw hostError("ACCOUNT_PROVIDER_INVALID");
+    if (!validateProvider(config) || config.models.some(model => model.type !== "classifier" && !model.maxTokens)) throw hostError("ACCOUNT_PROVIDER_INVALID");
     let url;
     try { url = new URL(config.baseUrl); } catch { throw hostError("ACCOUNT_PROVIDER_INVALID"); }
     if (url.username || url.password || url.search || url.hash || (url.protocol !== "https:" && !(url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)))) throw hostError("ACCOUNT_PROVIDER_INVALID");
     if (new Set(config.models.map((m) => m.id)).size !== config.models.length) throw hostError("ACCOUNT_PROVIDER_INVALID");
     return this.change(accountId, async (account) => {
       const paths = await this.runtimePaths(accountId);
-      await atomicWriteJson(this.configRoot, paths.modelsPath, { providers: { [account.providerId]: structuredClone(config) } });
+      const classifier = config.models.every(model => model.type === "classifier");
+      if (classifier !== ["typesafe-system-one", "openai-decisions", "cloudflare-workers-ai-system-one"].includes(config.api)) throw hostError("ACCOUNT_PROVIDER_INVALID");
+      await atomicWriteJson(this.configRoot, classifier ? path.join(path.dirname(paths.modelsPath), "classifiers.json") : paths.modelsPath, { providers: { [account.providerId]: structuredClone(config) } });
       return { status: "configured" };
     });
   }

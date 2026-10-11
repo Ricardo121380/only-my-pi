@@ -9,6 +9,7 @@ import { projectPath } from "./inspector.mjs";
 import { emptyUsage, recordUsage } from "./usage.mjs";
 import { INPUT_CARRIER } from "./input-protocol.mjs";
 import { supportsThinking } from "./models.mjs";
+import { ModelCallStore } from "../model-calls/store.mjs";
 import { McpCatalog } from "../mcp/catalog.mjs";
 
 const duration = (value) => typeof value === "number" && Number.isFinite(value) && value >= 0 ? { durationMs: value } : {};
@@ -83,13 +84,14 @@ export class HostTasks extends EventEmitter {
     const model = (await this.models(command.accountId)).find((m) => m.id === command.model);
     if (!model) throw hostError("MODEL_UNAVAILABLE", 409);
     if (command.thinkingLevel !== undefined && !supportsThinking(model, command.thinkingLevel)) throw hostError("THINKING_LEVEL_UNAVAILABLE", 409);
+    const classifierSnapshot = await new ModelCallStore(this.configRoot).config(project.path);
     const mcpSnapshot = await new McpCatalog(this.configRoot).snapshot(project.path);
     if (this.requests.has(command.requestId)) return existing(this.requests.get(command.requestId));
     if (this.closing) throw hostError("HOST_STOPPING", 409);
     if ([...this.tasks.values()].filter((t) => !terminal(t.status)).length >= 4) throw hostError("TASK_CAPACITY_REACHED", 429);
     const task = { taskId: randomUUID(), requestId: command.requestId, requestDigest, projectId: project.projectId, model: command.model, ...(this.accounts ? { accountId: command.accountId } : {}),
       requestedThinkingLevel: command.thinkingLevel ?? null, thinkingLevel: null, usage: emptyUsage(),
-      mode, mcpSnapshot, access: "inspect", approvals: [], resourceRevision: inputRecord?.binding.resourceRevision ?? 0, ...(submission ?? {}), prompt: command.prompt, status: "starting", sessionId: resume?.sessionId ?? null, resumeSessionKey: command.resumeSessionKey ?? null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      mode, mcpSnapshot, classifierSnapshot, access: "inspect", approvals: [], resourceRevision: inputRecord?.binding.resourceRevision ?? 0, ...(submission ?? {}), prompt: command.prompt, status: "starting", sessionId: resume?.sessionId ?? null, resumeSessionKey: command.resumeSessionKey ?? null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     this.requests.set(command.requestId, task.taskId); this.tasks.set(task.taskId, task);
     try { await this.persist(); }
     catch {
@@ -127,7 +129,7 @@ export class HostTasks extends EventEmitter {
     const sessionRoot = path.join(this.catalog.sessionRoot, `omp-${project.projectId}`);
     let worker;
     try {
-      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, taskId: task.taskId, accountId: task.accountId, controlled: task.mode === "controlled", mcpSnapshot: task.mcpSnapshot, sessionRoot, resumeFile: resume?.file, env: this.env,
+      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, taskId: task.taskId, accountId: task.accountId, controlled: task.mode === "controlled", mcpSnapshot: task.mcpSnapshot, classifierSnapshot: task.classifierSnapshot, sessionRoot, resumeFile: resume?.file, env: this.env,
         onIdentity: async (identity) => { task.worker = identity; await this.persist(); } });
     } catch (error) { this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId); throw error; }
     this.workers.set(task.taskId, worker);
@@ -191,7 +193,7 @@ export class HostTasks extends EventEmitter {
         if (current.sessionId !== resume.sessionId || current.file !== resume.file) throw hostError("SESSION_IDENTITY_CHANGED", 409);
       }
       const state = await worker.start();
-      if (worker.codemodeEnabled) task.codemode = { enabled: true, classifier: false, image: false };
+      if (worker.codemodeEnabled) task.codemode = { enabled: true, classifier: Boolean(task.classifierSnapshot?.classifier), image: false };
       if (resume && state.sessionId !== resume.sessionId) throw hostError("SESSION_IDENTITY_CHANGED", 409);
       task.worker = worker.identity; task.sessionId = state.sessionId;
       lease ??= await acquireOwnership(this.configRoot, "session", String(state.sessionId));
@@ -227,6 +229,12 @@ export class HostTasks extends EventEmitter {
       stopping = true;
       await worker.stop();
       task.status = task.status === "cancelling" || aborted ? "cancelled" : failed ? "failed" : "succeeded";
+      if (task.status === "succeeded" && task.classifierSnapshot?.classifier) {
+        const ledger = await new ModelCallStore(this.configRoot).status(project.path);
+        if (ledger.tasks.find(item => item.taskId === task.taskId)?.requests.some(request => request.status === "unknown")) {
+          task.status = "failed"; task.error = "MODEL_RESULT_RECONCILIATION_REQUIRED";
+        }
+      }
       if (task.status === "cancelled") task.error = null;
     } catch (error) { task.status = task.status === "cancelling" ? "cancelled" : "failed"; task.error = /^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "TASK_FAILED"; }
     finally {

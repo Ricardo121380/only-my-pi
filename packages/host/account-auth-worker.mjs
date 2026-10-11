@@ -2,6 +2,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { AccountCatalog } from "./accounts.mjs";
 import { awaitAuthStart } from "./auth-process.mjs";
+import { registerClassifiers } from "../model-calls/models.mjs";
 
 let finished = false;
 process.on("disconnect", () => { if (!finished) process.exit(1); });
@@ -14,7 +15,9 @@ try {
   for await (const chunk of process.stdin) { raw += chunk; if (Buffer.byteLength(raw) > 65536) throw new Error(); }
   const input = JSON.parse(raw);
   const { ModelRuntime } = await import(pathToFileURL(path.join(stackRoot, "pi/dist/index.js")).href);
-  const runtime = await ModelRuntime.create({ ...await catalog.runtimePaths(accountId), allowModelNetwork: false, refreshOnCreate: false });
+  const paths = await catalog.runtimePaths(accountId);
+  const runtime = await ModelRuntime.create({ ...paths, allowModelNetwork: false, refreshOnCreate: false });
+  await registerClassifiers(runtime, configRoot, paths.modelsPath, path.join(stackRoot, "pi/dist/index.js"));
   let status;
   if (input.type === "status") {
     const credentials = await runtime.listCredentials();

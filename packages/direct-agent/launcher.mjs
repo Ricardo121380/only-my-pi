@@ -68,7 +68,7 @@ const SAFE_VALUE_FLAGS = new Set([
   "--export",
 ]);
 
-const CONTROL_COMMANDS = new Set(OMP_CONTROL_COMMANDS);
+const CONTROL_COMMANDS = new Set([...OMP_CONTROL_COMMANDS, "classifier"]);
 
 export const OMP_AGENT_USAGE = `only-my-pi - guarded terminal coding Agent
 

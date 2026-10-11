@@ -18,11 +18,11 @@ function waitBounded(promise, ms, required = false) {
 }
 
 export class RpcWorker extends EventEmitter {
-  constructor({ stack, configRoot, cwd, model, sessionRoot, resumeFile, accountId, taskId, controlled = false, mcpSnapshot, env = process.env, onIdentity = async () => {}, spawnImpl = spawn, extensionResolver = resolveDirectExtensionSet }) {
+  constructor({ stack, configRoot, cwd, model, sessionRoot, resumeFile, accountId, taskId, controlled = false, mcpSnapshot, classifierSnapshot, env = process.env, onIdentity = async () => {}, spawnImpl = spawn, extensionResolver = resolveDirectExtensionSet }) {
     super(); Object.assign(this, { stack, configRoot, cwd, model, sessionRoot, accountId, taskId, controlled, env, onIdentity, spawnImpl, extensionResolver }); this.pending = new Map(); this.inputPending = new Map(); this.inputRecords = new Map(); this.child = null; this.stopping = null;
     this.approvals = new ApprovalBridge({ send: (frame) => { if (this.child && !this.closed && !this.child.stdin.destroyed) this.child.stdin.write(JSON.stringify(frame) + "\n"); }, publish: (approvals) => this.emit("approvals", approvals) });
     this.resumeFile = resumeFile;
-    this.mcpSnapshot = mcpSnapshot; this.mcpEnabled = mcpSnapshot?.servers.some((server) => server.enabled) === true;
+    this.classifierSnapshot = classifierSnapshot; this.mcpSnapshot = mcpSnapshot; this.mcpEnabled = mcpSnapshot?.servers.some((server) => server.enabled) === true;
     this.codemodeEnabled = accountId !== undefined;
   }
   async start() {
@@ -34,7 +34,8 @@ export class RpcWorker extends EventEmitter {
     if (this.stopRequested) throw hostError("RPC_CANCELLED_BEFORE_START");
     const argv = this.accountId === undefined ? invocation.argv.slice(1) : [fileURLToPath(new URL("./account-rpc-entry.mjs", import.meta.url)), this.stack.root, this.configRoot, this.accountId, this.model, this.sessionRoot, this.controlled ? "controlled" : "readonly", this.resumeFile ?? "", ...set.extensions];
     const childEnv = { ...invocation.env }; delete childEnv.OMP_HOST_INPUT_TASK_ID;
-    delete childEnv.OMP_HOST_MCP_SNAPSHOT;
+    delete childEnv.OMP_HOST_MCP_SNAPSHOT; delete childEnv.OMP_HOST_CLASSIFIER_SNAPSHOT;
+    if (this.accountId && this.classifierSnapshot) childEnv.OMP_HOST_CLASSIFIER_SNAPSHOT = JSON.stringify(this.classifierSnapshot);
     if (this.accountId && this.mcpSnapshot) childEnv.OMP_HOST_MCP_SNAPSHOT = JSON.stringify(this.mcpSnapshot);
     if (this.accountId && this.taskId) childEnv.OMP_HOST_INPUT_TASK_ID = this.taskId;
     const child = this.spawnImpl(invocation.executable, argv, { cwd: this.cwd, env: childEnv, detached: true, stdio: this.controlled || this.accountId !== undefined ? ["pipe", "pipe", "pipe", "ipc"] : ["pipe", "pipe", "pipe"] });

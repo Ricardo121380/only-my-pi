@@ -86,6 +86,7 @@
     "packages/direct-agent/",
     "packages/host/",
     "packages/mcp/",
+    "packages/model-calls/",
     "webui/dist/",
     "packages/daily-config/",
     "packages/project-gates/",

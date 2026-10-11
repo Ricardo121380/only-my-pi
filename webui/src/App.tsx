@@ -12,6 +12,7 @@ import { ProjectHome } from "./ProjectHome";
 import { HostDialog } from "./HostDialog";
 import { TaskControl } from "./TaskControl";
 import { McpPanel } from "./McpPanel";
+import { ClassifierPanel, ClassificationResults } from "./ClassifierPanel";
 
 const labels: Record<TaskStatus, string> = { starting: "正在启动", running: "运行中", cancelling: "正在取消", succeeded: "已完成", failed: "任务失败", cancelled: "已取消", interrupted: "运行已中断" };
 const active = (status?: TaskStatus) => status === "starting" || status === "running" || status === "cancelling";
@@ -34,6 +35,7 @@ export function App() {
   const [suggestion, setSuggestion] = useState<{ text: string; key: number } | undefined>();
   const searchDialog = useRef<HTMLDialogElement>(null);
   const [mcpOpen, setMcpOpen] = useState(false);
+  const [classifierOpen, setClassifierOpen] = useState(false);
   useEffect(() => { const resize = () => setWidth(window.innerWidth); window.addEventListener("resize", resize); return () => window.removeEventListener("resize", resize); }, []);
   useEffect(() => { const key = (e: KeyboardEvent) => { if (document.querySelector("dialog[open]")) return; if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); searchDialog.current?.showModal(); } if (e.ctrlKey && e.code === "Backquote") { e.preventDefault(); setDockOpen((open) => !open); setPanel("chat"); if (window.innerWidth <= 1100) setInspectOpen(false); } }; window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key); }, []);
   const dockButton = useRef<HTMLButtonElement>(null);
@@ -108,7 +110,7 @@ export function App() {
     <aside className="sidebar" aria-label="分区、项目与会话" inert={!showSidebar || overlay === "inspector"}>
       <div className="brand"><div className="brand-logo"><BrandLogo /></div><div className="grow"><div className="brand-name">Pi Agent</div><div className="brand-sub">GLACIER · AGENT WEBUI</div></div><button className="iconbtn small" aria-label="收起侧栏" onClick={toggleNavigation}><Icon name="sidebar" /></button></div>
       <button className="searchbutton" onClick={() => searchDialog.current?.showModal()}><Icon name="search" /><span>搜索分区、项目或会话</span><kbd>⌘ K</kbd></button>
-      <nav className="primary-nav" aria-label="主要操作"><button className="nav-item" onClick={fresh} disabled={!project}><Icon name="plus-circle" />新建会话</button><button className="nav-item" onClick={() => setExploreOpen(true)}><Icon name="compass" />探索</button><button className="nav-item" onClick={() => setMcpOpen(true)}><Icon name="box" />MCP 工具</button></nav>
+      <nav className="primary-nav" aria-label="主要操作"><button className="nav-item" onClick={fresh} disabled={!project}><Icon name="plus-circle" />新建会话</button><button className="nav-item" onClick={() => setExploreOpen(true)}><Icon name="compass" />探索</button><button className="nav-item" onClick={() => setMcpOpen(true)}><Icon name="box" />MCP 工具</button><button className="nav-item" disabled={!project} onClick={() => setClassifierOpen(true)}><Icon name="box" />分类模型</button></nav>
       <div className="tree-label between"><span>分区</span><button className="iconbtn small" disabled aria-label="新建分区（尚未接入）"><Icon name="plus" /></button></div>
       <nav className="tree" aria-label="分区 → 项目 → 会话"><section className="partition"><div className="partition-row"><button className="partition-main" aria-expanded={partitionOpen} onClick={() => setPartitionOpen(!partitionOpen)}><Icon name="home" /><span>本机</span><span className={`chevron ${partitionOpen ? "open" : ""}`}><Icon name="chevron" /></span></button><button className="iconbtn small" onClick={() => setAddOpen(true)} aria-label="添加项目"><Icon name="plus" /></button></div>
       {partitionOpen && <div className="projects">{snapshot?.projects.map((item) => <div className="project-group" key={item.projectId}><div className={`project-row ${item.projectId === projectId ? "selected" : ""}`}><button className="project-fold" aria-expanded={item.projectId === projectId && !folded} aria-label={`展开或收起${item.name}会话`} onClick={() => { if (item.projectId !== projectId) { chooseProject(item); setFolded(false); } else setFolded(!folded); }}><span className={`chevron ${item.projectId === projectId && !folded ? "open" : ""}`}><Icon name="chevron" /></span></button><button className="project-pick" title={item.path} onClick={() => { chooseProject(item); setFolded(false); }}><Icon name="folder" /><span className="cut">{item.name}</span></button><button className="iconbtn small" aria-label={`在${item.name}中新建会话`} onClick={() => { chooseProject(item); fresh(); }}><Icon name="plus" /></button></div>
@@ -130,6 +132,7 @@ export function App() {
         {feedTab === "chat" && visibleTask?.partial && <article className="assistant-message"><div className="agent-mark"><Icon name="spark" /></div><div className="assistant-content"><div className="sender"><b>Pi Agent</b><span>OMP</span></div><SafeMarkdown text={visibleTask.partial} /></div></article>}
         {visibleTask && <div className="run-status task-status" role="status"><Icon name={active(visibleTask.status) ? "clock" : visibleTask.status === "succeeded" ? "check" : "info"} /><span>{labels[visibleTask.status]}{visibleTask.tool ? ` · 正在调用 ${visibleTask.tool.name}` : ""}{visibleTask.error && <p>{errorText(new Error(visibleTask.error))}</p>}</span></div>}</div></div>}
         {visibleTask && <TaskControl key={visibleTask.taskId} task={visibleTask} connected={connected} />}
+        {projectId && (visibleTask || session) && <ClassificationResults key={`${projectId}:${taskId ?? session?.sessionId}`} projectId={projectId} taskId={visibleTask?.taskId} sessionId={session?.sessionId} running={active(visibleTask?.status)} />}
       </section>
       {!follow && visibleTask && <button className="pill host-latest" onClick={() => setFollow(true)}>回到最新</button>}
       {session && <div className="account-picker"><button className="softbtn" disabled={!connected || snapshot?.tasks.some((item) => item.sessionId === session.sessionId && active(item.status))} onClick={() => { setResumeSessionKey(resumeSessionKey ? undefined : session.sessionKey); pending.current = null; }}>{resumeSessionKey ? "取消续接" : "续接此会话"}</button><span role="status">{resumeSessionKey ? "下一条消息续接此历史；请明确选择账号和模型，不恢复旧授权。" : "当前仅查看历史；发送默认创建新会话。"}</span></div>}
@@ -143,5 +146,6 @@ export function App() {
     <HostDialog open={exploreOpen} onClose={() => setExploreOpen(false)} title="探索（尚未开放）"><p>独立探索功能尚未接入。可以使用主页的只读分析建议；关闭此说明会保留当前会话和草稿。</p></HostDialog>
     <HostDialog open={addOpen} onClose={() => setAddOpen(false)} title="添加项目">{addError && <p role="alert">{addError}</p>}<form onSubmit={addProject}><label className="field">本机绝对路径<input value={projectPath} onChange={(e) => setProjectPath(e.target.value)} placeholder="输入完整项目目录" /></label><div className="dialog-footer"><button className="softbtn primary" disabled={adding || !projectPath || !connected}>{adding ? "正在添加…" : "添加项目"}</button></div></form></HostDialog>
     {mcpOpen && <McpPanel projectId={projectId || undefined} projectName={project?.name} onClose={() => setMcpOpen(false)} />}
+    {classifierOpen && projectId && <ClassifierPanel key={projectId} projectId={projectId} projectName={project?.name} onClose={() => setClassifierOpen(false)} />}
   </div>;
 }

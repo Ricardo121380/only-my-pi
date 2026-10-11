@@ -46,7 +46,7 @@ test("native QuickJS keeps partial failures and enforces input, result, memory, 
     ['store("large", "x".repeat(1048577));', /store[\s\S]*(limit|large|bytes)/i],
     ['const buffers=[]; for(let i=0;i<400;i++) buffers.push(new Uint8Array(1024*1024)); text(buffers.length);', /out of memory/i],
     ['await new Promise(() => {}); text("unreachable");', /(deadlock|pending|settle)/i],
-    ['text(typeof models); await models.classify("unselected", {});', /undefined[\s\S]*models/],
+    ['text(await models.getAvailableOfType("classifier")); await models.classify({type:"classifier",provider:"unselected",id:"other"}, {});', /\[\][\s\S]*Unknown classifier model/],
     ['// @options: {"timeout_ms":50}\nwhile(true) {}', /CODEMODE_TIMEOUT|timed out|timeout/i],
   ];
   for (const [source, expected] of cases) {

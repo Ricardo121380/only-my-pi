@@ -3,6 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { findPackageJSON } from "node:module";
 import { pathToFileURL } from "node:url";
+import { createClassificationControl } from "../model-calls/runtime.mjs";
+import { registerClassifierCommand } from "../model-calls/commands.mjs";
 import { digest } from "../mcp/catalog.mjs";
 
 export const CODEMODE_LIMITS = Object.freeze({ timeoutMs: 60000, inputBytes: 32768, argumentBytes: 16384, outputBytes: 65536, concurrency: 4, calls: 32, scripts: 16, memoryBytes: 268435456, storeBytes: 1048576, historyBytes: 8388608, temporaryBytes: 67108864, nativeOutputCharacters: 16777216, nativeOutputItems: 100000 });
@@ -46,6 +48,8 @@ export async function installOmpCodemode(pi, { controller, sdkFile = process.env
   const metadata = JSON.parse(await fs.readFile(codemodeManifest, "utf8"));
   if (metadata.version !== "1.1.0") throw fail("CODEMODE_RUNTIME_VERSION_MISMATCH");
   const { parseCodemodeSource } = await import(pathToFileURL(path.resolve(path.dirname(codemodeManifest), metadata.exports["."].import)).href);
+  const classification = createClassificationControl(pi, { sdkFile, configRoot: process.env.PI_CODING_AGENT_DIR });
+  registerClassifierCommand(pi, { sdkFile, configRoot: process.env.PI_CODING_AGENT_DIR });
   const grants = new Set(), running = new Map();
   let revoked = false, scripts = 0, totalCalls = 0, active;
   controller.codemodeTools = () => revoked ? [] : ["codemode"];
@@ -103,6 +107,7 @@ export async function installOmpCodemode(pi, { controller, sdkFile = process.env
           temporary = await fs.mkdtemp(path.join(os.tmpdir(), "omp-codemode-"));
           process.env.TMPDIR = temporary;
           const bounded = { code: `// @options: ${JSON.stringify({ timeout_ms: timeoutMs, max_output_tokens: Math.min(parsed.options.maxOutputTokens ?? 16000, 16000) })}\n${parsed.code}` };
+          guardedContext.modelRegistry = await classification.registry(ctx, id, run.signal, () => check(run));
           const result = await native.execute(id, bounded, run.signal, onUpdate, guardedContext);
           if (deadline.aborted) return failure("CODEMODE_TIMEOUT", result);
           if (run.signal.aborted) return failure("CODEMODE_CANCELLED", result);
@@ -116,7 +121,7 @@ export async function installOmpCodemode(pi, { controller, sdkFile = process.env
           }
           if (bytes(result.content) > CODEMODE_LIMITS.outputBytes || result.content.some((block) => block.type !== "text")) return failure("CODEMODE_OUTPUT_LIMIT", result);
           if (!result.isError) { check(run); for (const [type, data] of run.entries) pi.appendEntry(type, data); }
-          return { ...result, details: { ...result.details, limits: CODEMODE_LIMITS, models: { classifier: "disabled_pending_72", image: "disabled_pending_73" } } };
+          return { ...result, details: { ...result.details, limits: CODEMODE_LIMITS, models: { classifier: "requires_project_binding_and_task_permission", image: "disabled_pending_73" } } };
         } catch (error) { return failure(/^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "CODEMODE_EXECUTION_FAILED"); }
         finally {
           abort.abort(); running.delete(id); active = undefined;
@@ -126,7 +131,7 @@ export async function installOmpCodemode(pi, { controller, sdkFile = process.env
       },
     });
   } });
-  sdk.createCodemodeExtension({ mode: "on", models: false })(proxy);
+  sdk.createCodemodeExtension({ mode: "on", models: true })(proxy);
   pi.on("tool_call", async (event, ctx) => {
     const run = running.get(event.parentToolCallId);
     if (!run) return;

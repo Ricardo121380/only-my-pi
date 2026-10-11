@@ -574,6 +574,15 @@ export async function runOmpEntrypoint(options = {}) {
       return OMP_EXIT_CODES.SUCCESS;
     }
     if (route.kind === "admin") {
+      if (route.argv[0] === "classifier") {
+        const { runClassifierCli } = await import("../packages/model-calls/commands.mjs");
+        const { resolveDirectConfigRoot, resolveControlledStack } = await import("../packages/direct-agent/launcher.mjs");
+        const homeDir = options.homedir ? options.homedir() : os.homedir();
+        const configRoot = resolveDirectConfigRoot({ env: options.env ?? process.env, homeDir });
+        const stack = await resolveControlledStack({ packageRoot: options.rootDir ?? DEFAULT_ROOT, homeDir, stackRoot: options.stackRoot });
+        writeText(stdout, stringifyOmpJson(await runClassifierCli({ argv: route.argv.slice(1), configRoot, stack })));
+        return OMP_EXIT_CODES.SUCCESS;
+      }
       if (route.argv[0] === "mcp") {
         const { runMcpCli } = await import("../packages/mcp/commands.mjs");
         const { resolveDirectConfigRoot } = await import("../packages/direct-agent/launcher.mjs");

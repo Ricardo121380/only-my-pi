@@ -22,6 +22,7 @@ import { HostTerminals } from "./terminals.mjs";
 import { HOST_PROTOCOL, HOST_VERSION, CLI_ACCOUNT_ID, hostError, validateCommand, terminal } from "./contracts.mjs";
 import { projectRunRecord } from "../direct-agent/contracts.mjs";
 import { createRunRecordStore } from "../run-management/index.mjs";
+import { ModelCallStore } from "../model-calls/store.mjs";
 import { McpCatalog } from "../mcp/catalog.mjs";
 import { McpRuns } from "../mcp/runs.mjs";
 import { McpOAuth } from "../mcp/oauth.mjs";
@@ -211,6 +212,17 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           const location = await mcpOAuth.open(url.searchParams.get("flowId"));
           res.writeHead(303, { location, "cache-control": "no-store", "referrer-policy": "no-referrer" }); return res.end();
         }
+        if (url.pathname === "/api/model-calls") {
+          const store = new ModelCallStore(configRoot);
+          if (req.method === "GET") return response(res, 200, await store.status(catalog.project(url.searchParams.get("projectId")).path));
+          if (req.method !== "POST" || !safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
+          if (req.headers["x-omp-host-protocol"] !== String(HOST_PROTOCOL)) throw hostError("PROTOCOL_MISMATCH", 409);
+          const input = await authorizedBody(req);
+          if (input?.type !== "save" || Object.keys(input).sort().join() !== "classifier,projectId,revision,type") throw hostError("CLASSIFIER_COMMAND_INVALID");
+          const project = catalog.project(input.projectId);
+          const config = await store.save(project.path, input.revision, input.classifier, accountId => listModels({ stack, configRoot, accountId, modelType: "classifier", env, signal: modelAbort.signal }));
+          return response(res, 200, config);
+        }
         if (url.pathname === "/api/mcp") {
           if (req.method !== "POST") throw hostError("METHOD_DENIED", 405);
           if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
@@ -306,7 +318,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
         if (url.pathname === "/api/models") {
           const accountId = url.searchParams.get("accountId");
           if (!accountId) throw hostError("ACCOUNT_BINDING_REQUIRED", 409);
-          return response(res, 200, { accountId, models: await accountModels(accountId) });
+          return response(res, 200, { accountId, models: url.searchParams.get("type") === "classifier" ? await listModels({ stack, configRoot, accountId, modelType: "classifier", env, signal: modelAbort.signal }) : await accountModels(accountId) });
         }
         if (url.pathname === "/api/sessions") return response(res, 200, { sessions: catalog.listSessions(url.searchParams.get("projectId")) });
         if (url.pathname === "/api/history") return response(res, 200, await catalog.history(url.searchParams.get("sessionKey"), Number(url.searchParams.get("offset") ?? 0)));

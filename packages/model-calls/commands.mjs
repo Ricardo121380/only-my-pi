@@ -1,0 +1,56 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+import { AccountCatalog } from "../host/accounts.mjs";
+import { listModels } from "../host/models.mjs";
+import { CLI_ACCOUNT_ID, hostError } from "../host/contracts.mjs";
+import { ModelCallStore, MODEL_BUDGET } from "./store.mjs";
+
+export async function classifierCommand({ configRoot, stack, projectPath, args }) {
+  const project = await fs.realpath(projectPath);
+  if (!(await fs.stat(project)).isDirectory()) throw hostError("CLASSIFIER_PROJECT_INVALID");
+  const store = new ModelCallStore(configRoot);
+  const models = accountId => listModels({ stack, configRoot, accountId, modelType: "classifier" });
+  if (args.length === 1 && args[0] === "status") return store.status(project);
+  if (args[0] === "list" && args.length === 2) return { models: await models(args[1]) };
+  if (args[0] === "apply" && args.length === 2 && path.isAbsolute(args[1])) {
+    const stat = await fs.lstat(args[1]);
+    if (!stat.isFile() || stat.size > 65536) throw hostError("CLASSIFIER_CONFIG_INVALID");
+    const input = JSON.parse(await fs.readFile(args[1], "utf8"));
+    if (Object.keys(input).sort().join() !== "classifier,revision") throw hostError("CLASSIFIER_CONFIG_INVALID");
+    return store.save(project, input.revision, input.classifier, models);
+  }
+  throw hostError("CLASSIFIER_COMMAND_USAGE: classifier list ACCOUNT | status | apply /absolute/config.json --project /absolute/project");
+}
+export async function runClassifierCli({ configRoot, stack, argv }) {
+  const index = argv.indexOf("--project"), projectPath = argv[index + 1];
+  if (index < 0 || !path.isAbsolute(projectPath ?? "") || argv.indexOf("--project", index + 1) >= 0) throw hostError("CLASSIFIER_PROJECT_REQUIRED");
+  return classifierCommand({ configRoot, stack, projectPath, args: [...argv.slice(0, index), ...argv.slice(index + 2)] });
+}
+export function registerClassifierCommand(pi, { configRoot, sdkFile }) {
+  const root = path.resolve(sdkFile, "../../.."), stack = { root, nodePath: process.execPath };
+  pi.registerCommand("omp-classifier", { description: "项目分类账号、模型、预算与持久请求账本", handler: async (args, ctx) => {
+    if (!ctx.hasUI) throw hostError("CLASSIFIER_UI_REQUIRED");
+    try {
+      if (args.trim()) {
+        const match = /^(status|list [^\s]+|apply \/[^\0\r\n]+)$/u.exec(args.trim());
+        if (!match) throw hostError("CLASSIFIER_COMMAND_USAGE");
+        const [command, ...rest] = args.trim().split(" ");
+        const result = await classifierCommand({ configRoot, stack, projectPath: ctx.cwd, args: command === "apply" ? [command, rest.join(" ")] : [command, ...rest] });
+        await ctx.ui.editor("分类配置与请求账本（只读，关闭不会重发）", JSON.stringify(result, null, 2)); return;
+      }
+      const store = new ModelCallStore(configRoot), config = await store.config(ctx.cwd);
+      const action = await ctx.ui.select("项目分类 · 保存仅影响后续任务；停用立即拒绝新请求", ["选择账号和模型", "查看请求账本", "停用分类", "取消"]);
+      if (action === "查看请求账本") { await ctx.ui.editor("分类请求账本（只读）", JSON.stringify(await store.status(ctx.cwd), null, 2)); return; }
+      if (action === "停用分类") { await store.save(ctx.cwd, config.revision, null); ctx.ui.notify("分类已停用；未知请求保留占额。", "info"); return; }
+      if (action !== "选择账号和模型") return;
+      const accounts = [{ accountId: CLI_ACCOUNT_ID, name: "CLI 只读引用" }, ...await new AccountCatalog(configRoot).list()];
+      const accountLabel = await ctx.ui.select("选择分类账号", accounts.map(a => `${a.name} · ${a.accountId}`));
+      const account = accounts.find(a => `${a.name} · ${a.accountId}` === accountLabel); if (!account) return;
+      const models = await listModels({ stack, configRoot, accountId: account.accountId, modelType: "classifier" });
+      const selected = await ctx.ui.select("选择分类模型（不继承聊天模型）", models.filter(m => m.supported).map(m => m.id)); if (!selected) return;
+      const value = await ctx.ui.editor("任务共享预算 · 次数/并发/输入输出字节/超时；费用未知需每任务授权", JSON.stringify(config.classifier?.budget ?? MODEL_BUDGET, null, 2)); if (!value) return;
+      await store.save(ctx.cwd, config.revision, { accountId: account.accountId, model: selected, budget: JSON.parse(value) }, async () => models);
+      ctx.ui.notify("项目分类配置已保存；每个新任务仍需授权。", "info");
+    } catch (error) { ctx.ui.notify(error.code ?? "CLASSIFIER_CONFIG_INVALID", "error"); }
+  } });
+}
