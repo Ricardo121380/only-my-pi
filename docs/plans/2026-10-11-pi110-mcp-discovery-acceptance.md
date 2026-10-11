@@ -6,7 +6,7 @@
 
 #71 基点 `c30ddb827b85f74440943d4231b17a6a413344d8`，分支 `codex/webui-phase1`。批次原始基点 `cf30fca4424799dfb05be41e106216bcb4ac0dba`，302 项既有工作树改动完整保留；301 个无关文件逐一比对 hash，TaskControl.tsx 的原有用户改动与 #70 增量分别保留。本票不再修改 TaskControl.tsx，只暂存明确属于本票的路径。
 
-最新全量通过基线仍为 `pi110-http-oauth-1010-221428/batch-final-full-node24`：1678 项、1672 PASS、0 FAIL、0 CANCELLED、6 SKIPPED。旧绿只证明批次起点，不能替代本批回归。批次最终全量在本票实施和评审后运行，当前为 PENDING。
+最新全量通过基线为 `pi110-http-oauth-1010-221428/batch-final-full-node24`：1678 项、1672 PASS、0 FAIL、0 CANCELLED、6 SKIPPED。旧绿只证明批次起点，不能替代本批回归。第一次批次全量在本票实施和评审后运行，实际 FAIL；修复后全量当前 PENDING。两轮记录分别保留。
 
 本机证据目录：
 
@@ -66,8 +66,18 @@ HTTP 发送 guard 修复轮的 B 差量 `71-browser-http-guard-*`：同一 TaskS
 
 工具目标检查修复后的 B 差量 `71-browser-target-guard-*`：仍为同一 TaskSpace 45 / p1、未注入等待的真实候选；组合任务分别批准四次，stdio 工具/资源各接收 1、HTTP 工具/资源各接收 1，四个子调用 completed。第二任务拒绝资源，子调用 rejected/MCP_CALL_DENIED、读取 0。11 个实际源码/Web 构建 hash 全部匹配当前实现，4 次审批原文、任务/嵌套状态、独立接收和 fixture 退出 0 均归档，`71-browser-target-guard-expanded.png` 已查看。
 
+批次全量修复后的 B 差量 `71-browser-full-regression-*`：同一 TaskSpace 45 / p1、真实 Pi 1.1.0 / Node 24.19.0，无持久化或目标检查等待注入。两个页面任务分别验证四次独立一次性审批的工具/资源组合，以及资源拒绝。允许任务 stdio 工具/资源各 1、HTTP 工具/资源各 1，四个 MCP 子调用 completed；拒绝子调用 rejected/MCP_CALL_DENIED、实际资源读取 0。11 个实际源码/Web 构建 hash 全部匹配，包含修复后的 RpcWorker；批准原文、嵌套 DOM、独立接收账本、fixture 退出 0 均保留，`71-browser-full-regression-expanded.png` 已查看。前一轮 B 的源码身份继续作为历史证据保存。
+
+## 批次全量失败与回归
+
+第一次固定于 `132e5c4` 的 `batch-final-full-node24` **FAIL**：1713 项、1696 PASS、11 FAIL、0 CANCELLED、6 SKIPPED，测试耗时 503.91 秒、命令退出 1。11 个失败包含一个 CLI 父测试。完整失败日志/收据及 `batch-full-entry.json` 保存，结束后核对 1194 个源文件和 32 个候选输入均无漂移；301 个无关原有文件与 TaskControl 原有修改也保持。原失败不能写成通过。
+
+三个实际原因及最小修复：公开 Pi 1.1.0 的精确工具列表断言补入 #70 的 codemode，显式指定旧四工具的 account child 仍保持原断言；RpcWorker 版本探测在 stack.root 缺失时关闭 codemode 准入，恢复既有受控 worker 生命周期；OAuth fixture 保留身份/撤销核对后，对不支持的 GET 流明确返回原生 StreamableHttpTransport 支持的 405，不放宽生产传输错误处理。没有修改或暂存原有用户改动的 host-rpc-worker.test.mjs。
+
+六个受影响测试文件的 Node 24 `71-full-regression-native-node24` **51/51 PASS**（136.80 秒），Node 22 `71-full-regression-native-node22` **51/51 PASS**（136.61 秒），均 0 FAIL/CANCELLED/SKIPPED。它们包含完整 OAuth fixture、实际凭据回显扣留、真实 CLI/TUI、Host 崩溃恢复、无 ACK 不释放所有权及账号身份回归；保持业务接收数、认证、终端恢复、结果与无重放断言。`71-full-regression-lint` PASS（1427 文件、0 findings），`71-full-regression-pack` PASS（1599 文件）。Web/类型/构建源码未改变，沿用上述实际通过记录。最新 B 差量见上。新修复后的全量需要重新冻结并执行，当前 PENDING。
+
 ## 独立评审与完成状态
 
-首轮固定范围 `c30ddb8...d30598d`：Standards FAIL（P2 stdio 资源发送 guard 漏洞）；Spec FAIL（P1 二进制凭据、P2 通知流失效未投影）。第二轮 `c30ddb8...9c2faca`：Standards PASS / Spec FAIL（P2 HTTP 物理发送竞态）；第三轮 `c30ddb8...fc9c731`：Standards PASS / Spec FAIL（P2 stdio 工具 guard 内部异步窗口）。各项均已真实 RED → GREEN，报告和原失败证据保留。最终 Standards / Spec：PENDING，需由两个新的只读探子在最新修复固定提交复评。必需 C/P/B 与最新 Node 22 20/20 组合已通过，最终复评及批次全量仍待收敛，当前不关闭本票。
+首轮固定范围 `c30ddb8...d30598d`：Standards FAIL（P2 stdio 资源发送 guard 漏洞）；Spec FAIL（P1 二进制凭据、P2 通知流失效未投影）。第二轮 `c30ddb8...9c2faca`：Standards PASS / Spec FAIL（P2 HTTP 物理发送竞态）；第三轮 `c30ddb8...fc9c731`：Standards PASS / Spec FAIL（P2 stdio 工具 guard 内部异步窗口）。各项均已真实 RED → GREEN，报告和原失败证据保留。第四轮完整固定范围 `c30ddb8...132e5c4`（24 个提交路径）已由两位新的只读探子复评：**Standards PASS / Spec PASS**，完整报告 `71-standards-final.md` / `71-spec-final.md`。随后全量实际失败，引入上述五个文件的回归修复；最新提交的独立双轴复评与修复后全量仍 PENDING。必需 C/P/B、Node 22 20/20 原生组合与 Node 22/24 各 51/51 受影响回归已通过，当前不关闭本票。
 
 I 完整候选安装、L 外部真实 Provider、远程 CI、发行、部署、日常安装切换：NOT_RUN。#19 及 #72/#73 不因本票的本地验收关闭。

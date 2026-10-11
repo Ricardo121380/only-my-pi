@@ -83,7 +83,7 @@ test("public OMP TUI handles keyboard input and resize without streaming or idle
   assert.equal(f.received.length, 1, "TUI Provider must receive one explicit keyboard prompt only");
   assert.equal(f.received[0].key, "Bearer fixture-cli");
   assert.ok(f.received[0].body.messages.some((message) => message.role === "user" && JSON.stringify(message.content).includes("cache probe")));
-  assert.deepEqual(f.received[0].body.tools.map((tool) => tool.function.name).sort(), ["delegate_readonly_agent", "find", "grep", "ls", "read", "request_coding_access"]);
+  assert.deepEqual(f.received[0].body.tools.map((tool) => tool.function.name).sort(), ["codemode", "delegate_readonly_agent", "find", "grep", "ls", "read", "request_coding_access"]);
   assert.ok(!run.output().includes("\x1b[?1049h"), "explicit regular must use the main screen");
   run.terminal.write("\x04");
   await until(run.output, (output) => output.includes("OMP_SHELL_READY"), "regular quit restores shell");

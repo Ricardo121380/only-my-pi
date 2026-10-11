@@ -6,7 +6,7 @@
 
 批次基点 `cf30fca4424799dfb05be41e106216bcb4ac0dba`，分支 `codex/webui-phase1`，开始索引为空，302 个既有修改/未跟踪文件已保存 hash。只重叠 TaskControl.tsx，提交只含本票增量，原有改动继续留在工作树。其余原有文件逐一核对。
 
-最新全量通过记录是 `pi110-http-oauth-1010-221428/batch-final-full-node24`：Node 24.19.0，1678 项、1672 PASS、0 FAIL、0 CANCELLED、6 SKIPPED。对应 Web 12 文件 96/96、四组类型检查以及 Node 22 MCP 35/35；该记录的非文档源码身份已经与批次开始源码核对。旧全量通过只建立起点，不能替代本票回归。本批唯一一次全量在 #71 完成后运行，本票关闭时全量回归为 PENDING。
+最新全量通过基线是 `pi110-http-oauth-1010-221428/batch-final-full-node24`：Node 24.19.0，1678 项、1672 PASS、0 FAIL、0 CANCELLED、6 SKIPPED。对应 Web 12 文件 96/96、四组类型检查以及 Node 22 MCP 35/35；该记录的非文档源码身份已经与批次开始源码核对。旧全量通过只建立起点，不能替代本票回归。本票关闭时批次全量为 PENDING，随后在 #71 实施与独立评审后执行；实际失败和修复后回归分别保留。
 
 绝对证据位置是本机材料，不冒充公开下载包：
 
@@ -52,4 +52,8 @@ LOCAL_WORKSPACE/artifacts/webui-optimization/pi110-codemode-discovery-1011
 
 最终固定范围 `cf30fca...3d2102f`（21 个提交路径）已由两位新的独立只读探子复评：**Standards PASS / Spec PASS**。硬规则违规与阻断发现为 0，Spec 确认首轮 P2 实质消除。Standards 保留上述非阻断 P3，不引入范围外重构。报告 `70-standards-final.md` / `70-spec-final.md`，提交版本和原有工作树差量分别核对。实现提交 `4e3e8a1`，存储修复 `3d2102f`；原始失败记录保留。GitHub 评论与关闭回读另留证据，本地提交没有推送。
 
-必需 C / P / B：PASS，限定上述实际 macOS 受控协议链路。批次全量：PENDING。I 完整候选安装、L 外部真实 Provider、远程 CI、发行、部署、日常安装切换：NOT_RUN。总规格 #19 与分类/生图后续票继续开放。
+批次第一次全量 `batch-final-full-node24` 在 `132e5c4` 完成，1713 项、1696 PASS、11 FAIL、0 CANCELLED、6 SKIPPED，退出 1。11 个失败包含一个父测试：工具名单断言未纳入 #70 的 codemode、旧受控栈缺少 root 时版本探测抛错、OAuth fixture 对原生通知 GET 错误返回 202。原失败收据、503.91 秒测试日志和冻结的 1194 个源文件 / 32 个候选输入均保留；失败运行结束后逐一核对，无源码漂移。修复只在缺少栈根时关闭 codemode 准入、更新精确工具名单，以及让已认证且不提供 GET 流的 OAuth fixture 返回原生支持的 405。显式 account child 的四个工具仍精确保持；请求数、账号身份、真实 PTY 恢复、无清理 ACK 不释放所有权、凭据扣留与无重放断言均保留。
+
+受影响六个测试文件的 `71-full-regression-native-node24` / `71-full-regression-native-node22` 分别 **51/51 PASS**、0 FAIL/CANCELLED/SKIPPED，覆盖完整 OAuth fixture 回归、公开 CLI/TUI、Host 生命周期与控制边界。最新 B 差量由 #71 的 `71-browser-full-regression-*` 保存，真实候选逐调用审批仍通过。新实质修复需要新的批次全量；第一次失败记录不覆写、不计为通过，修复后全量当前 PENDING。
+
+本票必需 C / P / B：PASS，限定上述实际 macOS 受控协议链路。GitHub 已于 `2026-10-11T02:58:31Z` CLOSED/completed 并回读，见 [关闭评论](https://github.com/Ricardo121380/only-my-pi/issues/70#issuecomment-6104818162) 和 `70-close-readback.json`；#71 在此之后实施。I 完整候选安装、L 外部真实 Provider、远程 CI、发行、部署、日常安装切换：NOT_RUN。总规格 #19 与分类/生图后续票继续开放。

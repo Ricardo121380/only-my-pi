@@ -106,7 +106,7 @@ test("public Host and real Pi suppress warming even when a loaded extension requ
   await delay(1800); // Real TTL=11s schedules its first warm at 1s.
   assert.equal(f.received.length, 1, "Provider must receive only the user request, including while streaming");
   assert.equal(f.received[0].key, "Bearer fixture-a");
-  assert.deepEqual(f.received[0].body.tools.map((tool) => tool.function.name).sort(), ["find", "grep", "ls", "read"]);
+  assert.deepEqual(f.received[0].body.tools.map((tool) => tool.function.name).sort(), ["codemode", "find", "grep", "ls", "read"]);
   const ack = await f.command({ type: "cancelTask", taskId: started.taskId }, 202);
   assert.equal(ack.status, "cancelling");
   const stopped = await until(() => f.task(started.taskId), (task) => task.status === "cancelled", "cancelled task");
@@ -138,7 +138,7 @@ test("public Host fixes same-provider and CLI account identity, reads with real 
     assert.equal(requests.length, 2, "one prompt and one tool-result continuation");
     assert.ok(requests.every((request) => request.key === `Bearer ${key}` && request.body.model === "one"));
     assert.match(JSON.stringify(requests[1].body.messages), /only temporary project data/);
-    assert.deepEqual(requests[0].body.tools.map((entry) => entry.function.name).sort(), ["find", "grep", "ls", "read"]);
+    assert.deepEqual(requests[0].body.tools.map((entry) => entry.function.name).sort(), ["codemode", "find", "grep", "ls", "read"]);
   }
   const before = f.received.length;
   const bad = (extra) => f.command({ type: "startTask", requestId: randomUUID(), projectId: f.projectId, accountId: f.account.accountId, model: "fixture/one", prompt: "must not run", ...extra }, 409);

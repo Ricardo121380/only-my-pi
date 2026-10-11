@@ -59,6 +59,7 @@ export async function createOAuthMcpServer({ expiresIn = 3600 } = {}) {
           return;
         }
         if (req.method === "DELETE") { res.writeHead(204).end(); return; }
+        if (req.method === "GET") { res.writeHead(405, { allow: "POST, DELETE" }).end(); return; }
         if (!message?.id) { res.writeHead(202).end(); return; }
         let result;
         if (message.method === "initialize") result = { protocolVersion: "2025-03-26", capabilities: { tools: {} }, serverInfo: { name: "controlled-oauth", version: "1" } };

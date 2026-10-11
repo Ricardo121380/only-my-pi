@@ -27,7 +27,7 @@ export class RpcWorker extends EventEmitter {
   }
   async start() {
     if (this.controlled && !this.accountId) throw hostError("ACCOUNT_BINDING_REQUIRED");
-    this.codemodeEnabled &&= await fs.readFile(path.join(this.stack.root, "pi/package.json"), "utf8").then((raw) => JSON.parse(raw).version === "1.1.0", () => false);
+    this.codemodeEnabled &&= typeof this.stack.root === "string" && await fs.readFile(path.join(this.stack.root, "pi/package.json"), "utf8").then((raw) => JSON.parse(raw).version === "1.1.0", () => false);
     const set = await this.extensionResolver({ stack: this.stack, configRoot: this.configRoot, headless: !this.controlled });
     const invocation = buildDirectPiInvocation({ stack: this.stack, extensionPaths: set.extensions, runtimeOwner: "host",
       argv: ["--mode", "rpc", "--model", this.model, "--session-dir", this.sessionRoot], env: { ...(this.accountId === undefined ? this.env : accountWorkerEnvironment(this.env)), PI_CODING_AGENT_DIR: this.configRoot } });
