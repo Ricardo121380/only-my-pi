@@ -57,7 +57,18 @@ test("active task protects its independent classifier account until worker termi
     assert.equal(result.code, "ACCOUNT_BUSY");
   }
   await authorize(f, taskId, "拒绝"); await done(f, taskId);
-  assert.equal(f.received.length, 0); assert.equal((await f.action({ type: "logout" })).status, "missing");
+  assert.equal(f.received.length, 0);
+  await until(async () => {
+    const response = await fetch(f.host.origin + "/api/account-action", {
+      method: "POST", headers: { Origin: f.host.origin, Cookie: f.cookie, "content-type": "application/json", "x-omp-account-protocol": "1" },
+      body: JSON.stringify({ accountId: f.account.accountId, action: { type: "status" } }),
+    });
+    const result = await response.json();
+    if (response.status === 409) { assert.equal(result.code, "ACCOUNT_BUSY"); return false; }
+    assert.equal(response.status, 200, JSON.stringify(result));
+    assert.equal(result.status, "stored"); return true;
+  }, Boolean, "classifier account released after confirmed termination", 15000);
+  assert.equal((await f.action({ type: "logout" })).status, "missing");
 });
 
 for (const partial of [true, false]) test(`priced classifier ${partial ? "partial" : "complete"} usage has one sourced accounting record and no parent SDK charge`, { timeout: 35000 }, async t => {
