@@ -63,7 +63,7 @@
 | B / Ego Lite | PASS，明确源码范围 | 单一 TaskSpace 46 / p1；`final-b/` 页面快照、PNG、实际接收数组及重启/最终 receipt；源码为 `e77586e` 对应工作树，评审后变更影响见下文 |
 | 类型检查 / WebUI / 构建 | PASS | `41-review-typecheck.log`、`42-web-final.log`（103/103）、`44-web-build-final.log`，exit 0 |
 | 最终全量回归 | PASS，1733 PASS / 0 FAIL / 0 CANCELLED / 6 SKIP | `51-node-full-final`，共 1739 项，exit 0；对应 `f969108` 工作树。随后仅加强账号测试等待并定向补验，运行时源码未改；首轮 `45-node-full` 的 1 FAIL 保留 |
-| 工程检查 | PASS | pack `48`；收尾 lint `56`、secret scan `57`、文档链接 `58`，均 exit 0；扫描首轮 `47` 失败保留 |
+| 工程检查 | PASS | pack `48`；收尾 lint `56`、secret scan `57`、文档链接 `58/59`，均 exit 0；扫描首轮 `47` 失败保留 |
 | Standards | PASS，已确认问题关闭 | 独立核验发现分类账号占用遗漏及 LOW 配置文案冲突，修复后分别复核；1 条非阻断标题前缀维护建议保留 |
 | Spec | PASS，已确认问题关闭 | 独立评审发现有价模型部分 token 被 SDK 补零及父工具重复累计；真实协议 RED 后修复，独立增量复核 PASS |
 
@@ -111,4 +111,4 @@ npm run build:web
 
 ## 收尾
 
-必需 C/P/B、Standards/Spec 及回归已经完成。`preservation-final.json` 复核初始 302 个文件：297 个字节不变，5 个重叠文件在隔离副本中仅反向应用本票提交差异后逐字还原。仅本票内容提交，未 push。GitHub 完成回填与关闭回读记录在本节后续更新；#19 保持 OPEN，#73/#74 本批不开始。
+必需 C/P/B、Standards/Spec 及回归已经完成。`preservation-final.json` 复核初始 302 个文件：297 个字节不变，5 个重叠文件在隔离副本中仅反向应用本票提交差异后逐字还原。仅本票内容提交，未 push。GitHub #72 的 7 条 AC 已勾选，[完成评论](https://github.com/Ricardo121380/only-my-pi/issues/72#issuecomment-6106938447)已逐字回读；2026-10-11 08:02:52Z 关闭并回读 `CLOSED / COMPLETED`，正文、评论、关闭状态分别保存在 `issue-72-*-readback.json`。总看板与工单映射同步到 #72 完成、下一批 #73/#74；#19 保持 OPEN，#73/#74 本批不开始。
