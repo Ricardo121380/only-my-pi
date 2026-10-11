@@ -148,9 +148,9 @@ export function installOmpMcp(pi, { configRoot, controller }) {
       if (!fresh || digest(fresh) !== record.definitionDigest || execution.changed || entry.changed || entry.epoch !== epoch) throw mcpError("MCP_TOOL_DEFINITION_CHANGED");
       execution.transport.beforeToolCall = async () => {
         await check(server);
-        if (callSignal.aborted || execution.changed || entry.changed || entry.epoch !== epoch) throw mcpError("MCP_AUTHORIZATION_REVOKED");
         if (write) { await authority.assert(); await write.assert(); }
         else if (!remote && await selectedPath(snapshot.projectPath, params[policy.pathArgument], policy.paths) !== record.target) throw mcpError("MCP_TARGET_CHANGED");
+        if (callSignal.aborted || execution.changed || entry.closed || entry.changed || entry.epoch !== epoch) throw mcpError("MCP_AUTHORIZATION_REVOKED");
       };
       if (remote) execution.transport.beforeDispatch = async () => { record.status = "dispatched"; await save(); };
       else { record.status = "dispatched"; await save(); }

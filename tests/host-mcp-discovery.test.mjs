@@ -91,3 +91,27 @@ test("an execution-only stdio definition notification during persistence prevent
   assert.ok(received.some((row) => row.type === "notification" && row.method === "notifications/resources/list_changed"));
   assert.equal(received.filter((row) => row.method === "resources/read").length, 0, "stale execution must not receive a resource read");
 });
+
+test("an execution-only stdio notification during target validation prevents the physical tool send", { timeout: 45000 }, async (t) => {
+  const code = 'text(await tools.mcp__local__read_file({path:"README.md"}));';
+  const { f } = await configured(t, { exposure: "direct", mode: "notify-at-tool-guard", code });
+  // Delay only the isolated fixture's selectedPath call inside the actual
+  // send guard. Its real filesystem validation still runs after notification.
+  const file = path.join(f.omp, "packages/mcp/extension.mjs"), source = await fs.readFile(file, "utf8"), anchor = "      execution.transport.beforeToolCall = async () => {\n";
+  assert.equal(source.split(anchor).length, 2);
+  const start = source.indexOf(anchor), end = source.indexOf("      };", start);
+  const guard = source.slice(start, end); assert.equal(guard.split("await selectedPath(").length, 2);
+  const delayed = anchor + `        const fixtureSelectedPath = async (...args) => {
+          await fs.writeFile(path.join(execution.transport.record.runtimeDir, "scratch"), "notify");
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          return selectedPath(...args);
+        };
+` + guard.slice(anchor.length).replace("await selectedPath(", "await fixtureSelectedPath(");
+  await fs.writeFile(file, source.slice(0, start) + delayed + source.slice(end));
+  const started = await f.start(); await finish(f, started);
+  const run = (await f.mcp({ type: "status" })).runs.at(-1), received = await mcpReception(run);
+  assert.ok(received.some((row) => row.type === "notification" && row.method === "notifications/tools/list_changed"));
+  assert.equal(run.discoveries[0].epoch, 0, "discovery process must remain unchanged");
+  assert.equal(received.filter((row) => row.method === "tools/call").length, 0, "stale execution must not receive a tool call");
+  assert.equal(run.calls[0].code, "MCP_AUTHORIZATION_REVOKED");
+});

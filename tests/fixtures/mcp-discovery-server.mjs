@@ -16,6 +16,13 @@ for await (const line of readline.createInterface({ input: process.stdin })) {
     const changing = ++lists === 2 && ["notify", "withdraw"].includes(mode); if (changing) phase++;
     output(message.id, { tools: mode === "withdraw" && phase > 1 ? [] : [{ name: "read_file", description: `Read selected file definition ${phase}`, inputSchema: { type: "object", required: ["path"], properties: { path: { type: "string" } }, additionalProperties: false } }] });
     if (changing) await notify();
+    if (mode === "notify-at-tool-guard") {
+      let execution = false; try { await fs.readFile(path.join(process.cwd(), "README.md")); execution = true; } catch {}
+      if (execution) {
+        for (;;) { if (await fs.readFile(path.join(root, "scratch"), "utf8").catch(() => "") === "notify") break; await new Promise((resolve) => setTimeout(resolve, 5)); }
+        await notify();
+      }
+    }
   } else if (message.method === "resources/list") output(message.id, { resources: mode === "withdraw" && phase > 1 ? [] : [{ uri, name: "Selected README", mimeType: "text/plain", size: mode === "claimed-large" ? 70000 : 22, description: `resource definition ${phase}` }, { uri: `mcp://${name}/hidden`, name: "unadmitted resource", mimeType: "text/plain" }] });
   else if (message.method === "resources/templates/list") {
     let execution = false;
