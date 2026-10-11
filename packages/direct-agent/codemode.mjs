@@ -14,6 +14,13 @@ const failure = (code, result) => {
 };
 const fail = (code) => Object.assign(new Error(code), { code });
 const bytes = (value) => Buffer.byteLength(JSON.stringify(value) ?? "");
+// Mirror the pinned native entry format only to measure its effective state.
+// Pi remains responsible for restoring and executing the store itself.
+function applyStore(store, data) {
+  if (typeof data?.set !== "object" || data.set === null || !Array.isArray(data.delete) || !data.delete.every((key) => typeof key === "string")) return;
+  for (const key of data.delete) store.delete(key);
+  for (const [key, value] of Object.entries(data.set)) store.set(key, value);
+}
 async function ordinaryTarget(ctx, input) {
   if (typeof input.path !== "string") return { path: ctx.cwd, identity: digest([ctx.cwd, input]) };
   const proposed = path.resolve(ctx.cwd, input.path);
@@ -50,8 +57,9 @@ export async function installOmpCodemode(pi, { controller, sdkFile = process.env
     if (key === "appendEntry") return (type, data) => {
       if (type === "codemode-store") {
         check(active);
-        const existing = active.ctx.sessionManager.getBranch().filter((entry) => entry.type === "custom" && entry.customType === type);
-        if (bytes(data) > CODEMODE_LIMITS.storeBytes || existing.reduce((sum, entry) => sum + bytes(entry.data), bytes(data)) > CODEMODE_LIMITS.historyBytes) throw fail("CODEMODE_STORAGE_LIMIT");
+        const store = new Map(active.store); applyStore(store, data);
+        if (bytes(Object.fromEntries(store)) > CODEMODE_LIMITS.storeBytes || active.historyBytes + bytes(data) > CODEMODE_LIMITS.historyBytes) throw fail("CODEMODE_STORAGE_LIMIT");
+        active.store = store; active.historyBytes += bytes(data);
       }
       if (type === "codemode-store") { active.entries.push([type, data]); return; }
       return pi.appendEntry(type, data);
@@ -62,9 +70,14 @@ export async function installOmpCodemode(pi, { controller, sdkFile = process.env
         if (revoked || running.size || ++scripts > CODEMODE_LIMITS.scripts) return failure("CODEMODE_EXECUTION_LIMIT");
         if (typeof input.code !== "string" || bytes(input) > CODEMODE_LIMITS.inputBytes) return failure("CODEMODE_INPUT_LIMIT");
         let parsed; try { parsed = parseCodemodeSource(input.code); } catch { return failure("CODEMODE_SOURCE_INVALID"); }
+        const entries = ctx.sessionManager.getBranch().filter((entry) => entry.type === "custom" && entry.customType === "codemode-store");
+        const historyBytes = entries.reduce((sum, entry) => sum + bytes(entry.data), 0), store = new Map();
+        if (historyBytes > CODEMODE_LIMITS.historyBytes) return failure("CODEMODE_STORAGE_LIMIT");
+        for (const entry of entries) applyStore(store, entry.data);
+        if (bytes(Object.fromEntries(store)) > CODEMODE_LIMITS.storeBytes) return failure("CODEMODE_STORAGE_LIMIT");
         const timeoutMs = Math.min(parsed.options.timeoutMs ?? CODEMODE_LIMITS.timeoutMs, CODEMODE_LIMITS.timeoutMs);
         const abort = new AbortController(), deadline = AbortSignal.timeout(timeoutMs);
-        const run = { id, ctx, abort, signal: AbortSignal.any([signal, abort.signal, deadline].filter(Boolean)), pending: 0, entries: [] };
+        const run = { id, ctx, abort, signal: AbortSignal.any([signal, abort.signal, deadline].filter(Boolean)), pending: 0, entries: [], store, historyBytes };
         running.set(id, run); active = run;
         const originalTmp = process.env.TMPDIR;
         let temporary;

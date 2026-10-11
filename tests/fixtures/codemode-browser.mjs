@@ -10,13 +10,18 @@ if (!path.isAbsolute(evidence ?? "")) throw new Error("evidence directory requir
 const prefix = process.env.OMP_CODEMODE_EVIDENCE_LABEL ?? "70-browser";
 if (!/^[a-z0-9-]+$/u.test(prefix)) throw new Error("invalid evidence label");
 const code = 'text(await tools.read({path:"README.md"})); try { text(await tools.mcp__local__read_file({path:"README.md"})); } catch(e) { text(e.message); } text("partial result retained; classifier/image disabled");';
+const storageCase = process.env.OMP_CODEMODE_BROWSER_CASE === "storage";
+const storageCodes = ['store("a", "中".repeat(200000)); text("first stored");', 'store("b", "中".repeat(200000)); text("second stored");'];
 const f = await createMcpHost({ assetsRoot: fileURLToPath(new URL("../../webui/dist", import.meta.url)), installedExtensions: true,
-  respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }),
+  respond: ({ body, res }) => {
+    if (storageCase) { const count = body.messages.filter((message) => message.role === "tool").length; return providerReply(res, count < storageCodes.length ? "codemode" : null, { code: storageCodes[count] }); }
+    return providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code });
+  },
 });
 await f.mcp({ type: "save", revision: 0, server: { ...f.server, enabled: true } });
 const hashes = {};
 for (const file of ["packages/direct-agent/codemode.mjs", "packages/direct-agent/launcher.mjs", "packages/mcp/extension.mjs", "packages/mcp/process.mjs", "packages/host/tasks.mjs", "packages/host/rpc-worker.mjs", "packages/host/account-rpc-entry.mjs", "extensions/omp-direct/index.ts", "extensions/omp-direct/runtime.mjs"]) hashes[file] = createHash("sha256").update(await fs.readFile(path.join(f.omp, file))).digest("hex");
-await fs.writeFile(path.join(evidence, `${prefix}-input.json`), JSON.stringify({ root: f.root, projectId: f.projectId, project: f.project, code, server: f.server, hashes, node: process.version, pi: "1.1.0", quickjs: "quickjs-wasi@3.6.2", installedExtensionCopies: true }, null, 2));
+await fs.writeFile(path.join(evidence, `${prefix}-input.json`), JSON.stringify({ root: f.root, projectId: f.projectId, project: f.project, code: storageCase ? storageCodes : code, server: f.server, hashes, node: process.version, pi: "1.1.0", quickjs: "quickjs-wasi@3.6.2", installedExtensionCopies: true }, null, 2));
 const pair = () => fetch(f.host.origin + "/internal/pair", { method: "POST", headers: { Origin: f.host.origin, Authorization: `Bearer ${f.host.controlToken}` } }).then((response) => response.json());
 const control = http.createServer(async (req, res) => {
   if (req.method !== "POST" || req.headers.origin !== controlOrigin || !["/pair", "/restart", "/stop"].includes(req.url)) { res.writeHead(403).end(); return; }

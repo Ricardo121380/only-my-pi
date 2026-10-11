@@ -14,13 +14,13 @@
 LOCAL_WORKSPACE/artifacts/webui-optimization/pi110-codemode-discovery-1011
 ```
 
-使用当前实际 Pi SDK / pi-codemode / pi-mcp **1.1.0**、quickjs-wasi **3.6.2**，分别运行 Node 24.19.0 与 22.19.0。加载 Pi 公开 createCodemodeExtension 和真实 QuickJS-NG，没有模拟执行器。P/B 的合成账号只连接回环模型协议服务；MCP 是受控的真实 stdio 进程，独立记录实际接收。使用实际安装 permission-modes 扩展的受控副本验证策略衔接，不改变用户安装或配置。
+源码候选实际加载仓库 Pi SDK / pi-codemode / pi-mcp **1.1.0**、quickjs-wasi **3.6.2**，分别运行 Node 24.19.0 与 22.19.0。受控 fixture 复制真实依赖后加载 Pi 公开 createCodemodeExtension 和真实 QuickJS-NG，没有模拟执行器。Node 24 所在的日常 stack 的 Pi 仍为 **0.85.1**，本批不切换它；Node 路径不代表 Pi 版本。P/B 的合成账号只连接回环模型协议服务；MCP 是受控的真实 stdio 进程，独立记录实际接收。使用实际安装 permission-modes 扩展的受控副本验证策略衔接，不改变用户安装或配置。
 
 ## C：授权、执行和恢复合同
 
 - 父脚本不授予子调用权限。普通子工具与 MCP 子工具分别走实际 Pi tool_call 策略；安装版 permission-modes 只把 OMP 已接管的 ask 分支委派给 OMP，显式 deny 仍生效。审批保留子工具、参数、canonical 目标及父子 ID。目标 inode/版本变化后旧许可失效。MCP 沿用现有工具、凭据、配置 epoch、Coding、项目 owner 与物理服务准入。
 - 注册、active 和 direct/deferred/codemode/hidden 分开处理。deferred/codemode 可按已准入策略在脚本内调用，模型直接声明只含 direct；hidden 和 inactive 不被发现，手写名称也不能执行。模型分类和生成 namespace 完全不注入。
-- 主脚本每次最多 60 秒、每任务最多 16 脚本 / 32 子调用、同时最多 4 子调用。源代码 32 KiB、子参数 16 KiB、子结果和返回输出各 64 KiB。脚本选项只能收紧，不能提高边界。真实 QuickJS 的 VM 上限 256 MiB、store 上限 1 MiB，当前分支历史保存上限 8 MiB。
+- 主脚本每次最多 60 秒、每任务最多 16 脚本 / 32 子调用、同时最多 4 子调用。源代码 32 KiB、子参数 16 KiB、子结果和返回输出各 64 KiB。脚本选项只能收紧，不能提高边界。真实 QuickJS 的 VM 上限 256 MiB、store 上限 1 MiB，当前分支 codemode-store 条目 payload 累计上限 8 MiB。
 - 原生输出具有 16,777,216 字符 / 100,000 项的内部上限。每次脚本使用私有临时目录，payload 上限依原生字符上限折合 64 MiB；原生截断文件不返回给模型，超限判失败，退出清理目录。这是 VM / payload 边界，不声称 OS RSS 或文件系统块配额。MCP 回执目录固定在运行时根，避免随脚本临时目录清理。
 - 异常、嵌套失败、超大输出、内存超限、store 超限、死等待、未等待 Promise、取消和撤权均保留已发生调用的实际结果。脚本结束后拒绝再发起子调用；不自动撤销或重放已发生的副作用。MCP UNKNOWN 仍投影 UNKNOWN，不以外层结束推断应用结果。
 - 原生 store/load 与真实会话记录、所选历史叶节点对应。只在完整成功且输出符合边界时提交新的 store entry；失败/取消不提交。公开 Host resume 与原生 SessionAdmissions.create(sourceFile, leafId) 的实际 at-entry 分支均实测；来源会话字节不改。权限与任务预算始终只存在于当前运行内，恢复和新任务重新审批。
@@ -46,6 +46,10 @@ LOCAL_WORKSPACE/artifacts/webui-optimization/pi110-codemode-discovery-1011
 
 ## 独立评审与关闭
 
-Standards / Spec：PENDING。独立双轴评审针对本票提交增量，排除用户原有工作树改动。评审通过并核对全部完成条件后才关闭 #70；GitHub 评论与关闭回读另留证据。
+首轮固定范围 `cf30fca...4e3e8a1`：Standards PASS（撤权 ACK 等待重复的非阻断 P3）；Spec FAIL（完整多字节 store 的 P2）。独立报告 `70-standards-first.md` / `70-spec-first.md` 保留。真实公开 Host 复现两项 RED：跨脚本累计超限和原生历史超限恢复，见 `70-red-complete-store`。修复在恢复入口和提交 set/delete 后检查完整有效状态的 UTF-8 字节，保留原生状态所有权；替换/删除按原生语义计算。Node 24 `70-green-complete-store` 的两项边界及原有真实 resume/branch 用例 **3/3 PASS**，四组类型检查 `70-store-typecheck` PASS。Node 22 复验及 B 差量独立留证。
+
+修复后 Node 22 `70-store-final-node22` **3/3 PASS**。同一 Ego Lite TaskSpace 的 `70-browser-storage-state.png` 展示两个真实脚本：首个 completed，累计超限的第二个 failed / CODEMODE_STORAGE_LIMIT；MCP 接收 0 次。截图已查看，实际任务和新源码 hash 保存于 `70-browser-storage-runtime.json`，与原先 1/0/0 B 的输入身份分别保留。
+
+最终 Standards / Spec：PENDING。独立双轴评审针对本票提交增量，排除用户原有工作树改动。评审通过并核对全部完成条件后才关闭 #70；GitHub 评论与关闭回读另留证据。
 
 必需 C / P / B：PASS，限定上述实际 macOS 受控协议链路。批次全量：PENDING。I 完整候选安装、L 外部真实 Provider、远程 CI、发行、部署、日常安装切换：NOT_RUN。总规格 #19 与分类/生图后续票继续开放。
