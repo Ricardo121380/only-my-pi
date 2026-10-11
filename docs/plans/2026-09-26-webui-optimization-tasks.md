@@ -1,6 +1,6 @@
 # WebUI 优化 Task 看板
 
-**2026-10-11 当前方向：** [总规格 #19 对应本地正文](2026-10-01-webui-remaining-spec.md)与[适配共识](2026-10-10-pi-1.1.0-adaptation-consensus.md)确定 Pi 1.1.0 为开发目标，新增 MCP/codemode、分类与生图。独立适配可先行，材料链继续由 #20/#21/#22 推进；原 #20–#61 身份和 U2–U6 出口保留。下面 20/44 及历史 PASS 不代表新版本或新增范围通过，Q14 已批准并发布新增 #62–#75，补充 18 张既有正文，完整图为 56 张实施票、73 条依赖，详见[本轮实际映射](2026-10-10-pi-1.1.0-ticket-review.md)。当前 #62/#63/#64/#66/#67/#68/#69 均已 CLOSED / completed；#68、#69 分别取得必需 C/P/B、Standards/Spec 与关闭回读，后续实施入口为 #70（codemode，前置 #66 已关闭）。#65 仍为独立私有运行时入口。
+**2026-10-11 当前方向：** [总规格 #19 对应本地正文](2026-10-01-webui-remaining-spec.md)与[适配共识](2026-10-10-pi-1.1.0-adaptation-consensus.md)确定 Pi 1.1.0 为开发目标，新增 MCP/codemode、分类与生图。独立适配可先行，材料链继续由 #20/#21/#22 推进；原 #20–#61 身份和 U2–U6 出口保留。下面 20/44 及历史 PASS 不代表新版本或新增范围通过，Q14 已批准并发布新增 #62–#75，补充 18 张既有正文，完整图为 56 张实施票、73 条依赖，详见[本轮实际映射](2026-10-10-pi-1.1.0-ticket-review.md)。当前 #62/#63/#64/#66/#67/#68/#69/#70/#71 均已 CLOSED / completed；#70 codemode 与 #71 MCP 发现各自完成必需 C/P/B、Standards/Spec 及关闭回读。下一项为 #72 / PI110-N11（固定分类账号模型、共享预算预占与持久请求账本），实时原生前置 #70 已关闭；本批交付止于 #72，#73/#74 留作后续图片产物批次。#65 仍为独立私有运行时入口。
 
 日期：2026-09-26。依据：[完整计划](2026-09-26-webui-optimization-plan.md)、[Q1–Q23 讨论记录](2026-09-26-webui-optimization-discussion.md)、[报告核验与R1–R3决定](2026-09-26-webui-report-followup-discussion.md)、[验收矩阵](2026-09-26-webui-optimization-acceptance.md)。
 
@@ -148,6 +148,8 @@ Task：S0-?? / U?-??
 ```
 
 ## 当前具体下一步
+
+**2026-10-11 分类批次入口回读：** 起点 `1ba85ac02f616bc025ad47d2cafcacc785c9674d`；#70/#71 正文、完成评论和 CLOSED / completed 状态已核对，#72 的实时原生 blocked-by 为 #70（completed）。[codemode 验收](2026-10-11-pi110-codemode-acceptance.md)与[MCP 发现验收](2026-10-11-pi110-mcp-discovery-acceptance.md)保留各票 C/P/B、Standards/Spec 的实际范围；上一批最终全量为 1713 项 / 1707 PASS / 0 FAIL / 6 SKIP，属于历史基线，本批尚未重跑。当前开始 #72；#73/#74 不在本批范围，#19 与 GP110-07 整体继续开放，Full、外部真实服务和日常晋升门槛保留。
 
 **2026-10-11 工程收尾及 HTTP / OAuth 完成回读：** #62/#63/#64/#66/#67/#68/#69 均已 CLOSED / completed；本批起点 `5d4ccda3c79629e6432d8b668ac435ad6f603f1c`。GP110-01、02、03 及 stdio 读/descriptor 写切片的必需证据和两轴评审分别通过，原源码身份与限制保留。逐票证据见[运行/终端验收](2026-10-10-pi110-runtime-terminal-acceptance.md)、[输入验收](2026-10-10-pi-1.1.0-input-acceptance.md)、[stdio 验收](2026-10-10-pi110-mcp-stdio-acceptance.md)、[写入验收](2026-10-10-pi110-mcp-write-acceptance.md)、[HTTP 验收](2026-10-10-pi110-http-mcp-acceptance.md)和[OAuth 验收](2026-10-10-pi110-mcp-oauth-acceptance.md)。#68 于 2026-10-10 15:24:24Z、#69 于 17:02:44Z 分别关闭并回读；本批两票分别完成。后续入口 #70 的直接前置 #66 已 CLOSED；#71 仍等待 #70。#65 为独立入口，#19/GP110-05 整体、材料链、Full/U2、真实服务和日常晋升门槛保持。上一批全量 FAIL 与本批首次 19 FAIL 保留；最终当前候选全量 PASS（1678 总计 / 1672 PASS / 0 FAIL / 0 CANCELLED / 6 SKIP，exit 0），与各票必需证据分别报告，详见[批次收尾](2026-10-10-pi110-http-oauth-closeout.md)。下面发布时的“全部 OPEN”“下一项 #62”保留为历史快照。
 
