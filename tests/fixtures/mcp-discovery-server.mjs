@@ -17,7 +17,14 @@ for await (const line of readline.createInterface({ input: process.stdin })) {
     output(message.id, { tools: mode === "withdraw" && phase > 1 ? [] : [{ name: "read_file", description: `Read selected file definition ${phase}`, inputSchema: { type: "object", required: ["path"], properties: { path: { type: "string" } }, additionalProperties: false } }] });
     if (changing) await notify();
   } else if (message.method === "resources/list") output(message.id, { resources: mode === "withdraw" && phase > 1 ? [] : [{ uri, name: "Selected README", mimeType: "text/plain", size: mode === "claimed-large" ? 70000 : 22, description: `resource definition ${phase}` }, { uri: `mcp://${name}/hidden`, name: "unadmitted resource", mimeType: "text/plain" }] });
-  else if (message.method === "resources/templates/list") output(message.id, { resourceTemplates: [] });
+  else if (message.method === "resources/templates/list") {
+    let execution = false;
+    if (mode === "notify-at-send") { try { await fs.readFile(path.join(process.cwd(), "README.md")); execution = true; } catch {} }
+    if (execution) {
+      const wait = async (value) => { for (;;) { if (await fs.readFile(path.join(root, "scratch"), "utf8").catch(() => "") === value) return; await new Promise((resolve) => setTimeout(resolve, 5)); } };
+      output(message.id, { resourceTemplates: [] }); await wait("notify"); await notify();
+    } else output(message.id, { resourceTemplates: [] });
+  }
   else if (message.method === "tools/call") { await record({ type: "call", arguments: message.params.arguments }); output(message.id, { content: [{ type: "text", text: await fs.readFile(message.params.arguments.path, "utf8") }] }); }
   else if (message.method === "resources/read") {
     await record({ type: "resource", uri: message.params.uri });

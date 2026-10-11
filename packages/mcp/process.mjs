@@ -107,7 +107,7 @@ export class ControlledStdioTransport {
     this.record.status = "running"; await this.save();
   }
   async send(message) {
-    if (message.method === "tools/call") await this.beforeToolCall?.(message);
+    if (["tools/call", "resources/read"].includes(message.method)) await this.beforeToolCall?.(message);
     if (this.closed || !this.child || this.child.stdin.destroyed) throw mcpError("MCP_CONNECTION_CLOSED");
     const frame = JSON.stringify(message) + "\n";
     if (Buffer.byteLength(frame) > MCP_LIMITS.inputBytes) throw mcpError("MCP_INPUT_LIMIT");

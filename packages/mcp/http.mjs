@@ -35,7 +35,7 @@ export class ControlledHttpTransport {
     if (this.closed && init.method !== "DELETE") throw mcpError("MCP_CONNECTION_CLOSED");
     await this.authorize(this.credentialDigest);
     if (init.body && (typeof init.body !== "string" || Buffer.byteLength(init.body) > MCP_LIMITS.inputBytes)) throw mcpError("MCP_INPUT_LIMIT");
-    const signal = AbortSignal.any([this.abort.signal, this.signal, init.signal, AbortSignal.timeout(init.method === "GET" ? MCP_LIMITS.discoveryStreamMs : MCP_LIMITS.timeoutMs)].filter(Boolean));
+    const signal = AbortSignal.any([this.abort.signal, init.method === "GET" ? undefined : this.signal, init.signal, AbortSignal.timeout(init.method === "GET" ? MCP_LIMITS.discoveryStreamMs : MCP_LIMITS.timeoutMs)].filter(Boolean));
     if (signal.aborted) throw mcpError("MCP_CALL_CANCELLED");
     let response;
     try {

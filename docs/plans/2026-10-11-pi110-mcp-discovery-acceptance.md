@@ -26,6 +26,7 @@ LOCAL_WORKSPACE/artifacts/webui-optimization/pi110-codemode-discovery-1011
 - 允许 text/plain、text/markdown、application/json 与明确准入的 application/octet-stream；JSON 实际解析，文本 blob 检查规范 base64 和 UTF-8，二进制只返回 base64 文本。每返回最多 8 部分、64 KiB，逐部分验证精确 URI、MIME 和内容形状，解码后再阻断凭据。只返回带服务器/URI/定义来源的数据，不执行 HTML、MCP Apps 或图片；不产生可供任意读取的资源临时文件。
 - 已知不合格内容明确 failed，部分返回仅保留已验证部分。已经派发但响应超限、断连、取消或凭据泄露拒绝的结果保留 unknown，重启后同目标/URI 后续尝试被阻断，不能自动重放。历史发现保留时戳与事件但标为历史/不可用；失联 owner 投影 stale/reconciliation，不改写历史事实。
 - 真实写入竞态另行补强：定义失效会取消该定义绑定的调用信号；审批返回及服务启动前再次检查 epoch。旧审批不能在定义变化后启动持有 FD 3 的服务。Coding、项目写入所有权、文件身份和物理限制继续独立生效。
+- HTTP 通知 GET 流的 EOF、超限和真实 60 秒期限会关闭失效连接、递增 epoch、取消定义绑定的在途信号并隐藏旧能力；UI 显示当前任务已断连及事件，仍允许显式重新发现。没有静默重连或业务重试。重新发现的 10 秒期限只约束发现过程，不在成功后继续撤销其连接。stdio 的 tools/call 与 resources/read 都在实际发送边界再次检查定义和权限。
 
 局部职责整理限于本票：协议发现与内容验证置于 `packages/mcp/discovery.mjs`，实际发现 UI 置于 `McpDiscoveryPanel.tsx`；原有配置、OAuth、所有权及传输职责保留，没有广域机械重构。
 
@@ -41,6 +42,12 @@ LOCAL_WORKSPACE/artifacts/webui-optimization/pi110-codemode-discovery-1011
 
 Web 最终 `71-final-web` **14 文件 99/99 PASS**，覆盖真实/历史发现投影及防重复操作；四组类型检查 `71-post-definition-typecheck` PASS，`71-final-build` PASS。`71-lint`、`71-pack` PASS，包清单 1599 文件，含发现模块。打包检查不等同完整候选安装。
 
+首轮独立评审发现三个实质缺口，失败报告保留为 `71-standards-first.md` / `71-spec-first.md`。`71-red-review-boundaries` 真实复现二进制 base64 凭据进入公开结果，以及通知 EOF 后仍显示 ready；第三项首轮因 fixture 回执尚未创建而失败，不作为业务复现。`71-red-stdio-save-delay` 才是 stdio 的真实发送竞态 RED：资源请求接收 **1**，预期 **0**。该用例只在隔离副本的 McpRuns.save 注入 200 ms 持久化延迟和受控通知信号，Host、Pi、stdio 传输和服务均真实执行；不冒充完全无注入的日常运行。先前同步尝试遇到 ENOENT、非等待式 LOCK_HELD 导致的终止未确认，失败日志全部保留，没有按通过计入。
+
+修复在 blob 解码之后、格式化之前阻断凭据，整次泄露返回保留 unknown，不能把原 base64 或部分内容交给脚本/模型；发现连接监听原生错误及关闭，首连期间的错误也不能被遗漏；stdio 统一实际发送前 guard。`71-green-review-boundaries-node24` **5/5 PASS**，132.63 秒：二进制凭据拒绝、EOF、64 KiB 累计超限、真实 60 秒期限、持久化期间执行连接单独通知。前三种断流均旧审批读取 0，显式重连后新审批读取 1；EOF 重连额外保持超过 10 秒仍 ready。Node 22 最终固定源码组合 `71-review-fixed-native-node22` **18/18 PASS**，260.78 秒、0 FAIL/CANCELLED/SKIPPED。
+
+修复后 `71-review-fixed-web` **14 文件 100/100 PASS**，`71-review-fixed-types` 四组 PASS，`71-review-fixed-build`、`71-review-fixed-lint`、`71-review-fixed-pack` PASS；打包仍 1599 文件。
+
 ## B：Ego Lite 与源码差量
 
 全批沿用 TaskSpace **45** / p1，没有切换浏览器工具或 profile。`71-browser-final-runtime.json` 五个实际页面任务：热变更旧审批 rejected（HTTP 读取 0）、新定义重新审批 completed（HTTP 读取 1）、hidden（业务接收 0、审批 0）、允许组合（stdio 工具/资源各 1、HTTP 工具/资源各 1，四次独立审批）、资源拒绝（HTTP 读取 0）。父脚本捕获子错误并成功时，子调用仍分别 rejected/failed，不以父状态冒充子调用成功。
@@ -49,8 +56,10 @@ Web 最终 `71-final-web` **14 文件 99/99 PASS**，覆盖真实/历史发现�
 
 初轮 `71-browser-verified-*` 也保留：实际允许组合成功；第二个任务因人工页面核验停留超过 60 秒脚本上限而超时，业务接收 0。浏览器选择器、snapshot ref 和等待参数失败记录留在工具历史；没有覆写这些输入或将其记作热更新通过。修正 fixture 对模型请求文本块的读取后完成上述五个最终旅程。实际截图和独立服务账本相互核对。
 
+评审修复的 B 差量为 `71-browser-channel-*`，仍是 TaskSpace 45 / p1、真实 Pi 1.1.0 / Node 24.19.0 和未注入持久化延迟的源码候选。待审批时由真实 HTTP 服务结束通知流，页面显示连接断开、变化版本 1、disconnected 事件、旧工具/资源当前不可用，显式“重新发现 remote”恢复。旧子调用 rejected（读取 0）；新任务独立审批后 completed（读取 1）。共两个任务、stdio 接收 0/0、HTTP 资源读取 1、GET 连接 3（首连、用户显式重连、新任务首连）。11 个实际源码/Web 构建 hash 与当前候选逐一匹配。`71-browser-channel-disconnected.png` / `71-browser-channel-fresh.png` 已查看，审批 DOM、实际任务、独立服务接收及停止收据均保留。
+
 ## 独立评审与完成状态
 
-Standards：PENDING；Spec：PENDING。固定范围为本票基点至实现提交，只读探子分别核验，结果与修复另行回填。必需 C/P/B 的核心受控链路已通过，最终复验及批次全量仍待收敛，当前不关闭本票。
+首轮固定范围 `c30ddb8...d30598d`：Standards FAIL（P2 stdio 资源发送 guard 漏洞）；Spec FAIL（P1 二进制凭据、P2 通知流失效未投影）。三项均已真实 RED → GREEN，报告和原失败证据保留。最终 Standards / Spec：PENDING，需由两个新的只读探子在修复后的固定提交复评。必需 C/P/B 和最终 Node 22 组合已通过，复评及批次全量仍待收敛，当前不关闭本票。
 
 I 完整候选安装、L 外部真实 Provider、远程 CI、发行、部署、日常安装切换：NOT_RUN。#19 及 #72/#73 不因本票的本地验收关闭。

@@ -19,11 +19,12 @@ const serverFile = fileURLToPath(new URL("./mcp-discovery-server.mjs", import.me
 let state = await f.mcp({ type: "list" });
 await f.mcp({ type: "save", revision: state.revision, server: { ...f.server, enabled: true, args: [serverFile], codePaths: [serverFile], tools: f.server.tools.map((tool) => ({ ...tool, exposure: "deferred" })), resources: [{ uri: "mcp://local/readme", mimeTypes: ["text/plain"], paths: ["README.md"] }] } });
 const hashes = {};
-for (const file of ["packages/mcp/catalog.mjs", "packages/mcp/discovery.mjs", "packages/mcp/extension.mjs", "packages/mcp/http.mjs", "packages/mcp/runs.mjs", "packages/direct-agent/codemode.mjs", "packages/host/server.mjs", "packages/host/rpc-worker.mjs", "packages/host/tasks.mjs"]) hashes[file] = createHash("sha256").update(await fs.readFile(path.join(f.omp, file))).digest("hex");
+for (const file of ["packages/mcp/catalog.mjs", "packages/mcp/discovery.mjs", "packages/mcp/extension.mjs", "packages/mcp/process.mjs", "packages/mcp/http.mjs", "packages/mcp/runs.mjs", "packages/direct-agent/codemode.mjs", "packages/host/server.mjs", "packages/host/rpc-worker.mjs", "packages/host/tasks.mjs"]) hashes[file] = createHash("sha256").update(await fs.readFile(path.join(f.omp, file))).digest("hex");
+hashes["webui/dist/index.html"] = createHash("sha256").update(await fs.readFile(fileURLToPath(new URL("../../webui/dist/index.html", import.meta.url)))).digest("hex");
 await fs.writeFile(path.join(evidence, `${prefix}-input.json`), JSON.stringify({ root: f.root, projectId: f.projectId, project: f.project, combinedCode, resourceCode, hashes, node: process.version, pi: "1.1.0", installedExtensionCopies: true }, null, 2));
 const pair = () => fetch(f.host.origin + "/internal/pair", { method: "POST", headers: { Origin: f.host.origin, Authorization: `Bearer ${f.host.controlToken}` } }).then((response) => response.json());
 const control = http.createServer(async (req, res) => {
-  if (req.method !== "POST" || req.headers.origin !== controlOrigin || !["/pair", "/change", "/withdraw", "/hide", "/show", "/delay", "/restart", "/stop"].includes(req.url)) { res.writeHead(403).end(); return; }
+  if (req.method !== "POST" || req.headers.origin !== controlOrigin || !["/pair", "/change", "/withdraw", "/hide", "/show", "/delay", "/drop-stream", "/oversize-stream", "/restart", "/stop"].includes(req.url)) { res.writeHead(403).end(); return; }
   try {
     let data = { changed: true };
     if (req.url === "/pair") data = await pair();
@@ -31,6 +32,8 @@ const control = http.createServer(async (req, res) => {
     else if (req.url === "/change") service.changeSchema();
     else if (req.url === "/withdraw") service.withdraw();
     else if (req.url === "/delay") service.setResourceMode("delay");
+    else if (req.url === "/drop-stream") service.dropNotifications();
+    else if (req.url === "/oversize-stream") service.dropNotifications(true);
     else if (["/hide", "/show"].includes(req.url)) {
       const hide = req.url === "/hide"; state = await f.mcp({ type: "list" });
       for (const server of state.servers) {

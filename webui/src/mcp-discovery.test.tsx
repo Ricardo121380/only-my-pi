@@ -24,3 +24,11 @@ it("stale and historical definitions never claim current callable or readable ca
   expect(screen.getByText(/上次发现，当前不可调用/)).toBeTruthy(); expect(screen.getByText(/上次发现，当前不可读取/)).toBeTruthy();
   expect((screen.getByText("重新发现 remote") as HTMLButtonElement).disabled).toBe(true);
 });
+it("a disconnected current task shows unavailable definitions while retaining explicit recovery", () => {
+  const discover = vi.fn();
+  const run: McpRun = { runId: "current", taskId: "actual-task", projectPath: "/project", revision: 1, status: "running", processes: [], calls: [], discoveries: [{ server: "remote", targetDigest: "target", epoch: 3, live: true, status: "disconnected", tools: [{ name: "echo", exposure: "deferred", active: false, definitionDigest: "old" }], resources: [{ name: "README", uri: "mcp://remote/readme", mimeType: "text/plain", definitionDigest: "old" }], events: [{ type: "disconnected", at: "2026-10-11T03:54:00Z" }] }] };
+  render(<McpDiscoveryPanel run={run} busy={false} canDiscover onDiscover={discover} />);
+  expect(screen.getByText(/当前任务/)).toBeTruthy(); expect(screen.queryByText(/当前连接/)).toBeNull();
+  expect(screen.getByText(/上次发现，当前不可调用/)).toBeTruthy(); expect(screen.getByText(/上次发现，当前不可读取/)).toBeTruthy();
+  fireEvent.click(screen.getByText("重新发现 remote")); expect(discover).toHaveBeenCalledWith("remote");
+});

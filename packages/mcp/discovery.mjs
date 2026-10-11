@@ -1,4 +1,5 @@
 import { MCP_LIMITS, digest, mcpError, resourceUri } from "./catalog.mjs";
+import { containsSecret } from "./process.mjs";
 
 const bytes = (value) => Buffer.byteLength(JSON.stringify(value));
 export async function discoverClient(client, server, signal) {
@@ -25,7 +26,7 @@ export function admittedResources(server, resources) {
 
 // A resource is inline data owned by this task. It never grants a host filename,
 // executes HTML or creates a model-readable temporary output file.
-export function resourceContent(output, policy, initial) {
+export function resourceContent(output, policy, initial, secrets = []) {
   const content = [], reject = (code) => ({ isError: true, content: [{ type: "text", text: code }, ...content], details: { status: "failed", code, partial: content.length > 0 } });
   if (!Array.isArray(output.contents) || output.contents.length > 8 || bytes(output) > MCP_LIMITS.outputBytes) return reject("MCP_RESOURCE_OUTPUT_LIMIT");
   for (const block of output.contents) {
@@ -38,11 +39,12 @@ export function resourceContent(output, policy, initial) {
       else if (typeof block.blob === "string") {
         const decoded = Buffer.from(block.blob, "base64");
         if (decoded.toString("base64") !== block.blob) throw mcpError("MCP_RESOURCE_TYPE_NOT_ADMITTED");
+        if (containsSecret(decoded.toString("utf8"), secrets)) throw mcpError("MCP_SECRET_OUTPUT_REJECTED");
         text = mime === "application/octet-stream" ? `base64: ${block.blob}` : new TextDecoder("utf-8", { fatal: true }).decode(decoded);
       } else throw mcpError("MCP_RESOURCE_TYPE_NOT_ADMITTED");
       if (mime === "application/json") JSON.parse(text);
       content.push({ type: "text", text });
-    } catch (error) { return reject(/^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "MCP_RESOURCE_TYPE_NOT_ADMITTED"); }
+    } catch (error) { if (error.code === "MCP_SECRET_OUTPUT_REJECTED") throw error; return reject(/^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "MCP_RESOURCE_TYPE_NOT_ADMITTED"); }
   }
   if (!content.length || bytes(content) > MCP_LIMITS.outputBytes) return reject("MCP_RESOURCE_OUTPUT_LIMIT");
   return { content };

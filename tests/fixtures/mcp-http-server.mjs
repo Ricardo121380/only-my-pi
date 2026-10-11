@@ -23,13 +23,13 @@ export async function createHttpMcpServer({ token = "fixture-http-identity", add
     let result;
     if (message.method === "initialize") { const session = randomUUID(); sessions.add(session); res.setHeader("mcp-session-id", session); result = { protocolVersion: "2025-03-26", capabilities: { tools: { listChanged: true }, ...(discovery ? { resources: { listChanged: true } } : {}) }, serverInfo: { name: "controlled-http", version: "1" } }; }
     else if (message.method === "tools/list") result = { tools: withdrawnTool ? [] : [{ name: "echo", description: "Controlled remote action", inputSchema: schema, annotations: { readOnlyHint: true } }] };
-    else if (discovery && message.method === "resources/list") result = { resources: withdrawnResource ? [] : [{ uri, name: "Remote README", mimeType: "text/plain", size: 24, description: `resource definition ${version}` }] };
+    else if (discovery && message.method === "resources/list") result = { resources: withdrawnResource ? [] : [{ uri, name: "Remote README", mimeType: resourceMode === "binary-secret" ? "application/octet-stream" : "text/plain", size: 24, description: `resource definition ${version}` }] };
     else if (discovery && message.method === "resources/templates/list") result = { resourceTemplates: [] };
     else if (discovery && message.method === "resources/read") {
       if (resourceMode === "disconnect") { req.socket.destroy(); return; }
       if (resourceMode === "delay") { await new Promise((resolve) => { const timer = setTimeout(resolve, delayMs); res.once("close", () => { clearTimeout(timer); resolve(); }); }); if (res.destroyed) return; }
-      const text = resourceMode === "oversized" ? "x".repeat(70000) : resourceMode === "secret-blob" ? token : "controlled remote README";
-      const first = { uri: resourceMode === "bad-uri" ? "file:///etc/passwd" : uri, mimeType: resourceMode === "html" ? "text/html" : "text/plain", ...(["blob", "secret-blob"].includes(resourceMode) ? { blob: Buffer.from(text).toString("base64") } : { text }) };
+      const text = resourceMode === "oversized" ? "x".repeat(70000) : ["secret-blob", "binary-secret"].includes(resourceMode) ? token : "controlled remote README";
+      const first = { uri: resourceMode === "bad-uri" ? "file:///etc/passwd" : uri, mimeType: resourceMode === "html" ? "text/html" : resourceMode === "binary-secret" ? "application/octet-stream" : "text/plain", ...(["blob", "secret-blob", "binary-secret"].includes(resourceMode) ? { blob: Buffer.from(text).toString("base64") } : { text }) };
       result = { contents: resourceMode === "partial" ? [first, { uri: "file:///etc/passwd", mimeType: "text/plain", text: "untrusted second part" }] : [first] };
     }
     else if (message.method === "tools/call") {
@@ -49,6 +49,7 @@ export async function createHttpMcpServer({ token = "fixture-http-identity", add
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   return { url: `http://127.0.0.1:${server.address().port}/mcp`, token, received, sessions,
     setMode: (value) => { mode = value; }, setResourceMode: (value) => { resourceMode = value; },
+    dropNotifications: (oversized = false) => { received.push({ type: "notification-channel", outcome: oversized ? "oversized" : "eof" }); for (const stream of streams) { if (oversized) stream.write(`: ${"x".repeat(70000)}\n\n`); else stream.end(); } },
     changeSchema: () => { schema = { ...schema, description: `new definition ${++version}` }; if (discovery) { notify("notifications/tools/list_changed"); notify("notifications/resources/list_changed"); } },
     withdraw: () => { withdrawnTool = true; withdrawnResource = true; notify("notifications/tools/list_changed"); notify("notifications/resources/list_changed"); },
     close: async () => { for (const socket of sockets) socket.destroy(); await new Promise((resolve) => server.close(resolve)); } };

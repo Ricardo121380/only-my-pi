@@ -64,7 +64,8 @@ export function installOmpMcp(pi, { configRoot, controller }) {
         if (digest((await catalog.credentials(server, snapshot.projectPath)).env) !== expected) throw mcpError("MCP_CREDENTIAL_BINDING_CHANGED");
       } }) : new ControlledStdioTransport({ server, files, readPaths, writeHandle, configRoot, ...credentials, record, save });
     const client = new McpClient({ name: "only-my-pi", version: "1", requestTimeoutMs: MCP_LIMITS.timeoutMs });
-    const connection = { client, transport, record, changed: false };
+    const connection = { client, transport, record, changed: false, failure: null };
+    client.onError((error) => { connection.failure = /^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "MCP_CONNECTION_CLOSED"; });
     if (signal) {
       if (signal.aborted) throw mcpError("MCP_CALL_CANCELLED");
       const abort = () => { void client.close().catch(() => {}); void transport.close().catch(() => {}); };
@@ -87,7 +88,9 @@ export function installOmpMcp(pi, { configRoot, controller }) {
     // sandbox-exec legitimately changes comm during exec. The completed MCP
     // handshake pins the server lifetime after that transition.
     if (!remote) transport.record.identity = await processIdentity(transport.record.pid);
-    await save(); return connection;
+    await save();
+    if (!callId) { connection.disarm?.(); if (remote) transport.signal = undefined; }
+    return connection;
   };
   const call = async (server, policy, initial, toolCallId, params, signal, ctx) => {
     if (!mcpToolEnabled(policy)) return result("MCP_TOOL_HIDDEN");
@@ -200,11 +203,18 @@ export function installOmpMcp(pi, { configRoot, controller }) {
   };
   const watch = (entry) => {
     const client = entry.client;
+    const disconnected = (error) => {
+      if (closing || connections.get(entry.server.name) !== entry || client !== entry.client || entry.closed) return;
+      entry.closed = true; entry.metadata.code = /^[A-Z_]+$/u.test(error?.code ?? "") ? error.code : "MCP_CONNECTION_CLOSED";
+      invalidate(entry, "disconnected");
+      void Promise.allSettled([client.close(), entry.transport.close()]);
+    };
     for (const type of ["notifications/tools/list_changed", "notifications/resources/list_changed"]) client.onNotification(type, () => {
       if (closing || connections.get(entry.server.name) !== entry || client !== entry.client) return;
       invalidate(entry, type); void refresh(entry).catch(() => {});
     });
-    client.onClose(() => { if (!closing && client === entry.client) { entry.closed = true; invalidate(entry, "disconnected"); } });
+    client.onError(disconnected); client.onClose(() => disconnected());
+    if (entry.failure) disconnected(mcpError(entry.failure));
   };
   const refresh = (entry, explicit = false, signal) => {
     if (entry.refreshing) return entry.refreshing;
@@ -218,6 +228,7 @@ export function installOmpMcp(pi, { configRoot, controller }) {
         Object.assign(entry, replacement, { closed: false }); watch(entry); await old.close();
       }
       for (let attempt = 0; attempt < 3; attempt++) {
+        if (entry.closed) throw mcpError("MCP_CONNECTION_CLOSED");
         const epoch = entry.epoch; entry.metadata.status = "discovering"; await save();
         const actual = await discoverClient(entry.client, entry.server, deadline); await check(entry.server);
         if (epoch !== entry.epoch) continue;
@@ -269,7 +280,7 @@ export function installOmpMcp(pi, { configRoot, controller }) {
       execution.transport.beforeDispatch = async () => { record.status = "dispatched"; await save(); };
       if (entry.server.transport === "stdio") { await execution.transport.beforeToolCall(); record.status = "dispatched"; await save(); }
       const output = await execution.client.readResource(params.uri, { signal: callSignal, timeoutMs: MCP_LIMITS.timeoutMs });
-      const parsed = resourceContent(output, policy, initial);
+      const parsed = resourceContent(output, policy, initial, execution.transport.secrets);
       if (containsSecret(parsed.content, execution.transport.secrets)) throw mcpError("MCP_SECRET_OUTPUT_REJECTED");
       await execution.client.close(); await execution.transport.close();
       record.status = parsed.isError ? "failed" : "completed"; if (parsed.details?.code) record.code = parsed.details.code; record.partial = parsed.details?.partial ?? false; record.completedAt = new Date().toISOString(); await save();
@@ -318,7 +329,7 @@ export function installOmpMcp(pi, { configRoot, controller }) {
       const discovery = await connect(server, files, credentials, []);
       const metadata = { server: server.name, targetDigest: server.targetDigest, status: "discovering", epoch: 0, tools: [], resources: [], events: [] };
       const entry = { ...discovery, server, files, credentialDigest: digest(credentials.env), names: [], epoch: 0, definitionAbort: new AbortController(), closed: false, metadata }; connections.set(server.name, entry); run.discoveries.push(metadata);
-      watch(entry); await refresh(entry, true);
+      watch(entry); await refresh(entry);
     }
     await installHelpers();
     controller.applyToolCeiling();

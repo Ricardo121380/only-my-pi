@@ -70,3 +70,24 @@ test("a resource declared oversized is excluded from discovery and rejected befo
   assert.equal(final.approvals.length, 0); assert.equal(run.discoveries[0].resources.length, 0); assert.equal(received.filter((item) => item.type === "resource").length, 0);
   assert.match(final.toolCalls.find((call) => call.name === "codemode").result, /MCP_RESOURCE_TYPE_NOT_ADMITTED/);
 });
+
+test("an execution-only stdio definition notification during persistence prevents the physical resource send", { timeout: 45000 }, async (t) => {
+  const code = 'text(await tools.mcp_read_resource({server:"local",uri:"mcp://local/readme"}));';
+  const { f } = await configured(t, { mode: "notify-at-send", code });
+  // Delay only the isolated fixture's durable save. The real Host, Pi client,
+  // transport and controlled service still execute their public paths.
+  const file = path.join(f.omp, "packages/mcp/runs.mjs"), source = await fs.readFile(file, "utf8"), anchor = "  async save(run) {\n";
+  assert.equal(source.split(anchor).length, 2);
+  await fs.writeFile(file, source.replace(anchor, anchor + `    const call = run.calls.find((item) => item.kind === "resource" && item.status === "dispatched");
+    if (call && !this.fixtureDelayed) {
+      this.fixtureDelayed = true;
+      const runtime = run.processes.find((item) => item.callId === call.callId).runtimeDir;
+      await (await import("node:fs/promises")).writeFile(path.join(runtime, "scratch"), "notify");
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+`));
+  const started = await f.start(); await finish(f, started);
+  const received = await mcpReception((await f.mcp({ type: "status" })).runs.at(-1));
+  assert.ok(received.some((row) => row.type === "notification" && row.method === "notifications/resources/list_changed"));
+  assert.equal(received.filter((row) => row.method === "resources/read").length, 0, "stale execution must not receive a resource read");
+});
