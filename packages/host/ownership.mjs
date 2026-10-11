@@ -28,7 +28,9 @@ export async function verifyOwnership(configRoot, kind, key, expected) {
   if (!expected || owner.kind !== kind || owner.token !== expected.token || owner.pid !== expected.pid || owner.identity !== expected.identity || await processIdentity(owner.pid) !== owner.identity) throw ownershipError("OWNERSHIP_LOST");
   return owner;
 }
-export async function acquireOwnership(configRoot, kind, key, { recover } = {}) {
+/** @param {{recover?: (previous: {token: string; pid: number; identity: string}) => unknown; retainTokenOnRecovery?: boolean}} [options] */
+export async function acquireOwnership(configRoot, kind, key, options = {}) {
+  const { recover, retainTokenOnRecovery = false } = options;
   if (!["host", "project", "session"].includes(kind)) throw ownershipError("OWNERSHIP_KIND_INVALID");
   const canonicalKey = kind === "project" ? await fs.realpath(key) : key;
   const digest = createHash("sha256").update(canonicalKey).digest("hex");
@@ -51,8 +53,11 @@ export async function acquireOwnership(configRoot, kind, key, { recover } = {}) 
     try { await fs.mkdir(guard, { mode: 0o700 }); } catch { throw ownershipError("OWNERSHIP_HELD"); }
     try {
       const latest = await readJsonObject(configRoot, ownerFile);
-      if (latest.token !== previous.token || await processIdentity(previous.pid) === previous.identity) throw ownershipError("OWNERSHIP_HELD");
+      if (latest.token !== previous.token || latest.pid !== previous.pid || latest.identity !== previous.identity || await processIdentity(previous.pid) === previous.identity) throw ownershipError("OWNERSHIP_HELD");
       await recover(previous);
+      // A validated recovery of the same durable operation may retain its
+      // logical token. PID/identity still name the new physical owner.
+      if (retainTokenOnRecovery) owner.token = previous.token;
       await fs.unlink(ownerFile);
       await fs.rmdir(directory);
       await fs.mkdir(directory, { mode: 0o700 });
@@ -65,7 +70,7 @@ export async function acquireOwnership(configRoot, kind, key, { recover } = {}) 
     if (released) return Promise.resolve();
     releasing ??= (async () => {
       const current = await readJsonObject(configRoot, ownerFile);
-      if (current.token !== owner.token) throw ownershipError("OWNERSHIP_LOST");
+      if (current.token !== owner.token || current.pid !== owner.pid || current.identity !== owner.identity) throw ownershipError("OWNERSHIP_LOST");
       await fs.unlink(ownerFile); await fs.rmdir(directory); released = true;
     })().finally(() => { releasing = null; });
     return releasing;

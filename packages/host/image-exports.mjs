@@ -98,7 +98,7 @@ export class ImageExports {
     const leaseKey = this.leaseKey(record.operationId);
     let lease = this.leases.get(leaseKey), pinned, published = false, dispatched = record.status !== "prepared";
     try {
-      lease ??= await acquireOwnership(this.configRoot, "project", project.path, input.type === "reconcile" ? { recover: previous => {
+      lease ??= await acquireOwnership(this.configRoot, "project", project.path, input.type === "reconcile" ? { retainTokenOnRecovery: true, recover: previous => {
         if (!record.owner || previous.token !== record.owner.token || record.executor !== "HOST_BOUNDED_EXPORT_WORKER" || record.worker && groupAlive(record.worker.pid)) throw fail("IMAGE_EXPORT_OWNER_CHANGED");
       } } : {});
       this.leases.set(leaseKey, lease);
