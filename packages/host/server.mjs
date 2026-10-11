@@ -23,6 +23,7 @@ import { HOST_PROTOCOL, HOST_VERSION, CLI_ACCOUNT_ID, hostError, validateCommand
 import { projectRunRecord } from "../direct-agent/contracts.mjs";
 import { createRunRecordStore } from "../run-management/index.mjs";
 import { ModelCallStore } from "../model-calls/store.mjs";
+import { ImageArtifacts } from "../model-calls/artifacts.mjs";
 import { McpCatalog } from "../mcp/catalog.mjs";
 import { McpRuns } from "../mcp/runs.mjs";
 import { McpOAuth } from "../mcp/oauth.mjs";
@@ -218,9 +219,10 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           if (req.method !== "POST" || !safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
           if (req.headers["x-omp-host-protocol"] !== String(HOST_PROTOCOL)) throw hostError("PROTOCOL_MISMATCH", 409);
           const input = await authorizedBody(req);
-          if (input?.type !== "save" || Object.keys(input).sort().join() !== "classifier,projectId,revision,type") throw hostError("CLASSIFIER_COMMAND_INVALID");
+          const kind = Object.hasOwn(input ?? {}, "image") ? "image" : "classifier";
+          if (input?.type !== "save" || Object.keys(input).sort().join() !== [kind, "projectId", "revision", "type"].sort().join()) throw hostError("MODEL_COMMAND_INVALID");
           const project = catalog.project(input.projectId);
-          const config = await store.save(project.path, input.revision, input.classifier, accountId => listModels({ stack, configRoot, accountId, modelType: "classifier", env, signal: modelAbort.signal }));
+          const config = await store.save(project.path, input.revision, input[kind], accountId => listModels({ stack, configRoot, accountId, modelType: kind, env, signal: modelAbort.signal }), kind);
           return response(res, 200, config);
         }
         if (url.pathname === "/api/mcp") {
@@ -309,6 +311,17 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           return response(res, 202, await tasks.cancel(command.taskId));
         }
         if (req.method !== "GET") throw hostError("METHOD_DENIED", 405);
+        if (url.pathname === "/api/image-artifact") {
+          if (req.headers["sec-fetch-site"] === "cross-site") throw hostError("HOST_ORIGIN_DENIED", 403);
+          if (url.searchParams.getAll("index").length !== 1 || !/^[0-3]$/u.test(url.searchParams.get("index") ?? "")) throw hostError("IMAGE_ARTIFACT_ID_INVALID");
+          const project = catalog.project(url.searchParams.get("projectId")), requestId = url.searchParams.get("requestId"), index = Number(url.searchParams.get("index"));
+          const ledger = await new ModelCallStore(configRoot).status(project.path);
+          const request = ledger.tasks.flatMap(task => task.requests).find(request => request.requestId === requestId && request.kind === "image");
+          const expected = request?.storage?.artifacts?.[index];
+          if (!expected) throw hostError("IMAGE_ARTIFACT_NOT_FOUND", 404);
+          const { bytes } = await new ImageArtifacts(configRoot).read(project.path, requestId, index, expected);
+          res.writeHead(200, { "content-type": "image/png", "content-length": bytes.length, "cache-control": "no-store", "x-content-type-options": "nosniff", "content-security-policy": "default-src 'none'" }); return res.end(bytes);
+        }
         if (url.pathname === "/api/state") return response(res, 200, snapshot());
         if (url.pathname === "/api/manual") return response(res, 200, { workspaces: manual.snapshot(), available: allowControlled });
         if (url.pathname === "/api/terminals") return response(res, 200, { terminals: terminals.snapshot(), available: allowControlled });
@@ -318,7 +331,9 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
         if (url.pathname === "/api/models") {
           const accountId = url.searchParams.get("accountId");
           if (!accountId) throw hostError("ACCOUNT_BINDING_REQUIRED", 409);
-          return response(res, 200, { accountId, models: url.searchParams.get("type") === "classifier" ? await listModels({ stack, configRoot, accountId, modelType: "classifier", env, signal: modelAbort.signal }) : await accountModels(accountId) });
+          const modelType = url.searchParams.get("type") ?? "llm";
+          if (!["llm", "classifier", "image"].includes(modelType)) throw hostError("MODEL_TYPE_UNAVAILABLE", 409);
+          return response(res, 200, { accountId, models: modelType !== "llm" ? await listModels({ stack, configRoot, accountId, modelType, env, signal: modelAbort.signal }) : await accountModels(accountId) });
         }
         if (url.pathname === "/api/sessions") return response(res, 200, { sessions: catalog.listSessions(url.searchParams.get("projectId")) });
         if (url.pathname === "/api/history") return response(res, 200, await catalog.history(url.searchParams.get("sessionKey"), Number(url.searchParams.get("offset") ?? 0)));

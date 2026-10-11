@@ -14,7 +14,7 @@ const fixture = await createClassificationHost({ installedExtensions: true, asse
   const { mode } = JSON.parse(await fs.readFile(scenarioFile, "utf8")); entry.scenario = mode;
   await fs.writeFile(path.join(evidenceDir, "browser-received.json"), JSON.stringify(received.map(item => ({ requestId: item.requestId, scenario: item.scenario, account: item.key === "Bearer class-fixture-a" ? "synthetic-A" : "unexpected", url: item.url, body: item.body })), null, 2));
   if (mode === "drop") { req.socket.destroy(); return; }
-  res.setHeader("content-type", "application/json"); res.end(JSON.stringify(mode === "missingUsage" ? { answers: classificationReply.answers } : classificationReply));
+  res.setHeader("content-type", "application/json"); res.end(JSON.stringify(mode === "missingUsage" ? { answers: classificationReply.answers } : mode === "partialUsage" ? { ...classificationReply, usage: { input_tokens: 12 } } : classificationReply));
 } });
 async function publishControl() {
   const pair = await fetch(fixture.host.origin + "/internal/pair", { method: "POST", headers: { authorization: `Bearer ${fixture.host.controlToken}` } }).then(response => response.json());

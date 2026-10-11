@@ -2,7 +2,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { AccountCatalog } from "./accounts.mjs";
 import { awaitAuthStart } from "./auth-process.mjs";
-import { registerClassifiers } from "../model-calls/models.mjs";
+import { registerClassifiers, registerImages } from "../model-calls/models.mjs";
 
 let finished = false;
 process.on("disconnect", () => { if (!finished) process.exit(1); });
@@ -18,6 +18,7 @@ try {
   const paths = await catalog.runtimePaths(accountId);
   const runtime = await ModelRuntime.create({ ...paths, allowModelNetwork: false, refreshOnCreate: false });
   await registerClassifiers(runtime, configRoot, paths.modelsPath, path.join(stackRoot, "pi/dist/index.js"));
+  await registerImages(runtime, configRoot, paths.modelsPath, path.join(stackRoot, "pi/dist/index.js"));
   let status;
   if (input.type === "status") {
     const credentials = await runtime.listCredentials();

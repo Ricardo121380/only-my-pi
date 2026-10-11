@@ -2,9 +2,13 @@
 .classifier-dialog p, .classification-results p { overflow-wrap: anywhere; line-height: 1.6; }
 .classifier-budgets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 20px 0; }
 .classifier-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.classifier-warning { padding: 12px; border: 1px solid var(--border); border-radius: 10px; }
-.classification-results { margin: 16px 0; padding: 16px; border: 1px solid var(--border); border-radius: 12px; overflow-wrap: anywhere; }
-.classifier-request { padding: 12px 0; border-top: 1px solid var(--border); }
+.classifier-warning { padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.classification-results { max-width: 900px; margin: 16px auto; padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); font-size: 13px; overflow-wrap: anywhere; }
+.classification-results h3 { font-size: 14px; }
+.classifier-request { padding: 12px 0; border-top: 1px solid var(--line); }
 .classifier-request summary { cursor: pointer; font-weight: 600; }
 .classifier-request pre { max-height: 260px; overflow: auto; white-space: pre-wrap; }
+.session-image { margin: 16px 0; }
+.session-image img { display: block; max-width: 100%; max-height: 480px; width: auto; height: auto; object-fit: contain; border-radius: 8px; border: 1px solid var(--line); }
+.session-image figcaption { margin-top: 10px; overflow-wrap: anywhere; }
 @media (max-width: 600px) { .classifier-budgets { grid-template-columns: 1fr; } .classification-results .between { flex-wrap: wrap; gap: 8px; } }

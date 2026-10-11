@@ -13,9 +13,9 @@ const fields = {
 const ajv = new Ajv({ strict: true });
 const validateInput = ajv.compile({ type: "object", additionalProperties: false, required: Object.keys(fields), properties: fields });
 const validateProvider = ajv.compile({ type: "object", additionalProperties: false, required: ["baseUrl", "api", "models"], properties: {
-  baseUrl: { type: "string", maxLength: 2048 }, api: { enum: ["openai-completions", "openai-responses", "anthropic-messages", "typesafe-system-one", "openai-decisions", "cloudflare-workers-ai-system-one"] },
+  baseUrl: { type: "string", maxLength: 2048 }, api: { enum: ["openai-completions", "openai-responses", "anthropic-messages", "typesafe-system-one", "openai-decisions", "cloudflare-workers-ai-system-one", "openrouter-images"] },
   models: { type: "array", minItems: 1, maxItems: 100, items: { type: "object", additionalProperties: false, required: ["id", "name", "contextWindow"], properties: {
-    type: { enum: ["llm", "classifier"] }, id: { type: "string", minLength: 1, maxLength: 256 }, name: { type: "string", minLength: 1, maxLength: 256 },
+    type: { enum: ["llm", "classifier", "image"] }, input: { type: "array", minItems: 1, maxItems: 2, uniqueItems: true, items: { enum: ["text", "image"] } }, output: { type: "array", minItems: 1, maxItems: 2, uniqueItems: true, items: { enum: ["text", "image"] } }, id: { type: "string", minLength: 1, maxLength: 256 }, name: { type: "string", minLength: 1, maxLength: 256 },
     contextWindow: { type: "integer", minimum: 1, maximum: 10000000 }, maxTokens: { type: "integer", minimum: 1, maximum: 1000000 }, reasoning: { type: "boolean" },
   } } },
 } });
@@ -93,7 +93,7 @@ export class AccountCatalog {
     });
   }
   async configure(accountId, config) {
-    if (!validateProvider(config) || config.models.some(model => model.type !== "classifier" && !model.maxTokens)) throw hostError("ACCOUNT_PROVIDER_INVALID");
+    if (!validateProvider(config) || config.models.some(model => !["classifier", "image"].includes(model.type) && !model.maxTokens || model.type === "image" && !model.output?.includes("image"))) throw hostError("ACCOUNT_PROVIDER_INVALID");
     let url;
     try { url = new URL(config.baseUrl); } catch { throw hostError("ACCOUNT_PROVIDER_INVALID"); }
     if (url.username || url.password || url.search || url.hash || (url.protocol !== "https:" && !(url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)))) throw hostError("ACCOUNT_PROVIDER_INVALID");
@@ -101,8 +101,10 @@ export class AccountCatalog {
     return this.change(accountId, async (account) => {
       const paths = await this.runtimePaths(accountId);
       const classifier = config.models.every(model => model.type === "classifier");
+      const image = config.models.every(model => model.type === "image");
       if (classifier !== ["typesafe-system-one", "openai-decisions", "cloudflare-workers-ai-system-one"].includes(config.api)) throw hostError("ACCOUNT_PROVIDER_INVALID");
-      await atomicWriteJson(this.configRoot, classifier ? path.join(path.dirname(paths.modelsPath), "classifiers.json") : paths.modelsPath, { providers: { [account.providerId]: structuredClone(config) } });
+      if (image !== (config.api === "openrouter-images")) throw hostError("ACCOUNT_PROVIDER_INVALID");
+      await atomicWriteJson(this.configRoot, classifier || image ? path.join(path.dirname(paths.modelsPath), classifier ? "classifiers.json" : "images.json") : paths.modelsPath, { providers: { [account.providerId]: structuredClone(config) } });
       return { status: "configured" };
     });
   }

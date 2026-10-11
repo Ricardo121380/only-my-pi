@@ -14,6 +14,8 @@ export function Accounts({ onChanged }: { onChanged?: () => void }) {
   const [baseUrl, setBaseUrl] = useState(""), [modelId, setModelId] = useState("");
   const [protocol, setProtocol] = useState<StaticProvider["api"]>("openai-completions");
   const classifier = ["typesafe-system-one", "openai-decisions", "cloudflare-workers-ai-system-one"].includes(protocol);
+  const image = protocol === "openrouter-images";
+  const [imageInput, setImageInput] = useState(false);
   const [contextWindow, setContextWindow] = useState(32768), [maxTokens, setMaxTokens] = useState(4096);
   const pending = useRef(false);
   const account = directory?.accounts.find((item) => item.accountId === selected);
@@ -77,13 +79,14 @@ export function Accounts({ onChanged }: { onChanged?: () => void }) {
       {account.authType === "oauth" && <OAuthLogin accountId={account.accountId} onChanged={onChanged} />}
       <div className="account-actions"><button className="softbtn" onClick={() => void execute({ type: "status" })}>查询认证状态</button><button className="softbtn" onClick={() => void execute({ type: "logout" })}>登出账号</button></div>
       <details><summary>自定义静态 Provider</summary><p className="metric-fine">仅在需要覆盖端点时配置；保存会替换此账号的自定义模型列表。无自定义命令执行。</p>
-        <form onSubmit={(e) => { e.preventDefault(); void execute({ type: "configure", config: { baseUrl, api: protocol, models: [{ id: modelId, name: modelId, contextWindow, ...(classifier ? { type: "classifier" } : { maxTokens }) }] } }); }}>
+        <form onSubmit={(e) => { e.preventDefault(); void execute({ type: "configure", config: { baseUrl, api: protocol, models: [{ id: modelId, name: modelId, contextWindow, ...(classifier ? { type: "classifier" } : image ? { type: "image", input: imageInput ? ["text", "image"] : ["text"], output: ["image", "text"] } : { maxTokens }) }] } }); }}>
           <label className="field">Base URL<input required type="url" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://api.example.com/v1" /></label>
-          <label className="field">API 协议<select value={protocol} onChange={(e) => setProtocol(e.target.value as StaticProvider["api"])}><option value="openai-completions">OpenAI Chat Completions</option><option value="openai-responses">OpenAI Responses</option><option value="anthropic-messages">Anthropic Messages</option><option value="typesafe-system-one">分类 · TypeSafe System One</option><option value="openai-decisions">分类 · OpenAI Decisions</option><option value="cloudflare-workers-ai-system-one">分类 · Cloudflare System One</option></select></label>
+          <label className="field">API 协议<select value={protocol} onChange={(e) => setProtocol(e.target.value as StaticProvider["api"])}><option value="openai-completions">OpenAI Chat Completions</option><option value="openai-responses">OpenAI Responses</option><option value="anthropic-messages">Anthropic Messages</option><option value="typesafe-system-one">分类 · TypeSafe System One</option><option value="openai-decisions">分类 · OpenAI Decisions</option><option value="cloudflare-workers-ai-system-one">分类 · Cloudflare System One</option><option value="openrouter-images">生图 · OpenRouter Images</option></select></label>
           <label className="field">模型 ID<input required maxLength={256} value={modelId} onChange={(e) => setModelId(e.target.value)} /></label>
           <label className="field">上下文窗口<input type="number" required min={1} max={10000000} value={contextWindow} onChange={(e) => setContextWindow(Number(e.target.value))} /></label>
-          {!classifier && <label className="field">最大输出 token<input type="number" required min={1} max={1000000} value={maxTokens} onChange={(e) => setMaxTokens(Number(e.target.value))} /></label>}
+          {!classifier && !image && <label className="field">最大输出 token<input type="number" required min={1} max={1000000} value={maxTokens} onChange={(e) => setMaxTokens(Number(e.target.value))} /></label>}
           {classifier && <p>分类协议没有单次生成 token 硬上限；项目预算在“分类模型”中配置。每个任务首次分类时仍需单独授权。分类与聊天模型列表分别保存。</p>}
+          {image && <><label className="checkline"><input type="checkbox" checked={imageInput} onChange={e => setImageInput(e.target.checked)} />此模型支持 PNG 图片输入</label><p>请按 Provider 的模型能力声明输入类型。输出支持 PNG；单次参数与存储额度在“生图模型”中配置。生图、分类和聊天分别保存；配置不授予任务许可。</p></>}
           <button className="softbtn">保存静态配置</button>
         </form>
       </details>

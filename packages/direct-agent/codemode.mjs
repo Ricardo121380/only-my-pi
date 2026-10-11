@@ -50,6 +50,7 @@ export async function installOmpCodemode(pi, { controller, sdkFile = process.env
   const { parseCodemodeSource } = await import(pathToFileURL(path.resolve(path.dirname(codemodeManifest), metadata.exports["."].import)).href);
   const classification = createClassificationControl(pi, { sdkFile, configRoot: process.env.PI_CODING_AGENT_DIR });
   registerClassifierCommand(pi, { sdkFile, configRoot: process.env.PI_CODING_AGENT_DIR });
+  registerClassifierCommand(pi, { sdkFile, configRoot: process.env.PI_CODING_AGENT_DIR, kind: "image" });
   const grants = new Set(), running = new Map();
   let revoked = false, scripts = 0, totalCalls = 0, active;
   controller.codemodeTools = () => revoked ? [] : ["codemode"];
@@ -119,9 +120,12 @@ export async function installOmpCodemode(pi, { controller, sdkFile = process.env
             delete result.details.fullOutputPath;
             return failure("CODEMODE_OUTPUT_LIMIT", result);
           }
-          if (bytes(result.content) > CODEMODE_LIMITS.outputBytes || result.content.some((block) => block.type !== "text")) return failure("CODEMODE_OUTPUT_LIMIT", result);
+          const content = await classification.output(result.content);
+          if (bytes(content.filter(block => block.type === "text")) > CODEMODE_LIMITS.outputBytes) return failure("CODEMODE_OUTPUT_LIMIT", result);
+          result.content = content;
+          delete result.details?.imagePaths;
           if (!result.isError) { check(run); for (const [type, data] of run.entries) pi.appendEntry(type, data); }
-          return { ...result, details: { ...result.details, limits: CODEMODE_LIMITS, models: { classifier: "requires_project_binding_and_task_permission", image: "disabled_pending_73" } } };
+          return { ...result, details: { ...result.details, limits: CODEMODE_LIMITS, models: { classifier: "requires_project_binding_and_task_permission", image: "requires_project_binding_and_task_permission" } } };
         } catch (error) { return failure(/^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "CODEMODE_EXECUTION_FAILED"); }
         finally {
           abort.abort(); running.delete(id); active = undefined;

@@ -75,8 +75,8 @@ export class HostTasks extends EventEmitter {
     const resume = command.resumeSessionKey ? await this.catalog.resume(command.resumeSessionKey, project.projectId) : null;
     if (resume && [...this.tasks.values()].some((task) => task.sessionId === resume.sessionId && (!terminal(task.status) || task.worker))) throw hostError("SESSION_IN_USE", 409);
     const release = this.accounts?.beginUse(command.accountId);
-    let classifierRelease;
-    const releaseAccounts = () => { release?.(); classifierRelease?.(); };
+    const capabilityReleases = [];
+    const releaseAccounts = () => { release?.(); for (const releaseCapability of capabilityReleases) releaseCapability(); };
     let transferred = false;
     try {
     if (this.accounts && command.accountId !== CLI_ACCOUNT_ID) {
@@ -87,8 +87,8 @@ export class HostTasks extends EventEmitter {
     if (!model) throw hostError("MODEL_UNAVAILABLE", 409);
     if (command.thinkingLevel !== undefined && !supportsThinking(model, command.thinkingLevel)) throw hostError("THINKING_LEVEL_UNAVAILABLE", 409);
     const classifierSnapshot = await new ModelCallStore(this.configRoot).config(project.path);
-    const classifierAccountId = classifierSnapshot.classifier?.accountId;
-    if (classifierAccountId && classifierAccountId !== command.accountId) classifierRelease = this.accounts?.beginUse(classifierAccountId);
+    const capabilityAccounts = new Set([classifierSnapshot.classifier?.accountId, classifierSnapshot.image?.accountId].filter(id => id && id !== command.accountId));
+    for (const accountId of capabilityAccounts) { const releaseCapability = this.accounts?.beginUse(accountId); if (releaseCapability) capabilityReleases.push(releaseCapability); }
     const mcpSnapshot = await new McpCatalog(this.configRoot).snapshot(project.path);
     if (this.requests.has(command.requestId)) return existing(this.requests.get(command.requestId));
     if (this.closing) throw hostError("HOST_STOPPING", 409);
@@ -103,7 +103,7 @@ export class HostTasks extends EventEmitter {
       this.requests.delete(command.requestId); this.tasks.delete(task.taskId);
       throw hostError("HOST_STORAGE_FAILED", 503);
     }
-    if (release || classifierRelease) { this.accountReleases.set(task.taskId, releaseAccounts); transferred = true; }
+    if (release || capabilityReleases.length) { this.accountReleases.set(task.taskId, releaseAccounts); transferred = true; }
     if (beforeRun) {
       try { inputRecord = await beforeRun(task); if (!inputRecord || inputRecord.taskId !== task.taskId || inputRecord.state !== "dispatching") throw hostError("INPUT_STATE_INVALID"); }
       catch (error) {
@@ -197,7 +197,7 @@ export class HostTasks extends EventEmitter {
         if (current.sessionId !== resume.sessionId || current.file !== resume.file) throw hostError("SESSION_IDENTITY_CHANGED", 409);
       }
       const state = await worker.start();
-      if (worker.codemodeEnabled) task.codemode = { enabled: true, classifier: Boolean(task.classifierSnapshot?.classifier), image: false };
+      if (worker.codemodeEnabled) task.codemode = { enabled: true, classifier: Boolean(task.classifierSnapshot?.classifier), image: Boolean(task.classifierSnapshot?.image) };
       if (resume && state.sessionId !== resume.sessionId) throw hostError("SESSION_IDENTITY_CHANGED", 409);
       task.worker = worker.identity; task.sessionId = state.sessionId;
       lease ??= await acquireOwnership(this.configRoot, "session", String(state.sessionId));
@@ -232,13 +232,17 @@ export class HostTasks extends EventEmitter {
       await settled;
       stopping = true;
       await worker.stop();
-      task.status = task.status === "cancelling" || aborted ? "cancelled" : failed ? "failed" : "succeeded";
-      if (task.status === "succeeded" && task.classifierSnapshot?.classifier) {
+      let status = task.status === "cancelling" || aborted ? "cancelled" : failed ? "failed" : "succeeded";
+      if (status === "succeeded" && (task.classifierSnapshot?.classifier || task.classifierSnapshot?.image)) {
         const ledger = await new ModelCallStore(this.configRoot).status(project.path);
-        if (ledger.tasks.find(item => item.taskId === task.taskId)?.requests.some(request => request.status === "unknown")) {
-          task.status = "failed"; task.error = "MODEL_RESULT_RECONCILIATION_REQUIRED";
+        const requests = ledger.tasks.find(item => item.taskId === task.taskId)?.requests ?? [];
+        if (requests.some(request => request.status === "unknown")) {
+          status = "failed"; task.error = "MODEL_RESULT_RECONCILIATION_REQUIRED";
+        } else if (requests.some(request => request.kind === "image" && request.error)) {
+          status = "failed"; task.error = "IMAGE_OUTPUT_UNAVAILABLE";
         }
       }
+      task.status = status;
       if (task.status === "cancelled") task.error = null;
     } catch (error) { task.status = task.status === "cancelling" ? "cancelled" : "failed"; task.error = /^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "TASK_FAILED"; }
     finally {
