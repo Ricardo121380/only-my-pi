@@ -1,17 +1,45 @@
 {
-  "verifiedAt": "2026-10-13",
+  "verifiedAt": "2026-10-13T02:54:11Z",
   "currentIssue": 65,
   "stopAfterIssue": 65,
   "issues": {
     "65": {
-      "state": "open",
-      "closed_at": null,
+      "state": "closed",
+      "closed_at": "2026-10-13T02:51:23Z",
       "dependencies": [],
       "dependencySummary": {
         "blocked_by": 0,
         "total_blocked_by": 0,
         "blocking": 2,
         "total_blocking": 2
+      },
+      "state_reason": "completed",
+      "acceptance": {
+        "gate": "GP110-04",
+        "C": "PASS",
+        "P": {
+          "Node22": "8/8 PASS",
+          "Node24": "8/8 PASS"
+        },
+        "Standards": "PASS",
+        "Spec": "PASS",
+        "fullRegression": {
+          "status": "FAIL",
+          "pass": 1763,
+          "fail": 9,
+          "cancelled": 10,
+          "skipped": 7,
+          "exitCode": 1
+        },
+        "failedCasesIsolated": {
+          "pass": 19,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "exitCode": 0
+        },
+        "report": "2026-10-13-pi110-private-runtime-acceptance.md",
+        "commentUrl": "https://github.com/Ricardo121380/only-my-pi/issues/65#issuecomment-6137132012"
       }
     },
     "73": {
@@ -29,7 +57,8 @@
         "total_blocked_by": 1,
         "blocking": 0,
         "total_blocking": 1
-      }
+      },
+      "state_reason": "completed"
     },
     "74": {
       "state": "closed",
@@ -51,7 +80,8 @@
         "total_blocked_by": 2,
         "blocking": 2,
         "total_blocking": 2
-      }
+      },
+      "state_reason": "completed"
     },
     "75": {
       "state": "open",
@@ -84,17 +114,20 @@
         },
         {
           "number": 65,
-          "state": "open",
+          "state": "closed",
           "title": "[PI110-N04] 生成可核验的 Pi 1.1.0 私有运行时"
         }
       ],
       "dependencySummary": {
-        "blocked_by": 1,
+        "blocked_by": 0,
         "total_blocked_by": 6,
         "blocking": 1,
         "total_blocking": 1
-      }
+      },
+      "implementationStarted": false
     }
   },
-  "publicationFieldsAreHistorical": true
+  "publicationFieldsAreHistorical": true,
+  "status": "completed",
+  "completedIssue": 65
 }
