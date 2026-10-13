@@ -103,7 +103,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
     projectsSaved = write.catch(() => {}); return write;
   };
   const previous = await readJsonObject(configRoot, projectsFile).catch(async (e) => { if (e.code === "ENOENT") return null; await lock.release(); throw e; });
-  const catalog = new ProjectCatalog({ sessionRoot, projects: previous?.projects ?? [] });
+  const catalog = new ProjectCatalog({ sessionRoot, projects: previous?.projects ?? [], sdkFile: stack.root ? path.join(stack.root, "pi/dist/index.js") : undefined });
   const images = new SessionImages(configRoot, catalog), imageExports = new ImageExports({ configRoot, catalog, images });
   const inputs = new HostInputStore({ configRoot, now: () => new Date(now()).toISOString() });
   try { await inputs.load(); } catch (error) { await lock.release(); throw error; }

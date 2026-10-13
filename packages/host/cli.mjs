@@ -40,7 +40,7 @@ export async function runWebCommand({ argv = [], packageRoot, env = process.env,
   }
   if (!endpoint) {
     const stack = await resolveControlledStack({ packageRoot });
-    if (stack.distribution?.runtimeContract !== "phase1-pi0851") throw hostError("HOST_REQUIRES_VERIFIED_CANDIDATE");
+    if (!["phase1-pi0851", "pi110-v1"].includes(stack.distribution?.runtimeContract)) throw hostError("HOST_REQUIRES_VERIFIED_CANDIDATE");
     const entry = fileURLToPath(new URL("./entry.mjs", import.meta.url));
     const child = fork(entry, [configRoot], { execPath: stack.nodePath, execArgv: [], detached: true, stdio: ["ignore", "ignore", "ignore", "ipc"], env });
     await new Promise((resolve, reject) => {

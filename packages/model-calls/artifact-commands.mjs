@@ -6,10 +6,10 @@ import { hostEndpoint } from "../host/cli.mjs";
 import { hostError } from "../host/contracts.mjs";
 import { SessionImages } from "./history.mjs";
 
-export async function imageArtifactCommand({ configRoot, projectPath, args }) {
+export async function imageArtifactCommand({ configRoot, projectPath, args, stack }) {
   if (["history", "download"].includes(args[0])) {
     const file = args[1]; if (!path.isAbsolute(file ?? "") || (args[0] === "history" ? args.length !== 2 : args.length !== 5 || !/^[0-3]$/u.test(args[4]))) throw hostError("IMAGE_HISTORY_COMMAND_USAGE");
-    const catalog = new ProjectCatalog({ sessionRoot: path.dirname(file) }); await catalog.add(projectPath); await catalog.scan();
+    const catalog = new ProjectCatalog({ sessionRoot: path.dirname(file), sdkFile: stack?.root ? path.join(stack.root, "pi/dist/index.js") : undefined }); await catalog.add(projectPath); await catalog.scan();
     const projectId = projectIdFor(projectPath), sessionKey = createHash("sha256").update(file).digest("hex"), images = new SessionImages(configRoot, catalog);
     if (args[0] === "history") return images.list(projectId, sessionKey);
     return (await images.read({ projectId, sessionKey, entryId: args[2], requestId: args[3], index: Number(args[4]) })).bytes;

@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import { constants } from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
+import { pathToFileURL } from "node:url";
 import { hostError, textContent } from "./contracts.mjs";
 import { assertSafeContainedPath } from "../config-runtime/index.mjs";
 import { findInputReceipt, INPUT_CARRIER } from "./input-protocol.mjs";
@@ -17,8 +18,9 @@ async function regular(file, maximum) {
   return handle;
 }
 export class ProjectCatalog {
-  constructor({ sessionRoot, projects = [] }) {
+  constructor({ sessionRoot, projects = [], sdkFile = undefined }) {
     this.sessionRoot = path.resolve(sessionRoot); this.projects = new Map(projects.map((p) => [p.projectId, p])); this.sessions = new Map(); this.diagnostics = [];
+    this.sdkFile = sdkFile;
   }
   async add(root) {
     if (!path.isAbsolute(root) || /[\0\r\n]/u.test(root)) throw hostError("PROJECT_PATH_INVALID");
@@ -32,7 +34,8 @@ export class ProjectCatalog {
     return this.scanning;
   }
   async scanOnce() {
-    this.sessions.clear(); this.diagnostics = [];
+    // Readers keep the last complete index while filesystem reads are in flight.
+    const sessions = new Map(), diagnostics = [];
     for (const project of this.projects.values()) project.available = await fs.stat(project.path).then((stat) => stat.isDirectory(), () => false);
     const dirs = await fs.readdir(this.sessionRoot, { withFileTypes: true }).catch((e) => { if (e.code === "ENOENT") return []; throw e; });
     const files = [];
@@ -55,26 +58,31 @@ export class ProjectCatalog {
         this.projects.set(projectId, { projectId, path: canonical, name: path.basename(canonical), available });
         const sessionKey = key(file);
         const timestamp = typeof header.timestamp === "string" ? header.timestamp.slice(0, 64) : "";
-        this.sessions.set(sessionKey, { sessionKey, sessionId: header.id, projectId, timestamp, name: timestamp || header.id, readOnly: true, file });
-      } catch { this.diagnostics.push({ code: "SESSION_UNREADABLE", sessionKey: key(file) }); }
+        sessions.set(sessionKey, { sessionKey, sessionId: header.id, projectId, timestamp, name: timestamp || header.id, readOnly: true, file });
+      } catch { diagnostics.push({ code: "SESSION_UNREADABLE", sessionKey: key(file) }); }
     }
+    this.sessions = sessions; this.diagnostics = diagnostics;
     return this.listProjects();
   }
   listProjects() { return [...this.projects.values()].sort((a, b) => a.name.localeCompare(b.name)); }
   listSessions(projectId) { return [...this.sessions.values()].filter((s) => s.projectId === projectId).map(({ file, ...s }) => s).sort((a, b) => b.timestamp.localeCompare(a.timestamp)); }
   project(id) { const result = this.projects.get(id); if (!result) throw hostError("PROJECT_NOT_FOUND", 404); return result; }
+  async readSnapshot(file) {
+    const sdk = this.sdkFile ? await (this.sdk ??= import(pathToFileURL(this.sdkFile).href)) : undefined;
+    return readSessionSnapshot(file, sdk);
+  }
   async resume(sessionKey, projectId) {
     const session = this.sessions.get(sessionKey);
     if (!session || session.projectId !== projectId) throw hostError("SESSION_NOT_FOUND", 404);
     await assertSafeContainedPath(this.sessionRoot, session.file);
-    const { header } = await readSessionSnapshot(session.file);
+    const { header } = await this.readSnapshot(session.file);
     if (header.id !== session.sessionId || await fs.realpath(header.cwd) !== this.project(projectId).path) throw hostError("SESSION_IDENTITY_CHANGED", 409);
     return { sessionId: session.sessionId, file: session.file };
   }
   async history(sessionKey, offset = 0, limit = 50) {
     const session = this.sessions.get(sessionKey); if (!session) throw hostError("SESSION_NOT_FOUND", 404);
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000) throw hostError("PAGE_INVALID");
-    const { manager } = await readSessionSnapshot(session.file);
+    const { manager } = await this.readSnapshot(session.file);
     const entries = manager.getBranch().map((entry) => entry.type === "custom_message" && entry.customType === INPUT_CARRIER
       ? { ...entry, type: "message", message: { role: "user", content: entry.content } } : entry).filter((entry) => entry.type === "message" && ["user", "assistant", "toolResult"].includes(entry.message?.role));
     const messages = entries.slice(offset, offset + Math.min(50, limit)).map((entry) => {
@@ -96,7 +104,7 @@ export class ProjectCatalog {
     const session = this.sessions.get(sessionKey);
     if (!session || session.projectId !== projectId) throw hostError("SESSION_NOT_FOUND", 404);
     await assertSafeContainedPath(this.sessionRoot, session.file);
-    const { manager, header } = await readSessionSnapshot(session.file);
+    const { manager, header } = await this.readSnapshot(session.file);
     if (header.id !== session.sessionId || (await fs.realpath(header.cwd).catch(() => header.cwd)) !== this.project(projectId).path) throw hostError("SESSION_IDENTITY_CHANGED", 409);
     const entries = manager.getBranch().filter(entry => entry.type === "custom" && entry.customType === IMAGE_ENTRY);
     if (entries.length > 256) throw hostError("IMAGE_HISTORY_LIMIT", 413);
@@ -109,12 +117,12 @@ export class ProjectCatalog {
     if (!sessions.length) return null;
     if (sessions.length !== 1) throw hostError("SESSION_IDENTITY_CHANGED", 409);
     const current = await this.resume(sessions[0].sessionKey, record.projectId);
-    return findInputReceipt((await readSessionSnapshot(current.file)).manager.getBranch(), record);
+    return findInputReceipt((await this.readSnapshot(current.file)).manager.getBranch(), record);
   }
   async toolOutput(sessionKey, entryId, offset = 0) {
     const session = this.sessions.get(sessionKey); if (!session) throw hostError("SESSION_NOT_FOUND", 404);
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > 8 * 1024 * 1024) throw hostError("PAGE_INVALID");
-    const entry = (await readSessionSnapshot(session.file)).manager.getBranch().find((e) => e.id === entryId && e.type === "message" && e.message?.role === "toolResult");
+    const entry = (await this.readSnapshot(session.file)).manager.getBranch().find((e) => e.id === entryId && e.type === "message" && e.message?.role === "toolResult");
     if (!entry) throw hostError("TOOL_OUTPUT_NOT_FOUND", 404);
     const text = textContent(entry.message.content, 8 * 1024 * 1024);
     return { text: text.slice(offset, offset + 65536), nextOffset: offset + 65536 < text.length ? offset + 65536 : null };
