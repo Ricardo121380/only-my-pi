@@ -10,7 +10,7 @@ import {
 import { buildArtifactLedger } from "./artifact-ledger.mjs";
 import {
   CONTROLLED_PI_VERSION,
-  CANDIDATE_PI_VERSION,
+  PRIVATE_RUNTIME_CONTRACTS,
   EMBEDDED_NODE_ARCHIVE_SHA256,
   EMBEDDED_NODE_VERSION,
   PREVIEW_VERSION,
@@ -120,8 +120,8 @@ export async function assembleReleasePayloads({
     }),
   ]);
   const ledger = mergeLedgers(sourceCommit, [externalLedger, piLedger]);
-  const privateRuntime = piVersion === CANDIDATE_PI_VERSION
-    ? await preparePrivateRuntime({ rootDir, resolved, sourceCommit, work: path.dirname(resolved) }) : null;
+  const privateRuntime = Object.hasOwn(PRIVATE_RUNTIME_CONTRACTS, piVersion)
+    ? await preparePrivateRuntime({ rootDir, resolved, sourceCommit, work: path.dirname(resolved), piVersion, licensesRoot }) : null;
   const byIdentity = new Map(ledger.artifacts.map((entry) => [`${entry.name}@${entry.version}`, entry]));
   const externalPackages = [];
   for (const { name, version } of PUBLIC_STACK_PACKAGES) {

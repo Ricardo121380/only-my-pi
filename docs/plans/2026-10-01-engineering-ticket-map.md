@@ -1,6 +1,8 @@
 # only-my-pi 首批工单映射与依赖：2026-10-01
 
-**2026-10-11 当前执行映射：** 新增 Pi 1.1.0 路线见[实际工单映射](2026-10-10-pi-1.1.0-ticket-review.md)。#70 / PI110-N09、#71 / PI110-N10 与 #72 / PI110-N11 已完成并回读 CLOSED / completed；#72 分类绑定、预算及请求账本的必需 C/P/B、Standards/Spec 和回归见[分类验收](2026-10-11-pi110-classification-acceptance.md)。本批在 #72 结束；下一项 #73 图片生成，随后 #74 图片产物，两票保持 OPEN、未实施。#19 和 GP110-07 整体保持未完成。下列材料与发布快照保留原身份和门槛，原产品 20/44 不代表扩大后项目完成率。
+**2026-10-13 当前执行状态：** #73 / PI110-N12 与 #74 / PI110-N13 已回读 CLOSED / completed；各自 C/P/B、Standards 与 Spec 的范围见[生图验收](2026-10-11-pi110-images-acceptance.md)和[历史、下载及导出验收](2026-10-11-pi110-image-history-acceptance.md)。当前实施 #65 / PI110-N04（无原生工单前置）；#75 的六个原生前置中只有 #65 尚开放，整合旅程尚未实施。本轮止于 #65；#19、G2、Full、真实服务与日常晋升仍各按原门禁。下文有日期的批次与发布记录保留历史含义。 当前机器状态见[2026-10-13 实施快照](2026-10-13-pi110-status.json)，原发布 JSON 保留原字节。
+
+**2026-10-11 分类批次历史映射：** 新增 Pi 1.1.0 路线见[实际工单映射](2026-10-10-pi-1.1.0-ticket-review.md)。#70 / PI110-N09、#71 / PI110-N10 与 #72 / PI110-N11 已完成并回读 CLOSED / completed；#72 分类绑定、预算及请求账本的必需 C/P/B、Standards/Spec 和回归见[分类验收](2026-10-11-pi110-classification-acceptance.md)。本批在 #72 结束；下一项 #73 图片生成，随后 #74 图片产物，两票保持 OPEN、未实施。#19 和 GP110-07 整体保持未完成。下列材料与发布快照保留原身份和门槛，原产品 20/44 不代表扩大后项目完成率。
 
 状态：**2026-10-09 剩余任务 to-spec → to-tickets 已完成发布。[总规格 #19](https://github.com/Ricardo121380/only-my-pi/issues/19)保留；既有 #20–#23 继续跟踪材料；新增 #24–#61 共 38 张已发布并回读正文、标签及原生依赖。#20–#22 仍 PARTIAL，#23 仍 BLOCKED，产品 20/44。** [完整已发布工单与实际映射](2026-10-09-remaining-ticket-review.md)包含全部 42 张剩余实施工单。首批 01–04 对应 #20–#23；G2-N/U2-N–U6-N 是稳定跟踪编号，实际 Issue 号见映射。选定 tracker 为 [GitHub Issues](https://github.com/Ricardo121380/only-my-pi/issues)。
 

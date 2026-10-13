@@ -17,9 +17,11 @@ export const CONTROLLED_PI_VERSION = "0.84.3";
 export const CONTROLLED_PI_INTEGRITY = "sha512-Yr2p9PubrbFZmYEPYI+C8KmZP9xlFuLDnAG64RtU0ZDgrdiXYWa+y7WGyJO5OlqPliOkVCMd9IzVszO3/t0D0w==";
 // Keep the historical default stable: candidate staging must opt in explicitly.
 export const CANDIDATE_PI_VERSION = "0.85.1";
+export const PI110_VERSION = "1.1.0";
 export const PI_RUNTIME_CONTRACTS = Object.freeze({
   [CONTROLLED_PI_VERSION]: Object.freeze({ version: CONTROLLED_PI_VERSION, integrity: CONTROLLED_PI_INTEGRITY }),
   [CANDIDATE_PI_VERSION]: Object.freeze({ version: CANDIDATE_PI_VERSION, integrity: "sha512-FGRN+OHbWaefBPGaTggAdLjrIHW+s2PzLyglz/5dfLzb9of7uuXMXYC0fJIeZTw+shS32o2cuQ9jF7YSDuL/oQ==" }),
+  [PI110_VERSION]: Object.freeze({ version: PI110_VERSION, integrity: "sha512-SeEi/4hdcHNgA9UWlefZl7ZZpm3dzi2OoxNjDHsBJ9o298LNOtbL4DGKgitlEj6uCTccvtw6f2hlCkTPVJ2RXg==" }),
 });
 
 export function piRuntimeContract(version = CONTROLLED_PI_VERSION) {
@@ -27,7 +29,8 @@ export function piRuntimeContract(version = CONTROLLED_PI_VERSION) {
   return PI_RUNTIME_CONTRACTS[version];
 }
 
-export function isPrivateStack(stack) { return stack?.runtime?.pi?.version === CANDIDATE_PI_VERSION; }
+export const PRIVATE_RUNTIME_CONTRACTS = Object.freeze({ "0.85.1": "phase1-pi0851", "1.1.0": "pi110-v1" });
+export function isPrivateStack(stack) { return Object.hasOwn(PRIVATE_RUNTIME_CONTRACTS, stack?.runtime?.pi?.version ?? ""); }
 
 export const PUBLIC_STACK_PACKAGES = Object.freeze([
   ["@narumitw/pi-plan-mode", "0.55.2"],
@@ -227,7 +230,7 @@ export function validateStackState(input) {
   if (input.status !== "REMOVED" && ![input.activeStack, input.manifestDigest].every((value) => SHA256.test(value ?? ""))) fail("STACK_STATE_ACTIVE_INVALID", "active stack identity is missing");
   if (input.status === "REMOVED" && input.activeStack !== null) fail("STACK_STATE_REMOVED_INVALID", "removed state cannot retain an active stack");
   for (const key of ["node", "pi", "onlyMyPi", "generation", "cliArtifact"]) if (typeof input[key]?.version !== "string" || !SHA256.test(input[key]?.digest ?? "")) fail("STACK_STATE_ASSET_INVALID", `stack state ${key} identity is invalid`);
-  const privateStack = input.pi?.version === CANDIDATE_PI_VERSION;
+  const privateStack = isPrivateStack({ runtime: { pi: input.pi } });
   if (!SHA256.test(input.externalTree?.digest ?? "") || !(privateStack ? ["STACK_PRIVATE"] : ["CANONICAL_RELEASE_TREE", "BORROWED_PREFLIGHT_SNAPSHOT"]).includes(input.externalTree?.verificationBasis)) fail("STACK_STATE_EXTERNAL_TREE_INVALID", "stack state external tree identity is invalid");
   assertPackageTuple(input.externalPackages, { code: "STACK_STATE_PACKAGE_TUPLE_INVALID", requireEvidence: false });
   for (const entry of input.externalPackages) if (entry.binding !== (privateStack ? "stack" : "external") || entry.owner !== (privateStack ? "only-my-pi" : "user") || !(privateStack ? entry.assetDisposition === "STACK_PRIVATE" : DISPOSITIONS.has(entry.assetDisposition)) || !SHA256.test(entry.treeDigest ?? "")) fail("STACK_STATE_OWNERSHIP_INVALID", `stack state ownership is invalid: ${entry.name}`);

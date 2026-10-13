@@ -3,7 +3,7 @@ import path from "node:path";
 import { PUBLIC_STACK_PACKAGES } from "../release-stack/contracts.mjs";
 import { PACKAGE_IDS, NODE_RANGE, manifestDigest, validateDistributionManifest, hashDistributionTree } from "./runtime.mjs";
 
-export async function createDistributionManifest({ root, version, sourceCommit, platform, packageFilters, runtimeContract }) {
+export async function createDistributionManifest({ root, version, sourceCommit, platform, packageFilters, runtimeContract, runtimeMaterialsDigest }) {
   const components = {};
   for (const [id, relative] of Object.entries({ app: "only-my-pi/package", pi: "pi", external: "external-npm" })) {
     components[id] = { path: relative, treeDigest: await hashDistributionTree(root, relative) };
@@ -19,7 +19,8 @@ export async function createDistributionManifest({ root, version, sourceCommit, 
       treeDigest: await hashDistributionTree(root, relative), resourceFilter: packageFilters[id] });
   }
   const manifest = { formatVersion: 1, kind: "only-my-pi-distribution", version, sourceCommit,
-    platform, nodeRange: NODE_RANGE, components, packages, ...(runtimeContract === undefined ? {} : { runtimeContract }) };
+    platform, nodeRange: NODE_RANGE, components, packages, ...(runtimeContract === undefined ? {} : { runtimeContract }),
+    ...(runtimeMaterialsDigest === undefined ? {} : { runtimeMaterialsDigest }) };
   manifest.distributionId = manifestDigest(manifest);
   return validateDistributionManifest(manifest);
 }

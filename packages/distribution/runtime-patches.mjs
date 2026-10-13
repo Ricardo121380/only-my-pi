@@ -12,16 +12,45 @@ function once(text, before, after) {
 /** Explicit, byte-bound build patches. Upstream ledger evidence is preserved;
  * the patched tree and this patch record are covered by distribution identity. */
 export async function applyRuntimePatches({ runtimeRoot, version, platform, runtimeContract }) {
-  if (runtimeContract !== undefined && runtimeContract !== "phase1-pi0851") throw new Error("unknown runtime patch contract");
-  if (version !== "0.4.0-preview.2" && runtimeContract !== "phase1-pi0851") return [];
+  if (runtimeContract !== undefined && !["phase1-pi0851", "pi110-v1"].includes(runtimeContract)) throw new Error("unknown runtime patch contract");
+  if (version !== "0.4.0-preview.2" && !["phase1-pi0851", "pi110-v1"].includes(runtimeContract)) return [];
+  if (runtimeContract === "pi110-v1") {
+    const pi = JSON.parse(await fs.readFile(path.join(runtimeRoot, "pi/package.json"), "utf8"));
+    if (pi.name !== "@earendil-works/pi-coding-agent" || pi.version !== "1.1.0" || platform !== "darwin-arm64") throw new Error("Pi 1.1.0 patch purpose, version or platform differs");
+  }
   const patches = [];
   async function patch(relative, packageName, packageVersion, expected, transform) {
+    if (runtimeContract === "pi110-v1") {
+      const metadata = JSON.parse(await fs.readFile(path.join(runtimeRoot, "external-npm/node_modules", packageName, "package.json"), "utf8"));
+      if (metadata.name !== packageName || metadata.version !== packageVersion) throw new Error(`runtime patch package version differs: ${packageName}`);
+    }
     const filename = path.join(runtimeRoot, "external-npm/node_modules", relative);
     const original = await fs.readFile(filename);
     if (digest(original) !== `sha256:${expected}`) throw new Error(`upstream patch input differs: ${relative}`);
     const changed = transform(original.toString("utf8"));
     await fs.writeFile(filename, changed);
     patches.push({ packageName, packageVersion, path: `node_modules/${relative}`, upstreamSha256: digest(original), patchedSha256: digest(changed) });
+  }
+  if (runtimeContract === "pi110-v1") {
+    await patch("pi-web-access/ssrf-protection.ts", "pi-web-access", "0.25.0",
+      "c8280208780f19a2d66a0c9a04d2feb674f8baa813e6b88a1b12cd53675f71aa", (text) => {
+        text = 'import { pinnedRequest as ompPinnedRequest } from "../../../only-my-pi/package/packages/web-policy/pinned-fetch.mjs";\n' + text;
+        text = once(text, "const fetchImpl = options.fetch ?? fetch;", "const fetchImpl = options.fetch ?? ((url, init) => ompPinnedRequest(url, init, { lookup: options.lookup }));");
+        return once(text, "const from = current;", "await response.body?.cancel();\n\t\tconst from = current;");
+      });
+    await patch("pi-web-access/utils.ts", "pi-web-access", "0.25.0",
+      "6b588a7ff4503f165a6670b3611b0e9502dde0d348519016fb06861e8c640b05", (text) => {
+        text = 'import { publicWebFetch as ompPublicWebFetch } from "../../../only-my-pi/package/packages/web-policy/pinned-fetch.mjs";\n' + text;
+        text = once(text, 'await fetch(current, { ...requestInit, redirect: "manual" })', 'await ompPublicWebFetch(current, { ...requestInit, redirect: "manual" })');
+        const apiRedirect = 'const next = new URL(location, current);\n\t\tif (next.protocol !== "http:" && next.protocol !== "https:") {';
+        return once(text, apiRedirect, `await response.body?.cancel();\n\t\t${apiRedirect}`);
+      });
+    await patch("pi-web-access/extract.ts", "pi-web-access", "0.25.0",
+      "dd47dcaa6ba077f27dd5a2364e28703d91c108cd4c6573cdf319d06ebb695add", (text) => {
+        text = 'import { pinnedRequest as ompPinnedRequest } from "../../../only-my-pi/package/packages/web-policy/pinned-fetch.mjs";\n' + text;
+        text = once(text, 'await fetch(current, { ...requestInit, headers, redirect: "manual" })', 'await ompPinnedRequest(current, { ...requestInit, headers, redirect: "manual" }, { lookup: validationOptions.lookup })');
+        return once(text, "const from = current;", "await response.body?.cancel();\n\t\tconst from = current;");
+      });
   }
   await patch("pi-permission-modes/src/index.ts", "pi-permission-modes", "2.2.0",
     "fd4462a3b7ba986af734c2e17ba8ea7178df56c933e87ed444ba90ba24c2fd5b", patchPermissionShellIndex);
@@ -53,6 +82,9 @@ export async function applyRuntimePatches({ runtimeRoot, version, platform, runt
       });
   }
   await fs.writeFile(path.join(runtimeRoot, "external-npm/omp-runtime-patches.json"), `${JSON.stringify({ formatVersion: 1,
-    reason: "Preserve existing empty files and owned mount cleanup; delegate permission-shell execution to OMP without replacing sandbox policy", patches }, null, 2)}\n`);
+    ...(runtimeContract === "pi110-v1" ? { runtimeContract, piVersion: "1.1.0", platform } : {}),
+    reason: runtimeContract === "pi110-v1"
+      ? "Pin validated public Web DNS and redirects; preserve empty files and owned mount cleanup; delegate permission-shell execution without replacing sandbox policy"
+      : "Preserve existing empty files and owned mount cleanup; delegate permission-shell execution to OMP without replacing sandbox policy", patches }, null, 2)}\n`);
   return patches;
 }

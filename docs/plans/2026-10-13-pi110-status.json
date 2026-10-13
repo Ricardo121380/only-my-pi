@@ -1,0 +1,100 @@
+{
+  "verifiedAt": "2026-10-13",
+  "currentIssue": 65,
+  "stopAfterIssue": 65,
+  "issues": {
+    "65": {
+      "state": "open",
+      "closed_at": null,
+      "dependencies": [],
+      "dependencySummary": {
+        "blocked_by": 0,
+        "total_blocked_by": 0,
+        "blocking": 2,
+        "total_blocking": 2
+      }
+    },
+    "73": {
+      "state": "closed",
+      "closed_at": "2026-10-11T10:34:15Z",
+      "dependencies": [
+        {
+          "number": 72,
+          "state": "closed",
+          "title": "[PI110-N11] 用固定账号模型执行有预算的分类"
+        }
+      ],
+      "dependencySummary": {
+        "blocked_by": 0,
+        "total_blocked_by": 1,
+        "blocking": 0,
+        "total_blocking": 1
+      }
+    },
+    "74": {
+      "state": "closed",
+      "closed_at": "2026-10-11T12:17:24Z",
+      "dependencies": [
+        {
+          "number": 73,
+          "state": "closed",
+          "title": "[PI110-N12] 生成并保存有来源的会话图片"
+        },
+        {
+          "number": 63,
+          "state": "closed",
+          "title": "[PI110-N02] 贯通新版输入反馈、历史续接和位置分支"
+        }
+      ],
+      "dependencySummary": {
+        "blocked_by": 0,
+        "total_blocked_by": 2,
+        "blocking": 2,
+        "total_blocking": 2
+      }
+    },
+    "75": {
+      "state": "open",
+      "closed_at": null,
+      "dependencies": [
+        {
+          "number": 64,
+          "state": "closed",
+          "title": "[PI110-N03] 交付 fullscreen 默认与 regular 终端选项"
+        },
+        {
+          "number": 67,
+          "state": "closed",
+          "title": "[PI110-N06] 通过 MCP 安全修改项目并核对单写"
+        },
+        {
+          "number": 69,
+          "state": "closed",
+          "title": "[PI110-N08] 完成 MCP OAuth 登录、取消与撤销"
+        },
+        {
+          "number": 71,
+          "state": "closed",
+          "title": "[PI110-N10] 受控发现 MCP 工具并读取资源"
+        },
+        {
+          "number": 74,
+          "state": "closed",
+          "title": "[PI110-N13] 恢复会话产物并显式下载或写入项目"
+        },
+        {
+          "number": 65,
+          "state": "open",
+          "title": "[PI110-N04] 生成可核验的 Pi 1.1.0 私有运行时"
+        }
+      ],
+      "dependencySummary": {
+        "blocked_by": 1,
+        "total_blocked_by": 6,
+        "blocking": 1,
+        "total_blocking": 1
+      }
+    }
+  },
+  "publicationFieldsAreHistorical": true
+}

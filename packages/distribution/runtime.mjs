@@ -6,7 +6,8 @@ import semver from "semver";
 
 import { canonicalJson } from "../config-runtime/index.mjs";
 import { hashResourcePath } from "../bootstrap/graph-plan.mjs";
-import { CONTROLLED_PI_VERSION, CANDIDATE_PI_VERSION, EMBEDDED_NODE_VERSION, PUBLIC_STACK_PACKAGES, sha256, validateStackManifest } from "../release-stack/contracts.mjs";
+import { CONTROLLED_PI_VERSION, PRIVATE_RUNTIME_CONTRACTS, EMBEDDED_NODE_VERSION, PUBLIC_STACK_PACKAGES, sha256, validateStackManifest } from "../release-stack/contracts.mjs";
+import { verifyPi110Materials, verifyPi110Declarations } from "../release-stack/pi110-materials.mjs";
 
 export const DISTRIBUTION_VERSION = "0.4.0-preview.1";
 export const DISTRIBUTION_VERSIONS = Object.freeze([DISTRIBUTION_VERSION, "0.4.0-preview.2"]);
@@ -53,9 +54,11 @@ export function manifestDigest(manifest) {
 }
 
 export function validateDistributionManifest(manifest) {
-  const privateStack = manifest?.runtimeContract === "phase1-pi0851";
+  const privateStack = Object.values(PRIVATE_RUNTIME_CONTRACTS).includes(manifest?.runtimeContract);
+  const pi110 = manifest?.runtimeContract === "pi110-v1";
   requireThat(manifest?.formatVersion === 1 && manifest.kind === "only-my-pi-distribution", "unsupported distribution format");
-  requireThat(Object.keys(manifest).sort().join() === ["formatVersion", "kind", "version", "sourceCommit", "platform", "nodeRange", "components", "packages", "distributionId", ...(privateStack ? ["runtimeContract"] : [])].sort().join(), "unexpected distribution fields");
+  requireThat(Object.keys(manifest).sort().join() === ["formatVersion", "kind", "version", "sourceCommit", "platform", "nodeRange", "components", "packages", "distributionId", ...(privateStack ? ["runtimeContract"] : []), ...(pi110 ? ["runtimeMaterialsDigest"] : [])].sort().join(), "unexpected distribution fields");
+  requireThat(!pi110 || DIGEST.test(manifest.runtimeMaterialsDigest ?? ""), "Pi 1.1.0 requires bound runtime materials");
   requireThat((privateStack ? manifest.version === "0.3.0-preview.1" : DISTRIBUTION_VERSIONS.includes(manifest.version)) && /^[a-f0-9]{40}$/u.test(manifest.sourceCommit ?? ""), "unsupported version or source identity");
   const target = `${manifest.platform?.os}-${manifest.platform?.arch}`;
   requireThat(["darwin-arm64", "linux-x64", "linux-arm64"].includes(target), "unsupported distribution platform");
@@ -100,6 +103,10 @@ export async function loadDistribution({ packageRoot = APP_ROOT, nodePath = proc
     || (platform === "linux" && !glibc)) throw distributionError("DISTRIBUTION_PLATFORM_UNSUPPORTED", "this runtime does not support the current operating system, architecture or libc");
   const ompPackageRoot = await containedPath(root, COMPONENTS.app, { directory: true });
   requireThat(await fs.realpath(packageRoot) === ompPackageRoot, "application is not from this distribution");
+  if (manifest.runtimeContract === "pi110-v1") {
+    await verifyPi110Materials({ root, manifest });
+    await verifyPi110Declarations({ root, manifest });
+  }
   await Promise.all(Object.entries(manifest.components).map(async ([name, component]) => {
     if (await hashDistributionTree(root, component.path) !== component.treeDigest)
       throw distributionError("DISTRIBUTION_CONTENT_DRIFT", `${name} runtime content differs from its release manifest`);
@@ -110,11 +117,12 @@ export async function loadDistribution({ packageRoot = APP_ROOT, nodePath = proc
   }
   const app = await readRegularJson(path.join(ompPackageRoot, "package.json"));
   const pi = await readRegularJson(path.join(root, "pi/package.json"));
-  const privateStack = manifest.runtimeContract === "phase1-pi0851";
-  requireThat(app.name === "only-my-pi" && app.version === manifest.version && pi.version === (privateStack ? CANDIDATE_PI_VERSION : CONTROLLED_PI_VERSION)
+  const privateStack = Object.values(PRIVATE_RUNTIME_CONTRACTS).includes(manifest.runtimeContract);
+  const piVersion = Object.keys(PRIVATE_RUNTIME_CONTRACTS).find(key => PRIVATE_RUNTIME_CONTRACTS[key] === manifest.runtimeContract) ?? CONTROLLED_PI_VERSION;
+  requireThat(app.name === "only-my-pi" && app.version === manifest.version && pi.version === piVersion
     && pi.name === "@earendil-works/pi-coding-agent", "application or Pi version differs");
   const privateManifest = privateStack ? validateStackManifest(await readRegularJson(path.join(root, "stack-manifest.json"))) : null;
-  if (privateManifest) requireThat(privateManifest.privateRuntimeDigest === manifest.distributionId && privateManifest.sourceCommit === manifest.sourceCommit && privateManifest.runtime.pi.version === CANDIDATE_PI_VERSION
+  if (privateManifest) requireThat(privateManifest.privateRuntimeDigest === manifest.distributionId && privateManifest.sourceCommit === manifest.sourceCommit && privateManifest.runtime.pi.version === piVersion
     && nodeVersion === EMBEDDED_NODE_VERSION && await fs.realpath(nodePath) === await containedPath(root, "node/bin/node"), "private runtime is not bound to the embedded Full stack");
   const installation = privateStack ? null : await readRegularJson(path.join(root, "../distribution-installation.json"), { optional: true });
   const channel = privateStack ? "stack" : installation?.channel ?? "npm";

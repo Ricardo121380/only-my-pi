@@ -1,0 +1,130 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-pi110-inputs",
+  "purpose": "GP110-04_PI_INPUT",
+  "platform": "darwin-arm64",
+  "nodeVersions": [
+    "22.19.0",
+    "24.19.0"
+  ],
+  "package": {
+    "name": "@earendil-works/pi-coding-agent",
+    "version": "1.1.0",
+    "sha256": "sha256:09cd8a0a43dbb1d81a67346b09400b439ce71d818caba4e963ea958846a1aed4",
+    "integrity": "sha512-SeEi/4hdcHNgA9UWlefZl7ZZpm3dzi2OoxNjDHsBJ9o298LNOtbL4DGKgitlEj6uCTccvtw6f2hlCkTPVJ2RXg==",
+    "manifestSha256": "sha256:c662a36f8bc47843393a60dc8616a34dfcc8376e8fcc96dbc2f1020c60e38e2a"
+  },
+  "files": {
+    "package.json": "sha256:339944e7c731e9df0e73f0e9703badd971942a122863574ed7bad7cbbf6f841c",
+    "package-lock.json": "sha256:32a518cda0ecc86c95607cd2d56abd86f17aef51b7576fc8ca5f04415068a74c"
+  },
+  "resources": [
+    {
+      "package": "quickjs-wasi",
+      "version": "3.6.2",
+      "path": "node_modules/quickjs-wasi/extensions/crypto/crypto.so",
+      "bytes": 120228,
+      "sha256": "sha256:fa26b6fafda251c3b1442dcc4c876b3ac73689639519f4ddfc2c410ebdb5b7c2",
+      "executable": 0
+    },
+    {
+      "package": "quickjs-wasi",
+      "version": "3.6.2",
+      "path": "node_modules/quickjs-wasi/extensions/encoding/encoding.so",
+      "bytes": 7715,
+      "sha256": "sha256:d501aa2a8410ee07c196103f0d169b226ec61c922883713510fd723fe14036c3",
+      "executable": 0
+    },
+    {
+      "package": "quickjs-wasi",
+      "version": "3.6.2",
+      "path": "node_modules/quickjs-wasi/extensions/headers/headers.so",
+      "bytes": 8896,
+      "sha256": "sha256:42c847104d6aa8d4666fa41bb74d324c2ee9a4d15c2492fca013b1631232b011",
+      "executable": 0
+    },
+    {
+      "package": "quickjs-wasi",
+      "version": "3.6.2",
+      "path": "node_modules/quickjs-wasi/extensions/structured-clone/structured-clone.so",
+      "bytes": 6007,
+      "sha256": "sha256:0ac5a36c0545c659ba6f9f8de5af11862df84546d151d0f15ec5184c95fd6cb3",
+      "executable": 0
+    },
+    {
+      "package": "quickjs-wasi",
+      "version": "3.6.2",
+      "path": "node_modules/quickjs-wasi/extensions/url/url.so",
+      "bytes": 397332,
+      "sha256": "sha256:af780a79f1fb131b5e6fa1d6fedc481e265420cf2f254fe966255230f4c1bc62",
+      "executable": 0
+    },
+    {
+      "package": "quickjs-wasi",
+      "version": "3.6.2",
+      "path": "node_modules/quickjs-wasi/quickjs.wasm",
+      "bytes": 637405,
+      "sha256": "sha256:d4c9375f2b1ca4dc95f72c8aa2982a7a9951ac8011490d79c6582df732b4bbd9",
+      "executable": 0
+    },
+    {
+      "package": "@earendil-works/pi-tui",
+      "version": "1.1.0",
+      "path": "node_modules/@earendil-works/pi-tui/native/darwin/prebuilds/darwin-arm64/darwin-platform.node",
+      "bytes": 52024,
+      "sha256": "sha256:36e909adf35c2734a2a52b3d65b7dbfb83f2278f306d51b7e32c5045516dfb7f",
+      "executable": 73
+    },
+    {
+      "package": "@earendil-works/pi-tui",
+      "version": "1.1.0",
+      "path": "node_modules/@earendil-works/pi-tui/native/darwin/prebuilds/darwin-x64/darwin-platform.node",
+      "bytes": 22784,
+      "sha256": "sha256:7ec59a02fff9562f6354274ad070ba35f8e0998b3b111eb27ad3de579ffb6c65",
+      "executable": 73
+    },
+    {
+      "package": "@earendil-works/pi-tui",
+      "version": "1.1.0",
+      "path": "node_modules/@earendil-works/pi-tui/native/linux/prebuilds/linux-arm64/linux-platform-x11.node",
+      "bytes": 67240,
+      "sha256": "sha256:63d4545349a25b5c97e352ea6d254cea50ff3c14161212ad3ddb3fc28022ddb5",
+      "executable": 73
+    },
+    {
+      "package": "@earendil-works/pi-tui",
+      "version": "1.1.0",
+      "path": "node_modules/@earendil-works/pi-tui/native/linux/prebuilds/linux-x64/linux-platform-x11.node",
+      "bytes": 18008,
+      "sha256": "sha256:522d2550f7fa5d0d5bd204f45983f786ce2be9cf80f27f00179640d31d0689d6",
+      "executable": 73
+    },
+    {
+      "package": "@earendil-works/pi-tui",
+      "version": "1.1.0",
+      "path": "node_modules/@earendil-works/pi-tui/native/win32/prebuilds/win32-arm64/win32-platform.node",
+      "bytes": 9216,
+      "sha256": "sha256:0e5671ab39ef577940483ced58fdf29ecdf5f864f368d90a771eec4aeeae11b8",
+      "executable": 73
+    },
+    {
+      "package": "@earendil-works/pi-tui",
+      "version": "1.1.0",
+      "path": "node_modules/@earendil-works/pi-tui/native/win32/prebuilds/win32-x64/win32-platform.node",
+      "bytes": 8704,
+      "sha256": "sha256:51bee02bcb73b165ab92af75ae15b88aba3f5d99f072e63ef60af92ffdc4d565",
+      "executable": 73
+    },
+    {
+      "package": "@silvia-odwyer/photon-node",
+      "version": "0.3.4",
+      "path": "node_modules/@silvia-odwyer/photon-node/photon_rs_bg.wasm",
+      "bytes": 1881634,
+      "sha256": "sha256:10468181565c56004c867f3a4af96f89a0ef5a63a72f2b5fb12c1f1992a3615c",
+      "executable": 0
+    }
+  ],
+  "lockOrigin": "OMP production lock resolved from the official package; upstream 1.1.0 tarball has no shrinkwrap; seven Pi packages pinned to 1.1.0",
+  "parserQuickjsEvidence": false,
+  "lifecycleScriptsExecuted": false
+}
