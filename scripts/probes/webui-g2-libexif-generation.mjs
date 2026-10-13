@@ -1,4 +1,5 @@
-// Fixed libexif generation materials; no upstream program execution or release admission.
+// Legacy fixed-material ledger, or --candidate for pinned local tool execution.
+// Neither mode admits a native kit or release.
 import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -210,7 +211,9 @@ async function run() {
   }
 }
 
-await run().catch((error) => {
+await (process.argv[2] === "--candidate"
+  ? import("./lib/libexif-document-candidate.mjs").then(({ runLibexifCandidate }) => runLibexifCandidate(process.argv.slice(3)))
+  : run()).catch((error) => {
   console.error(JSON.stringify({ status: "FAIL", error: error.message }));
   process.exitCode = 1;
 });
