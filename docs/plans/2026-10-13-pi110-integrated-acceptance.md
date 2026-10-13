@@ -137,7 +137,7 @@ B 早期两次审批停留超过原生 60 秒脚本期限，及选择器/ref/wai
 
 ## 独立审查与远端关闭
 
-Standards 首轮 PASS；资源补验后的独立复审仍为 **PASS**，0 阻断/0 documented standard 硬违规，非阻断 heuristic 为场景字符串在验证器多个分支重复使用，见 [Standards 复审回执](../../../artifacts/pi110-n14-20261013/standards-review-final.md)。Spec 首轮 **PARTIAL**，阻断为同 N2 资源 B 衔接不足，原结论与出处保留；完成上述 7 项补验后，另一轮独立复审为 **PASS**，做错/遗漏、过度实现和误解约束均无未解决阻断，见 [Spec 复审回执](../../../artifacts/pi110-n14-20261013/spec-review-final.md)。两轴各自判断，没有用 Standards PASS 代替 Spec。
+Standards 首轮 PASS；资源补验后的独立复审仍为 **PASS**，0 阻断/0 documented standard 硬违规，非阻断 heuristic 为场景字符串在验证器多个分支重复使用，Standards 复审回执为 `../../../artifacts/pi110-n14-20261013/standards-review-final.md`。Spec 首轮 **PARTIAL**，阻断为同 N2 资源 B 衔接不足，原结论与出处保留；完成上述 7 项补验后，另一轮独立复审为 **PASS**，做错/遗漏、过度实现和误解约束均无未解决阻断，Spec 复审回执为 `../../../artifacts/pi110-n14-20261013/spec-review-final.md`。两轴各自判断，没有用 Standards PASS 代替 Spec。
 
 固定入口 HEAD 与入口工作区副本作为审查基线，只将本轮 12 路径增量归属 #75；最终审查为 `06e53f509ec911c3995aa405cea4dbe4e41e58f7...9a9ee19f61ced0b66073c33417aad57f1b02faf1`，非空三点 diff 摘要 `da7bea66a0ec469b8d6c0d239e9ee62fdce8b4c799a125f2f3c964fb1e3b94a4`。审查提交只存在于隔离证据仓库，主工作区无 commit/stage。复审后的本文与状态更新只记录审查/关闭元数据，应用运行时源码与冻结 N2 持续逐字匹配。
 
