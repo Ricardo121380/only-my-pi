@@ -1,4 +1,4 @@
-// Fixed GIR material evidence. This CLI never fetches or executes upstream code.
+// Legacy fixed GIR ledger, plus an explicit fixed, offline candidate-generation entry.
 import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -173,7 +173,9 @@ async function run() {
   }
 }
 
-await run().catch((error) => {
+await (process.argv[2] === "--candidate"
+  ? import("./lib/gir-material-candidate.mjs").then(({ runGirCandidate }) => runGirCandidate(process.argv.slice(3)))
+  : run()).catch((error) => {
   console.error(JSON.stringify({ status: "FAIL", error: error.message }));
   process.exitCode = 1;
 });
