@@ -1,0 +1,44 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-native-generated-input-candidate",
+  "issue": 22,
+  "task": "G2-00-02",
+  "requirements": [
+    "US-009",
+    "US-010"
+  ],
+  "purpose": "GENERATED_INPUT_MATERIAL_CANDIDATE_ONLY",
+  "manifestSha256": "sha256:fe5c9a74a5142b0b22a29d565143cce8bb7c5977d14eda5168c402c1e8ddf440",
+  "inputFiles": 10353,
+  "inputBytes": 477874858,
+  "driverSha256": "sha256:514330ff9b1d3878f1c777cf9873e08847922eb7f0859bc150c1645e5420efd3",
+  "legacyRecipeSha256": "sha256:614000559cfb01c742fe9394f3bd89abc3d9c5070a5d6c31971c28491cd9d318",
+  "generatedObjects": [
+    "ffi/ChangeLog",
+    "ffi/doc/libffi.pdf",
+    "expat/expat/expat_config.h"
+  ],
+  "reuse": {
+    "autoheaderTemplates": 5,
+    "staticCorrespondences": 3,
+    "scope": "IDENTICAL_BYTES_INPUTS_AND_ORIGINAL_PROOF_SCOPE_ONLY",
+    "historicalInvocations": "UNVERIFIED"
+  },
+  "macroFiles": 111,
+  "families": 10,
+  "macroBindingsMaterial": "config/macro-bindings.json",
+  "currentObligationsMaterial": "config/current-obligations.json",
+  "sourceReconstruction": "Three inherited Expat support inputs are reconstructed from authenticated fixed upstream bases with explicit complete patches. Original patch authorship and invocation remain UNVERIFIED. Candidate bytes are unchanged.",
+  "currentPurpose": "LOCAL_PRIVATE_COPY_AND_GENERATE_ONLY_NO_CONVEYANCE",
+  "protectedInputRoots": [
+    "LOCAL_WORKSPACE/repo",
+    "LOCAL_WORKSPACE/artifacts/webui-optimization/G2-00-03-1002-2i5sh008",
+    "LOCAL_WORKSPACE/artifacts/webui-optimization/G2-00-locale-1001-EpCrn4/verified-node22/native-build-kit"
+  ],
+  "historicalInvocations": "UNVERIFIED",
+  "nativeBuild": "NOT_RUN",
+  "licensingClosure": "INCOMPLETE",
+  "Full": "NOT_RUN",
+  "U2": "BLOCKED",
+  "nextKit": "#23_NOT_CREATED_IN_THIS_TASK"
+}

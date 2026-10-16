@@ -1,4 +1,4 @@
-// Fixed material ledger only; no network, generator execution or release admission.
+// Legacy fixed ledger, or explicit --candidate execution from frozen inputs.
 import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -185,7 +185,9 @@ async function run() {
   }
 }
 
-await run().catch((error) => {
+await (process.argv[2] === "--candidate"
+  ? import("./lib/generated-input-candidate.mjs").then(({ runGeneratedCandidate }) => runGeneratedCandidate(process.argv.slice(3)))
+  : run()).catch((error) => {
   console.error(JSON.stringify({ status: "FAIL", error: error.message }));
   process.exitCode = 1;
 });
