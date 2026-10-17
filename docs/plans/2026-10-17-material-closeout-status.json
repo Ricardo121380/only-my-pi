@@ -1,0 +1,136 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-material-closeout-status",
+  "currentMaterialStatusRecord": "materialCloseout20261017",
+  "materialCloseout20261017": {
+    "observedOn": "2026-10-17",
+    "scope": "ISSUE_22_ENGINEERING_CLOSEOUT_ONLY",
+    "entryHead": "fc7fdbd01cd414c9c3b49caba0b44b87a2764e0b",
+    "implementationCommit": "2629b888087422ad4c99bdd46125e66d6f1caa5d",
+    "reportClarificationCommit": "fc7fdbd01cd414c9c3b49caba0b44b87a2764e0b",
+    "evidenceMode": "IDENTITY_BOUND_REUSE_AND_READ_ONLY_REHASH_NO_GENERATION_OR_BEHAVIOR_SUITE_RERUN",
+    "acceptanceReport": "2026-10-16-generated-inputs-candidate-acceptance.md",
+    "closeoutReport": "2026-10-17-generated-inputs-engineering-closeout.md",
+    "readbackReceipt": "../../../artifacts/issue22-engineering-closeout-20261017T050927Z/github-readback-verification.json",
+    "evidenceReuseReceipt": "../../../artifacts/issue22-engineering-closeout-20261017T050927Z/evidence-reuse-verification.json",
+    "taskIssueMapping": {
+      "G2-00-02": [
+        20,
+        21,
+        22,
+        23
+      ]
+    },
+    "issue20": {
+      "state": "CLOSED",
+      "evidence": "2026-10-14-libexif-document-candidate-acceptance.md",
+      "observation": "Existing completion retained; closed state reread through issue23 dependency"
+    },
+    "issue21": {
+      "state": "OPEN",
+      "completion": "PARTIAL",
+      "candidateAdmission": "BLOCKED",
+      "bodyCommentsMetadataAndUpdatedAtUnchanged": true,
+      "rerun": false,
+      "evidence": "2026-10-15-gir-candidate-acceptance.md",
+      "userDecision": "没有，保留阻断并交付已核实材料",
+      "progressComment": "https://github.com/Ricardo121380/only-my-pi/issues/21#issuecomment-5950149107",
+      "remoteMutated": false
+    },
+    "issue22": {
+      "state": "CLOSED",
+      "stateReason": "completed",
+      "closedAt": "2026-10-17T05:15:17Z",
+      "bodySha256": "6447701e2a1964e7b9f7d251203ba4c1b5c22e138789c8390cf1e3f39b523d61",
+      "acceptanceChecked": 10,
+      "originalSpecificationRetainedExceptCheckboxes": true,
+      "originalCommentPreserved": true,
+      "comment": "https://github.com/Ricardo121380/only-my-pi/issues/22#issuecomment-6230047786",
+      "independentBodyCommentStateReadbacks": true,
+      "metadataPreserved": true,
+      "blockedBy": [],
+      "blocking": [
+        23
+      ],
+      "completion": "PASS_MATERIAL_SLICE",
+      "acceptanceTotal": 10,
+      "Standards": {
+        "status": "PASS",
+        "findings": 0
+      },
+      "Spec": {
+        "status": "PASS_MATERIAL_SLICE",
+        "findings": 0
+      }
+    },
+    "issue23": {
+      "state": "OPEN",
+      "completion": "BLOCKED",
+      "newKit": "NOT_CREATED",
+      "nativeBlockedByAll": [
+        20,
+        21,
+        22
+      ],
+      "nativeBlockedByActive": [
+        21
+      ],
+      "blockedBy": 1,
+      "totalBlockedBy": 3,
+      "allNativeDependencyIdsPreserved": true,
+      "bodyCommentsMetadataUnchanged": true,
+      "blockingIssue24Snapshot": "EXACT_MATCH_WITH_ONLY_EXPECTED_REPOSITORY_OPEN_ISSUE_COUNTER_42_TO_41",
+      "implementationStarted": false,
+      "remoteMutated": false
+    },
+    "candidateIdentity": {
+      "fixedInputManifestSha256": "fe5c9a74a5142b0b22a29d565143cce8bb7c5977d14eda5168c402c1e8ddf440",
+      "outputSha256": "0053b59a01e9bfc25f635954c0bcf9ff1f6d7e4075f7e90010ff0031d9cfd8ea",
+      "files": 10359,
+      "bytes": 482360128,
+      "fullByteAndExecuteMaskRehash": "PASS"
+    },
+    "reusedValidation": {
+      "targetedPerNode": 11,
+      "negativeExecutions": 40,
+      "networkReceivesPerNodeOutsideInside": [
+        1,
+        0
+      ],
+      "writeProtectionTargets": 4,
+      "nodeRegression": {
+        "pass": 1790,
+        "fail": 0,
+        "cancelled": 0,
+        "skip": 8,
+        "excludedIssue21Tests": 10,
+        "exit": 0
+      },
+      "webRegression": {
+        "files": 17,
+        "pass": 108,
+        "exit": 0
+      }
+    },
+    "remainingGateStatus": {
+      "G2_00_02": "PARTIAL",
+      "F02": "PARTIAL",
+      "F03": "PARTIAL",
+      "licensingClosure": "INCOMPLETE",
+      "applicationBuild": "NOT_RUN",
+      "Full": "NOT_RUN",
+      "U2": "BLOCKED"
+    },
+    "historicalProductAccepted": 20,
+    "historicalProductTotal": 44,
+    "newProductAcceptances": 0,
+    "nextExecutableMaterialIssue": null,
+    "nextAction": "THIS_TASK_FINISHED_AT_22_RETAIN_21_BLOCKER_DO_NOT_START_23_OR_DOWNSTREAM",
+    "historicalFieldsPolicy": "All pre-existing top-level fields and dated workflow/publication/implementation objects retain their exact prior contents and observed dates. This additive record is the current material closeout observation; it does not advance the product or downstream gates.",
+    "readbackFinishedAt": "2026-10-17T05:16:27.329554+00:00",
+    "pushed": false,
+    "downstreamAdvanced": false
+  },
+  "legacyTaskMapping": "2026-10-01-engineering-ticket-plan.json",
+  "publicationFieldsAreHistorical": true
+}

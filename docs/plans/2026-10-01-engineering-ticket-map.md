@@ -1,5 +1,7 @@
 # only-my-pi 首批工单映射与依赖：2026-10-01
 
+**2026-10-17 #22 工程收尾（当前材料状态）：** [#22](https://github.com/Ricardo121380/only-my-pi/issues/22) 已于北京时间 13:15:17 关闭并独立回读 CLOSED / completed，现行 10 条完成条件及[完成评论](https://github.com/Ricardo121380/only-my-pi/issues/22#issuecomment-6230047786)核对通过。入口 HEAD `fc7fdbd` 与[10 月 16 日验收](2026-10-16-generated-inputs-candidate-acceptance.md)最终回执一致；5 个执行相关文件、完整固定输入和双目录 10,359 文件/482,360,128 字节输出无漂移，按身份与范围复用原验证。[#21 交付与阻断](2026-10-15-gir-candidate-acceptance.md)继续 OPEN/PARTIAL、candidate admission BLOCKED，沿用“没有，保留阻断并交付已核实材料”的既定决定，未重跑。#23 仍 OPEN/BLOCKED、新 kit NOT_CREATED；三条依赖 #20/#21/#22 保留，当前 active blocked_by=1、total_blocked_by=3，唯一未完成前置为 #21。本次只收尾 #22，后续构建/Full 不推进，整体 licensing INCOMPLETE、G2-00-02/F02/F03 PARTIAL、Full NOT_RUN、U2 BLOCKED、产品历史 20/44 保持。详见[本次收尾与回读](2026-10-17-generated-inputs-engineering-closeout.md)；机器当前材料记录为 [materialCloseout20261017](2026-10-17-material-closeout-status.json)。下文各日期历史记录及旧发布 JSON 保留原身份。
+
 **2026-10-14 本轮收尾：** #73、#74、#65 与 #75 均已回读 CLOSED / completed；各票证据分别见[生图](2026-10-11-pi110-images-acceptance.md)、[历史及导出](2026-10-11-pi110-image-history-acceptance.md)、[私有运行时](2026-10-13-pi110-private-runtime-acceptance.md)和[同候选整合验收](2026-10-13-pi110-integrated-acceptance.md)。#75 于 2026-10-13 北京时间 14:10:45 关闭，七条 AC、[完成评论](https://github.com/Ricardo121380/only-my-pi/issues/75#issuecomment-6139434444)与六条原生前置已核对；blocked_by=0、total_blocked_by=6，依赖边保留。GP110-08 的最终 C 全量为 1784 PASS / 0 FAIL / 0 CANCELLED / 8 SKIP，exit 0，原断言和超时不变、文件并发 2；同 N2 的 P 分段 23 项及资源补验 7 项、Ego Lite B 13+7 项与独立 Standards/Spec 复审分别 PASS。原 1763/9/10/7 全量 FAIL、19/19 隔离结果、并发 4 的后续失败及 Spec 首轮 PARTIAL 均保留原身份。#75 本地主仓工程收尾只提交入口基线后的归属增量，共改文件中的既有工作继续保留。#75 本地主仓收尾已提交 `d0f8989`，报告引用补正另为 `26ca9ae`。随后 [#20 libexif 新文档材料候选](https://github.com/Ricardo121380/only-my-pi/issues/20)于 2026-10-14 北京时间 00:24 回读 CLOSED / completed，九条 AC 与[完成评论](https://github.com/Ricardo121380/only-my-pi/issues/20#issuecomment-6150146305)匹配、历史正文/评论保留。[实际材料验收](2026-10-14-libexif-document-candidate-acceptance.md)覆盖固定输入/工具/配置、两个独立目录 5,803 对象全字节一致、106→111 逐项差异、双 Node、实际禁网及 26 项拒绝负例；双 Node 相关回归各 18 PASS，最终工程全量 1789 PASS / 0 FAIL / 0 CANCELLED / 8 SKIP，Standards 与 Spec 分别 PASS。本轮止于 #20。#23 的三条依赖边保留，blocked_by=2、total_blocked_by=3。#21/#22 仍 PARTIAL、#23 BLOCKED；#19、后续 G2、Full、真实服务、GP110-09 与日常晋升继续按各自门禁，产品历史 20/44 不变。下文有日期的批次与发布记录保留历史含义，#75 候选机器状态见[实施快照](2026-10-13-pi110-status.json)，#20 当前结果以本段材料验收为准，原发布 JSON 保留原字节。
 
 **2026-10-11 分类批次历史映射：** 新增 Pi 1.1.0 路线见[实际工单映射](2026-10-10-pi-1.1.0-ticket-review.md)。#70 / PI110-N09、#71 / PI110-N10 与 #72 / PI110-N11 已完成并回读 CLOSED / completed；#72 分类绑定、预算及请求账本的必需 C/P/B、Standards/Spec 和回归见[分类验收](2026-10-11-pi110-classification-acceptance.md)。本批在 #72 结束；下一项 #73 图片生成，随后 #74 图片产物，两票保持 OPEN、未实施。#19 和 GP110-07 整体保持未完成。下列材料与发布快照保留原身份和门槛，原产品 20/44 不代表扩大后项目完成率。
@@ -254,3 +256,16 @@ R4/Q4 用户批注“确认”后，按获批的五份完整正文更新既有 #
 完整工单正文、本地稳定编号、直接前置、交付与证据层见[已发布工单表](2026-10-09-remaining-ticket-review.md)，机器可读记录见[最新剩余方案](2026-10-09-remaining-ticket-proposal.json)。本轮只回填规划与追踪；原 44 个产品 Task 行及 20/44 历史验收不变，新的产品验收数为 0。
 
 当前执行前沿是 #20/#21/#22，建议先继续 #20 的生成链缺口。#23 验收新 kit 后进入 #24（PDF 材料），随后 #25 native 实际构建 → #26 parser 运行矩阵 → #27 默认发行 → #28 隔离 Full；G2 出口满足后才进入 #29 起的 U2。材料、构建、发行、Full、产品、真实 Provider 和日常晋升证据继续分列，具体操作仍核对对应条件。
+
+## 14. 2026-10-17 #22 工程收尾与当前材料映射
+
+[本次收尾报告](2026-10-17-generated-inputs-engineering-closeout.md)将现行 #22 十条完成条件与[原候选验收](2026-10-16-generated-inputs-candidate-acceptance.md)逐项对应；原报告/回执的 OPEN 观察时点不改写。本次已更新 #22 正文勾选、追加[完成评论](https://github.com/Ricardo121380/only-my-pi/issues/22#issuecomment-6230047786)并按 completed 关闭，随后独立回读正文、全部评论、状态与原生依赖。实现 `2629b888087422ad4c99bdd46125e66d6f1caa5d` 和报告澄清 `fc7fdbd01cd414c9c3b49caba0b44b87a2764e0b` 尚未推送，未上传原始材料。
+
+| Task / Issue | 当前状态 | 证据与范围 |
+| --- | --- | --- |
+| G2-00-02 / #20 | CLOSED（既有结果） | 沿用 [10 月 14 日验收](2026-10-14-libexif-document-candidate-acceptance.md)；本次 #23 依赖回读为 closed |
+| G2-00-02 / #21 | OPEN / PARTIAL；candidate admission BLOCKED | [10 月 15 日交付与用户决定](2026-10-15-gir-candidate-acceptance.md)及[既有进展评论](https://github.com/Ricardo121380/only-my-pi/issues/21#issuecomment-5950149107)保留；未重跑、未改写远端 |
+| G2-00-02 / #22 | CLOSED / completed；10/10 AC，PASS_MATERIAL_SLICE | [原验收](2026-10-16-generated-inputs-candidate-acceptance.md)、[本次独立回读](2026-10-17-generated-inputs-engineering-closeout.md)；材料阶段两轴各 0 findings，历史未知与整体许可边界保留 |
+| G2-00-02 / #23 | OPEN / BLOCKED；kit NOT_CREATED | 三条既有边 #20/#21/#22 全保留，当前状态 closed/open/closed；active blocked_by=1、total_blocked_by=3，仍由 #21 阻断 |
+
+[当前机器快照](2026-10-17-material-closeout-status.json)及旧机器映射新增的 `currentMaterialStatusRecord` 指向 `materialCloseout20261017`；该记录承接当前材料状态。旧顶层及 `remainingWorkWorkflow1009` 等对象按原观察日期完整保留，仍用于原 Task/Issue 发布映射，不作为今天的执行前沿。本次没有推进 #19、#23、后续构建、Full、U2 或日常晋升；不推荐自动重跑 #21。G2-00-02/F02/F03 PARTIAL、licensing INCOMPLETE、Full NOT_RUN、U2 BLOCKED 与产品 20/44 保持。
