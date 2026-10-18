@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { updateTreeDigest } from "../bootstrap/resource-hash.mjs";
@@ -109,16 +110,18 @@ async function inventory(root, roots, skipTop = [], componentTrees) {
   const hashes = componentTrees && new Map([...componentTrees.keys()].map(relative => [relative, createHash("sha256")]));
   async function readFile(record) {
     if (record.entry.type !== "file") return record;
-    const file = await fs.open(path.join(root, record.entry.path), fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+    // Keep the descriptor's stat/read/close together during admission, without
+    // a separate asynchronous filesystem round trip for each operation.
+    const file = fsSync.openSync(path.join(root, record.entry.path), fsSync.constants.O_RDONLY | fsSync.constants.O_NOFOLLOW);
     try {
-      const stat = await file.stat();
+      const stat = fsSync.fstatSync(file);
       if (!stat.isFile() || record.stat && (stat.dev !== record.stat.dev || stat.ino !== record.stat.ino
         || stat.size !== record.stat.size || (stat.mode & 0o111) !== record.entry.executable)) {
         fail("PI110_TREE_DRIFT", `Pi runtime file changed during inspection: ${record.entry.path}`);
       }
       return { ...record, entry: { path: record.entry.path, type: "file", bytes: stat.size,
-        executable: stat.mode & 0o111 }, bytes: await file.readFile() };
-    } finally { await file.close(); }
+        executable: stat.mode & 0o111 }, bytes: fsSync.readFileSync(file) };
+    } finally { fsSync.closeSync(file); }
   }
   for (let index = 0; index < discovered.length; index += 8) {
     const results = await Promise.allSettled(discovered.slice(index, index + 8).map(readFile));
