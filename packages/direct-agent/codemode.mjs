@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 import { createClassificationControl } from "../model-calls/runtime.mjs";
 import { registerClassifierCommand } from "../model-calls/commands.mjs";
 import { digest } from "../mcp/catalog.mjs";
+import { usesNativePiTools } from "../upstream-compatibility/native-pi.mjs";
 
 export const CODEMODE_LIMITS = Object.freeze({ timeoutMs: 60000, inputBytes: 32768, argumentBytes: 16384, outputBytes: 65536, concurrency: 4, calls: 32, scripts: 16, memoryBytes: 268435456, storeBytes: 1048576, historyBytes: 8388608, temporaryBytes: 67108864, nativeOutputCharacters: 16777216, nativeOutputItems: 100000 });
 const failure = (code, result) => {
@@ -41,12 +42,12 @@ async function ordinaryTarget(ctx, input) {
 export async function installOmpCodemode(pi, { controller, sdkFile = process.env.OMP_MCP_SDK_FILE } = {}) {
   if (!path.isAbsolute(sdkFile ?? "")) return { enabled: false };
   const manifest = JSON.parse(await fs.readFile(path.resolve(path.dirname(sdkFile), "../package.json"), "utf8"));
-  if (manifest.version !== "1.1.0") return { enabled: false }; // Historical controlled stacks retain their contract.
   if (manifest.name !== "@earendil-works/pi-coding-agent") throw fail("CODEMODE_RUNTIME_BINDING_INVALID");
+  if (!usesNativePiTools(manifest.version)) return { enabled: false }; // Historical controlled stacks retain their contract.
   const sdk = await import(pathToFileURL(sdkFile).href);
   const codemodeManifest = findPackageJSON("@earendil-works/pi-codemode", pathToFileURL(sdkFile));
   const metadata = JSON.parse(await fs.readFile(codemodeManifest, "utf8"));
-  if (metadata.version !== "1.1.0") throw fail("CODEMODE_RUNTIME_VERSION_MISMATCH");
+  if (metadata.name !== "@earendil-works/pi-codemode" || metadata.version !== manifest.version) throw fail("CODEMODE_RUNTIME_VERSION_MISMATCH");
   const { parseCodemodeSource } = await import(pathToFileURL(path.resolve(path.dirname(codemodeManifest), metadata.exports["."].import)).href);
   const classification = createClassificationControl(pi, { sdkFile, configRoot: process.env.PI_CODING_AGENT_DIR });
   registerClassifierCommand(pi, { sdkFile, configRoot: process.env.PI_CODING_AGENT_DIR });

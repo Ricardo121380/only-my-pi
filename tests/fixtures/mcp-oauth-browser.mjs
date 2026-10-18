@@ -26,7 +26,7 @@ const stop = () => stopping ??= (async () => {
   await fs.writeFile(path.join(evidence, "69-browser-runtime.json"), JSON.stringify({ authentication: (await new McpCatalog(f.config).snapshot(f.project)).authentication,
     runs: await new McpRuns(f.config).status(f.project), received: service.received, providerRequests: f.requests.length,
     rawBytesPreserved: await fs.readFile(path.join(f.config, "mcp.json"), "utf8") === raw, identities, bindings: f.bindings,
-    node: process.version, realPi: "1.1.0", realMcp: "1.1.0", sourceCandidate: true, installedExtensionCopies: true, I: "NOT_RUN", L: "NOT_RUN" }, null, 2));
+    node: process.version, realPi: f.piVersion, realMcp: f.piVersion, sourceCandidate: true, installedExtensionCopies: true, I: "NOT_RUN", L: "NOT_RUN" }, null, 2));
 })();
 const control = http.createServer(async (req, res) => {
   if (req.method !== "POST" || req.headers.origin !== controlOrigin || !["/mode", "/revoke", "/restart", "/stop"].includes(req.url)) { res.writeHead(403).end(); return; }

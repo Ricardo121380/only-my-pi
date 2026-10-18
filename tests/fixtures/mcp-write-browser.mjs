@@ -13,7 +13,7 @@ const raw = JSON.stringify({ mcpServers: { local: { command: f.server.command, a
 await fs.writeFile(path.join(f.config, "mcp.json"), raw);
 const hashes = {};
 for (const file of ["packages/mcp/extension.mjs", "packages/mcp/write-target.mjs", "packages/mcp/process.mjs", "packages/mcp/catalog.mjs", "packages/host/tasks.mjs", "packages/host/ownership.mjs", "packages/host/project-authority.mjs", "packages/host/account-rpc-entry.mjs", "extensions/omp-direct/index.ts", "extensions/omp-direct/runtime.mjs"]) hashes[file] = createHash("sha256").update(await fs.readFile(path.join(f.omp, file))).digest("hex");
-await fs.writeFile(path.join(evidence, "67-browser-input.json"), JSON.stringify({ origin: f.host.origin, projectId: f.projectId, project: f.project, configRoot: f.config, root: f.root, raw, server: f.server, runtimeSourceHashes: hashes, node: process.version, realPi: "1.1.0", realMcpClient: "1.1.0", installedExtensionCopies: true }, null, 2));
+await fs.writeFile(path.join(evidence, "67-browser-input.json"), JSON.stringify({ origin: f.host.origin, projectId: f.projectId, project: f.project, configRoot: f.config, root: f.root, raw, server: f.server, runtimeSourceHashes: hashes, node: process.version, realPi: f.piVersion, realMcpClient: f.piVersion, installedExtensionCopies: true }, null, 2));
 const pair = () => fetch(f.host.origin + "/internal/pair", { method: "POST", headers: { Origin: f.host.origin, Authorization: `Bearer ${f.host.controlToken}` } }).then((response) => response.json());
 let stopping;
 async function stop() {
@@ -22,7 +22,7 @@ async function stop() {
   const { McpRuns } = await import("../../packages/mcp/runs.mjs");
   const runs = await new McpRuns(f.config).status(f.project);
   const reception = await Promise.all(runs.runs.map(async (run) => ({ runId: run.runId, taskId: run.taskId, received: await mcpReception(run) })));
-  await fs.writeFile(path.join(evidence, "67-browser-runtime.json"), JSON.stringify({ runs, reception, fileBytes: await fs.readFile(path.join(f.project, "README.md"), "utf8"), providerRequests: f.requests.length, rawBytesPreserved: await fs.readFile(path.join(f.config, "mcp.json"), "utf8") === raw, runtimeSourceHashes: hashes, realPi: "1.1.0", realMcpClient: "1.1.0", node: process.version, installedExtensionCopies: true, I: "NOT_RUN", L: "NOT_RUN" }, null, 2));
+  await fs.writeFile(path.join(evidence, "67-browser-runtime.json"), JSON.stringify({ runs, reception, fileBytes: await fs.readFile(path.join(f.project, "README.md"), "utf8"), providerRequests: f.requests.length, rawBytesPreserved: await fs.readFile(path.join(f.config, "mcp.json"), "utf8") === raw, runtimeSourceHashes: hashes, realPi: f.piVersion, realMcpClient: f.piVersion, node: process.version, installedExtensionCopies: true, I: "NOT_RUN", L: "NOT_RUN" }, null, 2));
   console.log(JSON.stringify({ stopped: true, runs: runs.runs.length, receptions: reception.map((entry) => entry.received.filter((item) => item.type === "call").length) }));
 }
 const control = http.createServer(async (req, res) => {

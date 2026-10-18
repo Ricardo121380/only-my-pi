@@ -38,6 +38,7 @@ async function fakeStack(t) {
   const root = path.join(home, ".local", "share", "only-my-pi", "stacks", STACK_DIGEST);
   await fs.mkdir(path.join(root, "node", "bin"), { recursive: true });
   await fs.mkdir(path.join(root, "pi", "dist", "bundle"), { recursive: true });
+  await fs.writeFile(path.join(root, "pi/package.json"), JSON.stringify({ name: "@earendil-works/pi-coding-agent", version: "0.85.1" }));
   await fs.mkdir(path.join(root, "only-my-pi", "package", "bin"), { recursive: true });
   await fs.writeFile(path.join(root, "node", "bin", "node"), "node", { mode: 0o755 });
   await fs.writeFile(path.join(root, "pi", "dist", "bundle", "cli.js"), "pi\n", { mode: 0o644 });
@@ -179,7 +180,8 @@ test("explicit headless session routes through admission without dropping audite
   assert.throws(() => buildDirectPiInvocation({ argv: [...argv, "--session", "/other.jsonl"], stack, extensionPaths: EXTENSIONS }), { code: "OMP_AGENT_OPTION_INVALID" });
   for (const extra of [["--no-session"]]) {
     const unchanged = buildDirectPiInvocation({ argv: [...argv, ...extra], stack, extensionPaths: EXTENSIONS });
-    assert.equal(unchanged.argv[1], stack.piCliPath);
+    assert.equal(unchanged.argv[1], path.join(stack.ompPackageRoot, "packages/direct-agent/session-entry.mjs"));
+    assert.ok(unchanged.argv.includes("--no-session"));
   }
   const fork = buildDirectPiInvocation({ argv: ["-p", "--fork", "/history/source.jsonl", "review"], stack, extensionPaths: EXTENSIONS });
   assert.equal(fork.argv[1], path.join(stack.ompPackageRoot, "packages/direct-agent/session-entry.mjs"));

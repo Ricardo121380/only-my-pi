@@ -12,8 +12,10 @@ import { fileURLToPath } from "node:url";
 async function fixture(t, malformed = false, uncontrolledExit = false) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-rpc-wire-"))); t.after(() => fs.rm(root, { recursive: true, force: true }));
   const file = path.join(root, "worker.mjs");
+  await fs.mkdir(path.join(root, "pi"));
+  await fs.writeFile(path.join(root, "pi/package.json"), JSON.stringify({ name: "@earendil-works/pi-coding-agent", version: "0.85.1" }));
   await fs.writeFile(file, `import {createInterface} from "node:readline"; const lines=createInterface({input:process.stdin}); for await(const line of lines){const c=JSON.parse(line); if(${malformed}){process.stdout.write("not-json\\n");continue;} process.stdout.write(JSON.stringify({id:c.id,type:"response",command:c.type,success:true,data:{sessionId:"fixture-session"}})+"\\n");}`);
-  const worker = new RpcWorker({ stack: { nodePath: process.execPath, piCliPath: file, stackId: `sha256:${"a".repeat(64)}` }, configRoot: root, cwd: root, model: "mock/test", sessionRoot: root,
+  const worker = new RpcWorker({ stack: { root, nodePath: process.execPath, piCliPath: file, stackId: `sha256:${"a".repeat(64)}` }, configRoot: root, cwd: root, model: "mock/test", sessionRoot: root,
     ...(uncontrolledExit ? { controlled: true, accountId: "fixture-account" } : {}),
     extensionResolver: async () => ({ extensions: [file] }), spawnImpl: (_node, _argv, options) => spawn(process.execPath, [file], options) });
   t.after(() => uncontrolledExit ? worker.stop().catch((error) => assert.equal(error.code, "RPC_TERMINATION_UNCONFIRMED")) : worker.stop()); return worker;

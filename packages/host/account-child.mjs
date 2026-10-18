@@ -5,6 +5,7 @@ import { AccountCatalog } from "./accounts.mjs";
 import { CLI_ACCOUNT_ID } from "./contracts.mjs";
 import { hasAccountCredential } from "./account-credential.mjs";
 import { disableOmpCacheWarming } from "../direct-agent/cache-warming-policy.mjs";
+import { applyOmpRequestPolicy } from "../direct-agent/request-policy.mjs";
 
 // Implements only the bounded JSON-print CLI contract emitted by pi-subagents.
 // Unknown CLI modes fail closed instead of falling back to the ordinary Pi CLI.
@@ -29,7 +30,7 @@ export async function runAccountChild({ stack, configRoot, accountId, argv, cwd 
   sdk.initTheme(undefined, false);
   const sessionManager = args.noSession ? sdk.SessionManager.inMemory(cwd) : args.session ? sdk.SessionManager.open(args.session, args.sessionDir, cwd) : sdk.SessionManager.create(cwd, args.sessionDir);
   const runtime = await sdk.createAgentSessionRuntime(async ({ cwd, sessionManager, sessionStartEvent }) => {
-    const services = await sdk.createAgentSessionServices({ cwd, agentDir: configRoot, modelRuntime, settingsManager: sdk.SettingsManager.create(cwd, configRoot, { projectTrusted: false }), extensionFlagValues: args.unknownFlags,
+    const services = await sdk.createAgentSessionServices({ cwd, agentDir: configRoot, modelRuntime, settingsManager: applyOmpRequestPolicy(sdk.SettingsManager.create(cwd, configRoot, { projectTrusted: false })), extensionFlagValues: args.unknownFlags,
       resourceLoaderOptions: { noExtensions: true, additionalExtensionPaths: (args.extensions ?? []).map((p) => path.resolve(cwd, p)), noContextFiles: args.noContextFiles, noSkills: args.noSkills, systemPrompt: args.systemPrompt, appendSystemPrompt: args.appendSystemPrompt, extensionFactories: [disableOmpCacheWarming] },
     });
     if (services.diagnostics.some((d) => d.type === "error") || services.resourceLoader.getExtensions().errors.length) throw new Error("CHILD_EXTENSION_FAILED");

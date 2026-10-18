@@ -29,7 +29,7 @@ async function stop() {
     await f.close({ keep: true }); await service.close();
     const runs = await new McpRuns(f.config).status(f.project);
     await fs.writeFile(path.join(evidence, `${prefix}-runtime.json`), JSON.stringify({ runs, received: service.received, providerRequests: f.requests.length,
-      rawBytesPreserved: await fs.readFile(path.join(f.config, "mcp.json"), "utf8") === raw, identities, bindings: f.bindings, realPi: "1.1.0", realMcpClient: "1.1.0", node: process.version, installedExtensionCopies: true, sourceCandidate: true, I: "NOT_RUN", L: "NOT_RUN" }, null, 2));
+      rawBytesPreserved: await fs.readFile(path.join(f.config, "mcp.json"), "utf8") === raw, identities, bindings: f.bindings, realPi: f.piVersion, realMcpClient: f.piVersion, node: process.version, installedExtensionCopies: true, sourceCandidate: true, I: "NOT_RUN", L: "NOT_RUN" }, null, 2));
     console.log(JSON.stringify({ stopped: true, receptions: service.received.filter((entry) => entry.rpc === "tools/call").length }));
   })();
 }

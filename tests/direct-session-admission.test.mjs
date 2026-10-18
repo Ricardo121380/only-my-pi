@@ -21,6 +21,12 @@ async function fixture(t, version = 3) {
   return { root, config, file, id, contents };
 }
 
+async function permissionFlags(root) {
+  const file = path.join(root, "permission-flags.ts");
+  await fs.writeFile(file, 'export default pi => pi.registerFlag("perm", { type: "string" });');
+  return file;
+}
+
 test("admission keeps the shared lock until explicit release", async (t) => {
   const f = await fixture(t);
   const lease = await acquireExplicitSession(f.config, f.file);
@@ -66,6 +72,7 @@ for (const version of [1, 3]) test(`real admission entry refuses occupied v${ver
 for (const mode of ["probe", "direct", "json", "text", "relative", "id", "continue", "new-id", "fork"]) test(`real Pi ${mode} print runs while admission is held and releases after normal completion`, async (t) => {
   const f = await fixture(t);
   const createsTarget = mode === "new-id" || mode === "fork";
+  const flags = await permissionFlags(f.root);
   const expectedId = createsTarget ? "new-reserved" : f.id;
   let requests = 0, lockObserved = false;
   const server = http.createServer(async (_req, res) => {
@@ -86,8 +93,8 @@ for (const mode of ["probe", "direct", "json", "text", "relative", "id", "contin
     : mode === "continue" ? ["-c", "--session-dir", f.root] : ["--session", f.file];
   const args = mode === "probe" ? [entry, f.file, "fixture/fixture", "respond ok"] : [entry,
     fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")),
-    "--offline", "--no-extensions", "--extension", fileURLToPath(new URL("../extensions/omp-direct/index.ts", import.meta.url)),
-    "--tools", "read,grep,find,ls", ...(mode === "json" ? ["--mode", "json"] : mode === "text" ? ["--print", "--mode", "text"] : ["--print"]), ...selection, "--model", "fixture/fixture", "respond ok"];
+    "--offline", "--no-extensions", "--extension", flags, "--extension", fileURLToPath(new URL("../extensions/omp-direct/index.ts", import.meta.url)),
+    "--tools", "read,grep,find,ls", "--perm", "plan", ...(mode === "json" ? ["--mode", "json"] : mode === "text" ? ["--print", "--mode", "text"] : ["--print"]), ...selection, "--model", "fixture/fixture", "respond ok"];
   const launched = promisify(execFile)(process.execPath, args, {
     cwd: f.root, env: { PATH: process.env.PATH, HOME: f.root, PI_CODING_AGENT_DIR: f.config, PI_SKIP_VERSION_CHECK: "1", ONLY_MY_PI_DIRECT: "1", ONLY_MY_PI_HEADLESS: "1", ONLY_MY_PI_MODEL_EXPLICIT: "1" }, timeout: 15000,
   });
@@ -104,9 +111,15 @@ for (const mode of ["probe", "direct", "json", "text", "relative", "id", "contin
 test("Pi hard startup exit retains its lease for reconciliation", async (t) => {
   const f = await fixture(t);
   const entry = fileURLToPath(new URL("../packages/direct-agent/session-entry.mjs", import.meta.url));
+  // The public SDK now reports missing models by throwing rather than exiting
+  // inside main(). Inject a genuine hard exit in Pi's extension loader instead:
+  // admission must already be held, and no finally block may release it.
+  const extension = path.join(f.root, "hard-exit.ts");
+  await fs.writeFile(extension, 'export default function () { process.stderr.write("fixture model not found\\n"); process.exit(1); }');
   const launched = promisify(execFile)(process.execPath, [entry,
     fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")),
-    "--offline", "--no-extensions", "--print", "--session", f.file, "--model", "nonexistent/model", "must not run"], {
+    "--offline", "--no-extensions", "--extension", extension, "--tools", "read,grep,find,ls", "--perm", "plan",
+    "--print", "--session", f.file, "--model", "nonexistent/model", "must not run"], {
     cwd: f.root, env: { PATH: process.env.PATH, HOME: f.root, PI_CODING_AGENT_DIR: f.config, PI_SKIP_VERSION_CHECK: "1" }, timeout: 10000,
   });
   launched.child.stdin.end();
@@ -119,12 +132,29 @@ test("real resume entry with piped input fails before changing history or reserv
   const entry = fileURLToPath(new URL("../packages/direct-agent/session-entry.mjs", import.meta.url));
   const launched = promisify(execFile)(process.execPath, [entry,
     fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")),
-    "--offline", "--no-extensions", "--print", "--resume", "--session-dir", f.root], {
+    "--offline", "--no-extensions", "--extension", fileURLToPath(new URL("../extensions/omp-direct/index.ts", import.meta.url)),
+    "--tools", "read,grep,find,ls", "--perm", "plan", "--print", "--resume", "--session-dir", f.root], {
     cwd: f.root, env: { PATH: process.env.PATH, HOME: f.root, PI_CODING_AGENT_DIR: f.config }, timeout: 10000,
   });
   launched.child.stdin.end();
   await assert.rejects(launched, (error) => error.code === 1 && /SESSION_PICKER_TTY_REQUIRED/.test(error.stderr));
   assert.equal(await fs.readFile(f.file, "utf8"), f.contents);
   assert.deepEqual((await fs.readdir(f.root)).sort(), ["config", "session.jsonl"]);
+  const next = await acquireOwnership(f.config, "session", f.id); await next.release();
+});
+
+test("controlled print rejects a missing explicit model without falling back or changing history", async t => {
+  const f = await fixture(t);
+  const flags = await permissionFlags(f.root);
+  const entry = fileURLToPath(new URL("../packages/direct-agent/session-entry.mjs", import.meta.url));
+  const launched = promisify(execFile)(process.execPath, [entry,
+    fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")),
+    "--offline", "--no-extensions", "--extension", flags, "--extension", fileURLToPath(new URL("../extensions/omp-direct/index.ts", import.meta.url)),
+    "--tools", "read,grep,find,ls", "--perm", "plan", "--print", "--session", f.file, "--model", "nonexistent/model", "must not run"], {
+    cwd: f.root, env: { PATH: process.env.PATH, HOME: f.root, PI_CODING_AGENT_DIR: f.config }, timeout: 10000,
+  });
+  launched.child.stdin.end();
+  await assert.rejects(launched, error => error.code === 1 && /TUI_MODEL_NOT_FOUND/.test(error.stderr));
+  assert.equal(await fs.readFile(f.file, "utf8"), f.contents);
   const next = await acquireOwnership(f.config, "session", f.id); await next.release();
 });

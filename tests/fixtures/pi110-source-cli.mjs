@@ -32,7 +32,8 @@ export async function createPi110SourceCli(root, { baseUrl, installedExtensions 
     await fs.copyFile(path.join(nodeLib, name), path.join(stack, "node/lib", name));
   }
   const piRoot = path.dirname(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent"))));
-  assert.equal(JSON.parse(await fs.readFile(path.join(piRoot, "package.json"), "utf8")).version, "1.1.0");
+  const piVersion = JSON.parse(await fs.readFile(path.join(piRoot, "package.json"), "utf8")).version;
+  assert.equal(piVersion, "1.3.0");
   await fs.cp(piRoot, path.join(stack, "pi"), { recursive: true });
   await fs.symlink(path.join(repo, "node_modules"), path.join(stack, "node_modules"));
   await fs.symlink(path.join(repo, "node_modules"), path.join(omp, "node_modules"));
@@ -68,7 +69,7 @@ export async function createPi110SourceCli(root, { baseUrl, installedExtensions 
     bindings.push({ ...(pkg?.binding ?? { id, name, resolvedVersion: "0.0.0-fixture", binding: "external", owner: "user", resourceFilter: id === "agent-extensions" ? entries : [] }),
       physicalRootDigest: `sha256:${await hashResourcePath({ artifactRoot: path.join(config, "npm"), relativePath: `node_modules/${name}`, allowContainedSymlinks: true })}` });
   }
-  const settings = { defaultProvider: "fixture", defaultModel: "one", tuiMode: "regular", cacheWarming: "idle", enableAnalytics: false,
+  const settings = { defaultProvider: "fixture", defaultModel: "one", tuiMode: "regular", cacheWarming: "idle", enableAnalytics: false, lastChangelogVersion: piVersion,
     onlyMyPi: { packageBindings: bindings } };
   await fs.writeFile(path.join(config, "settings.json"), JSON.stringify(settings));
   await fs.writeFile(path.join(config, "auth.json"), JSON.stringify({ fixture: { type: "api_key", key: "fixture-cli" } }));
@@ -77,5 +78,5 @@ export async function createPi110SourceCli(root, { baseUrl, installedExtensions 
   ] } } }));
   await fs.writeFile(path.join(project, "README.md"), "temporary CLI project\n");
   const env = { PATH: process.env.PATH, HOME: home, TERM: "xterm-256color", LANG: "en_US.UTF-8", PI_CODING_AGENT_DIR: config, PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1" };
-  return { home, config, project, stack, omp, env, cli: path.join(omp, "bin/omp.mjs"), sdk: path.join(stack, "pi/dist/index.js"), bindings };
+  return { home, config, project, stack, omp, env, cli: path.join(omp, "bin/omp.mjs"), sdk: path.join(stack, "pi/dist/index.js"), bindings, piVersion };
 }

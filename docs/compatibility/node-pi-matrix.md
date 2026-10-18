@@ -1,5 +1,16 @@
 # Node and Pi compatibility matrix
 
+## PI130-01 development update — 2026-10-18
+
+The exact development dependency, lock and installed internal Pi packages are now
+`1.3.0`, acquired from the official registry with independent tarball SRI and
+installed-byte verification. Node `22.19.0` / `24.19.0` remain the required lanes.
+See the [#76 adaptation and evidence record](2026-10-18-pi-1.3.0-runtime-adaptation.md)
+for current checks and their scope, including the existing clean-tree Q12
+document-link failure. #76 remains OPEN/PARTIAL. New candidate packaging and same-candidate
+acceptance belong to #77. The checked 2026-10-17 identities below retain their
+historical meaning; they do not describe a new daily installation.
+
 | Runtime | Role | Evidence |
 | --- | --- | --- |
 | Node 22.19.0 | minimum supported/CI lane | Exact GitHub Actions lane; repository, topology, migration, and resource lifecycle gates pass |

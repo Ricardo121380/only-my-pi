@@ -7,6 +7,7 @@ import http from "node:http";
 import { spawn } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import { createPi110SourceCli } from "./fixtures/pi110-source-cli.mjs";
+import { writePiEvidence } from "./fixtures/pi-runtime-evidence.mjs";
 
 async function until(read, accept, label) {
   for (let i = 0; i < 400; i++) { const value = read(); if (accept(value)) return value; await delay(25); }
@@ -33,7 +34,10 @@ test("public OMP print, ephemeral print, RPC and account child suppress a forced
   });
   provider.on("connection", (socket) => { sockets.add(socket); socket.once("close", () => sockets.delete(socket)); });
   await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
-  t.after(async () => { for (const socket of sockets) socket.destroy(); await new Promise((resolve) => provider.close(resolve)); await fs.rm(root, { recursive: true, force: true }); });
+  const origin = `http://127.0.0.1:${provider.address().port}`, exits = [];
+  t.after(async () => { for (const socket of sockets) socket.destroy(); await new Promise((resolve) => provider.close(resolve));
+    await writePiEvidence(t.name, { sdk: f.sdk, bindings: f.bindings, service: { origin, source: "tests/direct-pi110-cli.test.mjs" }, received, exits });
+    await fs.rm(root, { recursive: true, force: true }); });
   const f = await createPi110SourceCli(root, { baseUrl: `http://127.0.0.1:${provider.address().port}/v1`, forceWarming: true,
     installedExtensions: process.env.OMP_PI110_INSTALLED_EXTENSIONS === "1" });
   const childEntry = path.join(root, "account-child-entry.mjs");
@@ -59,6 +63,7 @@ test("public OMP print, ephemeral print, RPC and account child suppress a forced
       await delay(1300); child.stdin.end();
     } else child.stdin.end(); // Pi main reads redirected stdin before print.
     const exit = await closed;
+    exits.push({ name, ...exit });
     assert.equal(exit.code, 0, `${name}: ${error}\n${output}`);
     assert.match(output, /fixture complete/);
     const requests = received.slice(before);

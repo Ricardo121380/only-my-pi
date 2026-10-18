@@ -21,7 +21,7 @@ const f = await createMcpHost({ assetsRoot: fileURLToPath(new URL("../../webui/d
 await f.mcp({ type: "save", revision: 0, server: { ...f.server, enabled: true } });
 const hashes = {};
 for (const file of ["packages/direct-agent/codemode.mjs", "packages/direct-agent/launcher.mjs", "packages/mcp/extension.mjs", "packages/mcp/process.mjs", "packages/host/tasks.mjs", "packages/host/rpc-worker.mjs", "packages/host/account-rpc-entry.mjs", "extensions/omp-direct/index.ts", "extensions/omp-direct/runtime.mjs"]) hashes[file] = createHash("sha256").update(await fs.readFile(path.join(f.omp, file))).digest("hex");
-await fs.writeFile(path.join(evidence, `${prefix}-input.json`), JSON.stringify({ root: f.root, projectId: f.projectId, project: f.project, code: storageCase ? storageCodes : code, server: f.server, hashes, node: process.version, pi: "1.1.0", quickjs: "quickjs-wasi@3.6.2", installedExtensionCopies: true }, null, 2));
+await fs.writeFile(path.join(evidence, `${prefix}-input.json`), JSON.stringify({ root: f.root, projectId: f.projectId, project: f.project, code: storageCase ? storageCodes : code, server: f.server, hashes, node: process.version, pi: f.piVersion, quickjs: "quickjs-wasi@3.6.2", installedExtensionCopies: true }, null, 2));
 const pair = () => fetch(f.host.origin + "/internal/pair", { method: "POST", headers: { Origin: f.host.origin, Authorization: `Bearer ${f.host.controlToken}` } }).then((response) => response.json());
 const control = http.createServer(async (req, res) => {
   if (req.method !== "POST" || req.headers.origin !== controlOrigin || !["/pair", "/restart", "/stop"].includes(req.url)) { res.writeHead(403).end(); return; }
@@ -35,7 +35,7 @@ const control = http.createServer(async (req, res) => {
       const runs = await new McpRuns(f.config).status(f.project);
       const reception = await Promise.all(runs.runs.map(async (run) => ({ runId: run.runId, taskId: run.taskId, received: await mcpReception(run) })));
       const tasks = [...f.host.tasks.tasks.values()].map((task) => f.host.tasks.public(task));
-      await fs.writeFile(path.join(evidence, `${prefix}-runtime.json`), JSON.stringify({ runs, reception, tasks, providerRequests: f.requests.length, hashes, pi: "1.1.0", node: process.version, I: "NOT_RUN", L: "NOT_RUN" }, null, 2));
+      await fs.writeFile(path.join(evidence, `${prefix}-runtime.json`), JSON.stringify({ runs, reception, tasks, providerRequests: f.requests.length, hashes, pi: f.piVersion, node: process.version, I: "NOT_RUN", L: "NOT_RUN" }, null, 2));
       data = { stopped: true, tasks: tasks.length, receptions: reception.map((run) => run.received.filter((item) => item.type === "call").length) };
       res.once("finish", () => { control.close(); control.closeAllConnections(); });
     }

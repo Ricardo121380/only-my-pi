@@ -1,5 +1,17 @@
 # only-my-pi status
 
+## PI130-01 development update — 2026-10-18
+
+The development pin/lock and installed Pi packages are now exactly `1.3.0`.
+[#76 implementation and verification](compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md)
+tracks real source CLI/PTY and Host/WebUI integration, controlled services,
+first failures, C/P checks and Standards/Spec review. Targeted runtime checks pass;
+clean-tree M11 Q12 retains the opening baseline's unresolved document links.
+Issue #76 stays OPEN/PARTIAL until the required closeout gate is satisfied.
+The 2026-10-17 development-version paragraph below is an earlier snapshot.
+Candidate construction and same-candidate integration remain #77; the daily
+installation and material/Full/real Provider acceptance are unchanged.
+
 Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-30** · Stable
 kernel merged to `main`: **2026-08-27** · Pi **0.84.3** · Node **25.8.0** · macOS
 `darwin-arm64`

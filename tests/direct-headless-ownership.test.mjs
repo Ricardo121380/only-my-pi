@@ -27,6 +27,7 @@ for (const mode of ["absolute", "relative", "prefix", "id", "continue"]) test(`a
   const owner = await acquireOwnership(configRoot, "session", sessionId);
   try {
   const cli = path.join(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent"))), "bundle/cli.js");
+  await fs.symlink(path.resolve(path.dirname(cli), "../.."), path.join(root, "pi"));
   const extension = fileURLToPath(new URL("../extensions/omp-direct/index.ts", import.meta.url));
   const selection = mode === "absolute" ? ["--session", file]
     : mode === "relative" ? ["--session", "sessions/fixture.jsonl"]
@@ -35,7 +36,7 @@ for (const mode of ["absolute", "relative", "prefix", "id", "continue"]) test(`a
     : ["--continue", "--session-dir", sessionRoot];
   const invocation = buildDirectPiInvocation({
     argv: ["--offline", "--print", ...selection, "--model", "fixture/fixture", "must not reach model"],
-    stack: { nodePath: process.execPath, piCliPath: cli, ompPackageRoot: fileURLToPath(new URL("../", import.meta.url)), stackId: `sha256:${"a".repeat(64)}` },
+    stack: { root, nodePath: process.execPath, piCliPath: cli, ompPackageRoot: fileURLToPath(new URL("../", import.meta.url)), stackId: `sha256:${"a".repeat(64)}` },
     extensionPaths: [extension],
     env: { PATH: process.env.PATH, HOME: root, PI_CODING_AGENT_DIR: configRoot, PI_SKIP_VERSION_CHECK: "1" },
   });

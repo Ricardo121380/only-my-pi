@@ -11,6 +11,7 @@ import { INPUT_PROTOCOL } from "./input-protocol.mjs";
 import { disableOmpCacheWarming } from "../direct-agent/cache-warming-policy.mjs";
 import { mcpToolNames } from "../mcp/catalog.mjs";
 import { hostProjectAuthority } from "./project-authority.mjs";
+import { applyOmpRequestPolicy } from "../direct-agent/request-policy.mjs";
 
 // Host-owned arguments contain identities and audited paths, never credentials.
 try {
@@ -48,7 +49,7 @@ try {
   const createRuntime = async ({ cwd, sessionManager, sessionStartEvent }) => {
     const services = await sdk.createAgentSessionServices({
       cwd, agentDir: configRoot, modelRuntime,
-      settingsManager: sdk.SettingsManager.create(cwd, configRoot, { projectTrusted: false }),
+      settingsManager: applyOmpRequestPolicy(sdk.SettingsManager.create(cwd, configRoot, { projectTrusted: false })),
       extensionFlagValues: new Map([["perm", controlled ? "build" : "plan"]]),
       resourceLoaderOptions: { noExtensions: true, additionalExtensionPaths: extensions, extensionFactories: [
         (pi) => pi.events.emit("only-my-pi:host-session-owner:v1", { ownsSession: (ctx) => ctx.mode === "rpc" && ctx.sessionManager.getSessionId() === sessionManager.getSessionId(), verifyProject: hostProjectAuthority({ configRoot, taskId: process.env.OMP_HOST_INPUT_TASK_ID, sessionManager }) }),

@@ -17,13 +17,13 @@ import { groupAlive } from "../packages/host/ownership.mjs";
 import { INPUT_CARRIER } from "../packages/host/input-protocol.mjs";
 
 async function until(check) { for (let i = 0; i < 800; i++) { const found = await check(); if (found) return found; await new Promise((resolve) => setTimeout(resolve, 20)); } throw new Error("real Pi fixture timed out"); }
-async function fixture(t) {
+async function fixture(t, { startup = false } = {}) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-input-real-pi-"))), configRoot = path.join(root, "config"), cwd = path.join(root, "project"), sessionRoot = path.join(root, "sessions");
   await fs.mkdir(cwd); await fs.writeFile(path.join(cwd, "README.md"), "fixture tool finished\n"); await fs.mkdir(sessionRoot);
   await fs.symlink(path.dirname(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")))), path.join(root, "pi"));
-  const sdkManifest = await fs.readFile(path.join(root, "pi/package.json")); assert.equal(JSON.parse(sdkManifest).version, "1.1.0");
+  const sdkManifest = await fs.readFile(path.join(root, "pi/package.json")); assert.equal(JSON.parse(sdkManifest).version, "1.3.0");
   const accounts = new AccountCatalog(configRoot), account = await accounts.create({ providerId: "fixture", name: "local-only", authType: "api_key" }), paths = await accounts.runtimePaths(account.accountId);
-  const f = { root, cwd, received: [], workers: [], toolWaiting: false, toolReleased: false, reject: false };
+  const f = { root, cwd, received: [], workers: [], toolWaiting: false, toolReleased: false, reject: false, startEvents: [] };
   const provider = http.createServer(async (req, res) => {
     let body = ""; for await (const bytes of req) body += bytes;
     f.received.push(JSON.parse(body));
@@ -44,6 +44,14 @@ async function fixture(t) {
   const extension = path.join(root, "fixture.mjs");
   await fs.writeFile(extension, `export default function(pi) {
     pi.registerFlag("perm", {description: "Fixture permission flag", type: "string"});
+    ${startup ? `pi.on("before_agent_start", async (event, ctx) => {
+      await new Promise(resolve => {
+        const listener = frame => { if (["fixture_release_startup", "fixture_abort_startup"].includes(frame?.type)) {
+          process.off("message", listener); if (frame.type === "fixture_abort_startup") ctx.abort(); resolve();
+        } };
+        process.on("message", listener); process.send({type:"fixture_starting", messageType:event.messageType});
+      });
+    });` : ""}
     pi.on("tool_call", async (event, ctx) => {
       if (event.toolName !== "read") return;
       await new Promise((resolve) => {
@@ -62,6 +70,7 @@ async function fixture(t) {
         return emit.call(this, event, frame, ...rest);
       };
       child.on("message", (message) => { if (message?.type === "fixture_tool_waiting") f.toolWaiting = true; });
+      child.on("message", (message) => { if (message?.type === "fixture_starting") f.startEvents.push(message); });
       return child;
     } }); f.workers.push(worker); return worker;
   } }); await tasks.load();
@@ -70,17 +79,18 @@ async function fixture(t) {
     controller.beginStop(); await tasks.stop(); await controller.close(); await store.close();
     for (const worker of f.workers) { assert.equal(groupAlive(worker.identity?.pid), false); assert.equal(worker.inputPending.size, 0); }
     assert.equal(tasks.leases.size, 0); assert.equal(tasks.accountReleases.size, 0);
-    if (process.env.OMP_INPUT_EVIDENCE_ROOT) await fs.writeFile(path.join(process.env.OMP_INPUT_EVIDENCE_ROOT, `pi-receipts-${process.pid}-${Date.now()}.json`), JSON.stringify({ case: t.name, sdk: { version: "1.1.0", manifestSha256: createHash("sha256").update(sdkManifest).digest("hex") }, node: process.version, provider: "LOOPBACK_FIXTURE_ONLY", ...f.evidence, workers: f.workers.map((worker) => ({ pid: worker.identity?.pid, start: worker.identity?.start, groupAlive: groupAlive(worker.identity?.pid), pendingInputs: worker.inputPending.size })), sessionLeases: tasks.leases.size, accountReservations: tasks.accountReleases.size }, null, 2) + "\n", { flag: "wx", mode: 0o600 });
+    if (process.env.OMP_INPUT_EVIDENCE_ROOT) await fs.writeFile(path.join(process.env.OMP_INPUT_EVIDENCE_ROOT, `pi-receipts-${process.pid}-${Date.now()}.json`), JSON.stringify({ case: t.name, sdk: { version: JSON.parse(sdkManifest).version, manifestSha256: createHash("sha256").update(sdkManifest).digest("hex") }, node: process.version, provider: "LOOPBACK_FIXTURE_ONLY", ...f.evidence, workers: f.workers.map((worker) => ({ pid: worker.identity?.pid, start: worker.identity?.start, groupAlive: groupAlive(worker.identity?.pid), pendingInputs: worker.inputPending.size })), sessionLeases: tasks.leases.size, accountReservations: tasks.accountReleases.size }, null, 2) + "\n", { flag: "wx", mode: 0o600 });
     await new Promise((resolve) => { provider.closeAllConnections(); provider.close(resolve); }); await fs.rm(root, { recursive: true, force: true });
   });
   const first = await tasks.start({ type: "startTask", requestId: "first", projectId: project.projectId, accountId: account.accountId, model: "fixture/fixture", thinkingLevel: "low", prompt: "Read README.md" });
-  await until(() => f.toolWaiting); await catalog.scan();
+  await until(() => startup ? f.startEvents.length : f.toolWaiting); await catalog.scan();
   const task = tasks.tasks.get(first.taskId), target = { projectId: project.projectId, taskId: task.taskId }, scope = { projectId: project.projectId, sessionId: task.sessionId };
   Object.assign(f, { task, target, scope });
   f.input = (inputId, delivery) => ({ inputId, delivery, text: `fixture ${inputId}`, materialSnapshotIds: [], binding: { accountId: account.accountId, modelId: "fixture/fixture", thinking: "low", mode: "readonly", resourceRevision: 0 } });
   f.queue = () => store.readQueue(scope);
   f.enqueue = async (id, delivery) => controller.command({ type: delivery === "steer" ? "deliverSupplement" : "enqueueInput", target, [delivery === "steer" ? "taskId" : "predecessorTaskId"]: task.taskId, input: f.input(id, delivery), expectedRevision: (await f.queue()).revision });
   f.release = () => { f.toolReleased = true; f.workers[0].child.send({ type: "fixture_release_tool" }); };
+  f.releaseStartup = (abort = false) => f.workers[0].child.send({ type: abort ? "fixture_abort_startup" : "fixture_release_startup" });
   return f;
 }
 
@@ -119,6 +129,37 @@ test("production Host/Pi RPC consumes steering at a safe tool boundary and three
   assert.ok(f.received.every((request) => !JSON.stringify(request).includes("contentDigest") && !JSON.stringify(request).includes("omp-host-input")), "business IDs remain metadata, not provider text");
   await assert.rejects(f.enqueue("late", "steer"), { code: "TASK_NOT_RUNNING" }); assert.equal(f.workers.length, 4);
   assert.ok((await f.catalog.history(session.sessionKey)).messages.some((message) => message.role === "user" && message.text === "fixture steer"));
+});
+
+test("Pi 1.3 startup is busy: steering stays correlated while before_agent_start waits", { timeout: 30000 }, async t => {
+  const f = await fixture(t, { startup: true });
+  assert.deepEqual(f.startEvents.map(event => event.messageType), ["user"]);
+  const accepted = await f.enqueue("during-startup", "steer");
+  assert.equal(accepted.items[0].state, "accepted");
+  assert.equal(accepted.items[0].consumedEntryId, null);
+  assert.equal(f.received.length, 0);
+  await f.enqueue("during-startup", "steer");
+  f.releaseStartup(); await until(() => f.toolWaiting); f.release();
+  await until(() => f.task.status === "succeeded");
+  await until(async () => (await f.queue()).items[0].state === "consumed");
+  const item = (await f.queue()).items[0];
+  assert.equal((await f.catalog.inputReceipt(item)).entryId, item.consumedEntryId);
+  assert.equal(f.received.length, 2);
+  assert.equal(f.workers.length, 1);
+  f.evidence = { kind: "ACTUAL_PI_STARTUP_STEERING", acceptedBeforeStart: accepted, item, requests: f.received.length, startEvents: f.startEvents };
+});
+
+test("Pi 1.3 abort during startup sends no model request while preserving proven consumption", { timeout: 30000 }, async t => {
+  const f = await fixture(t, { startup: true });
+  await f.enqueue("abort-startup", "steer"); f.releaseStartup(true);
+  await until(() => f.task.status === "cancelled");
+  await Promise.all([...f.tasks.running.values()]);
+  const queue = await f.queue();
+  assert.equal(queue.items[0].state, "consumed");
+  assert.equal((await f.catalog.inputReceipt(queue.items[0])).entryId, queue.items[0].consumedEntryId);
+  assert.equal(f.received.length, 0); assert.equal(f.workers.length, 1);
+  assert.deepEqual(f.task.settlement, { aborted: true });
+  f.evidence = { kind: "ACTUAL_PI_ABORT_DURING_STARTUP", queue, requests: 0, settlement: f.task.settlement };
 });
 test("real model failure pauses an admitted queue instead of starting another worker", { timeout: 30000 }, async (t) => {
   const f = await fixture(t); await f.enqueue("later", "queue"); f.reject = true; f.release();

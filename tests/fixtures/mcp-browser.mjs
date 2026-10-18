@@ -23,7 +23,7 @@ async function stop() {
   const runs = await f.mcp({ type: "status" });
   const reception = await Promise.all(runs.runs.map(async (run) => ({ runId: run.runId, taskId: run.taskId, received: await mcpReception(run) })));
   await f.close({ keep: true });
-  await fs.writeFile(path.join(evidence, "66-browser-runtime.json"), JSON.stringify({ runs, reception, providerRequests: f.requests.length, rawBytesPreserved: await fs.readFile(path.join(f.config, "mcp.json"), "utf8") === raw, identities, realPi: "1.1.0", realMcpClient: "1.1.0", node: process.version, installedExtensionCopies: true, sourceCandidate: true, I: "NOT_RUN", L: "NOT_RUN" }, null, 2));
+  await fs.writeFile(path.join(evidence, "66-browser-runtime.json"), JSON.stringify({ runs, reception, providerRequests: f.requests.length, rawBytesPreserved: await fs.readFile(path.join(f.config, "mcp.json"), "utf8") === raw, identities, realPi: f.piVersion, realMcpClient: f.piVersion, node: process.version, installedExtensionCopies: true, sourceCandidate: true, I: "NOT_RUN", L: "NOT_RUN" }, null, 2));
   console.log(JSON.stringify({ stopped: true, runs: runs.runs.length, receptions: reception.map((entry) => entry.received.filter((item) => item.type === "call").length) }));
 }
 process.once("SIGTERM", () => void stop()); process.once("SIGINT", () => void stop());

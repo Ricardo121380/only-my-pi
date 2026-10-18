@@ -7,6 +7,8 @@ import http from "node:http";
 import pty from "node-pty";
 import { setTimeout as delay } from "node:timers/promises";
 import { createPi110SourceCli } from "./fixtures/pi110-source-cli.mjs";
+import { writePiEvidence } from "./fixtures/pi-runtime-evidence.mjs";
+import { processIdentity } from "../packages/host/ownership.mjs";
 
 const quote = (value) => "'" + value.replaceAll("'", "'\\''") + "'";
 async function until(read, accept, label) {
@@ -43,7 +45,11 @@ async function fixture(t, { forceWarming = false, respondRequest } = {}) {
   });
   provider.on("connection", (socket) => { sockets.add(socket); socket.once("close", () => sockets.delete(socket)); });
   await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
-  t.after(async () => { for (const socket of sockets) socket.destroy(); await new Promise((resolve) => provider.close(resolve)); await fs.rm(root, { recursive: true, force: true }); });
+  const origin = `http://127.0.0.1:${provider.address().port}`, terminals = [];
+  t.after(async () => { for (const run of terminals) await run.close();
+    for (const socket of sockets) socket.destroy(); await new Promise((resolve) => provider.close(resolve));
+    await writePiEvidence(t.name, { sdk: f.sdk, bindings: f.bindings, service: { origin, source: "tests/direct-pi110-terminal.test.mjs" }, received: received.map(({ key, body, closed }) => ({ key, body, closed })), terminals: terminals.map(run => run.output()) });
+    await fs.rm(root, { recursive: true, force: true }); });
   const f = await createPi110SourceCli(root, { baseUrl: `http://127.0.0.1:${provider.address().port}/v1`, forceWarming, installedExtensions: process.env.OMP_PI110_INSTALLED_EXTENSIONS === "1" });
   function launch(args) {
     // Observe terminal attributes in the *same* PTY after Pi returns, before
@@ -51,8 +57,19 @@ async function fixture(t, { forceWarming = false, respondRequest } = {}) {
     const script = `printf 'OMP_STTY_BEFORE='; stty -g; ${[process.execPath, f.cli, ...args].map(quote).join(" ")}; code=$?; printf '\nOMP_EXIT_CODE=%s\nOMP_STTY_AFTER=' "$code"; stty -g; printf 'OMP_SHELL_READY\n'; read -r answer`;
     const terminal = pty.spawn("/bin/sh", ["-c", script], { cwd: f.project, env: f.env, cols: 100, rows: 30 });
     let output = ""; terminal.onData((chunk) => { output += chunk; });
-    t.after(() => { try { terminal.kill("SIGKILL"); } catch {} });
-    return { terminal, output: () => output };
+    let exited = false; terminal.onExit(() => { exited = true; });
+    const identity = processIdentity(terminal.pid).catch(() => null);
+    const run = { terminal, output: () => output, close: async () => {
+      if (!exited) {
+        const expected = await identity;
+        if (expected && await processIdentity(terminal.pid) === expected) {
+          // The fixture shell and Pi share this private PTY process group.
+          // Killing only the shell leaves Pi holding the fd after a failed test.
+          try { process.kill(-terminal.pid, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+        }
+        try { terminal.kill("SIGKILL"); } catch {}
+      }
+    } }; terminals.push(run); return run;
   }
   return { ...f, received, launch };
 }
@@ -184,5 +201,27 @@ test("public OMP Escape cancels an actual Pi request and closes the Provider str
   await until(run.output, (output) => output.includes("OMP_SHELL_READY"), "cancelled TUI quits");
   assert.match(run.output(), /OMP_EXIT_CODE=0/);
   assert.equal(run.output().match(/OMP_STTY_AFTER=([^\r\n]+)/)?.[1], run.output().match(/OMP_STTY_BEFORE=([^\r\n]+)/)?.[1]);
+  run.terminal.write("done\r");
+});
+
+test("public OMP reload preserves the no-retry policy without changing raw settings", { timeout: 30000 }, async t => {
+  const f = await fixture(t, { respondRequest: ({ res }) => {
+    res.writeHead(503, { "content-type": "application/json" }); res.end('{"error":{"message":"The service is temporarily unavailable"}}');
+  } });
+  const settingsFile = path.join(f.config, "settings.json");
+  const settings = JSON.stringify({ ...JSON.parse(await fs.readFile(settingsFile, "utf8")), retry: { enabled: true, maxRetries: 2, baseDelayMs: 50, provider: { maxRetries: 2 } } });
+  await fs.writeFile(settingsFile, settings);
+  const run = f.launch(["--model", "fixture/one", "--no-session", "--tui-mode", "regular"]);
+  await until(run.output, output => output.includes("Inspect"), "TUI startup");
+  run.terminal.write("/reload\r");
+  await until(run.output, output => output.includes("Reloaded keybindings"), "public Pi reload");
+  run.terminal.write("fail only once\r");
+  await until(run.output, output => output.includes("The service is temporarily unavailable"), "visible model failure");
+  run.terminal.write("\x04");
+  await until(run.output, output => output.includes("OMP_SHELL_READY"), "failed request returns to shell");
+  assert.equal(f.received.length, 1);
+  assert.equal(f.received[0].key, "Bearer fixture-cli");
+  assert.equal(await fs.readFile(settingsFile, "utf8"), settings);
+  assert.match(run.output(), /OMP_EXIT_CODE=0/);
   run.terminal.write("done\r");
 });

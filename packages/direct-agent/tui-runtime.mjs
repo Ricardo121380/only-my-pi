@@ -7,23 +7,26 @@ import { createResumeUiExtension } from "./session-resume-ui.mjs";
 import { prepareTuiInput } from "./initial-input.mjs";
 import { disableOmpCacheWarming } from "./cache-warming-policy.mjs";
 import { McpCatalog, mcpToolNames } from "../mcp/catalog.mjs";
+import { applyOmpRequestPolicy } from "./request-policy.mjs";
 
-// Candidate bootstrap using only Pi's public SDK. Not routed from the daily
-// launcher until the remaining CLI compatibility cases pass acceptance.
+// Controlled CLI bootstrap using only Pi's public SDK. All modes share the
+// same tool, account, request and session-admission policy.
 export function createDirectTuiRuntime(options) { return createDirectRuntime(options, "tui"); }
 export function createDirectRpcRuntime(options) { return createDirectRuntime(options, "rpc"); }
+export function createDirectPrintRuntime(options) { return createDirectRuntime(options, "print"); }
 
 async function createDirectRuntime({ sdk, args, configRoot, admissions,
   cwd = process.cwd(), env = process.env, selectResume, confirmProjectTrust, confirmSessionCwd, modelRuntime, onFatal }, mode) {
   const parsed = sdk.parseArgs(args);
-  if (parsed.diagnostics.some((item) => item.type === "error")) throw ownershipError("OMP_AGENT_OPTION_INVALID");
-  if ((mode === "tui" && parsed.print) || (mode === "tui" ? ![undefined, "text"].includes(parsed.mode) : parsed.mode !== "rpc") || parsed.export || parsed.version
+  if (parsed.diagnostics.some((item) => item.type === "error") || (parsed.provider && !parsed.model))
+    throw ownershipError("OMP_AGENT_OPTION_INVALID");
+  if ((mode === "tui" && parsed.print) || (mode === "rpc" ? parsed.mode !== "rpc" : !(mode === "print" ? [undefined, "text", "json"] : [undefined, "text"]).includes(parsed.mode)) || parsed.export || parsed.version
     || parsed.help || parsed.apiKey)
     throw ownershipError("TUI_STARTUP_OPTION_NOT_ADMITTED");
   if (mode === "rpc" && (parsed.fileArgs?.length || parsed.messages?.length || parsed.resume))
     throw ownershipError("RPC_STARTUP_OPTION_NOT_ADMITTED");
   if (!parsed.noExtensions || !parsed.extensions?.length || parsed.extensions.some((entry) => !path.isAbsolute(entry))
-    || !parsed.tools?.length || parsed.unknownFlags.get("perm") !== (mode === "rpc" ? "plan" : "build"))
+    || !parsed.tools?.length || parsed.unknownFlags.get("perm") !== (mode === "tui" ? "build" : "plan"))
     throw ownershipError("TUI_CONTROLLED_OPTIONS_REQUIRED");
   const name = parsed.name?.trim();
   if (parsed.name !== undefined && !name) throw ownershipError("OMP_AGENT_OPTION_INVALID");
@@ -37,7 +40,7 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
   let runtime;
   const resolveProjectTrust = async (effectiveCwd, projectTrustContext, initial = false) => {
     // Direct RPC is read-only and never authorizes project resource execution.
-    if (mode === "rpc") return false;
+    if (mode !== "tui") return false;
     const requiresTrust = sdk.hasTrustRequiringProjectResources(effectiveCwd);
     const decision = new sdk.ProjectTrustStore(configRoot).get(effectiveCwd);
     const globalSettings = sdk.SettingsManager.create(effectiveCwd, configRoot, { projectTrusted: false });
@@ -58,7 +61,7 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
   };
   const createRuntime = async ({ cwd: effectiveCwd, agentDir, sessionManager, sessionStartEvent, projectTrustContext }) => {
     const projectTrusted = await resolveProjectTrust(effectiveCwd, projectTrustContext, !sessionStartEvent);
-    const settingsManager = sdk.SettingsManager.create(effectiveCwd, agentDir, { projectTrusted });
+    const settingsManager = applyOmpRequestPolicy(sdk.SettingsManager.create(effectiveCwd, agentDir, { projectTrusted }));
     if (parsed.useTheme !== undefined) settingsManager.applyOverrides({ theme: parsed.useTheme });
     sdk.initTheme(settingsManager.getTheme(), false);
     const mcpSnapshot = await new McpCatalog(configRoot).snapshot(await fs.realpath(effectiveCwd));
@@ -67,8 +70,13 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
       modelRuntime, modelRuntimeSignal: AbortSignal.timeout(15_000), extensionFlagValues: parsed.unknownFlags,
       resourceLoaderOptions: { noExtensions: true, additionalExtensionPaths: parsed.extensions,
         extensionFactories: [(pi) => pi.events.emit("only-my-pi:direct-session-owner:v1", {
-          ownsSession: (ctx) => !admissions.closing && ctx.mode === mode && ctx.sessionManager === sessionManager,
-        }), (pi) => pi.events.emit("only-my-pi:mcp-task:v1", { snapshot: mcpSnapshot }), ...(mode === "tui" ? [createResumeUiExtension({ sdk, getRuntime: () => runtime })] : []), disableOmpCacheWarming] } });
+          ownsSession: (ctx) => !admissions.closing && ctx.mode === (mode === "print" ? parsed.mode === "json" ? "json" : "print" : mode) && ctx.sessionManager === sessionManager,
+        }), (pi) => pi.events.emit("only-my-pi:mcp-task:v1", { snapshot: mcpSnapshot }),
+        ...(mode === "print" ? [(pi) => {
+          pi.on("session_before_switch", () => ({ cancel: true }));
+          pi.on("session_before_fork", () => ({ cancel: true }));
+        }] : []),
+        ...(mode === "tui" ? [createResumeUiExtension({ sdk, getRuntime: () => runtime })] : []), disableOmpCacheWarming] } });
     if (services.diagnostics.some((entry) => entry.type === "error") || services.resourceLoader.getExtensions().errors.length)
       throw ownershipError("TUI_EXTENSION_LOAD_FAILED");
     const diagnostics = [...parsed.diagnostics, ...services.diagnostics];
@@ -107,8 +115,17 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     runtime = await initialize(cwd);
   }
   if (mode === "rpc") return { cancelled: false, runtime };
+  let stdinContent = "";
+  if (mode === "print" && !process.stdin.isTTY) {
+    process.stdin.setEncoding("utf8");
+    for await (const chunk of process.stdin) stdinContent += chunk;
+    stdinContent = stdinContent.trim();
+  }
   const input = await prepareTuiInput({ sdk, files: parsed.fileArgs, messages: parsed.messages, cwd,
-    autoResizeImages: runtime.services.settingsManager.getImageAutoResize() });
+    autoResizeImages: mode === "tui" && runtime.services.settingsManager.getImageAutoResize() });
+  if (mode === "print") return { cancelled: false, runtime, options: { mode: parsed.mode === "json" ? "json" : "text",
+    initialMessage: stdinContent || input.initialMessage !== undefined ? stdinContent + (input.initialMessage ?? "") : undefined,
+    initialImages: input.initialImages, messages: input.initialMessages } };
   return { cancelled: false, runtime, options: { ...input, verbose: parsed.verbose,
     tuiMode: parsed.tuiMode ?? "fullscreen", initialThemeSetting: parsed.useTheme, startupDiagnostics: runtime.diagnostics,
     modelFallbackMessage: runtime.modelFallbackMessage } };

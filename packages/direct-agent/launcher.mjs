@@ -8,6 +8,7 @@ import { resolveBoundPackageRoot } from "../bootstrap/runtime-package-binding.mj
 import { loadDistribution, resolveDistributionPackage } from "../distribution/runtime.mjs";
 import { OMP_CONTROL_COMMANDS } from "../control-service/cli-parser.mjs";
 import { McpCatalog, mcpToolNames } from "../mcp/catalog.mjs";
+import { usesNativePiTools } from "../upstream-compatibility/native-pi.mjs";
 
 const STACK_DIRECTORY = /^[a-f0-9]{64}$/u;
 const UUID = /^[a-f0-9-]{36}$/u;
@@ -358,6 +359,14 @@ export async function resolveDirectExtensionSet({
   });
 }
 
+function nativeToolsForStack(stack) {
+  let manifest;
+  try { manifest = JSON.parse(readFileSync(path.join(stack.root, "pi/package.json"), "utf8")); }
+  catch { fail("OMP_PI_RUNTIME_UNSUPPORTED", "Pi package identity is unavailable"); }
+  if (manifest?.name !== "@earendil-works/pi-coding-agent") fail("OMP_PI_RUNTIME_UNSUPPORTED", "Pi package identity is invalid");
+  return usesNativePiTools(manifest.version);
+}
+
 export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames = [], env = process.env, randomUUIDImpl = randomUUID, interactive = true, runtimeOwner = "direct" } = {}) {
   if (!["direct", "host"].includes(runtimeOwner)) fail("OMP_CONTROLLED_STACK_INVALID", "unknown runtime owner");
   const inspected = inspectDirectAgentArguments(argv ?? [], { interactive });
@@ -373,16 +382,16 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames 
   const launchId = randomUUIDImpl();
   if (typeof launchId !== "string" || !UUID.test(launchId)) fail("OMP_LAUNCH_ID_INVALID", "launch id generator returned an invalid UUID");
 
-  const pi110 = (() => { try { return JSON.parse(readFileSync(path.join(stack.root, "pi/package.json"), "utf8")).version === "1.1.0"; } catch { return false; } })();
+  const nativeTools = nativeToolsForStack(stack);
   const piArgs = [
     stack.piCliPath,
     "--no-extensions",
-    // Pi 1.1 CLI otherwise starts its built-in MCP discovery independently of
+    // Native Pi CLI otherwise starts its built-in MCP discovery independently of
     // the audited extension allowlist. Older controlled stacks lack this flag.
-    ...(pi110 ? ["--no-mcp"] : []),
+    ...(nativeTools ? ["--no-mcp"] : []),
     ...extensionPaths.flatMap((entry) => ["--extension", entry]),
     "--tools",
-    [inspected.headless ? HEADLESS_TOOLS : INTERACTIVE_TOOLS, ...(pi110 ? ["codemode"] : []), ...mcpNames].join(","),
+    [inspected.headless ? HEADLESS_TOOLS : INTERACTIVE_TOOLS, ...(nativeTools ? ["codemode"] : []), ...mcpNames].join(","),
     "--perm",
     inspected.headless ? "plan" : "build",
     ...(argv ?? []),
@@ -393,8 +402,7 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames 
   // ownership distinction is not a CLI flag or an environment override.
   const entry = utility || runtimeOwner === "host" ? undefined : mode === "rpc" ? "rpc-entry.mjs"
     : !inspected.headless && [undefined, "text"].includes(mode) ? "tui-entry.mjs"
-    : inspected.headless && [undefined, "text", "json"].includes(mode)
-      && !hasFlag(argv ?? [], "--no-session") ? "session-entry.mjs" : undefined;
+    : inspected.headless && [undefined, "text", "json"].includes(mode) ? "session-entry.mjs" : undefined;
   if (entry) {
     const beforeSeparator = (argv ?? []).slice(0, (argv ?? []).includes("--") ? argv.indexOf("--") : undefined);
     if (["--mode", "--session"].some((flag) => beforeSeparator.filter((token) => token === flag).length > 1))
@@ -427,6 +435,7 @@ export async function launchDirectAgent({ argv = [], packageRoot, homeDir, stack
   const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
   const inspected = inspectDirectAgentArguments(argv, { interactive });
   const stack = await resolveControlledStack({ packageRoot, homeDir, stackRoot });
+  nativeToolsForStack(stack); // Reject unknown identity before importing SDK/extensions.
   if (stack.distribution) {
     const { requireSystemDependencies } = await import("../distribution/system-dependencies.mjs");
     await requireSystemDependencies({ env });

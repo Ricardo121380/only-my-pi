@@ -21,13 +21,15 @@ test("a crashed Host restarts with interrupted tasks, invalid cookies, and no re
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-host-lifecycle-")));
   const config = path.join(root, "config"), assets = path.join(root, "assets"), project = path.join(root, "project");
   await fs.mkdir(assets); await fs.mkdir(project); await fs.writeFile(path.join(assets, "index.html"), "fixture");
+  await fs.mkdir(path.join(root, "pi"));
+  await fs.writeFile(path.join(root, "pi/package.json"), JSON.stringify({ name: "@earendil-works/pi-coding-agent", version: "0.85.1" }));
   const worker = path.join(root, "rpc.mjs");
   await fs.writeFile(worker, `import {createInterface} from "node:readline";for await(const line of createInterface({input:process.stdin})){const r=JSON.parse(line);process.stdout.write(JSON.stringify({type:"response",id:r.id,command:r.type,success:true,data:{sessionId:"persisted-session"}})+"\\n");}`);
   const file = path.join(root, "host.mjs");
   await fs.writeFile(file, `import {startHost} from ${JSON.stringify(new URL("../packages/host/server.mjs", import.meta.url).href)};
 import {RpcWorker} from ${JSON.stringify(new URL("../packages/host/rpc-worker.mjs", import.meta.url).href)};
 import {spawn} from "node:child_process";
-try { const host=await startHost({configRoot:${JSON.stringify(config)},assetsRoot:${JSON.stringify(assets)},stack:{stackId:"sha256:${"a".repeat(64)}",nodePath:process.execPath,piCliPath:${JSON.stringify(worker)}},modelsProvider:async()=>[{id:"mock/test",name:"Mock",provider:"mock"}],workerFactory:(options)=>new RpcWorker({...options,extensionResolver:async()=>({extensions:[${JSON.stringify(worker)}]}),spawnImpl:(_node,_args,opts)=>spawn(process.execPath,[${JSON.stringify(worker)}],opts)})});process.send({ready:true});process.on("SIGTERM",()=>host.stop().then(()=>process.exit(0),()=>process.exit(1))); }catch(e){process.send({code:e.code});process.exitCode=1;}process.disconnect();`);
+try { const host=await startHost({configRoot:${JSON.stringify(config)},assetsRoot:${JSON.stringify(assets)},stack:{root:${JSON.stringify(root)},stackId:"sha256:${"a".repeat(64)}",nodePath:process.execPath,piCliPath:${JSON.stringify(worker)}},modelsProvider:async()=>[{id:"mock/test",name:"Mock",provider:"mock"}],workerFactory:(options)=>new RpcWorker({...options,extensionResolver:async()=>({extensions:[${JSON.stringify(worker)}]}),spawnImpl:(_node,_args,opts)=>spawn(process.execPath,[${JSON.stringify(worker)}],opts)})});process.send({ready:true});process.on("SIGTERM",()=>host.stop().then(()=>process.exit(0),()=>process.exit(1))); }catch(e){process.send({code:e.code});process.exitCode=1;}process.disconnect();`);
   const children = [];
   t.after(async () => {
     for (const child of children) if (child.exitCode === null && child.signalCode === null) { child.kill("SIGTERM"); await once(child, "exit"); }

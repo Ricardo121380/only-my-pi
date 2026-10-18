@@ -10,6 +10,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { startHost } from "../packages/host/server.mjs";
 import { RpcWorker } from "../packages/host/rpc-worker.mjs";
 import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { writePiEvidence } from "./fixtures/pi-runtime-evidence.mjs";
 
 function finish(res, content = "fixture done") {
   res.writeHead(200, { "content-type": "text/event-stream" });
@@ -38,13 +39,13 @@ async function until(read, accept, label) {
 
 // Only the Provider and audited external-package boundary are fixtures. The
 // HTTP server, account catalog, task service, RpcWorker and Pi SDK are real.
-async function fixture(t, respond) {
+async function fixture(t, respond, settingsOverrides = {}) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-pi110-http-")));
   const configRoot = path.join(root, "config"), project = path.join(root, "project"), assetsRoot = path.join(root, "assets");
   await fs.mkdir(project); await fs.mkdir(assetsRoot); await fs.mkdir(configRoot);
-  await fs.writeFile(path.join(assetsRoot, "index.html"), "<!doctype html><title>Pi 1.1 fixture</title>");
+  await fs.writeFile(path.join(assetsRoot, "index.html"), "<!doctype html><title>Pi source fixture</title>");
   await fs.writeFile(path.join(project, "README.md"), "only temporary project data\n");
-  const settings = JSON.stringify({ cacheWarming: "idle", enableAnalytics: false });
+  const settings = JSON.stringify({ cacheWarming: "idle", enableAnalytics: false, ...settingsOverrides });
   await fs.writeFile(path.join(configRoot, "settings.json"), settings);
   const received = [], connections = new Set();
   const provider = http.createServer(async (req, res) => {
@@ -57,7 +58,7 @@ async function fixture(t, respond) {
   provider.on("connection", (socket) => { connections.add(socket); socket.on("close", () => connections.delete(socket)); });
   await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
   const piRoot = path.dirname(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent"))));
-  assert.equal(JSON.parse(await fs.readFile(path.join(piRoot, "package.json"), "utf8")).version, "1.1.0");
+  assert.equal(JSON.parse(await fs.readFile(path.join(piRoot, "package.json"), "utf8")).version, "1.3.0");
   await fs.symlink(piRoot, path.join(root, "pi"));
   const baseUrl = `http://127.0.0.1:${provider.address().port}/v1`;
   const extension = path.join(root, "provider.mjs");
@@ -81,6 +82,9 @@ async function fixture(t, respond) {
     await host.stop();
     for (const socket of connections) socket.destroy();
     await new Promise((resolve) => provider.close(resolve));
+    await writePiEvidence(t.name, { sdk: path.join(piRoot, "dist/index.js"), service: { baseUrl, source: "tests/host-pi110-runtime.test.mjs" },
+      received: received.map(({ key, body, closed }) => ({ key, body, closed })), tasks: host.snapshot().tasks,
+      sessionLeases: host.tasks.leases.size, accountReservations: host.tasks.accountReleases.size });
     await fs.rm(root, { recursive: true, force: true });
   });
   const paired = await fetch(host.origin + "/pair", { method: "POST", headers: { Origin: host.origin, "content-type": "application/json" }, body: JSON.stringify({ token: new URL(host.pairingUrl).hash.slice(6) }) });
@@ -163,6 +167,19 @@ test("public Host distinguishes Pi provider failure from success", { timeout: 15
   assert.equal(completed.error, "MODEL_REQUEST_FAILED");
   assert.equal(f.received.length, 1); assert.equal(f.received[0].key, "Bearer fixture-a");
   assert.deepEqual(completed.approvals, []);
+});
+
+for (const failure of ["disconnect", "503"]) test(`public Host does not resend a ${failure} response or borrow another account`, { timeout: 15000 }, async (t) => {
+  const f = await fixture(t, ({ res }) => {
+    if (failure === "disconnect") res.destroy();
+    else { res.writeHead(503, { "content-type": "application/json" }); res.end('{"error":{"message":"The service is temporarily unavailable"}}'); }
+  }, { retry: { enabled: true, maxRetries: 2, baseDelayMs: 50 } });
+  const started = await f.start("one uncertain request only");
+  const completed = await until(() => f.task(started.taskId), (task) => task.status === "failed", "uncertain request stops");
+  assert.equal(completed.error, "MODEL_REQUEST_FAILED");
+  assert.equal(f.received.length, 1, "a received request with unknown/failure result must not be retried");
+  assert.equal(f.received[0].key, "Bearer fixture-a");
+  assert.equal(await fs.readFile(path.join(f.configRoot, "settings.json"), "utf8"), f.settings);
 });
 
 for (const decision of ["approve", "deny", "revoke"]) test(`public Host coding ${decision} is scoped to one project and worker lifetime`, { timeout: 20000 }, async (t) => {
