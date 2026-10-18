@@ -61,26 +61,45 @@ export async function verifyPi110Resources(piRoot, inputs) {
 // File membership, bytes and execute bits are independent of the historical
 // content digests, which deliberately do not include file modes.
 async function inventory(root, roots, skipTop = []) {
-  const entries = [];
-  async function visit(relative) {
-    const filename = path.join(root, relative);
-    const stat = await fs.lstat(filename);
-    if (stat.isSymbolicLink()) {
-      const real = await fs.realpath(filename);
-      if (!real.startsWith(`${root}${path.sep}`)) fail("PI110_TREE_ESCAPE", `Pi runtime link escapes: ${relative}`);
-      entries.push({ path: relative, type: "link", target: await fs.readlink(filename) });
-    } else if (stat.isDirectory()) {
-      entries.push({ path: relative, type: "directory" });
-      for (const name of (await fs.readdir(filename)).sort()) {
-        if (relative === "." && skipTop.includes(name)) continue;
-        await visit(`${relative}/${name}`);
+  // Inspect every byte on every admission, with bounded I/O rather than one
+  // filesystem round trip at a time. Flatten in traversal order so historical
+  // materials retain exactly the same identity and no verification is cached.
+  let active = 0;
+  const waiting = [];
+  async function readEntry(relative) {
+    if (active < 8) active++;
+    else await new Promise(resolve => waiting.push(resolve));
+    try {
+      const filename = path.join(root, relative);
+      const stat = await fs.lstat(filename);
+      if (stat.isSymbolicLink()) {
+        const real = await fs.realpath(filename);
+        if (!real.startsWith(`${root}${path.sep}`)) fail("PI110_TREE_ESCAPE", `Pi runtime link escapes: ${relative}`);
+        return { entry: { path: relative, type: "link", target: await fs.readlink(filename) } };
       }
-    } else if (stat.isFile()) {
-      entries.push({ path: relative, type: "file", bytes: stat.size, sha256: sha256(await fs.readFile(filename)), executable: stat.mode & 0o111 });
-    } else fail("PI110_TREE_TYPE_INVALID", `Pi runtime entry has unsupported type: ${relative}`);
+      if (stat.isDirectory()) return { entry: { path: relative, type: "directory" }, names: (await fs.readdir(filename)).sort() };
+      if (stat.isFile()) return { entry: { path: relative, type: "file", bytes: stat.size, sha256: sha256(await fs.readFile(filename)), executable: stat.mode & 0o111 } };
+      fail("PI110_TREE_TYPE_INVALID", `Pi runtime entry has unsupported type: ${relative}`);
+    } finally {
+      const next = waiting.shift();
+      if (next) next();
+      else active--;
+    }
   }
-  for (const relative of roots) await visit(relative);
-  return entries;
+  async function visit(relative) {
+    const { entry, names = [] } = await readEntry(relative);
+    const children = names.filter(name => relative !== "." || !skipTop.includes(name)).map(name => `${relative}/${name}`);
+    return [entry, ...await collect(children)];
+  }
+  async function collect(relatives) {
+    // Drain queued reads before returning a rejection to a caller that may
+    // restore or remove the inspected tree.
+    const results = await Promise.allSettled(relatives.map(visit));
+    const failure = results.find(result => result.status === "rejected");
+    if (failure) throw failure.reason;
+    return results.flatMap(result => result.value);
+  }
+  return collect(roots);
 }
 
 export async function verifyPi110AcquiredTrees({ resolved, artifactTreeRoots }) {

@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { readJsonObject } from "../config-runtime/index.mjs";
 import { resolveControlledStack, resolveDirectConfigRoot } from "../direct-agent/launcher.mjs";
+import { PRIVATE_RUNTIME_CONTRACTS } from "../release-stack/contracts.mjs";
 import { processIdentity } from "./ownership.mjs";
 import { HOST_PROTOCOL, HOST_VERSION, hostError } from "./contracts.mjs";
 
@@ -40,7 +41,7 @@ export async function runWebCommand({ argv = [], packageRoot, env = process.env,
   }
   if (!endpoint) {
     const stack = await resolveControlledStack({ packageRoot });
-    if (!["phase1-pi0851", "pi110-v1"].includes(stack.distribution?.runtimeContract)) throw hostError("HOST_REQUIRES_VERIFIED_CANDIDATE");
+    if (!Object.values(PRIVATE_RUNTIME_CONTRACTS).includes(stack.distribution?.runtimeContract)) throw hostError("HOST_REQUIRES_VERIFIED_CANDIDATE");
     const entry = fileURLToPath(new URL("./entry.mjs", import.meta.url));
     const child = fork(entry, [configRoot], { execPath: stack.nodePath, execArgv: [], detached: true, stdio: ["ignore", "ignore", "ignore", "ipc"], env });
     await new Promise((resolve, reject) => {
