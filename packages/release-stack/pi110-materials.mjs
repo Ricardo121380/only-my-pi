@@ -1,5 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { createHash } from "node:crypto";
+import { updateTreeDigest } from "../bootstrap/resource-hash.mjs";
 import { canonicalJson } from "../config-runtime/index.mjs";
 import { sha256, validateStackManifest, validateArtifactLedger, EMBEDDED_NODE_ARCHIVE_SHA256, EMBEDDED_NODE_VERSION } from "./contracts.mjs";
 import { createSpdxSbom, renderThirdPartyNotices } from "./sbom.mjs";
@@ -60,25 +62,28 @@ export async function verifyPi110Resources(piRoot, inputs) {
 
 // File membership, bytes and execute bits are independent of the historical
 // content digests, which deliberately do not include file modes.
-async function inventory(root, roots, skipTop = []) {
-  // Inspect every byte on every admission, with bounded I/O rather than one
-  // filesystem round trip at a time. Flatten in traversal order so historical
-  // materials retain exactly the same identity and no verification is cached.
+async function inventory(root, roots, skipTop = [], componentTrees) {
+  // Discover metadata with bounded I/O, then consume bounded file windows in
+  // historical DFS order. One fresh read feeds both file and tree digests.
   let active = 0;
   const waiting = [];
-  async function readEntry(relative) {
+  async function readEntry(relative, hint) {
     if (active < 8) active++;
     else await new Promise(resolve => waiting.push(resolve));
     try {
       const filename = path.join(root, relative);
+      // readdir supplies file types; the opened descriptor supplies file
+      // metadata below. Do not stat every regular file twice.
+      if (hint?.isFile()) return { entry: { path: relative, type: "file" } };
       const stat = await fs.lstat(filename);
       if (stat.isSymbolicLink()) {
         const real = await fs.realpath(filename);
         if (!real.startsWith(`${root}${path.sep}`)) fail("PI110_TREE_ESCAPE", `Pi runtime link escapes: ${relative}`);
         return { entry: { path: relative, type: "link", target: await fs.readlink(filename) } };
       }
-      if (stat.isDirectory()) return { entry: { path: relative, type: "directory" }, names: (await fs.readdir(filename)).sort() };
-      if (stat.isFile()) return { entry: { path: relative, type: "file", bytes: stat.size, sha256: sha256(await fs.readFile(filename)), executable: stat.mode & 0o111 } };
+      if (stat.isDirectory()) return { entry: { path: relative, type: "directory" },
+        names: (await fs.readdir(filename, { withFileTypes: true })).sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0) };
+      if (stat.isFile()) return { entry: { path: relative, type: "file", bytes: stat.size, executable: stat.mode & 0o111 }, stat };
       fail("PI110_TREE_TYPE_INVALID", `Pi runtime entry has unsupported type: ${relative}`);
     } finally {
       const next = waiting.shift();
@@ -86,10 +91,11 @@ async function inventory(root, roots, skipTop = []) {
       else active--;
     }
   }
-  async function visit(relative) {
-    const { entry, names = [] } = await readEntry(relative);
-    const children = names.filter(name => relative !== "." || !skipTop.includes(name)).map(name => `${relative}/${name}`);
-    return [entry, ...await collect(children)];
+  async function visit({ relative, hint }) {
+    const { entry, stat, names = [] } = await readEntry(relative, hint);
+    const children = names.filter(item => relative !== "." || !skipTop.includes(item.name))
+      .map(item => ({ relative: `${relative}/${item.name}`, hint: item }));
+    return [{ entry, stat }, ...await collect(children)];
   }
   async function collect(relatives) {
     // Drain queued reads before returning a rejection to a caller that may
@@ -99,7 +105,38 @@ async function inventory(root, roots, skipTop = []) {
     if (failure) throw failure.reason;
     return results.flatMap(result => result.value);
   }
-  return collect(roots);
+  const discovered = await collect(roots.map(relative => ({ relative }))), entries = [];
+  const hashes = componentTrees && new Map([...componentTrees.keys()].map(relative => [relative, createHash("sha256")]));
+  async function readFile(record) {
+    if (record.entry.type !== "file") return record;
+    const file = await fs.open(path.join(root, record.entry.path), fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+    try {
+      const stat = await file.stat();
+      if (!stat.isFile() || record.stat && (stat.dev !== record.stat.dev || stat.ino !== record.stat.ino
+        || stat.size !== record.stat.size || (stat.mode & 0o111) !== record.entry.executable)) {
+        fail("PI110_TREE_DRIFT", `Pi runtime file changed during inspection: ${record.entry.path}`);
+      }
+      return { ...record, entry: { path: record.entry.path, type: "file", bytes: stat.size,
+        executable: stat.mode & 0o111 }, bytes: await file.readFile() };
+    } finally { await file.close(); }
+  }
+  for (let index = 0; index < discovered.length; index += 8) {
+    const results = await Promise.allSettled(discovered.slice(index, index + 8).map(readFile));
+    const failure = results.find(result => result.status === "rejected");
+    if (failure) throw failure.reason;
+    for (const { value: { entry, bytes } } of results) {
+      entries.push(entry.type === "file" ? { path: entry.path, type: entry.type,
+        bytes: entry.bytes, sha256: sha256(bytes), executable: entry.executable } : entry);
+      for (const [relative, hash] of hashes ?? []) {
+        if (entry.path === relative || entry.path.startsWith(`${relative}/`)) {
+          updateTreeDigest(hash, { directory: "D", file: "F", link: "L" }[entry.type],
+            entry.path === relative ? "." : entry.path.slice(relative.length + 1), entry.type === "link" ? entry.target : bytes);
+        }
+      }
+    }
+  }
+  for (const [relative, hash] of hashes ?? []) componentTrees.set(relative, `sha256:${hash.digest("hex")}`);
+  return entries;
 }
 
 export async function verifyPi110AcquiredTrees({ resolved, artifactTreeRoots }) {
@@ -145,7 +182,7 @@ export async function writePi110Materials({ resolved, sourceCommit, licensesRoot
   return sha256(bytes);
 }
 
-export async function verifyPi110Materials({ root, manifest }) {
+export async function verifyPi110Materials({ root, manifest, componentTrees }) {
   const piVersion = runtimeInputForContract(manifest.runtimeContract);
   const contract = FROZEN_PI_INPUTS[piVersion];
   if (!contract) fail("STACK_PI_IDENTITY_INVALID", "unknown frozen Pi materials contract");
@@ -165,7 +202,7 @@ export async function verifyPi110Materials({ root, manifest }) {
     fail("PI110_INPUT_DRIFT", "Pi runtime package or dependency lock differs");
   }
   await verifyPi110Resources(path.join(root, "pi"), inputs);
-  if (canonicalJson(await inventory(root, ROOTS)) !== canonicalJson(materials.entries)) fail("PI110_TREE_DRIFT", "Pi runtime file set, bytes, links or execute bits differ");
+  if (canonicalJson(await inventory(root, ROOTS, [], componentTrees)) !== canonicalJson(materials.entries)) fail("PI110_TREE_DRIFT", "Pi runtime file set, bytes, links or execute bits differ");
   const licensesRoot = path.join(root, "LICENSES");
   if (canonicalJson(await inventory(licensesRoot, (await fs.readdir(licensesRoot)).sort())) !== canonicalJson(materials.licenses)) {
     fail("PI110_LICENSE_DRIFT", "Pi runtime license texts differ or are missing");

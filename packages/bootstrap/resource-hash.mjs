@@ -57,6 +57,21 @@ async function* treeEntries(absolutePath, relativePath, options) {
   yield { type: "F", relativePath, absolutePath };
 }
 
+export function updateTreeDigest(hash, type, relativePath, content) {
+  hash.update(`${type}\0`);
+  hash.update(relativePath);
+  hash.update("\0");
+  if (type === "L") {
+    hash.update(content);
+    hash.update("\0");
+  } else if (type === "F") {
+    hash.update(String(content.length));
+    hash.update("\0");
+    hash.update(content);
+    hash.update("\0");
+  }
+}
+
 async function hashTreeEntry(absolutePath, relativePath, hash, options) {
   // Prefetch a bounded window, then hash in the original depth-first order.
   // Every invocation reads fresh bytes; no file or admission result is cached.
@@ -67,18 +82,7 @@ async function hashTreeEntry(absolutePath, relativePath, hash, options) {
     for (const result of results) {
       if (result.error) throw result.error;
       const { entry, bytes } = result;
-      hash.update(`${entry.type}\0`);
-      hash.update(entry.relativePath);
-      hash.update("\0");
-      if (entry.type === "L") {
-        hash.update(entry.link);
-        hash.update("\0");
-      } else if (entry.type === "F") {
-        hash.update(String(bytes.length));
-        hash.update("\0");
-        hash.update(bytes);
-        hash.update("\0");
-      }
+      updateTreeDigest(hash, entry.type, entry.relativePath, entry.type === "L" ? entry.link : bytes);
     }
   }
   try {

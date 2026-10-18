@@ -103,12 +103,16 @@ export async function loadDistribution({ packageRoot = APP_ROOT, nodePath = proc
     || (platform === "linux" && !glibc)) throw distributionError("DISTRIBUTION_PLATFORM_UNSUPPORTED", "this runtime does not support the current operating system, architecture or libc");
   const ompPackageRoot = await containedPath(root, COMPONENTS.app, { directory: true });
   requireThat(await fs.realpath(packageRoot) === ompPackageRoot, "application is not from this distribution");
+  let componentTrees;
   if (runtimeInputForContract(manifest.runtimeContract)) {
-    await verifyPi110Materials({ root, manifest });
+    // Compute tree digests from the same fresh file reads as the inventory,
+    // never from stored file hashes or a previous admission.
+    componentTrees = new Map(Object.values(manifest.components).map(component => [component.path, undefined]));
+    await verifyPi110Materials({ root, manifest, componentTrees });
     await verifyPi110Declarations({ root, manifest });
   }
   await Promise.all(Object.entries(manifest.components).map(async ([name, component]) => {
-    if (await hashDistributionTree(root, component.path) !== component.treeDigest)
+    if ((componentTrees?.get(component.path) ?? await hashDistributionTree(root, component.path)) !== component.treeDigest)
       throw distributionError("DISTRIBUTION_CONTENT_DRIFT", `${name} runtime content differs from its release manifest`);
   }));
   for (const tool of ["fd", "rg"]) {
