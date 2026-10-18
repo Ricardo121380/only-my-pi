@@ -9,6 +9,7 @@ import { createMcpHost, providerReply } from "./fixtures/mcp-host.mjs";
 import { codingRequest } from "./fixtures/mcp-write-host.mjs";
 import { createWriteHost, codingApproved, approveWrite, terminal } from "./fixtures/mcp-write-host.mjs";
 import { until, mcpReception } from "./fixtures/mcp-host.mjs";
+import { byteEvidence, errorEvidence, mcpDenialEvidence, processEvidence, saveRegressionEvidence } from "./fixtures/regression-evidence.mjs";
 const dispatched = async (f) => {
   const run = (await f.mcp({ type: "status" })).runs.at(-1);
   if (run.processes.some((entry) => !entry.runtimeDir)) return [];
@@ -37,18 +38,54 @@ test("four authorities admit one actual descriptor write with truthful result id
   assert.ok(run.processes.every((entry) => !entry.alive));
 });
 
-test("Inspect and an unapproved MCP tool cannot obtain real project write effects", { timeout: 45000 }, async (t) => {
-  for (const [coding, answer] of [[false, null], [true, "拒绝"]]) {
-    const f = await createWriteHost({ coding }); t.after(() => f.close());
-    const original = await fs.readFile(path.join(f.project, "README.md"), "utf8"), started = await f.start({ mode: coding ? "controlled" : "readonly" });
-    if (coding) await approveWrite(f, await codingApproved(f, started), answer);
-    await until(() => f.task(started.taskId), terminal, "unauthorized write denied");
-    const run = (await f.mcp({ type: "status" })).runs.at(-1), receipts = await mcpReception(run);
-    assert.equal(receipts.filter((entry) => entry.type === "call").length, 0); assert.equal(receipts.filter((entry) => entry.type === "effect").length, 0);
-    assert.equal(await fs.readFile(path.join(f.project, "README.md"), "utf8"), original); assert.equal(run.calls[0].status, "rejected");
-    await f.close();
+async function deniedWrites(t, { slowStartup = false } = {}) {
+  for (const [coding, answer] of slowStartup ? [[false, null]] : [[false, null], [true, "拒绝"]]) {
+    const f = await createWriteHost({ coding });
+    const mode = coding ? "controlled" : "readonly";
+    const original = await fs.readFile(path.join(f.project, "README.md"));
+    let started, lastTask, closed = false;
+    const timing = { requestedAt: null, readyAt: null, deniedAt: null };
+    const context = () => ({ coding, mode, answer, slowStartup, timing, taskId: started?.taskId, original: byteEvidence(original), lastTask });
+    const close = async () => {
+      if (closed) return;
+      const before = await mcpDenialEvidence(f, { ...context(), phase: "before-cleanup" });
+      const pids = [...new Set((before.mcp.value?.runs ?? []).flatMap(run => [run.ownerPid, ...run.processes.map(entry => entry.pid)]).concat(before.worker.value?.pid).filter(Number.isSafeInteger))];
+      try { await f.close(); closed = true; await saveRegressionEvidence("mcp-cleanup", { root: f.root, ...context(), result: "closed", processes: await Promise.all(pids.map(processEvidence)) }); }
+      catch (error) { await saveRegressionEvidence("mcp-cleanup", { root: f.root, ...context(), result: "UNKNOWN", error: errorEvidence(error) }); throw error; }
+    };
+    t.after(close);
+    try {
+      if (slowStartup) {
+        // Fault injection stays at the copied public SDK factory. The actual
+        // Host HTTP entry, Pi runtime, MCP receiver and policy remain in use.
+        await fs.rename(f.sdk, path.join(path.dirname(f.sdk), "index-original.js"));
+        await fs.writeFile(f.sdk, 'export * from "./index-original.js"; import { createAgentSessionServices as real } from "./index-original.js"; export async function createAgentSessionServices(options) { await new Promise(resolve => setTimeout(resolve, 8000)); return real(options); }');
+      }
+      timing.requestedAt = Date.now();
+      started = await f.start({ mode });
+      // startTask is asynchronous (202/starting). Its worker initialization
+      // uses the existing 30s RPC readiness contract; denial keeps the original
+      // 7.5s poll after initialization, including all original effect assertions.
+      await until(async () => lastTask = await f.task(started.taskId), task => task.status !== "starting", "Pi task initialized", 30000);
+      timing.readyAt = Date.now();
+      if (coding) await approveWrite(f, await codingApproved(f, started), answer);
+      await until(async () => lastTask = await f.task(started.taskId), terminal, "unauthorized write denied");
+      timing.deniedAt = Date.now();
+      const run = (await f.mcp({ type: "status" })).runs.at(-1), receipts = await mcpReception(run);
+      assert.equal(receipts.filter((entry) => entry.type === "call").length, 0); assert.equal(receipts.filter((entry) => entry.type === "effect").length, 0);
+      assert.deepEqual(await fs.readFile(path.join(f.project, "README.md")), original); assert.equal(run.calls[0].status, "rejected");
+      assert.equal(run.calls[0].code, coding ? "MCP_CALL_DENIED" : "MCP_CODING_AUTHORITY_REQUIRED");
+    } catch (error) {
+      const snapshot = await mcpDenialEvidence(f, { ...context(), phase: "failure-before-cleanup", error: errorEvidence(error) });
+      t.diagnostic(JSON.stringify({ coding, mode, answer, taskId: started?.taskId, task: snapshot.task, reception: snapshot.reception.status }));
+      throw error;
+    }
+    await close();
   }
-});
+}
+
+test("Inspect and an unapproved MCP tool cannot obtain real project write effects", { timeout: 45000 }, deniedWrites);
+test("Inspect denial retains zero effects after a slow real Pi initialization", { timeout: 45000 }, t => deniedWrites(t, { slowStartup: true }));
 
 test("directory symlinks, file symlinks, hardlinks and outside targets reach zero actual writes", { timeout: 65000 }, async (t) => {
   for (const kind of ["symlink", "directory", "hardlink", "outside"]) {

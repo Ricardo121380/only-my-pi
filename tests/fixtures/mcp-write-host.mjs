@@ -19,6 +19,9 @@ export async function createWriteHost({ mode, target = "README.md", coding = tru
   return f;
 }
 export async function codingApproved(f, started) {
+  // HTTP acceptance precedes Pi readiness. Keep the approval poll separate
+  // from the worker's existing 30s initialization contract.
+  await until(() => f.task(started.taskId), task => task.status !== "starting", "Pi task initialized", 30000);
   const waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length > 0 || terminal(task), "coding approval");
   if (!waiting.approvals.length) throw new Error(JSON.stringify(waiting));
   await f.request("/api/command", { type: "answerApproval", taskId: started.taskId, approvalId: waiting.approvals[0].approvalId, value: waiting.approvals[0].options[0] });

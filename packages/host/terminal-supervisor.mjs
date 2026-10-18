@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
-import fs from "node:fs/promises";
+import path from "node:path";
+import { atomicWriteJson } from "../config-runtime/atomic-file.mjs";
 import { TerminalProcesses } from "./terminal-processes.mjs";
 
 // Kept alive until cleanup finishes, so its TTY still identifies job-control
@@ -20,7 +21,7 @@ async function stop() {
       deadline = Date.now() + 1200;
       while ((await tracker.scan()).length && Date.now() < deadline) await pause(40);
       if ((await tracker.scan()).length || tracker.unknown || fault) throw Error("TERMINAL_CLEANUP_UNCONFIRMED");
-      await fs.writeFile(receipt, JSON.stringify({ token, clean: true }), { flag: "wx", mode: 0o600 });
+      await atomicWriteJson(path.dirname(receipt), receipt, { token, clean: true }, { exclusive: true });
       process.exit(0);
     } catch { process.exit(1); }
   })();
@@ -35,7 +36,8 @@ try {
   const child = spawn(shell, ["-f"], { stdio: "inherit", env: process.env });
   child.on("error", () => { fault = true; void stop(); });
   child.on("exit", () => void stop());
-  await fs.writeFile(receipt + ".ready", JSON.stringify({ token }), { flag: "wx", mode: 0o600 });
+  // The Host polls this path: publish a complete, synced inode exclusively.
+  await atomicWriteJson(path.dirname(receipt), receipt + ".ready", { token }, { exclusive: true });
   if (closing) await closing;
   timer = setInterval(() => {
     if (scanning || closing) return;

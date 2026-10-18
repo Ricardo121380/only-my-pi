@@ -1,15 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import http from "node:http";
 import pty from "node-pty";
 import { setTimeout as delay } from "node:timers/promises";
+import { createSourceFixtureRoot } from "./fixtures/source-fixture-root.mjs";
 import { createPi110SourceCli } from "./fixtures/pi110-source-cli.mjs";
 import { writePiEvidence } from "./fixtures/pi-runtime-evidence.mjs";
-import { processIdentity } from "../packages/host/ownership.mjs";
+import { processIdentity, groupAlive } from "../packages/host/ownership.mjs";
 
+import { processEvidence, saveRegressionEvidence } from "./fixtures/regression-evidence.mjs";
 const quote = (value) => "'" + value.replaceAll("'", "'\\''") + "'";
 async function until(read, accept, label) {
   for (let i = 0; i < 320; i++) { const value = await read(); if (accept(value)) return value; await delay(25); }
@@ -29,7 +30,7 @@ function textResponse(res, content = "fixture complete") {
 }
 
 async function fixture(t, { forceWarming = false, respondRequest } = {}) {
-  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-pi110-pty-")));
+  const root = await createSourceFixtureRoot("omp-pi110-pty-");
   const received = [], sockets = new Set();
   const provider = http.createServer(async (req, res) => {
     let text = ""; for await (const bytes of req) text += bytes;
@@ -46,20 +47,37 @@ async function fixture(t, { forceWarming = false, respondRequest } = {}) {
   provider.on("connection", (socket) => { sockets.add(socket); socket.once("close", () => sockets.delete(socket)); });
   await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
   const origin = `http://127.0.0.1:${provider.address().port}`, terminals = [];
-  t.after(async () => { for (const run of terminals) await run.close();
-    for (const socket of sockets) socket.destroy(); await new Promise((resolve) => provider.close(resolve));
-    await writePiEvidence(t.name, { sdk: f.sdk, bindings: f.bindings, service: { origin, source: "tests/direct-pi110-terminal.test.mjs" }, received: received.map(({ key, body, closed }) => ({ key, body, closed })), terminals: terminals.map(run => run.output()) });
-    await fs.rm(root, { recursive: true, force: true }); });
-  const f = await createPi110SourceCli(root, { baseUrl: `http://127.0.0.1:${provider.address().port}/v1`, forceWarming, installedExtensions: process.env.OMP_PI110_INSTALLED_EXTENSIONS === "1" });
+  let f;
+  t.after(async () => {
+    const cleanup = await Promise.allSettled(terminals.map(run => run.close()));
+    for (const socket of sockets) socket.destroy();
+    await new Promise((resolve) => provider.close(resolve));
+    if (f) await writePiEvidence(t.name, { sdk: f.sdk, bindings: f.bindings, service: { origin, source: "tests/direct-pi110-terminal.test.mjs" }, received: received.map(({ key, body, closed }) => ({ key, body, closed })), terminals: terminals.map(run => run.output()), terminalStages: terminals.map(run => run.stages) });
+    const errors = cleanup.filter(result => result.status === "rejected").map(result => result.reason);
+    if (errors.length) throw new AggregateError(errors, "PTY_FIXTURE_CLEANUP_UNCONFIRMED");
+    if (f) await fs.rm(root, { recursive: true, force: true });
+  });
+  f = await createPi110SourceCli(root, { baseUrl: `http://127.0.0.1:${provider.address().port}/v1`, forceWarming, installedExtensions: process.env.OMP_PI110_INSTALLED_EXTENSIONS === "1" });
   function launch(args) {
     // Observe terminal attributes in the *same* PTY after Pi returns, before
     // node-pty closes its fd. A new terminal would hide restoration defects.
     const script = `printf 'OMP_STTY_BEFORE='; stty -g; ${[process.execPath, f.cli, ...args].map(quote).join(" ")}; code=$?; printf '\nOMP_EXIT_CODE=%s\nOMP_STTY_AFTER=' "$code"; stty -g; printf 'OMP_SHELL_READY\n'; read -r answer`;
+    const stages = [{ stage: "spawn", at: Date.now() }];
     const terminal = pty.spawn("/bin/sh", ["-c", script], { cwd: f.project, env: f.env, cols: 100, rows: 30 });
-    let output = ""; terminal.onData((chunk) => { output += chunk; });
-    let exited = false; terminal.onExit(() => { exited = true; });
-    const identity = processIdentity(terminal.pid).catch(() => null);
-    const run = { terminal, output: () => output, close: async () => {
+    stages.push({ stage: "spawned", at: Date.now(), pid: terminal.pid });
+    let output = "", identity, inspect = false;
+    terminal.onData((chunk) => {
+      const first = output.length === 0; output += chunk;
+      if (first) stages.push({ stage: "first-byte", at: Date.now() });
+      // Pin after the fixture shell has exec'd; node-pty's spawn helper can
+      // still own the PID immediately after spawn returns.
+      if (!identity && output.includes("OMP_STTY_BEFORE=")) identity = processIdentity(terminal.pid).catch(error => { stages.push({ stage: "identity-error", at: Date.now(), code: error.code }); return null; });
+      if (!inspect && output.includes("Inspect")) { inspect = true; stages.push({ stage: "Inspect", at: Date.now() }); }
+    });
+    let exited;
+    terminal.onExit(exit => { exited = exit; stages.push({ stage: "exit", at: Date.now(), ...exit }); });
+    const run = { terminal, output: () => output, stages, close: async () => {
+      await saveRegressionEvidence("pty-before-cleanup", { test: t.name, root, stages, output, received: received.map(({ key, body, closed }) => ({ key, body, closed })), process: await processEvidence(terminal.pid) });
       if (!exited) {
         const expected = await identity;
         if (expected && await processIdentity(terminal.pid) === expected) {
@@ -69,6 +87,11 @@ async function fixture(t, { forceWarming = false, respondRequest } = {}) {
         }
         try { terminal.kill("SIGKILL"); } catch {}
       }
+      const deadline = Date.now() + 2000;
+      while ((!exited || groupAlive(terminal.pid)) && Date.now() < deadline) await delay(25);
+      const clean = Boolean(exited) && !groupAlive(terminal.pid);
+      await saveRegressionEvidence("pty-cleanup", { test: t.name, root, stages, clean, process: await processEvidence(terminal.pid) });
+      if (!clean) throw Object.assign(new Error("PTY_FIXTURE_CLEANUP_UNCONFIRMED"), { code: "PTY_FIXTURE_CLEANUP_UNCONFIRMED" });
     } }; terminals.push(run); return run;
   }
   return { ...f, received, launch };
