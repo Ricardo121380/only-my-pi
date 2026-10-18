@@ -19,7 +19,7 @@ export function assertSafeRelativePath(value, label = "path") {
   return value;
 }
 
-async function hashTreeEntry(absolutePath, relativePath, hash, options) {
+async function* treeEntries(absolutePath, relativePath, options) {
   const stat = await fs.lstat(absolutePath);
   if (stat.isSymbolicLink()) {
     if (!options.allowContainedSymlinks) {
@@ -35,24 +35,17 @@ async function hashTreeEntry(absolutePath, relativePath, hash, options) {
       fail("UNSAFE_TREE_SYMLINK", `managed tree symlink escapes its root: ${relativePath}`);
     }
     const link = await fs.readlink(absolutePath);
-    hash.update("L\0");
-    hash.update(relativePath);
-    hash.update("\0");
-    hash.update(link);
-    hash.update("\0");
+    yield { type: "L", relativePath, link };
     return;
   }
   if (stat.isDirectory()) {
-    hash.update("D\0");
-    hash.update(relativePath);
-    hash.update("\0");
+    yield { type: "D", relativePath };
     const names = await fs.readdir(absolutePath);
     names.sort();
     for (const name of names) {
-      await hashTreeEntry(
+      yield* treeEntries(
         path.join(absolutePath, name),
         relativePath === "." ? name : `${relativePath}/${name}`,
-        hash,
         options,
       );
     }
@@ -61,14 +54,45 @@ async function hashTreeEntry(absolutePath, relativePath, hash, options) {
   if (!stat.isFile()) {
     fail("UNSUPPORTED_RESOURCE_TYPE", `resource graph only admits regular files and directories: ${relativePath}`);
   }
-  const bytes = await fs.readFile(absolutePath);
-  hash.update("F\0");
-  hash.update(relativePath);
-  hash.update("\0");
-  hash.update(String(bytes.length));
-  hash.update("\0");
-  hash.update(bytes);
-  hash.update("\0");
+  yield { type: "F", relativePath, absolutePath };
+}
+
+async function hashTreeEntry(absolutePath, relativePath, hash, options) {
+  // Prefetch a bounded window, then hash in the original depth-first order.
+  // Every invocation reads fresh bytes; no file or admission result is cached.
+  let pending = [];
+  async function drain() {
+    const results = await Promise.all(pending);
+    pending = [];
+    for (const result of results) {
+      if (result.error) throw result.error;
+      const { entry, bytes } = result;
+      hash.update(`${entry.type}\0`);
+      hash.update(entry.relativePath);
+      hash.update("\0");
+      if (entry.type === "L") {
+        hash.update(entry.link);
+        hash.update("\0");
+      } else if (entry.type === "F") {
+        hash.update(String(bytes.length));
+        hash.update("\0");
+        hash.update(bytes);
+        hash.update("\0");
+      }
+    }
+  }
+  try {
+    for await (const entry of treeEntries(absolutePath, relativePath, options)) {
+      pending.push(entry.type === "F"
+        ? fs.readFile(entry.absolutePath).then(bytes => ({ entry, bytes }), error => ({ error }))
+        : Promise.resolve({ entry }));
+      if (pending.length === 8) await drain();
+    }
+    await drain();
+  } finally {
+    // Complete pending reads before a rejection permits cleanup of the tree.
+    await Promise.all(pending);
+  }
 }
 
 export async function hashResourcePath({ artifactRoot, relativePath, allowContainedSymlinks = false }) {
@@ -102,4 +126,3 @@ export async function hashResourcePath({ artifactRoot, relativePath, allowContai
   }
   return hash.digest("hex");
 }
-
