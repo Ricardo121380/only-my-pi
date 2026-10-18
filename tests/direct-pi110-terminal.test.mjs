@@ -52,7 +52,7 @@ async function fixture(t, { forceWarming = false, respondRequest } = {}) {
     const cleanup = await Promise.allSettled(terminals.map(run => run.close()));
     for (const socket of sockets) socket.destroy();
     await new Promise((resolve) => provider.close(resolve));
-    if (f) await writePiEvidence(t.name, { sdk: f.sdk, bindings: f.bindings, service: { origin, source: "tests/direct-pi110-terminal.test.mjs" }, received: received.map(({ key, body, closed }) => ({ key, body, closed })), terminals: terminals.map(run => run.output()), terminalStages: terminals.map(run => run.stages) });
+    if (f) await writePiEvidence(t.name, { sdk: f.sdk, bindings: f.bindings, nodeRuntime: f.nodeRuntime, service: { origin, source: "tests/direct-pi110-terminal.test.mjs" }, received: received.map(({ key, body, closed }) => ({ key, body, closed })), terminals: terminals.map(run => run.output()), terminalStages: terminals.map(run => run.stages) });
     const errors = cleanup.filter(result => result.status === "rejected").map(result => result.reason);
     if (errors.length) throw new AggregateError(errors, "PTY_FIXTURE_CLEANUP_UNCONFIRMED");
     if (f) await fs.rm(root, { recursive: true, force: true });

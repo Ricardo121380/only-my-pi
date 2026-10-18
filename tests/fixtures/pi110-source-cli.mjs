@@ -3,11 +3,14 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFile as execFileCallback } from "node:child_process";
+import { promisify } from "node:util";
 import { resolveBoundPackageRoot } from "../../packages/bootstrap/runtime-package-binding.mjs";
 import { hashResourcePath } from "../../packages/bootstrap/graph-plan.mjs";
 import { patchPermissionShellIndex, patchPermissionShellSandbox } from "../../packages/distribution/permission-shell-patch.mjs";
 
 const repo = fileURLToPath(new URL("../../", import.meta.url));
+const execFile = promisify(execFileCallback);
 const packages = [
   ["permission-modes", ["src/index.ts"]], ["subagents", ["index.ts"]],
   ["agent-extensions", ["extensions/sessions/index.ts", "extensions/context/index.ts", "extensions/review/index.ts", "extensions/notify/index.ts"]],
@@ -31,6 +34,13 @@ export async function createPi110SourceCli(root, { baseUrl, installedExtensions 
     await fs.mkdir(path.join(stack, "node/lib"), { recursive: true });
     await fs.copyFile(path.join(nodeLib, name), path.join(stack, "node/lib", name));
   }
+  // Validate the relocated runtime as installation preparation. The first exec
+  // of a newly copied binary can be slow on macOS. This probes Node only: OMP,
+  // Pi and every extension still load for the first time after the PTY spawn.
+  const nodePath = path.join(stack, "node/bin/node");
+  const probe = await execFile(nodePath, ["--version"], { timeout: 10000 });
+  assert.equal(probe.stdout.trim(), process.version);
+  const nodeRuntime = { path: nodePath, version: probe.stdout.trim(), stdout: probe.stdout, stderr: probe.stderr };
   const piRoot = path.dirname(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent"))));
   const piVersion = JSON.parse(await fs.readFile(path.join(piRoot, "package.json"), "utf8")).version;
   assert.equal(piVersion, "1.3.0");
@@ -78,5 +88,5 @@ export async function createPi110SourceCli(root, { baseUrl, installedExtensions 
   ] } } }));
   await fs.writeFile(path.join(project, "README.md"), "temporary CLI project\n");
   const env = { PATH: process.env.PATH, HOME: home, TERM: "xterm-256color", LANG: "en_US.UTF-8", PI_CODING_AGENT_DIR: config, PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1" };
-  return { home, config, project, stack, omp, env, cli: path.join(omp, "bin/omp.mjs"), sdk: path.join(stack, "pi/dist/index.js"), bindings, piVersion };
+  return { home, config, project, stack, omp, env, cli: path.join(omp, "bin/omp.mjs"), sdk: path.join(stack, "pi/dist/index.js"), bindings, piVersion, nodeRuntime };
 }
