@@ -57,7 +57,7 @@ async function fixture(t, { forceWarming = false, respondRequest } = {}) {
     if (errors.length) throw new AggregateError(errors, "PTY_FIXTURE_CLEANUP_UNCONFIRMED");
     if (f) await fs.rm(root, { recursive: true, force: true });
   });
-  f = await createPi110SourceCli(root, { baseUrl: `http://127.0.0.1:${provider.address().port}/v1`, forceWarming, installedExtensions: process.env.OMP_PI110_INSTALLED_EXTENSIONS === "1" });
+  f = await createPi110SourceCli(root, { baseUrl: `http://127.0.0.1:${provider.address().port}/v1`, forceWarming, verifyNode: true, installedExtensions: process.env.OMP_PI110_INSTALLED_EXTENSIONS === "1" });
   function launch(args) {
     // Observe terminal attributes in the *same* PTY after Pi returns, before
     // node-pty closes its fd. A new terminal would hide restoration defects.

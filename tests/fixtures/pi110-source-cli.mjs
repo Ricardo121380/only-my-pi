@@ -21,7 +21,7 @@ const packages = [
 // code and Pi are real copies. Portable tests fixture only the external package
 // boundary; explicit local acceptance may copy verified user-owned packages.
 // No auth/settings files from the user's config are copied or modified.
-export async function createPi110SourceCli(root, { baseUrl, installedExtensions = false, forceWarming = false } = {}) {
+export async function createPi110SourceCli(root, { baseUrl, installedExtensions = false, forceWarming = false, verifyNode = false } = {}) {
   const home = path.join(root, "home"), config = path.join(root, "config"), project = path.join(root, "project");
   const stack = path.join(root, "a".repeat(64)), omp = path.join(stack, "only-my-pi/package");
   for (const directory of [home, config, project, omp, path.join(stack, "node/bin")]) await fs.mkdir(directory, { recursive: true });
@@ -37,10 +37,13 @@ export async function createPi110SourceCli(root, { baseUrl, installedExtensions 
   // Validate the relocated runtime as installation preparation. The first exec
   // of a newly copied binary can be slow on macOS. This probes Node only: OMP,
   // Pi and every extension still load for the first time after the PTY spawn.
-  const nodePath = path.join(stack, "node/bin/node");
-  const probe = await execFile(nodePath, ["--version"], { timeout: 10000 });
-  assert.equal(probe.stdout.trim(), process.version);
-  const nodeRuntime = { path: nodePath, version: probe.stdout.trim(), stdout: probe.stdout, stderr: probe.stderr };
+  let nodeRuntime;
+  if (verifyNode) {
+    const nodePath = path.join(stack, "node/bin/node");
+    const probe = await execFile(nodePath, ["--version"], { timeout: 10000 });
+    assert.equal(probe.stdout.trim(), process.version);
+    nodeRuntime = { path: nodePath, version: probe.stdout.trim(), stdout: probe.stdout, stderr: probe.stderr };
+  }
   const piRoot = path.dirname(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent"))));
   const piVersion = JSON.parse(await fs.readFile(path.join(piRoot, "package.json"), "utf8")).version;
   assert.equal(piVersion, "1.3.0");
