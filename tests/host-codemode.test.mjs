@@ -4,8 +4,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { SessionManager } from "@earendil-works/pi-coding-agent";
 import { SessionAdmissions } from "../packages/direct-agent/session-admission.mjs";
-import { createMcpHost, providerReply, until, mcpReception } from "./fixtures/mcp-host.mjs";
+import { createMcpHost, providerReply, until, untilPiInitialized, slowPiInitialization, mcpReception } from "./fixtures/mcp-host.mjs";
 import { createWriteHost, codingRequest, terminal } from "./fixtures/mcp-write-host.mjs";
+import { byteEvidence, errorEvidence, mcpDenialEvidence, processEvidence, saveRegressionEvidence } from "./fixtures/regression-evidence.mjs";
 
 test("public Host runs the native QuickJS extension and authorizes ordinary and MCP children separately", { timeout: 45000 }, async (t) => {
   const code = 'text(await tools.read({path:"README.md"})); text(await tools.mcp__local__read_file({path:"README.md"})); store("checked", {source:"README.md"});';
@@ -14,6 +15,7 @@ test("public Host runs the native QuickJS extension and authorizes ordinary and 
   await f.mcp({ type: "save", revision: 0, server: f.server });
   await f.mcp({ type: "enable", revision: 1, name: "local", enabled: true });
   const started = await f.start();
+  await untilPiInitialized(() => f.task(started.taskId));
   const first = await until(() => f.task(started.taskId), (task) => task.approvals.length || ["failed", "succeeded"].includes(task.status), "ordinary child approval", 15000);
   assert.ok(first.approvals.length, JSON.stringify(first));
   assert.match(first.approvals[0]?.title ?? "", /Codemode · read/);
@@ -79,7 +81,9 @@ test("an ordinary target changed during approval cannot retain or consume the pr
   const code = 'text(await tools.read({path:"README.md"}));';
   const f = await createMcpHost({ installedExtensions: true, respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
   t.after(() => f.close());
-  const started = await f.start(), waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length, "ordinary target approval", 15000);
+  const started = await f.start();
+  await untilPiInitialized(() => f.task(started.taskId));
+  const waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length, "ordinary target approval", 15000);
   await fs.writeFile(path.join(f.project, "README.md"), "replacement target bytes\n");
   await f.request("/api/command", { type: "answerApproval", taskId: started.taskId, approvalId: waiting.approvals[0].approvalId, value: "本任务" });
   const final = await until(() => f.task(started.taskId), terminal, "changed target refusal");
@@ -157,6 +161,7 @@ test("codemode-store follows actual resume and selected branch while fresh tasks
   const execute = async (source, sessionKey, approve) => {
     code = source; phaseBase = f.requests.length;
     const started = await f.start(sessionKey ? { resumeSessionKey: sessionKey } : {});
+    await untilPiInitialized(() => f.task(started.taskId));
     if (approve) {
       const waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length || terminal(task), "fresh ordinary authorization");
       assert.equal(waiting.approvals.length, 1, JSON.stringify(waiting));
@@ -195,27 +200,44 @@ test("codemode-store follows actual resume and selected branch while fresh tasks
   assert.ok(SessionManager.open(file).getEntries().filter((entry) => entry.customType === "codemode-store").every((entry) => Object.keys(entry.data).sort().join() === "delete,set"));
 });
 
-test("nested ordinary and MCP writes retain Coding, separate approvals and the canonical project writer", { timeout: 40000 }, async (t) => {
+async function nestedWrites(t, { slowStartup = false } = {}) {
   const code = String.raw`text(await tools.write({path:"README.md", content:"ordinary child bytes\n"})); text(await tools.mcp__local__write_file({path:"README.md",text:"approved MCP file bytes\n"}));`;
   const f = await createWriteHost({ respond: ({ body, res }) => {
     const count = body.messages.filter((message) => message.role === "tool").length;
     providerReply(res, count === 0 ? "request_coding_access" : count === 1 ? "codemode" : null, count === 0 ? codingRequest : { code });
   } });
-  t.after(() => f.close());
-  const started = await f.start({ mode: "controlled" });
-  const coding = await until(() => f.task(started.taskId), (task) => task.approvals.length, "Coding request");
+  const original = byteEvidence(await fs.readFile(path.join(f.project, "README.md")));
+  let started, lastTask;
+  const answers = [];
+  const context = () => ({ test: t.name, coding: true, mode: "controlled", answer: answers.at(-1)?.value ?? null, answers, slowStartup, taskId: started?.taskId, lastTask, original });
+  t.after(async () => {
+    const before = await mcpDenialEvidence(f, { ...context(), phase: "nested-before-cleanup" });
+    const pids = [...new Set((before.mcp.value?.runs ?? []).flatMap(run => [run.ownerPid, ...run.processes.map(entry => entry.pid)]).concat(before.worker.value?.pid).filter(Number.isSafeInteger))];
+    try { await f.close(); await saveRegressionEvidence("nested-cleanup", { ...context(), result: "closed", processes: await Promise.all(pids.map(processEvidence)) }); }
+    catch (error) { await saveRegressionEvidence("nested-cleanup", { ...context(), result: "UNKNOWN", error: errorEvidence(error), processes: await Promise.all(pids.map(processEvidence)) }); throw error; }
+  });
+  if (slowStartup) await slowPiInitialization(f.sdk);
+  started = await f.start({ mode: "controlled" });
+  let coding;
+  try {
+    await untilPiInitialized(async () => lastTask = await f.task(started.taskId));
+    coding = await until(async () => lastTask = await f.task(started.taskId), task => task.approvals.length, "Coding request");
+  } catch (error) { await mcpDenialEvidence(f, { ...context(), phase: "nested-failure-before-cleanup", error: errorEvidence(error) }); throw error; }
   await f.request("/api/command", { type: "answerApproval", taskId: started.taskId, approvalId: coding.approvals[0].approvalId, value: coding.approvals[0].options[0] });
+  answers.push({ approvalId: coding.approvals[0].approvalId, value: coding.approvals[0].options[0] });
   const ordinary = await until(() => f.task(started.taskId), (task) => task.approvals.some((approval) => approval.title.startsWith("Codemode · write")) || terminal(task), "ordinary write request");
   assert.equal(await fs.readFile(path.join(f.project, "README.md"), "utf8"), "temporary CLI project\n");
   assert.ok(ordinary.approvals.length, JSON.stringify(ordinary));
   const conflict = await f.request("/api/command", { type: "openTerminal", projectId: f.projectId, cols: 90, rows: 24 }, 500);
   assert.equal(conflict.code, "OWNERSHIP_HELD");
   await f.request("/api/command", { type: "answerApproval", taskId: started.taskId, approvalId: ordinary.approvals[0].approvalId, value: "仅本次" });
+  answers.push({ approvalId: ordinary.approvals[0].approvalId, value: "仅本次" });
   const mcp = await until(() => f.task(started.taskId), (task) => task.approvals.some((approval) => approval.title.startsWith("MCP ·")) || terminal(task), "descriptor write request");
   assert.ok(mcp.approvals.length, JSON.stringify(mcp));
   assert.equal(await fs.readFile(path.join(f.project, "README.md"), "utf8"), "ordinary child bytes\n");
   assert.equal((await mcpReception((await f.mcp({ type: "status" })).runs.at(-1))).filter((item) => item.type === "call").length, 0);
   await f.request("/api/command", { type: "answerApproval", taskId: started.taskId, approvalId: mcp.approvals[0].approvalId, value: "仅本次" });
+  answers.push({ approvalId: mcp.approvals[0].approvalId, value: "仅本次" });
   const final = await until(() => f.task(started.taskId), terminal, "nested writes complete");
   assert.equal(await fs.readFile(path.join(f.project, "README.md"), "utf8"), "approved MCP file bytes\n");
   const parent = final.toolCalls.find((call) => call.name === "codemode");
@@ -227,4 +249,7 @@ test("nested ordinary and MCP writes retain Coding, separate approvals and the c
   assert.ok(receipts.filter((entry) => entry.type === "startup-write").every((entry) => ["EPERM", "EACCES"].includes(entry.code)));
   assert.equal(run.calls[0].parentToolCallId, parent.toolCallId);
   assert.equal(run.calls[0].application, "applied"); assert.equal(run.calls[0].verification, "not_run");
-});
+}
+
+test("nested ordinary and MCP writes retain Coding, separate approvals and the canonical project writer", { timeout: 40000 }, nestedWrites);
+test("nested writes preserve their authorities after slow real Pi initialization", { timeout: 40000 }, t => nestedWrites(t, { slowStartup: true }));

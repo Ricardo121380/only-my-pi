@@ -2,7 +2,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { createMcpHost, providerReply, until } from "./mcp-host.mjs";
+import { createMcpHost, providerReply, until, untilPiInitialized } from "./mcp-host.mjs";
 export const codingRequest = { taskSummary: "Write selected MCP fixture file", complexity: "simple", scope: ["README.md"], riskFlags: [], verification: ["inspect actual file bytes"], orchestration: { useReadOnlyScouts: false, useManagedCloneWriter: false, useFreshReviewer: false } };
 export const terminal = (task) => ["succeeded", "failed", "cancelled"].includes(task.status);
 export async function createWriteHost({ mode, target = "README.md", coding = true, repeat = false, ...options } = {}) {
@@ -21,7 +21,7 @@ export async function createWriteHost({ mode, target = "README.md", coding = tru
 export async function codingApproved(f, started) {
   // HTTP acceptance precedes Pi readiness. Keep the approval poll separate
   // from the worker's existing 30s initialization contract.
-  await until(() => f.task(started.taskId), task => task.status !== "starting", "Pi task initialized", 30000);
+  await untilPiInitialized(() => f.task(started.taskId));
   const waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length > 0 || terminal(task), "coding approval");
   if (!waiting.approvals.length) throw new Error(JSON.stringify(waiting));
   await f.request("/api/command", { type: "answerApproval", taskId: started.taskId, approvalId: waiting.approvals[0].approvalId, value: waiting.approvals[0].options[0] });

@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import { createMcpHost, providerReply } from "./fixtures/mcp-host.mjs";
 import { codingRequest } from "./fixtures/mcp-write-host.mjs";
 import { createWriteHost, codingApproved, approveWrite, terminal } from "./fixtures/mcp-write-host.mjs";
-import { until, mcpReception } from "./fixtures/mcp-host.mjs";
+import { until, untilPiInitialized, slowPiInitialization, mcpReception } from "./fixtures/mcp-host.mjs";
 import { byteEvidence, errorEvidence, mcpDenialEvidence, processEvidence, saveRegressionEvidence } from "./fixtures/regression-evidence.mjs";
 const dispatched = async (f) => {
   const run = (await f.mcp({ type: "status" })).runs.at(-1);
@@ -58,15 +58,14 @@ async function deniedWrites(t, { slowStartup = false } = {}) {
       if (slowStartup) {
         // Fault injection stays at the copied public SDK factory. The actual
         // Host HTTP entry, Pi runtime, MCP receiver and policy remain in use.
-        await fs.rename(f.sdk, path.join(path.dirname(f.sdk), "index-original.js"));
-        await fs.writeFile(f.sdk, 'export * from "./index-original.js"; import { createAgentSessionServices as real } from "./index-original.js"; export async function createAgentSessionServices(options) { await new Promise(resolve => setTimeout(resolve, 8000)); return real(options); }');
+        await slowPiInitialization(f.sdk);
       }
       timing.requestedAt = Date.now();
       started = await f.start({ mode });
       // startTask is asynchronous (202/starting). Its worker initialization
       // uses the existing 30s RPC readiness contract; denial keeps the original
       // 7.5s poll after initialization, including all original effect assertions.
-      await until(async () => lastTask = await f.task(started.taskId), task => task.status !== "starting", "Pi task initialized", 30000);
+      await untilPiInitialized(async () => lastTask = await f.task(started.taskId));
       timing.readyAt = Date.now();
       if (coding) await approveWrite(f, await codingApproved(f, started), answer);
       await until(async () => lastTask = await f.task(started.taskId), terminal, "unauthorized write denied");

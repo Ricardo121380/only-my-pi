@@ -19,6 +19,13 @@ export async function until(read, accept, label, timeoutMs = 7500) {
   for (let i = 0; i < Math.ceil(timeoutMs / 25); i++) { const value = await read(); if (accept(value)) return value; await delay(25); }
   assert.fail(`Timed out: ${label}`);
 }
+// HTTP 202 precedes worker readiness. Separate its existing 30s initialization
+// contract from the unchanged approval/denial polls that follow it.
+export const untilPiInitialized = read => until(read, task => task.status !== "starting", "Pi task initialized", 30000);
+export async function slowPiInitialization(sdk) {
+  await fs.rename(sdk, path.join(path.dirname(sdk), "index-original.js"));
+  await fs.writeFile(sdk, 'export * from "./index-original.js"; import { createAgentSessionServices as real } from "./index-original.js"; export async function createAgentSessionServices(options) { await new Promise(resolve => setTimeout(resolve, 8000)); return real(options); }');
+}
 export async function mcpReception(run) {
   return (await Promise.all(run.processes.map(async (process) => (await fs.readFile(path.join(process.runtimeDir, "received.jsonl"), "utf8")).trim().split("\n").filter(Boolean).map(JSON.parse)))).flat();
 }
