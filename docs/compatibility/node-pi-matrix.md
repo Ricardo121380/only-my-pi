@@ -2,16 +2,8 @@
 
 ## PI130-01 development update — 2026-10-18
 
-The exact development dependency, lock and installed internal Pi packages are now
-`1.3.0`, acquired from the official registry with independent tarball SRI and
-installed-byte verification. Node `22.19.0` / `24.19.0` remain the required lanes.
-See the [#76 adaptation and evidence record](2026-10-18-pi-1.3.0-runtime-adaptation.md)
-for clean-source dual-Node types/contracts and targeted PTY/process evidence.
-The original Q12 link failure is resolved; all ten applicable M11 deterministic
-gates pass. The final full suite still has real PTY startup, HTTP terminal identity and MCP denial wait failures, so #76
-remains OPEN/PARTIAL. Q10/Q11 retain their non-execution states. New candidate packaging and same-candidate
-acceptance belong to #77. The checked 2026-10-17 identities below retain their
-historical meaning; they do not describe a new daily installation.
+The exact development dependency, lock and six internal Pi packages remain `1.3.0`. Official tarball and 1,276 installed regular files match. Required Node `22.19.0` / `24.19.0` lanes pass types, contracts and the original full suite on frozen clean source `f5c7635` (1679 PASS, zero failures/cancellations, four installed SKIPs per lane). Linux arm64 affected public CLI checks pass 48 each. See [#76 final evidence](2026-10-18-pi-1.3.0-runtime-adaptation.md#7-三类完整回归失败的处置与本轮验收).
+#76 is OPEN with acceptance PASS, ready for authorized closure. All ten applicable M11 deterministic gates pass; Q10/Q11 retain their non-execution states. New candidate packaging and same-candidate acceptance belong to #77. Identities below retain their historical meaning and do not describe a new daily installation.
 
 ## Historical identities — checked 2026-10-17
 

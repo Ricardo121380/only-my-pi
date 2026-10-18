@@ -1,6 +1,6 @@
 # WebUI 优化 Task 看板
 
-**2026-10-18 #76 收尾更新：** Pi 1.3.0 已冻结，必要开发基线及干净源码双 Node 类型/合同、已通过的定向 C/P 和 M11 确定性门禁已补齐。最终全量仍有真实 PTY 启动超时、HTTP 终端身份缺失及 MCP 拒绝结果等待超时，#76 保持 OPEN/PARTIAL，见[当前兼容报告](../compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md#6-本轮必要基线与最终交付验证)。GP130-01 不再概括为全部 NOT_RUN；#77 开工前置尚未满足，本轮不实施。下方 to-spec/to-tickets 与旧候选记录保留各自阶段含义，#21/#23 阻断不变。
+**2026-10-18 #76 回归验收更新：** Pi 1.3.0 保持冻结，三类完整回归失败已按真实入口证据处置；最终干净源码双 Node 完整套件均通过，类型/合同、受影响 Linux CLI 与 M11 十项确定性门禁通过。本票验收 PASS；#76 仍 OPEN，已具备回写关闭条件，见[当前兼容报告](../compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md#7-三类完整回归失败的处置与本轮验收)。本轮未实施 #77，其新候选、四项 installed 检查与同候选回归继续由该票承接。下方历史记录保留各自阶段含义，#21/#23 阻断不变。
 
 **2026-10-18 基线确认与规格发布：** 用户 Q12 确认[蓝图 v1](2026-10-17-product-direction-and-iteration-plan.md)，本次设计质询结束。[同一规格](2026-10-01-webui-remaining-spec.md)已新增 US-129–US-143、GP130/GCLIENT，并按 to-spec 更新[总规格 #19](https://github.com/Ricardo121380/only-my-pi/issues/19)，标题和正文独立回读一致，保持 OPEN / ready-for-agent；[本地任务修订稿](2026-10-18-client-baseline-work-items.md)细化 PI130-01–03、CLIENT-01–04、MATERIAL-01 及原工单差异并记录发布回执。具体实施工单尚未同步，新增实现与验收 NOT_RUN，远程编号和依赖未改。原 Task 表保留，U3 的独立开工及 U5 的共享配置按新稿衔接，整批出口不提前通过。
 

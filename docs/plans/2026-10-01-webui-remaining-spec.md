@@ -1,6 +1,6 @@
 # [Spec] Only my pi 双客户端与完整 WebUI：Pi 接入、共享能力、G2-00、U2–U6
 
-**2026-10-18 #76 收尾更新：** Pi 1.3.0 已冻结，必要开发基线及干净源码双 Node 类型/合同、已通过的定向 C/P 和 M11 确定性门禁已补齐。最终全量仍有真实 PTY 启动超时、HTTP 终端身份缺失及 MCP 拒绝结果等待超时，#76 保持 OPEN/PARTIAL，见[当前兼容报告](../compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md#6-本轮必要基线与最终交付验证)。GP130-01 不再概括为全部 NOT_RUN；#77 开工前置尚未满足，本轮不实施。下方 to-spec/to-tickets 与旧候选记录保留各自阶段含义，#21/#23 阻断不变。
+**2026-10-18 #76 回归验收更新：** Pi 1.3.0 保持冻结，三类完整回归失败已按真实入口证据处置；最终干净源码双 Node 完整套件均通过，类型/合同、受影响 Linux CLI 与 M11 十项确定性门禁通过。本票验收 PASS；#76 仍 OPEN，已具备回写关闭条件，见[当前兼容报告](../compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md#7-三类完整回归失败的处置与本轮验收)。本轮未实施 #77，其新候选、四项 installed 检查与同候选回归继续由该票承接。下方历史记录保留各自阶段含义，#21/#23 阻断不变。
 
 **2026-10-18 正式规格修订：** [蓝图](2026-10-17-product-direction-and-iteration-plan.md)Q1–Q12 已全部确认，设计质询结束。本次 `to-spec` 沿用总规格 #19，新增 US-129–US-143、GP130-01–03 和 GCLIENT-01–07，按已确认的共享配置决定修订 US-057/061；其他原需求编号和历史证据保留。产品目标、独立设置、共享配置、配套版本和首批平台范围写入下文，长期决定见 [ADR-0020](../decisions/ADR-0020-pi-native-clients-and-shared-sessions.md)、[ADR-0021](../decisions/ADR-0021-shared-product-configuration.md)。
 

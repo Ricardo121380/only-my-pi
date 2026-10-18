@@ -4,12 +4,7 @@ Research and design notes for only-my-pi live here.
 
 ## Pi 1.3.0 development closeout — 2026-10-18
 
-[#76 development adaptation and C/P evidence](compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md)
-records the acquired exact 1.3.0 dependency, public CLI/WebUI integration,
-controlled capabilities, failures and current verification. It updates the
-development-version facts in the earlier planning snapshot below. New private
-candidate packaging and its combined regression remain with #77; material,
-installation and external Provider gates keep their independent scope.
+[#76 development adaptation and final C/P acceptance](compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md#7-三类完整回归失败的处置与本轮验收) records exact Pi 1.3.0 identity, the three full-regression diagnoses, both frozen full Node lanes and independent Standards/Spec review. #76 is OPEN with acceptance PASS, ready for authorized closure. New private candidate packaging and its combined regression remain #77; material, installation and external Provider gates keep their independent scope.
 
 ## Current development entry
 

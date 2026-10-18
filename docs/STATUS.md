@@ -2,17 +2,8 @@
 
 ## PI130-01 development update — 2026-10-18
 
-The development pin/lock and installed Pi packages are now exactly `1.3.0`.
-[#76 implementation and verification](compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md)
-tracks real source CLI/PTY and Host/WebUI integration, controlled services,
-first failures, C/P checks and Standards/Spec review. The necessary development baseline is committed; the original 122-link Q12
-failure is resolved. Clean-source dual-Node types, contracts and targeted C/P
-pass; M11 deterministic Q1–Q9/Q12 pass. The frozen full suite still has real
-PTY Inspect-startup timeouts, an HTTP terminal identity failure and an MCP denial wait failure, so #76 remains OPEN/PARTIAL and #77 cannot start.
-Q10 remains NOT_RUN_PLATFORM and Q11 NOT_RUN_BY_POLICY; see the final report.
-The 2026-10-17 development-version paragraph below is an earlier snapshot.
-Candidate construction and same-candidate integration remain #77; the daily
-installation and material/Full/real Provider acceptance are unchanged.
+The exact development Pi pin remains `1.3.0`. [#76 final regression acceptance](compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md#7-三类完整回归失败的处置与本轮验收) records the three causal diagnoses and minimal fixes. Frozen clean source `f5c7635` passes both original full Node lanes (1679 PASS each, zero failures/cancellations, four installed SKIPs each). Types, contracts, affected Linux CLI and all ten applicable M11 deterministic gates pass. #76 is OPEN with acceptance PASS, ready for authorized closure. Standards: PASS; Spec: PASS.
+Q10 remains NOT_RUN_PLATFORM and Q11 NOT_RUN_BY_POLICY. Candidate construction, the four installed checks and same-candidate integration remain #77; daily installation and material/Full/real Provider acceptance are unchanged. Earlier dated paragraphs below are historical snapshots.
 
 ## Current development entry — 2026-10-17
 
