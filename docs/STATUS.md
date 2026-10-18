@@ -1,11 +1,12 @@
 # only-my-pi status
 
-## PI130-01 development update — 2026-10-18
+## PI130-02/03 private candidate — 2026-10-19
 
-The exact development Pi pin remains `1.3.0`. [#76 final regression acceptance](compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md#7-三类完整回归失败的处置与本轮验收) records the three causal diagnoses and minimal fixes. Frozen clean source `f5c7635` passes both original full Node lanes (1679 PASS each, zero failures/cancellations, four installed SKIPs each). Types, contracts, affected Linux CLI and all ten applicable M11 deterministic gates pass. #76 is CLOSED/completed, independently read back; #77 has satisfied its sole prerequisite and remains unimplemented. Standards: PASS; Spec: PASS.
-Q10 remains NOT_RUN_PLATFORM and Q11 NOT_RUN_BY_POLICY. Candidate construction, the four installed checks and same-candidate integration remain #77; daily installation and material/Full/real Provider acceptance are unchanged. Earlier dated paragraphs below are historical snapshots.
+Pi `1.3.0` / `pi130-v1`: GP130-02 PASS; GP130-03 PASS. [Same-candidate acceptance](compatibility/2026-10-18-pi-1.3.0-private-candidate-acceptance.md) binds private source `dd996352`, production lock, complete materials, actual CLI/PTY/Ego and independent controlled receivers. The four required installed checks pass on the embedded Node24. #77: CLOSED / completed，已独立回读.
 
-## Current development entry — 2026-10-17
+#76 remains CLOSED/completed for its own frozen `f5c7635` source (1679 PASS and four installed SKIPs per Node lane). #77 owns the new candidate and actual installed results. Historical failures and candidates remain; material #21/#23, Full, real Provider and daily promotion are separate. Q10 is NOT_RUN_PLATFORM and Q11 NOT_RUN_BY_POLICY.
+
+## Current development entry — 2026-10-19
 
 Only my pi is being developed as a CLI/TUI and a desktop Agent client directly
 on the latest stable Pi core. The complete selected WebUI scope precedes desktop
@@ -15,7 +16,7 @@ owns the current direction, status, remaining work, and discussion decisions;
 
 The published terminal Preview is
 [v0.4.0-preview.2](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2).
-Development dependencies are Pi 1.1.0; the checked upgrade target is Pi 1.3.0.
+Development dependencies and the isolated private candidate use exact Pi 1.3.0.
 Neither value establishes the user's current daily installation. See the
 [compatibility matrix](compatibility/node-pi-matrix.md) for the separate identities.
 

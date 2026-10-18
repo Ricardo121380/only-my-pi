@@ -1,9 +1,19 @@
 # Node and Pi compatibility matrix
 
-## PI130-01 development update — 2026-10-18
+## PI130-02/03 current private identity — 2026-10-19
 
-The exact development dependency, lock and six internal Pi packages remain `1.3.0`. Official tarball and 1,276 installed regular files match. Required Node `22.19.0` / `24.19.0` lanes pass types, contracts and the original full suite on frozen clean source `f5c7635` (1679 PASS, zero failures/cancellations, four installed SKIPs per lane). Linux arm64 affected public CLI checks pass 48 each. See [#76 final evidence](2026-10-18-pi-1.3.0-runtime-adaptation.md#7-三类完整回归失败的处置与本轮验收).
-#76 is CLOSED/completed, independently read back; #77 has satisfied its sole prerequisite and remains unimplemented. All ten applicable M11 deterministic gates pass; Q10/Q11 retain their non-execution states. New candidate packaging and same-candidate acceptance belong to #77. Identities below retain their historical meaning and do not describe a new daily installation.
+Exact Pi `1.3.0`, contract `pi130-v1`, private source `dd996352`; GP130-02 PASS, GP130-03 PASS. #77: CLOSED / completed，已独立回读. See [candidate identity, provenance and AC evidence](2026-10-18-pi-1.3.0-private-candidate-acceptance.md).
+
+| Platform / runtime | Applicable evidence | Result and limits |
+| --- | --- | --- |
+| macOS arm64 / Node22.19.0 | Complete source lane, same packaged Pi/SDK/WASM/native/MCP | PASS; 1683 PASS / 0 FAIL / 0 CANCELLED / 4 SKIP; the embedded OMP/Host contract requires actual Node24 |
+| macOS arm64 / Node24.19.0 | Candidate's embedded OMP/Host, four required installed flows, CLI/PTY/Ego and complete source lane | PASS; 1687 PASS / 0 FAIL / 0 CANCELLED / 0 SKIP; separate installed suite 8 PASS / 0 SKIP |
+| Linux arm64 / Node22.19.0 | Affected existing CLI and contracts from the same frozen source export | 52 PASS / 0 SKIP; actual Pi and independent receivers; no new Linux candidate/capability claim |
+| Linux arm64 / Node24.19.0 | Same Linux source/dependencies and affected scope | 52 PASS / 0 SKIP |
+| Historical Pi1.1.0 candidate | Existing `pi110-v1` byte/mode/material inspection by current verifier | PASS; preserved, no daily installation switch |
+| Daily installation / Full / external Provider | Separate evidence and authorization | Unchanged / NOT_RUN in #77 |
+
+The actual Mac is macOS27.0 arm64; the contract's minimum macOS14 is a declared floor, not a test of every release. Node22 does not impersonate the embedded Node24. Conditional installed SKIPs in its source lane do not complete #77: all four required flows have actual packaged Node24 results. #76 remains CLOSED/completed on its own `f5c7635` source, with 1679 PASS and four inherited installed SKIPs per lane. Historical rows below keep their dated meaning.
 
 ## Historical identities — checked 2026-10-17
 

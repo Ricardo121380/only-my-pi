@@ -2,9 +2,11 @@
 
 Research and design notes for only-my-pi live here.
 
-## Pi 1.3.0 development closeout — 2026-10-18
+## Pi 1.3.0 private candidate — 2026-10-19
 
-[#76 development adaptation and final C/P acceptance](compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md#7-三类完整回归失败的处置与本轮验收) records exact Pi 1.3.0 identity, the three full-regression diagnoses, both frozen full Node lanes and independent Standards/Spec review. #76 is CLOSED/completed, independently read back; #77 has satisfied its sole prerequisite and remains unimplemented. New private candidate packaging and its combined regression remain #77; material, installation and external Provider gates keep their independent scope.
+[Same-candidate delivery and acceptance](compatibility/2026-10-18-pi-1.3.0-private-candidate-acceptance.md) records `pi130-v1`, private source `dd996352`, the exact production lock/materials and actual candidate CLI/PTY/Ego. GP130-02 PASS; GP130-03 PASS. #77: CLOSED / completed，已独立回读. The four required installed checks run successfully on the packaged Node24; Node22 and Linux have explicit applicable scopes.
+
+[#76 development adaptation](compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md#7-三类完整回归失败的处置与本轮验收) remains CLOSED/completed for its own source and two 1679-PASS lanes. New candidate acceptance is recorded separately; material, Full, installation and external Provider gates keep their scope.
 
 ## Current development entry
 
@@ -25,8 +27,8 @@ an additional product stage or a required second Agent runtime.
 - [GitHub implementation tasks](https://github.com/Ricardo121380/only-my-pi/issues)
 - [Original Task/Gate mapping and historical acceptance](plans/2026-09-26-webui-optimization-tasks.md)
 
-As checked on 2026-10-17, development dependencies remain on Pi 1.1.0 while
-the upstream stable release is 1.3.0. Pi 1.1.0 tasks #62–#75 and material
+As checked on 2026-10-18, development dependencies and the private candidate use
+exact Pi 1.3.0; the final upstream metadata readback also reports 1.3.0. Pi 1.1.0 tasks #62–#75 and material
 tasks #20/#22 are closed within their recorded scope. #21 still blocks the
 remaining material chain; U2–U6 and the desktop application remain incomplete.
 Current runtime, installation, and Provider acceptance require their own evidence.
@@ -61,10 +63,8 @@ issues #76–#84, updated 25 existing issue bodies, and synchronized native
 dependencies. Independent readback verified every body and dependency, preserving
 the parent specification, existing states, metadata, and comments. The original
 62 concrete acceptance criteria remain covered by the nine tickets.
-[PI130-01 / #76](https://github.com/Ricardo121380/only-my-pi/issues/76)
-now has its baseline and clean-source evidence recorded above. Its remaining
-full-suite PTY/HTTP terminal and MCP denial failures keep it OPEN/PARTIAL; #77 cannot start and is
-not implemented in this round.
+[PI130-01 / #76](https://github.com/Ricardo121380/only-my-pi/issues/76) is CLOSED/completed with both full Node lanes passing.
+[PI130-02 / #77](https://github.com/Ricardo121380/only-my-pi/issues/77) owns both candidate assembly and same-candidate regression: GP130-02 PASS; GP130-03 PASS; CLOSED / completed，已独立回读.
 The [publication receipt](plans/2026-10-18-client-ticket-publication.json) records
 the actual issue mapping and verification results.
 This publication does not claim new runtime acceptance.

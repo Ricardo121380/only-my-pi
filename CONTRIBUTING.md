@@ -7,7 +7,7 @@ change is strongly recommended. Acceptance is not guaranteed.
 
 ## Before submitting
 
-- Keep changes inside the current read-only Pi Harness boundary.
+- Keep changes within the [current development blueprint](docs/plans/2026-10-17-product-direction-and-iteration-plan.md) and originating Issue, preserving explicit authorization and ownership boundaries.
 - Use exact versions and preserve external/user ownership for third-party
   packages.
 - Add focused tests and run the relevant manifest-backed gates.
