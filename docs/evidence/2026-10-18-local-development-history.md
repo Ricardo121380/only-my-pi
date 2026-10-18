@@ -6,6 +6,12 @@
 
 机器清单见[同名 JSON](2026-10-18-local-development-history.json)。
 
+<a id="u0-document-coverage-original"></a>
+
+## U0 文档覆盖验收的原始本机位置
+
+2026-09-29 文档覆盖验收曾引用系统临时根中的 `omp-u0-parser-package-LUbTGo/installed`。原绝对位置和原文逐字节保存在工作区 `artifacts/pi130-01-closeout-20261018T062251Z/baseline-inputs/docs/plans/2026-09-29-webui-u0-document-coverage-acceptance.md`；原文 SHA-256 与字节数见同名 JSON 的 `originalDocuments`。本轮仅为仓库交付规范化机器专属临时路径，原实验、失败和适用范围不变；未重新认证该旧安装目录。
+
 <a id="local-6cc62f5d9429765b"></a>
 
 ## `contracts/release/parser-resources-v1/contract.json`

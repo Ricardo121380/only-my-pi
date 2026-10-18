@@ -5157,1387 +5157,13 @@
         "bytes": 16139,
         "sha256": "88332a743a088d996a11c3b40cb9ce186c4698d45c114fedf09f1d30d63ac7b1"
       }
-    }
-  ],
-  "retainedLocal": [
-    {
-      "path": ".github/workflows/ci.yml",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": ".github/workflows/ci.yml",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 4005,
-        "sha256": "659c953802a285b1a4a9aca56775a79a9985ef41d1ebf00b00365a6827fbae61"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/contract.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/contract.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 210286,
-        "sha256": "a7f342d5ce2ead6610fb5cc2624307ca90c31a0f6540fb1b64a63fd2475edb70"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/documents/",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": null
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/images/",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": null
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/native-generated-compatibility-inputs.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/native-generated-compatibility-inputs.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 2183,
-        "sha256": "8cbabc2cd4f83e42d3a31badb4bcacd081077e7d19f3beedf4f306254548396c"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/native-generated-materials.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/native-generated-materials.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 12043,
-        "sha256": "3e2320986cfa631f6f319174a0ea456dfba200067a1c354bf9a7246c734b4bf4"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/native-generated-notices.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/native-generated-notices.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 6101,
-        "sha256": "6e2bc96d5f17e364d38a42f7f71c48dc90244ae5cd7c61d0addaca64ea08445b"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/native-libexif-doc-materials.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/native-libexif-doc-materials.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 6555,
-        "sha256": "30087a1105214fc766e1cabb9488f0dffc7df6a703288bab01dbd910d9b142a8"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/native-locale-adapter.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/native-locale-adapter.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 1447,
-        "sha256": "397241e267a73c4591a2c035ce2039adfb394cb2cdb92cbf4da686413fb9a5fc"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/native-missing-texts-review.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/native-missing-texts-review.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 3418,
-        "sha256": "9f8e36922f8794465f207cf2c1683223bb6a59541bf515c51c83b98a0e07feae"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/native-primary-texts-review.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/native-primary-texts-review.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 6806,
-        "sha256": "73b0a5f231f92baaa5f92e751f678aa2791ee2287f671528aadc0710aea3d640"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/native-primary-texts.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/native-primary-texts.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 21081,
-        "sha256": "7ffd3455bc1faeffd47717bfe6fe6636a2e8b7909a122f881d04e55e7840556a"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/native-rebuild-inputs.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/native-rebuild-inputs.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 4658,
-        "sha256": "e8074756b7f92e2d9f8e08e4c8d1c865ba1f1701cd4db0aea285c054d36135a5"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/native-source-policy.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/native-source-policy.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 543,
-        "sha256": "819dc727d01921b9f478a0248f837cd8c40eb5d0a8e4af384628e0ee55e5cb3c"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/native-submodule-inputs.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/native-submodule-inputs.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 1355,
-        "sha256": "d3133ac3396d1994234a214baa8911a6f5ac054d98438564b1c2e93f89e51074"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/native-winapi-materials.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/native-winapi-materials.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 2421,
-        "sha256": "f9a104859db26d302826e7a03c6afd780a552d2bcb492f0437055ece41db5aa5"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/npm-acquisition-review.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/npm-acquisition-review.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 14919,
-        "sha256": "b2c77805f43cfec2aac3d58ec37512a15bc02e73ac7480c04b22f25afa66640f"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/parser-boundaries-review.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/parser-boundaries-review.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 3300,
-        "sha256": "bd355c8baf1d06587502178c6fc6ddaf4ad7b603eedf61fd03aed757b7b35cfb"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/pdf-asset-license-review.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/pdf-asset-license-review.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 3808,
-        "sha256": "1dc39f7dce324ed31e343098dee87750a8e62743b1a4f7f098812f523cf53db1"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/pdf-budget-review.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/pdf-budget-review.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 3550,
-        "sha256": "66283e875bc5517114971c680a4aed1526029f15759328b45a749c478c4440b8"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/pdf-build-inputs-review.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/pdf-build-inputs-review.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 6736,
-        "sha256": "e82eb279c62581a5e4e56e7753b7fbfe2079cbe0c8d065be1c74dd0dd5db3d49"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/pdf-build-inputs.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/pdf-build-inputs.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 12610,
-        "sha256": "5a168315d9bdb6198f9e94cd72ae2a5adadbd239f1c63c18ca819d61339c37e5"
-      }
-    },
-    {
-      "path": "contracts/release/parser-resources-v1/source-materials-review.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "contracts/release/parser-resources-v1/source-materials-review.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 8828,
-        "sha256": "1a996e004928ac1ad0f1400f54f5af6ba630bfadd8e4ac6281d32b597bda4853"
-      }
-    },
-    {
-      "path": "docs/plans/2026-10-01-engineering-ticket-drafts/",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": null
-    },
-    {
-      "path": "docs/plans/2026-10-07-g2-ticket-drafts/",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": null
-    },
-    {
-      "path": "docs/plans/2026-10-07-g2-ticket-proposal.json",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "docs/plans/2026-10-07-g2-ticket-proposal.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 4607,
-        "sha256": "fa2f1ec5c51143b1b69f7fba2664f91f44b52f915d8c037a55815466866b2650"
-      }
-    },
-    {
-      "path": "docs/plans/2026-10-07-g2-ticket-review.md",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "docs/plans/2026-10-07-g2-ticket-review.md",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 6593,
-        "sha256": "cf624e361f54853999bd0fdd1e02fac4115f17674d4a654e600530b9d0e1cc3f"
-      }
-    },
-    {
-      "path": "docs/plans/2026-10-09-remaining-ticket-drafts/",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": null
-    },
-    {
-      "path": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": null
-    },
-    {
-      "path": "inventory/resources.lock.json",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "inventory/resources.lock.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 42900,
-        "sha256": "8008c3d14484647ca1cfe43d61152a715c9c105c28af0165bae1fd9b421fa5f5"
-      }
-    },
-    {
-      "path": "package-lock.json",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "package-lock.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 174443,
-        "sha256": "57336716ffde8a8e099861bcc525faabd0a4b72714d5017a7675004bd0638737"
-      }
-    },
-    {
-      "path": "package.json",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "package.json",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 14816,
-        "sha256": "1950b311f7bf5b58af781d1993ce3e880a70f6bec6bf75b2fcda69c5c6b10b26"
-      }
-    },
-    {
-      "path": "packages/config-runtime/atomic-file.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "packages/config-runtime/atomic-file.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 14497,
-        "sha256": "6f7c72812fa4b0aa36a91b5ba2502a8356518f630498a1cf27dc7eed79238c28"
-      }
-    },
-    {
-      "path": "packages/direct-agent/shell-policy.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "packages/direct-agent/shell-policy.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 4877,
-        "sha256": "be10ba5c73b27bd4c59de159332f5aa48f0ad33ec111d9c30f48d1d0e73701a6"
-      }
-    },
-    {
-      "path": "packages/direct-agent/workspace.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "packages/direct-agent/workspace.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 14343,
-        "sha256": "cd4a77cd90bcd60444065bda0ff0270d478b74ef7f5cf2af4ba6f5baffd2983f"
-      }
-    },
-    {
-      "path": "packages/distribution/runtime-patches.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "packages/distribution/runtime-patches.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 7607,
-        "sha256": "a4625494b9b3b4561dbc688fe9369f601e72f8e9281386dbbedb352a146ae966"
-      }
-    },
-    {
-      "path": "packages/host/terminal-supervisor.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "packages/host/terminal-supervisor.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 2285,
-        "sha256": "5e36cdded672642bdecaf33ef8325e60a044e21e8d4c57722371396db6ebb71a"
-      }
-    },
-    {
-      "path": "packages/release-stack/parser-acquisition.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "packages/release-stack/parser-acquisition.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 11267,
-        "sha256": "392bd00a0a7ca0c20b1623d72c46f5371c955c1048c5aba4ec530011219d6a00"
-      }
-    },
-    {
-      "path": "packages/release-stack/parser-resources.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "packages/release-stack/parser-resources.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 14789,
-        "sha256": "e9c64f7a0348a194213fc82ce2c93c82f555457f89a883ee8b81be0881a6a98b"
-      }
-    },
-    {
-      "path": "packages/release-stack/private-runtime.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "packages/release-stack/private-runtime.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 3985,
-        "sha256": "8e65fabe9751a1f027afdf4b9317e14cadbf1d36c4e39af4c3591c8fd1e1e238"
-      }
-    },
-    {
-      "path": "packages/web-policy/index.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "packages/web-policy/index.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 9808,
-        "sha256": "38b32e66ce334ed946b1d20bd411964846ebe3e583fe72807c99f3715d71990c"
-      }
-    },
-    {
-      "path": "scripts/probes/fixtures/",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": null
-    },
-    {
-      "path": "scripts/probes/lib/pdf-budget-cases.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/pdf-budget-cases.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 7040,
-        "sha256": "7047c152c6f1bbc9f3da65a86f74a88eda7f1b2cdb962ac956e361c4ee07aa39"
-      }
-    },
-    {
-      "path": "scripts/probes/lib/pdf-decode-budget.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/pdf-decode-budget.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 11151,
-        "sha256": "b5e9a82bcc5206838c59c80eb975dfac26783627d083c47f76220e9bae26dcee"
-      }
-    },
-    {
-      "path": "scripts/probes/lib/resource-native-archives.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/resource-native-archives.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 3265,
-        "sha256": "85aea0577a2e868b099477d2d73cb1e762e0317f0b6063b724774105b02fce65"
-      }
-    },
-    {
-      "path": "scripts/probes/lib/resource-native-configure-review.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/resource-native-configure-review.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 1296,
-        "sha256": "73c4b107f5809d31dc56ad995d70494ba15b1898d08a34c373b76228514595a3"
-      }
-    },
-    {
-      "path": "scripts/probes/lib/resource-native-generated-materials.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/resource-native-generated-materials.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 3767,
-        "sha256": "bf0472c11d1a9cba7496bc0c28a3735d0095c7cf9d2c068335519a74493b5a8e"
-      }
-    },
-    {
-      "path": "scripts/probes/lib/resource-native-generated-notices.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/resource-native-generated-notices.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 3206,
-        "sha256": "59749cbd70e644167103efec1de2d154cf001a920c9f056fc8259cc8f27b2160"
-      }
-    },
-    {
-      "path": "scripts/probes/lib/resource-native-libexif-docs.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/resource-native-libexif-docs.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 5849,
-        "sha256": "7a6fd3f5d1623cd77dc78b38f81aaa46cfc78e8f78f7b4a7a4209db37752bf6f"
-      }
-    },
-    {
-      "path": "scripts/probes/lib/resource-native-locale.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/resource-native-locale.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 5047,
-        "sha256": "bbe91670a0e2b35817e1b892dd7630efeff9dfa7b908764cca90a025feff7af5"
-      }
-    },
-    {
-      "path": "scripts/probes/lib/resource-native-materials.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/resource-native-materials.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 10456,
-        "sha256": "aad2ed77077e2507608157fbd7343273e292fca284c72783eca28bea58b0c02e"
-      }
-    },
-    {
-      "path": "scripts/probes/lib/resource-native-patches.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/resource-native-patches.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 8622,
-        "sha256": "618e84397f9671da656a5f4687b449a6a29cb924fefe01de436a969d987d88c9"
-      }
-    },
-    {
-      "path": "scripts/probes/lib/resource-native-rebuild.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/resource-native-rebuild.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 10509,
-        "sha256": "9db1935252b5ecfcfa16f7cc64e7545e6a6c237c2f755288e8e56fcc86658fce"
-      }
-    },
-    {
-      "path": "scripts/probes/lib/resource-native-source.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/resource-native-source.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 15361,
-        "sha256": "a1bf7d873a20abc6eabb4a572d59d2581592b6aa5da0f630f561e9c1316109ae"
-      }
-    },
-    {
-      "path": "scripts/probes/lib/resource-native-unit-graph.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/resource-native-unit-graph.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 4285,
-        "sha256": "1c1af22f64a17132687c66b024d725e9556ab05ae29550656d040246224f5783"
-      }
-    },
-    {
-      "path": "scripts/probes/lib/resource-native-winapi.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/resource-native-winapi.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 2283,
-        "sha256": "0ddeca61ca1bf404d5b83955e8cfa58078157903f3cf236d33dcb344cd69363d"
-      }
-    },
-    {
-      "path": "scripts/probes/lib/resource-rehearsal-child.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/resource-rehearsal-child.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 4326,
-        "sha256": "b4f2f9b28b66e37ed872f55b8f3cc91ccb14384f698d0201bbe2aee5566c8131"
-      }
-    },
-    {
-      "path": "scripts/probes/lib/resource-source-materials.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/lib/resource-source-materials.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 16004,
-        "sha256": "5b55646f26d64c322b3088ebe36c79eb65a7c2ed1ba8863245537cd20dd363ac"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-g2-native-generated-materials.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-g2-native-generated-materials.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 7882,
-        "sha256": "22c52c4a5a859ce4e0c681028dcf6da1897770f36bc14a851c06fae371d171a2"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-g2-native-generated-notices.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-g2-native-generated-notices.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 12912,
-        "sha256": "7595e43b3121dcae101d3570420d3fd60f5c9463f279d28d744dafce1ed20e15"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-g2-native-libexif-docs.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-g2-native-libexif-docs.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 14395,
-        "sha256": "1f97c9113ffdd18361cd42b4a5cbe11113397123550716a125c5c9544e047a24"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-g2-native-locale.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-g2-native-locale.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 29669,
-        "sha256": "4ab22b4c71d6c1733aa617e2fd026f98524e2146fe489e133ee96cf274bc5056"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-g2-native-patches.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-g2-native-patches.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 7669,
-        "sha256": "f5499ff6cda48ed824133036f9ac9b3dea62c9627bfe4e3393d9069ac4ba1513"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-g2-native-rebuild-inputs.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-g2-native-rebuild-inputs.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 2970,
-        "sha256": "476d2601c6e1cab378f0fd2300b4cd2fa44c39519ebf2588ad594dd6c44d437a"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-g2-native-rust.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-g2-native-rust.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 6502,
-        "sha256": "d5232940d01b5b25541a20437c20a9aac63023ddf7d4eb4732b81ac9601fbde4"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-g2-native-sources.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-g2-native-sources.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 3307,
-        "sha256": "3fc98f88d91b51991233e4c96cd6583901f6991bc637ab925c48c3bc9d4b5219"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-g2-native-submodules.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-g2-native-submodules.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 2913,
-        "sha256": "cc79c405d502154a3a046be481a9462ce046bf07924b8ecd06b952739831895f"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-g2-native-target-graph.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-g2-native-target-graph.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 9633,
-        "sha256": "657b3c15f92ff9cb5c8e7280bff54d4efdaf3a4abae6abceb255920c49406cef"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-g2-native-winapi.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-g2-native-winapi.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 9592,
-        "sha256": "90cbff9c4499f1f154d7aa792d025130a5b2ffb761ee642ba8f0f92e680fed66"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-baseline.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-baseline.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 3311,
-        "sha256": "814e8de12fa9bd33c8f7a440e37012a08725a67ff0e0944bdaec4d11f20a4f7b"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-documents.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-documents.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 82842,
-        "sha256": "69d019f5c2b8d26960fa2fa8dd276e61f03670aa274ded36c63de751fde1be4d"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-image-candidate.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-image-candidate.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 3604,
-        "sha256": "644e763bf10eebfb178a5fdc8f2a042d9aea95305781b2914a69fca54d260e93"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-images.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-images.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 9809,
-        "sha256": "6c59b4b63fe2e16b40fb38e67ac0b515485d68014b4556b5274e7c6a256004f8"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-native-materials.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-native-materials.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 8576,
-        "sha256": "9ff1d52215e346340664e2fb545a65dbf91d6857b9c279d09913cdf50925fa14"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-native-provenance.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-native-provenance.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 6759,
-        "sha256": "345365eaf1cb24acb299f1246b18a49c58c7165c850382f029b701b653ba9b7c"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-office-corpus.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-office-corpus.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 6585,
-        "sha256": "2b0577f8950abff22aba6f8a4e2dd114c2a751911ce041ddbfab36ecd3343e16"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-parser-acquisition.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-parser-acquisition.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 10955,
-        "sha256": "4b32509ff20321e882399da3b4ba97fbea93d62222f58ddb82a3a22170f6227f"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-parser-integration.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-parser-integration.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 11662,
-        "sha256": "b1c4300f2b8c429373160ce1c70a075f3f664deb0cad71ae02277b40b3fd66c2"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-parser-offline.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-parser-offline.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 4231,
-        "sha256": "950400848cd9037698c2de41c7a95eabb607d5aa137e87ce16dabecaf186111a"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-parser-package.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-parser-package.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 4979,
-        "sha256": "ba0965c24b6710542aaa6aa1172e47bc54aeacc87605abd5ae7033bcfb389ba8"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-pdf-inputs.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-pdf-inputs.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 10294,
-        "sha256": "2310da60d2f8c15eb42ca2208aac30840ea25686e6ee5ec81a6c73a615d206df"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-pi-child.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-pi-child.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 3609,
-        "sha256": "f85223f125686202ddaac718e863518467c819200ef696d4024b80efa03a1a60"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-pi.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-pi.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 13174,
-        "sha256": "56797e2754953d538836cdf1a84252a67a4cc57e02f6b98ec95da876740375dd"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-preview-agent.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-preview-agent.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 2614,
-        "sha256": "95b4952029916cd78c0a5a05028d2d148eac592dd0f9138cf00cc69ce73ab677"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-preview-auth.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-preview-auth.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 5326,
-        "sha256": "33f4073822d1111659c51468fea071a58edec3f58dcc23486a07da33ad6498c8"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-preview-managed.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-preview-managed.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 24808,
-        "sha256": "0198b4763cb5b2e9eb55949571bb03e8d6812a95d204080ddcfb302c17a47d53"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-preview-orphan.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-preview-orphan.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 797,
-        "sha256": "1c21916c43f8e22bb3029cfa7d28e165fe830815bba584397e7708d9ba26efd7"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-preview-worker.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-preview-worker.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 4644,
-        "sha256": "bf65eb7c7a37738d8a051592389043c8b644527543feb7484d27b408ec885641"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-resources.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-resources.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 7276,
-        "sha256": "31fe353b8188b6cd734585ae845e4a7868234934760f318be1eef063dadcc20b"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-sharp-compat.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-sharp-compat.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 15854,
-        "sha256": "2911d8ef2bc186bba11742257adf33302033de654a7ebfc05535a595d029acfe"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-sharp-images.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-sharp-images.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 7285,
-        "sha256": "2ed313a4fa4a29c12ffabfd09edf7a206a8e86b68c722df44cbd236ae5c6befa"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u0-source-materials.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u0-source-materials.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 11417,
-        "sha256": "dee7970425d0fd07de74ff9301f6c981988f686f530d1f6693904ebbf4d28a5f"
-      }
-    },
-    {
-      "path": "scripts/probes/webui-u1-storage.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "scripts/probes/webui-u1-storage.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 9696,
-        "sha256": "12ad23b44fac75339b255c363b9d65a7527095f8882182ea115b67b3fbee3fe6"
-      }
-    },
-    {
-      "path": "tests/bootstrap-staging.test.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "tests/bootstrap-staging.test.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 38531,
-        "sha256": "d00334bf0b5d147001f5b713f7c01c2e25f859b229a435eb9dfdcbfff8c0de98"
-      }
-    },
-    {
-      "path": "tests/ci-contract.test.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "tests/ci-contract.test.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 10493,
-        "sha256": "c75d53fbf867489477177fd27fa5c6cd471008c2c66cec5210ec459656fe8eaa"
-      }
-    },
-    {
-      "path": "tests/direct-agent-workspace.test.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "tests/direct-agent-workspace.test.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 6869,
-        "sha256": "db8478f339502e44125d44f4748c10d8ef924ac1b9e35562abac765b84a5e23f"
-      }
-    },
-    {
-      "path": "tests/direct-headless-ownership.test.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "tests/direct-headless-ownership.test.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 3736,
-        "sha256": "b034f6a25242b2edfc51a4adc3002247b878ec9ed6525f50b667a91a27cfa267"
-      }
-    },
-    {
-      "path": "tests/direct-path-normalization.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "tests/direct-path-normalization.test.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 2572,
-        "sha256": "e0199f90895c161f4af41455b8e7669c0cc0e04d1a94c012817ad0be828a4af9"
-      }
-    },
-    {
-      "path": "tests/fixtures/permission-shell-build-probe.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "tests/fixtures/permission-shell-build-probe.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 2507,
-        "sha256": "39f518781028d313f904302b636eb5504afd35399a0a2283855d3e42147bd853"
-      }
-    },
-    {
-      "path": "tests/fixtures/web-cookie-fixture.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "tests/fixtures/web-cookie-fixture.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 393,
-        "sha256": "96aeb6e8777578a98570e3a6a3d5242f207cf90f672052f16a57bdeacac48f6d"
-      }
-    },
-    {
-      "path": "tests/fixtures/web-runtime-probe.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
-      "original": {
-        "path": "tests/fixtures/web-runtime-probe.mjs",
-        "mode": "0o644",
-        "type": "file",
-        "bytes": 5680,
-        "sha256": "f37b0175a25aa51296f49cf2fbaa357fb9d3aee914453b266904b0bbe09c21ce"
-      }
     },
     {
       "path": "tests/host-account-child.test.mjs",
       "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "ownership": "necessary synthetic-account validation baseline",
+      "decision": "include",
+      "reason": "preserve exact Bearer header and independent receive assertions without embedding long synthetic Bearer literals that the existing secret scanner rejects",
       "original": {
         "path": "tests/host-account-child.test.mjs",
         "mode": "0o644",
@@ -6549,9 +5175,9 @@
     {
       "path": "tests/host-account-rpc-success.test.mjs",
       "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
-      "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "ownership": "necessary synthetic-account validation baseline",
+      "decision": "include",
+      "reason": "preserve exact Bearer header and independent receive assertions without embedding long synthetic Bearer literals that the existing secret scanner rejects",
       "original": {
         "path": "tests/host-account-rpc-success.test.mjs",
         "mode": "0o644",
@@ -6559,13 +5185,1527 @@
         "bytes": 9481,
         "sha256": "9d62bfd5371921cb837a007bfd36d055c2cf655240e035233dde6acd8a262ccf"
       }
+    }
+  ],
+  "retainedLocal": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": ".github/workflows/ci.yml",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 4005,
+        "sha256": "659c953802a285b1a4a9aca56775a79a9985ef41d1ebf00b00365a6827fbae61"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/contract.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/contract.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 210286,
+        "sha256": "a7f342d5ce2ead6610fb5cc2624307ca90c31a0f6540fb1b64a63fd2475edb70"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/documents/licenses/saxes-6.0.0.txt",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/documents/licenses/saxes-6.0.0.txt",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3011,
+        "sha256": "0fac2374380621b22e6b50451057721a9c52935b02d16d106a9f04897f061d0e"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/documents/package-lock.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/documents/package-lock.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 10116,
+        "sha256": "3120e2d01ad9b390ae9e8eec16674752fb8a032e933644340354866779fa9ee5"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/documents/package.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/documents/package.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 194,
+        "sha256": "29eb4ef380692671968dc2e724eefe6d2545e1aa259b86738f9e2952802ce42e"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/images/package-lock.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/images/package-lock.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 20136,
+        "sha256": "0e5020f83038a0105d9894b6a51c18be9c1fe351144f39252931932f7da606ed"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/images/package.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/images/package.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 130,
+        "sha256": "f24815e8bf2d88e3f7cebe9372791152460a2af2c88740f1f0c5516c6c4fce01"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/native-generated-compatibility-inputs.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/native-generated-compatibility-inputs.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 2183,
+        "sha256": "8cbabc2cd4f83e42d3a31badb4bcacd081077e7d19f3beedf4f306254548396c"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/native-generated-materials.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/native-generated-materials.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 12043,
+        "sha256": "3e2320986cfa631f6f319174a0ea456dfba200067a1c354bf9a7246c734b4bf4"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/native-generated-notices.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/native-generated-notices.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 6101,
+        "sha256": "6e2bc96d5f17e364d38a42f7f71c48dc90244ae5cd7c61d0addaca64ea08445b"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/native-libexif-doc-materials.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/native-libexif-doc-materials.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 6555,
+        "sha256": "30087a1105214fc766e1cabb9488f0dffc7df6a703288bab01dbd910d9b142a8"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/native-locale-adapter.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/native-locale-adapter.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 1447,
+        "sha256": "397241e267a73c4591a2c035ce2039adfb394cb2cdb92cbf4da686413fb9a5fc"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/native-missing-texts-review.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/native-missing-texts-review.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3418,
+        "sha256": "9f8e36922f8794465f207cf2c1683223bb6a59541bf515c51c83b98a0e07feae"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/native-primary-texts-review.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/native-primary-texts-review.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 6806,
+        "sha256": "73b0a5f231f92baaa5f92e751f678aa2791ee2287f671528aadc0710aea3d640"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/native-primary-texts.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/native-primary-texts.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 21081,
+        "sha256": "7ffd3455bc1faeffd47717bfe6fe6636a2e8b7909a122f881d04e55e7840556a"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/native-rebuild-inputs.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/native-rebuild-inputs.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 4658,
+        "sha256": "e8074756b7f92e2d9f8e08e4c8d1c865ba1f1701cd4db0aea285c054d36135a5"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/native-source-policy.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/native-source-policy.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 543,
+        "sha256": "819dc727d01921b9f478a0248f837cd8c40eb5d0a8e4af384628e0ee55e5cb3c"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/native-submodule-inputs.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/native-submodule-inputs.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 1355,
+        "sha256": "d3133ac3396d1994234a214baa8911a6f5ac054d98438564b1c2e93f89e51074"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/native-winapi-materials.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/native-winapi-materials.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 2421,
+        "sha256": "f9a104859db26d302826e7a03c6afd780a552d2bcb492f0437055ece41db5aa5"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/npm-acquisition-review.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/npm-acquisition-review.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 14919,
+        "sha256": "b2c77805f43cfec2aac3d58ec37512a15bc02e73ac7480c04b22f25afa66640f"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/parser-boundaries-review.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/parser-boundaries-review.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3300,
+        "sha256": "bd355c8baf1d06587502178c6fc6ddaf4ad7b603eedf61fd03aed757b7b35cfb"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/pdf-asset-license-review.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/pdf-asset-license-review.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3808,
+        "sha256": "1dc39f7dce324ed31e343098dee87750a8e62743b1a4f7f098812f523cf53db1"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/pdf-budget-review.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/pdf-budget-review.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3550,
+        "sha256": "66283e875bc5517114971c680a4aed1526029f15759328b45a749c478c4440b8"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/pdf-build-inputs-review.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/pdf-build-inputs-review.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 6736,
+        "sha256": "e82eb279c62581a5e4e56e7753b7fbfe2079cbe0c8d065be1c74dd0dd5db3d49"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/pdf-build-inputs.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/pdf-build-inputs.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 12610,
+        "sha256": "5a168315d9bdb6198f9e94cd72ae2a5adadbd239f1c63c18ca819d61339c37e5"
+      }
+    },
+    {
+      "path": "contracts/release/parser-resources-v1/source-materials-review.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "contracts/release/parser-resources-v1/source-materials-review.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 8828,
+        "sha256": "1a996e004928ac1ad0f1400f54f5af6ba630bfadd8e4ac6281d32b597bda4853"
+      }
+    },
+    {
+      "path": "docs/plans/2026-10-07-g2-ticket-drafts/01-pdf-material-closure.md",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "docs/plans/2026-10-07-g2-ticket-drafts/01-pdf-material-closure.md",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3071,
+        "sha256": "d6bd90ac8e0413821d998c349a7910dbdf78e73a64152eb7bb63fa3babf575de"
+      }
+    },
+    {
+      "path": "docs/plans/2026-10-07-g2-ticket-drafts/02-native-build-candidate.md",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "docs/plans/2026-10-07-g2-ticket-drafts/02-native-build-candidate.md",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 2686,
+        "sha256": "3f75663215b8e26def16a48a27772deec0a8a24a5f676a38cb0bec3ad2b000a4"
+      }
+    },
+    {
+      "path": "docs/plans/2026-10-07-g2-ticket-drafts/03-parser-resource-candidate.md",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "docs/plans/2026-10-07-g2-ticket-drafts/03-parser-resource-candidate.md",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 2793,
+        "sha256": "b571308e567bdd2109d787a064c2677a2170cf92de33f8062cd12b6ce4090f02"
+      }
+    },
+    {
+      "path": "docs/plans/2026-10-07-g2-ticket-drafts/04-default-parser-release.md",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "docs/plans/2026-10-07-g2-ticket-drafts/04-default-parser-release.md",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3024,
+        "sha256": "5455e51d2b39f2f1e55992946b4cd5612e8a63f78dd9b1e570aed80e7a77af09"
+      }
+    },
+    {
+      "path": "docs/plans/2026-10-07-g2-ticket-drafts/05-isolated-full-gate.md",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "docs/plans/2026-10-07-g2-ticket-drafts/05-isolated-full-gate.md",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 2890,
+        "sha256": "a979ad7604cc7032d99554e23968454df05e1b389472846e1a5fa10196d94f23"
+      }
+    },
+    {
+      "path": "docs/plans/2026-10-07-g2-ticket-proposal.json",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "docs/plans/2026-10-07-g2-ticket-proposal.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 4607,
+        "sha256": "fa2f1ec5c51143b1b69f7fba2664f91f44b52f915d8c037a55815466866b2650"
+      }
+    },
+    {
+      "path": "docs/plans/2026-10-07-g2-ticket-review.md",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "docs/plans/2026-10-07-g2-ticket-review.md",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 6593,
+        "sha256": "cf624e361f54853999bd0fdd1e02fac4115f17674d4a654e600530b9d0e1cc3f"
+      }
+    },
+    {
+      "path": "inventory/resources.lock.json",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "inventory/resources.lock.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 42900,
+        "sha256": "8008c3d14484647ca1cfe43d61152a715c9c105c28af0165bae1fd9b421fa5f5"
+      }
+    },
+    {
+      "path": "package-lock.json",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "package-lock.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 174443,
+        "sha256": "57336716ffde8a8e099861bcc525faabd0a4b72714d5017a7675004bd0638737"
+      }
+    },
+    {
+      "path": "package.json",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "package.json",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 14816,
+        "sha256": "1950b311f7bf5b58af781d1993ce3e880a70f6bec6bf75b2fcda69c5c6b10b26"
+      }
+    },
+    {
+      "path": "packages/config-runtime/atomic-file.mjs",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "packages/config-runtime/atomic-file.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 14497,
+        "sha256": "6f7c72812fa4b0aa36a91b5ba2502a8356518f630498a1cf27dc7eed79238c28"
+      }
+    },
+    {
+      "path": "packages/direct-agent/shell-policy.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "packages/direct-agent/shell-policy.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 4877,
+        "sha256": "be10ba5c73b27bd4c59de159332f5aa48f0ad33ec111d9c30f48d1d0e73701a6"
+      }
+    },
+    {
+      "path": "packages/direct-agent/workspace.mjs",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "packages/direct-agent/workspace.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 14343,
+        "sha256": "cd4a77cd90bcd60444065bda0ff0270d478b74ef7f5cf2af4ba6f5baffd2983f"
+      }
+    },
+    {
+      "path": "packages/distribution/runtime-patches.mjs",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "packages/distribution/runtime-patches.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 7607,
+        "sha256": "a4625494b9b3b4561dbc688fe9369f601e72f8e9281386dbbedb352a146ae966"
+      }
+    },
+    {
+      "path": "packages/host/terminal-supervisor.mjs",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "packages/host/terminal-supervisor.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 2285,
+        "sha256": "5e36cdded672642bdecaf33ef8325e60a044e21e8d4c57722371396db6ebb71a"
+      }
+    },
+    {
+      "path": "packages/release-stack/parser-acquisition.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "packages/release-stack/parser-acquisition.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 11267,
+        "sha256": "392bd00a0a7ca0c20b1623d72c46f5371c955c1048c5aba4ec530011219d6a00"
+      }
+    },
+    {
+      "path": "packages/release-stack/parser-resources.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "packages/release-stack/parser-resources.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 14789,
+        "sha256": "e9c64f7a0348a194213fc82ce2c93c82f555457f89a883ee8b81be0881a6a98b"
+      }
+    },
+    {
+      "path": "packages/release-stack/private-runtime.mjs",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "packages/release-stack/private-runtime.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3985,
+        "sha256": "8e65fabe9751a1f027afdf4b9317e14cadbf1d36c4e39af4c3591c8fd1e1e238"
+      }
+    },
+    {
+      "path": "packages/web-policy/index.mjs",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "packages/web-policy/index.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 9808,
+        "sha256": "38b32e66ce334ed946b1d20bd411964846ebe3e583fe72807c99f3715d71990c"
+      }
+    },
+    {
+      "path": "scripts/probes/fixtures/locale-corefoundation.rs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/fixtures/locale-corefoundation.rs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 5794,
+        "sha256": "c3f533022f0f12ebdb5127540c6626a94c9e238faaaf3ccbed4f7f86cd724931"
+      }
+    },
+    {
+      "path": "scripts/probes/fixtures/locale-oracle.m",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/fixtures/locale-oracle.m",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 1088,
+        "sha256": "a4cd1a11426f7194d5129a0a31858ef158cd139e19925ec2ff13884be850562c"
+      }
+    },
+    {
+      "path": "scripts/probes/fixtures/locale-smoke.rs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/fixtures/locale-smoke.rs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 849,
+        "sha256": "662e4c760b323b1f29980a246ce6d928bb10d4805f736e91e62785ddcaa671ea"
+      }
+    },
+    {
+      "path": "scripts/probes/fixtures/locale-svg-tests.rs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/fixtures/locale-svg-tests.rs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 2395,
+        "sha256": "88c27ee4b07e012d180de566eabf71a7058ba7eefb22fa25a931e3dcea31c37a"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/pdf-budget-cases.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/pdf-budget-cases.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 7040,
+        "sha256": "7047c152c6f1bbc9f3da65a86f74a88eda7f1b2cdb962ac956e361c4ee07aa39"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/pdf-decode-budget.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/pdf-decode-budget.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 11151,
+        "sha256": "b5e9a82bcc5206838c59c80eb975dfac26783627d083c47f76220e9bae26dcee"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/resource-native-archives.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/resource-native-archives.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3265,
+        "sha256": "85aea0577a2e868b099477d2d73cb1e762e0317f0b6063b724774105b02fce65"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/resource-native-configure-review.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/resource-native-configure-review.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 1296,
+        "sha256": "73c4b107f5809d31dc56ad995d70494ba15b1898d08a34c373b76228514595a3"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/resource-native-generated-materials.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/resource-native-generated-materials.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3767,
+        "sha256": "bf0472c11d1a9cba7496bc0c28a3735d0095c7cf9d2c068335519a74493b5a8e"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/resource-native-generated-notices.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/resource-native-generated-notices.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3206,
+        "sha256": "59749cbd70e644167103efec1de2d154cf001a920c9f056fc8259cc8f27b2160"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/resource-native-libexif-docs.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/resource-native-libexif-docs.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 5849,
+        "sha256": "7a6fd3f5d1623cd77dc78b38f81aaa46cfc78e8f78f7b4a7a4209db37752bf6f"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/resource-native-locale.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/resource-native-locale.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 5047,
+        "sha256": "bbe91670a0e2b35817e1b892dd7630efeff9dfa7b908764cca90a025feff7af5"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/resource-native-materials.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/resource-native-materials.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 10456,
+        "sha256": "aad2ed77077e2507608157fbd7343273e292fca284c72783eca28bea58b0c02e"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/resource-native-patches.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/resource-native-patches.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 8622,
+        "sha256": "618e84397f9671da656a5f4687b449a6a29cb924fefe01de436a969d987d88c9"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/resource-native-rebuild.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/resource-native-rebuild.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 10509,
+        "sha256": "9db1935252b5ecfcfa16f7cc64e7545e6a6c237c2f755288e8e56fcc86658fce"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/resource-native-source.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/resource-native-source.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 15361,
+        "sha256": "a1bf7d873a20abc6eabb4a572d59d2581592b6aa5da0f630f561e9c1316109ae"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/resource-native-unit-graph.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/resource-native-unit-graph.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 4285,
+        "sha256": "1c1af22f64a17132687c66b024d725e9556ab05ae29550656d040246224f5783"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/resource-native-winapi.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/resource-native-winapi.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 2283,
+        "sha256": "0ddeca61ca1bf404d5b83955e8cfa58078157903f3cf236d33dcb344cd69363d"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/resource-rehearsal-child.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/resource-rehearsal-child.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 4326,
+        "sha256": "b4f2f9b28b66e37ed872f55b8f3cc91ccb14384f698d0201bbe2aee5566c8131"
+      }
+    },
+    {
+      "path": "scripts/probes/lib/resource-source-materials.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/lib/resource-source-materials.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 16004,
+        "sha256": "5b55646f26d64c322b3088ebe36c79eb65a7c2ed1ba8863245537cd20dd363ac"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-g2-native-generated-materials.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-g2-native-generated-materials.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 7882,
+        "sha256": "22c52c4a5a859ce4e0c681028dcf6da1897770f36bc14a851c06fae371d171a2"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-g2-native-generated-notices.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-g2-native-generated-notices.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 12912,
+        "sha256": "7595e43b3121dcae101d3570420d3fd60f5c9463f279d28d744dafce1ed20e15"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-g2-native-libexif-docs.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-g2-native-libexif-docs.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 14395,
+        "sha256": "1f97c9113ffdd18361cd42b4a5cbe11113397123550716a125c5c9544e047a24"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-g2-native-locale.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-g2-native-locale.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 29669,
+        "sha256": "4ab22b4c71d6c1733aa617e2fd026f98524e2146fe489e133ee96cf274bc5056"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-g2-native-patches.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-g2-native-patches.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 7669,
+        "sha256": "f5499ff6cda48ed824133036f9ac9b3dea62c9627bfe4e3393d9069ac4ba1513"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-g2-native-rebuild-inputs.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-g2-native-rebuild-inputs.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 2970,
+        "sha256": "476d2601c6e1cab378f0fd2300b4cd2fa44c39519ebf2588ad594dd6c44d437a"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-g2-native-rust.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-g2-native-rust.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 6502,
+        "sha256": "d5232940d01b5b25541a20437c20a9aac63023ddf7d4eb4732b81ac9601fbde4"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-g2-native-sources.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-g2-native-sources.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3307,
+        "sha256": "3fc98f88d91b51991233e4c96cd6583901f6991bc637ab925c48c3bc9d4b5219"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-g2-native-submodules.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-g2-native-submodules.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 2913,
+        "sha256": "cc79c405d502154a3a046be481a9462ce046bf07924b8ecd06b952739831895f"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-g2-native-target-graph.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-g2-native-target-graph.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 9633,
+        "sha256": "657b3c15f92ff9cb5c8e7280bff54d4efdaf3a4abae6abceb255920c49406cef"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-g2-native-winapi.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-g2-native-winapi.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 9592,
+        "sha256": "90cbff9c4499f1f154d7aa792d025130a5b2ffb761ee642ba8f0f92e680fed66"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-baseline.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-baseline.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3311,
+        "sha256": "814e8de12fa9bd33c8f7a440e37012a08725a67ff0e0944bdaec4d11f20a4f7b"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-documents.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-documents.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 82842,
+        "sha256": "69d019f5c2b8d26960fa2fa8dd276e61f03670aa274ded36c63de751fde1be4d"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-image-candidate.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-image-candidate.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3604,
+        "sha256": "644e763bf10eebfb178a5fdc8f2a042d9aea95305781b2914a69fca54d260e93"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-images.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-images.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 9809,
+        "sha256": "6c59b4b63fe2e16b40fb38e67ac0b515485d68014b4556b5274e7c6a256004f8"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-native-materials.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-native-materials.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 8576,
+        "sha256": "9ff1d52215e346340664e2fb545a65dbf91d6857b9c279d09913cdf50925fa14"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-native-provenance.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-native-provenance.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 6759,
+        "sha256": "345365eaf1cb24acb299f1246b18a49c58c7165c850382f029b701b653ba9b7c"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-office-corpus.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-office-corpus.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 6585,
+        "sha256": "2b0577f8950abff22aba6f8a4e2dd114c2a751911ce041ddbfab36ecd3343e16"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-parser-acquisition.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-parser-acquisition.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 10955,
+        "sha256": "4b32509ff20321e882399da3b4ba97fbea93d62222f58ddb82a3a22170f6227f"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-parser-integration.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-parser-integration.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 11662,
+        "sha256": "b1c4300f2b8c429373160ce1c70a075f3f664deb0cad71ae02277b40b3fd66c2"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-parser-offline.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-parser-offline.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 4231,
+        "sha256": "950400848cd9037698c2de41c7a95eabb607d5aa137e87ce16dabecaf186111a"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-parser-package.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-parser-package.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 4979,
+        "sha256": "ba0965c24b6710542aaa6aa1172e47bc54aeacc87605abd5ae7033bcfb389ba8"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-pdf-inputs.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-pdf-inputs.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 10294,
+        "sha256": "2310da60d2f8c15eb42ca2208aac30840ea25686e6ee5ec81a6c73a615d206df"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-pi-child.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-pi-child.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3609,
+        "sha256": "f85223f125686202ddaac718e863518467c819200ef696d4024b80efa03a1a60"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-pi.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-pi.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 13174,
+        "sha256": "56797e2754953d538836cdf1a84252a67a4cc57e02f6b98ec95da876740375dd"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-preview-agent.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-preview-agent.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 2614,
+        "sha256": "95b4952029916cd78c0a5a05028d2d148eac592dd0f9138cf00cc69ce73ab677"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-preview-auth.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-preview-auth.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 5326,
+        "sha256": "33f4073822d1111659c51468fea071a58edec3f58dcc23486a07da33ad6498c8"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-preview-managed.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-preview-managed.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 24808,
+        "sha256": "0198b4763cb5b2e9eb55949571bb03e8d6812a95d204080ddcfb302c17a47d53"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-preview-orphan.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-preview-orphan.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 797,
+        "sha256": "1c21916c43f8e22bb3029cfa7d28e165fe830815bba584397e7708d9ba26efd7"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-preview-worker.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-preview-worker.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 4644,
+        "sha256": "bf65eb7c7a37738d8a051592389043c8b644527543feb7484d27b408ec885641"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-resources.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-resources.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 7276,
+        "sha256": "31fe353b8188b6cd734585ae845e4a7868234934760f318be1eef063dadcc20b"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-sharp-compat.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-sharp-compat.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 15854,
+        "sha256": "2911d8ef2bc186bba11742257adf33302033de654a7ebfc05535a595d029acfe"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-sharp-images.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-sharp-images.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 7285,
+        "sha256": "2ed313a4fa4a29c12ffabfd09edf7a206a8e86b68c722df44cbd236ae5c6befa"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u0-source-materials.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u0-source-materials.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 11417,
+        "sha256": "dee7970425d0fd07de74ff9301f6c981988f686f530d1f6693904ebbf4d28a5f"
+      }
+    },
+    {
+      "path": "scripts/probes/webui-u1-storage.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "scripts/probes/webui-u1-storage.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 9696,
+        "sha256": "12ad23b44fac75339b255c363b9d65a7527095f8882182ea115b67b3fbee3fe6"
+      }
+    },
+    {
+      "path": "tests/bootstrap-staging.test.mjs",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "tests/bootstrap-staging.test.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 38531,
+        "sha256": "d00334bf0b5d147001f5b713f7c01c2e25f859b229a435eb9dfdcbfff8c0de98"
+      }
+    },
+    {
+      "path": "tests/ci-contract.test.mjs",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "tests/ci-contract.test.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 10493,
+        "sha256": "c75d53fbf867489477177fd27fa5c6cd471008c2c66cec5210ec459656fe8eaa"
+      }
+    },
+    {
+      "path": "tests/direct-agent-workspace.test.mjs",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "tests/direct-agent-workspace.test.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 6869,
+        "sha256": "db8478f339502e44125d44f4748c10d8ef924ac1b9e35562abac765b84a5e23f"
+      }
+    },
+    {
+      "path": "tests/direct-headless-ownership.test.mjs",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "tests/direct-headless-ownership.test.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 3736,
+        "sha256": "b034f6a25242b2edfc51a4adc3002247b878ec9ed6525f50b667a91a27cfa267"
+      }
+    },
+    {
+      "path": "tests/direct-path-normalization.test.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "tests/direct-path-normalization.test.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 2572,
+        "sha256": "e0199f90895c161f4af41455b8e7669c0cc0e04d1a94c012817ad0be828a4af9"
+      }
+    },
+    {
+      "path": "tests/fixtures/permission-shell-build-probe.mjs",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "tests/fixtures/permission-shell-build-probe.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 2507,
+        "sha256": "39f518781028d313f904302b636eb5504afd35399a0a2283855d3e42147bd853"
+      }
+    },
+    {
+      "path": "tests/fixtures/web-cookie-fixture.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "tests/fixtures/web-cookie-fixture.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 393,
+        "sha256": "96aeb6e8777578a98570e3a6a3d5242f207cf90f672052f16a57bdeacac48f6d"
+      }
+    },
+    {
+      "path": "tests/fixtures/web-runtime-probe.mjs",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
+      "decision": "retain-local",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
+      "original": {
+        "path": "tests/fixtures/web-runtime-probe.mjs",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 5680,
+        "sha256": "f37b0175a25aa51296f49cf2fbaa357fb9d3aee914453b266904b0bbe09c21ce"
+      }
     },
     {
       "path": "tests/host-controlled-rpc.test.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/host-controlled-rpc.test.mjs",
         "mode": "0o644",
@@ -6576,10 +6716,10 @@
     },
     {
       "path": "tests/host-controlled-tasks.test.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/host-controlled-tasks.test.mjs",
         "mode": "0o644",
@@ -6590,10 +6730,10 @@
     },
     {
       "path": "tests/host-pty-lifetime-probe.test.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/host-pty-lifetime-probe.test.mjs",
         "mode": "0o644",
@@ -6604,10 +6744,10 @@
     },
     {
       "path": "tests/host-rpc-worker.test.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/host-rpc-worker.test.mjs",
         "mode": "0o644",
@@ -6618,10 +6758,10 @@
     },
     {
       "path": "tests/host-server.test.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/host-server.test.mjs",
         "mode": "0o644",
@@ -6632,10 +6772,10 @@
     },
     {
       "path": "tests/host-task-binding.test.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/host-task-binding.test.mjs",
         "mode": "0o644",
@@ -6646,10 +6786,10 @@
     },
     {
       "path": "tests/host-task-metrics.test.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/host-task-metrics.test.mjs",
         "mode": "0o644",
@@ -6660,10 +6800,10 @@
     },
     {
       "path": "tests/host-task-resume.test.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/host-task-resume.test.mjs",
         "mode": "0o644",
@@ -6674,10 +6814,10 @@
     },
     {
       "path": "tests/host-terminals.test.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/host-terminals.test.mjs",
         "mode": "0o644",
@@ -6688,10 +6828,10 @@
     },
     {
       "path": "tests/host-thinking-capability.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/host-thinking-capability.test.mjs",
         "mode": "0o644",
@@ -6702,10 +6842,10 @@
     },
     {
       "path": "tests/pinned-web-fetch.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/pinned-web-fetch.test.mjs",
         "mode": "0o644",
@@ -6716,10 +6856,10 @@
     },
     {
       "path": "tests/release-native-archives.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-native-archives.test.mjs",
         "mode": "0o644",
@@ -6730,10 +6870,10 @@
     },
     {
       "path": "tests/release-native-configure-review.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-native-configure-review.test.mjs",
         "mode": "0o644",
@@ -6744,10 +6884,10 @@
     },
     {
       "path": "tests/release-native-generated-materials.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-native-generated-materials.test.mjs",
         "mode": "0o644",
@@ -6758,10 +6898,10 @@
     },
     {
       "path": "tests/release-native-generated-notices.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-native-generated-notices.test.mjs",
         "mode": "0o644",
@@ -6772,10 +6912,10 @@
     },
     {
       "path": "tests/release-native-libexif-docs.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-native-libexif-docs.test.mjs",
         "mode": "0o644",
@@ -6786,10 +6926,10 @@
     },
     {
       "path": "tests/release-native-locale.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-native-locale.test.mjs",
         "mode": "0o644",
@@ -6800,10 +6940,10 @@
     },
     {
       "path": "tests/release-native-materials.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-native-materials.test.mjs",
         "mode": "0o644",
@@ -6814,10 +6954,10 @@
     },
     {
       "path": "tests/release-native-patches.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-native-patches.test.mjs",
         "mode": "0o644",
@@ -6828,10 +6968,10 @@
     },
     {
       "path": "tests/release-native-rebuild-inputs.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-native-rebuild-inputs.test.mjs",
         "mode": "0o644",
@@ -6842,10 +6982,10 @@
     },
     {
       "path": "tests/release-native-rust-cli.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-native-rust-cli.test.mjs",
         "mode": "0o644",
@@ -6856,10 +6996,10 @@
     },
     {
       "path": "tests/release-native-source.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-native-source.test.mjs",
         "mode": "0o644",
@@ -6870,10 +7010,10 @@
     },
     {
       "path": "tests/release-native-target-graph-cli.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-native-target-graph-cli.test.mjs",
         "mode": "0o644",
@@ -6884,10 +7024,10 @@
     },
     {
       "path": "tests/release-native-unit-graph.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-native-unit-graph.test.mjs",
         "mode": "0o644",
@@ -6898,10 +7038,10 @@
     },
     {
       "path": "tests/release-native-winapi.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-native-winapi.test.mjs",
         "mode": "0o644",
@@ -6912,10 +7052,10 @@
     },
     {
       "path": "tests/release-parser-acquisition.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-parser-acquisition.test.mjs",
         "mode": "0o644",
@@ -6926,10 +7066,10 @@
     },
     {
       "path": "tests/release-parser-resources.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-parser-resources.test.mjs",
         "mode": "0o644",
@@ -6940,10 +7080,10 @@
     },
     {
       "path": "tests/release-parser-source-materials.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-parser-source-materials.test.mjs",
         "mode": "0o644",
@@ -6954,10 +7094,10 @@
     },
     {
       "path": "tests/release-pdf-build-inputs.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/release-pdf-build-inputs.test.mjs",
         "mode": "0o644",
@@ -6968,10 +7108,10 @@
     },
     {
       "path": "tests/subagents-batch-swarm.test.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/subagents-batch-swarm.test.mjs",
         "mode": "0o644",
@@ -6982,10 +7122,10 @@
     },
     {
       "path": "tests/subagents-run-coordinator.test.mjs",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/subagents-run-coordinator.test.mjs",
         "mode": "0o644",
@@ -6996,10 +7136,10 @@
     },
     {
       "path": "tests/terminal-ready-publication.test.mjs",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "tests/terminal-ready-publication.test.mjs",
         "mode": "0o644",
@@ -7010,10 +7150,10 @@
     },
     {
       "path": "webui/src/App.tsx",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/App.tsx",
         "mode": "0o644",
@@ -7024,10 +7164,10 @@
     },
     {
       "path": "webui/src/Composer.tsx",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/Composer.tsx",
         "mode": "0o644",
@@ -7038,10 +7178,10 @@
     },
     {
       "path": "webui/src/DraftNotice.tsx",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/DraftNotice.tsx",
         "mode": "0o644",
@@ -7052,10 +7192,10 @@
     },
     {
       "path": "webui/src/InputQueue.tsx",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/InputQueue.tsx",
         "mode": "0o644",
@@ -7066,10 +7206,10 @@
     },
     {
       "path": "webui/src/ProjectHome.tsx",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/ProjectHome.tsx",
         "mode": "0o644",
@@ -7080,10 +7220,10 @@
     },
     {
       "path": "webui/src/TaskControl.tsx",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/TaskControl.tsx",
         "mode": "0o644",
@@ -7094,10 +7234,10 @@
     },
     {
       "path": "webui/src/TaskProgress.tsx",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/TaskProgress.tsx",
         "mode": "0o644",
@@ -7108,10 +7248,10 @@
     },
     {
       "path": "webui/src/api.ts",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/api.ts",
         "mode": "0o644",
@@ -7122,10 +7262,10 @@
     },
     {
       "path": "webui/src/conversation-flow.test.tsx",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/conversation-flow.test.tsx",
         "mode": "0o644",
@@ -7136,10 +7276,10 @@
     },
     {
       "path": "webui/src/host-ui.css",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/host-ui.css",
         "mode": "0o644",
@@ -7150,10 +7290,10 @@
     },
     {
       "path": "webui/src/input-delivery-ui.test.tsx",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/input-delivery-ui.test.tsx",
         "mode": "0o644",
@@ -7164,10 +7304,10 @@
     },
     {
       "path": "webui/src/task-control.test.tsx",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/task-control.test.tsx",
         "mode": "0o644",
@@ -7178,10 +7318,10 @@
     },
     {
       "path": "webui/src/task-progress.test.tsx",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/task-progress.test.tsx",
         "mode": "0o644",
@@ -7192,10 +7332,10 @@
     },
     {
       "path": "webui/src/useConversation.test.tsx",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/useConversation.test.tsx",
         "mode": "0o644",
@@ -7206,10 +7346,10 @@
     },
     {
       "path": "webui/src/useConversation.ts",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/useConversation.ts",
         "mode": "0o644",
@@ -7220,10 +7360,10 @@
     },
     {
       "path": "webui/src/useHost.test.tsx",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/useHost.test.tsx",
         "mode": "0o644",
@@ -7234,10 +7374,10 @@
     },
     {
       "path": "webui/src/useHost.ts",
-      "source": "pre-existing tracked modification",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing tracked modified",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/useHost.ts",
         "mode": "0o644",
@@ -7248,10 +7388,10 @@
     },
     {
       "path": "webui/src/useInputDraft.test.tsx",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/useInputDraft.test.tsx",
         "mode": "0o644",
@@ -7262,10 +7402,10 @@
     },
     {
       "path": "webui/src/useInputDraft.ts",
-      "source": "pre-existing untracked file",
-      "ownership": "existing work outside the necessary #76 baseline",
+      "source": "pre-existing untracked",
+      "ownership": "existing work outside necessary #76 development baseline",
       "decision": "retain-local",
-      "reason": "no necessity established for #76 runtime or its required checks",
+      "reason": "no runtime or required validation necessity established; preserve original bytes and mode",
       "original": {
         "path": "webui/src/useInputDraft.ts",
         "mode": "0o644",
@@ -10310,5 +10450,12 @@
     "existingDocumentChanges": 25,
     "retainedLocalImplementation": 87,
     "externalEvidence": 11
-  }
+  },
+  "additionalCorrections": [
+    {
+      "path": "docs/plans/2026-09-29-webui-u0-document-coverage-acceptance.md",
+      "reason": "normalize machine-specific temporary path in repository; retain original byte identity in the local original-document index"
+    }
+  ],
+  "preservationInventoryScope": "per-file expansion of every original dirty tracked/untracked path; directory summaries are not file counts"
 }

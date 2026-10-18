@@ -116,7 +116,7 @@ test("real account RPC requests keep two stored identities and readonly tool reg
       assert.equal(received.length, count, "new worker must reject removed configured identity");
     }
   }
-  assert.deepEqual(received.map((r) => r.key), [...Array(5).fill("Bearer fixture-a"), ...Array(5).fill("Bearer fixture-b"), ...Array(5).fill("Bearer fixture-cli"), ...Array(5).fill("Bearer fixture-cli-configured")]);
+  assert.deepEqual(received.map((r) => r.key), ["fixture-a", "fixture-b", "fixture-cli", "fixture-cli-configured"].flatMap((key) => Array(5).fill(`Bearer ${key}`)));
   for (const request of received) {
     const tools = request.body.tools.map((tool) => tool.function.name).sort();
     assert.deepEqual(tools, ["find", "grep", "ls", "read"]);

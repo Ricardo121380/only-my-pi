@@ -2289,5 +2289,20 @@
         }
       ]
     }
+  ],
+  "originalDocuments": [
+    {
+      "id": "u0-document-coverage-original",
+      "originalDocument": "docs/plans/2026-09-29-webui-u0-document-coverage-acceptance.md",
+      "archiveLocation": "artifacts/pi130-01-closeout-20261018T062251Z/baseline-inputs/docs/plans/2026-09-29-webui-u0-document-coverage-acceptance.md",
+      "originalIdentity": {
+        "path": "docs/plans/2026-09-29-webui-u0-document-coverage-acceptance.md",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 9542,
+        "sha256": "dbf1e60e54f41c0039447be3924369b834252c6760b7422af5797a47022eb55f"
+      },
+      "scope": "original path and text retained locally; historical temporary installation not reauthenticated"
+    }
   ]
 }

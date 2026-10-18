@@ -51,7 +51,7 @@ test("JSON print child uses its bound account, tool ceiling and prompt files, ne
   const cliModels = JSON.stringify({ providers: { fixture: { apiKey: "child-cli-configured", baseUrl: `http://127.0.0.1:${server.address().port}/v1`, api: "openai-completions", models: [{ id: "fixture", contextWindow: 32000, maxTokens: 128 }] } } });
   await fs.writeFile(path.join(root, "models.json"), cliModels);
   await launch("cli-readonly", ["--mode", "json", "-p", "--no-session", "--model", "fixture/fixture", "--no-extensions", "--no-skills", "--no-context-files", "--tools", "read", "Say done"]);
-  assert.equal(received.at(-1).key, "Bearer child-cli-configured");
+  assert.equal(received.at(-1).key, `Bearer ${JSON.parse(cliModels).providers.fixture.apiKey}`);
   assert.equal(await fs.readFile(path.join(root, "auth.json"), "utf8"), "{}");
   await fs.writeFile(path.join(root, "models.json"), cliModels.replace('"apiKey":"child-cli-configured",', ""));
   const count = received.length;

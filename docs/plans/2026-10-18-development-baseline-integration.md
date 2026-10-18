@@ -15,6 +15,7 @@
 | 11 个仓库外 M2 证据附件 | 原文件保留；可点击链接指向本地历史索引，索引明确原本机位置、摘要、候选和失败范围。原始附件不伪装成仓库文件 |
 | `verification/manifests/pack-content-v1.json` | 仅整合两个精确 bundled dependency 前缀 `node-pty`、`node-addon-api`，修复干净开发树实际 pack 拒绝。原有五项 Host input `required` 增量继续留在工作树 |
 | `tests/pack-content.test.mjs` | 整合已有真实原生文件正例和嵌套未列依赖拒绝例，与上述声明共同验收；不修改 validator 或弱化原断言 |
+| `tests/host-account-child.test.mjs`、`tests/host-account-rpc-success.test.mjs` | 整合已有两处合成 Bearer 期望值的等价表达，保留精确 header、身份和次数断言，使必要 secret scan 不误判夹具长字符串；扫描器和模式不变 |
 | 其余既有运行代码、测试、WebUI、CI、inventory、manifest/lock 修改 | 继续留在原工作树；没有因历史文档引用一并整合。具体路径与开工摘要见逐文件清单 |
 
 所有新增文档在整理前的原字节另保存在本地证据 `pi130-01-closeout-20261018T062251Z/baseline-inputs/`，引用映射同时保存原目标与新索引目标。历史失败、当前材料许可和接口阻断没有变成 PASS；#21/#23、U2、Full、真实 Provider 和安装晋升保持各自门槛。原始证据不上传。
@@ -24,6 +25,8 @@
 原证据 `pi130-01-20261018T032930Z/doc-link-baseline-comparison.json` 及两份 missing 清单完全一致：122 条，introduced=0；111 次内部引用对应 68 个 untracked 目标，另 11 次越界附件引用。递归文档图展开后涉及上述 134 份文档和 87 个本地实现目标。本轮保留 Markdown 检查器和检查范围，未删除文档或将链接批量降为纯文本。
 
 从入口提交建立独立 Git worktree，使用该提交自己的 manifest/lock 执行 `npm ci --ignore-scripts --no-audit --no-fund`。Node 24.19.0 下定向执行 docs-links、pack-content、bootstrap-staging 和 ci-contract：31 项，28 PASS / 3 FAIL。失败分别为原 122 条链接，以及两项实际 npm pack 检查的原生依赖 allowlist 拒绝；bootstrap 与 CI 合同通过。原始日志、命令、退出码和前后源码摘要保存为 `checks/red-clean-development-baseline.*`，不覆盖红色结果。
+
+基线独立 secret scan 另发现两个已有合成 Bearer 字符串，以及新纳入历史文档的一处机器专属临时路径。前两项只纳入已存在的精确等价测试表达；后一项通过本地原文索引保留原身份。没有关闭或放宽扫描规则，原始 FAIL 保存在 `checks/baseline-secret-scan-node24.*`。
 
 基线整理提交与 #76 最终验证说明分开。最终选定提交另创建干净验证目录，独立安装其自身依赖，补齐双 Node 类型/合同、真实进程、真实扩展 PTY、收尾完整测试及适用 M11。测试期间冻结被测源码和依赖；不将原工作树 1823 PASS 或 Node 24 混合源码运行改写为最终干净提交通过。
 

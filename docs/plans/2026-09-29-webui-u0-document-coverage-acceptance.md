@@ -22,7 +22,7 @@ Strict与Transitional命名空间差异可参见[微软Open XML说明](https://l
 
 ## 实测与证据
 
-本批仓库外目录：`../artifacts/webui-optimization/U0/document-coverage-0929-YY1PVt/`（相对仓库根）。两个固定运行时为Node22.19.0及H候选内Node24.19.0；显式依赖目录为先前已解包的`/privateLOCAL_TMP/omp-u0-parser-package-LUbTGo/installed`，不是开发根node_modules。
+本批仓库外目录：`../artifacts/webui-optimization/U0/document-coverage-0929-YY1PVt/`（相对仓库根）。两个固定运行时为Node22.19.0及H候选内Node24.19.0；显式依赖目录为先前已解包的系统临时根下 `omp-u0-parser-package-LUbTGo/installed`，不是开发根node_modules。[原绝对位置及未改原文的本地索引](../evidence/2026-10-18-local-development-history.md#u0-document-coverage-original)保留历史身份，不推定旧临时根现在仍有效。
 
 | 检查 | Node22 | Node24 | 证据边界 |
 | --- | --- | --- | --- |
