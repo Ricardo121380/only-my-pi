@@ -7,10 +7,17 @@ import { SessionAdmissions } from "../packages/direct-agent/session-admission.mj
 import { createMcpHost, providerReply, until, untilPiInitialized, slowPiInitialization, mcpReception } from "./fixtures/mcp-host.mjs";
 import { createWriteHost, codingRequest, terminal } from "./fixtures/mcp-write-host.mjs";
 import { byteEvidence, errorEvidence, mcpDenialEvidence, processEvidence, saveRegressionEvidence } from "./fixtures/regression-evidence.mjs";
+import { createSourceFixtureRoot } from "./fixtures/source-fixture-root.mjs";
+
+// These cases own only Host-managed processes and await normal close. A
+// retained root is never reused; source/config/session data is rebuilt each time.
+async function createCodemodeFixture(factory, options) {
+  return factory({ ...options, root: await createSourceFixtureRoot("omp-codemode-host-") });
+}
 
 test("public Host runs the native QuickJS extension and authorizes ordinary and MCP children separately", { timeout: 45000 }, async (t) => {
   const code = 'text(await tools.read({path:"README.md"})); text(await tools.mcp__local__read_file({path:"README.md"})); store("checked", {source:"README.md"});';
-  const f = await createMcpHost({ installedExtensions: true, respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
+  const f = await createCodemodeFixture(createMcpHost, { installedExtensions: true, respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
   t.after(() => f.close());
   await f.mcp({ type: "save", revision: 0, server: f.server });
   await f.mcp({ type: "enable", revision: 1, name: "local", enabled: true });
@@ -38,7 +45,7 @@ test("public Host runs the native QuickJS extension and authorizes ordinary and 
 
 test("native QuickJS keeps partial failures and enforces input, result, memory, store and suspended-promise boundaries", { timeout: 90000 }, async (t) => {
   let code;
-  const f = await createMcpHost({ respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
+  const f = await createCodemodeFixture(createMcpHost, { respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
   t.after(() => f.close());
   const cases = [
     ['text("partial before failure"); throw new Error("script failure");', /partial before failure[\s\S]*script failure/],
@@ -65,7 +72,7 @@ test("native QuickJS keeps partial failures and enforces input, result, memory, 
 
 test("rejecting one child preserves a successful partial result instead of treating outer completion as child success", { timeout: 30000 }, async (t) => {
   const code = 'try { await tools.read({path:"README.md"}); } catch (e) { text(e.message); } text("partial result retained");';
-  const f = await createMcpHost({ respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
+  const f = await createCodemodeFixture(createMcpHost, { respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
   t.after(() => f.close());
   const started = await f.start();
   const waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length, "ordinary approval without MCP");
@@ -79,14 +86,28 @@ test("rejecting one child preserves a successful partial result instead of treat
 
 test("an ordinary target changed during approval cannot retain or consume the previous grant", { timeout: 25000 }, async (t) => {
   const code = 'text(await tools.read({path:"README.md"}));';
-  const f = await createMcpHost({ installedExtensions: true, respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
-  t.after(() => f.close());
-  const started = await f.start();
-  await untilPiInitialized(() => f.task(started.taskId));
-  const waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length, "ordinary target approval", 15000);
+  const f = await createCodemodeFixture(createMcpHost, { installedExtensions: true, respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
+  const original = byteEvidence(await fs.readFile(path.join(f.project, "README.md")));
+  let started, lastTask, phase = "starting";
+  t.after(async () => {
+    const context = { test: t.name, phase, taskId: started?.taskId, lastTask, original };
+    const before = await mcpDenialEvidence(f, context);
+    const pids = [before.worker.value?.pid].filter(Number.isSafeInteger);
+    try { await f.close(); await saveRegressionEvidence("changed-target-cleanup", { ...context, result: "closed", processes: await Promise.all(pids.map(processEvidence)) }); }
+    catch (error) { await saveRegressionEvidence("changed-target-cleanup", { ...context, result: "UNKNOWN", error: errorEvidence(error), processes: await Promise.all(pids.map(processEvidence)) }); throw error; }
+  });
+  started = await f.start();
+  const read = async () => lastTask = await f.task(started.taskId);
+  phase = "initialization";
+  await untilPiInitialized(read);
+  phase = "approval";
+  const waiting = await until(read, (task) => task.approvals.length, "ordinary target approval", 15000);
+  phase = "target-replacement";
   await fs.writeFile(path.join(f.project, "README.md"), "replacement target bytes\n");
   await f.request("/api/command", { type: "answerApproval", taskId: started.taskId, approvalId: waiting.approvals[0].approvalId, value: "本任务" });
-  const final = await until(() => f.task(started.taskId), terminal, "changed target refusal");
+  phase = "settlement";
+  const final = await until(read, terminal, "changed target refusal");
+  phase = "assertions";
   assert.equal(final.toolCalls.find((call) => call.name === "read").status, "failed");
   assert.match(final.toolCalls.find((call) => call.name === "codemode").result, /CODEMODE_TARGET_CHANGED/);
   assert.doesNotMatch(final.toolCalls.find((call) => call.name === "read").result, /replacement target bytes/);
@@ -94,7 +115,7 @@ test("an ordinary target changed during approval cannot retain or consume the pr
 
 test("unawaited calls and cancellation do not dispatch any new MCP action or retain approvals", { timeout: 45000 }, async (t) => {
   let code = 'tools.mcp__local__read_file({path:"README.md"}); text("unawaited complete");';
-  const f = await createMcpHost({ respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
+  const f = await createCodemodeFixture(createMcpHost, { respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
   t.after(() => f.close());
   await f.mcp({ type: "save", revision: 0, server: f.server });
   await f.mcp({ type: "enable", revision: 1, name: "local", enabled: true });
@@ -119,7 +140,7 @@ test("unawaited calls and cancellation do not dispatch any new MCP action or ret
 
 test("a hidden MCP tool is absent from QuickJS discovery and a handwritten name cannot invoke it", { timeout: 30000 }, async (t) => {
   const code = 'text(ALL_TOOLS.some(t => t.name === "mcp__local__read_file")); try { await tools.mcp__local__read_file({path:"README.md"}); } catch { text("hidden rejected"); }';
-  const f = await createMcpHost({ respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
+  const f = await createCodemodeFixture(createMcpHost, { respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
   t.after(() => f.close());
   const server = { ...f.server, tools: f.server.tools.map((tool) => ({ ...tool, exposure: "hidden" })) };
   await f.mcp({ type: "save", revision: 0, server });
@@ -136,7 +157,7 @@ test("a hidden MCP tool is absent from QuickJS discovery and a handwritten name 
 test("direct, deferred, codemode and inactive MCP exposure keep declarations distinct from nested eligibility", { timeout: 50000 }, async (t) => {
   for (const [exposure, active] of [["direct", true], ["deferred", true], ["codemode", true], ["direct", false]]) {
     const code = 'text(ALL_TOOLS.some(t => t.name === "mcp__local__read_file")); try { text(await tools.mcp__local__read_file({path:"README.md"})); } catch { text("not callable"); }';
-    const f = await createMcpHost({ respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
+    const f = await createCodemodeFixture(createMcpHost, { respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
     t.after(() => f.close());
     await f.mcp({ type: "save", revision: 0, server: { ...f.server, enabled: true, tools: f.server.tools.map((tool) => ({ ...tool, exposure, active })) } });
     const started = await f.start();
@@ -156,7 +177,7 @@ test("direct, deferred, codemode and inactive MCP exposure keep declarations dis
 
 test("codemode-store follows actual resume and selected branch while fresh tasks request new authority", { timeout: 50000 }, async (t) => {
   let code, phaseBase = 0;
-  const f = await createMcpHost({ installedExtensions: true, respond: ({ res }, requests) => providerReply(res, requests.length === phaseBase + 1 ? "codemode" : null, { code }) });
+  const f = await createCodemodeFixture(createMcpHost, { installedExtensions: true, respond: ({ res }, requests) => providerReply(res, requests.length === phaseBase + 1 ? "codemode" : null, { code }) });
   t.after(() => f.close());
   const execute = async (source, sessionKey, approve) => {
     code = source; phaseBase = f.requests.length;
@@ -202,7 +223,7 @@ test("codemode-store follows actual resume and selected branch while fresh tasks
 
 async function nestedWrites(t, { slowStartup = false } = {}) {
   const code = String.raw`text(await tools.write({path:"README.md", content:"ordinary child bytes\n"})); text(await tools.mcp__local__write_file({path:"README.md",text:"approved MCP file bytes\n"}));`;
-  const f = await createWriteHost({ respond: ({ body, res }) => {
+  const f = await createCodemodeFixture(createWriteHost, { respond: ({ body, res }) => {
     const count = body.messages.filter((message) => message.role === "tool").length;
     providerReply(res, count === 0 ? "request_coding_access" : count === 1 ? "codemode" : null, count === 0 ? codingRequest : { code });
   } });
