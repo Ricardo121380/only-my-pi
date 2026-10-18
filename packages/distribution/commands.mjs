@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { DirectAgentDoctor } from "../direct-agent/doctor.mjs";
 import { resolveDirectConfigRoot } from "../direct-agent/launcher.mjs";
+import { CONTROLLED_PI_VERSION, PRIVATE_RUNTIME_CONTRACTS } from "../release-stack/contracts.mjs";
 import { distributionError, readRegularJson } from "./runtime.mjs";
 import { migrateLegacy } from "./migrate.mjs";
 import { inspectSystemDependencies } from "./system-dependencies.mjs";
@@ -46,9 +47,11 @@ export async function inspectCommandPaths({ env = process.env, homeDir, runtime 
 }
 
 export function distributionVersion(runtime, env = process.env) {
+  const piVersion = Object.keys(PRIVATE_RUNTIME_CONTRACTS)
+    .find((version) => PRIVATE_RUNTIME_CONTRACTS[version] === runtime.distribution.runtimeContract) ?? CONTROLLED_PI_VERSION;
   return { formatVersion: 1, ok: true, status: "DISTRIBUTION_READY", mutation: false,
     packageVersion: runtime.distribution.version, sourceCommit: runtime.distribution.sourceCommit,
-    distributionId: runtime.stackId, piVersion: runtime.distribution.runtimeContract === "phase1-pi0851" ? "0.85.1" : "0.84.3", nodeVersion: process.versions.node,
+    distributionId: runtime.stackId, piVersion, nodeVersion: process.versions.node,
     installation: { channel: runtime.channel, platform: runtime.distribution.platform,
       runtimeRoot: runtime.root, ephemeral: runtime.channel === "npm" && env.npm_command === "exec" } };
 }

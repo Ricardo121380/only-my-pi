@@ -5,7 +5,8 @@ import os from "node:os";
 import path from "node:path";
 
 import { resolveBoundPackageRoot } from "../bootstrap/runtime-package-binding.mjs";
-import { loadDistribution, resolveDistributionPackage } from "../distribution/runtime.mjs";
+import { APP_ROOT, loadDistribution, resolveDistributionPackage } from "../distribution/runtime.mjs";
+import { loadIntrinsicDistribution } from "../distribution/intrinsic.mjs";
 import { OMP_CONTROL_COMMANDS } from "../control-service/cli-parser.mjs";
 import { McpCatalog, mcpToolNames } from "../mcp/catalog.mjs";
 import { usesNativePiTools } from "../upstream-compatibility/native-pi.mjs";
@@ -275,7 +276,11 @@ async function inspectStackRoot(candidate) {
 
 export async function resolveControlledStack({ packageRoot, homeDir = os.homedir(), stackRoot } = {}) {
   if (packageRoot) {
-    const distribution = await loadDistribution({ packageRoot });
+    // Revalidate each public admission. Intrinsic consumers in this process
+    // share that completed check instead of scanning the same stack again.
+    const distribution = path.resolve(packageRoot) === APP_ROOT
+      ? await loadIntrinsicDistribution({ refresh: true })
+      : await loadDistribution({ packageRoot });
     if (distribution) return distribution;
   }
   const candidates = [];
