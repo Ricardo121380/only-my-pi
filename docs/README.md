@@ -4,7 +4,7 @@ Research and design notes for only-my-pi live here.
 
 ## Pi 1.3.0 development closeout — 2026-10-18
 
-[#76 development adaptation and final C/P acceptance](compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md#7-三类完整回归失败的处置与本轮验收) records exact Pi 1.3.0 identity, the three full-regression diagnoses, both frozen full Node lanes and independent Standards/Spec review. #76 is OPEN with acceptance PASS, ready for authorized closure. New private candidate packaging and its combined regression remain #77; material, installation and external Provider gates keep their independent scope.
+[#76 development adaptation and final C/P acceptance](compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md#7-三类完整回归失败的处置与本轮验收) records exact Pi 1.3.0 identity, the three full-regression diagnoses, both frozen full Node lanes and independent Standards/Spec review. #76 is CLOSED/completed, independently read back; #77 has satisfied its sole prerequisite and remains unimplemented. New private candidate packaging and its combined regression remain #77; material, installation and external Provider gates keep their independent scope.
 
 ## Current development entry
 

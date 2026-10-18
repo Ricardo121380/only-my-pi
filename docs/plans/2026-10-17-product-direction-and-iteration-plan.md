@@ -1,6 +1,6 @@
 # Only my pi 完整开发蓝图与当前迭代入口
 
-**2026-10-18 #76 回归验收更新：** Pi 1.3.0 保持冻结，三类完整回归失败已按真实入口证据处置；最终干净源码双 Node 完整套件均通过，类型/合同、受影响 Linux CLI 与 M11 十项确定性门禁通过。本票验收 PASS；#76 仍 OPEN，已具备回写关闭条件，见[当前兼容报告](../compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md#7-三类完整回归失败的处置与本轮验收)。本轮未实施 #77，其新候选、四项 installed 检查与同候选回归继续由该票承接。下方历史记录保留各自阶段含义，#21/#23 阻断不变。
+**2026-10-18 #76 回归验收更新：** Pi 1.3.0 保持冻结，三类完整回归失败已按真实入口证据处置；最终干净源码双 Node 完整套件均通过，类型/合同、受影响 Linux CLI 与 M11 十项确定性门禁通过。#76 CLOSED / completed；本票验收 PASS；#77 的唯一原生前置已满足，见[当前兼容报告](../compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md#7-三类完整回归失败的处置与本轮验收)。本轮未实施 #77，其新候选、四项 installed 检查与同候选回归继续由该票承接。下方历史记录保留各自阶段含义，#21/#23 阻断不变。
 
 创建：2026-10-17；更新：2026-10-18（Asia/Shanghai）。**蓝图 v1 已确认：Q1–Q12 全部收敛，本次设计质询结束，作为后续规格细化、任务拆分和逐项开发的基线。** 本文件是当前总入口，负责产品路线、阶段结果、真实依赖和下一轮安排。[总规格](2026-10-01-webui-remaining-spec.md)保留原需求 ID，并新增 US-129–US-143 及对应验收；[本地任务拆分与工单修订稿](2026-10-18-client-baseline-work-items.md)承接执行准备。长期决定见 [ADR-0020](../decisions/ADR-0020-pi-native-clients-and-shared-sessions.md)、[ADR-0021](../decisions/ADR-0021-shared-product-configuration.md)。已发布任务状态由 [GitHub Issues](https://github.com/Ricardo121380/only-my-pi/issues)跟踪，不重新编号已验收任务。
 
