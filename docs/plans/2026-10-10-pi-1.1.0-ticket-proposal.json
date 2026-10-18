@@ -1,0 +1,2245 @@
+{
+  "formatVersion": 1,
+  "kind": "pi110-adaptation-ticket-proposal",
+  "date": "2026-10-10",
+  "status": "PUBLISHED_VERIFIED",
+  "sourceCommit": "8240603576088a688f2fc0bbd8c38950bd4245bc",
+  "specPublication": {
+    "status": "PUBLISHED_VERIFIED",
+    "number": 19,
+    "url": "https://github.com/Ricardo121380/only-my-pi/issues/19",
+    "title": "[Spec] Pi 1.1.0 与剩余 WebUI：MCP、codemode、G2-00、U2–U6",
+    "updatedAt": "2026-10-10T02:28:15Z",
+    "bodySha256": "0b854ca2e808f91413789c9508faededfc27c835dcecf01f7b29ec2e0c5ff900",
+    "characters": 36147,
+    "stories": 128,
+    "newGates": 9,
+    "parentFrozenDuringToTickets": true,
+    "implementationIssuesChanged": false
+  },
+  "parentFrozenDuringToTickets": true,
+  "approval": {
+    "question": "Q14",
+    "questionItemId": "[\"request_user_input_async\",\"call_7d80f0371ec9498981151541877e513b\",0]",
+    "answer": "按完整稿发布并更新依赖（推荐）",
+    "recordedAt": "2026-10-10T03:14:06.105450+00:00",
+    "scope": {
+      "existing": 42,
+      "new": 14,
+      "combined": 56,
+      "existingBodyUpdates": 18,
+      "retainedEdges": 50,
+      "newInternalEdges": 19,
+      "newCrossEdges": 4,
+      "combinedEdges": 73
+    },
+    "parentFrozen": 19,
+    "approvedProposalSha256": "4e4d33dde9d4db17b1e1f253f0ac2f98926873fc2222db64e49ab1a89ef224ce"
+  },
+  "newTickets": [
+    {
+      "id": "PI110-N01",
+      "title": "用 Pi 1.1.0 完成受控任务并关闭缓存保温",
+      "blockedBy": [],
+      "stories": [
+        "US-082",
+        "US-083",
+        "US-086"
+      ],
+      "gates": [
+        "GP110-01"
+      ],
+      "delivery": "用户从公开 Host 或 OMP CLI 启动现有账号任务，实际使用 Pi 1.1.0 完成读取、受控编程与取消，缓存保温不会追加模型请求。",
+      "acceptance": [
+        "实际账号/模型、SDK/worker 身份固定为 1.1.0，原只读、编程授权、单写与强制扩展继续有效；新增内置工具未获准时不因升级默认启用。",
+        "OMP 所有生产会话创建路径明确关闭缓存保温；覆盖可能触发保温的受控条件，以模型服务接收计数证明没有额外请求，不能只检查配置值。",
+        "同 Provider 多账号、CLI 默认账号、缺失/撤销凭据与错误模型均按真实身份处理，无环境凭据或模型自动回退；原错误身份负例保持零外部执行。",
+        "实际公开 Host/CLI 走真实 Pi 与本地受控 Provider，核对任务成功、失败、取消以及授权拒绝；接口 ACK 与远端停止分列。",
+        "在 Node 22.19.0/24.19.0 完成受影响运行与类型检查，保留当前 Node 26 有限证据但不拿它替代支持矩阵。",
+        "本票只关闭 GP110-01；开发依赖已升级不表示本票已完成，MCP/codemode、输入/历史、终端模式和 Full 分别由后续切片验收。"
+      ],
+      "evidenceLayers": "C/P",
+      "status": "PUBLISHED_VERIFIED",
+      "triageLabel": "ready-for-agent",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/pi110-n01.md",
+      "draftSha256": "16ce1fe085e0269c91560762c2b6847d457e53fad69340065eb37602865880d2",
+      "approvedDraftSha256": "066930bee8daa02bf67bba032a460b804f519194c65da1650ff4928c59d45fa2",
+      "bodySha256": "16ce1fe085e0269c91560762c2b6847d457e53fad69340065eb37602865880d2",
+      "issueNumber": 62,
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/62",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "databaseId": 5787610243,
+      "publishedTitle": "[PI110-N01] 用 Pi 1.1.0 完成受控任务并关闭缓存保温",
+      "publishedBlockedBy": []
+    },
+    {
+      "id": "PI110-N02",
+      "title": "贯通新版输入反馈、历史续接和位置分支",
+      "blockedBy": [
+        "PI110-N01"
+      ],
+      "stories": [
+        "US-084",
+        "US-085",
+        "US-124"
+      ],
+      "gates": [
+        "GP110-02"
+      ],
+      "delivery": "用户在真实 Pi 1.1.0 中发送、补充、排队、取消及续接旧会话，看到准确状态并能保留原位置语义，未知投递不会被自动重放。",
+      "acceptance": [
+        "公开 Host 输入命令继续先保存意图及稳定 inputId，再调用 Pi；新版 disposition、耗时、终止/aborted 语义与持久回执对应，ACK 不冒充消费。",
+        "覆盖重复提交、丢 ACK、迟到结果、FIFO、配置/账号变化、Host/worker 中断和只读重启；未知投递先核对，无法确认则暂停，不自动重放。",
+        "实际旧历史及新版 context/usage/工具相关条目由规范会话接口读取和续接；上下文投影不直接绕过新版管理器，错误/未知条目保留原件并明确拒绝。",
+        "既有公开 CLI/SDK 的指定位置分支保持 at-entry 语义、源历史字节及新身份，不继承授权和队列；新增 WebUI 分支入口仍由 #43 交付。",
+        "真实 Host→Pi→受控 Provider 核对请求内容、inputId、消费回执和历史；Ego Lite 完成发送→补充/队列→取消→刷新→续接，并保留 U1 回归。",
+        "新数据的旧版本读取不兼容时明确版本门槛、原件与恢复方式；本票验证数据行为，实际安装回滚仍由 #59 验收。"
+      ],
+      "evidenceLayers": "C/P/B",
+      "status": "PUBLISHED_VERIFIED",
+      "triageLabel": "ready-for-agent",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/pi110-n02.md",
+      "draftSha256": "4429ad04864baf024997c5b71ab99b2b7dcb474d6bde8571daeab1a1441f9c12",
+      "approvedDraftSha256": "6855ee3979d9628d46f3d5aea643a023b6ccd780707377c7442ef8f8f86715f4",
+      "bodySha256": "4429ad04864baf024997c5b71ab99b2b7dcb474d6bde8571daeab1a1441f9c12",
+      "issueNumber": 63,
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/63",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "databaseId": 5787610639,
+      "publishedTitle": "[PI110-N02] 贯通新版输入反馈、历史续接和位置分支",
+      "publishedBlockedBy": [
+        62
+      ]
+    },
+    {
+      "id": "PI110-N03",
+      "title": "交付 fullscreen 默认与 regular 终端选项",
+      "blockedBy": [
+        "PI110-N01"
+      ],
+      "stories": [
+        "US-087",
+        "US-108"
+      ],
+      "gates": [
+        "GP110-03"
+      ],
+      "delivery": "用户从 OMP 真实终端入口进入新版 fullscreen，也能显式选择 regular；嵌入终端、审批和退出恢复可用。",
+      "acceptance": [
+        "实际 OMP 启动链向 Pi 传递确定的 TUI 模式，默认 fullscreen，显式 regular 可回读；非法选项明确拒绝，不静默切换。",
+        "真实 PTY 验证输入、输出、尺寸变化、键盘交互、审批/取消和正常/异常退出后的终端恢复，不以参数单测代替显示行为。",
+        "审批仍绑定当前项目和执行生命周期，无 UI/headless 场景不能隐式批准；模式切换不改变账号或权限。",
+        "Ego Lite 核对嵌入终端及重连，WebUI Glacier、原人工终端生命周期和单写保持。",
+        "CLI 支持范围、macOS arm64 和适用 Linux 终端证据分列；未实际覆盖的平台明确保持未验，完成既有必需终端回归。"
+      ],
+      "evidenceLayers": "C/P/B",
+      "status": "PUBLISHED_VERIFIED",
+      "triageLabel": "ready-for-agent",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/pi110-n03.md",
+      "draftSha256": "8bdbadaa375fbe1e05a32f965b8c6976a6999b4442fd7a7b311b7529d1da8875",
+      "approvedDraftSha256": "cda929320a6062adf2a48c39205082a83ff3fa50f9929bce0bb98946a9c98607",
+      "bodySha256": "8bdbadaa375fbe1e05a32f965b8c6976a6999b4442fd7a7b311b7529d1da8875",
+      "issueNumber": 64,
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/64",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "databaseId": 5787611389,
+      "publishedTitle": "[PI110-N03] 交付 fullscreen 默认与 regular 终端选项",
+      "publishedBlockedBy": [
+        62
+      ]
+    },
+    {
+      "id": "PI110-N04",
+      "title": "生成可核验的 Pi 1.1.0 私有运行时",
+      "blockedBy": [],
+      "stories": [
+        "US-088",
+        "US-125"
+      ],
+      "gates": [
+        "GP110-04"
+      ],
+      "delivery": "维护者从固定官方输入得到可实际加载的 Pi 1.1.0 私有运行时，能核对完整依赖、资源、补丁与声明，不把旧合同改名为新候选。",
+      "acceptance": [
+        "固定实际取得的 Pi 1.1.0 包、解析后的依赖树、平台/Node 及文件集合/字节/摘要/执行位；保留旧运行时与历史合同，缺失或漂移输入拒绝。",
+        "新增 MCP/codemode、QuickJS/WASM 与必要非 npm 资产进入实际 acquisition、身份、声明和候选内容；PDF 自身 QuickJS 材料仍属原 #24，不能借同名互相补证。",
+        "逐项核对原受控扩展及 sandbox 补丁目标的真实包版本、文件摘要和锚点，使用 1.1.0 合同记录适用结果，不只放宽版本/SHA 检查。",
+        "通过正式私有运行时准备入口构成隔离产物，真实运行 Pi 版本、SDK 与内置能力/WASM 加载检查；无 checkout、全局或旧目录回退。",
+        "支持的双 Node 和目标平台分别核验，缺资源、声明、错误用途/版本/平台、树摘要冲突有公开拒绝；必要构建使用固定干净输入及独立输出。",
+        "只交付 GP110-04 和给 #26/#27 的 Pi 输入；parser 来源/构建、完整软件 Full、日常晋升和真实模型仍按原工单验收，本票无 #20–#23 前置。"
+      ],
+      "evidenceLayers": "C/P",
+      "status": "PUBLISHED_VERIFIED",
+      "triageLabel": "ready-for-agent",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/pi110-n04.md",
+      "draftSha256": "d6f7f30ea6fbd01ec33226798308a42876f00772384919ddd6583b5d100867db",
+      "approvedDraftSha256": "a64f1d9bd9ac3c226b271bbc5a025a0d542ddea4828543e84b07b7d462c54e99",
+      "bodySha256": "d6f7f30ea6fbd01ec33226798308a42876f00772384919ddd6583b5d100867db",
+      "issueNumber": 65,
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/65",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "databaseId": 5787612091,
+      "publishedTitle": "[PI110-N04] 生成可核验的 Pi 1.1.0 私有运行时",
+      "publishedBlockedBy": []
+    },
+    {
+      "id": "PI110-N05",
+      "title": "配置并调用受控的 stdio MCP 工具",
+      "blockedBy": [
+        "PI110-N01"
+      ],
+      "stories": [
+        "US-089",
+        "US-091",
+        "US-092",
+        "US-093",
+        "US-094",
+        "US-096",
+        "US-099",
+        "US-100",
+        "US-102",
+        "US-103",
+        "US-108"
+      ],
+      "gates": [
+        "GP110-05"
+      ],
+      "delivery": "用户在 OMP 查看或显式导入本地 MCP 配置，选择项目覆盖后启用服务器，批准一次或当前任务的工具范围，取得真实只读结果并能停止服务器。",
+      "acceptance": [
+        "从 CLI/TUI/WebUI 配置入口到 OMP 自有持久化、项目覆盖、任务快照、实际进程与结果完整贯通；raw Pi 原配置字节保持，导入和预览均零启动/零取密命令执行。",
+        "命令、参数、cwd、环境与凭据引用经过受控准入；同名目标冲突、跨项目凭据、动态取密命令、任意环境继承和扩展注册的额外服务器不得绕过明确启用。",
+        "在明确只读范围内逐调用授权，支持仅本次/本任务复用；工具定义、目标、配置或任务生命周期变化时旧许可不放行，不信任 readOnlyHint。尚未交付的写入能力明确拒绝。",
+        "实际 stdio 协议服务器记录接收数及真实读取结果；未批准、撤销、无界输入输出和范围外请求均不执行，不只看调用包装函数返回。",
+        "启动、进程组、退出、取消与残留可回读；任务期间页面断连不误杀已授权工作，未知孤儿保持阻断，后代尚存不能释放相关持有。",
+        "配置变更只影响后续任务，撤销停止后续调用；从保存/启用/授权/调用/停止到重启读回的 C/P/B 证据通过，共享配置版本接口留给后续 #50–#52 复用。"
+      ],
+      "evidenceLayers": "C/P/B",
+      "status": "PUBLISHED_VERIFIED",
+      "triageLabel": "ready-for-agent",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/pi110-n05.md",
+      "draftSha256": "1cf60581fb86bf5f00d9fa957ecfdb6bbd67e1d0459bb2276b87bae1ff81f249",
+      "approvedDraftSha256": "2359e976c4af5975d548b64105f74ee03954115035b049b19c4d78c493e39499",
+      "bodySha256": "1cf60581fb86bf5f00d9fa957ecfdb6bbd67e1d0459bb2276b87bae1ff81f249",
+      "issueNumber": 66,
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/66",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "databaseId": 5787612471,
+      "publishedTitle": "[PI110-N05] 配置并调用受控的 stdio MCP 工具",
+      "publishedBlockedBy": [
+        62
+      ]
+    },
+    {
+      "id": "PI110-N06",
+      "title": "通过 MCP 安全修改项目并核对单写",
+      "blockedBy": [
+        "PI110-N05"
+      ],
+      "stories": [
+        "US-099",
+        "US-100",
+        "US-101",
+        "US-102",
+        "US-103"
+      ],
+      "gates": [
+        "GP110-05"
+      ],
+      "delivery": "用户明确批准 MCP 对当前项目的写入后，工具实际修改指定文件并返回可核对的结果；无所有权、越界和并发冲突被拒绝。",
+      "acceptance": [
+        "从审批到执行同时核对工具许可、编程授权、当前项目写入所有者及服务器进程范围，任何一项缺失时真实文件不改变。",
+        "本地服务器启动本身纳入隔离；路径/链接/环境/凭据限制可在真实子进程验证，不能仅拦 MCP 请求后假定进程不会自行写入。无法落实边界的服务器明确拒绝项目写入准入。",
+        "工具名、Schema 或目标变更使旧授权失效；多工具/多入口竞争保持项目单写，CLI、人工终端、Agent 和 MCP 不同时写入。",
+        "记录任务/父调用/工具/目标及结果身份；已修改但回执丢失保持未知，不自动重试或撤销用户文件，也不伪称验证通过。",
+        "用受控服务器的接收账本和实际文件效果验证正例、跨目录/链接逃逸、撤销竞态、取消、崩溃和残留；页面显示拒绝原因及已发生/未知结果。",
+        "覆盖 macOS 当前产品目标和现有 CLI 的适用权限合同，保留受影响所有权/终端回归；无经过验证的隔离实现则本票保持未完成。"
+      ],
+      "evidenceLayers": "C/P/B",
+      "status": "PUBLISHED_VERIFIED",
+      "triageLabel": "ready-for-agent",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/pi110-n06.md",
+      "draftSha256": "e82b81293729dd0445af330804f22ac42a932a936b8f5a2bc4a9a1ef0ee8f14c",
+      "approvedDraftSha256": "a4f9532999380bf305b7abfdfc7b4370d90e28af00913c14a94af34224d31a28",
+      "bodySha256": "e82b81293729dd0445af330804f22ac42a932a936b8f5a2bc4a9a1ef0ee8f14c",
+      "issueNumber": 67,
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/67",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "databaseId": 5787613217,
+      "publishedTitle": "[PI110-N06] 通过 MCP 安全修改项目并核对单写",
+      "publishedBlockedBy": [
+        66
+      ]
+    },
+    {
+      "id": "PI110-N07",
+      "title": "配置并调用 Streamable HTTP MCP",
+      "blockedBy": [
+        "PI110-N05"
+      ],
+      "stories": [
+        "US-090",
+        "US-091",
+        "US-093",
+        "US-094",
+        "US-096",
+        "US-099",
+        "US-100",
+        "US-103"
+      ],
+      "gates": [
+        "GP110-05"
+      ],
+      "delivery": "用户在相同 OMP 配置和审批体验中显式连接一个远程 MCP 目标，使用受控凭据引用完成调用，并能识别断连后的未知结果。",
+      "acceptance": [
+        "贯通明确 URL/配置来源/凭据引用、项目覆盖、任务快照、真实 Streamable HTTP 协议请求和产品结果；旧 SSE 明确不支持。",
+        "目标、重定向、认证头和配置覆盖都保持已授权绑定，不将凭据交给新地址、错误项目或日志；模型上下文不取得原始凭据。",
+        "每次调用沿同一工具权限合同；远程服务器声明不能替权限，涉及本机项目写入仍须本机所有权和隔离，不能因 HTTP 路由放宽。",
+        "受控 HTTP 服务器核对收到的目标、身份和调用数；未授权、停用、撤销、错误目标和超额请求没有实际执行。",
+        "协议连接重试和业务工具重试区分：可能已执行的工具调用不自动重放，超时/断连/取消保留已知与未知效果，有限输入输出及截止时间生效。",
+        "CLI/TUI/WebUI 完成配置→启用→授权→结果→断连/停止旅程；OAuth 由下一票扩展，此片至少实际覆盖受控认证引用而非仅无认证 mock。"
+      ],
+      "evidenceLayers": "C/P/B",
+      "status": "PUBLISHED_VERIFIED",
+      "triageLabel": "ready-for-agent",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/pi110-n07.md",
+      "draftSha256": "435852212314745ca91c404eb7ac5f2afaa15b6745de109b569e05f5942c5c1a",
+      "approvedDraftSha256": "d3ddcbe3ad6206ebc66162e2ca9f001371fdfb0355ce4f52207cfb8fdf241ff1",
+      "bodySha256": "435852212314745ca91c404eb7ac5f2afaa15b6745de109b569e05f5942c5c1a",
+      "issueNumber": 68,
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/68",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "databaseId": 5787613922,
+      "publishedTitle": "[PI110-N07] 配置并调用 Streamable HTTP MCP",
+      "publishedBlockedBy": [
+        66
+      ]
+    },
+    {
+      "id": "PI110-N08",
+      "title": "完成 MCP OAuth 登录、取消与撤销",
+      "blockedBy": [
+        "PI110-N07"
+      ],
+      "stories": [
+        "US-094",
+        "US-095",
+        "US-102",
+        "US-103"
+      ],
+      "gates": [
+        "GP110-05"
+      ],
+      "delivery": "用户为明确的 MCP 连接显式登录，能取消、识别失效并撤销身份；不同连接或项目不会意外共用令牌。",
+      "acceptance": [
+        "真实产品登录入口贯通受控 OAuth 服务、回调、原子凭据存储及后续 MCP 请求；CLI/TUI/WebUI 均能得到同一可解释状态。",
+        "登录操作绑定连接、目标、项目和凭据引用，目标覆盖或冲突不迁移旧令牌；明确复用引用与意外共享分开，不借 Provider 登录自动转交认证。",
+        "取消、超时、错误 state/回调、刷新失败、撤销和重复完成均有真实负例，敏感 URL/token/code 不进入模型、持久页面状态或日志。",
+        "仅显式操作打开授权页面；回调与刷新生命周期可核对，刷新暂不可取消时如实等待有限结束和安全落盘，不宣称已立即停止。",
+        "受控服务记录授权、令牌与实际工具请求关系，错误绑定及撤销后的后续调用不发送；Ego Lite 完成成功、取消、失效及重新显式登录。",
+        "此片的受控 OAuth 证据不代实际第三方登录；真实服务范围与费用沿 #60 授权。"
+      ],
+      "evidenceLayers": "C/P/B",
+      "status": "PUBLISHED_VERIFIED",
+      "triageLabel": "ready-for-agent",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/pi110-n08.md",
+      "draftSha256": "b7081dd55b8edaa4a0c7d899cb658e46924b4ff545458ebe93bd2d6c477b280e",
+      "approvedDraftSha256": "c7839b964cf73d22924c604a91ddd2253f8084d669aec89d9a135eab1126bc5e",
+      "bodySha256": "b7081dd55b8edaa4a0c7d899cb658e46924b4ff545458ebe93bd2d6c477b280e",
+      "issueNumber": 69,
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/69",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "databaseId": 5787614571,
+      "publishedTitle": "[PI110-N08] 完成 MCP OAuth 登录、取消与撤销",
+      "publishedBlockedBy": [
+        68
+      ]
+    },
+    {
+      "id": "PI110-N09",
+      "title": "用 codemode 组合已授权工具并保留调用状态",
+      "blockedBy": [
+        "PI110-N05"
+      ],
+      "stories": [
+        "US-099",
+        "US-100",
+        "US-104",
+        "US-105",
+        "US-106",
+        "US-107",
+        "US-108"
+      ],
+      "gates": [
+        "GP110-06"
+      ],
+      "delivery": "用户在真实 Pi 的 codemode 中组合现有工具和已准入 MCP 工具，逐项看到执行结果；脚本失败、取消或恢复不会扩大权限或重放未知动作。",
+      "acceptance": [
+        "实际加载公开 codemode 扩展和 QuickJS，普通工具及 MCP 工具的嵌套调用逐次经过当前 OMP 策略，父工具批准不代替子调用授权。",
+        "注册、active、direct/deferred/codemode/hidden 的可发现性与可调用性分开检查；未获许可工具不能因脚本枚举或手写名称执行。",
+        "父脚本与嵌套调用具有稳定关联，产品显示实际状态、耗时、部分结果与错误，不将外层完成当所有子调用成功。",
+        "强制有限超时、并发、输入/输出和内存/存储边界，脚本传参不能扩大限制；同时覆盖异常、未等待 Promise、死等待、嵌套失败及取消后零新调用。",
+        "会话内 store/load 与历史/分支来源对应，权限、预算和凭据不随脚本状态保存或恢复；未知副作用不自动重放。",
+        "通过公开 Host/CLI→真实 Pi/QuickJS→实际工具与受控 MCP 服务核对接收次数和结果；Ego Lite 展开嵌套状态。模型能力在后续分类/生图切片完成前保持明确禁用。"
+      ],
+      "evidenceLayers": "C/P/B",
+      "status": "PUBLISHED_VERIFIED",
+      "triageLabel": "ready-for-agent",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/pi110-n09.md",
+      "draftSha256": "aaeacfb391896d9baea2b77fb6efafbb9fcd540bd04c6c28abaabef05e6709cf",
+      "approvedDraftSha256": "efb5dda4b370bfedb68844be86444ed15e1c21670cb9ed8139d79b28aeda2f81",
+      "bodySha256": "aaeacfb391896d9baea2b77fb6efafbb9fcd540bd04c6c28abaabef05e6709cf",
+      "issueNumber": 70,
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/70",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "databaseId": 5787615517,
+      "publishedTitle": "[PI110-N09] 用 codemode 组合已授权工具并保留调用状态",
+      "publishedBlockedBy": [
+        66
+      ]
+    },
+    {
+      "id": "PI110-N10",
+      "title": "受控发现 MCP 工具并读取资源",
+      "blockedBy": [
+        "PI110-N07",
+        "PI110-N09"
+      ],
+      "stories": [
+        "US-096",
+        "US-097",
+        "US-098",
+        "US-099",
+        "US-100",
+        "US-103"
+      ],
+      "gates": [
+        "GP110-05",
+        "GP110-06"
+      ],
+      "delivery": "用户或已授权任务按需发现可用 MCP 工具、读取允许的资源；工具列表变化、隐藏和资源返回都遵守同一权限与内容边界。",
+      "acceptance": [
+        "实际两种 MCP 连接贯通工具/资源发现、tool_search 或 codemode 调用、授权及有来源结果；不另建会隐式启用服务器的目录。",
+        "direct/deferred/codemode/hidden 的配置与实际可调用状态一致；已隐藏/撤回、未知、定义变更的工具调用明确拒绝，旧授权不适用于新定义。",
+        "资源 URI、服务目标、权限、返回类型和大小在真实入口验证；列表或读取不扩展成本/权限，未知远端 HTML/MCP Apps 不执行。",
+        "服务器工具通知、重新发现、资源列表变化和调用竞态有可观察结果；静态工具缓存不代实际列表，失效回执不得冒充新能力。",
+        "结果超限、错误、部分内容、取消和断连都有明确状态；完整返回或临时文件的访问归属保持，不能借资源路径读取任意主机文件。",
+        "受控 stdio/HTTP 服务记录发现和调用数，真实 Pi 与 Ego Lite 验证允许、隐藏、热更新和拒绝旅程。"
+      ],
+      "evidenceLayers": "C/P/B",
+      "status": "PUBLISHED_VERIFIED",
+      "triageLabel": "ready-for-agent",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/pi110-n10.md",
+      "draftSha256": "2ac44c40a6496c035e3c08378e437f100acf225624c8270dbae88c47b841e27e",
+      "approvedDraftSha256": "9fc99b92850c9f92a9066a7e6f8cc0e3a326448a0d650b8507afcd11e4a17b39",
+      "bodySha256": "2ac44c40a6496c035e3c08378e437f100acf225624c8270dbae88c47b841e27e",
+      "issueNumber": 71,
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/71",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "databaseId": 5787616238,
+      "publishedTitle": "[PI110-N10] 受控发现 MCP 工具并读取资源",
+      "publishedBlockedBy": [
+        68,
+        70
+      ]
+    },
+    {
+      "id": "PI110-N11",
+      "title": "用固定账号模型执行有预算的分类",
+      "blockedBy": [
+        "PI110-N09"
+      ],
+      "stories": [
+        "US-109",
+        "US-111",
+        "US-112",
+        "US-113",
+        "US-114",
+        "US-115",
+        "US-116",
+        "US-117",
+        "US-118"
+      ],
+      "gates": [
+        "GP110-07"
+      ],
+      "delivery": "用户为项目选择分类账号、模型和额度，任务实际完成分类并显示结果与用量；未配置、越权或超额时没有模型请求发出。",
+      "acceptance": [
+        "CLI/TUI/WebUI 的分类模型目录、明确选择、项目保存、任务固定绑定、真实 Pi 分类请求及产品结果完整贯通；聊天账号变化不更换绑定，脚本指定其他模型拒绝。",
+        "适配实际非聊天 ModelRegistry 请求入口，调用前检查当前凭据与许可；普通 tool_call 事件之外的直接模型调用也受控，无账号/环境兜底。",
+        "首次完整实现并复用按请求持久记录：发出前预占次数、并发、输入输出及可可靠核算的费用上限；不足时服务接收数为零，脚本无法扩额。",
+        "价格/单次上限未知时须有针对该任务的明确同意，界面显示按其他额度运行；不能把 SDK 估算称为货币硬上限或账单。",
+        "发出后断连、取消、错误及重启按稳定请求身份对账，结果未知继续占额；无自动重试/退款，父脚本与请求费用不重复累计。",
+        "真实 Pi 分类 Provider 协议夹具记录账号/模型/内容和接收数，至少合法分类结果、并发预算竞争、撤权、缺用量和重启均经公开入口及实际页面验证；共享账本供生图和既有 #46–#49 扩展。"
+      ],
+      "evidenceLayers": "C/P/B",
+      "status": "PUBLISHED_VERIFIED",
+      "triageLabel": "ready-for-agent",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/pi110-n11.md",
+      "draftSha256": "46c9703eb7b9fc97f3181636d468879e4169c558d8606892e543ce9dc2e2a9c7",
+      "approvedDraftSha256": "57e212ee4efa027dcbddee9d853fd48bda4de01a4d8d5fe8e9967f401066b542",
+      "bodySha256": "46c9703eb7b9fc97f3181636d468879e4169c558d8606892e543ce9dc2e2a9c7",
+      "issueNumber": 72,
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/72",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "databaseId": 5787617557,
+      "publishedTitle": "[PI110-N11] 用固定账号模型执行有预算的分类",
+      "publishedBlockedBy": [
+        70
+      ]
+    },
+    {
+      "id": "PI110-N12",
+      "title": "生成并保存有来源的会话图片",
+      "blockedBy": [
+        "PI110-N11"
+      ],
+      "stories": [
+        "US-110",
+        "US-111",
+        "US-112",
+        "US-113",
+        "US-114",
+        "US-115",
+        "US-116",
+        "US-117",
+        "US-119",
+        "US-122"
+      ],
+      "gates": [
+        "GP110-07"
+      ],
+      "delivery": "用户为项目独立选择生图账号、模型和额度，任务实际得到图片并保存为会话产物，在各入口查看真实结果与用量。",
+      "acceptance": [
+        "完整贯通生图模型发现、项目绑定、任务快照、实际 Pi 生图请求、图片结果与当前会话展示；不复用聊天/分类选择作为隐式许可。",
+        "复用分类片已交付的授权、请求身份、预算预占和未知结算机制，加入图片数、可支持输入/输出参数及存储上限；不另建费用账本。",
+        "校验实际返回类型、大小、内容边界与来源，原子保存图片及请求/模型/账号引用；合法图片真实可查看，成功字符串或空占位不能算完成。",
+        "部分输出、Provider 错误、取消、无用量、保存失败和磁盘不足分开呈现；远端已发生费用与本地保存失败不互相覆盖，不自动重新生成。",
+        "图片保存在 OMP 会话产物范围，不能自动落入项目目录；不调用 parser 的范围可独立验收，若实现确实需要 parser 则保留 G2 前置，不能临时放宽旧门禁。",
+        "实际 Pi 生图协议与受控服务核对请求接收数、图片字节/身份、预算和结果；Ego Lite 核对当前会话展示与失败状态，历史管理和显式导出由下一票扩展。"
+      ],
+      "evidenceLayers": "C/P/B",
+      "status": "PUBLISHED_VERIFIED",
+      "triageLabel": "ready-for-agent",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/pi110-n12.md",
+      "draftSha256": "73259a914f1b968bb8822f6b912cfa26e190234b0ca41b50a5ddc87392e5401f",
+      "approvedDraftSha256": "8d112e6fcf7857ec6dd1dcce329bd77528d3e45ece5fa4c7936ab7295130c13e",
+      "bodySha256": "73259a914f1b968bb8822f6b912cfa26e190234b0ca41b50a5ddc87392e5401f",
+      "issueNumber": 73,
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/73",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "databaseId": 5787618296,
+      "publishedTitle": "[PI110-N12] 生成并保存有来源的会话图片",
+      "publishedBlockedBy": [
+        72
+      ]
+    },
+    {
+      "id": "PI110-N13",
+      "title": "恢复会话产物并显式下载或写入项目",
+      "blockedBy": [
+        "PI110-N12",
+        "PI110-N02"
+      ],
+      "stories": [
+        "US-107",
+        "US-120",
+        "US-121",
+        "US-122",
+        "US-124"
+      ],
+      "gates": [
+        "GP110-02",
+        "GP110-07"
+      ],
+      "delivery": "用户重新打开会话时找回生成图片，能下载或明确选择项目目标保存；历史、分支或恢复不会重新调用模型。",
+      "acceptance": [
+        "会话产物从原子保存到历史读取、展示和下载完整贯通，绑定原请求与来源；重启、切项目、多窗和损坏状态不会串产物。",
+        "利用既有 Pi 分支入口保留该位置已有产物与 codemode 状态来源，分支不继承预算、MCP/模型许可或登录资格；旧源产物、共享引用和缺失标记保留。",
+        "显式下载与写项目分开；项目导出必须有选定目标、路径/链接/覆盖确认及项目写入所有权，拒绝时文件不变，结果未知不自动重放。",
+        "显示空间、引用和失败状态，遵守已有显式清理约定；不为新输出自动删历史、共享内容或项目原件，不扩大原全文索引范围。",
+        "实际 Host/Pi/CLI 与 Ego Lite 完成生成后重启→打开历史→下载→显式导出→拒绝/恢复，服务接收数证明没有重新生图；后续 #43 将这些来源关系接入新的 WebUI 指定消息分支入口。",
+        "回滚数据保护给出明确兼容/只读拒绝结果，旧数据和新增产物可恢复；纯安装与实际回滚继续由 #59 验收。"
+      ],
+      "evidenceLayers": "C/P/B",
+      "status": "PUBLISHED_VERIFIED",
+      "triageLabel": "ready-for-agent",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/pi110-n13.md",
+      "draftSha256": "5883299a8a42df816f4c3969f4b1c3b19d1139ebc7c0fc0184027a79897da3aa",
+      "approvedDraftSha256": "1aa6a678f00f502a8f11497da7075378468a8b185112b8f6529c2c235415b67c",
+      "bodySha256": "5883299a8a42df816f4c3969f4b1c3b19d1139ebc7c0fc0184027a79897da3aa",
+      "issueNumber": 74,
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/74",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "databaseId": 5787619156,
+      "publishedTitle": "[PI110-N13] 恢复会话产物并显式下载或写入项目",
+      "publishedBlockedBy": [
+        73,
+        63
+      ]
+    },
+    {
+      "id": "PI110-N14",
+      "title": "验收新增能力的并发、撤销和恢复旅程",
+      "blockedBy": [
+        "PI110-N03",
+        "PI110-N06",
+        "PI110-N08",
+        "PI110-N10",
+        "PI110-N13",
+        "PI110-N04"
+      ],
+      "stories": [
+        "US-102",
+        "US-103",
+        "US-123",
+        "US-125",
+        "US-128"
+      ],
+      "gates": [
+        "GP110-08"
+      ],
+      "delivery": "用户在同一 Pi 1.1.0 候选完成 MCP 配置/认证、codemode、分类与生图、历史及导出全旅程，在并发、撤销和故障中仍能核对真实效果。",
+      "acceptance": [
+        "同一实际 Host/Pi/CLI 和 Ego Lite 完成 stdio/HTTP/OAuth→逐调用授权→codemode→分类/生图→用量→历史→导出，核对配置、账号模型及父子请求身份。",
+        "跨入口并发、工具定义/目标变化、撤销、审批等待、页面断连、Host/worker 崩溃、服务断连与残留采用真实受控进程/协议故障，不只发送合成 UI 事件。",
+        "服务接收账本、实际文件、产物、请求预占/结算与页面逐项对账：未批准和超额零执行，未知副作用不重放，取消后无新请求，单写不被并发脚本绕过。",
+        "原账号、U1 输入/历史、权限、人工终端、fullscreen/regular 回归通过；保留缓存保温零额外请求证明，现有活动工作不被配置热改。",
+        "GP110-01–08 的必需范围与各切片证据无遗漏，记录独立 Standards/Spec 结论；GP110-04 的运行时材料由 PI110-N04 及后续 #26/#27 对账，本票不重复制作材料。",
+        "本票关闭新增能力 C/P/B 整合出口；G2、完整原 WebUI、安装、真实服务和日常晋升仍由现有 #57–#61 与 GP110-09 汇合，不预写最终 PASS。"
+      ],
+      "evidenceLayers": "C/P/B",
+      "status": "PUBLISHED_VERIFIED",
+      "triageLabel": "ready-for-agent",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/pi110-n14.md",
+      "draftSha256": "a289d960bc63f32ff7a5999a66a49943766d2a84c920661bbc1127f2efa6bf10",
+      "approvedDraftSha256": "0819b61da144d5bae77e1086e57bd75aaae6d0ac23c9c719c39f419bbe393c34",
+      "bodySha256": "a289d960bc63f32ff7a5999a66a49943766d2a84c920661bbc1127f2efa6bf10",
+      "issueNumber": 75,
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/75",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "databaseId": 5787620214,
+      "publishedTitle": "[PI110-N14] 验收新增能力的并发、撤销和恢复旅程",
+      "publishedBlockedBy": [
+        64,
+        67,
+        69,
+        71,
+        74,
+        65
+      ]
+    }
+  ],
+  "existingUpdates": [
+    {
+      "issueNumber": 26,
+      "title": "[G2-N03] 形成新图片与文档资源候选并通过运行矩阵",
+      "reason": "资源矩阵使用已核验的 1.1.0 私有运行时",
+      "oldBodySha256": "5683f26c34c84f6ca8f458ddde34ec1d833fe9542cad4f8275b751b8b6451b12",
+      "draftSha256": "cab6891197edb8b9fec76ae40c758c354906578ce6eccce2ca197555721dbc19",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-26.md",
+      "retainedBlockedBy": [
+        "#25"
+      ],
+      "addedBlockedBy": [
+        "PI110-N04"
+      ],
+      "acceptanceAdditions": [
+        "当前固定 Pi 矩阵以精确 1.1.0 及 PI110-N04 的运行时身份执行，不能复用 0.85.1/旧栈结果；新的 parser 资源身份与 Pi 运行时身份分别绑定。",
+        "PDF 的 QuickJS/辅助资源与 codemode 自身 WASM/依赖分开核验，完整材料与运行义务不因同名或 npm 安装成功而合并为通过。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "e9e58c9f7a82ef0c38dbe120a90ba35471e3923a4315af4507db7fbe13269803",
+      "bodySha256": "cab6891197edb8b9fec76ae40c758c354906578ce6eccce2ca197555721dbc19",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/26",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        25,
+        65
+      ]
+    },
+    {
+      "issueNumber": 27,
+      "title": "[G2-N04] 让默认发行包完整携带 parser 资源与元数据",
+      "reason": "默认发行完整包含新 Pi 依赖",
+      "oldBodySha256": "9482dc723aa324ed898037690b3af7a455469fba1711c8b5575a9d12a7be2608",
+      "draftSha256": "d9220c2878f494a2e38a4c04fcfd6a5a896b041febfb70eeacc33ce4f383a61b",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-27.md",
+      "retainedBlockedBy": [
+        "#26"
+      ],
+      "addedBlockedBy": [],
+      "acceptanceAdditions": [
+        "默认 acquisition/staging/assembly 将经 PI110-N04 核验的 Pi 1.1.0、MCP/codemode 及真实必需资源，与 parser 资源共同纳入最终内容、ledger、双 SBOM/notices，保留各自身份。",
+        "历史受控补丁只按新合同的真实版本/摘要/锚点使用；不得为了构建通过接受旧 runtimeContract 或无来源目录。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "d9220c2878f494a2e38a4c04fcfd6a5a896b041febfb70eeacc33ce4f383a61b",
+      "bodySha256": "d9220c2878f494a2e38a4c04fcfd6a5a896b041febfb70eeacc33ce4f383a61b",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/27",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        26
+      ]
+    },
+    {
+      "issueNumber": 28,
+      "title": "[G2-N05] 验证隔离 Full 并完成 G2-00 入口验收",
+      "reason": "G2 安装使用新版受控运行基线",
+      "oldBodySha256": "bd089a7fe80b50c66b4157ae51e0e3b5bc1d0f04659792b03236f04e1841d0fa",
+      "draftSha256": "1d28e03fdf25a15d45c3e3dda046a8e1a48c4c738e938bebcfe7d00ecba7cbf0",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-28.md",
+      "retainedBlockedBy": [
+        "#27"
+      ],
+      "addedBlockedBy": [
+        "PI110-N01"
+      ],
+      "acceptanceAdditions": [
+        "安装候选使用经 PI110-N01 验证的受控账号/工具及缓存保温关闭行为，版本目标为 Pi 1.1.0，原材料及 F01–F06 关闭条件保持。",
+        "本票的 G2 安装出口限定 parser 可进入 U2；未完成的新 MCP/codemode 范围仍待 GP110 与 U6，不能在本票提前声称全部新能力 Full 通过。原 44 是 WebUI 历史任务分母。"
+      ],
+      "replacements": {
+        "Pi 0.85.1": "Pi 1.1.0"
+      },
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "7df302520a1208dfc42bf1210c26d599f5b0222ca57ead2cdee44074160df449",
+      "bodySha256": "1d28e03fdf25a15d45c3e3dda046a8e1a48c4c738e938bebcfe7d00ecba7cbf0",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/28",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        27,
+        62
+      ]
+    },
+    {
+      "issueNumber": 43,
+      "title": "[U3-N05] 从停止会话的指定消息创建分支",
+      "reason": "新历史位置和产物来源必须可分支",
+      "oldBodySha256": "f996f2ee7d57cf631c9a9cdfc3db756ecd5ceb9cb5aef338042d6bdbf2616e98",
+      "draftSha256": "e1fbaa0fb2d493d33b4accfb9abeab7be2e04192eb2dd3edc21326bd303fa15d",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-43.md",
+      "retainedBlockedBy": [
+        "#39",
+        "#40"
+      ],
+      "addedBlockedBy": [
+        "PI110-N13"
+      ],
+      "acceptanceAdditions": [
+        "Pi 1.1.0 的规范上下文/usage/工具条目及 PI110-N13 会话产物进入指定消息分支；所选位置之后的产物不混入，原件、来源和共享引用保持。",
+        "分支不继承 MCP 工具授权、分类/生图许可、预算预占或活动连接；继承结果不重新生成、不作为新消费。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "4700a454c24bacd003cf353fcbcf30073dde75e7bb7a5d3bbffee43e145da134",
+      "bodySha256": "e1fbaa0fb2d493d33b4accfb9abeab7be2e04192eb2dd3edc21326bd303fa15d",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/43",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        39,
+        40,
+        74
+      ]
+    },
+    {
+      "issueNumber": 44,
+      "title": "[U3-N06] 验收搜索、续接、分支与归档完整旅程",
+      "reason": "历史整合覆盖新版条目与产物",
+      "oldBodySha256": "1a2353e283c117edbd792fa9f5954ed3267c6dbc9eda71da27483de33f723102",
+      "draftSha256": "58d077469293c38b0aa6afdd9c0fefe1905275bb0e567995879556800668fede",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-44.md",
+      "retainedBlockedBy": [
+        "#42",
+        "#43"
+      ],
+      "addedBlockedBy": [],
+      "acceptanceAdditions": [
+        "历史整合加入 1.1.0 新条目、codemode 状态及分类/生图产物，原索引范围保持；打开/搜索/归档/分支不产生新的模型请求。",
+        "缺失产物、旧版本不理解的新历史与来源冲突明确显示并保留原件，不用重生成图片或覆盖历史修复。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "58d077469293c38b0aa6afdd9c0fefe1905275bb0e567995879556800668fede",
+      "bodySha256": "58d077469293c38b0aa6afdd9c0fefe1905275bb0e567995879556800668fede",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/44",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        42,
+        43
+      ]
+    },
+    {
+      "issueNumber": 46,
+      "title": "[U4-N02] 按请求身份记录用量并聚合任务与会话",
+      "reason": "复用新能力请求账本形成统一汇总",
+      "oldBodySha256": "de6f6c819328b0a7114638d00549970821c30e127c2efd88d0a39c450a0f2afd",
+      "draftSha256": "34cca1bcfa999093b2ccd5aed550b89947524bad77392a6d64c1d39f0b92c391",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-46.md",
+      "retainedBlockedBy": [
+        "#44"
+      ],
+      "addedBlockedBy": [],
+      "acceptanceAdditions": [
+        "复用 PI110-N11/N12 的逐请求身份、预占与结算事实，将聊天、分类、生图及父 codemode 对应关系统一投影；不得新建互不对账的第二套费用账本。",
+        "新增请求在 U4 之前已有必要权限/预算/结果记账；本票扩展全局任务/会话汇总，未知费用、已发未结及 SDK 估算继续分列。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "34cca1bcfa999093b2ccd5aed550b89947524bad77392a6d64c1d39f0b92c391",
+      "bodySha256": "34cca1bcfa999093b2ccd5aed550b89947524bad77392a6d64c1d39f0b92c391",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/46",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        44
+      ]
+    },
+    {
+      "issueNumber": 47,
+      "title": "[U4-N03] 核对主子 Agent 与分支继承的用量归属",
+      "reason": "嵌套与分支消费归属",
+      "oldBodySha256": "872fd40a824be3263104431f3d699658725a420a953347f5a8430ece8250cdeb",
+      "draftSha256": "85bbc3242fe41ee38562e8474f1f6f86b2c295e0eeae2532d8344647c40bfc17",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-47.md",
+      "retainedBlockedBy": [
+        "#46"
+      ],
+      "addedBlockedBy": [],
+      "acceptanceAdditions": [
+        "主/子 Agent 与父 codemode、MCP 子调用、分类/生图请求使用各自稳定身份关联，不能因父脚本或重复子回执重复累计。",
+        "继承的分类结果/图片/脚本状态只保留来源，不重复计算模型消费或恢复预算、授权；未知关联仍明确保留。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "85bbc3242fe41ee38562e8474f1f6f86b2c295e0eeae2532d8344647c40bfc17",
+      "bodySha256": "85bbc3242fe41ee38562e8474f1f6f86b2c295e0eeae2532d8344647c40bfc17",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/47",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        46
+      ]
+    },
+    {
+      "issueNumber": 48,
+      "title": "[U4-N04] 展示有来源的上下文、生成速度和费用详情",
+      "reason": "新版耗时和非聊天指标正确展示",
+      "oldBodySha256": "62004c7c899ab9465e076ef63c49f9165c125bb50a93e39102fc798afc2b5275",
+      "draftSha256": "1225a9caca9af7de8b1c098eba2afe047558948939a644fd2a926a27e519b74c",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-48.md",
+      "retainedBlockedBy": [
+        "#47"
+      ],
+      "addedBlockedBy": [],
+      "acceptanceAdditions": [
+        "Pi 1.1.0 助手/工具耗时、嵌套工具等待与分类/生图请求耗时分别呈现，不能把图像数或分类结果套成聊天输出 token 速度。",
+        "详情显示分类/生图账号模型、预算占用/未知结算和费用来源；项目绑定变化不重算历史。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "1225a9caca9af7de8b1c098eba2afe047558948939a644fd2a926a27e519b74c",
+      "bodySha256": "1225a9caca9af7de8b1c098eba2afe047558948939a644fd2a926a27e519b74c",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/48",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        47
+      ]
+    },
+    {
+      "issueNumber": 49,
+      "title": "[U4-N05] 验收结果与用量的故障和分支旅程",
+      "reason": "用量整合覆盖新模型请求故障",
+      "oldBodySha256": "b5c55ecc7dddf6bed70406541959ae5e38fad87c2d0ade3305f05517f4314e6f",
+      "draftSha256": "ea68cbf80aa507c7141e764a3ddc1808e1d975c041f5dabb50d5533ecfb0fb4b",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-49.md",
+      "retainedBlockedBy": [
+        "#45",
+        "#48"
+      ],
+      "addedBlockedBy": [],
+      "acceptanceAdditions": [
+        "整合加入分类/生图的成功、取消、已发未结、保存失败、重复回执及重启对账，服务接收数与请求事实/父脚本/页面汇总一致。",
+        "所有新来源至少有明确受支持正例与拒绝例；不能仅全部 unknown 或漏掉直接 ModelRegistry 请求就关闭 G4 出口。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "ea68cbf80aa507c7141e764a3ddc1808e1d975c041f5dabb50d5533ecfb0fb4b",
+      "bodySha256": "ea68cbf80aa507c7141e764a3ddc1808e1d975c041f5dabb50d5533ecfb0fb4b",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/49",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        45,
+        48
+      ]
+    },
+    {
+      "issueNumber": 50,
+      "title": "[U5-N01] 查看已有资源的来源、兼容性和配置归属",
+      "reason": "资源目录显示新增内置能力与配置归属",
+      "oldBodySha256": "ffa69516a83b4313417a5af6ab3466e4eb5a5a1379f7b13115fcda444b3d526a",
+      "draftSha256": "1c93d6e7e22bae895ed5edfc07625b6b90b9648dcfc6486cb6c09e483df5f4af",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-50.md",
+      "retainedBlockedBy": [
+        "#49"
+      ],
+      "addedBlockedBy": [],
+      "acceptanceAdditions": [
+        "同一资源目录显示 Pi 内置 MCP/codemode 的真实身份、已选择配置、可发现/可调用差异和加载状态；未启用或未获授权不能展示为可执行。",
+        "读取 raw Pi 既有资源的边界保持；MCP 配置按本次共识由 OMP 独立管理并显式导入，不以目录刷新启动服务器或执行取密命令。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "1c93d6e7e22bae895ed5edfc07625b6b90b9648dcfc6486cb6c09e483df5f4af",
+      "bodySha256": "1c93d6e7e22bae895ed5edfc07625b6b90b9648dcfc6486cb6c09e483df5f4af",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/50",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        49
+      ]
+    },
+    {
+      "issueNumber": 51,
+      "title": "[U5-N02] 配置可选资源并在下一次执行生效",
+      "reason": "复用配置版本，不另造 MCP 设置系统",
+      "oldBodySha256": "3e73f38129ee9c2d350637b5c273a6844b7ab2986aeffc1ca25e885cbce96af4",
+      "draftSha256": "fb5df92a2c1e4723c573f66964c516c4dc739fbc5fa57a3fa5e869f36c3a03a0",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-51.md",
+      "retainedBlockedBy": [
+        "#50"
+      ],
+      "addedBlockedBy": [],
+      "acceptanceAdditions": [
+        "复用 PI110-N05 及后续模型绑定的配置版本和任务快照接口，将通用资源启停接入同一生效/冲突语义，不能复制成互相矛盾的第二套配置。",
+        "原 GUI 资源覆盖不改 raw Pi 原配置；新 MCP/codemode 的 OMP 受控配置按已确认范围在 CLI/TUI/WebUI 一致生效，不能把旧“CLI 不变”解释为排除该新能力。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "fb5df92a2c1e4723c573f66964c516c4dc739fbc5fa57a3fa5e869f36c3a03a0",
+      "bodySha256": "fb5df92a2c1e4723c573f66964c516c4dc739fbc5fa57a3fa5e869f36c3a03a0",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/51",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        50
+      ]
+    },
+    {
+      "issueNumber": 52,
+      "title": "[U5-N03] 编辑声明配置并处理加载失败与恢复",
+      "reason": "声明配置不能绕过 MCP 与模型策略",
+      "oldBodySha256": "b35027d71de9eeee9ff1d02151800181ee9d7d49184279ee7c5382346b14099a",
+      "draftSha256": "82a39976da3ede6b7edaa878c1dee6aff2bc955357a4482a6afd8f1928e7d547",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-52.md",
+      "retainedBlockedBy": [
+        "#51"
+      ],
+      "addedBlockedBy": [],
+      "acceptanceAdditions": [
+        "通用 Schema 表单不得旁路 MCP 启动/凭据引用、工具许可、分类/生图模型绑定或预算；普通字段不接受秘密、取密命令及隐式 Provider 身份借用。",
+        "配置失败、目标/Schema 漂移及下一任务恢复沿同一版本与授权失效规则，活动执行不热换账号或目标。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "82a39976da3ede6b7edaa878c1dee6aff2bc955357a4482a6afd8f1928e7d547",
+      "bodySha256": "82a39976da3ede6b7edaa878c1dee6aff2bc955357a4482a6afd8f1928e7d547",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/52",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        51
+      ]
+    },
+    {
+      "issueNumber": 56,
+      "title": "[U5-N07] 验收资源配置、命令与并行预览整条旅程",
+      "reason": "通用资源旅程与新增能力一致",
+      "oldBodySha256": "9b1af4ea489ba3bbc66ceebca7a521b2e49e9e329545f10f74886c56fd4350a4",
+      "draftSha256": "fe1812f11926be897c6817290da6dbc54110e98662a9c99ef7fc839277b0906d",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-56.md",
+      "retainedBlockedBy": [
+        "#52",
+        "#55"
+      ],
+      "addedBlockedBy": [],
+      "acceptanceAdditions": [
+        "原 U5 配置、命令、预览旅程核对与新 MCP/模型配置版本共存时的任务绑定、排队和单写，不因通用启停覆盖新增权限。",
+        "完整 MCP/codemode 特有旅程由 PI110-N14 验收并在 #57 汇合；本票不重复实现专用配置/预算，也不以原 G5 通过提前关闭 GP110。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "fe1812f11926be897c6817290da6dbc54110e98662a9c99ef7fc839277b0906d",
+      "bodySha256": "fe1812f11926be897c6817290da6dbc54110e98662a9c99ef7fc839277b0906d",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/56",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        52,
+        55
+      ]
+    },
+    {
+      "issueNumber": 57,
+      "title": "[U6-N01] 验收全部 WebUI 入口、状态和操作旅程",
+      "reason": "U6 全入口汇合新旧能力",
+      "oldBodySha256": "6f21a62f06900616b571ba8faa5977e95ce74b48b486e0a1bac7fda0d158b1cc",
+      "draftSha256": "9d6ccba7995e9688441d64ba79312f53b462d1cfb3fbd471bbf71c67e1677a1b",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-57.md",
+      "retainedBlockedBy": [
+        "#56"
+      ],
+      "addedBlockedBy": [
+        "PI110-N14"
+      ],
+      "acceptanceAdditions": [
+        "逐入口清单同时覆盖 stdio/HTTP/OAuth、工具授权/codemode、分类/生图绑定与预算、会话产物和显式导出，不能只验旧 U1–U5。",
+        "同一候选完成原 WebUI 与 PI110-N14 新能力的组合旅程，Glacier、fullscreen/regular 嵌入终端及所有拒绝/恢复状态保持；贡献 GP110-09 的整体产品交互证据。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "a42179e485635cbe56a99970c20b57f85067b70b1f7748949d5ac561dbfa79da",
+      "bodySha256": "9d6ccba7995e9688441d64ba79312f53b462d1cfb3fbd471bbf71c67e1677a1b",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/57",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        56,
+        75
+      ]
+    },
+    {
+      "issueNumber": 58,
+      "title": "[U6-N02] 验证固定性能样本与进程资源占用",
+      "reason": "性能样本纳入脚本和图片结果",
+      "oldBodySha256": "98ba6cf8740da862ef50a1ba4c55333bfa7f5586855771f9b741de3a1e02261b",
+      "draftSha256": "b2f09cf81e06fc15030c25feaa25a07ccccbb9df9c7c5a664ad557ee0b426074",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-58.md",
+      "retainedBlockedBy": [
+        "#57"
+      ],
+      "addedBlockedBy": [],
+      "acceptanceAdditions": [
+        "固定负载加入有界 MCP 发现/输出、codemode 嵌套并发及分类/图片结果、预算等待与取消；保持原冻结性能目标和至少 30 个有效输入样本。",
+        "新增 MCP 子进程/QuickJS 与产物存储资源分列，有限并发、超时及输出额度实际生效；不把远端请求取消确认等同远端停费。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "b2f09cf81e06fc15030c25feaa25a07ccccbb9df9c7c5a664ad557ee0b426074",
+      "bodySha256": "b2f09cf81e06fc15030c25feaa25a07ccccbb9df9c7c5a664ad557ee0b426074",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/58",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        57
+      ]
+    },
+    {
+      "issueNumber": 59,
+      "title": "[U6-N03] 验证同一 Full 候选的纯安装与数据兼容",
+      "reason": "同一 Full 覆盖全部新增能力和数据",
+      "oldBodySha256": "a06f596cb62ed51232b08e16a950feaa624fbbca3d6a83ca1e4ba7eefcabe995",
+      "draftSha256": "84b3cfe1d8c699b1815a887984e444e9e5022616217b9edaa731f04a582104db",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-59.md",
+      "retainedBlockedBy": [
+        "#58"
+      ],
+      "addedBlockedBy": [],
+      "acceptanceAdditions": [
+        "当前 Full 固定 Pi 1.1.0，包含经核验的 MCP/codemode、QuickJS/WASM 与原 parser 全集合；安装态真实调用和加载无 checkout/全局回退。",
+        "隔离安装、回滚、重应用覆盖 OMP MCP 配置/凭据引用、模型绑定/预算账本、新版历史与会话产物；旧栈不理解的新数据保持原件及明确兼容门槛，不覆盖或重新生成。",
+        "实际页面及 CLI/PTY 核对新增能力和原全部范围，GP110-09 安装部分与 G6-03 绑定同一候选，真实服务和日常晋升仍独立。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "84b3cfe1d8c699b1815a887984e444e9e5022616217b9edaa731f04a582104db",
+      "bodySha256": "84b3cfe1d8c699b1815a887984e444e9e5022616217b9edaa731f04a582104db",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/59",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        58
+      ]
+    },
+    {
+      "issueNumber": 60,
+      "title": "[U6-N04] 执行获准的真实 Provider 小型验收包",
+      "reason": "真实验收包增加 MCP、分类和生图",
+      "oldBodySha256": "750a977d02c407f6ea4cc66843d2151acf08208a11c86bf35bee057bce12b7d8",
+      "draftSha256": "1e9ea4a8b880c004e9a4c1b3c2cf9098c1e2ea5a0efb457e7a2dc9895f5dab39",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-60.md",
+      "retainedBlockedBy": [
+        "#59"
+      ],
+      "addedBlockedBy": [],
+      "acceptanceAdditions": [
+        "在原 L1–L3 之外准备明确的真实 MCP 服务、codemode 工具组合、分类和生图小型场景；逐项列出账号/模型引用、合成输入、外部操作、请求/图片数、token/时间/费用额度与停止条件。",
+        "取得新增具体场景授权后才执行，原包或历史耗尽额度不得挪用；未知价格需要显式同意其他额度，不自动重试/扩额。",
+        "同一安装候选的服务实际接收、结果/图片、原请求及费用来源与 Ego Lite/CLI 对账，拒绝/取消只声明实测能力；完成 GP110-09 的真实服务部分，缺授权仍为 NOT_RUN。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "1e9ea4a8b880c004e9a4c1b3c2cf9098c1e2ea5a0efb457e7a2dc9895f5dab39",
+      "bodySha256": "1e9ea4a8b880c004e9a4c1b3c2cf9098c1e2ea5a0efb457e7a2dc9895f5dab39",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/60",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        59
+      ]
+    },
+    {
+      "issueNumber": 61,
+      "title": "[U6-N05] 晋升日常栈并完成回滚、重应用和体验收口",
+      "reason": "最终日常体验包含整个扩大范围",
+      "oldBodySha256": "48244c389fb4229fb93d8fc1d68a7d9698010f44f6f9929157baacf2acf99a49",
+      "draftSha256": "600e7dcbd8e64d6537107b630af88946e7294f77a163a2a12eb8f89d4c2cd165",
+      "draftFile": "docs/plans/2026-10-10-pi-1.1.0-ticket-drafts/existing-61.md",
+      "retainedBlockedBy": [
+        "#60"
+      ],
+      "addedBlockedBy": [],
+      "acceptanceAdditions": [
+        "日常切换前复核原门禁与 GP110-01–09 的必需证据，新增 MCP/codemode、分类/生图、产物和原 WebUI 全范围无遗漏；任何必需未验项不因旧 20/44 计数而消失。",
+        "实际日常升级→回滚切换前已验证 active→再应用同一候选，保留新版凭据引用、请求账本、脚本状态、历史/产物，不自动启动未启用服务器或重放外部操作。",
+        "更新原 WebUI 与新增范围的独立状态及实际映射后再收口；本票不自动授权公开软件发行或 Electron 实现。"
+      ],
+      "replacements": {},
+      "status": "PUBLISHED_VERIFIED",
+      "approvedDraftSha256": "600e7dcbd8e64d6537107b630af88946e7294f77a163a2a12eb8f89d4c2cd165",
+      "bodySha256": "600e7dcbd8e64d6537107b630af88946e7294f77a163a2a12eb8f89d4c2cd165",
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/61",
+      "state": "OPEN",
+      "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+      "publishedBlockedBy": [
+        60
+      ]
+    }
+  ],
+  "retainedExistingIssueNumbers": [
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61
+  ],
+  "unchangedExistingIssueNumbers": [
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    45,
+    53,
+    54,
+    55
+  ],
+  "graph": {
+    "#61": [
+      "#60"
+    ],
+    "#60": [
+      "#59"
+    ],
+    "#59": [
+      "#58"
+    ],
+    "#58": [
+      "#57"
+    ],
+    "#57": [
+      "#56",
+      "PI110-N14"
+    ],
+    "#56": [
+      "#52",
+      "#55"
+    ],
+    "#55": [
+      "#54"
+    ],
+    "#54": [
+      "#53"
+    ],
+    "#53": [
+      "#49"
+    ],
+    "#52": [
+      "#51"
+    ],
+    "#51": [
+      "#50"
+    ],
+    "#50": [
+      "#49"
+    ],
+    "#49": [
+      "#45",
+      "#48"
+    ],
+    "#48": [
+      "#47"
+    ],
+    "#47": [
+      "#46"
+    ],
+    "#46": [
+      "#44"
+    ],
+    "#45": [
+      "#44"
+    ],
+    "#44": [
+      "#42",
+      "#43"
+    ],
+    "#43": [
+      "#39",
+      "#40",
+      "PI110-N13"
+    ],
+    "#42": [
+      "#41"
+    ],
+    "#41": [
+      "#39",
+      "#40"
+    ],
+    "#40": [
+      "#38"
+    ],
+    "#39": [
+      "#38"
+    ],
+    "#38": [
+      "#37"
+    ],
+    "#37": [
+      "#31",
+      "#32",
+      "#34",
+      "#35",
+      "#36"
+    ],
+    "#36": [
+      "#33"
+    ],
+    "#35": [
+      "#33"
+    ],
+    "#34": [
+      "#33"
+    ],
+    "#33": [
+      "#30"
+    ],
+    "#32": [
+      "#30"
+    ],
+    "#31": [
+      "#30"
+    ],
+    "#30": [
+      "#29"
+    ],
+    "#29": [
+      "#28"
+    ],
+    "#28": [
+      "#27",
+      "PI110-N01"
+    ],
+    "#27": [
+      "#26"
+    ],
+    "#26": [
+      "#25",
+      "PI110-N04"
+    ],
+    "#25": [
+      "#24"
+    ],
+    "#24": [
+      "#23"
+    ],
+    "#23": [
+      "#20",
+      "#21",
+      "#22"
+    ],
+    "#22": [],
+    "#21": [],
+    "#20": [],
+    "PI110-N01": [],
+    "PI110-N02": [
+      "PI110-N01"
+    ],
+    "PI110-N03": [
+      "PI110-N01"
+    ],
+    "PI110-N04": [],
+    "PI110-N05": [
+      "PI110-N01"
+    ],
+    "PI110-N06": [
+      "PI110-N05"
+    ],
+    "PI110-N07": [
+      "PI110-N05"
+    ],
+    "PI110-N08": [
+      "PI110-N07"
+    ],
+    "PI110-N09": [
+      "PI110-N05"
+    ],
+    "PI110-N10": [
+      "PI110-N07",
+      "PI110-N09"
+    ],
+    "PI110-N11": [
+      "PI110-N09"
+    ],
+    "PI110-N12": [
+      "PI110-N11"
+    ],
+    "PI110-N13": [
+      "PI110-N12",
+      "PI110-N02"
+    ],
+    "PI110-N14": [
+      "PI110-N03",
+      "PI110-N06",
+      "PI110-N08",
+      "PI110-N10",
+      "PI110-N13",
+      "PI110-N04"
+    ]
+  },
+  "topologicalOrder": [
+    "#20",
+    "#21",
+    "#22",
+    "#23",
+    "#24",
+    "#25",
+    "PI110-N04",
+    "#26",
+    "#27",
+    "PI110-N01",
+    "#28",
+    "#29",
+    "#30",
+    "#31",
+    "#32",
+    "#33",
+    "#34",
+    "#35",
+    "#36",
+    "#37",
+    "#38",
+    "#39",
+    "#40",
+    "#41",
+    "#42",
+    "PI110-N05",
+    "PI110-N09",
+    "PI110-N11",
+    "PI110-N12",
+    "PI110-N02",
+    "PI110-N13",
+    "#43",
+    "#44",
+    "#45",
+    "#46",
+    "#47",
+    "#48",
+    "#49",
+    "#50",
+    "#51",
+    "#52",
+    "#53",
+    "#54",
+    "#55",
+    "#56",
+    "PI110-N03",
+    "PI110-N06",
+    "PI110-N07",
+    "PI110-N08",
+    "PI110-N10",
+    "PI110-N14",
+    "#57",
+    "#58",
+    "#59",
+    "#60",
+    "#61"
+  ],
+  "storyMapping": {
+    "US-082": [
+      "PI110-N01"
+    ],
+    "US-083": [
+      "PI110-N01"
+    ],
+    "US-084": [
+      "PI110-N02"
+    ],
+    "US-085": [
+      "PI110-N02"
+    ],
+    "US-086": [
+      "PI110-N01"
+    ],
+    "US-087": [
+      "PI110-N03"
+    ],
+    "US-088": [
+      "PI110-N04"
+    ],
+    "US-089": [
+      "PI110-N05"
+    ],
+    "US-090": [
+      "PI110-N07"
+    ],
+    "US-091": [
+      "PI110-N05",
+      "PI110-N07"
+    ],
+    "US-092": [
+      "PI110-N05"
+    ],
+    "US-093": [
+      "PI110-N05",
+      "PI110-N07"
+    ],
+    "US-094": [
+      "PI110-N05",
+      "PI110-N07",
+      "PI110-N08"
+    ],
+    "US-095": [
+      "PI110-N08"
+    ],
+    "US-096": [
+      "PI110-N05",
+      "PI110-N07",
+      "PI110-N10"
+    ],
+    "US-097": [
+      "PI110-N10"
+    ],
+    "US-098": [
+      "PI110-N10"
+    ],
+    "US-099": [
+      "PI110-N05",
+      "PI110-N06",
+      "PI110-N07",
+      "PI110-N09",
+      "PI110-N10"
+    ],
+    "US-100": [
+      "PI110-N05",
+      "PI110-N06",
+      "PI110-N07",
+      "PI110-N09",
+      "PI110-N10"
+    ],
+    "US-101": [
+      "PI110-N06"
+    ],
+    "US-102": [
+      "PI110-N05",
+      "PI110-N06",
+      "PI110-N08",
+      "PI110-N14"
+    ],
+    "US-103": [
+      "PI110-N05",
+      "PI110-N06",
+      "PI110-N07",
+      "PI110-N08",
+      "PI110-N10",
+      "PI110-N14"
+    ],
+    "US-104": [
+      "PI110-N09"
+    ],
+    "US-105": [
+      "PI110-N09"
+    ],
+    "US-106": [
+      "PI110-N09"
+    ],
+    "US-107": [
+      "PI110-N09",
+      "PI110-N13"
+    ],
+    "US-108": [
+      "PI110-N03",
+      "PI110-N05",
+      "PI110-N09"
+    ],
+    "US-109": [
+      "PI110-N11"
+    ],
+    "US-110": [
+      "PI110-N12"
+    ],
+    "US-111": [
+      "PI110-N11",
+      "PI110-N12"
+    ],
+    "US-112": [
+      "PI110-N11",
+      "PI110-N12"
+    ],
+    "US-113": [
+      "PI110-N11",
+      "PI110-N12"
+    ],
+    "US-114": [
+      "PI110-N11",
+      "PI110-N12"
+    ],
+    "US-115": [
+      "PI110-N11",
+      "PI110-N12"
+    ],
+    "US-116": [
+      "PI110-N11",
+      "PI110-N12"
+    ],
+    "US-117": [
+      "PI110-N11",
+      "PI110-N12"
+    ],
+    "US-118": [
+      "PI110-N11"
+    ],
+    "US-119": [
+      "PI110-N12"
+    ],
+    "US-120": [
+      "PI110-N13"
+    ],
+    "US-121": [
+      "PI110-N13"
+    ],
+    "US-122": [
+      "PI110-N12",
+      "PI110-N13"
+    ],
+    "US-123": [
+      "PI110-N14"
+    ],
+    "US-124": [
+      "PI110-N02",
+      "PI110-N13",
+      "#59",
+      "#61"
+    ],
+    "US-125": [
+      "PI110-N04",
+      "PI110-N14"
+    ],
+    "US-126": [
+      "#57",
+      "#58",
+      "#59",
+      "#61"
+    ],
+    "US-127": [
+      "#60"
+    ],
+    "US-128": [
+      "PI110-N14"
+    ]
+  },
+  "gateMapping": {
+    "GP110-01": [
+      "PI110-N01"
+    ],
+    "GP110-02": [
+      "PI110-N02",
+      "PI110-N13",
+      "#43",
+      "#44"
+    ],
+    "GP110-03": [
+      "PI110-N03"
+    ],
+    "GP110-04": [
+      "PI110-N04"
+    ],
+    "GP110-05": [
+      "PI110-N05",
+      "PI110-N06",
+      "PI110-N07",
+      "PI110-N08",
+      "PI110-N10"
+    ],
+    "GP110-06": [
+      "PI110-N09",
+      "PI110-N10"
+    ],
+    "GP110-07": [
+      "PI110-N11",
+      "PI110-N12",
+      "PI110-N13"
+    ],
+    "GP110-08": [
+      "PI110-N14"
+    ],
+    "GP110-09": [
+      "#57",
+      "#58",
+      "#59",
+      "#60",
+      "#61"
+    ]
+  },
+  "counts": {
+    "existing": 42,
+    "new": 14,
+    "combined": 56,
+    "existingBodyUpdates": 18,
+    "retainedEdges": 50,
+    "newInternalEdges": 19,
+    "newCrossEdges": 4,
+    "combinedEdges": 73
+  },
+  "validation": {
+    "acyclic": true,
+    "missingNewStories": [],
+    "redundantProposedEdges": [],
+    "originalMaterialClosureConditionsPreserved": true
+  },
+  "recommendedFirstTicket": "PI110-N01",
+  "independentNewFrontier": [
+    "PI110-N01",
+    "PI110-N04"
+  ],
+  "materialFrontier": [
+    "#20",
+    "#21",
+    "#22"
+  ],
+  "artifacts": "LOCAL_WORKSPACE/repo/../artifacts/webui-optimization/pi-1.1.0-spec-tickets-1010-v4cndk8t",
+  "publicationPlan": [
+    "Approval must cover 14 new tickets, 18 existing body updates, 4 cross edges and 19 new-lane edges",
+    "Re-read before writes and reject concurrent body/dependency drift",
+    "Create new tickets in topological order with real numbers; never reserve issue numbers",
+    "Update only reviewed existing bodies and add native dependencies using numeric database IDs",
+    "Preserve all 50 original edges and existing OPEN state; do not close or claim tickets",
+    "Read back title/body/ready-for-agent and native dependency direction; parent #19 body/title stays frozen",
+    "Update local mapping with actual IDs only after successful readback"
+  ],
+  "publishedGraph": {
+    "#20": [],
+    "#21": [],
+    "#22": [],
+    "#23": [
+      "#20",
+      "#21",
+      "#22"
+    ],
+    "#24": [
+      "#23"
+    ],
+    "#25": [
+      "#24"
+    ],
+    "#26": [
+      "#25",
+      "#65"
+    ],
+    "#27": [
+      "#26"
+    ],
+    "#28": [
+      "#27",
+      "#62"
+    ],
+    "#29": [
+      "#28"
+    ],
+    "#30": [
+      "#29"
+    ],
+    "#31": [
+      "#30"
+    ],
+    "#32": [
+      "#30"
+    ],
+    "#33": [
+      "#30"
+    ],
+    "#34": [
+      "#33"
+    ],
+    "#35": [
+      "#33"
+    ],
+    "#36": [
+      "#33"
+    ],
+    "#37": [
+      "#31",
+      "#32",
+      "#34",
+      "#35",
+      "#36"
+    ],
+    "#38": [
+      "#37"
+    ],
+    "#39": [
+      "#38"
+    ],
+    "#40": [
+      "#38"
+    ],
+    "#41": [
+      "#39",
+      "#40"
+    ],
+    "#42": [
+      "#41"
+    ],
+    "#43": [
+      "#39",
+      "#40",
+      "#74"
+    ],
+    "#44": [
+      "#42",
+      "#43"
+    ],
+    "#45": [
+      "#44"
+    ],
+    "#46": [
+      "#44"
+    ],
+    "#47": [
+      "#46"
+    ],
+    "#48": [
+      "#47"
+    ],
+    "#49": [
+      "#45",
+      "#48"
+    ],
+    "#50": [
+      "#49"
+    ],
+    "#51": [
+      "#50"
+    ],
+    "#52": [
+      "#51"
+    ],
+    "#53": [
+      "#49"
+    ],
+    "#54": [
+      "#53"
+    ],
+    "#55": [
+      "#54"
+    ],
+    "#56": [
+      "#52",
+      "#55"
+    ],
+    "#57": [
+      "#56",
+      "#75"
+    ],
+    "#58": [
+      "#57"
+    ],
+    "#59": [
+      "#58"
+    ],
+    "#60": [
+      "#59"
+    ],
+    "#61": [
+      "#60"
+    ],
+    "#62": [],
+    "#63": [
+      "#62"
+    ],
+    "#64": [
+      "#62"
+    ],
+    "#65": [],
+    "#66": [
+      "#62"
+    ],
+    "#67": [
+      "#66"
+    ],
+    "#68": [
+      "#66"
+    ],
+    "#69": [
+      "#68"
+    ],
+    "#70": [
+      "#66"
+    ],
+    "#71": [
+      "#68",
+      "#70"
+    ],
+    "#72": [
+      "#70"
+    ],
+    "#73": [
+      "#72"
+    ],
+    "#74": [
+      "#63",
+      "#73"
+    ],
+    "#75": [
+      "#64",
+      "#65",
+      "#67",
+      "#69",
+      "#71",
+      "#74"
+    ]
+  },
+  "publishedTopologicalOrder": [
+    "#20",
+    "#21",
+    "#22",
+    "#23",
+    "#24",
+    "#25",
+    "#65",
+    "#26",
+    "#27",
+    "#62",
+    "#28",
+    "#29",
+    "#30",
+    "#31",
+    "#32",
+    "#33",
+    "#34",
+    "#35",
+    "#36",
+    "#37",
+    "#38",
+    "#39",
+    "#40",
+    "#41",
+    "#42",
+    "#63",
+    "#66",
+    "#70",
+    "#72",
+    "#73",
+    "#74",
+    "#43",
+    "#44",
+    "#45",
+    "#46",
+    "#47",
+    "#48",
+    "#49",
+    "#50",
+    "#51",
+    "#52",
+    "#53",
+    "#54",
+    "#55",
+    "#56",
+    "#64",
+    "#67",
+    "#68",
+    "#69",
+    "#71",
+    "#75",
+    "#57",
+    "#58",
+    "#59",
+    "#60",
+    "#61"
+  ],
+  "publishedStoryMapping": {
+    "US-082": [
+      "#62"
+    ],
+    "US-083": [
+      "#62"
+    ],
+    "US-084": [
+      "#63"
+    ],
+    "US-085": [
+      "#63"
+    ],
+    "US-086": [
+      "#62"
+    ],
+    "US-087": [
+      "#64"
+    ],
+    "US-088": [
+      "#65"
+    ],
+    "US-089": [
+      "#66"
+    ],
+    "US-090": [
+      "#68"
+    ],
+    "US-091": [
+      "#66",
+      "#68"
+    ],
+    "US-092": [
+      "#66"
+    ],
+    "US-093": [
+      "#66",
+      "#68"
+    ],
+    "US-094": [
+      "#66",
+      "#68",
+      "#69"
+    ],
+    "US-095": [
+      "#69"
+    ],
+    "US-096": [
+      "#66",
+      "#68",
+      "#71"
+    ],
+    "US-097": [
+      "#71"
+    ],
+    "US-098": [
+      "#71"
+    ],
+    "US-099": [
+      "#66",
+      "#67",
+      "#68",
+      "#70",
+      "#71"
+    ],
+    "US-100": [
+      "#66",
+      "#67",
+      "#68",
+      "#70",
+      "#71"
+    ],
+    "US-101": [
+      "#67"
+    ],
+    "US-102": [
+      "#66",
+      "#67",
+      "#69",
+      "#75"
+    ],
+    "US-103": [
+      "#66",
+      "#67",
+      "#68",
+      "#69",
+      "#71",
+      "#75"
+    ],
+    "US-104": [
+      "#70"
+    ],
+    "US-105": [
+      "#70"
+    ],
+    "US-106": [
+      "#70"
+    ],
+    "US-107": [
+      "#70",
+      "#74"
+    ],
+    "US-108": [
+      "#64",
+      "#66",
+      "#70"
+    ],
+    "US-109": [
+      "#72"
+    ],
+    "US-110": [
+      "#73"
+    ],
+    "US-111": [
+      "#72",
+      "#73"
+    ],
+    "US-112": [
+      "#72",
+      "#73"
+    ],
+    "US-113": [
+      "#72",
+      "#73"
+    ],
+    "US-114": [
+      "#72",
+      "#73"
+    ],
+    "US-115": [
+      "#72",
+      "#73"
+    ],
+    "US-116": [
+      "#72",
+      "#73"
+    ],
+    "US-117": [
+      "#72",
+      "#73"
+    ],
+    "US-118": [
+      "#72"
+    ],
+    "US-119": [
+      "#73"
+    ],
+    "US-120": [
+      "#74"
+    ],
+    "US-121": [
+      "#74"
+    ],
+    "US-122": [
+      "#73",
+      "#74"
+    ],
+    "US-123": [
+      "#75"
+    ],
+    "US-124": [
+      "#63",
+      "#74",
+      "#59",
+      "#61"
+    ],
+    "US-125": [
+      "#65",
+      "#75"
+    ],
+    "US-126": [
+      "#57",
+      "#58",
+      "#59",
+      "#61"
+    ],
+    "US-127": [
+      "#60"
+    ],
+    "US-128": [
+      "#75"
+    ]
+  },
+  "publishedGateMapping": {
+    "GP110-01": [
+      "#62"
+    ],
+    "GP110-02": [
+      "#63",
+      "#74",
+      "#43",
+      "#44"
+    ],
+    "GP110-03": [
+      "#64"
+    ],
+    "GP110-04": [
+      "#65"
+    ],
+    "GP110-05": [
+      "#66",
+      "#67",
+      "#68",
+      "#69",
+      "#71"
+    ],
+    "GP110-06": [
+      "#70",
+      "#71"
+    ],
+    "GP110-07": [
+      "#72",
+      "#73",
+      "#74"
+    ],
+    "GP110-08": [
+      "#75"
+    ],
+    "GP110-09": [
+      "#57",
+      "#58",
+      "#59",
+      "#60",
+      "#61"
+    ]
+  },
+  "recommendedFirstIssue": 62,
+  "independentNewFrontierIssueNumbers": [
+    62,
+    65
+  ],
+  "publication": {
+    "status": "PUBLISHED_VERIFIED",
+    "verifiedAt": "2026-10-10T03:21:20.880562+00:00",
+    "verificationFile": "LOCAL_WORKSPACE/artifacts/webui-optimization/pi-1.1.0-spec-tickets-1010-v4cndk8t/publication-verification.json",
+    "journalFile": "LOCAL_WORKSPACE/artifacts/webui-optimization/pi-1.1.0-spec-tickets-1010-v4cndk8t/publication-journal.json",
+    "approvedDraftsDirectory": "LOCAL_WORKSPACE/artifacts/webui-optimization/pi-1.1.0-spec-tickets-1010-v4cndk8t/approved-ticket-drafts",
+    "newIssues": [
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75
+    ],
+    "existingBodyUpdates": [
+      26,
+      27,
+      28,
+      43,
+      44,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61
+    ],
+    "allOriginalEdgesPreserved": true,
+    "nativeEdges": 73,
+    "acyclic": true,
+    "parentUnchanged": {
+      "number": 19,
+      "title": "[Spec] Pi 1.1.0 与剩余 WebUI：MCP、codemode、G2-00、U2–U6",
+      "bodySha256": "0b854ca2e808f91413789c9508faededfc27c835dcecf01f7b29ec2e0c5ff900",
+      "unchanged": true
+    },
+    "frontier": [
+      20,
+      21,
+      22,
+      62,
+      65
+    ],
+    "productAcceptanceAdded": false,
+    "closedOrClaimedIssues": []
+  }
+}

@@ -43,7 +43,7 @@
 
 ## 证据位置与后续
 
-证据根：`LOCAL_HOME/Agentprojects/only-my-pi/artifacts/webui-phase2/live-cpar-writer-terminal-sep26/`。
+本机证据根：工作区下 `artifacts/webui-phase2/live-cpar-writer-terminal-sep26/`（仓库外）。
 
 - `acceptance-summary.json`：断言结果、任务身份、累计预算、关键文件 SHA256。
 - `prompt.txt`、`submitted-command.json`、`executed-fixture.mjs`：完整输入与实际执行脚本。

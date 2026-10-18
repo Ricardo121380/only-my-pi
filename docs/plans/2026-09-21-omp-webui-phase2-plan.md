@@ -86,6 +86,8 @@ M2 完成必须能在一个 WebUI 内配置账号、选择项目、受控编程�
 | 2E | 本机协作边界已实现；源码及 bb4111e 安装态真实 PTY/页面定向通过 |
 | F04/F05、2F | PASS：真实强度/用量、writer终态、输入及最终安装通过；资源/Full更新体积MEASURED，记录要求完成 |
 
-下一执行项：3A Electron承载。二阶段累计任务3/3、重试6/6；本轮只追加一次writer，真实3轮/2工具/13670token，双gate、独立reviewer、Host succeeded、页面完成、worker退出及双锁重获PASS。日常升级/回滚/再应用PASS，配置与58个历史文件摘要保持。模型续接取消已验收，真实模型发起的运行中shell取消未额外执行；OAuth真实登录仍NOT_RUN，按总计划仅声明实际所测Provider。完整证据见[writer复测](2026-09-26-omp-writer-terminal-acceptance.md)和[二阶段完成验收](2026-09-26-omp-webui-phase2-closeout.md)。
+后续执行调整：M2收口时原下一项为3A；用户随后完成23项WebUI优化讨论，并通过[R1–R3报告补充讨论](2026-09-26-webui-report-followup-discussion.md)确认先完成S0安全与可靠性修复，再实施[U0–U6追加计划](2026-09-26-webui-optimization-plan.md)。当前[S0-01–08全部已验收，下一项U0-01尚未开始](2026-09-26-webui-optimization-tasks.md)，3A暂缓。优化设计以Glacier对话优先为准，不再强制保持本计划早期的原稿DOM布局；S0通过前不开始U0设计。
+
+二阶段历史累计任务3/3、重试6/6；收口轮只追加一次writer，真实3轮/2工具/13670token，双gate、独立reviewer、Host succeeded、页面完成、worker退出及双锁重获PASS。日常升级/回滚/再应用PASS，配置与58个历史文件摘要保持。模型续接取消已验收，真实模型发起的运行中shell取消未额外执行；OAuth真实登录仍NOT_RUN，按总计划仅声明实际所测Provider。完整证据见[writer复测](2026-09-26-omp-writer-terminal-acceptance.md)和[二阶段完成验收](2026-09-26-omp-webui-phase2-closeout.md)。
 
 2026-09-23 已确认终端边界：React/xterm → OMP Host/node-pty → 本机 shell，继续保留 Pi RPC，Electron 属于 M3。隐藏面板不关闭终端，重新连接不重发输入；结束需确认，普通后台任务清理成功才释放项目锁。进程跟踪不能保证捕获主动逃离采样的任意守护进程，不作为 OS 隔离或恶意代码防线；未知清理状态保留锁并显示核对入口。

@@ -4,6 +4,8 @@
 
 **当前阶段：M2 PASS（2026-09-26）**，日常安装已晋升9130d02；[完成验收与限制](2026-09-26-omp-webui-phase2-closeout.md)是最终收敛入口。下方开发批次保留各自原始验证口径，后续不据历史通过替新代码验收。
 
+**后续安排调整（2026-09-26）：** 用户确认先完成S0安全与可靠性修复，再推进WebUI优化U0–U6，最后进入Electron。[功能讨论](2026-09-26-webui-optimization-discussion.md)与[报告核验后的R1–R3](2026-09-26-webui-report-followup-discussion.md)已收敛；执行转到[新Task看板](2026-09-26-webui-optimization-tasks.md)，当前S0-01–08全部已验收、下一项U0-01尚未开始，依据[详细计划](2026-09-26-webui-optimization-plan.md)及[验收矩阵](2026-09-26-webui-optimization-acceptance.md)。M2历史结论保留，3A暂缓。
+
 状态规则：待开始 → 开发中 → 待验收 → 已验收。单元测试、模拟 Provider、真实 Provider、浏览器和安装态分别记录；前置 Task 未通过不得开放依赖能力。历史证据不代表当前工作树重新验收。
 
 ## 2A：账号与模型
@@ -61,7 +63,8 @@ F04/F05 已接入并有开发态与候选证据。F02 的 DOMPurify/fast-uri 告
 | 受管写入真实任务 | 已验收，完整真实终态 | 本轮有界复测3轮/2工具；克隆、fresh reviewer、应用、双gate、Host succeeded、页面完成、worker退出及双锁重获PASS；[报告](2026-09-26-omp-writer-terminal-acceptance.md) |
 | 撤权/取消真实任务 | 已验收，模型续接期间 | 撤权确认、cancelled、worker退出、双锁重获、迟到审批409；未到bash，不声称运行中shell已测 |
 | 日常安装与 M2 总验收 | 已验收，M2 PASS | 日常升级→回滚原active→再应用9130d02；页面/身份通过；设置、凭据与58个历史文件保持；[报告](2026-09-26-omp-webui-phase2-closeout.md) |
-| 3A Electron 承载 | 下一批，待开始 | 复用WebUI/Host，窗口/菜单/目录/通知，区分关闭窗口与显式退出；M3未完成 |
+| S0修复及WebUI优化讨论与计划 | S0-01–08全部已验收 | S0＋U0–U6共44项Task/43项验收；8项Task已验收；U0–U6尚未开始，预览与Agent必须同时可用 |
+| 3A Electron 承载 | 暂缓，先完成WebUI优化 | 后续复用WebUI/Host，窗口/菜单/目录/通知，区分关闭窗口与显式退出；M3未完成 |
 
 ## 2C 启动前准入验证（2026-09-22）
 

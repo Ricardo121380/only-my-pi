@@ -1,5 +1,7 @@
 # M2 资源与更新体积记录
 
+> 本文保留测量当时的 M2 状态、预算与下一门禁，不代表当前状态；后续已完成项见 [M2 收口记录](2026-09-26-omp-webui-phase2-closeout.md)。下列证据为本机工作区的仓库外附件，通过[本地历史证据索引](../evidence/2026-10-18-local-development-history.md)记录原始路径、摘要和范围；原始附件不随仓交付。
+
 日期：2026-09-26。结论：**当前 Full 候选的资源记录与更新包体积已补齐，状态 MEASURED；Full 字节校验、解包身份与 PTY 清理检查 PASS。M2 仍为 IN_PROGRESS。** 本项没有约定内存硬上限，不将采样成功写成跨设备性能达标；writer 真实 Host/页面成功终态和最终日常安装仍未完成。
 
 ## 版本与测量边界
@@ -22,7 +24,7 @@
 | M2 Full 解包文件逻辑长度之和 | 519,799,860 | 495.72 | 安全解包器记录，共 37,548 个目录/文件/链接条目 |
 | M2 Full 解包目录磁盘分配占用 | 616,062,976 | 587.52 | `du` 口径，含文件系统分配开销；与压缩包或逻辑长度不同 |
 
-Full SHA-256：`3ca4340d715cda359d0aba6e81cb8a3c1b4b58b43c8dacc94dcd3f7b3b069d7b`。完整 [transfer.json](../../../artifacts/webui-phase2/resources-sep26-transfer/transfer.json) 保存 Full/Thin 摘要、条目数、候选身份和 PASS 回执；[baseline.json](../../../artifacts/webui-phase2/resources-sep26-transfer/baseline.json) 保存 M1 重打包与历史归档摘要对照。
+Full SHA-256：`3ca4340d715cda359d0aba6e81cb8a3c1b4b58b43c8dacc94dcd3f7b3b069d7b`。本机 [resources-sep26-transfer/transfer.json](../evidence/2026-10-18-local-development-history.md#local-214960c83968db77) 保存 Full/Thin 摘要、条目数、候选身份和 PASS 回执；[resources-sep26-transfer/baseline.json](../evidence/2026-10-18-local-development-history.md#local-c4a07a3d0d088181) 保存 M1 重打包与历史归档摘要对照。
 
 当前没有差分下载实现：[payload-source.mjs](../../packages/release-stack/payload-source.mjs) 的远端 prepare 每次请求完整资产，本地 prepare 从明确 bundle 读取。**使用已有本地 Full 候选切换时，新增网络下载为 0；若传输此候选整包，文件响应正文为 151,164,714 bytes。** 本轮没有发布 release index、没有伪造受保护验收回执，也没有公网/CDN下载。HTTP/TLS开销、metadata、重试与未来重新构建后的字节变化不包含在该数字中。
 
@@ -30,7 +32,7 @@ Thin 的小包不能代表完整更新流量：[thin-resolver.mjs](../../package
 
 ### 增长来源
 
-下表为两次候选的 `du` 分配字节数，**子目录相互包含，不可相加**。原始记录：[component-allocation.json](../../../artifacts/webui-phase2/resources-sep26-transfer/component-allocation.json)。
+下表为两次候选的 `du` 分配字节数，**子目录相互包含，不可相加**。本机原始记录：[resources-sep26-transfer/component-allocation.json](../evidence/2026-10-18-local-development-history.md#local-03aa7a97dee5baee)。
 
 | 组件 | M1 bytes | M2 bytes | 判断 |
 | --- | ---: | ---: | --- |
@@ -66,7 +68,7 @@ Node、Pi、external-npm 的分配占用在两次样本中基本稳定。本表�
 - overview和空白对照末尾 `hasFocus=false`，其余业务状态末尾为true；这些是资源状态样本，不重新用于输入延迟/FPS判定。普通前台输入门禁沿用[独立输入验收](2026-09-26-omp-input-performance-acceptance.md)。
 - 本轮确定性worker没有真实模型子进程。真实模型运行记录另用既有证据，不能拼接成同一时刻的“完整应用峰值”。
 
-详细过程树、每个样本的时间和字节数见 [summary.json](../../../artifacts/webui-phase2/resources-sep26/summary.json) 及同目录 `blank/overview/history-diff/monaco/pty/pty-closed/blank-after.json`。逐样本还记录了 Host+共享浏览器在同次采样中的RSS合计，仅用于检查统计完整性，不代表 OMP 独占量。
+详细过程树、每个样本的时间和字节数见本机 [resources-sep26/summary.json](../evidence/2026-10-18-local-development-history.md#local-5bedcf6f7c15885c) 及同目录 `blank/overview/history-diff/monaco/pty/pty-closed/blank-after.json`。逐样本还记录了 Host+共享浏览器在同次采样中的RSS合计，仅用于检查统计完整性，不代表 OMP 独占量。
 
 ### 真实模型进程树与启动历史证据
 
@@ -78,18 +80,18 @@ Node、Pi、external-npm 的分配占用在两次样本中基本稳定。本表�
 | CPAR writer | 549,830,656 bytes（524.36MiB） | 峰值样本包含Host、RPC及子任务；原验收脚本终态崩溃，非完整成功验收 |
 | CPAR 模型续接撤权/取消 | 508,870,656 bytes（485.30MiB） | Host + RPC worker；未运行bash |
 
-来源分别为 [simple](../../../artifacts/webui-phase2/live-cpar-summary-sep25/report.json)、[writer](../../../artifacts/webui-phase2/live-cpar-writer-sep25/report.json)、[cancel](../../../artifacts/webui-phase2/live-cpar-cancel-sep26/report.json)；两秒采样，不能称精确系统峰值。
+本机来源分别为 [live-cpar-summary-sep25/report.json](../evidence/2026-10-18-local-development-history.md#local-481796b71db4724e)、[live-cpar-writer-sep25/report.json](../evidence/2026-10-18-local-development-history.md#local-89b6cd05f7955d19)、[live-cpar-cancel-sep26/report.json](../evidence/2026-10-18-local-development-history.md#local-158f40906969dd9c)；两秒采样，不能称精确系统峰值。
 
-启动仍以 [cold-start-36FBe0/metrics.json](../../../artifacts/webui-phase2/cold-start-36FBe0/metrics.json) 的 **4,075.7ms** 为已执行证据：新Node进程经安装入口至Host就绪及配对，抑制默认浏览器打开；不是清空OS缓存的冷启动，也不包含首屏。本轮夹具Host初始化+初次索引54.5ms只是进程内子步骤，不能替换完整入口指标。
+启动仍以本机 [cold-start-36FBe0/metrics.json](../evidence/2026-10-18-local-development-history.md#local-e2577f044ec5fd9d) 的 **4,075.7ms** 为已执行证据：新Node进程经安装入口至Host就绪及配对，抑制默认浏览器打开；不是清空OS缓存的冷启动，也不包含首屏。本轮夹具Host初始化+初次索引54.5ms只是进程内子步骤，不能替换完整入口指标。
 
 ## 实际验证、清理与复测
 
 - Full候选组件摘要在压缩前、下载函数本地流回放后、安全解包后保持一致。M1同函数重打包与既存115,465,257字节归档SHA完全一致。临时回放/解包目录清除，保留压缩包和JSON。
 - 进程采样辅助函数实机检查PASS：真实sleep子进程被包含、RSS之和一致、浏览器路径边界成立、无argv/env字段、Host不存在时拒绝测量。证据 `resources-sep26/process-helper-check.mjs` 与 `.log`。
 - Ego实际打开历史、工具输出、diff、Monaco和xterm；终端输入 `printf RESOURCE_PTY_OK > resource-proof.txt`，落盘字节精确匹配。关闭→观察页面已结束约1,510.3ms，**仅一次且包含自动化等待**；不是取消本地确认P95或纯进程退出时延。
-- 关闭后supervisor 77522、shell 77525 均不存在，后续20个样本Host树均回到1个进程，安装ownership模块重新取得并释放项目锁。见 [pty-cleanup.json](../../../artifacts/webui-phase2/resources-sep26/pty-cleanup.json)；[页面截图](../../../artifacts/webui-phase2/resources-sep26/pty.png)已查看。
+- 关闭后supervisor 77522、shell 77525 均不存在，后续20个样本Host树均回到1个进程，安装ownership模块重新取得并释放项目锁。见本机 [resources-sep26/pty-cleanup.json](../evidence/2026-10-18-local-development-history.md#local-d9a965ed348eb0d8)；页面截图 [resources-sep26/pty.png](../evidence/2026-10-18-local-development-history.md#local-184e527dd4218a2f) 已查看。
 - 自动化中一次宽泛项目按钮定位歧义、一次CDP采样后旧ref失效、两个错误/不可见选择器等待超时，均重新读取当前页面后纠正；没有重复发起终端、没有把这些自动化错误记成产品缺陷或隐藏成零失败。
-- Host正常退出、Ego空间正常finish、配对清单删除，见 [cleanup.json](../../../artifacts/webui-phase2/resources-sep26/cleanup.json)。未晋升日常安装、未发布、未升级Pi；既有Glacier审计文档改动保留。
+- Host正常退出、Ego空间正常finish、配对清单删除，见本机 [resources-sep26/cleanup.json](../evidence/2026-10-18-local-development-history.md#local-a746e227e7e3e308)。未晋升日常安装、未发布、未升级Pi；既有Glacier审计文档改动保留。
 
 离线包体复测命令（输出目录必须尚不存在）：
 

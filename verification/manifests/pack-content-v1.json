@@ -87,6 +87,8 @@
     "packages/adapters/"
   ],
   "allowedBundledPrefixes": [
+    "node_modules/node-pty/",
+    "node_modules/node-addon-api/",
     "node_modules/ajv/",
     "node_modules/ws/",
     "node_modules/ajv-formats/",

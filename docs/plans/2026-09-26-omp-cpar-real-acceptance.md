@@ -69,7 +69,7 @@ Pi 回执合计输入 8,091、输出 387、cacheRead 7,296，总 **15,774 token*
 
 ## 清理与证据
 
-证据根目录：`LOCAL_HOME/Agentprojects/only-my-pi/artifacts/webui-phase2/`。
+本机证据根目录：工作区下 `artifacts/webui-phase2/`（仓库外）。
 
 | 目录/文件 | 内容 |
 | --- | --- |

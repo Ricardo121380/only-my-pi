@@ -4,6 +4,13 @@
 
 Accepted — 2026-08-16
 
+2026-10-17 product-direction successor: [ADR-0020](ADR-0020-pi-native-clients-and-shared-sessions.md)
+establishes the CLI/TUI and desktop as two first-class clients directly on Pi.
+The original Harness surfaces and milestone sequence below remain historical;
+the sole-Pi-runtime rule and explicit Labs boundaries remain applicable.
+Use the [development blueprint](../plans/2026-10-17-product-direction-and-iteration-plan.md)
+for current work.
+
 ## Context
 
 Pi deliberately keeps its core small and exposes extensions, skills, prompts,

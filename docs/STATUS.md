@@ -12,11 +12,32 @@ The 2026-10-17 development-version paragraph below is an earlier snapshot.
 Candidate construction and same-candidate integration remain #77; the daily
 installation and material/Full/real Provider acceptance are unchanged.
 
+## Current development entry — 2026-10-17
+
+Only my pi is being developed as a CLI/TUI and a desktop Agent client directly
+on the latest stable Pi core. The complete selected WebUI scope precedes desktop
+implementation. The [development blueprint](plans/2026-10-17-product-direction-and-iteration-plan.md)
+owns the current direction, status, remaining work, and discussion decisions;
+[GitHub Issues](https://github.com/Ricardo121380/only-my-pi/issues) track published tasks.
+
+The published terminal Preview is
+[v0.4.0-preview.2](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2).
+Development dependencies are Pi 1.1.0; the checked upgrade target is Pi 1.3.0.
+Neither value establishes the user's current daily installation. See the
+[compatibility matrix](compatibility/node-pi-matrix.md) for the separate identities.
+
+The remainder of this file is the preserved M0–M13 status archive. Its versions,
+active-stack identities, next steps, and publication holds apply to the dated
+milestones below, not to today's development queue. Historical receipts and
+failure records remain valid within their original scope.
+
+## Historical baseline
+
 Baseline snapshot: **2026-08-15** · Roadmap updated: **2026-08-30** · Stable
 kernel merged to `main`: **2026-08-27** · Pi **0.84.3** · Node **25.8.0** · macOS
 `darwin-arm64`
 
-## Active milestone — M12 Direct Terminal Coding Agent Closure
+## Historical milestone — M12 Direct Terminal Coding Agent Closure
 
 ### Public standard-runner CI route — 2026-09-10
 
@@ -1105,7 +1126,7 @@ bound by a second receipt-only child commit at
 receipt out of the source commit preserves the same parent-verification
 invariant as the Harness MVP receipt.
 
-## Next implementation boundary
+## Historical next implementation boundary — M12.8
 
 The local M12.7 boundary is closed by the source/evidence/report chain above.
 The acceptance host can start `omp` directly and recover the prior M11 stack.

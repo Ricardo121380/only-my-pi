@@ -49,10 +49,10 @@
 
 - [Host HTTP 先例](../../tests/host-input-http.test.mjs)第 15–38 行通过生产 startHost、HTTP 和事件观察行为；提交场景第 49–66 行注入 Worker，不能当真实 Pi。
 - [真实 Pi 集成先例](../../tests/host-input-rpc.test.mjs)第 23–61 行绑定 Pi 0.85.1、本地 SSE Provider 与实际 spawn；该入口绕过 HTTP。
-- [浏览器夹具](../../tests/fixtures/host-input-browser.mjs)第 96–105 行使用实际 Host/RpcWorker 与公开命令；[组件测试](../../webui/src/input-delivery-ui.test.tsx)包含 inputApi 模拟，二者证明范围分别记录。
+- [浏览器夹具](../../tests/fixtures/host-input-browser.mjs)第 96–105 行使用实际 Host/RpcWorker 与公开命令；[组件测试](../evidence/2026-10-18-local-development-history.md#local-f2a5fca51c9ff18b)包含 inputApi 模拟，二者证明范围分别记录。
 - [stager 测试](../../tests/release-payload-stager.test.mjs)第 54–64 行注入 prepare 并创建空 payload 目录；成功不能证明默认 parser 打包接线。
 - [现有隔离安装脚本](../../scripts/phase1-stack-rehearsal.mjs)第 10–25、63–74 行绑定输入 Full manifest、Pi 0.85.1/Node 24.19.0，并提供安装/回滚/重新应用参考；只含版本/RPC 冒烟，不能替代新 parser 完整矩阵。
-- [旧 M11 脚本](../../scripts/m11-protected-release-acceptance.mjs)第 37、235 行固定旧 release 与 Pi 0.84.3；不能直接作为当前候选验收命令。[U0 离线探针](../../scripts/probes/webui-u0-parser-offline.mjs)第 47 行也明确不提供生产 Full 安装结论。
+- [旧 M11 脚本](../../scripts/m11-protected-release-acceptance.mjs)第 37、235 行固定旧 release 与 Pi 0.84.3；不能直接作为当前候选验收命令。[U0 离线探针](../evidence/2026-10-18-local-development-history.md#local-30af436d2533866e)第 47 行也明确不提供生产 Full 安装结论。
 
 本轮未执行上述产品测试、构建或安装。共同理解与测试入口已确认；[总规格](2026-10-01-webui-remaining-spec.md)包含 81 条用户故事和全部阶段/Gate 对应，已发布为 [总规格 #19](https://github.com/Ricardo121380/only-my-pi/issues/19)，远程正文与本地文件一致。Q5 已在 2026-10-02 确认；四张工单发布及原生依赖回读均完成。
 

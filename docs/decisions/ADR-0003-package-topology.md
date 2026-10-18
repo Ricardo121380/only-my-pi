@@ -4,6 +4,15 @@
 
 Accepted — 2026-08-16
 
+2026-10-17 scope note: this record describes the original package topology and
+ownership rules. The dual-client product goal is now defined by
+[ADR-0020](ADR-0020-pi-native-clients-and-shared-sessions.md), while candidate
+runtime packaging follows [ADR-0017](ADR-0017-versioned-runtime-contracts-and-stack-promotion.md)
+and its version-specific successors. Direct Pi SDK use does not itself change
+the checked-in dependency or distribution contracts; any such change needs an
+explicit compatibility and packaging assessment. Historical M1 observations
+below are not current delivery status.
+
 ## Context
 
 `only-my-pi` is a Pi distribution and governance layer. It needs Pi types during

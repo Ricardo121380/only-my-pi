@@ -44,7 +44,7 @@ P95 使用排序后的 `ceil(n × .95) - 1` 索引，不丢弃慢样本。所有
 
 ## 证据与收尾
 
-证据目录：`LOCAL_HOME/Agentprojects/only-my-pi/artifacts/webui-phase2/perf-sep26/`。
+本机证据目录：工作区下 `artifacts/webui-phase2/perf-sep26/`（仓库外）。
 
 - `input-dedicated-window.json`、`blank-dedicated-window.json`、`input-dedicated-after-control.json`：正式的三组测量。
 - `input-native-window.json`、`input-frontmost.json`、`input-frontmost-os.json`、`input-activated-target.json`、`blank-selected-space.json`：未通过前置条件或处于概览视图的诊断数据。文件名里的 frontmost/native 不代表已验收，以其上下文和本报告为准。

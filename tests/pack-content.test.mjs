@@ -21,6 +21,7 @@ test("pack allowlist rejects receipts, fixtures, tests, traversal, and unlisted 
     "docs/research/report.md",
     "node_modules/unlisted-package/index.js",
     "node_modules/ajv/node_modules/unlisted-package/index.js",
+    "node_modules/node-pty/node_modules/unlisted-package/index.js",
   ]) {
     const result = validatePackEntries([...manifest.required, file], manifest);
     assert.equal(result.ok, false, file);
@@ -28,7 +29,7 @@ test("pack allowlist rejects receipts, fixtures, tests, traversal, and unlisted 
 });
 
 test("pack allowlist accepts only the exact bundled runtime dependency roots", () => {
-  const result = validatePackEntries([...manifest.required, "node_modules/ajv/dist/ajv.js", "node_modules/minipass/dist/commonjs/index.js"], manifest);
+  const result = validatePackEntries([...manifest.required, "node_modules/ajv/dist/ajv.js", "node_modules/minipass/dist/commonjs/index.js", "node_modules/node-pty/prebuilds/darwin-arm64/pty.node", "node_modules/node-addon-api/napi.h"], manifest);
   assert.equal(result.ok, true, JSON.stringify(result.errors));
 });
 

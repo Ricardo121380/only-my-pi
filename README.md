@@ -4,6 +4,8 @@
 
 **Inspect first. Code with approval.**
 
+**Development goal:** Only my pi delivers both a CLI/TUI and a desktop Agent client, directly built on the latest stable Pi core. The complete selected WebUI scope comes before the Electron application. Both clients are first-class product interfaces, with shared session viewing and explicit-account continuation as a development goal. Pi supplies the Agent runtime, with only the application integration each interface needs. See the [development blueprint](docs/plans/2026-10-17-product-direction-and-iteration-plan.md) for confirmed decisions, verified status, remaining work, and the next iteration. The installation guide below describes the published terminal Preview.
+
 only-my-pi (OMP) is a terminal coding agent built on [Pi](https://github.com/earendil-works/pi), distributed through Homebrew and npm. Run `omp` in a project to inspect code, investigate problems, and make project-local changes after explicit approval.
 
 Pi provides the terminal UI, models, sessions, and core tools. OMP adds coding approvals, budgeted subagent collaboration, and verifiable installation and rollback.

@@ -61,7 +61,7 @@
 | [输入合同](../../packages/host/input-contracts.mjs)，21、33 行 | `materialSnapshotIds` 已有数组字段，但额外字段被拒绝；类型声明本身不表示材料已可发送 |
 | [Host 准入](../../packages/host/input-controller.mjs)，93–98、259 行 | `#binding` 对非空材料快照抛出 `INPUT_MATERIALS_UNAVAILABLE`；`saveDraft` 直接走 store，不能把“可保存 ID”说成“可执行材料” |
 | [Pi 输入桥](../../packages/host/pi-input-bridge.mjs)，33–48 行 | `deliver` 拒绝非空材料快照；当前 `sendCustomMessage` 的内容为 `record.text`，该投递入口未提供实际图片块 |
-| [草稿与恢复](../../webui/src/useInputDraft.ts)，21–25、42、52、58 行 | 新内容固定空材料数组；远端保存内容可复制 ID，但恢复中的 prompt/补充请求要求材料数组为空，非法恢复保留 `raw` 供处理；不是材料刷新恢复闭环 |
+| [草稿与恢复](../evidence/2026-10-18-local-development-history.md#local-f423e05274e70cdc)，21–25、42、52、58 行 | 新内容固定空材料数组；远端保存内容可复制 ID，但恢复中的 prompt/补充请求要求材料数组为空，非法恢复保留 `raw` 供处理；不是材料刷新恢复闭环 |
 | [Composer](../../webui/src/Composer.tsx)，43 行 | 添加附件/引用按钮 `disabled`，标签明确“尚未接入”；本次未进行浏览器点击验收 |
 
 当前所见接点符合“U2 尚未接入”的记录。解除 G2-00 后，首片 #29 必须从公开上传、原子材料发布、卡片/草稿恢复、不可变实际字节到真实 Pi 请求与消费回执贯通；只启用按钮、传文件名或移除拒绝判断不满足工单。测试边界已在总规格确认，实施时沿公开 Host/真实 Pi、Ego Lite 和当前候选安装入口取证。

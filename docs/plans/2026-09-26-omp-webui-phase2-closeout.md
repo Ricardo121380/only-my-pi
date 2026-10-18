@@ -11,8 +11,8 @@
 | 产品源码 | `9130d0259bb53a82f8af290c994dc31fbdd8e028` |
 | Full stack | `sha256:7444c7fb3a6a91bbe077ba2e15bd157b63265f368a480db8b81f959b43d9aea0` |
 | Pi / Node | 0.85.1 / 24.19.0，候选内嵌运行核心 |
-| 日常入口 | `LOCAL_HOME/.local/bin/omp` |
-| 当前安装 | `LOCAL_HOME/.local/share/only-my-pi/current-stack` 指向上述 stack |
+| 日常入口 | 用户目录下 `.local/bin/omp` |
+| 当前安装 | 用户目录下 `.local/share/only-my-pi/current-stack` 指向上述 stack |
 | 升级前 active | `sha256:0b9e9e1c8b7e6d8b1b678dc0c02a5e728c29d47ac96e90853f3b61450ffe8847`，源码 `b5d4674` |
 | 对外发布 | 未推送、未发布；仍为本机私有候选合同，packageVersion 保持 `0.3.0-preview.1`，以 sourceCommit / stackId 区分增量 |
 
@@ -58,3 +58,5 @@
 仓库外 `artifacts/webui-phase2/daily-promotion-sep26/` 中的 `promotion.json` 是本次日常事务收据；`browser-acceptance.json`、`installed-page-state.json`、页面文本和 `installed-ready.png` 是页面检查证据。`promote.mjs` 位于回滚栈之外，可保留供诊断；不应无条件重复运行。阶段汇总为同级 `M2.json`。
 
 按[总计划](2026-09-20-omp-webui-desktop-plan.md)，下一批为 **3A：Electron 承载**。复用当前 React WebUI 和 OMP Host，先处理单实例连接、窗口关闭与显式退出、菜单/目录选择及通知；运行核心打包与安装事务属于 3B/3C。M3 尚未完成，不把 M2 的 WebUI 安装当作 Electron 已交付。
+
+**收口后的安排调整（2026-09-26）：** 上段保留M2收口当时顺序。用户随后通过Q1–Q23及[R1–R3补充讨论](2026-09-26-webui-report-followup-discussion.md)确认先完成S0安全与可靠性修复，再推进[WebUI优化U0–U6](2026-09-26-webui-optimization-plan.md)，最后进入Electron；当前执行入口是[新Task看板](2026-09-26-webui-optimization-tasks.md)，S0-01–08全部已验收，下一项U0-01尚未开始。本报告历史验收结论和限制不变，不据此验收新发现缺陷的修复或追加功能。

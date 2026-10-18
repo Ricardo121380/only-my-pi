@@ -11,6 +11,23 @@ document-link failure. #76 remains OPEN/PARTIAL. New candidate packaging and sam
 acceptance belong to #77. The checked 2026-10-17 identities below retain their
 historical meaning; they do not describe a new daily installation.
 
+## Current identities — checked 2026-10-17
+
+| Identity | Version / state | Evidence and limits |
+| --- | --- | --- |
+| Published terminal Preview | OMP `v0.4.0-preview.2`; packaged Pi `0.84.3` is documented in the release guide | [Published release](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2), [README](../../README.md); release metadata was checked, binaries were not rerun |
+| Development dependency | Pi `1.1.0` | Exact manifest, lock and installed package metadata; not proof of the daily runtime |
+| Accepted controlled candidate | Pi `1.1.0` / `pi110-v1` | [Historical integrated acceptance](../plans/2026-10-13-pi110-integrated-acceptance.md); limited to that candidate and C/P/B scope |
+| Next stable-core target | Pi `1.3.0` | [Upgrade preflight](2026-10-17-pi-1.3.0-upgrade-preflight.md); new-version runtime acceptance NOT_RUN |
+| Supported development/CI matrix | Node `22.19.0` / `24.19.0` | Each new runtime change must pass its applicable checks; old rows do not certify new candidates |
+| User's current daily installation | UNKNOWN in this discussion | Must inspect the actual active stack before an installation change |
+
+See the [development blueprint](../plans/2026-10-17-product-direction-and-iteration-plan.md)
+for the upgrade policy and current milestones. Values below retain their
+historical M0–M10 scope.
+
+## Historical M0–M10 compatibility evidence
+
 | Runtime | Role | Evidence |
 | --- | --- | --- |
 | Node 22.19.0 | minimum supported/CI lane | Exact GitHub Actions lane; repository, topology, migration, and resource lifecycle gates pass |
@@ -36,5 +53,6 @@ The M9 candidate row is governed by
 machine-readable
 [`upstream-candidates.json`](../../contracts/compatibility/upstream-candidates.json).
 M10 supplied the separate reviewed promotion and real-root rollback/reapply
-evidence; Pi `0.84.3` is therefore the current Stable default while `0.84.1`
-remains the recorded historical rollback baseline.
+evidence; Pi `0.84.3` was the Stable default for that recorded M10 generation,
+while `0.84.1` remains its historical rollback baseline. Neither version is the
+current development target or a substitute for a fresh pre-upgrade active-stack check.

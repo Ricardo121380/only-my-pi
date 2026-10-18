@@ -5,7 +5,9 @@ date: 2026-09-20
 
 # ADR-0014: 以共享 WebUI 和 OMP Host 演进到 Electron 桌面端
 
-用户经分轮讨论确认 **React + OMP Host + Pi RPC → Electron**：保留已有 Pi/OMP 运行能力，以本机 WebUI 作为中间产品，再由 Electron 承载共享界面。该选择优先复用现有受控启动、编程授权、子代理和验证流程，并减少后续桌面端重复建设业务界面的成本。状态为设计已接受，尚未实施或验收。
+2026-10-17 部分后继：[ADR-0020](ADR-0020-pi-native-clients-and-shared-sessions.md)明确 CLI/桌面双正式客户端、双向会话接续与 CLI 显式产品账号；现有 Host/RPC 进程划分改为待实际比较的实现选择。完整 WebUI 后再进入 Electron 的交付顺序继续有效。M1/M2 的实现和历史验收见[第二阶段收口](../plans/2026-09-26-omp-webui-phase2-closeout.md)，当前剩余工作见[开发蓝图](../plans/2026-10-17-product-direction-and-iteration-plan.md)。
+
+用户于 2026-09-20 经分轮讨论确认 **React + OMP Host + Pi RPC → Electron**：保留已有 Pi/OMP 运行能力，以本机 WebUI 作为中间产品，再由 Electron 承载共享界面。该选择优先复用现有受控启动、编程授权、子代理和验证流程，并减少后续桌面端重复建设业务界面的成本。下文保留当时设计；实施状态按上方后继入口判断。
 
 ## 取舍
 

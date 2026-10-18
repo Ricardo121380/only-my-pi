@@ -4,6 +4,8 @@
 
 **先理解代码，再授权修改。**
 
+**开发最终目标：Only my pi 同时交付直接基于最新稳定版 Pi 内核的 CLI/TUI 和桌面 Agent 客户端。** 两者都是正式产品入口；先完成全部已选 WebUI 范围，再通过 Electron 交付桌面应用。两端以共享会话查看和显式账号下的接续为开发目标；Pi 提供 Agent 运行能力，各端只保留必要的产品接入。已确认决定、核实基线、完整路线和下一轮入口见[开发蓝图](docs/plans/2026-10-17-product-direction-and-iteration-plan.md)。下方安装说明对应已发布的终端预览版。
+
 only-my-pi（OMP）是基于 [Pi](https://github.com/earendil-works/pi) 的终端 AI 编程助手，通过 Homebrew 或 npm 安装。进入项目运行 `omp`，即可阅读代码、分析问题，并在明确授权后进行项目内修改。
 
 Pi 提供终端界面、模型、会话和基础工具；OMP 在此之上增加编程审批、有预算的子代理协作，以及可验证的安装与回滚。

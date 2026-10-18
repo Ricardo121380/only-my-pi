@@ -1,0 +1,1918 @@
+{
+  "branch": "codex/webui-phase1",
+  "canonicalManifestEncoding": "UTF-8 JSON of priorWorktreeFiles, sorted keys, compact separators, ensure_ascii=true",
+  "configurationFiles": [
+    {
+      "bytes": 1662,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "AGENTS.md",
+      "sha256": "720d4a4ac82a34823ad231a7bcdc7f1846e7a21b863dfd246fa58b57c5313625",
+      "statusAtInitialCapture": "untracked",
+      "committedIn": "e57410a3b3037761a246bf1471939bec0aa0c8eb"
+    },
+    {
+      "bytes": 2186,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/agents/domain.md",
+      "sha256": "3625ad2fa4febd95acf5d7c38ae870aa53a509b676be2fb2dd5217f9a989eb77",
+      "statusAtInitialCapture": "untracked",
+      "committedIn": "e57410a3b3037761a246bf1471939bec0aa0c8eb"
+    },
+    {
+      "bytes": 4107,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/agents/issue-tracker.md",
+      "sha256": "9034449e2d7e20b91b9dd92a47c0cf82b8ccf25c5526efb7edbaae7e2d0cdaf3",
+      "statusAtInitialCapture": "untracked",
+      "committedIn": "e57410a3b3037761a246bf1471939bec0aa0c8eb"
+    },
+    {
+      "bytes": 822,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/agents/triage-labels.md",
+      "sha256": "5f8a656db731c369eb546407b86adcd63dbf2e0a0403c69f5a2aee447eba764f",
+      "statusAtInitialCapture": "untracked",
+      "committedIn": "e57410a3b3037761a246bf1471939bec0aa0c8eb"
+    }
+  ],
+  "configurationPaths": [
+    "AGENTS.md",
+    "docs/agents/issue-tracker.md",
+    "docs/agents/triage-labels.md",
+    "docs/agents/domain.md"
+  ],
+  "formatVersion": 1,
+  "kind": "only-my-pi-engineering-baseline",
+  "observedOn": "2026-10-01",
+  "priorWorktreeCounts": {
+    "modified": 57,
+    "untracked": 175
+  },
+  "priorWorktreeFiles": [
+    {
+      "bytes": 4005,
+      "kind": "file",
+      "mode": "0o644",
+      "path": ".github/workflows/ci.yml",
+      "sha256": "659c953802a285b1a4a9aca56775a79a9985ef41d1ebf00b00365a6827fbae61",
+      "status": "modified"
+    },
+    {
+      "bytes": 7019,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "CONTEXT.md",
+      "sha256": "876eefb4c74a0306ad52ebc266523a351048b42ff4b7582f24335e6314161237",
+      "status": "modified"
+    },
+    {
+      "bytes": 210286,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/contract.json",
+      "sha256": "a7f342d5ce2ead6610fb5cc2624307ca90c31a0f6540fb1b64a63fd2475edb70",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3011,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/documents/licenses/saxes-6.0.0.txt",
+      "sha256": "0fac2374380621b22e6b50451057721a9c52935b02d16d106a9f04897f061d0e",
+      "status": "untracked"
+    },
+    {
+      "bytes": 10116,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/documents/package-lock.json",
+      "sha256": "3120e2d01ad9b390ae9e8eec16674752fb8a032e933644340354866779fa9ee5",
+      "status": "untracked"
+    },
+    {
+      "bytes": 194,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/documents/package.json",
+      "sha256": "29eb4ef380692671968dc2e724eefe6d2545e1aa259b86738f9e2952802ce42e",
+      "status": "untracked"
+    },
+    {
+      "bytes": 20136,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/images/package-lock.json",
+      "sha256": "0e5020f83038a0105d9894b6a51c18be9c1fe351144f39252931932f7da606ed",
+      "status": "untracked"
+    },
+    {
+      "bytes": 130,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/images/package.json",
+      "sha256": "f24815e8bf2d88e3f7cebe9372791152460a2af2c88740f1f0c5516c6c4fce01",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2183,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/native-generated-compatibility-inputs.json",
+      "sha256": "8cbabc2cd4f83e42d3a31badb4bcacd081077e7d19f3beedf4f306254548396c",
+      "status": "untracked"
+    },
+    {
+      "bytes": 12043,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/native-generated-materials.json",
+      "sha256": "3e2320986cfa631f6f319174a0ea456dfba200067a1c354bf9a7246c734b4bf4",
+      "status": "untracked"
+    },
+    {
+      "bytes": 6101,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/native-generated-notices.json",
+      "sha256": "6e2bc96d5f17e364d38a42f7f71c48dc90244ae5cd7c61d0addaca64ea08445b",
+      "status": "untracked"
+    },
+    {
+      "bytes": 6555,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/native-libexif-doc-materials.json",
+      "sha256": "30087a1105214fc766e1cabb9488f0dffc7df6a703288bab01dbd910d9b142a8",
+      "status": "untracked"
+    },
+    {
+      "bytes": 1447,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/native-locale-adapter.json",
+      "sha256": "397241e267a73c4591a2c035ce2039adfb394cb2cdb92cbf4da686413fb9a5fc",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3418,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/native-missing-texts-review.json",
+      "sha256": "9f8e36922f8794465f207cf2c1683223bb6a59541bf515c51c83b98a0e07feae",
+      "status": "untracked"
+    },
+    {
+      "bytes": 6806,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/native-primary-texts-review.json",
+      "sha256": "73b0a5f231f92baaa5f92e751f678aa2791ee2287f671528aadc0710aea3d640",
+      "status": "untracked"
+    },
+    {
+      "bytes": 21081,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/native-primary-texts.json",
+      "sha256": "7ffd3455bc1faeffd47717bfe6fe6636a2e8b7909a122f881d04e55e7840556a",
+      "status": "untracked"
+    },
+    {
+      "bytes": 4658,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/native-rebuild-inputs.json",
+      "sha256": "e8074756b7f92e2d9f8e08e4c8d1c865ba1f1701cd4db0aea285c054d36135a5",
+      "status": "untracked"
+    },
+    {
+      "bytes": 543,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/native-source-policy.json",
+      "sha256": "819dc727d01921b9f478a0248f837cd8c40eb5d0a8e4af384628e0ee55e5cb3c",
+      "status": "untracked"
+    },
+    {
+      "bytes": 1355,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/native-submodule-inputs.json",
+      "sha256": "d3133ac3396d1994234a214baa8911a6f5ac054d98438564b1c2e93f89e51074",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2421,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/native-winapi-materials.json",
+      "sha256": "f9a104859db26d302826e7a03c6afd780a552d2bcb492f0437055ece41db5aa5",
+      "status": "untracked"
+    },
+    {
+      "bytes": 14919,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/npm-acquisition-review.json",
+      "sha256": "b2c77805f43cfec2aac3d58ec37512a15bc02e73ac7480c04b22f25afa66640f",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3300,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/parser-boundaries-review.json",
+      "sha256": "bd355c8baf1d06587502178c6fc6ddaf4ad7b603eedf61fd03aed757b7b35cfb",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3808,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/pdf-asset-license-review.json",
+      "sha256": "1dc39f7dce324ed31e343098dee87750a8e62743b1a4f7f098812f523cf53db1",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3550,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/pdf-budget-review.json",
+      "sha256": "66283e875bc5517114971c680a4aed1526029f15759328b45a749c478c4440b8",
+      "status": "untracked"
+    },
+    {
+      "bytes": 6736,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/pdf-build-inputs-review.json",
+      "sha256": "e82eb279c62581a5e4e56e7753b7fbfe2079cbe0c8d065be1c74dd0dd5db3d49",
+      "status": "untracked"
+    },
+    {
+      "bytes": 12610,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/pdf-build-inputs.json",
+      "sha256": "5a168315d9bdb6198f9e94cd72ae2a5adadbd239f1c63c18ca819d61339c37e5",
+      "status": "untracked"
+    },
+    {
+      "bytes": 8828,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "contracts/release/parser-resources-v1/source-materials-review.json",
+      "sha256": "1a996e004928ac1ad0f1400f54f5af6ba630bfadd8e4ac6281d32b597bda4853",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2022,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/decisions/ADR-0018-host-input-ledger-and-pi-correlation.md",
+      "sha256": "32a6ae94e483e497765b6e92d45b7abc221bc325ca8872569b25a25cd2ac7fb7",
+      "status": "untracked"
+    },
+    {
+      "bytes": 5287,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/design/glacier/2026-09-26-u0-design-contract.md",
+      "sha256": "fe47d333cfb67ead039b4ae2d2d24ccd3f0d61ab20b3f8949d5cec31f3ffb0fc",
+      "status": "untracked"
+    },
+    {
+      "bytes": 24711,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/design/glacier/u0-workbench.html",
+      "sha256": "31ea4e5b48847890b3244ecaae4fd7051da99166ec6d967876cb0f09c6b62a15",
+      "status": "untracked"
+    },
+    {
+      "bytes": 25006,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-20-omp-webui-desktop-plan.md",
+      "sha256": "189c449f5ca464fb82bf9542b13fe4a1813d7b8f2e7f7a8c0a6ce24a687d27f9",
+      "status": "modified"
+    },
+    {
+      "bytes": 8585,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-21-glacier-interaction-audit.md",
+      "sha256": "eb7af0f49b1fb92346e86272d6236ebf627d440fa411ef599d2954f63455fa22",
+      "status": "modified"
+    },
+    {
+      "bytes": 9355,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-21-omp-webui-phase2-plan.md",
+      "sha256": "b330bc2007fe285327cb9020ff71a8ec12501657c686aa644e134c4a74488b0c",
+      "status": "modified"
+    },
+    {
+      "bytes": 103222,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-21-omp-webui-phase2-progress.md",
+      "sha256": "ece687dfcf689cf69021da4fe9463499030985c18669b64a8468622b96d5eaa2",
+      "status": "modified"
+    },
+    {
+      "bytes": 28526,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-21-omp-webui-phase2-tasks.md",
+      "sha256": "39786961e551e63ec85e597049934e579c79866d1ab63196bc7adafa363df0d5",
+      "status": "modified"
+    },
+    {
+      "bytes": 10739,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-26-omp-cpar-real-acceptance.md",
+      "sha256": "0c8fda5e2f9e580110d208546a02f8c0c3cdd08f819b7fd29c3117bcb9d1c362",
+      "status": "modified"
+    },
+    {
+      "bytes": 6920,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-26-omp-input-performance-acceptance.md",
+      "sha256": "7274307b2cd5f21dcef2b543624256bc560a854c71363c96bdaaa5163deb5a86",
+      "status": "modified"
+    },
+    {
+      "bytes": 12068,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-26-omp-resource-transfer-acceptance.md",
+      "sha256": "60529747b519819968930562060de1ad978d5eb81d027a626276310febff81dd",
+      "status": "modified"
+    },
+    {
+      "bytes": 8115,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-26-omp-webui-phase2-closeout.md",
+      "sha256": "67484e5eb325ec01b80c738e3850490830b4394bade2b62faaa58d5a7361308f",
+      "status": "modified"
+    },
+    {
+      "bytes": 5898,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-26-omp-writer-terminal-acceptance.md",
+      "sha256": "8cb5ff0cac1f06c365bb03c596c2df3126f432749ef2720e68199ec4e7e7b47d",
+      "status": "modified"
+    },
+    {
+      "bytes": 22378,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-26-webui-optimization-acceptance.md",
+      "sha256": "e24c64da73f38d169145ee83aee68ad9d532c1fc19105ff097907376ab985d79",
+      "status": "untracked"
+    },
+    {
+      "bytes": 25950,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-26-webui-optimization-discussion.md",
+      "sha256": "cae09a372a696ae009103a5a8fe030831b1ff7b063af8ea999b9909cc83531f6",
+      "status": "untracked"
+    },
+    {
+      "bytes": 28985,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-26-webui-optimization-plan.md",
+      "sha256": "5b767e108a20331d51eea204c397e730f4de828228a35339040c2e4e430c329f",
+      "status": "untracked"
+    },
+    {
+      "bytes": 23978,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-26-webui-optimization-tasks.md",
+      "sha256": "89c7dca29f115376e79432b2a01631ca364cfce66b2d2e4c63992a03a831aefe",
+      "status": "untracked"
+    },
+    {
+      "bytes": 12776,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-26-webui-report-followup-discussion.md",
+      "sha256": "4a56cf339771007b5bc5cc59f5bba408574b7db53b1b2367ce3ec449a41f5ab1",
+      "status": "untracked"
+    },
+    {
+      "bytes": 18614,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-26-webui-s0-remediation.md",
+      "sha256": "8decece11fcef9a125b03c326eeb14ce4d266284ea978012e4b1b0486525579e",
+      "status": "untracked"
+    },
+    {
+      "bytes": 17926,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-26-webui-u0-contracts.md",
+      "sha256": "ebdba8ab92302ce481a8f079a6bdc18927ba1643f5ee663992d106523ff85289",
+      "status": "untracked"
+    },
+    {
+      "bytes": 12909,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-26-webui-u0-parser-study.md",
+      "sha256": "aa47e63caa1006fad0ee6b44dfea4051195101aeb7ee93d0a9041bb4891ed744",
+      "status": "untracked"
+    },
+    {
+      "bytes": 34216,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-26-webui-u0-progress.md",
+      "sha256": "eac6df9e31e1b8637a225c2c1c2753ccbde6be06699ec3342b4a8c341ca0aae0",
+      "status": "untracked"
+    },
+    {
+      "bytes": 1740,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-parser-gate-adjustment.md",
+      "sha256": "ca2b51ae6d2a254d958a9b7848cfa01310a76e89dc2deb4b02b5a3ea07fac8e3",
+      "status": "untracked"
+    },
+    {
+      "bytes": 11204,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u0-acquisition-acceptance.md",
+      "sha256": "557382123fbe93ac59dafd2c1198351a807f65200d4f2fac502cb7be4819933c",
+      "status": "untracked"
+    },
+    {
+      "bytes": 9542,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u0-document-coverage-acceptance.md",
+      "sha256": "dbf1e60e54f41c0039447be3924369b834252c6760b7422af5797a47022eb55f",
+      "status": "untracked"
+    },
+    {
+      "bytes": 9181,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u0-image-compat-acceptance.md",
+      "sha256": "696d3f6f9eb541827df0fe4ae9c43bf876350e25dab64086433e00bfdbd4eba7",
+      "status": "untracked"
+    },
+    {
+      "bytes": 6379,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u0-image-memory-study.md",
+      "sha256": "5b49ef5106942f3b580d33d065914c85dca52429925acdf21178ef4954558f62",
+      "status": "untracked"
+    },
+    {
+      "bytes": 11729,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u0-native-materials-acceptance.md",
+      "sha256": "019b6073ad34be284c92d010fc6787a9d78f17315f01dc51189a3c0b74a71235",
+      "status": "untracked"
+    },
+    {
+      "bytes": 7451,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u0-parser-boundaries-acceptance.md",
+      "sha256": "2317f1e4d2a87953be97d4f018916f544eb6b421fa3a810de4c8f28d5605716d",
+      "status": "untracked"
+    },
+    {
+      "bytes": 4976,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u0-parser-capacity-acceptance.md",
+      "sha256": "621f56b595f07306798376370f1392e54477b8263650c6821deb4dcaaf3edc7c",
+      "status": "untracked"
+    },
+    {
+      "bytes": 12896,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u0-parser-full-integration.md",
+      "sha256": "ef024a2601719c930c94efea33f3f0094a60f095a20fef22077711531eeb6125",
+      "status": "untracked"
+    },
+    {
+      "bytes": 8073,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u0-pdf-budget-acceptance.md",
+      "sha256": "e0d634a5c907a45a5602e462d80f3d1e2245c8324a98c3678b8fb439fcd53f8d",
+      "status": "untracked"
+    },
+    {
+      "bytes": 12052,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u0-pdf-inputs-acceptance.md",
+      "sha256": "2414478276988de03f5ef79261a36fa9905f3bdce3edffdc014de037a5b91188",
+      "status": "untracked"
+    },
+    {
+      "bytes": 4582,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u0-preview-browser-acceptance.md",
+      "sha256": "0ba75fa7547b8c924d65e42476d159b119dc4621699a283791781e6de8cc5035",
+      "status": "untracked"
+    },
+    {
+      "bytes": 4596,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u0-preview-fault-acceptance.md",
+      "sha256": "946fb59415259440bd76e594b045b8b9cbe50a3b5c5c516ad5fbf80fc80d9b7e",
+      "status": "untracked"
+    },
+    {
+      "bytes": 7491,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u0-resource-integration-acceptance.md",
+      "sha256": "80ebc98160c9af2092cf4593914873975050ab4e2a0bc5290d44bc72a1ede562",
+      "status": "untracked"
+    },
+    {
+      "bytes": 13603,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u0-source-and-cleanup-acceptance.md",
+      "sha256": "a39e6385fc68dff84d705031d730bc18f6ebbeec780e50df636f9ab7a6056ec0",
+      "status": "untracked"
+    },
+    {
+      "bytes": 8687,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u1-01-storage-acceptance.md",
+      "sha256": "dae78d986b49fc16582397e91873a71597c16e28796af1e5b9c43cbaae68f1ec",
+      "status": "untracked"
+    },
+    {
+      "bytes": 11993,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-29-webui-u1-progress.md",
+      "sha256": "5f606b59d990c1610a4f3ece3f0573ee7e04a81f93ac99b3469da4e46f2eac81",
+      "status": "untracked"
+    },
+    {
+      "bytes": 17334,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-30-webui-g2-00-native-source-progress.md",
+      "sha256": "7bb652f49608046b6e0af46fbc0c6621f32842efb458599fc8a7e1030e8c610b",
+      "status": "untracked"
+    },
+    {
+      "bytes": 10971,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-30-webui-g2-00-rebuild-inputs-progress.md",
+      "sha256": "b714d08621bcddae56b4cef411a4698fd8d1c67d66c4fca34378cd694fa8f24e",
+      "status": "untracked"
+    },
+    {
+      "bytes": 8461,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-30-webui-u1-02-delivery-acceptance.md",
+      "sha256": "3e97584cbfa763d1fc32840afe433673239cb84a44b717a129f0185159170b9e",
+      "status": "untracked"
+    },
+    {
+      "bytes": 10067,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-30-webui-u1-03-conversation-acceptance.md",
+      "sha256": "f25bbabfe1d092c5c7ead873632b714dffd708a7a82d651c84b7f42e3a51d15c",
+      "status": "untracked"
+    },
+    {
+      "bytes": 10896,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-30-webui-u1-04-input-control-acceptance.md",
+      "sha256": "eadb585368460ff80ad0e4a19e2f947ff770c03f729f466440390017ee91f0be",
+      "status": "untracked"
+    },
+    {
+      "bytes": 13363,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-30-webui-u1-05-recovery-acceptance.md",
+      "sha256": "010558573b78a1a2a2f72b7f3ae0adb55bad903f38cc5a1c0bf5fc53e4c81435",
+      "status": "untracked"
+    },
+    {
+      "bytes": 13630,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-09-30-webui-u1-06-integration-acceptance.md",
+      "sha256": "52be04fd6b78654675a60ed2cb6852bb0fd4fe9bfad7f275e625524e460595c6",
+      "status": "untracked"
+    },
+    {
+      "bytes": 13583,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-10-01-webui-g2-00-cross-platform-materials.md",
+      "sha256": "d730c9f459c99340a66f7b6e252373b2f259193a4eef3e2ff81eeb750984058c",
+      "status": "untracked"
+    },
+    {
+      "bytes": 11581,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-10-01-webui-g2-00-generated-materials.md",
+      "sha256": "44847bb5ffde585e6559c9671ac646a4e607872bc8a089dc43c80b49e50f5714",
+      "status": "untracked"
+    },
+    {
+      "bytes": 14063,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-10-01-webui-g2-00-libexif-doc-materials.md",
+      "sha256": "02d6ffd22fcd3c8fa63bf8c347a90440ed80726f74230fb737d912b025411f84",
+      "status": "untracked"
+    },
+    {
+      "bytes": 13248,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-10-01-webui-g2-00-locale-adapter-acceptance.md",
+      "sha256": "12de84a913652b1b6fd578d45fa986f21f593addf71ffbf7889676c038900242",
+      "status": "untracked"
+    },
+    {
+      "bytes": 12877,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-10-01-webui-g2-00-native-closure-review.md",
+      "sha256": "6a91099b7d0602f9cbb6ebc54e891ddd926a71866588d0f5861e56ff2e7bc564",
+      "status": "untracked"
+    },
+    {
+      "bytes": 12154,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "docs/plans/2026-10-01-webui-g2-00-notice-inventory.md",
+      "sha256": "3d4d584e6725d78e54a1bc1566561b7e142cc2e956cef60e74e58b449b11eaec",
+      "status": "untracked"
+    },
+    {
+      "bytes": 42900,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "inventory/resources.lock.json",
+      "sha256": "8008c3d14484647ca1cfe43d61152a715c9c105c28af0165bae1fd9b421fa5f5",
+      "status": "modified"
+    },
+    {
+      "bytes": 210068,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "package-lock.json",
+      "sha256": "200b68c15dd2352846dedf0fa2e30596f2810e624468b531efab93ac9eebef3c",
+      "status": "modified"
+    },
+    {
+      "bytes": 14746,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "package.json",
+      "sha256": "cb8fcd24a8b0ee3183a017491a54a7a78607975b5d2649ebfbd2d17cbae29942",
+      "status": "modified"
+    },
+    {
+      "bytes": 14497,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/config-runtime/atomic-file.mjs",
+      "sha256": "6f7c72812fa4b0aa36a91b5ba2502a8356518f630498a1cf27dc7eed79238c28",
+      "status": "modified"
+    },
+    {
+      "bytes": 4877,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/direct-agent/shell-policy.mjs",
+      "sha256": "be10ba5c73b27bd4c59de159332f5aa48f0ad33ec111d9c30f48d1d0e73701a6",
+      "status": "untracked"
+    },
+    {
+      "bytes": 14343,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/direct-agent/workspace.mjs",
+      "sha256": "cd4a77cd90bcd60444065bda0ff0270d478b74ef7f5cf2af4ba6f5baffd2983f",
+      "status": "modified"
+    },
+    {
+      "bytes": 6796,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/distribution/runtime-patches.mjs",
+      "sha256": "655b36ad9f366797c578a5c3188963688091bf9c4a7d5d18438ae0baf0d1b2f8",
+      "status": "modified"
+    },
+    {
+      "bytes": 6357,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/host/account-rpc-entry.mjs",
+      "sha256": "964377ce736e3d152e677de44190cc51a28ce723e5df079ae646b03339907973",
+      "status": "modified"
+    },
+    {
+      "bytes": 9215,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/host/catalog.mjs",
+      "sha256": "c3b904aa376e87b4c672d6308a23bc73896efc31994e2611d7b9e761e2baf2ab",
+      "status": "modified"
+    },
+    {
+      "bytes": 8735,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/host/contracts.d.ts",
+      "sha256": "ac04120489c31ddcfda05cb8c3410e05b4013cfe261b8ba03a5741a78bcdd1f4",
+      "status": "modified"
+    },
+    {
+      "bytes": 6246,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/host/input-contracts.mjs",
+      "sha256": "c3442b094282daf1d449fe71276d616d3ef64c538ab7abd848a93bae12801918",
+      "status": "untracked"
+    },
+    {
+      "bytes": 22774,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/host/input-controller.mjs",
+      "sha256": "e77553a243127a49b03b9f400ea871b01df88dc69611a3a6ebf7a9a3220183fd",
+      "status": "untracked"
+    },
+    {
+      "bytes": 6027,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/host/input-protocol.mjs",
+      "sha256": "8ef68194153a5f66c75c3b6e0c93bb97f89c55ce5bd4ab2b2ddd4526c21ad900",
+      "status": "untracked"
+    },
+    {
+      "bytes": 16566,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/host/input-store.mjs",
+      "sha256": "b856ec40e3680a4475afacb2f20ac8cd75bd343dbc2dafd2886c621a16ee03cc",
+      "status": "untracked"
+    },
+    {
+      "bytes": 1675,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/host/models.mjs",
+      "sha256": "83416d20f6f902238dd92b79241b46d00470359f7a203767a672d4bf6e2e43a5",
+      "status": "modified"
+    },
+    {
+      "bytes": 4806,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/host/pi-input-bridge.mjs",
+      "sha256": "1860b4b459ed1882c04789a82452bcf5a36be349bba0158181e1122e33565f68",
+      "status": "untracked"
+    },
+    {
+      "bytes": 12463,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/host/rpc-worker.mjs",
+      "sha256": "36c352b9cc6d272df261ad1e439136eee5f9a2957c74b6ea856229a3aa3105ad",
+      "status": "modified"
+    },
+    {
+      "bytes": 26956,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/host/server.mjs",
+      "sha256": "4ce505937b6b682c60c460a06bc5c9bcb8a5fc2a15be793d3d309c28f057df06",
+      "status": "modified"
+    },
+    {
+      "bytes": 19353,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/host/tasks.mjs",
+      "sha256": "43c617b57b3137e3cb8ed0a613578fda6cc462f9b7f3713d3ae99814a4422f16",
+      "status": "modified"
+    },
+    {
+      "bytes": 2285,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/host/terminal-supervisor.mjs",
+      "sha256": "5e36cdded672642bdecaf33ef8325e60a044e21e8d4c57722371396db6ebb71a",
+      "status": "modified"
+    },
+    {
+      "bytes": 11267,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/release-stack/parser-acquisition.mjs",
+      "sha256": "392bd00a0a7ca0c20b1623d72c46f5371c955c1048c5aba4ec530011219d6a00",
+      "status": "untracked"
+    },
+    {
+      "bytes": 14789,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/release-stack/parser-resources.mjs",
+      "sha256": "e9c64f7a0348a194213fc82ce2c93c82f555457f89a883ee8b81be0881a6a98b",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3550,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/release-stack/private-runtime.mjs",
+      "sha256": "d5b7280a8b2ae882cb1f25630b9d767a771152380ac0b9f78074a285a71121be",
+      "status": "modified"
+    },
+    {
+      "bytes": 9808,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/web-policy/index.mjs",
+      "sha256": "38b32e66ce334ed946b1d20bd411964846ebe3e583fe72807c99f3715d71990c",
+      "status": "modified"
+    },
+    {
+      "bytes": 5043,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "packages/web-policy/pinned-fetch.mjs",
+      "sha256": "d6ecfda4c3caa68b94b3afeaacb5818a1ba8e10a0cb601806be91130c6cdb982",
+      "status": "untracked"
+    },
+    {
+      "bytes": 5794,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/fixtures/locale-corefoundation.rs",
+      "sha256": "c3f533022f0f12ebdb5127540c6626a94c9e238faaaf3ccbed4f7f86cd724931",
+      "status": "untracked"
+    },
+    {
+      "bytes": 1088,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/fixtures/locale-oracle.m",
+      "sha256": "a4cd1a11426f7194d5129a0a31858ef158cd139e19925ec2ff13884be850562c",
+      "status": "untracked"
+    },
+    {
+      "bytes": 849,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/fixtures/locale-smoke.rs",
+      "sha256": "662e4c760b323b1f29980a246ce6d928bb10d4805f736e91e62785ddcaa671ea",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2395,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/fixtures/locale-svg-tests.rs",
+      "sha256": "88c27ee4b07e012d180de566eabf71a7058ba7eefb22fa25a931e3dcea31c37a",
+      "status": "untracked"
+    },
+    {
+      "bytes": 7040,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/pdf-budget-cases.mjs",
+      "sha256": "7047c152c6f1bbc9f3da65a86f74a88eda7f1b2cdb962ac956e361c4ee07aa39",
+      "status": "untracked"
+    },
+    {
+      "bytes": 11151,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/pdf-decode-budget.mjs",
+      "sha256": "b5e9a82bcc5206838c59c80eb975dfac26783627d083c47f76220e9bae26dcee",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3265,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/resource-native-archives.mjs",
+      "sha256": "85aea0577a2e868b099477d2d73cb1e762e0317f0b6063b724774105b02fce65",
+      "status": "untracked"
+    },
+    {
+      "bytes": 1296,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/resource-native-configure-review.mjs",
+      "sha256": "73c4b107f5809d31dc56ad995d70494ba15b1898d08a34c373b76228514595a3",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3767,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/resource-native-generated-materials.mjs",
+      "sha256": "bf0472c11d1a9cba7496bc0c28a3735d0095c7cf9d2c068335519a74493b5a8e",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3206,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/resource-native-generated-notices.mjs",
+      "sha256": "59749cbd70e644167103efec1de2d154cf001a920c9f056fc8259cc8f27b2160",
+      "status": "untracked"
+    },
+    {
+      "bytes": 5849,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/resource-native-libexif-docs.mjs",
+      "sha256": "7a6fd3f5d1623cd77dc78b38f81aaa46cfc78e8f78f7b4a7a4209db37752bf6f",
+      "status": "untracked"
+    },
+    {
+      "bytes": 5047,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/resource-native-locale.mjs",
+      "sha256": "bbe91670a0e2b35817e1b892dd7630efeff9dfa7b908764cca90a025feff7af5",
+      "status": "untracked"
+    },
+    {
+      "bytes": 10456,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/resource-native-materials.mjs",
+      "sha256": "aad2ed77077e2507608157fbd7343273e292fca284c72783eca28bea58b0c02e",
+      "status": "untracked"
+    },
+    {
+      "bytes": 8622,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/resource-native-patches.mjs",
+      "sha256": "618e84397f9671da656a5f4687b449a6a29cb924fefe01de436a969d987d88c9",
+      "status": "untracked"
+    },
+    {
+      "bytes": 10509,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/resource-native-rebuild.mjs",
+      "sha256": "9db1935252b5ecfcfa16f7cc64e7545e6a6c237c2f755288e8e56fcc86658fce",
+      "status": "untracked"
+    },
+    {
+      "bytes": 15361,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/resource-native-source.mjs",
+      "sha256": "a1bf7d873a20abc6eabb4a572d59d2581592b6aa5da0f630f561e9c1316109ae",
+      "status": "untracked"
+    },
+    {
+      "bytes": 4285,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/resource-native-unit-graph.mjs",
+      "sha256": "1c1af22f64a17132687c66b024d725e9556ab05ae29550656d040246224f5783",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2283,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/resource-native-winapi.mjs",
+      "sha256": "0ddeca61ca1bf404d5b83955e8cfa58078157903f3cf236d33dcb344cd69363d",
+      "status": "untracked"
+    },
+    {
+      "bytes": 4326,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/resource-rehearsal-child.mjs",
+      "sha256": "b4f2f9b28b66e37ed872f55b8f3cc91ccb14384f698d0201bbe2aee5566c8131",
+      "status": "untracked"
+    },
+    {
+      "bytes": 16004,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/lib/resource-source-materials.mjs",
+      "sha256": "5b55646f26d64c322b3088ebe36c79eb65a7c2ed1ba8863245537cd20dd363ac",
+      "status": "untracked"
+    },
+    {
+      "bytes": 7882,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-g2-native-generated-materials.mjs",
+      "sha256": "22c52c4a5a859ce4e0c681028dcf6da1897770f36bc14a851c06fae371d171a2",
+      "status": "untracked"
+    },
+    {
+      "bytes": 12912,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-g2-native-generated-notices.mjs",
+      "sha256": "7595e43b3121dcae101d3570420d3fd60f5c9463f279d28d744dafce1ed20e15",
+      "status": "untracked"
+    },
+    {
+      "bytes": 14395,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-g2-native-libexif-docs.mjs",
+      "sha256": "1f97c9113ffdd18361cd42b4a5cbe11113397123550716a125c5c9544e047a24",
+      "status": "untracked"
+    },
+    {
+      "bytes": 29669,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-g2-native-locale.mjs",
+      "sha256": "4ab22b4c71d6c1733aa617e2fd026f98524e2146fe489e133ee96cf274bc5056",
+      "status": "untracked"
+    },
+    {
+      "bytes": 7669,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-g2-native-patches.mjs",
+      "sha256": "f5499ff6cda48ed824133036f9ac9b3dea62c9627bfe4e3393d9069ac4ba1513",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2970,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-g2-native-rebuild-inputs.mjs",
+      "sha256": "476d2601c6e1cab378f0fd2300b4cd2fa44c39519ebf2588ad594dd6c44d437a",
+      "status": "untracked"
+    },
+    {
+      "bytes": 6502,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-g2-native-rust.mjs",
+      "sha256": "d5232940d01b5b25541a20437c20a9aac63023ddf7d4eb4732b81ac9601fbde4",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3307,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-g2-native-sources.mjs",
+      "sha256": "3fc98f88d91b51991233e4c96cd6583901f6991bc637ab925c48c3bc9d4b5219",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2913,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-g2-native-submodules.mjs",
+      "sha256": "cc79c405d502154a3a046be481a9462ce046bf07924b8ecd06b952739831895f",
+      "status": "untracked"
+    },
+    {
+      "bytes": 9633,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-g2-native-target-graph.mjs",
+      "sha256": "657b3c15f92ff9cb5c8e7280bff54d4efdaf3a4abae6abceb255920c49406cef",
+      "status": "untracked"
+    },
+    {
+      "bytes": 9592,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-g2-native-winapi.mjs",
+      "sha256": "90cbff9c4499f1f154d7aa792d025130a5b2ffb761ee642ba8f0f92e680fed66",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3311,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-baseline.mjs",
+      "sha256": "814e8de12fa9bd33c8f7a440e37012a08725a67ff0e0944bdaec4d11f20a4f7b",
+      "status": "untracked"
+    },
+    {
+      "bytes": 82842,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-documents.mjs",
+      "sha256": "69d019f5c2b8d26960fa2fa8dd276e61f03670aa274ded36c63de751fde1be4d",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3604,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-image-candidate.mjs",
+      "sha256": "644e763bf10eebfb178a5fdc8f2a042d9aea95305781b2914a69fca54d260e93",
+      "status": "untracked"
+    },
+    {
+      "bytes": 9809,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-images.mjs",
+      "sha256": "6c59b4b63fe2e16b40fb38e67ac0b515485d68014b4556b5274e7c6a256004f8",
+      "status": "untracked"
+    },
+    {
+      "bytes": 8576,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-native-materials.mjs",
+      "sha256": "9ff1d52215e346340664e2fb545a65dbf91d6857b9c279d09913cdf50925fa14",
+      "status": "untracked"
+    },
+    {
+      "bytes": 6759,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-native-provenance.mjs",
+      "sha256": "345365eaf1cb24acb299f1246b18a49c58c7165c850382f029b701b653ba9b7c",
+      "status": "untracked"
+    },
+    {
+      "bytes": 6585,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-office-corpus.mjs",
+      "sha256": "2b0577f8950abff22aba6f8a4e2dd114c2a751911ce041ddbfab36ecd3343e16",
+      "status": "untracked"
+    },
+    {
+      "bytes": 10955,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-parser-acquisition.mjs",
+      "sha256": "4b32509ff20321e882399da3b4ba97fbea93d62222f58ddb82a3a22170f6227f",
+      "status": "untracked"
+    },
+    {
+      "bytes": 11662,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-parser-integration.mjs",
+      "sha256": "b1c4300f2b8c429373160ce1c70a075f3f664deb0cad71ae02277b40b3fd66c2",
+      "status": "untracked"
+    },
+    {
+      "bytes": 4231,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-parser-offline.mjs",
+      "sha256": "950400848cd9037698c2de41c7a95eabb607d5aa137e87ce16dabecaf186111a",
+      "status": "untracked"
+    },
+    {
+      "bytes": 4979,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-parser-package.mjs",
+      "sha256": "ba0965c24b6710542aaa6aa1172e47bc54aeacc87605abd5ae7033bcfb389ba8",
+      "status": "untracked"
+    },
+    {
+      "bytes": 10294,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-pdf-inputs.mjs",
+      "sha256": "2310da60d2f8c15eb42ca2208aac30840ea25686e6ee5ec81a6c73a615d206df",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3609,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-pi-child.mjs",
+      "sha256": "f85223f125686202ddaac718e863518467c819200ef696d4024b80efa03a1a60",
+      "status": "untracked"
+    },
+    {
+      "bytes": 13174,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-pi.mjs",
+      "sha256": "56797e2754953d538836cdf1a84252a67a4cc57e02f6b98ec95da876740375dd",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2614,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-preview-agent.mjs",
+      "sha256": "95b4952029916cd78c0a5a05028d2d148eac592dd0f9138cf00cc69ce73ab677",
+      "status": "untracked"
+    },
+    {
+      "bytes": 5326,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-preview-auth.mjs",
+      "sha256": "33f4073822d1111659c51468fea071a58edec3f58dcc23486a07da33ad6498c8",
+      "status": "untracked"
+    },
+    {
+      "bytes": 24808,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-preview-managed.mjs",
+      "sha256": "0198b4763cb5b2e9eb55949571bb03e8d6812a95d204080ddcfb302c17a47d53",
+      "status": "untracked"
+    },
+    {
+      "bytes": 797,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-preview-orphan.mjs",
+      "sha256": "1c21916c43f8e22bb3029cfa7d28e165fe830815bba584397e7708d9ba26efd7",
+      "status": "untracked"
+    },
+    {
+      "bytes": 4644,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-preview-worker.mjs",
+      "sha256": "bf65eb7c7a37738d8a051592389043c8b644527543feb7484d27b408ec885641",
+      "status": "untracked"
+    },
+    {
+      "bytes": 7276,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-resources.mjs",
+      "sha256": "31fe353b8188b6cd734585ae845e4a7868234934760f318be1eef063dadcc20b",
+      "status": "untracked"
+    },
+    {
+      "bytes": 15854,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-sharp-compat.mjs",
+      "sha256": "2911d8ef2bc186bba11742257adf33302033de654a7ebfc05535a595d029acfe",
+      "status": "untracked"
+    },
+    {
+      "bytes": 7285,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-sharp-images.mjs",
+      "sha256": "2ed313a4fa4a29c12ffabfd09edf7a206a8e86b68c722df44cbd236ae5c6befa",
+      "status": "untracked"
+    },
+    {
+      "bytes": 11417,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u0-source-materials.mjs",
+      "sha256": "dee7970425d0fd07de74ff9301f6c981988f686f530d1f6693904ebbf4d28a5f",
+      "status": "untracked"
+    },
+    {
+      "bytes": 9696,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "scripts/probes/webui-u1-storage.mjs",
+      "sha256": "12ad23b44fac75339b255c363b9d65a7527095f8882182ea115b67b3fbee3fe6",
+      "status": "untracked"
+    },
+    {
+      "bytes": 38531,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/bootstrap-staging.test.mjs",
+      "sha256": "d00334bf0b5d147001f5b713f7c01c2e25f859b229a435eb9dfdcbfff8c0de98",
+      "status": "modified"
+    },
+    {
+      "bytes": 10493,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/ci-contract.test.mjs",
+      "sha256": "c75d53fbf867489477177fd27fa5c6cd471008c2c66cec5210ec459656fe8eaa",
+      "status": "modified"
+    },
+    {
+      "bytes": 6869,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/direct-agent-workspace.test.mjs",
+      "sha256": "db8478f339502e44125d44f4748c10d8ef924ac1b9e35562abac765b84a5e23f",
+      "status": "modified"
+    },
+    {
+      "bytes": 3645,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/direct-headless-ownership.test.mjs",
+      "sha256": "e8f2df6acd395098a6a2144a36095587463d35d05928755ab579fe29e34dd010",
+      "status": "modified"
+    },
+    {
+      "bytes": 2572,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/direct-path-normalization.test.mjs",
+      "sha256": "e0199f90895c161f4af41455b8e7669c0cc0e04d1a94c012817ad0be828a4af9",
+      "status": "untracked"
+    },
+    {
+      "bytes": 17892,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/fixtures/host-input-browser.mjs",
+      "sha256": "d3f13c2c60283d6ea116944630e9dd81686431a2c033333f56de8ee6ad8c3dd7",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2230,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/fixtures/host-input-crash.mjs",
+      "sha256": "b134696a4bc534ef560dd88866e9e659ed40ce640a4ffdbef531dd19606357bb",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2507,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/fixtures/permission-shell-build-probe.mjs",
+      "sha256": "39f518781028d313f904302b636eb5504afd35399a0a2283855d3e42147bd853",
+      "status": "modified"
+    },
+    {
+      "bytes": 393,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/fixtures/web-cookie-fixture.mjs",
+      "sha256": "96aeb6e8777578a98570e3a6a3d5242f207cf90f672052f16a57bdeacac48f6d",
+      "status": "untracked"
+    },
+    {
+      "bytes": 5680,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/fixtures/web-runtime-probe.mjs",
+      "sha256": "f37b0175a25aa51296f49cf2fbaa357fb9d3aee914453b266904b0bbe09c21ce",
+      "status": "untracked"
+    },
+    {
+      "bytes": 4965,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-account-child.test.mjs",
+      "sha256": "d7d4d366d35131d46d07b2ea52e399a0178b13dd980ff6bffe9ef8eced635ae5",
+      "status": "modified"
+    },
+    {
+      "bytes": 9481,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-account-rpc-success.test.mjs",
+      "sha256": "9d62bfd5371921cb837a007bfd36d055c2cf655240e035233dde6acd8a262ccf",
+      "status": "modified"
+    },
+    {
+      "bytes": 9493,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-controlled-rpc.test.mjs",
+      "sha256": "02853355ee246fca9aa226125f25900ec7fe7babf0344fcffec0ec766c955c55",
+      "status": "modified"
+    },
+    {
+      "bytes": 5166,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-controlled-tasks.test.mjs",
+      "sha256": "d78dc1a3adbe80dd222df208ff57922443dfa3998602578570f90c5623e1cc6d",
+      "status": "modified"
+    },
+    {
+      "bytes": 10385,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-input-crash.test.mjs",
+      "sha256": "b85f2d7b4ccfc38ec0be3db43e45164fa7eb28639ee08b27846f0276fa1ad5c5",
+      "status": "untracked"
+    },
+    {
+      "bytes": 28313,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-input-delivery.test.mjs",
+      "sha256": "c359de00124967ceee3d444792807af169682c1963d2686e355e2fd4edf448a4",
+      "status": "untracked"
+    },
+    {
+      "bytes": 9108,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-input-http.test.mjs",
+      "sha256": "0daad2249a1be466cdf674c6bf360270849e6ddbbd4494c6ee0075ad72a3a3f1",
+      "status": "untracked"
+    },
+    {
+      "bytes": 14460,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-input-rpc.test.mjs",
+      "sha256": "ff1e640f6ee71d133d0c463a316e1490d1a40c6d94f63965f94513832d5cd131",
+      "status": "untracked"
+    },
+    {
+      "bytes": 27846,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-input-store.test.mjs",
+      "sha256": "545d4a193318f59d1bb26a122e96b5938cb399f414594ea02202211ef5c44c7b",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2609,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-pty-lifetime-probe.test.mjs",
+      "sha256": "b1590f3107922bb95a230a7fb8d43eca22db1c080b618c6f41622c0105daddcb",
+      "status": "modified"
+    },
+    {
+      "bytes": 5175,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-rpc-worker.test.mjs",
+      "sha256": "e2e91f234faf841ce1a08e78fd32b5b85c13f0f3d70423c5a6e82b298d281c66",
+      "status": "modified"
+    },
+    {
+      "bytes": 20973,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-server.test.mjs",
+      "sha256": "c5c8bd5997db62d3e2c00cd71639e4e569386631fff190ec7a40e902cecefa47",
+      "status": "modified"
+    },
+    {
+      "bytes": 8166,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-task-binding.test.mjs",
+      "sha256": "488aa0b6630a16624860b700a4df57c017ccfa6bc35e9ef699c68be29a1ec761",
+      "status": "modified"
+    },
+    {
+      "bytes": 3210,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-task-metrics.test.mjs",
+      "sha256": "2223c354b3e49f96294b1f1531495a42bbff5c553d1ad623e3b3375d99b254f9",
+      "status": "modified"
+    },
+    {
+      "bytes": 3362,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-task-resume.test.mjs",
+      "sha256": "e62e3627cdcdf552510cad925e3cd429ec2b894d26f20bf68a0bcf5102741c95",
+      "status": "modified"
+    },
+    {
+      "bytes": 8173,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-terminals.test.mjs",
+      "sha256": "345ad54d2ffe4180bdbd0ab8aa7b3ef125b3c89dfdfde1ebc1b92d7f59803dca",
+      "status": "modified"
+    },
+    {
+      "bytes": 634,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/host-thinking-capability.test.mjs",
+      "sha256": "88ce525ac3e26b66c12185341fec822cffb3a932e7eeb2da448e6559aebc090d",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3637,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/pack-content.test.mjs",
+      "sha256": "feed16db67e75c7e743df705b4cbc95e171b7a420aa2914d70143c3d3890aad0",
+      "status": "modified"
+    },
+    {
+      "bytes": 3408,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/pinned-web-fetch.test.mjs",
+      "sha256": "a1ffb73f557e0cfef90c46bf852aa73a7d8152a2ee5d4d09d552fbf7219eea47",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2596,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-native-archives.test.mjs",
+      "sha256": "222748fbf4e7a2fe3c5d115e11ac75ce826f437ad424a7cf6881442fa44059f2",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2121,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-native-configure-review.test.mjs",
+      "sha256": "366959c5d9906fc2d8b70cf7b0aa0ef5c83ab51e0569ebbc7bee26ed893d355f",
+      "status": "untracked"
+    },
+    {
+      "bytes": 7523,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-native-generated-materials.test.mjs",
+      "sha256": "89c7820fe023e5cc0d4304e994451c6c563a93571fc7f31e34ed261586627c5d",
+      "status": "untracked"
+    },
+    {
+      "bytes": 6004,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-native-generated-notices.test.mjs",
+      "sha256": "4c8ef3e906381fec68e91a20e4c32664153271c9e074085e2009ddc44b365d1f",
+      "status": "untracked"
+    },
+    {
+      "bytes": 8053,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-native-libexif-docs.test.mjs",
+      "sha256": "a080345ef5362d9a8dc9b59aacd94c1eec55a13022199d1472c29fdf1af6a586",
+      "status": "untracked"
+    },
+    {
+      "bytes": 7870,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-native-locale.test.mjs",
+      "sha256": "27aedd4b5a475f45a1563c344d7a2abd006c6345276d37768902d5d6fb572108",
+      "status": "untracked"
+    },
+    {
+      "bytes": 10758,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-native-materials.test.mjs",
+      "sha256": "eda1ce611cdfd80544f8834ccdf073c65825ba6d9d69523796d04246c99d3866",
+      "status": "untracked"
+    },
+    {
+      "bytes": 5101,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-native-patches.test.mjs",
+      "sha256": "56e4b60504a830ab55607003d3c29b10f8f43de1b8ed22bbc12ceff3c56f607e",
+      "status": "untracked"
+    },
+    {
+      "bytes": 11599,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-native-rebuild-inputs.test.mjs",
+      "sha256": "7b3bedf3976e5c42c9474eb26b11038142f1aeee9513bdca915815e7aaf77509",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3678,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-native-rust-cli.test.mjs",
+      "sha256": "a81af0948336130a0ec84d0d638097a0af3cf0a8becfd6729de54cbffe207ed6",
+      "status": "untracked"
+    },
+    {
+      "bytes": 9710,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-native-source.test.mjs",
+      "sha256": "c34d7121ecae39bd0170d2a6fd14842dad0656f8a31f158e6618fa028f90fc82",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2569,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-native-target-graph-cli.test.mjs",
+      "sha256": "45a327af8de7a7ffdc59fac7e80a9cd614241fd58730856c38f3e100f307f1fe",
+      "status": "untracked"
+    },
+    {
+      "bytes": 4399,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-native-unit-graph.test.mjs",
+      "sha256": "2bc597d86e5f07805a17c39791f0c118f7150109fa6a66f9013fe9067b2215da",
+      "status": "untracked"
+    },
+    {
+      "bytes": 5423,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-native-winapi.test.mjs",
+      "sha256": "adfbf828a874ef27d5e94f336dde93869e5c31f5f52040ff7e022e1f3ea47308",
+      "status": "untracked"
+    },
+    {
+      "bytes": 13644,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-parser-acquisition.test.mjs",
+      "sha256": "6ec6647c76751e60efd4a79676630b569675fa899f74c2e7e6f5d79a4c632efb",
+      "status": "untracked"
+    },
+    {
+      "bytes": 24675,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-parser-resources.test.mjs",
+      "sha256": "778c231d8fc0eae155fac51ab08b06814795c80eef13c40ea76747ac592fcde3",
+      "status": "untracked"
+    },
+    {
+      "bytes": 6367,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-parser-source-materials.test.mjs",
+      "sha256": "ba2d2a30f0410788325778632aad7cfcac00fcc2c651ed34efefce334c12f340",
+      "status": "untracked"
+    },
+    {
+      "bytes": 12990,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/release-pdf-build-inputs.test.mjs",
+      "sha256": "04a156cfca8aa4a06990c182d4b4aec78402f7a5042ca66052257b73426dc803",
+      "status": "untracked"
+    },
+    {
+      "bytes": 41950,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/subagents-batch-swarm.test.mjs",
+      "sha256": "813ce4caefb0d6ba71b5ced5c7728c249de0469d26ac492441799de6f76a6108",
+      "status": "modified"
+    },
+    {
+      "bytes": 48910,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/subagents-run-coordinator.test.mjs",
+      "sha256": "865d3e98b66c7b486033a33456b86cd477b800923b01e110cec3481ad6b3676f",
+      "status": "modified"
+    },
+    {
+      "bytes": 2300,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/terminal-ready-publication.test.mjs",
+      "sha256": "db218ac2995c5a38a48302ccc4fbc0a22e142ab56b7cab9bd181cea760966d07",
+      "status": "untracked"
+    },
+    {
+      "bytes": 815,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/types/host-input-protocol.mts",
+      "sha256": "309859db73a4ab47dacddae31addefd7ea2082663b05090e612617273192438c",
+      "status": "untracked"
+    },
+    {
+      "bytes": 1228,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tests/types/host-input-store.mts",
+      "sha256": "86711d23e19f8d9ba799c605e3ed4c50feef9222be6540c30f022dfabb869ba2",
+      "status": "untracked"
+    },
+    {
+      "bytes": 526,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "tsconfig.host.json",
+      "sha256": "57140849b7a4fd502c106fb17e1c10ee63fec5fa83938ca612c856355c6dc423",
+      "status": "modified"
+    },
+    {
+      "bytes": 15568,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "verification/manifests/pack-content-v1.json",
+      "sha256": "e1635512dcf89db6f46c95e4d8bcf63f0f707b629b50a496a1a8e6edf79cf29c",
+      "status": "modified"
+    },
+    {
+      "bytes": 30941,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/App.tsx",
+      "sha256": "9e05e9b2722b909747872dea9fb2e82defd451c57f83b46e9eb4c3a9f9a3d01f",
+      "status": "modified"
+    },
+    {
+      "bytes": 13338,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/Composer.tsx",
+      "sha256": "15488805e49cac610c74cc621e57a557ec25a4ee4f20a2ff78b7c0690c2b92af",
+      "status": "modified"
+    },
+    {
+      "bytes": 3069,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/DraftNotice.tsx",
+      "sha256": "0575108d62c9f2e77ebefc09555c26b7b7d55671d6629225a2b7e27568a91fe8",
+      "status": "untracked"
+    },
+    {
+      "bytes": 9929,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/InputQueue.tsx",
+      "sha256": "a2ae01754f8ee4aecdb74495efdb1d3889d14ca4d271ef9fd3a4a2ffd3f371c5",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2759,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/ProjectHome.tsx",
+      "sha256": "620b9dca48c99bab2a07861b41e76a4f8003c66d64d9a0b9d14c307e14e0fc9d",
+      "status": "modified"
+    },
+    {
+      "bytes": 4466,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/TaskControl.tsx",
+      "sha256": "e5419fc3497cbc4e96a9ee48740213f13fa83f24bd214d8f7883123af5b06d6c",
+      "status": "modified"
+    },
+    {
+      "bytes": 4627,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/TaskProgress.tsx",
+      "sha256": "d0745e2539fc493bc9e4caeeb650751ab2e3029c88dd8bc37957c7af1f4678b4",
+      "status": "untracked"
+    },
+    {
+      "bytes": 9599,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/api.ts",
+      "sha256": "937aa42edbc2e3e088093c9313b1345ec4c9708631bc7f5c82d0078d7556e378",
+      "status": "modified"
+    },
+    {
+      "bytes": 19730,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/conversation-flow.test.tsx",
+      "sha256": "7a726e119b6b51711111eaf10a2c3c4d50ce147b3897d90ee3a6bc31298fbf6b",
+      "status": "untracked"
+    },
+    {
+      "bytes": 9559,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/host-ui.css",
+      "sha256": "461881004cc660684d78946e8de24141c245409eb4365cf3721fdc2f9418e324",
+      "status": "modified"
+    },
+    {
+      "bytes": 20300,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/input-delivery-ui.test.tsx",
+      "sha256": "c2929e3dd12b39f51e6014e58113773a2435a78ccf7bb615b99793ed1e3633da",
+      "status": "untracked"
+    },
+    {
+      "bytes": 3790,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/task-control.test.tsx",
+      "sha256": "5efa89f4da19b6050f06e5a8f51f9476660bf7d8e5c58e10812210e38752662e",
+      "status": "modified"
+    },
+    {
+      "bytes": 3339,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/task-progress.test.tsx",
+      "sha256": "e178872645c4daca84d79ee23d0742ed1b749aa4635635d3324b5fbda89d7fb5",
+      "status": "untracked"
+    },
+    {
+      "bytes": 1669,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/useConversation.test.tsx",
+      "sha256": "a1f34ab9792a1153a2c884942db2d4eda6a8b89fb3649ce600ac18bf978af54a",
+      "status": "untracked"
+    },
+    {
+      "bytes": 2249,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/useConversation.ts",
+      "sha256": "c53d2f1cb85aff3d014e1021a7d316161fbef329370e2cd7404304adb54f1e21",
+      "status": "untracked"
+    },
+    {
+      "bytes": 10070,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/useHost.test.tsx",
+      "sha256": "a7eed12fd5d11d650f980a363de87b95ef932fbefe550fa0421c94cd0fc1ab09",
+      "status": "untracked"
+    },
+    {
+      "bytes": 6086,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/useHost.ts",
+      "sha256": "304d0d8a9e02adb649568f7bf6fde3293c915b7bc60b577eec1824bec9c293ed",
+      "status": "modified"
+    },
+    {
+      "bytes": 18419,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/useInputDraft.test.tsx",
+      "sha256": "b5261050ee07ce7aadb71e102d388f8693cac7e4354eb3ca1063f8cfd6c94695",
+      "status": "untracked"
+    },
+    {
+      "bytes": 24933,
+      "kind": "file",
+      "mode": "0o644",
+      "path": "webui/src/useInputDraft.ts",
+      "sha256": "f8d0c3a6ffb219a98919427c7dedd77925fe5fb69ad397413ce2e46d5b10e0d0",
+      "status": "untracked"
+    }
+  ],
+  "priorWorktreeManifestSha256": "f4992558cff41540055e91106ac5ec0d6aa2f813787bb4e8d144ac4b7094e404",
+  "scope": "bytes and modes of prior working files, not product runtime acceptance",
+  "sourceCommit": "e57410a3b3037761a246bf1471939bec0aa0c8eb",
+  "sourceParent": "4ba9ee4645aecab98b73a8f4ec052a62de09c1d8",
+  "trackedDiffSha256": "21c2d1377b7dae4898b25592291795e4d22cfe77313b913830369fab7f0f438b"
+}

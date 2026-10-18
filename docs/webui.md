@@ -1,8 +1,8 @@
-# Glacier 本机工作台（第二阶段）
+# Glacier 本机工作台
 
-工作台要求经过验证的 Pi 0.85.1 Full 候选栈。旧 Pi 0.84.3 安装不会因执行 `omp web` 自动升级。
+**2026-10-17 当前说明：** Only my pi 的 CLI/TUI 与桌面都是正式客户端，图形端先完成 WebUI。当前开发依赖为 Pi 1.1.0，下一升级目标为 1.3.0；已有阶段验收、剩余功能和双端接续计划见[开发蓝图](plans/2026-10-17-product-direction-and-iteration-plan.md)。本次未核验用户日常安装版本。`omp web` 只会使用实际安装的兼容运行栈，不会因开发依赖或本文更新而自动升级。
 
-2026-09-26 本机已完成 M2，日常 OMP 已安装源码 `9130d02` 的 Full 栈，使用 Pi 0.85.1 / Node 24.19.0。验收服务已停止，按下列命令启动即可。本阶段实际验证了 **CPAR Grok 4.5 / cpar-grok-build / low** 的小型修改与受管 writer；目录中存在模型不代表其当前额度、认证或服务一定可用。[完成验收与限制](plans/2026-09-26-omp-webui-phase2-closeout.md)
+**历史使用基线（M2，2026-09-26）：** 当时日常 OMP 安装源码 `9130d02` 的 Full 栈，使用 Pi 0.85.1 / Node 24.19.0，并验证了 **CPAR Grok 4.5 / cpar-grok-build / low** 的小型修改与受管 writer。该记录不证明当前安装或服务可用。下列操作说明保留 M2 已交付使用方式；后续连续输入、MCP、分类与生图的范围另见蓝图所链接的验收记录，完整 WebUI 尚未交付。[M2 完成验收与限制](plans/2026-09-26-omp-webui-phase2-closeout.md)
 
 ```sh
 omp web
@@ -47,4 +47,4 @@ node scripts/phase1-gates.mjs /absolute/evidence-directory
 
 最终候选打包会从清洁源码重新构建前端，并携带实际打包依赖及许可证。浏览器验收使用 Host 同源构建产物，不以 Vite 开发服务器代替认证验收。
 
-日常 Full 栈回滚属于整个运行栈事务；不是 npm 安装或仅 Harness 回滚。先检查 `omp admin stack rollback --plan --json` 的目标是否为本次升级前 active，再按已审核回执操作。未确认旧栈身份、存在用户活动会话或进程归属不明时，停止切换。本轮实际升级、回滚与重新应用见[第二阶段完成记录](plans/2026-09-26-omp-webui-phase2-closeout.md)；旧[M1记录](plans/2026-09-20-omp-webui-phase1-progress.md)保留历史口径。
+日常 Full 栈回滚属于整个运行栈事务；不是 npm 安装或仅 Harness 回滚。先检查 `omp admin stack rollback --plan --json` 的目标是否为本次升级前 active，再按已审核回执操作。未确认旧栈身份、存在用户活动会话或进程归属不明时，停止切换。2026-09-26 实际升级、回滚与重新应用见[第二阶段完成记录](plans/2026-09-26-omp-webui-phase2-closeout.md)；旧[M1记录](plans/2026-09-20-omp-webui-phase1-progress.md)保留历史口径。
