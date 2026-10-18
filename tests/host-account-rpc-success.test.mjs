@@ -9,6 +9,7 @@ import { RpcWorker } from "../packages/host/rpc-worker.mjs";
 import { AccountCatalog } from "../packages/host/accounts.mjs";
 import { loadDistribution } from "../packages/distribution/runtime.mjs";
 import { listModels } from "../packages/host/models.mjs";
+import { usesNativePiTools } from "../packages/upstream-compatibility/native-pi.mjs";
 
 test("real account RPC requests keep two stored identities and readonly tool registry", { timeout: 30000 }, async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-rpc-accounts-")));
@@ -16,16 +17,19 @@ test("real account RPC requests keep two stored identities and readonly tool reg
   const received = [];
   let rejectAuth = false;
   let requestWrite = false;
+  let requestCodemodeWrite = false;
   const server = http.createServer(async (req, res) => {
     let body = ""; for await (const chunk of req) body += chunk;
     received.push({ key: req.headers.authorization, body: JSON.parse(body) });
     if (rejectAuth) { res.writeHead(401, { "content-type": "application/json" }); res.end(JSON.stringify({ error: { message: "fixture credential revoked", type: "authentication_error" } })); return; }
     res.writeHead(200, { "content-type": "text/event-stream" });
-    const choices = requestWrite ? [
-      { delta: { role: "assistant", tool_calls: [{ index: 0, id: "write-attempt", type: "function", function: { name: "write", arguments: JSON.stringify({ path: path.join(root, "forbidden.txt"), content: "must not exist" }) } }] }, finish_reason: null },
+    const target = path.join(root, "forbidden.txt");
+    const choices = requestWrite || requestCodemodeWrite ? [
+      { delta: { role: "assistant", tool_calls: [{ index: 0, id: requestCodemodeWrite ? "codemode-write-attempt" : "write-attempt", type: "function", function: { name: requestCodemodeWrite ? "codemode" : "write", arguments: JSON.stringify(requestCodemodeWrite ? { code: `await tools.write(${JSON.stringify({ path: target, content: "must not exist" })});` } : { path: target, content: "must not exist" }) } }] }, finish_reason: null },
       { delta: {}, finish_reason: "tool_calls" },
     ] : [{ delta: { role: "assistant", content: "fixture done" }, finish_reason: null }, { delta: {}, finish_reason: "stop" }];
     requestWrite = false;
+    requestCodemodeWrite = false;
     for (const choice of choices) res.write(`data: ${JSON.stringify({ id: "fixture", object: "chat.completion.chunk", created: 1, model: "fixture", choices: [{ index: 0, ...choice }] })}\n\n`);
     res.write(`data: ${JSON.stringify({ id: "fixture", choices: [], usage: { prompt_tokens: 100, completion_tokens: 20, total_tokens: 120, prompt_tokens_details: { cached_tokens: 30 } } })}\n\n`);
     res.end("data: [DONE]\n\n");
@@ -38,6 +42,7 @@ test("real account RPC requests keep two stored identities and readonly tool reg
   const catalog = new AccountCatalog(root);
   const installedStack = process.env.OMP_TEST_STACK_PACKAGE ? await loadDistribution({ packageRoot: process.env.OMP_TEST_STACK_PACKAGE }) : null;
   if (process.env.OMP_TEST_STACK_PACKAGE) assert.ok(installedStack, "explicit installed stack must resolve");
+  const nativeCodemode = installedStack && usesNativePiTools(JSON.parse(await fs.readFile(path.join(installedStack.root, "pi/package.json"), "utf8")).version);
   for (const key of ["fixture-a", "fixture-b", "fixture-cli", "fixture-cli-configured"]) {
     const configuredKey = key === "fixture-cli-configured", cli = key.startsWith("fixture-cli");
     const account = cli ? { accountId: "cli-readonly" } : await catalog.create({ providerId: "fixture", name: key, authType: "api_key" });
@@ -82,6 +87,12 @@ test("real account RPC requests keep two stored identities and readonly tool reg
     const writeAttempt = await prompt();
     assert.ok(writeAttempt.some((m) => m.role === "toolResult" && m.isError === true));
     await assert.rejects(fs.access(path.join(root, "forbidden.txt")), { code: "ENOENT" });
+    if (nativeCodemode && key === "fixture-a") {
+      requestCodemodeWrite = true;
+      const nestedWrite = await prompt();
+      assert.ok(nestedWrite.some((m) => m.role === "toolResult" && m.toolName === "codemode" && m.isError === true), "the native wrapper must not grant readonly accounts a nested write");
+      await assert.rejects(fs.access(path.join(root, "forbidden.txt")), { code: "ENOENT" });
+    }
     const beforeRemoval = received.length;
     if (!configuredKey) {
       await fs.unlink(paths.authPath);
@@ -116,9 +127,9 @@ test("real account RPC requests keep two stored identities and readonly tool reg
       assert.equal(received.length, count, "new worker must reject removed configured identity");
     }
   }
-  assert.deepEqual(received.map((r) => r.key), ["fixture-a", "fixture-b", "fixture-cli", "fixture-cli-configured"].flatMap((key) => Array(5).fill(`Bearer ${key}`)));
+  assert.deepEqual(received.map((r) => r.key), ["fixture-a", "fixture-b", "fixture-cli", "fixture-cli-configured"].flatMap((key) => Array(nativeCodemode && key === "fixture-a" ? 7 : 5).fill(`Bearer ${key}`)));
   for (const request of received) {
     const tools = request.body.tools.map((tool) => tool.function.name).sort();
-    assert.deepEqual(tools, ["find", "grep", "ls", "read"]);
+    assert.deepEqual(tools, nativeCodemode ? ["codemode", "find", "grep", "ls", "read"] : ["find", "grep", "ls", "read"]);
   }
 });
