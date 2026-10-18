@@ -6,12 +6,14 @@ The exact development dependency, lock and installed internal Pi packages are no
 `1.3.0`, acquired from the official registry with independent tarball SRI and
 installed-byte verification. Node `22.19.0` / `24.19.0` remain the required lanes.
 See the [#76 adaptation and evidence record](2026-10-18-pi-1.3.0-runtime-adaptation.md)
-for current checks and their scope, including the existing clean-tree Q12
-document-link failure. #76 remains OPEN/PARTIAL. New candidate packaging and same-candidate
+for clean-source dual-Node types/contracts and targeted PTY/process evidence.
+The original Q12 link failure is resolved; all ten applicable M11 deterministic
+gates pass. The final full suite still has real PTY startup, HTTP terminal identity and MCP denial wait failures, so #76
+remains OPEN/PARTIAL. Q10/Q11 retain their non-execution states. New candidate packaging and same-candidate
 acceptance belong to #77. The checked 2026-10-17 identities below retain their
 historical meaning; they do not describe a new daily installation.
 
-## Current identities — checked 2026-10-17
+## Historical identities — checked 2026-10-17
 
 | Identity | Version / state | Evidence and limits |
 | --- | --- | --- |

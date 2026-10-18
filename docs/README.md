@@ -2,7 +2,7 @@
 
 Research and design notes for only-my-pi live here.
 
-## Pi 1.3.0 implementation — 2026-10-18
+## Pi 1.3.0 development closeout — 2026-10-18
 
 [#76 development adaptation and C/P evidence](compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md)
 records the acquired exact 1.3.0 dependency, public CLI/WebUI integration,
@@ -66,8 +66,10 @@ issues #76–#84, updated 25 existing issue bodies, and synchronized native
 dependencies. Independent readback verified every body and dependency, preserving
 the parent specification, existing states, metadata, and comments. The original
 62 concrete acceptance criteria remain covered by the nine tickets.
-The next implementation slice is
-[PI130-01 / #76](https://github.com/Ricardo121380/only-my-pi/issues/76).
+[PI130-01 / #76](https://github.com/Ricardo121380/only-my-pi/issues/76)
+now has its baseline and clean-source evidence recorded above. Its remaining
+full-suite PTY/HTTP terminal and MCP denial failures keep it OPEN/PARTIAL; #77 cannot start and is
+not implemented in this round.
 The [publication receipt](plans/2026-10-18-client-ticket-publication.json) records
 the actual issue mapping and verification results.
 This publication does not claim new runtime acceptance.

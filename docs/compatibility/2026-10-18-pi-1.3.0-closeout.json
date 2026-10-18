@@ -1,0 +1,442 @@
+{
+  "issue": 76,
+  "state": "OPEN",
+  "result": "PARTIAL",
+  "scope": "PI130-01 development source and required local gates only",
+  "implementationCommit": "728dbbe3119c2b603af493a7775cc90448ee2013",
+  "baselineCommits": [
+    "c9a76114bf23b7dffb4a6bfa74fd06f8da0657a6",
+    "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb"
+  ],
+  "supplementCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+  "testedCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+  "testedTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+  "manifestSha256": "2879bd4374426628cd99558e88d75ce3ceebdfe18ed57a77b05a6054a4b43f1a",
+  "lockSha256": "bc9899201e7d74aa3f782d512247badc70b1fa58fab8efabc236cda2e9cfe639",
+  "pi": "1.3.0",
+  "nodes": [
+    "22.19.0",
+    "24.19.0"
+  ],
+  "fullTests": {
+    "22.19.0": {
+      "tests": 1678,
+      "pass": 1669,
+      "fail": 4,
+      "skip": 4,
+      "cancelled": 1,
+      "todo": 0
+    },
+    "24.19.0": {
+      "tests": 1678,
+      "pass": 1672,
+      "fail": 2,
+      "skip": 4,
+      "cancelled": 0,
+      "todo": 0
+    }
+  },
+  "fullFailures": {
+    "22.19.0": [
+      {
+        "case": "public OMP fullscreen keyboard approval is revoked by /new and Escape cannot approve",
+        "logLine": 1853,
+        "result": "FAIL"
+      },
+      {
+        "case": "public OMP regular keyboard approval is revoked by /new and Escape cannot approve",
+        "logLine": 1873,
+        "result": "FAIL"
+      },
+      {
+        "case": "public OMP Escape cancels an actual Pi request and closes the Provider stream",
+        "logLine": 1893,
+        "result": "CANCELLED"
+      },
+      {
+        "case": "public OMP reload preserves the no-retry policy without changing raw settings",
+        "logLine": 1903,
+        "result": "FAIL"
+      },
+      {
+        "case": "Inspect and an unapproved MCP tool cannot obtain real project write effects",
+        "logLine": 4673,
+        "result": "FAIL"
+      }
+    ],
+    "24.19.0": [
+      {
+        "case": "public OMP regular keyboard approval is revoked by /new and Escape cannot approve",
+        "logLine": 320,
+        "result": "FAIL"
+      },
+      {
+        "case": "terminal HTTP authenticates, validates input and coordinates manual ownership",
+        "logLine": 844,
+        "result": "FAIL"
+      }
+    ]
+  },
+  "fullSourceRunStatus": {
+    "22.19.0": "COMPLETE_FAIL",
+    "24.19.0": "COMPLETE_FAIL"
+  },
+  "criteria": [
+    {
+      "id": "AC1",
+      "result": "PASS",
+      "evidence": [
+        "original upstream acquisition/SRI/tag records",
+        "evidence-audit.json",
+        "delivery-install-node24",
+        "delivery-test-freeze.json"
+      ],
+      "scope": "frozen Pi 1.3.0; official tarball and 1276 installed regular files match; exact manifest/lock"
+    },
+    {
+      "id": "AC2",
+      "result": "PARTIAL",
+      "evidence": [
+        "docs/compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md#2-公开入口与产品职责",
+        "process-node22",
+        "process-node24"
+      ],
+      "scope": "exact-version admission and explicit native MCP/codemode pass targeted checks; final Node22 unapproved-write denial wait failed before zero-effect assertions, so complete policy verification remains partial"
+    },
+    {
+      "id": "AC3",
+      "result": "PARTIAL",
+      "evidence": [
+        "process-node22",
+        "process-node24",
+        "final-pty-node22",
+        "final-pty-node24",
+        "delivery-full-node24"
+      ],
+      "scope": "targeted real public CLI/PTY and Host pass; frozen full-suite regular PTY startup timeout remains unresolved"
+    },
+    {
+      "id": "AC4",
+      "result": "PASS",
+      "evidence": [
+        "final-input-history-node22",
+        "final-input-history-node24",
+        "process-node22",
+        "process-node24"
+      ],
+      "scope": "persistent inputId, lost ACK/unknown not replayed, fixed account/model, independent receive counts and no warming"
+    },
+    {
+      "id": "AC5",
+      "result": "FAIL",
+      "evidence": [
+        "delivery-typecheck-node22",
+        "delivery-typecheck-node24",
+        "delivery-contract-fixed-cache-node22",
+        "delivery-contract-fixed-cache-node24",
+        "delivery-full-node22",
+        "delivery-full-node24",
+        "linux-final-node22",
+        "linux-final-node24"
+      ],
+      "scope": "dual Node types/contracts and targeted processes pass; mandatory final full-suite success is not satisfied"
+    },
+    {
+      "id": "AC6",
+      "result": "PARTIAL",
+      "evidence": [
+        "final-m11-node24",
+        "evidence-audit.json",
+        "docs/compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md"
+      ],
+      "scope": "C/P identities and failures recorded, separate review below; required full-suite gate remains open; Q10/Q11 non-execution states preserved"
+    }
+  ],
+  "checks": {
+    "delivery-typecheck-node22": {
+      "exitCode": 0,
+      "sourceCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+      "sourceTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+      "logSha256": "bed3820c66b3b36d5c28e2b128f662afb04a0d924adfd35b82d02524c6cac6bf",
+      "trackedUnchanged": true,
+      "durationSeconds": 7.431
+    },
+    "delivery-typecheck-node24": {
+      "exitCode": 0,
+      "sourceCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+      "sourceTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+      "logSha256": "bed3820c66b3b36d5c28e2b128f662afb04a0d924adfd35b82d02524c6cac6bf",
+      "trackedUnchanged": true,
+      "durationSeconds": 6.284
+    },
+    "delivery-contract-fixed-cache-node22": {
+      "exitCode": 0,
+      "sourceCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+      "sourceTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+      "logSha256": "b5b2457ca020fa08d1ddeb20c8266165cc8e058a84e8d921794605bc542c27aa",
+      "trackedUnchanged": true,
+      "durationSeconds": 3.287
+    },
+    "delivery-contract-fixed-cache-node24": {
+      "exitCode": 0,
+      "sourceCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+      "sourceTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+      "logSha256": "459ff20fe7e4d0c652032e874d0760b23f174604e26bc629d2518f921354e712",
+      "trackedUnchanged": true,
+      "durationSeconds": 3.426
+    },
+    "delivery-full-node22": {
+      "exitCode": 1,
+      "sourceCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+      "sourceTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+      "logSha256": "50139d4e9dc0fc74c6ffc3de7be54335a20e2ddd9c80f5c75b97c68af6668a23",
+      "trackedUnchanged": true,
+      "durationSeconds": 1147.241
+    },
+    "delivery-full-node24": {
+      "exitCode": 1,
+      "sourceCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+      "sourceTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+      "logSha256": "bd5c473bdab026843b1ae2ffa89726d49ecc8a6538d7389c88e485f2f4cb4933",
+      "trackedUnchanged": true,
+      "durationSeconds": 1169.174
+    },
+    "final-web-build-node24": {
+      "exitCode": 0,
+      "sourceCommit": "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb",
+      "sourceTree": "70d4d7466978b828305158a3cff5482a0c2ef37d",
+      "logSha256": "60c7b55edd601f9ee6da4404055fdeea8d995ea1aaae8715f7bafd822dd0a783",
+      "trackedUnchanged": true,
+      "durationSeconds": 10.768
+    },
+    "final-web-tests-node24": {
+      "exitCode": 0,
+      "sourceCommit": "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb",
+      "sourceTree": "70d4d7466978b828305158a3cff5482a0c2ef37d",
+      "logSha256": "5fb093207499891b90c559161bd978b9f050c2bb89f012af7ee370418dc70da8",
+      "trackedUnchanged": true,
+      "durationSeconds": 6.347
+    },
+    "final-lint-node24": {
+      "exitCode": 0,
+      "sourceCommit": "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb",
+      "sourceTree": "70d4d7466978b828305158a3cff5482a0c2ef37d",
+      "logSha256": "d198732ed074ba97dc2d4feecb3169084c659017fab4dc5260dd2de199a47328",
+      "trackedUnchanged": true,
+      "durationSeconds": 26.108
+    },
+    "final-schema-node24": {
+      "exitCode": 0,
+      "sourceCommit": "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb",
+      "sourceTree": "70d4d7466978b828305158a3cff5482a0c2ef37d",
+      "logSha256": "982074422e5c4942447cafabaa5cd33c5e145100878a93840b16d414f8669d6b",
+      "trackedUnchanged": true,
+      "durationSeconds": 1.65
+    },
+    "final-profile-node24": {
+      "exitCode": 0,
+      "sourceCommit": "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb",
+      "sourceTree": "70d4d7466978b828305158a3cff5482a0c2ef37d",
+      "logSha256": "671f065d858915216fbd87cf53ed7c3f1edf35e18aeab08c9845b3b8b58e8fbd",
+      "trackedUnchanged": true,
+      "durationSeconds": 0.397
+    },
+    "final-m11-node24": {
+      "exitCode": 0,
+      "sourceCommit": "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb",
+      "sourceTree": "70d4d7466978b828305158a3cff5482a0c2ef37d",
+      "logSha256": "c6f99d98f7ff807814f65b7a6b6ace74946c0720d0cdb6552fd9e3c9595f1e6e",
+      "trackedUnchanged": true,
+      "durationSeconds": 45.416
+    },
+    "final-pty-node22": {
+      "exitCode": 0,
+      "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+      "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+      "logSha256": "5efe5d992755913c61e1459a6fdd75037fee92e869585048ceaaaa115bf87e12",
+      "trackedUnchanged": true,
+      "durationSeconds": 85.568
+    },
+    "final-pty-node24": {
+      "exitCode": 0,
+      "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+      "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+      "logSha256": "4d2d9fa9eb3fac2de2685cb8439e787fe45ec0d0afeccc97e772a9006861bb81",
+      "trackedUnchanged": true,
+      "durationSeconds": 85.412
+    },
+    "final-input-history-node22": {
+      "exitCode": 0,
+      "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+      "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+      "logSha256": "1d9019cc6bf3489f2039724b234135935770dd8bf33daf78f000579a55204a46",
+      "trackedUnchanged": true,
+      "durationSeconds": 20.53
+    },
+    "final-input-history-node24": {
+      "exitCode": 0,
+      "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+      "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+      "logSha256": "85138409a3d0e7caf00a76b71a347fcdd4379ea3afa6ccc9861fcfd26fcdabdc",
+      "trackedUnchanged": true,
+      "durationSeconds": 20.669
+    },
+    "final-baseline-green-node22": {
+      "exitCode": 0,
+      "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+      "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+      "logSha256": "27b9b63102a7cf05d2d69028c7c59681760e9a756d8f6db39f5e6e496c5ff5f6",
+      "trackedUnchanged": true,
+      "durationSeconds": 17.888
+    },
+    "final-baseline-green-node24": {
+      "exitCode": 0,
+      "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+      "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+      "logSha256": "24fdf8a2618e2b6f5ed94d8853978e949ffa39fac367f058b6fed79daedfa135",
+      "trackedUnchanged": true,
+      "durationSeconds": 17.452
+    },
+    "final-secret-node22": {
+      "exitCode": 0,
+      "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+      "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+      "logSha256": "785d6ff1d4348a75df67b80062f499ee3794b547c0f22d2786d651e10210bcc8",
+      "trackedUnchanged": true,
+      "durationSeconds": 3.504
+    },
+    "final-secret-node24": {
+      "exitCode": 0,
+      "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+      "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+      "logSha256": "785d6ff1d4348a75df67b80062f499ee3794b547c0f22d2786d651e10210bcc8",
+      "trackedUnchanged": true,
+      "durationSeconds": 3.286
+    },
+    "linux-final-node22": {
+      "exitCode": 0,
+      "sourceCommit": "c9a76114bf23b7dffb4a6bfa74fd06f8da0657a6",
+      "sourceTree": "dbaa1c35c1acaede3894985f54536320d9f98b1e",
+      "logSha256": "0f2774343e16c57ab22574a814cf3721ef3349b1f316a6cf593401acf2383859",
+      "trackedUnchanged": true,
+      "durationSeconds": 41.243,
+      "driverCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+      "driverTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+      "executionSource": "git archive independently installed in /work/pi130-closeout-c9a7611",
+      "executionSourceUnchanged": true,
+      "executionIdentityReceipt": "linux-final-verification-identity.json"
+    },
+    "linux-final-node24": {
+      "exitCode": 0,
+      "sourceCommit": "c9a76114bf23b7dffb4a6bfa74fd06f8da0657a6",
+      "sourceTree": "dbaa1c35c1acaede3894985f54536320d9f98b1e",
+      "logSha256": "fcd8af3184ef6b4986ee5502d13a36a58b8f974099533a91dfca1ba56f43853c",
+      "trackedUnchanged": true,
+      "durationSeconds": 39.632,
+      "driverCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+      "driverTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+      "executionSource": "git archive independently installed in /work/pi130-closeout-c9a7611",
+      "executionSourceUnchanged": true,
+      "executionIdentityReceipt": "linux-final-verification-identity.json"
+    }
+  },
+  "review": {
+    "standards": "PASS",
+    "spec": "PARTIAL; close condition FAIL",
+    "standardsFindings": 0,
+    "standardsWorst": null,
+    "specFindings": 2,
+    "specWorst": "P1",
+    "specDispositions": [
+      {
+        "id": "P1",
+        "state": "OPEN",
+        "condition": "Required real-process gate remains open: full-suite real PTY Inspect startup failure(s); completed Node24 suite additionally failed Host HTTP terminalId, whose original status/body was not captured."
+      },
+      {
+        "id": "P2",
+        "state": "FIXED",
+        "change": "Linux sourceCommit/tree now record the actual c9a7611 git archive; prior host checkout identity is separately driverCommit/tree; actual source byte/mode parity references linux-final-verification-identity.json."
+      }
+    ],
+    "reports": {
+      "review-standards.md": "e18b2e3e43efa944b2d57fd02d46cb2167e08e400f448b9474837abeb7ae622e",
+      "review-spec.md": "192bbf9f6416d9e0851ddf68adb097d9ccb6aac7aaecd1528eba30f02053fca8"
+    },
+    "scope": {
+      "fixedPoint": "728dbbe3119c2b603af493a7775cc90448ee2013",
+      "head": "22377517c5f2183124af9be05467426f1c8bbd36",
+      "headTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+      "stagedTree": "3784aed0c5aed2010cf40db3cc199afa9273c387",
+      "commitDiffCommand": "git diff 728dbbe3119c2b603af493a7775cc90448ee2013...HEAD",
+      "docDiffCommand": "git diff --cached",
+      "commits": "2237751 test: isolate Linux prerequisite checks in clean worktrees (#76)\n83e58bf chore: complete required baseline hygiene for #76\nc9a7611 chore: integrate required development baseline for #76\n",
+      "stagedOwnedPaths": [
+        "docs/README.md",
+        "docs/STATUS.md",
+        "docs/compatibility/2026-10-17-pi-1.3.0-upgrade-preflight.md",
+        "docs/compatibility/2026-10-18-pi-1.3.0-closeout.json",
+        "docs/compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md",
+        "docs/compatibility/node-pi-matrix.md",
+        "docs/plans/2026-09-26-webui-optimization-tasks.md",
+        "docs/plans/2026-10-01-webui-remaining-spec.md",
+        "docs/plans/2026-10-17-product-direction-and-iteration-plan.md",
+        "docs/plans/2026-10-18-client-baseline-work-items.md",
+        "docs/plans/2026-10-18-development-baseline-integration.md"
+      ],
+      "fullSuiteState": "Both serial lanes are frozen and running; Node24 already has a real PTY startup failure. Draft explicitly says OPEN/PARTIAL and does not claim full success. Only actual final counts and reviewed verdict text will be filled later."
+    },
+    "postcheck": {
+      "scope": {
+        "head": "22377517c5f2183124af9be05467426f1c8bbd36",
+        "stagedTree": "36e515beed60c4ed2a44ff90da28674df16e05ab",
+        "ownedPaths": [
+          "docs/compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md",
+          "docs/compatibility/2026-10-18-pi-1.3.0-closeout.json",
+          "docs/plans/2026-10-17-product-direction-and-iteration-plan.md",
+          "docs/plans/2026-09-26-webui-optimization-tasks.md",
+          "docs/plans/2026-10-18-client-baseline-work-items.md",
+          "docs/plans/2026-10-01-webui-remaining-spec.md",
+          "docs/compatibility/2026-10-17-pi-1.3.0-upgrade-preflight.md",
+          "docs/STATUS.md",
+          "docs/compatibility/node-pi-matrix.md",
+          "docs/README.md",
+          "docs/plans/2026-10-18-development-baseline-integration.md"
+        ],
+        "scope": "post-review factual delta: Linux execution/driver source distinction and final Node24 failures; Node22 suite still in progress, no full PASS claimed"
+      },
+      "spec": "PARTIAL; close condition FAIL",
+      "P2": "FIXED_VERIFIED",
+      "P1": "OPEN",
+      "newInaccuracies": 0,
+      "reportSha256": "286486114aeed8f1b77b6278e715fbac40acad8de98fefcab0c9ab6b9652d775"
+    }
+  },
+  "m11": {
+    "deterministic": "PASS_10_OF_10",
+    "Q10": "NOT_RUN_PLATFORM",
+    "Q11": "NOT_RUN_BY_POLICY",
+    "status": "HOLD_PLATFORM_AND_PROTECTED"
+  },
+  "evidenceId": "pi130-01-closeout-20261018T062251Z",
+  "originalEvidenceId": "pi130-01-20261018T032930Z",
+  "installedCandidateSkips": {
+    "owner": 77,
+    "countPerLane": 4
+  },
+  "issue77PrerequisiteSatisfied": false,
+  "remaining": [
+    "Node22 host-mcp-write negative case timed out before terminal task status and before independent zero-call/zero-effect/file-unchanged assertions; actual effects at that failure are UNKNOWN, requiring captured task/receiver/file state and a source-bound diagnosis.",
+    "Real PTY Inspect startup failures under the original wait threshold in the frozen full-suite environment; identify a source-bound cause, then verify a minimal fix with affected real PTY and required full suites.",
+    "Host terminal HTTP full-suite failure: terminalId absent at tests/host-terminal-http.test.mjs:29; original response status/body was not recorded. A diagnostic single-file pass does not explain or cancel the full failure. Capture actual addProject/openTerminal response and supervisor readiness state before selecting any existing atomic-publication increment."
+  ],
+  "notPerformed": [
+    "#77 implementation",
+    "daily installation switch",
+    "paid Provider",
+    "public release",
+    "push",
+    "dependency graph mutation",
+    "#21/#23 unblock"
+  ]
+}

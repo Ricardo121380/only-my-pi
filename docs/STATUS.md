@@ -5,9 +5,11 @@
 The development pin/lock and installed Pi packages are now exactly `1.3.0`.
 [#76 implementation and verification](compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md)
 tracks real source CLI/PTY and Host/WebUI integration, controlled services,
-first failures, C/P checks and Standards/Spec review. Targeted runtime checks pass;
-clean-tree M11 Q12 retains the opening baseline's unresolved document links.
-Issue #76 stays OPEN/PARTIAL until the required closeout gate is satisfied.
+first failures, C/P checks and Standards/Spec review. The necessary development baseline is committed; the original 122-link Q12
+failure is resolved. Clean-source dual-Node types, contracts and targeted C/P
+pass; M11 deterministic Q1–Q9/Q12 pass. The frozen full suite still has real
+PTY Inspect-startup timeouts, an HTTP terminal identity failure and an MCP denial wait failure, so #76 remains OPEN/PARTIAL and #77 cannot start.
+Q10 remains NOT_RUN_PLATFORM and Q11 NOT_RUN_BY_POLICY; see the final report.
 The 2026-10-17 development-version paragraph below is an earlier snapshot.
 Candidate construction and same-candidate integration remain #77; the daily
 installation and material/Full/real Provider acceptance are unchanged.
