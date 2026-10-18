@@ -2,13 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { createMcpHost, until, mcpReception } from "./fixtures/mcp-host.mjs";
+import { createMcpHost, until, untilPiInitialized, mcpReception } from "./fixtures/mcp-host.mjs";
 
 test("public Host and real Pi approve a single scoped stdio read, show its result and confirm process exit", { timeout: 30000 }, async (t) => {
   const f = await createMcpHost({ installedExtensions: true }); t.after(() => f.close());
   await f.mcp({ type: "save", revision: 0, server: f.server });
   await f.mcp({ type: "enable", revision: 1, name: "local", enabled: true });
   const started = await f.start();
+  await untilPiInitialized(() => f.task(started.taskId));
   const waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length > 0 || ["failed", "succeeded"].includes(task.status), "MCP approval");
   assert.ok(waiting.approvals.length > 0, JSON.stringify(waiting));
   assert.equal(waiting.mode, "readonly");

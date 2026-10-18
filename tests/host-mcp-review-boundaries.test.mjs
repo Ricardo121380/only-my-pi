@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import { execFile, fork } from "node:child_process";
 import { promisify } from "node:util";
-import { createMcpHost, until, mcpReception, providerReply } from "./fixtures/mcp-host.mjs";
+import { createMcpHost, until, untilPiInitialized, mcpReception, providerReply } from "./fixtures/mcp-host.mjs";
 const terminal = (task) => ["succeeded", "failed", "cancelled"].includes(task.status);
 const strings = (value) => typeof value === "string" ? [value] : value && typeof value === "object" ? Object.values(value).flatMap(strings) : [];
 const exposed = (value, secret) => strings(value).some((text) => {
@@ -49,6 +49,7 @@ for (const mode of ["readonly", "controlled"]) test(`journal quota failure canno
   if (mode === "controlled") for (const args of [["init", "--quiet"], ["add", "README.md"], ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "--quiet", "-m", "fixture"]]) await promisify(execFile)("git", args, { cwd: f.project });
   await f.mcp({ type: "save", revision: 0, server: { ...f.server, env: { F_MODE: "orphan" }, enabled: true } });
   const started = await f.start({ mode });
+  await untilPiInitialized(() => f.task(started.taskId));
   if (mode === "controlled") {
     const waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length > 0 || terminal(task), "coding approval");
     assert.ok(waiting.approvals.length, JSON.stringify(waiting));
