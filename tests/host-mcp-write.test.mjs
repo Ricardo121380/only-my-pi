@@ -3,13 +3,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import pty from "node-pty";
+import { processIdentity, groupAlive } from "../packages/host/ownership.mjs";
 import { DirectSessionOwnership } from "../packages/direct-agent/ownership.mjs";
 import { createHash } from "node:crypto";
 import { createMcpHost, providerReply } from "./fixtures/mcp-host.mjs";
 import { codingRequest } from "./fixtures/mcp-write-host.mjs";
 import { createWriteHost, codingApproved, approveWrite, terminal } from "./fixtures/mcp-write-host.mjs";
 import { until, untilPiInitialized, slowPiInitialization, mcpReception } from "./fixtures/mcp-host.mjs";
-import { byteEvidence, errorEvidence, mcpDenialEvidence, processEvidence, saveRegressionEvidence } from "./fixtures/regression-evidence.mjs";
+import { byteEvidence, errorEvidence, fileEvidence, observation, mcpDenialEvidence, processEvidence, saveRegressionEvidence } from "./fixtures/regression-evidence.mjs";
 const dispatched = async (f) => {
   const run = (await f.mcp({ type: "status" })).runs.at(-1);
   if (run.processes.some((entry) => !entry.runtimeDir)) return [];
@@ -182,22 +183,109 @@ test("real terminal and Agent/MCP alternate the same canonical project ownership
   const owned = new DirectSessionOwnership(f.config); await owned.acquire("project", f.project); await owned.close();
 });
 
-test("actual CLI TUI writes through the shared approval and physical descriptor contract", { timeout: 45000 }, async (t) => {
-  const f = await createWriteHost(); let output = "", exited;
+async function tuiDescriptorWrite(t, { slowSelector = false } = {}) {
+  const f = await createWriteHost();
+  const original = byteEvidence(await fs.readFile(path.join(f.project, "README.md")));
+  const selectorTrace = path.join(f.root, "selector-events.jsonl");
+  if (slowSelector) {
+    // Delay only the private SDK's real selector entry, after the durable MCP
+    // approval status but before Pi installs the focused input component.
+    await fs.rename(f.sdk, path.join(path.dirname(f.sdk), "index-original.js"));
+    await fs.writeFile(f.sdk, `export * from "./index-original.js";
+import { InteractiveMode as RealMode } from "./index-original.js";
+import fs from "node:fs";
+const record = value => fs.appendFileSync(${JSON.stringify(selectorTrace)}, JSON.stringify({ at: Date.now(), ...value }) + "\\n");
+export class InteractiveMode extends RealMode {
+  async showExtensionSelector(title, options, opts, blocked) {
+    if (!title.startsWith("MCP · local/write_file · 写入")) return super.showExtensionSelector(title, options, opts, blocked);
+    record({ stage: "before-selector", title });
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const result = super.showExtensionSelector(title, options, opts, blocked);
+    record({ stage: "selector-focused", focused: this.ui.focusedComponent === this.extensionSelector });
+    const component = this.extensionSelector, handleInput = component.handleInput.bind(component);
+    component.handleInput = data => { record({ stage: "selector-input", data }); return handleInput(data); };
+    const answer = await result; record({ stage: "selector-answer", answer }); return answer;
+  }
+}`);
+  }
+  let output = "", exited, identity, lastMcp;
+  const stages = [{ stage: "spawn", at: Date.now() }], keyWrites = [];
   const term = pty.spawn(process.execPath, [f.cli, "--model", "fixture/one", "--no-session", "--tui-mode", "regular"], { cwd: f.project, env: f.env, cols: 120, rows: 36 });
-  term.onData((data) => { output += data; }); term.onExit((exit) => { exited = exit; });
-  t.after(async () => { if (!exited) { term.kill("SIGTERM"); await until(() => exited, Boolean, "owned CLI fixture exit"); } await f.close(); });
-  await until(() => output, (value) => value.includes("Inspect") || exited, "TUI ready", 30000); assert.equal(exited, undefined, output);
-  term.write("MCP write probe\r");
-  await until(() => output, (value) => value.includes("Approve") || exited, "coding approval");
-  term.write("\r");
-  await until(() => f.mcp({ type: "status" }), (state) => state.runs.at(-1)?.calls[0]?.status === "awaiting_approval", "TUI MCP approval");
-  term.write("\x1b[B\r");
-  await until(async () => fs.readFile(path.join(f.project, "README.md"), "utf8"), (value) => value === "approved MCP file bytes\n", "actual CLI descriptor effect");
-  await until(() => f.mcp({ type: "status" }), (state) => state.runs.at(-1).status === "stopped", "TUI task stopped");
-  const run = (await f.mcp({ type: "status" })).runs.at(-1); assert.equal(run.calls[0].application, "applied"); assert.equal((await mcpReception(run)).filter((entry) => entry.type === "call").length, 1);
-  term.write("\x04"); await until(() => exited, Boolean, "TUI normal exit"); assert.equal(exited.exitCode, 0);
-});
+  const write = data => { keyWrites.push({ at: Date.now(), bytes: byteEvidence(data) }); term.write(data); };
+  term.onData(data => { output += data; identity ??= processIdentity(term.pid); });
+  term.onExit(exit => { exited = exit; stages.push({ stage: "exit", at: Date.now(), ...exit }); });
+  const snapshot = async phase => {
+    const mcp = await observation(() => f.mcp({ type: "status" }));
+    if (mcp.status === "KNOWN") lastMcp = mcp.value;
+    const reception = await Promise.all((mcp.value?.runs ?? []).flatMap(run => run.processes.map(async entry => {
+      const raw = typeof entry.runtimeDir === "string" ? await fileEvidence(path.join(entry.runtimeDir, "received.jsonl")) : { status: "UNKNOWN", reason: "RECEIVER_PATH_UNAVAILABLE" };
+      const counts = raw.status === "KNOWN" ? await observation(async () => {
+        const rows = Buffer.from(raw.value.base64, "base64").toString().trim().split("\n").filter(Boolean).map(JSON.parse);
+        return { call: rows.filter(row => row.type === "call").length, effect: rows.filter(row => row.type === "effect").length };
+      }) : raw;
+      return { runId: run.runId, process: entry, raw, counts };
+    })));
+    await saveRegressionEvidence("mcp-tui", { test: t.name, root: f.root, phase, slowSelector, stages, keyWrites, original, mcp, reception,
+      readme: await fileEvidence(path.join(f.project, "README.md")), selectorTrace: await fileEvidence(selectorTrace), output: byteEvidence(output), exited: exited ?? null,
+      process: await processEvidence(term.pid), providerRequests: f.requests.map(({ body }) => body) });
+  };
+  t.after(async () => {
+    let clean = false;
+    try {
+      await snapshot("before-cleanup");
+      if (!exited && groupAlive(term.pid)) {
+        const expected = await identity;
+        assert.ok(expected, "owned TUI cleanup identity is known");
+        assert.equal(await processIdentity(term.pid), expected, "owned TUI cleanup identity");
+        try { process.kill(-term.pid, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+      }
+      for (const entry of (lastMcp?.runs ?? []).flatMap(run => run.processes)) {
+        if (groupAlive(entry.pid)) {
+          assert.equal(await processIdentity(entry.pid), entry.identity, "owned MCP cleanup identity");
+          try { process.kill(-entry.pid, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+        }
+      }
+      await until(() => exited && !groupAlive(term.pid) && (lastMcp?.runs ?? []).every(run => run.processes.every(entry => !groupAlive(entry.pid))), Boolean, "owned TUI and MCP fixture exit", 2000);
+      clean = true;
+    } finally {
+      try { await f.close({ keep: !clean }); }
+      finally { await saveRegressionEvidence("mcp-tui-cleanup", { test: t.name, root: f.root, clean, exited: exited ?? null, process: await processEvidence(term.pid) }); }
+    }
+  });
+  try {
+    await until(() => output, value => value.includes("Inspect") || exited, "TUI ready", 30000); assert.equal(exited, undefined, output);
+    identity = await identity; stages.push({ stage: "Inspect", at: Date.now() });
+    write("MCP write probe\r");
+    await until(() => output, value => value.includes("Approve") || exited, "coding approval");
+    const approvalOutput = output.length;
+    write("\r");
+    lastMcp = await until(() => f.mcp({ type: "status" }), state => state.runs.at(-1)?.calls[0]?.status === "awaiting_approval", "TUI MCP approval");
+    stages.push({ stage: "journal-awaiting-approval", at: Date.now() });
+    // The persisted approval journal precedes selector focus and terminal output.
+    // Drive the actual visible dialog before sending the original combined keys.
+    await until(() => output.slice(approvalOutput), value => value.includes("MCP · local/write_file · 写入") && value.includes("拒绝") && value.includes("仅本次") && value.includes("本任务"), "visible MCP write selector");
+    stages.push({ stage: "visible-selector", at: Date.now() });
+    write("\x1b[B\r");
+    await until(async () => fs.readFile(path.join(f.project, "README.md"), "utf8"), value => value === "approved MCP file bytes\n", "actual CLI descriptor effect");
+    await until(() => f.mcp({ type: "status" }), state => state.runs.at(-1).status === "stopped", "TUI task stopped");
+    const run = (await f.mcp({ type: "status" })).runs.at(-1); assert.equal(run.calls[0].application, "applied"); assert.equal((await mcpReception(run)).filter(entry => entry.type === "call").length, 1);
+    if (slowSelector) {
+      const events = (await fs.readFile(selectorTrace, "utf8")).trim().split("\n").map(JSON.parse);
+      const before = events.find(event => event.stage === "before-selector"), focused = events.find(event => event.stage === "selector-focused");
+      assert.ok(focused.at > before.at); assert.equal(focused.focused, true);
+      assert.ok(stages.find(stage => stage.stage === "journal-awaiting-approval").at < focused.at, "approval journal is readable before selector focus");
+      assert.equal(events.find(event => event.stage === "selector-answer").answer, "仅本次");
+    }
+    write("\x04"); await until(() => exited, Boolean, "TUI normal exit"); assert.equal(exited.exitCode, 0);
+  } catch (error) {
+    stages.push({ stage: "failure", at: Date.now(), error: errorEvidence(error) });
+    await snapshot("failure-before-cleanup");
+    throw error;
+  }
+}
+
+test("actual CLI TUI writes through the shared approval and physical descriptor contract", { timeout: 45000 }, tuiDescriptorWrite);
+test("actual CLI TUI waits for the focused MCP write selector after its approval journal is visible", { timeout: 45000 }, t => tuiDescriptorWrite(t, { slowSelector: true }));
 
 test("MCP approval cannot repair a lost real Host project owner token", { timeout: 25000 }, async (t) => {
   let release; const gate = new Promise((resolve) => { release = resolve; });
