@@ -5,29 +5,42 @@ import { sha256, validateStackManifest, validateArtifactLedger, EMBEDDED_NODE_AR
 import { createSpdxSbom, renderThirdPartyNotices } from "./sbom.mjs";
 
 export const PI110_INPUT_SHA256 = "sha256:13e384c15ebe3fadc7ef10c363fc2e38bfeed1b2072cbc00de8e2d24bb58ff22";
+export const PI130_INPUT_SHA256 = "sha256:9fb1a3df114bb57722112ed527997bfdaea5652c0f6637d13a2bc3de9ce4487d";
+// Historical Pi110 exports remain callable; each version selects its own bytes.
+export const FROZEN_PI_INPUTS = Object.freeze({
+  "1.1.0": Object.freeze({ id: "pi110", runtimeContract: "pi110-v1", purpose: "GP110-04_PI_INPUT", sha256: PI110_INPUT_SHA256 }),
+  "1.3.0": Object.freeze({ id: "pi130", runtimeContract: "pi130-v1", purpose: "GP130-02_PI_INPUT", sha256: PI130_INPUT_SHA256 }),
+});
+export function runtimeInputForContract(runtimeContract) {
+  return Object.entries(FROZEN_PI_INPUTS).find(([, input]) => input.runtimeContract === runtimeContract)?.[0];
+}
 const ROOTS = ["node", "pi", "external-npm", "only-my-pi/package"];
 function fail(code, message) { throw Object.assign(new Error(message), { code }); }
 
-async function regularBytes(filename) {
+async function regularBytes(filename, missingCode = "PI110_INPUT_MISSING") {
   const stat = await fs.lstat(filename).catch(() => null);
   if (!stat?.isFile() || stat.isSymbolicLink() || stat.size > 64 * 1024 * 1024
-    || await fs.realpath(filename) !== path.resolve(filename)) fail("PI110_INPUT_MISSING", "Pi runtime input must be a bounded regular file");
+    || await fs.realpath(filename) !== path.resolve(filename)) fail(missingCode, "Pi runtime input must be a bounded regular file");
   return fs.readFile(filename);
 }
 
-function parseInputs(bytes) {
-  if (sha256(bytes) !== PI110_INPUT_SHA256) fail("PI110_INPUT_DRIFT", "Pi 1.1.0 input contract differs from its reviewed identity");
+function parseInputs(bytes, piVersion = "1.1.0") {
+  const contract = FROZEN_PI_INPUTS[piVersion];
+  if (!contract) fail("STACK_PI_IDENTITY_INVALID", "unknown frozen Pi input contract");
+  if (sha256(bytes) !== contract.sha256) fail(`${contract.id.toUpperCase()}_INPUT_DRIFT`, "Pi input contract differs from its reviewed identity");
   return JSON.parse(bytes.toString("utf8"));
 }
 
-export async function loadPi110Inputs(rootDir) {
-  const root = path.join(rootDir, "contracts/release/pi110");
-  const bytes = await regularBytes(path.join(root, "inputs.json"));
-  const inputs = parseInputs(bytes);
+export async function loadPi110Inputs(rootDir, piVersion = "1.1.0") {
+  const contract = FROZEN_PI_INPUTS[piVersion];
+  if (!contract) fail("STACK_PI_IDENTITY_INVALID", "unknown frozen Pi input contract");
+  const root = path.join(rootDir, "contracts/release", contract.id);
+  const bytes = await regularBytes(path.join(root, "inputs.json"), `${contract.id.toUpperCase()}_INPUT_MISSING`);
+  const inputs = parseInputs(bytes, piVersion);
   const files = {};
   for (const [name, digest] of Object.entries(inputs.files)) {
-    files[name] = await regularBytes(path.join(root, name));
-    if (sha256(files[name]) !== digest) fail("PI110_INPUT_DRIFT", `Pi 1.1.0 frozen input differs: ${name}`);
+    files[name] = await regularBytes(path.join(root, name), `${contract.id.toUpperCase()}_INPUT_MISSING`);
+    if (sha256(files[name]) !== digest) fail(`${contract.id.toUpperCase()}_INPUT_DRIFT`, `Pi frozen input differs: ${name}`);
   }
   return { inputs, bytes, files };
 }
@@ -99,31 +112,35 @@ export async function verifyPi110AcquiredTrees({ resolved, artifactTreeRoots }) 
   return { packages };
 }
 
-export async function writePi110Materials({ resolved, sourceCommit, licensesRoot, patches }) {
+export async function writePi110Materials({ resolved, sourceCommit, licensesRoot, patches, piVersion = "1.1.0" }) {
+  const contract = FROZEN_PI_INPUTS[piVersion];
   const inputBytes = await regularBytes(path.join(resolved, "pi/omp-runtime-inputs.json"));
-  const inputs = parseInputs(inputBytes);
+  const inputs = parseInputs(inputBytes, piVersion);
   await verifyPi110Resources(path.join(resolved, "pi"), inputs);
   const materials = { formatVersion: 1, kind: "only-my-pi-private-runtime-materials", purpose: inputs.purpose,
-    sourceCommit, piVersion: "1.1.0", platform: inputs.platform, nodeVersions: inputs.nodeVersions,
-    inputSha256: PI110_INPUT_SHA256, roots: ROOTS, entries: await inventory(resolved, ROOTS),
+    sourceCommit, piVersion, platform: inputs.platform, nodeVersions: inputs.nodeVersions,
+    inputSha256: contract.sha256, roots: ROOTS, entries: await inventory(resolved, ROOTS),
     licenses: await inventory(licensesRoot, (await fs.readdir(licensesRoot)).sort()), patches };
   const bytes = Buffer.from(`${JSON.stringify(materials, null, 2)}\n`);
-  await fs.writeFile(path.join(resolved, "pi110-materials.json"), bytes, { flag: "wx", mode: 0o600 });
+  await fs.writeFile(path.join(resolved, `${contract.id}-materials.json`), bytes, { flag: "wx", mode: 0o600 });
   return sha256(bytes);
 }
 
 export async function verifyPi110Materials({ root, manifest }) {
-  const bytes = await regularBytes(path.join(root, "pi110-materials.json"));
+  const piVersion = runtimeInputForContract(manifest.runtimeContract);
+  const contract = FROZEN_PI_INPUTS[piVersion];
+  if (!contract) fail("STACK_PI_IDENTITY_INVALID", "unknown frozen Pi materials contract");
+  const bytes = await regularBytes(path.join(root, `${contract.id}-materials.json`));
   if (sha256(bytes) !== manifest.runtimeMaterialsDigest) fail("PI110_MATERIALS_DRIFT", "Pi runtime materials differ from the distribution binding");
   const materials = JSON.parse(bytes.toString("utf8"));
   if (materials.kind !== "only-my-pi-private-runtime-materials" || materials.formatVersion !== 1
-    || materials.purpose !== "GP110-04_PI_INPUT" || materials.piVersion !== "1.1.0"
+    || materials.purpose !== contract.purpose || materials.piVersion !== piVersion
     || materials.sourceCommit !== manifest.sourceCommit || materials.platform !== "darwin-arm64"
     || canonicalJson(materials.nodeVersions) !== canonicalJson(["22.19.0", "24.19.0"])
-    || materials.inputSha256 !== PI110_INPUT_SHA256 || canonicalJson(materials.roots) !== canonicalJson(ROOTS)) {
+    || materials.inputSha256 !== contract.sha256 || canonicalJson(materials.roots) !== canonicalJson(ROOTS)) {
     fail("PI110_MATERIALS_IDENTITY_INVALID", "Pi runtime materials have an unsupported purpose, version or platform");
   }
-  const inputs = parseInputs(await regularBytes(path.join(root, "pi/omp-runtime-inputs.json")));
+  const inputs = parseInputs(await regularBytes(path.join(root, "pi/omp-runtime-inputs.json")), piVersion);
   if (sha256(await regularBytes(path.join(root, "pi/npm-shrinkwrap.json"))) !== inputs.files["package-lock.json"]
     || sha256(await regularBytes(path.join(root, "pi/package.json"))) !== inputs.package.manifestSha256) {
     fail("PI110_INPUT_DRIFT", "Pi runtime package or dependency lock differs");
@@ -143,7 +160,7 @@ export async function verifyPi110Declarations({ root, manifest }) {
   const read = async name => JSON.parse((await regularBytes(path.join(root, name))).toString("utf8"));
   const stack = validateStackManifest(await read("stack-manifest.json"));
   const ledger = validateArtifactLedger(await read("transitive-artifact-ledger.json"));
-  if (stack.runtime.pi.version !== "1.1.0" || stack.privateRuntimeDigest !== manifest.distributionId
+  if (stack.runtime.pi.version !== runtimeInputForContract(manifest.runtimeContract) || stack.privateRuntimeDigest !== manifest.distributionId
     || stack.sourceCommit !== manifest.sourceCommit || ledger.sourceCommit !== stack.sourceCommit
     || ledger.ledgerDigest !== stack.transitiveLedgerSha256) fail("PI110_DECLARATION_BINDING_INVALID", "Pi declarations differ from the private stack");
   if (canonicalJson(await read("sbom.spdx.json")) !== canonicalJson(createSpdxSbom({ stackManifest: stack, ledger }))

@@ -9,7 +9,7 @@ import { createDistributionSbom } from "../distribution/sbom.mjs";
 import { hashFile } from "./deterministic-archive.mjs";
 import { extractVerifiedTarGzip } from "./safe-extract.mjs";
 import { PRIVATE_RUNTIME_CONTRACTS } from "./contracts.mjs";
-import { writePi110Materials } from "./pi110-materials.mjs";
+import { writePi110Materials, FROZEN_PI_INPUTS } from "./pi110-materials.mjs";
 
 // Only operates on a newly staged Full tree. Never accepts user package roots.
 export async function preparePrivateRuntime({ rootDir, resolved, sourceCommit, work, piVersion = "0.85.1", licensesRoot }) {
@@ -20,12 +20,12 @@ export async function preparePrivateRuntime({ rootDir, resolved, sourceCommit, w
   await stageToolchain({ rootDir, runtimeRoot: resolved, work, platform: "darwin-arm64" });
   await stagePiBranding(path.join(resolved, "pi"));
   const patches = await applyRuntimePatches({ runtimeRoot: resolved, version: "0.3.0-preview.1", platform: "darwin-arm64", runtimeContract });
-  if (patches.length !== (piVersion === "1.1.0" ? 6 : 3)) throw new Error("private runtime is missing its reviewed patch set");
+  if (patches.length !== (FROZEN_PI_INPUTS[piVersion] ? 6 : 3)) throw new Error("private runtime is missing its reviewed patch set");
   const graph = await buildGenerationPlan({ rootDir, profileId: "daily", sourceCommit });
   const inventory = JSON.parse(await fs.readFile(path.join(rootDir, "inventory/packages.lock.json"), "utf8"));
   const packageFilters = Object.fromEntries(inventory.packages.filter((entry) => entry.installed === true).map((entry) => [entry.id, entry.resourceFilter ?? []]));
   for (const entry of graph.packages) packageFilters[entry.id] = entry.resourceFilter;
-  const runtimeMaterialsDigest = piVersion === "1.1.0" ? await writePi110Materials({ resolved, sourceCommit, licensesRoot, patches }) : undefined;
+  const runtimeMaterialsDigest = FROZEN_PI_INPUTS[piVersion] ? await writePi110Materials({ resolved, sourceCommit, licensesRoot, patches, piVersion }) : undefined;
   const manifest = await createDistributionManifest({ root: resolved, version: "0.3.0-preview.1", sourceCommit,
     platform: { os: "darwin", arch: "arm64", minimumMacOS: "14.0" }, packageFilters, runtimeContract, runtimeMaterialsDigest });
   await fs.writeFile(path.join(resolved, "distribution-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, { mode: 0o600, flag: "wx" });

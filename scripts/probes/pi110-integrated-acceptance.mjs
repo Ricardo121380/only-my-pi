@@ -20,13 +20,15 @@ const terminal = task => ["succeeded", "failed", "cancelled", "interrupted"].inc
 const digest = bytes => createHash("sha256").update(bytes).digest("hex");
 const fullCode = `text(await tools.read({path:"README.md"})); text(await tools.mcp__local__read_file({path:"README.md"})); text(await tools.mcp__http__echo({value:"N14-http"})); text(await tools.mcp__oauth__echo({value:"N14-oauth"})); { ${classificationCode} } { ${imageCode} } store("n14","integrated");`;
 
-export async function createIntegratedHost({ candidateRoot, evidenceRoot, scenario = "full" }) {
+export async function createIntegratedHost({ candidateRoot, evidenceRoot, scenario = "full", piVersion = "1.1.0" }) {
   assert.ok(path.isAbsolute(candidateRoot) && path.isAbsolute(evidenceRoot));
   const omp = path.join(candidateRoot, "only-my-pi/package");
   const candidateImport = relative => import(pathToFileURL(path.join(omp, relative)).href);
   const { loadDistribution } = await candidateImport("packages/distribution/runtime.mjs");
   const stack = await loadDistribution({ packageRoot: omp });
-  assert.ok(stack); assert.equal(stack.distribution.runtimeContract, "pi110-v1");
+  const { PRIVATE_RUNTIME_CONTRACTS } = await candidateImport("packages/release-stack/contracts.mjs");
+  assert.ok(["1.1.0", "1.3.0"].includes(piVersion), "unknown integrated acceptance version");
+  assert.ok(stack); assert.equal(stack.distribution.runtimeContract, PRIVATE_RUNTIME_CONTRACTS[piVersion]);
   const { inspectResolvedStack } = await candidateImport("packages/release-stack/release-builder.mjs");
   const checked = await inspectResolvedStack({ resolvedRoot: candidateRoot, stackManifest: JSON.parse(await fs.readFile(path.join(candidateRoot, "stack-manifest.json"), "utf8")) });
   await fs.mkdir(evidenceRoot, { recursive: true });
@@ -131,11 +133,16 @@ export async function createIntegratedHost({ candidateRoot, evidenceRoot, scenar
     };
     selectScenario(scenario);
     const reception = async (offline = false) => {
-      const runs = (offline ? await cli(["admin", "mcp", "status", "--project", project]) : await mcp({ type: "status" })).runs, stdio = [];
-      for (const run of runs) for (const process of run.processes.filter(p => p.transport === "stdio")) for (const entry of (await fs.readFile(path.join(process.runtimeDir, "received.jsonl"), "utf8").catch(() => "")).split("\n").filter(Boolean).map(JSON.parse)) stdio.push({ runId: run.runId, taskId: run.taskId, ...entry });
-      return { runs, stdio, http: remote.received, oauth: oauth.received, models: received, chatCount: chat.length, ledger: offline ? await cli(["admin", "image", "status", "--project", project]) : await calls(), readback: offline ? "actual candidate CLI after Host unavailable" : "actual Host HTTP" };
+      const runs = (offline ? await cli(["admin", "mcp", "status", "--project", project]) : await mcp({ type: "status" })).runs, stdio = [], readErrors = [];
+      for (const run of runs) for (const process of run.processes.filter(p => p.transport === "stdio")) {
+        try {
+          const raw = await fs.readFile(path.join(process.runtimeDir, "received.jsonl"), "utf8");
+          for (const entry of raw.split("\n").filter(Boolean).map(JSON.parse)) stdio.push({ runId: run.runId, taskId: run.taskId, ...entry });
+        } catch (error) { readErrors.push({ runId: run.runId, pid: process.pid, code: error.code ?? error.message }); }
+      }
+      return { runs, stdio: readErrors.length ? null : stdio, observedStdio: stdio, readErrors, stdioStatus: readErrors.length ? "UNKNOWN" : "KNOWN", http: remote.received, oauth: oauth.received, models: received, chatCount: chat.length, ledger: offline ? await cli(["admin", "image", "status", "--project", project]) : await calls(), readback: offline ? "actual candidate CLI after Host unavailable" : "actual Host HTTP" };
     };
-    const receipt = async (offline = false) => ({ scope: "PI110-N14_SAME_PRIVATE_CANDIDATE_C_P_B", root, candidateRoot, nodePath: stack.nodePath, nodeVersion: process.version, nodeSha256: digest(await fs.readFile(stack.nodePath)), sdkSha256: digest(await fs.readFile(path.join(candidateRoot, "pi/dist/index.js"))), probeSha256: digest(await fs.readFile(fileURLToPath(import.meta.url))), stackId: stack.stackId, distributionId: stack.distribution.distributionId, checked, scenario, ...(await reception(offline)) });
+    const receipt = async (offline = false) => ({ scope: piVersion === "1.3.0" ? "GP130-03_SAME_PRIVATE_CANDIDATE_C_P_B" : "PI110-N14_SAME_PRIVATE_CANDIDATE_C_P_B", piVersion, root, candidateRoot, nodePath: stack.nodePath, nodeVersion: process.version, nodeSha256: digest(await fs.readFile(stack.nodePath)), sdkSha256: digest(await fs.readFile(path.join(candidateRoot, "pi/dist/index.js"))), probeSha256: digest(await fs.readFile(fileURLToPath(import.meta.url))), stackId: stack.stackId, distributionId: stack.distribution.distributionId, checked, scenario, ...(await reception(offline)) });
     const approve = async id => {
       for (let i = 0; i < 16; i++) {
         const waiting = await until(() => task(id), t => t.approvals.length || terminal(t), "N14 approval or terminal", 30000);
@@ -165,11 +172,11 @@ export async function createIntegratedHost({ candidateRoot, evidenceRoot, scenar
   } catch (error) { await close(); throw error; }
 }
 
-const [mode, candidateRoot, evidenceRoot] = process.argv.slice(2);
-if (mode === "--run") await runAcceptance({ candidateRoot, evidenceRoot });
-if (mode === "--faults") await runAcceptance({ candidateRoot, evidenceRoot, faultsOnly: true });
+const [mode, candidateRoot, evidenceRoot, piVersion = "1.1.0"] = process.argv.slice(2);
+if (mode === "--run") await runAcceptance({ candidateRoot, evidenceRoot, piVersion });
+if (mode === "--faults") await runAcceptance({ candidateRoot, evidenceRoot, piVersion, faultsOnly: true });
 if (mode === "--serve") {
-  const f = await createIntegratedHost({ candidateRoot, evidenceRoot }); await f.configure();
+  const f = await createIntegratedHost({ candidateRoot, evidenceRoot, piVersion }); await f.configure();
   const control = http.createServer(async (req, res) => {
     try {
       let value;
@@ -193,8 +200,8 @@ if (mode === "--serve") {
 
 export { fullCode, imageDigest, imageCode, classificationCode, terminal, until, digest };
 
-async function runAcceptance({ candidateRoot, evidenceRoot, faultsOnly = false }) {
-  const f = await createIntegratedHost({ candidateRoot, evidenceRoot });
+async function runAcceptance({ candidateRoot, evidenceRoot, faultsOnly = false, piVersion = "1.1.0" }) {
+  const f = await createIntegratedHost({ candidateRoot, evidenceRoot, piVersion });
   const checks = [], tasks = [];
   const save = async () => {
     let receipt;
@@ -219,7 +226,7 @@ async function runAcceptance({ candidateRoot, evidenceRoot, faultsOnly = false }
     await check("verified candidate and public Host CLI", async () => {
       const status = await f.cli(["web", "status", "--json"]); assert.equal(status.status, "HOST_RUNNING");
       const html = await (await fetch(f.host.origin)).text(); assert.equal(html, await fs.readFile(path.join(f.omp, "webui/dist/index.html"), "utf8"));
-      const pi = JSON.parse(await fs.readFile(path.join(candidateRoot, "pi/package.json"))); assert.equal(pi.version, "1.1.0");
+      const pi = JSON.parse(await fs.readFile(path.join(candidateRoot, "pi/package.json"))); assert.equal(pi.version, piVersion);
       return { pid: f.host.pid, epoch: f.host.epoch, sourceCommit: f.stack.distribution.sourceCommit, cliPath: f.cliPath, pi: pi.version };
     });
     await check("ordinary + stdio + HTTP + OAuth + classifier + image in one native script", async () => {

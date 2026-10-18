@@ -18,7 +18,7 @@ import { downloadVerified } from "./downloader.mjs";
 import { assembleReleasePayloads } from "./payload-assembler.mjs";
 import { extractVerifiedTarGzip } from "./safe-extract.mjs";
 import { prepareEnvironment, scrubbedEnvironment } from "./thin-resolver.mjs";
-import { loadPi110Inputs, verifyPi110AcquiredTrees } from "./pi110-materials.mjs";
+import { loadPi110Inputs, verifyPi110AcquiredTrees, FROZEN_PI_INPUTS } from "./pi110-materials.mjs";
 
 const execFile = promisify(execFileCallback);
 const COMMIT = /^[a-f0-9]{40}$/u;
@@ -103,11 +103,11 @@ export async function installExternal({ rootDir, resolved, node, npm, env, run, 
 
 export async function installPi({ rootDir, work, resolved, node, npm, env, run, download, extract, piVersion = CONTROLLED_PI_VERSION }) {
   const contract = piRuntimeContract(piVersion);
-  const fixed = piVersion === "1.1.0" ? await loadPi110Inputs(rootDir) : null;
+  const fixed = FROZEN_PI_INPUTS[piVersion] ? await loadPi110Inputs(rootDir, piVersion) : null;
   const archive = path.join(work, "downloads", "pi-coding-agent.tgz");
   const extracted = path.join(work, "pi-artifact");
   const verified = await download({ url: `https://registry.npmjs.org/${PI_NAME}/-/pi-coding-agent-${contract.version}.tgz`, destination: archive, expectedSri: contract.integrity, maxBytes: 512 * 1024 * 1024, allowedHosts: ["registry.npmjs.org"] });
-  if (fixed && verified.sha256 !== fixed.inputs.package.sha256) fail("PI110_INPUT_DRIFT", "Pi 1.1.0 archive digest differs");
+  if (fixed && verified.sha256 !== fixed.inputs.package.sha256) fail(`${FROZEN_PI_INPUTS[piVersion].id.toUpperCase()}_INPUT_DRIFT`, "Pi runtime archive digest differs");
   await extract({ archivePath: archive, destination: extracted, expectedSha256: verified.sha256, maxEntries: 100_000, maxExtractedBytes: 1024 * 1024 * 1024 });
   const packageRoot = await singleDirectory(extracted, "package");
   const pi = path.join(resolved, "pi");
@@ -116,12 +116,12 @@ export async function installPi({ rootDir, work, resolved, node, npm, env, run, 
   if (!lock && !fixed) fail("RELEASE_PI_LOCK_MISSING", "controlled Pi package does not contain its exact npm shrinkwrap");
   const manifestPath = path.join(pi, "package.json");
   const manifestBytes = await fs.readFile(manifestPath);
-  if (fixed && sha256(manifestBytes) !== fixed.inputs.package.manifestSha256) fail("PI110_INPUT_DRIFT", "official Pi 1.1.0 metadata differs");
+  if (fixed && sha256(manifestBytes) !== fixed.inputs.package.manifestSha256) fail(`${FROZEN_PI_INPUTS[piVersion].id.toUpperCase()}_INPUT_DRIFT`, "official Pi runtime metadata differs");
   const productionManifest = JSON.parse((fixed?.files["package.json"] ?? manifestBytes).toString("utf8"));
   if (productionManifest.name !== PI_NAME || productionManifest.version !== contract.version) fail("STACK_PI_IDENTITY_INVALID", "downloaded Pi package does not match the requested runtime");
   delete productionManifest.devDependencies;
   if (fixed) {
-    if (lock) fail("PI110_INPUT_DRIFT", "official Pi 1.1.0 unexpectedly contains a shrinkwrap");
+    if (lock) fail(`${FROZEN_PI_INPUTS[piVersion].id.toUpperCase()}_INPUT_DRIFT`, "official Pi runtime unexpectedly contains a shrinkwrap");
     await fs.writeFile(path.join(pi, "npm-shrinkwrap.json"), fixed.files["package-lock.json"], { flag: "wx", mode: 0o600 });
     await fs.writeFile(path.join(pi, "omp-runtime-inputs.json"), fixed.bytes, { flag: "wx", mode: 0o600 });
   }
@@ -131,7 +131,7 @@ export async function installPi({ rootDir, work, resolved, node, npm, env, run, 
   } finally {
     await fs.writeFile(manifestPath, manifestBytes, { mode: 0o600 });
   }
-  if (fixed && sha256(await fs.readFile(path.join(pi, "npm-shrinkwrap.json"))) !== fixed.inputs.files["package-lock.json"]) fail("PI110_INPUT_DRIFT", "npm changed the frozen Pi lock");
+  if (fixed && sha256(await fs.readFile(path.join(pi, "npm-shrinkwrap.json"))) !== fixed.inputs.files["package-lock.json"]) fail(`${FROZEN_PI_INPUTS[piVersion].id.toUpperCase()}_INPUT_DRIFT`, "npm changed the frozen Pi lock");
   return { pi, archive, artifactRoot: packageRoot, verified };
 }
 
@@ -221,7 +221,7 @@ async function copyLicense(source, destination) {
 export async function loadLicenseRegistry(rootDir, piVersion = CONTROLLED_PI_VERSION) {
   piRuntimeContract(piVersion);
   const contractRoot = path.join(rootDir, "contracts", "release");
-  const registryPath = path.join(contractRoot, piVersion === "1.1.0" ? "license-source-registry-pi110.json" : piVersion === "0.85.1" ? "license-source-registry-pi0851.json" : "license-source-registry.json");
+  const registryPath = path.join(contractRoot, piVersion === "1.3.0" ? "license-source-registry-pi130.json" : piVersion === "1.1.0" ? "license-source-registry-pi110.json" : piVersion === "0.85.1" ? "license-source-registry-pi0851.json" : "license-source-registry.json");
   const registry = JSON.parse(await fs.readFile(registryPath, "utf8"));
   if (registry?.formatVersion !== 1 || registry.kind !== "only-my-pi-license-source-registry" || !Array.isArray(registry.sources) || !registry.bindings || typeof registry.bindings !== "object" || Array.isArray(registry.bindings)) fail("RELEASE_LICENSE_REGISTRY_INVALID", "license source registry is invalid");
   const sources = new Map();
@@ -243,10 +243,10 @@ export async function collectLicenses({ resolved, artifacts, output, licenseRegi
   const usedBindings = new Set();
   for (const [identity, root] of [...artifacts.artifactTreeRoots].sort(([left], [right]) => left.localeCompare(right))) {
     const names = await fs.readdir(root);
-    const pi110 = licenseRegistry.registry.piVersion === "1.1.0";
-    const candidate = names.sort().find((name) => (pi110 ? /^(licen[cs]e|copying)([.-][A-Za-z0-9._-]+)?$/iu : /^(licen[cs]e|copying)(\.[A-Za-z0-9._-]+)?$/iu).test(name));
+    const supplementalLicenses = Boolean(FROZEN_PI_INPUTS[licenseRegistry.registry.piVersion]);
+    const candidate = names.sort().find((name) => (supplementalLicenses ? /^(licen[cs]e|copying)([.-][A-Za-z0-9._-]+)?$/iu : /^(licen[cs]e|copying)(\.[A-Za-z0-9._-]+)?$/iu).test(name));
     const filename = `${sha256(identity).slice("sha256:".length, "sha256:".length + 16)}-${identity.replaceAll(/[^A-Za-z0-9._-]/gu, "-")}-LICENSE.txt`;
-    if (pi110) {
+    if (supplementalLicenses) {
       async function supplement(source, target) {
         const stat = await fs.lstat(source);
         if (stat.isDirectory() && !stat.isSymbolicLink()) {
@@ -305,7 +305,7 @@ async function defaultPrepare({ rootDir, sourceCommit, outputRoot, download, ext
     extract,
   });
   const licenseRegistry = await loadLicenseRegistry(rootDir, piVersion);
-  if (piVersion === "1.1.0") await verifyPi110AcquiredTrees({ resolved, artifactTreeRoots: artifacts.artifactTreeRoots });
+  if (FROZEN_PI_INPUTS[piVersion]) await verifyPi110AcquiredTrees({ resolved, artifactTreeRoots: artifacts.artifactTreeRoots });
   const licenses = await collectLicenses({ resolved, artifacts, output: path.join(work, "licenses"), licenseRegistry });
   const generation = await buildGenerationPlan({ rootDir, profileId: "daily", sourceCommit });
   return await assemble({
@@ -338,8 +338,8 @@ export class ReleasePayloadStager {
     if (parent !== path.dirname(path.resolve(outputRoot)) || !(await outputMissing(outputRoot))) fail("RELEASE_STAGE_OUTPUT_EXISTS", "release stage output must not exist");
     const source = await this.sourceInspector(this.rootDir);
     if (source.head !== sourceCommit || source.clean !== true) fail("RELEASE_STAGE_SOURCE_NOT_CLEAN", "release stage requires a clean checkout at the exact source commit");
-    const fixed = piVersion === "1.1.0" ? await loadPi110Inputs(this.rootDir) : null;
-    if (fixed && `${process.platform}-${process.arch}` !== fixed.inputs.platform) fail("PI110_PLATFORM_UNSUPPORTED", "Pi 1.1.0 private preparation requires darwin-arm64");
+    const fixed = FROZEN_PI_INPUTS[piVersion] ? await loadPi110Inputs(this.rootDir, piVersion) : null;
+    if (fixed && `${process.platform}-${process.arch}` !== fixed.inputs.platform) fail(`${FROZEN_PI_INPUTS[piVersion].id.toUpperCase()}_PLATFORM_UNSUPPORTED`, "Pi runtime private preparation requires darwin-arm64");
     const plan = { formatVersion: 1, kind: "only-my-pi-release-stage-plan", mutation: false, status: "RELEASE_STAGE_PLANNED", sourceCommit, piRuntime: piContract,
       ...(fixed ? { piInputSha256: sha256(fixed.bytes), purpose: fixed.inputs.purpose } : {}), outputClass: "EXPLICIT_NON_REPOSITORY_DIRECTORY", networkHosts: ["nodejs.org", "registry.npmjs.org", ...(fixed ? ["github.com"] : [])], lifecycleScriptsDisabled: true };
     return Object.freeze({ ...plan, planDigest: sha256(JSON.stringify(plan)) });

@@ -7,7 +7,7 @@ import semver from "semver";
 import { canonicalJson } from "../config-runtime/index.mjs";
 import { hashResourcePath } from "../bootstrap/graph-plan.mjs";
 import { CONTROLLED_PI_VERSION, PRIVATE_RUNTIME_CONTRACTS, EMBEDDED_NODE_VERSION, PUBLIC_STACK_PACKAGES, sha256, validateStackManifest } from "../release-stack/contracts.mjs";
-import { verifyPi110Materials, verifyPi110Declarations } from "../release-stack/pi110-materials.mjs";
+import { verifyPi110Materials, verifyPi110Declarations, runtimeInputForContract } from "../release-stack/pi110-materials.mjs";
 
 export const DISTRIBUTION_VERSION = "0.4.0-preview.1";
 export const DISTRIBUTION_VERSIONS = Object.freeze([DISTRIBUTION_VERSION, "0.4.0-preview.2"]);
@@ -55,10 +55,10 @@ export function manifestDigest(manifest) {
 
 export function validateDistributionManifest(manifest) {
   const privateStack = Object.values(PRIVATE_RUNTIME_CONTRACTS).includes(manifest?.runtimeContract);
-  const pi110 = manifest?.runtimeContract === "pi110-v1";
+  const boundMaterials = Boolean(runtimeInputForContract(manifest?.runtimeContract));
   requireThat(manifest?.formatVersion === 1 && manifest.kind === "only-my-pi-distribution", "unsupported distribution format");
-  requireThat(Object.keys(manifest).sort().join() === ["formatVersion", "kind", "version", "sourceCommit", "platform", "nodeRange", "components", "packages", "distributionId", ...(privateStack ? ["runtimeContract"] : []), ...(pi110 ? ["runtimeMaterialsDigest"] : [])].sort().join(), "unexpected distribution fields");
-  requireThat(!pi110 || DIGEST.test(manifest.runtimeMaterialsDigest ?? ""), "Pi 1.1.0 requires bound runtime materials");
+  requireThat(Object.keys(manifest).sort().join() === ["formatVersion", "kind", "version", "sourceCommit", "platform", "nodeRange", "components", "packages", "distributionId", ...(privateStack ? ["runtimeContract"] : []), ...(boundMaterials ? ["runtimeMaterialsDigest"] : [])].sort().join(), "unexpected distribution fields");
+  requireThat(!boundMaterials || DIGEST.test(manifest.runtimeMaterialsDigest ?? ""), "Pi runtime requires bound runtime materials");
   requireThat((privateStack ? manifest.version === "0.3.0-preview.1" : DISTRIBUTION_VERSIONS.includes(manifest.version)) && /^[a-f0-9]{40}$/u.test(manifest.sourceCommit ?? ""), "unsupported version or source identity");
   const target = `${manifest.platform?.os}-${manifest.platform?.arch}`;
   requireThat(["darwin-arm64", "linux-x64", "linux-arm64"].includes(target), "unsupported distribution platform");
@@ -103,7 +103,7 @@ export async function loadDistribution({ packageRoot = APP_ROOT, nodePath = proc
     || (platform === "linux" && !glibc)) throw distributionError("DISTRIBUTION_PLATFORM_UNSUPPORTED", "this runtime does not support the current operating system, architecture or libc");
   const ompPackageRoot = await containedPath(root, COMPONENTS.app, { directory: true });
   requireThat(await fs.realpath(packageRoot) === ompPackageRoot, "application is not from this distribution");
-  if (manifest.runtimeContract === "pi110-v1") {
+  if (runtimeInputForContract(manifest.runtimeContract)) {
     await verifyPi110Materials({ root, manifest });
     await verifyPi110Declarations({ root, manifest });
   }

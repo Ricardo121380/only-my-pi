@@ -17,7 +17,7 @@ import {
   PRIVATE_RUNTIME_CONTRACTS,
 } from "./contracts.mjs";
 import { validateDistributionManifest } from "../distribution/runtime.mjs";
-import { verifyPi110Materials, verifyPi110Declarations } from "./pi110-materials.mjs";
+import { verifyPi110Materials, verifyPi110Declarations, runtimeInputForContract } from "./pi110-materials.mjs";
 import { createDeterministicTarGzip, hashFile } from "./deterministic-archive.mjs";
 import { hashPackageContentTree } from "./package-content-identity.mjs";
 import { validateSpdxSbom } from "./sbom.mjs";
@@ -78,7 +78,7 @@ export async function inspectResolvedStack({ resolvedRoot, stackManifest } = {})
   if (isPrivateStack(stack)) {
     const runtime = validateDistributionManifest(await jsonFile(root, "distribution-manifest.json"));
     if (runtime.runtimeContract !== PRIVATE_RUNTIME_CONTRACTS[stack.runtime.pi.version] || runtime.distributionId !== stack.privateRuntimeDigest || runtime.sourceCommit !== stack.sourceCommit) fail("STACK_PRIVATE_RUNTIME_INVALID", "private runtime descriptor differs from the Full stack");
-    if (runtime.runtimeContract === "pi110-v1") {
+    if (runtimeInputForContract(runtime.runtimeContract)) {
       await verifyPi110Materials({ root, manifest: runtime });
       await verifyPi110Declarations({ root, manifest: runtime });
     }

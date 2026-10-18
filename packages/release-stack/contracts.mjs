@@ -18,10 +18,12 @@ export const CONTROLLED_PI_INTEGRITY = "sha512-Yr2p9PubrbFZmYEPYI+C8KmZP9xlFuLDn
 // Keep the historical default stable: candidate staging must opt in explicitly.
 export const CANDIDATE_PI_VERSION = "0.85.1";
 export const PI110_VERSION = "1.1.0";
+export const PI130_VERSION = "1.3.0";
 export const PI_RUNTIME_CONTRACTS = Object.freeze({
   [CONTROLLED_PI_VERSION]: Object.freeze({ version: CONTROLLED_PI_VERSION, integrity: CONTROLLED_PI_INTEGRITY }),
   [CANDIDATE_PI_VERSION]: Object.freeze({ version: CANDIDATE_PI_VERSION, integrity: "sha512-FGRN+OHbWaefBPGaTggAdLjrIHW+s2PzLyglz/5dfLzb9of7uuXMXYC0fJIeZTw+shS32o2cuQ9jF7YSDuL/oQ==" }),
   [PI110_VERSION]: Object.freeze({ version: PI110_VERSION, integrity: "sha512-SeEi/4hdcHNgA9UWlefZl7ZZpm3dzi2OoxNjDHsBJ9o298LNOtbL4DGKgitlEj6uCTccvtw6f2hlCkTPVJ2RXg==" }),
+  [PI130_VERSION]: Object.freeze({ version: PI130_VERSION, integrity: "sha512-V/WoCjA2hQSe3QLWIUB24cTRdtEdeLiIzkDqU5RMXV6VWuD+KGZnzVBMhglwdnQTySkehZsjt8a3g6Jd2g4nnw==" }),
 });
 
 export function piRuntimeContract(version = CONTROLLED_PI_VERSION) {
@@ -29,7 +31,7 @@ export function piRuntimeContract(version = CONTROLLED_PI_VERSION) {
   return PI_RUNTIME_CONTRACTS[version];
 }
 
-export const PRIVATE_RUNTIME_CONTRACTS = Object.freeze({ "0.85.1": "phase1-pi0851", "1.1.0": "pi110-v1" });
+export const PRIVATE_RUNTIME_CONTRACTS = Object.freeze({ "0.85.1": "phase1-pi0851", "1.1.0": "pi110-v1", "1.3.0": "pi130-v1" });
 export function isPrivateStack(stack) { return Object.hasOwn(PRIVATE_RUNTIME_CONTRACTS, stack?.runtime?.pi?.version ?? ""); }
 
 export const PUBLIC_STACK_PACKAGES = Object.freeze([

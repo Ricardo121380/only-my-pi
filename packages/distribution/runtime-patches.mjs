@@ -12,15 +12,16 @@ function once(text, before, after) {
 /** Explicit, byte-bound build patches. Upstream ledger evidence is preserved;
  * the patched tree and this patch record are covered by distribution identity. */
 export async function applyRuntimePatches({ runtimeRoot, version, platform, runtimeContract }) {
-  if (runtimeContract !== undefined && !["phase1-pi0851", "pi110-v1"].includes(runtimeContract)) throw new Error("unknown runtime patch contract");
-  if (version !== "0.4.0-preview.2" && !["phase1-pi0851", "pi110-v1"].includes(runtimeContract)) return [];
-  if (runtimeContract === "pi110-v1") {
+  if (runtimeContract !== undefined && !["phase1-pi0851", "pi110-v1", "pi130-v1"].includes(runtimeContract)) throw new Error("unknown runtime patch contract");
+  if (version !== "0.4.0-preview.2" && !["phase1-pi0851", "pi110-v1", "pi130-v1"].includes(runtimeContract)) return [];
+  const reviewedPi = { "pi110-v1": "1.1.0", "pi130-v1": "1.3.0" }[runtimeContract];
+  if (reviewedPi) {
     const pi = JSON.parse(await fs.readFile(path.join(runtimeRoot, "pi/package.json"), "utf8"));
-    if (pi.name !== "@earendil-works/pi-coding-agent" || pi.version !== "1.1.0" || platform !== "darwin-arm64") throw new Error("Pi 1.1.0 patch purpose, version or platform differs");
+    if (pi.name !== "@earendil-works/pi-coding-agent" || pi.version !== reviewedPi || platform !== "darwin-arm64") throw new Error("Pi patch purpose, version or platform differs");
   }
   const patches = [];
   async function patch(relative, packageName, packageVersion, expected, transform) {
-    if (runtimeContract === "pi110-v1") {
+    if (reviewedPi) {
       const metadata = JSON.parse(await fs.readFile(path.join(runtimeRoot, "external-npm/node_modules", packageName, "package.json"), "utf8"));
       if (metadata.name !== packageName || metadata.version !== packageVersion) throw new Error(`runtime patch package version differs: ${packageName}`);
     }
@@ -31,7 +32,7 @@ export async function applyRuntimePatches({ runtimeRoot, version, platform, runt
     await fs.writeFile(filename, changed);
     patches.push({ packageName, packageVersion, path: `node_modules/${relative}`, upstreamSha256: digest(original), patchedSha256: digest(changed) });
   }
-  if (runtimeContract === "pi110-v1") {
+  if (reviewedPi) {
     await patch("pi-web-access/ssrf-protection.ts", "pi-web-access", "0.25.0",
       "c8280208780f19a2d66a0c9a04d2feb674f8baa813e6b88a1b12cd53675f71aa", (text) => {
         text = 'import { pinnedRequest as ompPinnedRequest } from "../../../only-my-pi/package/packages/web-policy/pinned-fetch.mjs";\n' + text;
@@ -82,8 +83,8 @@ export async function applyRuntimePatches({ runtimeRoot, version, platform, runt
       });
   }
   await fs.writeFile(path.join(runtimeRoot, "external-npm/omp-runtime-patches.json"), `${JSON.stringify({ formatVersion: 1,
-    ...(runtimeContract === "pi110-v1" ? { runtimeContract, piVersion: "1.1.0", platform } : {}),
-    reason: runtimeContract === "pi110-v1"
+    ...(reviewedPi ? { runtimeContract, piVersion: reviewedPi, platform } : {}),
+    reason: reviewedPi
       ? "Pin validated public Web DNS and redirects; preserve empty files and owned mount cleanup; delegate permission-shell execution without replacing sandbox policy"
       : "Preserve existing empty files and owned mount cleanup; delegate permission-shell execution to OMP without replacing sandbox policy", patches }, null, 2)}\n`);
   return patches;
