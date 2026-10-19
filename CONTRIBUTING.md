@@ -33,6 +33,13 @@ real-root gates are maintainer-run; contributors are never expected to provide
 credentials or production evidence. The project currently requires neither a
 CLA nor DCO sign-off.
 
+Keep each completed work batch traceable to its source commit and relevant
+checks. Before an authorized GitHub sync, review the complete outgoing history
+for private data, push an explicit branch, and read back the remote SHA. Record
+any work that remains local; a successful push is not a CI or release verdict.
+The [repository maintenance guide](docs/maintenance/README.md) describes the
+folder layout, preservation of existing work, and archived branch recovery.
+
 Security reports must use GitHub Private Vulnerability Reporting, not a public
 Issue. See [SECURITY.md](SECURITY.md).
 

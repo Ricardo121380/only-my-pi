@@ -2,6 +2,10 @@
 
 Research and design notes for only-my-pi live here.
 
+For source folders, local evidence boundaries, and Git synchronization, see the
+[repository maintenance guide](maintenance/README.md) and the
+[2026-10-19 repository audit](maintenance/2026-10-19-repository-audit.md).
+
 ## Pi 1.3.0 private candidate — 2026-10-19
 
 [Same-candidate delivery and acceptance](compatibility/2026-10-18-pi-1.3.0-private-candidate-acceptance.md) records `pi130-v1`, private source `dd996352`, the exact production lock/materials and actual candidate CLI/PTY/Ego. GP130-02 PASS; GP130-03 PASS. #77: CLOSED / completed，已独立回读. The four required installed checks run successfully on the packaged Node24; Node22 and Linux have explicit applicable scopes.
