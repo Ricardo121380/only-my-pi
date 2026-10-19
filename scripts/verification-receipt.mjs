@@ -76,7 +76,7 @@ export function boundedTestFailureDiagnostic(stdout, stderr) {
   const kinds = [];
   const timeouts = [];
   const coverage = [];
-  const tapReporter = lines.some(line => /^\s*TAP version 13$/u.test(line));
+  const tapReporter = lines.some(line => /^\s*(?:TAP version 13$|not ok \d+ - )/u.test(line));
   let diagnosticIndent;
   const remember = (target, value, maximum) => {
     const sanitized = sanitizedTestLabel(value);
@@ -86,9 +86,13 @@ export function boundedTestFailureDiagnostic(stdout, stderr) {
     const yamlStart = /^(\s*)---$/u.exec(line);
     if (yamlStart) diagnosticIndent = yamlStart[1];
     if (/^\s*\.\.\.$/u.test(line)) diagnosticIndent = undefined;
-    const tap = /^\s*not ok \d+ - (.+)$/u.exec(line);
+    const tap = /^(\s*)not ok \d+ - (.+)$/u.exec(line);
     const spec = /^\s*✖\s+(.+?)(?:\s+\([\d.]+ms\))?$/u.exec(line);
-    if (tap?.[1]) remember(failures, tap[1], 16);
+    if (tap) {
+      // A bounded/clipped TAP excerpt may omit its header and YAML marker.
+      diagnosticIndent = tap[1] + "  ";
+      remember(failures, tap[2], 16);
+    }
     else if (spec?.[1] && spec[1] !== "failing tests:") remember(failures, spec[1], 16);
     // Only error fields at the reporter's diagnostic root are metadata.
     // An assertion's actual/expected object can itself contain a secret code.

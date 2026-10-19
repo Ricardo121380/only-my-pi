@@ -100,6 +100,8 @@ test("test-gate diagnostics expose only bounded test names and stable error code
   const diagnostic = boundedTestFailureDiagnostic([
     `✖ runner keeps ${privatePath} isolated (12.3ms)`,
     "not ok 42 - linux cleanup releases every lock",
+    "  actual:",
+    "    code: 'NESTED_SECRET'",
     "  code: 'ERR_ASSERTION'",
     "  failureType: 'TEST_CODE_FAILURE'",
     "raw secret=must-not-be-copied",
@@ -109,6 +111,7 @@ test("test-gate diagnostics expose only bounded test names and stable error code
   assert.match(diagnostic, /linux cleanup releases every lock/u);
   assert.match(diagnostic, /ERR_ASSERTION/u);
   assert.equal(diagnostic.includes("must-not-be-copied"), false);
+  assert.equal(diagnostic.includes("NESTED_SECRET"), false);
   assert.equal(diagnostic.length <= 1200, true);
 });
 
