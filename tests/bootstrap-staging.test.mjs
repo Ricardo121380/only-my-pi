@@ -400,6 +400,9 @@ test("promoted minimal generation closes the /omp mode runtime import graph", as
   }
 
   const runtimeModule = await import(`${pathToFileURL(path.join(root, "resources/extensions/omp-control/runtime.mjs"))}?m3=${Date.now()}`);
+  // Pi loads the extension entrypoint, whose imports may exceed runtime.mjs.
+  const entryModule = await import(pathToFileURL(path.join(root, "resources/extensions/omp-control/index.ts")));
+  assert.equal(typeof entryModule.default, "function");
   const runtime = runtimeModule.createOmpRuntime();
   const listed = await runtime.execute("mode list");
   assert.equal(listed.ok, true, JSON.stringify(listed));

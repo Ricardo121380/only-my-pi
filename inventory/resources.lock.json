@@ -1234,7 +1234,7 @@
       "commands": ["omp"],
       "egressSurfaces": [],
       "defaultLoaded": false,
-      "profileEligibility": ["daily"],
+      "profileEligibility": ["minimal", "coding", "research", "orchestration", "daily", "ui-terminal", "experimental"],
       "lifecycle": "stable",
       "packaged": true
     },

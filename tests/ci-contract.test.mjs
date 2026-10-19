@@ -12,6 +12,9 @@ test("CI executes the same manifest-backed verify runner without credentials", (
   assert.match(workflow, /push:\n\s+branches:\n\s+- main/u);
   assert.doesNotMatch(workflow, /branches:\n\s+- "\*\*"/u);
   assert.match(workflow, /npm ci --ignore-scripts/);
+  assert.match(workflow, /NPM_CONFIG_IGNORE_SCRIPTS: "true"/u);
+  assert.equal((workflow.match(/node scripts\/prepare-test-pty\.mjs/gu) ?? []).length, 2);
+  assert.ok(workflow.indexOf("node scripts/prepare-test-pty.mjs") < workflow.indexOf("npm run verify -- --run"));
   assert.match(workflow, /node-version: \["22\.19\.0", "24\.19\.0"\]/u);
   assert.doesNotMatch(workflow, /node-version:.*24\.x/u);
   assert.match(workflow, /npm run verify -- --run/);
