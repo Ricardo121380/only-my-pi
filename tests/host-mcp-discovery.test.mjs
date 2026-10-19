@@ -3,7 +3,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { createMcpHost, providerReply, until, mcpReception } from "./fixtures/mcp-host.mjs";
+import { createMcpHost, providerReply, until, untilPiInitialized, mcpReception, slowPiInitialization } from "./fixtures/mcp-host.mjs";
 
 const terminal = (task) => ["succeeded", "failed", "cancelled"].includes(task.status);
 async function configured(t, { exposure = "deferred", mode, code } = {}) {
@@ -20,6 +20,7 @@ async function configured(t, { exposure = "deferred", mode, code } = {}) {
   await f.mcp({ type: "save", revision: 0, server });return { f, server };
 }
 async function finish(f, started, approve = true) {
+  await untilPiInitialized(() => f.task(started.taskId));
   for (;;) {
     const task = await until(() => f.task(started.taskId), (value) => value.approvals.length || terminal(value), "discovery journey", 15000);
     if (terminal(task)) return task;
@@ -36,6 +37,16 @@ test("public native tool search loads only admitted deferred tools and reads a s
   const run = (await f.mcp({ type: "status" })).runs.find((item) => item.taskId === started.taskId), received = await mcpReception(run);
   assert.equal(received.filter((item) => item.type === "call").length, 1);assert.equal(received.filter((item) => item.type === "resource").length, 1);
   assert.ok(received.some((item) => item.method === "resources/list"));assert.ok(run.discoveries.some((entry) => entry.resources.length === 1));
+});
+
+test("resource discovery retains its operation budget after a slow real Pi initialization", { timeout: 45000 }, async t => {
+  const code = 'text(await tools.mcp_list_resources({server:"local"})); text(await tools.mcp_read_resource({server:"local",uri:"mcp://local/readme"}));';
+  const { f } = await configured(t, { code });
+  await slowPiInitialization(f.sdk, 18000);
+  const started = await f.start(), final = await finish(f, started);
+  assert.equal(final.toolCalls.find(call => call.name === "codemode").status, "completed");
+  const run = (await f.mcp({ type: "status" })).runs.at(-1), received = await mcpReception(run);
+  assert.equal(received.filter(item => item.type === "resource").length, 1);
 });
 
 test("hidden tools and handwritten resource URIs never dispatch through codemode", { timeout: 30000 }, async (t) => {
