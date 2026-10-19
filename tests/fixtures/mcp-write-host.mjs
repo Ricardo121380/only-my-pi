@@ -1,4 +1,5 @@
 import path from "node:path";
+import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -28,3 +29,8 @@ export async function codingApproved(f, started) {
   return until(() => f.task(started.taskId), (task) => task.approvals.some((entry) => entry.title.startsWith("MCP ·")) || terminal(task), "MCP write approval");
 }
 export const approveWrite = (f, waiting, value = "仅本次") => f.request("/api/command", { type: "answerApproval", taskId: waiting.taskId, approvalId: waiting.approvals[0].approvalId, value });
+export async function releaseWrite(f) {
+  const run = (await f.mcp({ type: "status" })).runs.at(-1);
+  const writer = run.processes.find(entry => entry.kind === "write");
+  await fs.writeFile(path.join(writer.runtimeDir, "scratch"), "release");
+}

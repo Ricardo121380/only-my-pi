@@ -44,6 +44,7 @@ test("resource discovery retains its operation budget after a slow real Pi initi
   const { f } = await configured(t, { code });
   await slowPiInitialization(f.sdk, 18000);
   const started = await f.start(), final = await finish(f, started);
+  assert.ok(final.toolCalls.some(call => call.name === "codemode"), JSON.stringify({ status: final.status, error: final.error }));
   assert.equal(final.toolCalls.find(call => call.name === "codemode").status, "completed");
   const run = (await f.mcp({ type: "status" })).runs.at(-1), received = await mcpReception(run);
   assert.equal(received.filter(item => item.type === "resource").length, 1);

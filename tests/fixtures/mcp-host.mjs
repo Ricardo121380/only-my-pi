@@ -24,7 +24,9 @@ export async function until(read, accept, label, timeoutMs = 7500) {
 export const untilPiInitialized = read => until(read, task => task.status !== "starting", "Pi task initialized", 30000);
 export async function slowPiInitialization(sdk, delayMs = 8000) {
   await fs.rename(sdk, path.join(path.dirname(sdk), "index-original.js"));
-  await fs.writeFile(sdk, `export * from "./index-original.js"; import { createAgentSessionServices as real } from "./index-original.js"; export async function createAgentSessionServices(options) { await new Promise(resolve => setTimeout(resolve, ${delayMs})); return real(options); }`);
+  // Guarantee a minimum startup duration without adding the real SDK's load
+  // time to the injected delay and accidentally exhausting its RPC deadline.
+  await fs.writeFile(sdk, `export * from "./index-original.js"; import { createAgentSessionServices as real } from "./index-original.js"; export async function createAgentSessionServices(options) { const services = await real(options); await new Promise(resolve => setTimeout(resolve, Math.max(0, ${delayMs} - process.uptime() * 1000))); return services; }`);
 }
 export async function mcpReception(run) {
   return (await Promise.all(run.processes.map(async (process) => (await fs.readFile(path.join(process.runtimeDir, "received.jsonl"), "utf8")).trim().split("\n").filter(Boolean).map(JSON.parse)))).flat();

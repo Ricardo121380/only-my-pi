@@ -73,30 +73,47 @@ export function boundedTestFailureDiagnostic(stdout, stderr) {
   const codes = [];
   const frames = [];
   const operators = [];
+  const kinds = [];
+  const timeouts = [];
   const coverage = [];
+  const tapReporter = lines.some(line => /^\s*TAP version 13$/u.test(line));
+  let diagnosticIndent;
   const remember = (target, value, maximum) => {
     const sanitized = sanitizedTestLabel(value);
     if (sanitized && !target.includes(sanitized) && target.length < maximum) target.push(sanitized);
   };
   for (const line of lines) {
+    const yamlStart = /^(\s*)---$/u.exec(line);
+    if (yamlStart) diagnosticIndent = yamlStart[1];
+    if (/^\s*\.\.\.$/u.test(line)) diagnosticIndent = undefined;
     const tap = /^\s*not ok \d+ - (.+)$/u.exec(line);
     const spec = /^\s*✖\s+(.+?)(?:\s+\([\d.]+ms\))?$/u.exec(line);
     if (tap?.[1]) remember(failures, tap[1], 16);
     else if (spec?.[1] && spec[1] !== "failing tests:") remember(failures, spec[1], 16);
-    const code = /^\s*(?:code|failureType):\s*['"]?([A-Z][A-Z0-9_-]{1,127})['"]?\s*$/u.exec(line);
+    // Only error fields at the reporter's diagnostic root are metadata.
+    // An assertion's actual/expected object can itself contain a secret code.
+    const rootField = tapReporter ? diagnosticIndent !== undefined && line.startsWith(diagnosticIndent) && !/^\s/u.test(line.slice(diagnosticIndent.length)) : /^ {4}\S/u.test(line);
+    const code = rootField && /^\s*code:\s*['"]?([A-Z][A-Z0-9_-]{1,127})['"]?,?\s*$/u.exec(line);
     if (code?.[1]) remember(codes, code[1], 16);
+    const kind = rootField && /^\s*failureType:\s*['"]?(testCodeFailure|testTimeoutFailure|cancelledByParent|subtestsFailed|hookFailed)['"]?,?\s*$/u.exec(line);
+    if (kind?.[1]) remember(kinds, kind[1], 5);
+    const timeout = /\btest timed out after (\d{1,9})ms\b/u.exec(line);
+    if (timeout) remember(timeouts, `${timeout[1]}ms`, 8);
     // Keep repository test coordinates, never absolute paths, assertion values
     // or arbitrary error messages from provider/extension output.
     const frame = /^\s+(?:at\s+)?(?:async\s+)?[\w$.<>]+\s+\((?:file:\/\/)?[^)\r\n]*\/(tests\/[A-Za-z0-9_.-]+\.test\.mjs:\d+:\d+)\)$/u.exec(line);
     if (frame?.[1]) remember(frames, frame[1], 8);
-    const operator = /^\s*operator:\s*['"]?(strictEqual|notStrictEqual|deepStrictEqual|notDeepStrictEqual|match|doesNotMatch|fail|ok|throws|doesNotThrow|rejects|doesNotReject)['"]?\s*$/u.exec(line);
+    const operator = /^\s*operator:\s*['"]?(strictEqual|notStrictEqual|deepStrictEqual|notDeepStrictEqual|match|doesNotMatch|fail|ok|throws|doesNotThrow|rejects|doesNotReject)['"]?,?\s*$/u.exec(line);
     if (operator?.[1]) remember(operators, operator[1], 8);
     const threshold = /^\s*(?:ℹ\s*|#\s*)?Error: (\d+(?:\.\d+)?)% (line|branch|function) coverage does not meet threshold of (\d+(?:\.\d+)?)%\.\s*$/u.exec(line);
     if (threshold) remember(coverage, `${threshold[2]}:${threshold[1]}<${threshold[3]}`, 3);
   }
   const parts = [
-    failures.length > 0 ? `tests=${failures.join(" | ")}` : "tests=UNPARSEABLE",
+    // Reserve space for the cause even when many long test labels fail.
+    failures.length > 0 ? `tests=${failures.join(" | ").slice(0, 500)}` : "tests=UNPARSEABLE",
     ...(codes.length > 0 ? [`codes=${codes.join(",")}`] : []),
+    ...(kinds.length > 0 ? [`kinds=${kinds.join(",")}`] : []),
+    ...(timeouts.length > 0 ? [`timeouts=${timeouts.join(",")}`] : []),
     ...(frames.length > 0 ? [`frames=${frames.join(",")}`] : []),
     ...(operators.length > 0 ? [`operators=${operators.join(",")}`] : []),
     ...(coverage.length > 0 ? [`coverage=${coverage.join(",")}`] : []),

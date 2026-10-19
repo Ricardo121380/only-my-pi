@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import fs from "node:fs/promises";
 import { SessionManager } from "@earendil-works/pi-coding-agent";
-import { createMcpHost, providerReply, until } from "./fixtures/mcp-host.mjs";
+import { createMcpHost, providerReply, until, untilPiInitialized } from "./fixtures/mcp-host.mjs";
 
 const terminal = (task) => ["succeeded", "failed", "cancelled"].includes(task.status);
 async function storageHost(t) {
@@ -12,7 +12,9 @@ async function storageHost(t) {
   const execute = async (source, sessionKey) => {
     code = source; phaseBase = f.requests.length;
     const started = await f.start(sessionKey ? { resumeSessionKey: sessionKey } : {});
+    await untilPiInitialized(() => f.task(started.taskId));
     const final = await until(() => f.task(started.taskId), terminal, "store byte boundary", 15000);
+    assert.ok(final.toolCalls.some(item => item.name === "codemode"), JSON.stringify({ status: final.status, error: final.error }));
     await Promise.all([...f.host.tasks.running.values()]); await f.host.scan();
     const { sessions } = await f.request(`/api/sessions?projectId=${f.projectId}`);
     const session = sessions.find((item) => item.sessionId === final.sessionId);

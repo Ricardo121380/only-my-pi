@@ -79,3 +79,29 @@ test("D15 identifies an actual coverage threshold failure without copying child 
   assert.match(result.diagnostic, /coverage=function:50\.00<100/u);
   assert.doesNotMatch(result.diagnostic, /subject\.mjs|passing assertion/u);
 });
+
+for (const reporter of ["tap", "spec"]) test(`D15 retains timeout classification among long ${reporter} test labels`, async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-gate-timeout-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const fixture = path.join(root, "timeout.mjs");
+  await fs.writeFile(fixture, `
+import test from "node:test";
+import assert from "node:assert/strict";
+import { setTimeout as delay } from "node:timers/promises";
+for (let i = 0; i < 8; i++) test("long assertion " + i + " " + "x".repeat(160), () => i === 0 ? assert.deepEqual({ code: "PRIVATE_ASSERTION" }, { code: "other" }) : assert.equal("PRIVATE_ASSERTION", "other"));
+test("controlled timeout", { timeout: 10 }, () => delay(100));
+`);
+  const result = await receipt.runCheck({ id: "D15", command: process.execPath,
+    args: ["--test", `--test-reporter=${reporter}`, fixture], timeoutMs: 10000, env: {} });
+  assert.equal(result.status, "FAIL");
+  assert.equal(result.timedOut, false, "the child test timed out, not the outer gate");
+  assert.match(result.diagnostic, /codes=ERR_ASSERTION/u);
+  if (reporter === "tap") {
+    assert.match(result.diagnostic, /codes=ERR_ASSERTION,ERR_TEST_FAILURE/u);
+    assert.match(result.diagnostic, /kinds=[^;]*testTimeoutFailure/u);
+  }
+  assert.match(result.diagnostic, /timeouts=10ms/u);
+  assert.ok(result.diagnostic.length <= 1200);
+  assert.doesNotMatch(result.diagnostic, /PRIVATE_ASSERTION/u);
+  assert.ok(!result.diagnostic.includes(root));
+});

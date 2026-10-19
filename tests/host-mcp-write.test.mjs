@@ -2,13 +2,14 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
+import { setTimeout as delay } from "node:timers/promises";
 import pty from "node-pty";
 import { processIdentity, groupAlive } from "../packages/host/ownership.mjs";
 import { DirectSessionOwnership } from "../packages/direct-agent/ownership.mjs";
 import { createHash } from "node:crypto";
 import { createMcpHost, providerReply } from "./fixtures/mcp-host.mjs";
 import { codingRequest } from "./fixtures/mcp-write-host.mjs";
-import { createWriteHost, codingApproved, approveWrite, terminal } from "./fixtures/mcp-write-host.mjs";
+import { createWriteHost, codingApproved, approveWrite, releaseWrite, terminal } from "./fixtures/mcp-write-host.mjs";
 import { until, untilPiInitialized, slowPiInitialization, mcpReception } from "./fixtures/mcp-host.mjs";
 import { byteEvidence, errorEvidence, fileEvidence, observation, mcpDenialEvidence, processEvidence, saveRegressionEvidence } from "./fixtures/regression-evidence.mjs";
 const dispatched = async (f) => {
@@ -26,11 +27,17 @@ test("a lost Host stop receipt cannot leave the controlled fixture provider list
   await assert.rejects(fetch(f.providerOrigin));
   assert.ok((await fs.stat(f.root)).isDirectory(), "an unconfirmed close retains its fixture evidence");
 });
-test("four authorities admit one actual descriptor write with truthful result identity", { timeout: 25000 }, async (t) => {
-  const f = await createWriteHost(); t.after(() => f.close());
+// A real journey includes fixture/model preparation, up to 30s RPC startup,
+// separate 7.5s approval/operation polls, and verified process cleanup.
+const writeJourneyTimeout = 60000;
+test("four authorities admit one actual descriptor write with truthful result identity", { timeout: writeJourneyTimeout }, async (t) => {
+  const f = await createWriteHost({ mode: "gated" }); t.after(() => f.close());
   const started = await f.start({ mode: "controlled" }), waiting = await codingApproved(f, started);
   assert.equal(waiting.access, "coding"); assert.match(waiting.approvals[0].title, /写入/u);
-  await approveWrite(f, waiting); await until(() => f.task(started.taskId), terminal, "write complete");
+  await approveWrite(f, waiting);
+  await until(() => dispatched(f), entries => entries.some(entry => entry.type === "call"), "actual dispatch");
+  await releaseWrite(f);
+  await until(() => f.task(started.taskId), terminal, "write complete");
   assert.equal(await fs.readFile(path.join(f.project, "README.md"), "utf8"), "approved MCP file bytes\n");
   const run = (await f.mcp({ type: "status" })).runs.at(-1), receipts = await mcpReception(run);
   assert.equal(receipts.filter((entry) => entry.type === "call").length, 1); assert.equal(receipts.filter((entry) => entry.type === "effect").length, 1);
@@ -39,74 +46,71 @@ test("four authorities admit one actual descriptor write with truthful result id
   assert.ok(run.processes.every((entry) => !entry.alive));
 });
 
-async function deniedWrites(t, { slowStartup = false } = {}) {
-  for (const [coding, answer] of slowStartup ? [[false, null]] : [[false, null], [true, "拒绝"]]) {
-    const f = await createWriteHost({ coding });
-    const mode = coding ? "controlled" : "readonly";
-    const original = await fs.readFile(path.join(f.project, "README.md"));
-    let started, lastTask, closed = false;
-    const timing = { requestedAt: null, readyAt: null, deniedAt: null };
-    const context = () => ({ coding, mode, answer, slowStartup, timing, taskId: started?.taskId, original: byteEvidence(original), lastTask });
-    const close = async () => {
-      if (closed) return;
-      const before = await mcpDenialEvidence(f, { ...context(), phase: "before-cleanup" });
-      const pids = [...new Set((before.mcp.value?.runs ?? []).flatMap(run => [run.ownerPid, ...run.processes.map(entry => entry.pid)]).concat(before.worker.value?.pid).filter(Number.isSafeInteger))];
-      try { await f.close(); closed = true; await saveRegressionEvidence("mcp-cleanup", { root: f.root, ...context(), result: "closed", processes: await Promise.all(pids.map(processEvidence)) }); }
-      catch (error) { await saveRegressionEvidence("mcp-cleanup", { root: f.root, ...context(), result: "UNKNOWN", error: errorEvidence(error) }); throw error; }
-    };
-    t.after(close);
-    try {
-      if (slowStartup) {
-        // Fault injection stays at the copied public SDK factory. The actual
-        // Host HTTP entry, Pi runtime, MCP receiver and policy remain in use.
-        await slowPiInitialization(f.sdk);
-      }
-      timing.requestedAt = Date.now();
-      started = await f.start({ mode });
-      // startTask is asynchronous (202/starting). Its worker initialization
-      // uses the existing 30s RPC readiness contract; denial keeps the original
-      // 7.5s poll after initialization, including all original effect assertions.
-      await untilPiInitialized(async () => lastTask = await f.task(started.taskId));
-      timing.readyAt = Date.now();
-      if (coding) await approveWrite(f, await codingApproved(f, started), answer);
-      await until(async () => lastTask = await f.task(started.taskId), terminal, "unauthorized write denied");
-      timing.deniedAt = Date.now();
-      const run = (await f.mcp({ type: "status" })).runs.at(-1), receipts = await mcpReception(run);
-      assert.equal(receipts.filter((entry) => entry.type === "call").length, 0); assert.equal(receipts.filter((entry) => entry.type === "effect").length, 0);
-      assert.deepEqual(await fs.readFile(path.join(f.project, "README.md")), original); assert.equal(run.calls[0].status, "rejected");
-      assert.equal(run.calls[0].code, coding ? "MCP_CALL_DENIED" : "MCP_CODING_AUTHORITY_REQUIRED");
-    } catch (error) {
-      const snapshot = await mcpDenialEvidence(f, { ...context(), phase: "failure-before-cleanup", error: errorEvidence(error) });
-      t.diagnostic(JSON.stringify({ coding, mode, answer, taskId: started?.taskId, task: snapshot.task, reception: snapshot.reception.status }));
-      throw error;
+async function deniedWrites(t, { coding = false, slowStartup = false } = {}) {
+  const answer = coding ? "拒绝" : null;
+  const f = await createWriteHost({ coding });
+  const mode = coding ? "controlled" : "readonly";
+  const original = await fs.readFile(path.join(f.project, "README.md"));
+  let started, lastTask, closed = false;
+  const timing = { requestedAt: null, readyAt: null, deniedAt: null };
+  const context = () => ({ coding, mode, answer, slowStartup, timing, taskId: started?.taskId, original: byteEvidence(original), lastTask });
+  const close = async () => {
+    if (closed) return;
+    const before = await mcpDenialEvidence(f, { ...context(), phase: "before-cleanup" });
+    const pids = [...new Set((before.mcp.value?.runs ?? []).flatMap(run => [run.ownerPid, ...run.processes.map(entry => entry.pid)]).concat(before.worker.value?.pid).filter(Number.isSafeInteger))];
+    try { await f.close(); closed = true; await saveRegressionEvidence("mcp-cleanup", { root: f.root, ...context(), result: "closed", processes: await Promise.all(pids.map(processEvidence)) }); }
+    catch (error) { await saveRegressionEvidence("mcp-cleanup", { root: f.root, ...context(), result: "UNKNOWN", error: errorEvidence(error) }); throw error; }
+  };
+  t.after(close);
+  try {
+    if (slowStartup) {
+      // Fault injection stays at the copied public SDK factory. The actual
+      // Host HTTP entry, Pi runtime, MCP receiver and policy remain in use.
+      await slowPiInitialization(f.sdk);
     }
-    await close();
+    timing.requestedAt = Date.now();
+    started = await f.start({ mode });
+    // startTask is asynchronous (202/starting). Its worker initialization
+    // uses the existing 30s RPC readiness contract; denial keeps the original
+    // 7.5s poll after initialization, including all original effect assertions.
+    await untilPiInitialized(async () => lastTask = await f.task(started.taskId));
+    timing.readyAt = Date.now();
+    if (coding) await approveWrite(f, await codingApproved(f, started), answer);
+    await until(async () => lastTask = await f.task(started.taskId), terminal, "unauthorized write denied");
+    timing.deniedAt = Date.now();
+    const run = (await f.mcp({ type: "status" })).runs.at(-1), receipts = await mcpReception(run);
+    assert.equal(receipts.filter((entry) => entry.type === "call").length, 0); assert.equal(receipts.filter((entry) => entry.type === "effect").length, 0);
+    assert.deepEqual(await fs.readFile(path.join(f.project, "README.md")), original); assert.equal(run.calls[0].status, "rejected");
+    assert.equal(run.calls[0].code, coding ? "MCP_CALL_DENIED" : "MCP_CODING_AUTHORITY_REQUIRED");
+  } catch (error) {
+    const snapshot = await mcpDenialEvidence(f, { ...context(), phase: "failure-before-cleanup", error: errorEvidence(error) });
+    t.diagnostic(JSON.stringify({ coding, mode, answer, taskId: started?.taskId, task: snapshot.task, reception: snapshot.reception.status }));
+    throw error;
   }
+  await close();
 }
 
-test("Inspect and an unapproved MCP tool cannot obtain real project write effects", { timeout: 45000 }, deniedWrites);
+for (const coding of [false, true]) test(`${coding ? "An unapproved MCP tool" : "Inspect"} cannot obtain real project write effects`, { timeout: writeJourneyTimeout }, t => deniedWrites(t, { coding }));
 test("Inspect denial retains zero effects after a slow real Pi initialization", { timeout: 45000 }, t => deniedWrites(t, { slowStartup: true }));
 
-test("directory symlinks, file symlinks, hardlinks and outside targets reach zero actual writes", { timeout: 65000 }, async (t) => {
-  for (const kind of ["symlink", "directory", "hardlink", "outside"]) {
-    const target = kind === "directory" ? "alias/file" : kind === "outside" ? "../outside" : "alias";
-    const f = await createWriteHost({ target }); t.after(() => f.close());
-    const outside = path.join(f.root, "outside"); await fs.writeFile(outside, "outside original");
-    if (kind === "symlink") await fs.symlink(outside, path.join(f.project, "alias"));
-    if (kind === "directory") { const dir = path.join(f.root, "other"); await fs.mkdir(dir); await fs.writeFile(path.join(dir, "file"), "outside original"); await fs.symlink(dir, path.join(f.project, "alias")); }
-    if (kind === "hardlink") await fs.link(outside, path.join(f.project, "alias"));
-    if (kind !== "outside") await f.mcp({ type: "save", revision: 1, server: { ...f.server, enabled: true, tools: [{ ...f.server.tools[0], paths: [kind === "directory" ? "alias" : target] }] } });
-    const started = await f.start({ mode: "controlled" }), ended = await codingApproved(f, started);
-    assert.equal(ended.approvals.length, 0); await until(() => f.task(started.taskId), terminal, "link denied");
-    const run = (await f.mcp({ type: "status" })).runs.at(-1), receipts = await mcpReception(run);
-    assert.equal(receipts.filter((entry) => ["call", "effect"].includes(entry.type)).length, 0);
-    assert.equal(await fs.readFile(outside, "utf8"), "outside original");
-    if (kind === "directory") assert.equal(await fs.readFile(path.join(f.root, "other/file"), "utf8"), "outside original");
-    await f.close();
-  }
+for (const kind of ["symlink", "directory", "hardlink", "outside"]) test(`${kind} target reaches zero actual writes`, { timeout: writeJourneyTimeout }, async (t) => {
+  const target = kind === "directory" ? "alias/file" : kind === "outside" ? "../outside" : "alias";
+  const f = await createWriteHost({ target }); t.after(() => f.close());
+  const outside = path.join(f.root, "outside"); await fs.writeFile(outside, "outside original");
+  if (kind === "symlink") await fs.symlink(outside, path.join(f.project, "alias"));
+  if (kind === "directory") { const dir = path.join(f.root, "other"); await fs.mkdir(dir); await fs.writeFile(path.join(dir, "file"), "outside original"); await fs.symlink(dir, path.join(f.project, "alias")); }
+  if (kind === "hardlink") await fs.link(outside, path.join(f.project, "alias"));
+  if (kind !== "outside") await f.mcp({ type: "save", revision: 1, server: { ...f.server, enabled: true, tools: [{ ...f.server.tools[0], paths: [kind === "directory" ? "alias" : target] }] } });
+  const started = await f.start({ mode: "controlled" }), ended = await codingApproved(f, started);
+  assert.equal(ended.approvals.length, 0); await until(() => f.task(started.taskId), terminal, "link denied");
+  const run = (await f.mcp({ type: "status" })).runs.at(-1), receipts = await mcpReception(run);
+  assert.equal(receipts.filter((entry) => ["call", "effect"].includes(entry.type)).length, 0);
+  assert.equal(await fs.readFile(outside, "utf8"), "outside original");
+  if (kind === "directory") assert.equal(await fs.readFile(path.join(f.root, "other/file"), "utf8"), "outside original");
+  await f.close();
 });
 
-test("target replaced while approval is pending invalidates that approval before writer startup", { timeout: 25000 }, async (t) => {
+test("target replaced while approval is pending invalidates that approval before writer startup", { timeout: writeJourneyTimeout }, async (t) => {
   const f = await createWriteHost(); t.after(() => f.close());
   const started = await f.start({ mode: "controlled" }), waiting = await codingApproved(f, started), outside = path.join(f.root, "outside");
   await fs.writeFile(outside, "outside original"); await fs.rename(path.join(f.project, "README.md"), path.join(f.project, "saved")); await fs.symlink(outside, path.join(f.project, "README.md"));
@@ -117,13 +121,14 @@ test("target replaced while approval is pending invalidates that approval before
 });
 
 test("post-dispatch path replacement cannot redirect the pinned descriptor to an outside file", { timeout: 45000 }, async (t) => {
-  const f = await createWriteHost({ mode: "slow" }); t.after(() => f.close());
+  const f = await createWriteHost({ mode: "gated" }); t.after(() => f.close());
   const started = await f.start({ mode: "controlled" }), waiting = await codingApproved(f, started);
   await approveWrite(f, waiting);
   const run = (await f.mcp({ type: "status" })).runs.at(-1);
   await until(() => dispatched(f), (entries) => entries.some((entry) => entry.type === "call"), "actual dispatch");
   const outside = path.join(f.root, "outside"); await fs.writeFile(outside, "outside original");
   await fs.rename(path.join(f.project, "README.md"), path.join(f.project, "saved")); await fs.symlink(outside, path.join(f.project, "README.md"));
+  await releaseWrite(f);
   await until(() => f.task(started.taskId), terminal, "pinned write complete");
   const final = (await f.mcp({ type: "status" })).runs.find((entry) => entry.runId === run.runId);
   assert.equal(await fs.readFile(outside, "utf8"), "outside original"); assert.equal(await fs.readFile(path.join(f.project, "saved"), "utf8"), "approved MCP file bytes\n");
@@ -150,10 +155,12 @@ test("actual mutation followed by receipt loss remains UNKNOWN and cannot auto r
   await f.request("/api/command", { type: "cancelTask", taskId: next.taskId }, 202);
 });
 
-for (const action of ["revokeTask", "cancelTask"]) test(`actual dispatched write ${action} keeps effects truthful and stops service`, { timeout: 25000 }, async (t) => {
-  const f = await createWriteHost({ mode: "slow" }); t.after(() => f.close());
+for (const action of ["revokeTask", "cancelTask"]) test(`actual dispatched write ${action} keeps effects truthful and stops service`, { timeout: writeJourneyTimeout }, async (t) => {
+  const f = await createWriteHost({ mode: "gated" }); t.after(() => f.close());
   const started = await f.start({ mode: "controlled" }), waiting = await codingApproved(f, started); await approveWrite(f, waiting);
   await until(() => dispatched(f), (entries) => entries.some((entry) => entry.type === "call"), "actual dispatch");
+  // Cross the former 2s window while the real service remains at the effect gate.
+  await delay(2500);
   await f.request("/api/command", { type: action, taskId: started.taskId }, action === "cancelTask" ? 202 : 200);
   await until(() => f.task(started.taskId), terminal, "stopped write");
   const run = (await f.mcp({ type: "status" })).runs.at(-1), receipts = await mcpReception(run);
@@ -162,7 +169,7 @@ for (const action of ["revokeTask", "cancelTask"]) test(`actual dispatched write
   assert.equal(run.calls[0].status, "unknown"); assert.ok(run.processes.every((entry) => !entry.alive));
 });
 
-test("startup descriptor effects are recorded UNKNOWN even when no tools/call is dispatched", { timeout: 25000 }, async (t) => {
+test("startup descriptor effects are recorded UNKNOWN even when no tools/call is dispatched", { timeout: writeJourneyTimeout }, async (t) => {
   const f = await createWriteHost({ mode: "startup-effect" }); t.after(() => f.close());
   const started = await f.start({ mode: "controlled" }), waiting = await codingApproved(f, started); await approveWrite(f, waiting);
   await until(() => f.task(started.taskId), terminal, "startup effect");
@@ -317,7 +324,7 @@ export class InteractiveMode extends RealMode {
 test("actual CLI TUI writes through the shared approval and physical descriptor contract", { timeout: 45000 }, tuiDescriptorWrite);
 test("actual CLI TUI waits for the focused MCP write selector after its approval journal is visible", { timeout: 45000 }, t => tuiDescriptorWrite(t, { slowSelector: true }));
 
-test("MCP approval cannot repair a lost real Host project owner token", { timeout: 25000 }, async (t) => {
+test("MCP approval cannot repair a lost real Host project owner token", { timeout: writeJourneyTimeout }, async (t) => {
   let release; const gate = new Promise((resolve) => { release = resolve; });
   const f = await createWriteHost({ respond: async ({ body, res }) => {
     const count = body.messages.filter((message) => message.role === "tool").length;

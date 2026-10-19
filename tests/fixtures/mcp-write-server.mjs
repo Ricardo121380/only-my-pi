@@ -25,6 +25,15 @@ for await (const line of readline.createInterface({ input: process.stdin })) {
   }
   else if (message.method === "tools/call") {
     await receipt({ type: "call", name: message.params.name, arguments: message.params.arguments });
+    if (mode === "gated") {
+      // The actual process has received tools/call, but no descriptor effect
+      // can occur until the test explicitly releases it or terminates it.
+      for (;;) {
+        try { if (await fs.readFile(path.join(root, "scratch"), "utf8") === "release") break; }
+        catch (error) { if (error.code !== "ENOENT") throw error; }
+        await delay(25);
+      }
+    }
     if (mode === "slow") await delay(2000);
     if (mode === "orphan") { await delay(2000); }
     try {
