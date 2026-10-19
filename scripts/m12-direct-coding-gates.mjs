@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 
 import { canonicalJson } from "../packages/config-runtime/index.mjs";
 import { DIRECT_AGENT_VERSION } from "../packages/direct-agent/product-contract.mjs";
-import { repositoryRoot, runCheck } from "./verification-receipt.mjs";
+import { formatGateProgress, repositoryRoot, runCheck } from "./verification-receipt.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MANIFEST = "verification/m12-direct-coding-gates-v1.json";
@@ -236,11 +236,16 @@ export async function runM12Verification({ rootDir = repositoryRoot, output = nu
   const evidence = await loadProtectedEvidence(resolvedRoot, protectedEvidence, authoritativeSource, verifyGit && requireCleanSource);
   const results = [];
   for (const gate of manifest.gates) {
-    const result = gate.execution === "protected-evidence"
-      ? protectedResult(gate, evidence)
-      : publicResult(await runCheckImpl({ ...gate, cwd: "repository-root", env: { CI: "1", NO_COLOR: "1", PI_TELEMETRY: "0" }, sensitiveOutput: false, required: true }, { cwd: resolvedRoot, maxOutputBytes: Math.min(gate.maxOutputBytes, manifest.policy.maxOutputBytes), env }));
+    let result;
+    let diagnostic;
+    if (gate.execution === "protected-evidence") result = protectedResult(gate, evidence);
+    else {
+      const raw = await runCheckImpl({ ...gate, cwd: "repository-root", env: { CI: "1", NO_COLOR: "1", PI_TELEMETRY: "0" }, sensitiveOutput: false, required: true }, { cwd: resolvedRoot, maxOutputBytes: Math.min(gate.maxOutputBytes, manifest.policy.maxOutputBytes), env });
+      result = publicResult(raw);
+      diagnostic = raw.diagnostic;
+    }
     results.push(result);
-    onGate(result);
+    onGate(result, diagnostic);
   }
   if (requireCleanSource && cleanHead(resolvedRoot) !== executionCommit) fail("M12_GATE_SOURCE_CHANGED", "source changed while M12 gates were running");
   const deterministicPassed = results.filter((entry) => entry.execution === "deterministic").every((entry) => entry.status === "PASS");
@@ -273,7 +278,7 @@ async function main() {
   const args = parseM12GateArgs(process.argv.slice(2));
   let result;
   if (!args.run) result = inspectM12Gates(process.argv.slice(2));
-  else result = (await runM12Verification({ output: args.receipt, sourceCommit: args.sourceCommit, protectedEvidence: args.protectedEvidence })).report;
+  else result = (await runM12Verification({ output: args.receipt, sourceCommit: args.sourceCommit, protectedEvidence: args.protectedEvidence, onGate: (gate, diagnostic) => process.stderr.write(formatGateProgress(gate, diagnostic)) })).report;
   process.stdout.write(`${JSON.stringify(result, null, args.json ? 2 : 0)}\n`);
   if (args.run && result.ok !== true) process.exitCode = 1;
 }

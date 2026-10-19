@@ -47,7 +47,13 @@ function boundedFailureDiagnostic(stderr) {
   return `${match[1]}:${message}`;
 }
 
-const TEST_GATE_IDS = new Set(["test-unit", "test-contract", "test-integration", "full-tests"]);
+const TEST_GATE_IDS = new Set([
+  "test-unit", "test-contract", "test-integration", "full-tests",
+  "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D15",
+  "U1", "U2", "U3", "U4", "U5", "U6", "U7", "U8",
+  "Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9", "Q10", "Q12",
+  "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10",
+]);
 
 function sanitizedTestLabel(value) {
   return String(value)
@@ -65,6 +71,7 @@ export function boundedTestFailureDiagnostic(stdout, stderr) {
     .split(/\r?\n/u);
   const failures = [];
   const codes = [];
+  const coverage = [];
   const remember = (target, value, maximum) => {
     const sanitized = sanitizedTestLabel(value);
     if (sanitized && !target.includes(sanitized) && target.length < maximum) target.push(sanitized);
@@ -76,12 +83,24 @@ export function boundedTestFailureDiagnostic(stdout, stderr) {
     else if (spec?.[1] && spec[1] !== "failing tests:") remember(failures, spec[1], 16);
     const code = /^\s*(?:code|failureType):\s*['"]?([A-Z][A-Z0-9_-]{1,127})['"]?\s*$/u.exec(line);
     if (code?.[1]) remember(codes, code[1], 16);
+    const threshold = /^\s*(?:ℹ\s*|#\s*)?Error: (\d+(?:\.\d+)?)% (line|branch|function) coverage does not meet threshold of (\d+(?:\.\d+)?)%\.\s*$/u.exec(line);
+    if (threshold) remember(coverage, `${threshold[2]}:${threshold[1]}<${threshold[3]}`, 3);
   }
   const parts = [
     failures.length > 0 ? `tests=${failures.join(" | ")}` : "tests=UNPARSEABLE",
     ...(codes.length > 0 ? [`codes=${codes.join(",")}`] : []),
+    ...(coverage.length > 0 ? [`coverage=${coverage.join(",")}`] : []),
   ];
   return `TEST_FAILURE:${parts.join(";")}`.slice(0, 1200);
+}
+
+export function formatGateProgress(gate, diagnostic) {
+  let output = `${gate.status} ${gate.id} (${gate.durationMs} ms)\n`;
+  if (gate.status === "FAIL") {
+    output += `failure ${gate.id}: exitCode=${gate.exitCode} signal=${gate.signal} timedOut=${gate.timedOut} outputLimitExceeded=${gate.outputLimitExceeded}\n`;
+  }
+  if (diagnostic) output += `diagnostic ${gate.id}: ${diagnostic}\n`;
+  return output;
 }
 
 function exactKeys(value, allowed, label) {
