@@ -22,6 +22,7 @@ test("pack allowlist rejects receipts, fixtures, tests, traversal, and unlisted 
     "node_modules/unlisted-package/index.js",
     "node_modules/ajv/node_modules/unlisted-package/index.js",
     "node_modules/node-pty/node_modules/unlisted-package/index.js",
+    "contracts/release/external/node_modules/pi-permission-modes/src/index.ts",
   ]) {
     const result = validatePackEntries([...manifest.required, file], manifest);
     assert.equal(result.ok, false, file);

@@ -1,0 +1,2 @@
+# Contract locks are shipped; their local test/build installations are not.
+**/node_modules/
