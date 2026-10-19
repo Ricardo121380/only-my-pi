@@ -3,6 +3,13 @@
 only-my-pi is an independent project. It is not affiliated with or endorsed by
 the Pi coding agent or extension authors.
 
+The table below describes the historical `0.2.0-preview.1` distribution. It is
+not the dependency inventory of the current development branch. Current source
+dependencies are pinned by `package.json` and `package-lock.json`; a new binary
+distribution requires notices and license texts for its own exact release tree.
+Private material-candidate records do not grant permission to redistribute the
+referenced material. See the [public source projection record](docs/maintenance/2026-10-19-public-source-projection.md).
+
 The `0.2.0-preview.1` distribution includes or provisions the following direct
 components at exact versions. Their package manifests declare the MIT license:
 
