@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
-import { createMcpHost, providerReply, until, mcpReception } from "./fixtures/mcp-host.mjs";
+import { createMcpHost, providerReply, until, untilPiInitialized, mcpReception } from "./fixtures/mcp-host.mjs";
 
 async function configured(t, options = {}, mode) {
   const f = await createMcpHost(options); t.after(() => f.close());
@@ -10,7 +10,10 @@ async function configured(t, options = {}, mode) {
   await f.mcp({ type: "enable", revision: 1, name: "local", enabled: true }); return f;
 }
 const terminal = (task) => ["succeeded", "failed", "cancelled"].includes(task.status);
-const awaiting = (f, id) => until(() => f.task(id), (task) => task.approvals.length > 0 || terminal(task), "approval or terminal");
+const awaiting = async (f, id) => {
+  await untilPiInitialized(() => f.task(id));
+  return until(() => f.task(id), (task) => task.approvals.length > 0 || terminal(task), "approval or terminal");
+};
 const reply = (f, task, value) => f.request("/api/command", { type: "answerApproval", taskId: task.taskId, approvalId: task.approvals[0].approvalId, value });
 const readRun = async (f, id) => (await f.mcp({ type: "status" })).runs.find((run) => run.taskId === id);
 const reception = mcpReception;
@@ -42,7 +45,8 @@ test("real credentials use references, revocation blocks a pending call, and cro
   const other = path.join(f.root, "other"); await fs.mkdir(other); await fs.writeFile(path.join(other, "README.md"), "other project");
   const project = await f.request("/api/command", { type: "addProject", path: other });
   await f.request("/api/mcp", { type: "save", projectId: project.projectId, revision: 4, server: { ...f.server, enabled: true, credentialRefs: state.servers[0].credentialRefs } });
-  const next = await f.start({ projectId: project.projectId }); const done = await until(() => f.task(next.taskId), terminal, "foreign credential denied");
+  const next = await f.start({ projectId: project.projectId }); await untilPiInitialized(() => f.task(next.taskId));
+  const done = await until(() => f.task(next.taskId), terminal, "foreign credential denied");
   assert.equal(done.error, "MCP_CREDENTIAL_BINDING_CHANGED");
   const status = await f.request("/api/mcp", { type: "status", projectId: project.projectId }); assert.equal(status.runs.at(-1).processes.length, 0);
 });
@@ -91,7 +95,8 @@ test("task grant reuses one approval for two actual reads, then expires before a
 test("definition changes, oversized inputs, undeclared fields and outside paths reach zero tool calls", { timeout: 45000 }, async (t) => {
   for (const [mode, args] of [["list-change", { path: "README.md" }], [null, { path: "x".repeat(17000) }], [null, { path: "README.md", extra: "undeclared" }], [null, { path: "../outside" }]]) {
     const f = await configured(t, { respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "mcp__local__read_file", args) }, mode);
-    const started = await f.start(); await until(() => f.task(started.taskId), terminal, "denied input");
+    const started = await f.start(); await untilPiInitialized(() => f.task(started.taskId));
+    await until(() => f.task(started.taskId), terminal, "denied input");
     const run = await readRun(f, started.taskId); assert.equal((await reception(run)).filter((item) => item.type === "call").length, 0);
     await f.close();
   }

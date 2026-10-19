@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import { execFile, fork } from "node:child_process";
 import { promisify } from "node:util";
-import { createMcpHost, until, untilPiInitialized, mcpReception, providerReply } from "./fixtures/mcp-host.mjs";
+import { createMcpHost, until, untilPiInitialized, slowPiInitialization, mcpReception, providerReply } from "./fixtures/mcp-host.mjs";
 const terminal = (task) => ["succeeded", "failed", "cancelled"].includes(task.status);
 const strings = (value) => typeof value === "string" ? [value] : value && typeof value === "object" ? Object.values(value).flatMap(strings) : [];
 const exposed = (value, secret) => strings(value).some((text) => {
@@ -17,7 +17,8 @@ test("real escaped and unicode-escaped credential results never enter public Pi 
     const f = await createMcpHost(); t.after(() => f.close());
     await f.mcp({ type: "save", revision: 0, server: { ...f.server, env: { F_MODE: mode }, enabled: true } });
     await f.mcp({ type: "credential", revision: 1, name: "local", envName: "MCP_TOKEN", value: secret });
-    const started = await f.start(), waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length > 0 || terminal(task), "approval");
+    const started = await f.start(); await untilPiInitialized(() => f.task(started.taskId));
+    const waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length > 0 || terminal(task), "approval");
     await f.request("/api/command", { type: "answerApproval", taskId: started.taskId, approvalId: waiting.approvals[0].approvalId, value: "仅本次" });
     const completed = await until(() => f.task(started.taskId), terminal, "secret rejected");
     assert.equal(exposed(completed.messages, secret), false, "recoverable secret reached public task");
@@ -31,7 +32,12 @@ test("real escaped and unicode-escaped credential results never enter public Pi 
 test("many complete MCP frames share one finite stdout allowance", { timeout: 20000 }, async (t) => {
   const f = await createMcpHost(); t.after(() => f.close());
   await f.mcp({ type: "save", revision: 0, server: { ...f.server, env: { F_MODE: "flood" }, enabled: true } });
-  const started = await f.start(), waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length > 0, "approval");
+  // Initialization may exceed the approval budget; the output cap and its
+  // original post-readiness waits still exercise the actual service below.
+  await slowPiInitialization(f.sdk, 8500);
+  const started = await f.start();
+  await untilPiInitialized(() => f.task(started.taskId));
+  const waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length > 0, "approval");
   await f.request("/api/command", { type: "answerApproval", taskId: started.taskId, approvalId: waiting.approvals[0].approvalId, value: "仅本次" });
   await until(() => f.task(started.taskId), terminal, "finite cumulative output");
   const run = (await f.mcp({ type: "status" })).runs.at(-1);
@@ -79,7 +85,8 @@ for (const mode of ["readonly", "controlled"]) test(`journal quota failure canno
 test("saving a disabled server revokes a pending actual task before any tool dispatch", { timeout: 20000 }, async (t) => {
   const f = await createMcpHost(); t.after(() => f.close());
   await f.mcp({ type: "save", revision: 0, server: { ...f.server, enabled: true } });
-  const started = await f.start(), waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length > 0, "approval");
+  const started = await f.start(); await untilPiInitialized(() => f.task(started.taskId));
+  const waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length > 0, "approval");
   await f.mcp({ type: "save", revision: 1, server: f.server });
   await f.request("/api/command", { type: "answerApproval", taskId: started.taskId, approvalId: waiting.approvals[0].approvalId, value: "本任务" });
   await until(() => f.task(started.taskId), terminal, "disabled call denied");
@@ -89,7 +96,8 @@ test("saving a disabled server revokes a pending actual task before any tool dis
 test("actual service has only fixed scratch slots and a kernel file size limit", { timeout: 20000 }, async (t) => {
   const f = await createMcpHost(); t.after(() => f.close());
   await f.mcp({ type: "save", revision: 0, server: { ...f.server, env: { F_MODE: "storage" }, enabled: true } });
-  const started = await f.start(); await until(() => f.task(started.taskId), (task) => terminal(task) || task.approvals.length > 0, "storage limit or unsafe startup");
+  const started = await f.start(); await untilPiInitialized(() => f.task(started.taskId));
+  await until(() => f.task(started.taskId), (task) => terminal(task) || task.approvals.length > 0, "storage limit or unsafe startup");
   const run = (await f.mcp({ type: "status" })).runs.at(-1), received = await mcpReception(run);
   assert.ok(["EPERM", "EACCES"].includes(received.find((item) => item.type === "storage-extra").code));
   assert.ok((await fs.stat(path.join(run.processes[0].runtimeDir, "scratch"))).size <= 65536);
