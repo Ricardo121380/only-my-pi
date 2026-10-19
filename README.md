@@ -528,6 +528,7 @@ Repository development requires **Node.js >=22.19.0**; CI checks `22.19.0` and `
 git clone https://github.com/Ricardo121380/only-my-pi.git
 cd only-my-pi
 npm ci --ignore-scripts --no-audit --no-fund
+npm run test:prepare
 
 npm run lint
 npm run typecheck

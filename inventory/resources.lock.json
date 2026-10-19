@@ -139,6 +139,36 @@
       "packaged": true
     },
     {
+      "id": "omp-host-ownership-runtime",
+      "type": "library",
+      "path": "packages/host/ownership.mjs",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": [],
+      "owners": ["only-my-pi-control"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
+      "id": "omp-config-runtime",
+      "type": "library",
+      "path": "packages/config-runtime",
+      "version": "0.1.0",
+      "provides": [],
+      "requires": [],
+      "owners": ["only-my-pi-control"],
+      "commands": [],
+      "egressSurfaces": [],
+      "defaultLoaded": false,
+      "profileEligibility": ["daily"],
+      "lifecycle": "stable",
+      "packaged": true
+    },
+    {
       "id": "omp-mode-service",
       "type": "library",
       "path": "packages/control-service/mode-service.mjs",

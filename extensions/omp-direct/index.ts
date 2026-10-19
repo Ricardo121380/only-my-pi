@@ -1,12 +1,9 @@
-import { type BashOperations, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import type { BashOperations, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import os from "node:os";
 import path from "node:path";
 import { DirectSessionOwnership } from "../../packages/direct-agent/ownership.mjs";
 import { createOwnedBashOperations } from "../../packages/direct-agent/shell.mjs";
 import { disableOmpCacheWarming } from "../../packages/direct-agent/cache-warming-policy.mjs";
-import { installOmpCodemode } from "../../packages/direct-agent/codemode.mjs";
-import { installOmpMcp } from "../../packages/mcp/extension.mjs";
-import { mcpCommand, prepareMcpCommand } from "../../packages/mcp/commands.mjs";
 
 import {
   DIRECT_READ_ONLY_AGENTS,
@@ -65,6 +62,11 @@ const ManagedWriterParameters = {
 
 export default async function ompDirect(pi: ExtensionAPI): Promise<void> {
   if (process.env.ONLY_MY_PI_DIRECT !== "1") return;
+  // Native clients belong to the controlled direct runtime. A Harness-only
+  // generation loads this entrypoint with the direct session disabled.
+  const { installOmpCodemode } = await import("../../packages/direct-agent/codemode.mjs");
+  const { installOmpMcp } = await import("../../packages/mcp/extension.mjs");
+  const { mcpCommand, prepareMcpCommand } = await import("../../packages/mcp/commands.mjs");
   // Also covers the native CLI's ephemeral --no-session path and legacy RPC.
   disableOmpCacheWarming(pi);
   const configRoot = process.env.PI_CODING_AGENT_DIR ?? path.join(os.homedir(), ".pi", "agent");

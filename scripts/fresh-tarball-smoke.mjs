@@ -9,7 +9,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const PI_VERSION = "0.84.1";
+const PI_PACKAGE = "@earendil-works/pi-coding-agent";
 const MAX_OUTPUT_BYTES = 2 * 1024 * 1024;
 
 function fail(code, message) {
@@ -252,6 +252,11 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT, profileI
     ], { cwd: prefix, env, label: "fresh scripts-disabled locked install" });
 
     const packageRoot = await fs.realpath(path.join(prefix, "node_modules", "only-my-pi"));
+    const piRoot = path.join(prefix, "node_modules", PI_PACKAGE);
+    const piManifest = JSON.parse(await fs.readFile(path.join(piRoot, "package.json"), "utf8"));
+    if (piManifest.name !== PI_PACKAGE || piManifest.version !== sourcePackage.devDependencies?.[PI_PACKAGE]) {
+      fail("FRESH_PI_IDENTITY_MISMATCH", "installed Pi does not match the source's exact development pin");
+    }
     const relativeToSource = path.relative(root, packageRoot);
     if (relativeToSource === "" || (!relativeToSource.startsWith("..") && !path.isAbsolute(relativeToSource))) {
       fail("FRESH_INSTALL_USES_CHECKOUT", "installed package resolves back into the source checkout");
@@ -303,11 +308,11 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT, profileI
     assertStatus(finalStatus, ["NOT_INSTALLED"], "post-rollback status");
 
     return Object.freeze({
-      formatVersion: 1,
+      formatVersion: 2,
       status: "PASS",
       sourceCommit,
       nodeVersion: process.version,
-      piVersion: PI_VERSION,
+      piVersion: piManifest.version,
       platform: process.platform,
       arch: process.arch,
       tarball: Object.freeze({

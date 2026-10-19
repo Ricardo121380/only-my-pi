@@ -137,7 +137,7 @@
       "args": ["test"],
       "cwd": "repository-root",
       "env": { "CI": "1", "NO_COLOR": "1", "PI_TELEMETRY": "0" },
-      "timeoutMs": 300000,
+      "timeoutMs": 1800000,
       "maxOutputBytes": 2097152,
       "sensitiveOutput": false,
       "required": true

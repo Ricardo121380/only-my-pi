@@ -63,6 +63,16 @@ test("the public verify script is the non-executing v1 inspector", () => {
   assert.match(manifest.description, /not itself a gate/);
 });
 
+test("only the repository-wide suite admits a bounded thirty-minute budget", () => {
+  const current = loadReleaseGatesManifest(manifestPath);
+  assert.equal(resolveReleaseGate(current, "full-tests").timeoutMs, 1800000);
+  for (const [id, timeoutMs] of [["full-tests", 1800001], ["lint", 300001], ["full-tests", 0]]) {
+    const invalid = structuredClone(current);
+    invalid.gates.find(gate => gate.id === id).timeoutMs = timeoutMs;
+    assert.throws(() => validateReleaseGatesManifest(invalid), /timeoutMs is invalid/);
+  }
+});
+
 test("resolved gates are immutable and expose no argv override", () => {
   const manifest = loadReleaseGatesManifest(manifestPath);
   const gate = resolveReleaseGate(manifest, "schema-check");

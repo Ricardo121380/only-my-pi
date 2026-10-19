@@ -179,11 +179,13 @@ function extractFreshEvidence(stdout) {
     return null;
   }
   const safe = value
-    && value.formatVersion === 1
+    // Preserve historical v1 receipts; current v2 smoke reads the installed
+    // runtime identity instead of repeating the old 0.84.1 label.
+    && ((value.formatVersion === 1 && value.piVersion === "0.84.1")
+      || (value.formatVersion === 2 && value.piVersion === "1.3.0"))
     && value.status === "PASS"
     && FULL_SHA.test(value.sourceCommit ?? "")
     && typeof value.nodeVersion === "string"
-    && value.piVersion === "0.84.1"
     && SHA256.test(`sha256:${value.tarball?.sha256 ?? ""}`)
     && SHA512_SRI.test(value.tarball?.integrity ?? "")
     && value.install?.scripts === "disabled"
@@ -376,7 +378,7 @@ export async function runReleaseVerification({
       freshTarball: gates.find((gate) => gate.id === "test-e2e")?.evidence ?? null,
       compatibility: {
         node: process.version,
-        pi: "0.84.1",
+        pi: gates.find((gate) => gate.id === "test-e2e")?.evidence?.piVersion ?? null,
         platform: process.platform,
         arch: process.arch,
       },
@@ -454,7 +456,7 @@ export function validateReleaseReceipt(receipt, manifest, { expectedSourceCommit
   if (!Number.isFinite(Date.parse(receipt.startedAt)) || !Number.isFinite(Date.parse(receipt.completedAt))) throw new Error("release receipt timestamps are invalid");
   if (Date.parse(receipt.completedAt) < Date.parse(receipt.startedAt)) throw new Error("release receipt completedAt precedes startedAt");
   validateFreshEvidence(receipt.evidence?.freshTarball, receipt.sourceCommit);
-  if (receipt.evidence?.compatibility?.pi !== "0.84.1") throw new Error("release receipt Pi compatibility evidence is invalid");
+  if (receipt.evidence?.compatibility?.pi !== receipt.evidence.freshTarball.piVersion) throw new Error("release receipt Pi compatibility evidence is invalid");
   if (receipt.privacy?.rawOutputStored !== false || receipt.privacy?.hostPathsStored !== false || receipt.privacy?.credentialsRead !== false) {
     throw new Error("release receipt privacy boundary is invalid");
   }

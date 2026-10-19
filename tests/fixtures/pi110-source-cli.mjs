@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFile as execFileCallback } from "node:child_process";
 import { promisify } from "node:util";
-import { resolveBoundPackageRoot } from "../../packages/bootstrap/runtime-package-binding.mjs";
 import { hashResourcePath } from "../../packages/bootstrap/graph-plan.mjs";
 import { patchPermissionShellIndex, patchPermissionShellSandbox } from "../../packages/distribution/permission-shell-patch.mjs";
 
@@ -16,10 +14,13 @@ const packages = [
   ["agent-extensions", ["extensions/sessions/index.ts", "extensions/context/index.ts", "extensions/review/index.ts", "extensions/notify/index.ts"]],
   ["lsp", ["dist/index.ts"]], ["usage", ["dist/index.js"]],
 ];
+const externalNames = { "permission-modes": "pi-permission-modes", subagents: "pi-subagents",
+  "agent-extensions": "pi-agent-extensions", lsp: "@narumitw/pi-lsp", usage: "@sreetej510/pi-usage" };
+const externalRoot = path.join(repo, "contracts/release", process.platform === "linux" ? "linux-external" : "external");
 
 // An ephemeral source harness, never an installed/release candidate. All OMP
 // code and Pi are real copies. Portable tests fixture only the external package
-// boundary; explicit local acceptance may copy verified user-owned packages.
+// boundary; installedExtensions copies real packages from the committed lock.
 // No auth/settings files from the user's config are copied or modified.
 export async function createPi110SourceCli(root, { baseUrl, installedExtensions = false, forceWarming = false, verifyNode = false } = {}) {
   const home = path.join(root, "home"), config = path.join(root, "config"), project = path.join(root, "project");
@@ -54,9 +55,18 @@ export async function createPi110SourceCli(root, { baseUrl, installedExtensions 
     if (await fs.stat(path.join(repo, name)).catch(() => null)) await fs.cp(path.join(repo, name), path.join(omp, name), { recursive: true });
   }
   const bindings = [];
-  if (installedExtensions) await fs.symlink(path.join(os.homedir(), ".pi/agent/npm/node_modules"), path.join(root, "node_modules"));
+  const externalLock = installedExtensions ? JSON.parse(await fs.readFile(path.join(externalRoot, "package-lock.json"), "utf8")) : null;
+  if (installedExtensions) await fs.symlink(path.join(externalRoot, "node_modules"), path.join(root, "node_modules"));
   for (const [id, entries] of packages) {
-    const pkg = installedExtensions ? await resolveBoundPackageRoot({ configRoot: path.join(os.homedir(), ".pi/agent"), packageId: id }) : null;
+    let pkg;
+    if (installedExtensions) {
+      const name = externalNames[id], packageRoot = path.join(externalRoot, "node_modules", name);
+      const manifest = JSON.parse(await fs.readFile(path.join(packageRoot, "package.json"), "utf8"));
+      assert.equal(manifest.name, name);
+      assert.equal(manifest.version, externalLock.packages[`node_modules/${name}`].version);
+      pkg = { root: packageRoot, manifest, binding: { id, name, resolvedVersion: manifest.version,
+        binding: "external", owner: "user", resourceFilter: id === "agent-extensions" ? entries : [] } };
+    }
     const name = pkg?.manifest.name ?? `pi110-fixture-${id}`;
     const destination = path.join(config, "npm/node_modules", name);
     await fs.mkdir(path.dirname(destination), { recursive: true });

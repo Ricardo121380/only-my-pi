@@ -22,11 +22,16 @@ Start with:
 
 ```bash
 npm ci --ignore-scripts --no-audit --no-fund
+npm run test:prepare
 npm test
 npm run lint
 npm run typecheck
 npm run verify:m11:run
 ```
+
+`test:prepare` prepares the pinned PTY binding and installs the committed
+platform-specific external-package lock without lifecycle scripts. Real
+extension tests use these isolated dependencies, never `~/.pi/agent`.
 
 PRs must pass the required repository checks. Protected Provider/live-model and
 real-root gates are maintainer-run; contributors are never expected to provide
