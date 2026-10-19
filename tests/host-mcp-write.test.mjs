@@ -130,7 +130,7 @@ test("post-dispatch path replacement cannot redirect the pinned descriptor to an
   assert.equal(final.calls[0].status, "unknown"); assert.equal(final.calls[0].observedChange, true);
 });
 
-test("actual mutation followed by receipt loss remains UNKNOWN and cannot auto replay", { timeout: 30000 }, async (t) => {
+test("actual mutation followed by receipt loss remains UNKNOWN and cannot auto replay", { timeout: 50000 }, async (t) => {
   const f = await createWriteHost({ mode: "crash", repeat: true }); t.after(() => f.close());
   const started = await f.start({ mode: "controlled" }), waiting = await codingApproved(f, started); await approveWrite(f, waiting, "本任务");
   await until(() => f.task(started.taskId), terminal, "lost receipt");
@@ -140,7 +140,11 @@ test("actual mutation followed by receipt loss remains UNKNOWN and cannot auto r
   assert.equal(run.calls[0].status, "unknown"); assert.equal(run.calls[0].application, "unknown"); assert.equal(run.calls[0].observedChange, true);
   assert.equal(run.calls[1].code, "MCP_WRITE_RECONCILIATION_REQUIRED");
   await f.restart(); assert.equal((await f.mcp({ type: "status" })).runs.at(-1).calls[0].status, "unknown");
+  // A fresh worker may initialize after the 7.5s approval budget. Exercise
+  // that real boundary after recovery, retaining the original approval poll.
+  await slowPiInitialization(f.sdk, 8500);
   const next = await f.start({ mode: "controlled" });
+  await untilPiInitialized(() => f.task(next.taskId));
   const pending = await until(() => f.task(next.taskId), (task) => task.approvals.length > 0, "new coding authority required");
   assert.equal(pending.access, "inspect");
   await f.request("/api/command", { type: "cancelTask", taskId: next.taskId }, 202);
