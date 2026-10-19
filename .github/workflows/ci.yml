@@ -21,8 +21,9 @@ jobs:
     # The full native suite includes Seatbelt-isolated stdio MCP, currently macOS-only.
     # Linux distribution/sandbox acceptance remains in linux-candidate.yml.
     runs-on: macos-14
-    # v1, v2 Preview and M9 repeat full tests; M8/M12 also require full coverage.
-    timeout-minutes: 120
+    # Five sequential full-suite gates each allow 30 minutes, plus preparation
+    # and focused checks. Individual gate/test limits remain independently enforced.
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
