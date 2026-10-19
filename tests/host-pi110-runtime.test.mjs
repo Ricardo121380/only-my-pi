@@ -28,8 +28,8 @@ function tool(res, name, args) {
   res.end("data: [DONE]\n\n");
 }
 
-async function until(read, accept, label) {
-  for (let i = 0; i < 200; i++) {
+async function until(read, accept, label, attempts = 200) {
+  for (let i = 0; i < attempts; i++) {
     const value = await read();
     if (accept(value)) return value;
     await delay(25);
@@ -39,7 +39,7 @@ async function until(read, accept, label) {
 
 // Only the Provider and audited external-package boundary are fixtures. The
 // HTTP server, account catalog, task service, RpcWorker and Pi SDK are real.
-async function fixture(t, respond, settingsOverrides = {}) {
+async function fixture(t, respond, settingsOverrides = {}, { initializationDelayMs = 0, onWorker = () => {} } = {}) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-pi110-http-")));
   const configRoot = path.join(root, "config"), project = path.join(root, "project"), assetsRoot = path.join(root, "assets");
   await fs.mkdir(project); await fs.mkdir(assetsRoot); await fs.mkdir(configRoot);
@@ -77,7 +77,13 @@ async function fixture(t, respond, settingsOverrides = {}) {
   await fs.writeFile(paths.modelsPath, JSON.stringify({ providers: { fixture: { baseUrl, api: "openai-completions", models: [{ id: "one", name: "Fixture", contextWindow: 32000, maxTokens: 128 }] } } }));
   const stack = { root, nodePath: process.execPath, piCliPath: "unused", stackId: `sha256:${"a".repeat(64)}` };
   const host = await startHost({ stack, configRoot, assetsRoot, allowControlled: true, env: { PATH: process.env.PATH, HOME: root, OPENAI_API_KEY: "ambient-must-not-run", FIXTURE_API_KEY: "ambient-must-not-run" },
-    workerFactory: (options) => new RpcWorker({ ...options, extensionResolver: async () => ({ extensions: [extension, fileURLToPath(new URL("../extensions/omp-direct/index.ts", import.meta.url))] }) }) });
+    workerFactory: (options) => {
+      const worker = new RpcWorker({ ...options, extensionResolver: async () => {
+        if (initializationDelayMs) await delay(initializationDelayMs);
+        return { extensions: [extension, fileURLToPath(new URL("../extensions/omp-direct/index.ts", import.meta.url))] };
+      } });
+      onWorker(worker); return worker;
+    } });
   t.after(async () => {
     await host.stop();
     for (const socket of connections) socket.destroy();
@@ -182,8 +188,13 @@ for (const failure of ["disconnect", "503"]) test(`public Host does not resend a
   assert.equal(await fs.readFile(path.join(f.configRoot, "settings.json"), "utf8"), f.settings);
 });
 
-for (const decision of ["approve", "deny", "revoke"]) test(`public Host coding ${decision} is scoped to one project and worker lifetime`, { timeout: 20000 }, async (t) => {
+for (const { decision, suffix = "", delayedGrant = false, initializationDelayMs = 0 } of [
+  { decision: "approve" }, { decision: "deny" }, { decision: "revoke" },
+  { decision: "revoke", suffix: " with delayed grant event", delayedGrant: true },
+  { decision: "revoke", suffix: " with slow initialization", initializationDelayMs: 8000 },
+]) test(`public Host coding ${decision} is scoped to one project and worker lifetime${suffix}`, { timeout: 20000 }, async (t) => {
   let continueWrite;
+  let releaseGrant;
   const writeGate = new Promise((resolve) => { continueWrite = resolve; });
   const access = { taskSummary: "Write fixture", complexity: "simple", scope: ["proof.txt"], riskFlags: [], verification: ["read proof.txt"], orchestration: { useReadOnlyScouts: false, useManagedCloneWriter: false, useFreshReviewer: false } };
   const f = await fixture(t, async ({ res, body }) => {
@@ -191,9 +202,25 @@ for (const decision of ["approve", "deny", "revoke"]) test(`public Host coding $
     if (!steps) tool(res, "request_coding_access", access);
     else if (steps === 1) { if (decision === "revoke") await writeGate; tool(res, "write", { path: "proof.txt", content: "controlled\n" }); }
     else finish(res, "coding complete");
-  });
+  }, {}, { initializationDelayMs, onWorker(worker) {
+    if (!delayedGrant) return;
+    const emit = worker.emit.bind(worker);
+    worker.emit = (type, event, ...args) => {
+      // Delay the actual SDK stdout event across the independent IPC revoke
+      // acknowledgement; neither the grant nor its result is fabricated.
+      if (type === "event" && event?.type === "tool_execution_end" && event.toolName === "request_coding_access") {
+        assert.equal(releaseGrant, undefined);
+        releaseGrant = () => emit(type, event, ...args); return true;
+      }
+      return emit(type, event, ...args);
+    };
+  } });
   t.after(() => continueWrite());
   const started = await f.start("write proof after approval", { mode: "controlled" });
+  // The 202 response precedes worker readiness; wait for it separately.
+  // Keep approval and completion polls at their original 200 x 25ms budget.
+  const initialized = await until(() => f.task(started.taskId), (task) => task.status !== "starting", "coding worker initialized", 1200);
+  assert.equal(initialized.status, "running", JSON.stringify(initialized));
   const waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length > 0, "coding approval");
   assert.equal(waiting.access, "inspect");
   await assert.rejects(fs.access(path.join(f.project, "proof.txt")), { code: "ENOENT" });
@@ -203,8 +230,14 @@ for (const decision of ["approve", "deny", "revoke"]) test(`public Host coding $
   await f.command({ type: "answerApproval", taskId: started.taskId, approvalId: approval.approvalId, value: decision === "deny" ? "Deny" : approval.options[0] });
   if (decision === "revoke") {
     await until(() => f.received.length, (count) => count === 2, "post-grant request");
+    if (delayedGrant) await until(() => releaseGrant, Boolean, "actual grant event captured");
     const revoked = await f.command({ type: "revokeTask", taskId: started.taskId });
-    assert.equal(revoked.access, "inspect"); continueWrite();
+    assert.equal(revoked.access, "inspect");
+    if (delayedGrant) {
+      releaseGrant();
+      assert.equal((await f.task(started.taskId)).access, "inspect", "late grant result must not undo confirmed revoke");
+    }
+    continueWrite();
   }
   const completed = await until(() => f.task(started.taskId), (task) => ["succeeded", "failed"].includes(task.status), "coding completion");
   assert.equal(completed.status, "succeeded", JSON.stringify(completed));

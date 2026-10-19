@@ -168,7 +168,9 @@ export class HostTasks extends EventEmitter {
       } else if (event?.type === "tool_execution_end") {
         const call = task.toolCalls?.find((item) => item.toolCallId === event.toolCallId);
         if (call) Object.assign(call, { status: event.result?.details?.status === "unknown" ? "unknown" : event.result?.details?.code === "CODEMODE_CANCELLED" ? "cancelled" : event.isError ? "failed" : "completed", completedAt: new Date().toISOString(), result: textContent(event.result?.content).slice(0, 16384), ...duration(event.durationMs) });
-        if (event.toolName === "request_coding_access" && event.result?.details?.status === "CODING_ACCESS_GRANTED" && !event.isError) task.access = "coding";
+        // Stdout tool results can arrive after the independent IPC revoke ACK.
+        // Only the ordered control channel may project a later fresh grant.
+        if (!task.inputRevoked && event.toolName === "request_coding_access" && event.result?.details?.status === "CODING_ACCESS_GRANTED" && !event.isError) task.access = "coding";
         task.messages.push({ id: randomUUID(), role: "toolResult", toolName: String(event.toolName).slice(0, 128), text: textContent(event.result?.content), isError: event.isError === true, ...duration(event.durationMs) });
         task.tool = null;
       } else if (event?.type === "extension_error") { failed = true; task.error = "EXTENSION_FAILED"; settledResolve(); }

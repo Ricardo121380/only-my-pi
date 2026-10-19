@@ -21,7 +21,8 @@ const CASES = [
 for (const entry of CASES) test(`${entry.id} preserves bounded actual child failure diagnostics outside its report`, async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-gate-diagnostic-"));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  const fixture = path.join(root, "failure.mjs");
+  await fs.mkdir(path.join(root, "tests"));
+  const fixture = path.join(root, "tests/failure.test.mjs");
   await fs.writeFile(fixture, `
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -50,10 +51,13 @@ test("controlled gate regression /private/fixture/test", () => assert.equal(1, 2
   assert.equal(failed.gate.outputLimitExceeded, false);
   assert.match(failed.diagnostic, /TEST_FAILURE:tests=controlled gate regression <path>/u);
   assert.match(failed.diagnostic, /codes=ERR_ASSERTION/u);
+  assert.match(failed.diagnostic, /frames=tests\/failure\.test\.mjs:5:\d+/u);
+  assert.match(failed.diagnostic, /operators=strictEqual/u);
   const progress = receipt.formatGateProgress(failed.gate, failed.diagnostic);
   assert.match(progress, new RegExp(`failure ${entry.id}: exitCode=1 signal=null timedOut=false outputLimitExceeded=false`, "u"));
   assert.ok(progress.includes(failed.diagnostic));
   assert.doesNotMatch(progress, /PRIVATE_DIAGNOSTIC_PAYLOAD|\/private\/fixture/u);
+  assert.ok(!progress.includes(root));
   assert.doesNotMatch(JSON.stringify(report), /diagnostic|PRIVATE_DIAGNOSTIC_PAYLOAD|controlled gate regression|\/private\/fixture/u);
   assert.ok(observed.filter(({ gate }) => gate.id !== entry.id).every(({ diagnostic }) => diagnostic === undefined));
 });

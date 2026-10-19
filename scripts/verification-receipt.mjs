@@ -71,6 +71,8 @@ export function boundedTestFailureDiagnostic(stdout, stderr) {
     .split(/\r?\n/u);
   const failures = [];
   const codes = [];
+  const frames = [];
+  const operators = [];
   const coverage = [];
   const remember = (target, value, maximum) => {
     const sanitized = sanitizedTestLabel(value);
@@ -83,12 +85,20 @@ export function boundedTestFailureDiagnostic(stdout, stderr) {
     else if (spec?.[1] && spec[1] !== "failing tests:") remember(failures, spec[1], 16);
     const code = /^\s*(?:code|failureType):\s*['"]?([A-Z][A-Z0-9_-]{1,127})['"]?\s*$/u.exec(line);
     if (code?.[1]) remember(codes, code[1], 16);
+    // Keep repository test coordinates, never absolute paths, assertion values
+    // or arbitrary error messages from provider/extension output.
+    const frame = /^\s+(?:at\s+)?(?:async\s+)?[\w$.<>]+\s+\((?:file:\/\/)?[^)\r\n]*\/(tests\/[A-Za-z0-9_.-]+\.test\.mjs:\d+:\d+)\)$/u.exec(line);
+    if (frame?.[1]) remember(frames, frame[1], 8);
+    const operator = /^\s*operator:\s*['"]?(strictEqual|notStrictEqual|deepStrictEqual|notDeepStrictEqual|match|doesNotMatch|fail|ok|throws|doesNotThrow|rejects|doesNotReject)['"]?\s*$/u.exec(line);
+    if (operator?.[1]) remember(operators, operator[1], 8);
     const threshold = /^\s*(?:ℹ\s*|#\s*)?Error: (\d+(?:\.\d+)?)% (line|branch|function) coverage does not meet threshold of (\d+(?:\.\d+)?)%\.\s*$/u.exec(line);
     if (threshold) remember(coverage, `${threshold[2]}:${threshold[1]}<${threshold[3]}`, 3);
   }
   const parts = [
     failures.length > 0 ? `tests=${failures.join(" | ")}` : "tests=UNPARSEABLE",
     ...(codes.length > 0 ? [`codes=${codes.join(",")}`] : []),
+    ...(frames.length > 0 ? [`frames=${frames.join(",")}`] : []),
+    ...(operators.length > 0 ? [`operators=${operators.join(",")}`] : []),
     ...(coverage.length > 0 ? [`coverage=${coverage.join(",")}`] : []),
   ];
   return `TEST_FAILURE:${parts.join(";")}`.slice(0, 1200);
