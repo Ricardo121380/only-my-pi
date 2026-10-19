@@ -50,6 +50,22 @@ test("worker stop accepts a group that exits during the real identity probe", { 
   }
   assert.equal(probed, true); assert.deepEqual(signals, []); assert.equal(groupAlive(pid), false);
 });
+test("worker stop waits for a real same-group descendant after the leader closes", { timeout: 10000 }, async (t) => {
+  const worker = await fixture(t, false, true);
+  await fs.appendFile(worker.stack.piCliPath, '\nconst { spawn } = await import("node:child_process"); spawn("/bin/sleep", ["0.2"], { stdio: "ignore" }).unref();\n');
+  await worker.start();
+  const pid = worker.identity.pid, kill = process.kill, signals = [];
+  t.mock.method(process, "kill", (target, signal) => { if (target === -pid && signal !== 0) signals.push(signal); return kill(target, signal); });
+  try {
+    await worker.stop();
+    assert.equal(worker.closed, true);
+    assert.equal(groupAlive(pid), false, "the leader close event alone does not prove group exit");
+    assert.deepEqual(signals, [], "a naturally draining group needs no unverifiable signal");
+  } finally {
+    for (let i = 0; i < 40 && groupAlive(pid); i++) await new Promise(resolve => setTimeout(resolve, 25));
+    assert.equal(groupAlive(pid), false, "the test's real descendant has finished");
+  }
+});
 for (const identity of [null, "different-start"]) test(`worker stop cannot signal a live group with identity ${identity}`, { timeout: 10000 }, async (t) => {
   const worker = await fixture(t, false, true, true);
   await worker.start();

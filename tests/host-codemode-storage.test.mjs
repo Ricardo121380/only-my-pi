@@ -41,16 +41,24 @@ test("the store byte limit applies across real resumed scripts and allows replac
 });
 
 test("an oversized native history store is refused before a restored script starts", { timeout: 30000 }, async (t) => {
-  const { execute } = await storageHost(t);
-  const first = await execute('text("native legacy store fixture");');
-  // Public SessionManager creates a valid legacy/native entry, with no OMP grants.
-  SessionManager.open(first.file).appendCustomEntry("codemode-store", { set: { a: "中".repeat(200000), b: "中".repeat(200000) }, delete: [] });
-  const before = await fs.readFile(first.file);
-  const restored = await execute('store("executed", true); text("unexpected script execution");', first.sessionKey);
+  const { f, execute } = await storageHost(t);
+  // Build legacy history through Pi's public API; only the restore needs a worker.
+  // The message persists the native session without carrying any OMP grants.
+  const manager = SessionManager.create(f.project, f.host.catalog.sessionRoot);
+  manager.appendMessage({ role: "user", content: "native legacy store fixture", timestamp: 1 });
+  manager.appendCustomEntry("codemode-store", { set: { a: "中".repeat(200000), b: "中".repeat(200000) }, delete: [] });
+  const file = manager.getSessionFile(), before = await fs.readFile(file);
+  await f.host.scan();
+  const { sessions } = await f.request(`/api/sessions?projectId=${f.projectId}`);
+  const session = sessions.find((entry) => entry.sessionId === manager.getSessionId());
+  assert.ok(session, "the real Host indexes the native session before restore");
+  const restored = await execute('store("executed", true); text("unexpected script execution");', session.sessionKey);
+  assert.equal(restored.file, file);
+  assert.equal(restored.task.sessionId, manager.getSessionId());
   assert.equal(restored.call.status, "failed");
   assert.match(restored.call.result, /CODEMODE_STORAGE_LIMIT/);
   assert.doesNotMatch(restored.call.result, /unexpected script execution/);
-  const entries = SessionManager.open(first.file).getEntries();
+  const entries = SessionManager.open(file).getEntries();
   assert.equal(entries.filter((entry) => entry.customType === "codemode-store").length, 1);
-  assert.ok((await fs.readFile(first.file)).subarray(0, before.length).equals(before), "legacy history is not rewritten");
+  assert.ok((await fs.readFile(file)).subarray(0, before.length).equals(before), "legacy history is not rewritten");
 });

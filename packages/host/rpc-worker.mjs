@@ -17,6 +17,18 @@ function waitBounded(promise, ms, required = false) {
   let timer;
   return Promise.race([promise, new Promise((resolve, reject) => { timer = setTimeout(() => required ? reject(hostError("RPC_TERMINATION_UNCONFIRMED")) : resolve(), ms); })]).finally(() => clearTimeout(timer));
 }
+function waitForWorkerExit(worker, ms, required = false) {
+  let interval;
+  const exited = new Promise((resolve) => {
+    const check = () => {
+      const pid = worker.child?.pid;
+      if (worker.closed && (!pid || !groupAlive(pid))) resolve();
+    };
+    interval = setInterval(check, 25);
+    check();
+  });
+  return waitBounded(exited, ms, required).finally(() => clearInterval(interval));
+}
 
 export class RpcWorker extends EventEmitter {
   constructor({ stack, configRoot, cwd, model, sessionRoot, resumeFile, accountId, taskId, controlled = false, mcpSnapshot, classifierSnapshot, env = process.env, onIdentity = async () => {}, spawnImpl = spawn, extensionResolver = resolveDirectExtensionSet }) {
@@ -143,7 +155,8 @@ export class RpcWorker extends EventEmitter {
       // revocation, stdin closure or identity-checked OS termination.
       if (this.mcpEnabled && this.child.connected && !this.closed) await this.mcpControl("mcp_prepare_shutdown").catch(() => {});
       if (!this.closed) this.child.stdin.end();
-      await waitBounded(this.exited, 500);
+      // A leader can close before its descendants finish the same shutdown.
+      await waitForWorkerExit(this, 500);
       const pid = this.child.pid;
       const signalGroup = async (signal) => {
         if (!pid || !groupAlive(pid)) return;
@@ -157,9 +170,9 @@ export class RpcWorker extends EventEmitter {
         try { process.kill(-pid, signal); } catch (e) { if (e.code !== "ESRCH") throw e; }
       };
       await signalGroup("SIGTERM");
-      await waitBounded(this.exited, 500);
+      await waitForWorkerExit(this, 500);
       await signalGroup("SIGKILL");
-      await waitBounded(this.exited, 2000, true);
+      await waitForWorkerExit(this, 2000, true);
       if (pid && groupAlive(pid)) throw hostError("RPC_TERMINATION_UNCONFIRMED");
       if (this.mcpEnabled && !this.mcpStopConfirmed) throw hostError("RPC_TERMINATION_UNCONFIRMED");
       if (this.controlled && this.promptSent && !this.shutdownConfirmed) throw hostError("RPC_TERMINATION_UNCONFIRMED");
