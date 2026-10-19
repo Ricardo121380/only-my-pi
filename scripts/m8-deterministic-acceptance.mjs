@@ -16,7 +16,14 @@ const CHECKS = Object.freeze([
   Object.freeze({
     id: "global-coverage",
     command: process.execPath,
-    args: Object.freeze(["--test", "--test-concurrency=2", "--experimental-test-coverage", "--test-coverage-lines=85", "--test-coverage-branches=69", "--test-coverage-functions=85"]),
+    args: Object.freeze([
+      "--test", "--test-concurrency=2", "--experimental-test-coverage",
+      // Forked integration fixtures also execute copied third-party runtimes.
+      // Measure this checkout, retaining Node's dependency and test exclusions.
+      `--test-coverage-include=${repositoryRoot}/**`, "--test-coverage-exclude=**/node_modules/**",
+      "--test-coverage-exclude=**/{test,test/**/*,test-*,*[._-]test}.{js,mjs,cjs,ts,mts,cts}",
+      "--test-coverage-lines=85", "--test-coverage-branches=69", "--test-coverage-functions=85",
+    ]),
   }),
   Object.freeze({
     id: "session-composer-coverage",

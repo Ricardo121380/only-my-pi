@@ -18,7 +18,9 @@ concurrency:
 jobs:
   release-gates:
     name: Node ${{ matrix.node-version }}
-    runs-on: ubuntu-latest
+    # The full native suite includes Seatbelt-isolated stdio MCP, currently macOS-only.
+    # Linux distribution/sandbox acceptance remains in linux-candidate.yml.
+    runs-on: macos-14
     # v1, v2 Preview and M9 repeat full tests; M8/M12 also require full coverage.
     timeout-minutes: 120
     strategy:

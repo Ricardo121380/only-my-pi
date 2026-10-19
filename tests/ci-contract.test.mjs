@@ -28,6 +28,7 @@ test("CI executes the same manifest-backed verify runner without credentials", (
   assert.match(workflow, /npm run verify:m12:run/u);
   assert.match(workflow, /cancel-in-progress: true/u);
   assert.match(workflow, /runs-on: macos-14/u);
+  assert.match(workflow.split("  m11-q10:")[0], /runs-on: macos-14/u, "the full native suite requires the admitted Seatbelt MCP platform");
   assert.doesNotMatch(workflow, /runs-on: macos-14-xlarge/u);
   assert.match(workflow, /npm run verify:m11:q10:ci/u);
   assert.match(workflow, /receipt:check/);

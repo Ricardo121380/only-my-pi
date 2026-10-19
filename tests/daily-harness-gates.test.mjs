@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
+import { execFile } from "node:child_process";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { promisify } from "node:util";
 import test from "node:test";
 
 import {
@@ -137,4 +143,30 @@ test("D15 enforces global and per-runtime coverage through fixed shell-free argv
   assert.equal(invocation.options.shell, false);
   assert.equal(invocation.options.env.API_KEY, undefined);
   assert.deepEqual(invocation.args, composer.args);
+});
+
+test("global coverage includes checkout code without counting copied external runtimes", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-coverage-scope-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const external = path.join(root, "copied-runtime.mjs");
+  const entry = path.join(root, "scope.test.mjs");
+  const project = new URL("../scripts/m8-deterministic-acceptance.mjs", import.meta.url);
+  await fs.writeFile(external, "export const outside = true;\n");
+  await fs.writeFile(entry, `import test from "node:test";
+import assert from "node:assert/strict";
+import { M8_DETERMINISTIC_CHECKS } from ${JSON.stringify(project.href)};
+import { outside } from ${JSON.stringify(pathToFileURL(external).href)};
+test("both code locations execute", () => {
+  assert.ok(M8_DETERMINISTIC_CHECKS.length > 0 && outside);
+});\n`);
+  const global = M8_DETERMINISTIC_CHECKS.find(check => check.id === "global-coverage");
+  // This is a scope probe, not a replacement for the full threshold-enforcing run.
+  const args = global.args.filter(arg => !/^--test-coverage-(lines|branches|functions)=/.test(arg));
+  const env = { ...process.env }; delete env.NODE_V8_COVERAGE; delete env.NODE_TEST_CONTEXT;
+  const { stdout, stderr } = await promisify(execFile)(global.command, [...args, "--test-reporter=lcov", entry], {
+    cwd: fileURLToPath(new URL("../", import.meta.url)), env, timeout: 10000,
+  });
+  const files = stdout.split("\n").filter(line => line.startsWith("SF:")).map(line => line.slice(3));
+  assert.ok(files.some(file => file.endsWith("scripts/m8-deterministic-acceptance.mjs")), stdout + stderr);
+  assert.ok(files.every(file => !file.includes("copied-runtime.mjs") && !file.includes("node_modules")), stdout);
 });

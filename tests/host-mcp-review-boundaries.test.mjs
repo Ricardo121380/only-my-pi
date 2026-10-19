@@ -97,7 +97,7 @@ test("actual service has only fixed scratch slots and a kernel file size limit",
   assert.equal(received.filter((item) => item.type === "call").length, 0);
 });
 
-test("disabled MCP cannot hide independent service groups during actual Host crash recovery", { timeout: 30000 }, async (t) => {
+test("disabled MCP cannot hide independent service groups during actual Host crash recovery", { timeout: 50000 }, async (t) => {
   const child = fork(new URL("./fixtures/mcp-host-orphan.mjs", import.meta.url), { execArgv: [], stdio: ["ignore", "ignore", "pipe", "ipc"] });
   let stderr = "", host, fixture;
   child.stderr.on("data", (bytes) => { stderr += bytes; });

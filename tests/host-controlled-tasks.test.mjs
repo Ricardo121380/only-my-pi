@@ -10,7 +10,8 @@ import { acquireOwnership } from "../packages/host/ownership.mjs";
 
 test("internal controlled tasks hold project ownership and approvals; public default stays readonly", async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-control-task-")));
-  t.after(() => fs.rm(root, { recursive: true }));
+  let tasks;
+  t.after(async () => { await tasks?.stop(); await fs.rm(root, { recursive: true }); });
   const accounts = new AccountCatalog(root), account = await accounts.create({ providerId: "fixture", name: "Fixture", authType: "api_key" });
   let ready, worker;
   const prompted = new Promise((resolve) => { ready = resolve; });
@@ -25,8 +26,7 @@ test("internal controlled tasks hold project ownership and approvals; public def
   const options = { configRoot: root, stack: {}, accounts, catalog: { sessionRoot: root, project: () => ({ projectId: "project", path: root, available: true }), scan: async () => {} }, models: async () => [{ id: "fixture/model" }], workerFactory: (args) => { assert.equal(args.controlled, true); worker = new Worker(); return worker; } };
   const command = { requestId: "controlled", projectId: "project", accountId: account.accountId, model: "fixture/model", mode: "controlled", prompt: "implement fixture" };
   await assert.rejects(new HostTasks(options).start(command), { code: "CONTROLLED_MODE_UNAVAILABLE" });
-  const tasks = new HostTasks({ ...options, allowControlled: true }); await tasks.load();
-  t.after(() => tasks.stop());
+  tasks = new HostTasks({ ...options, allowControlled: true }); await tasks.load();
   const task = await tasks.start(command); await prompted;
   await assert.rejects(acquireOwnership(root, "project", root), { code: "OWNERSHIP_HELD" });
   assert.equal(tasks.public(tasks.tasks.get(task.taskId)).approvals.length, 1);
@@ -43,19 +43,18 @@ test("internal controlled tasks hold project ownership and approvals; public def
 
 test("controlled task retains writer ownership when process termination is unconfirmed", async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-control-owner-")));
-  t.after(() => fs.rm(root, { recursive: true }));
+  let tasks, stoppable = false;
+  t.after(async () => { stoppable = true; await tasks?.stop(); await fs.rm(root, { recursive: true }); });
   const accounts = new AccountCatalog(root), account = await accounts.create({ providerId: "fixture", name: "Fixture", authType: "api_key" });
-  let stoppable = false;
   class Worker extends EventEmitter {
     identity = null;
     async start() { return { sessionId: "uncertain-controlled" }; }
     async command() { this.emit("event", { type: "agent_settled" }); }
     async stop() { if (!stoppable) throw new Error("fixture stop unconfirmed"); }
   }
-  const tasks = new HostTasks({ configRoot: root, stack: {}, accounts, allowControlled: true,
+  tasks = new HostTasks({ configRoot: root, stack: {}, accounts, allowControlled: true,
     catalog: { sessionRoot: root, project: () => ({ projectId: "project", path: root, available: true }), scan: async () => {} },
     models: async () => [{ id: "fixture/model" }], workerFactory: () => new Worker() });
-  t.after(async () => { stoppable = true; await tasks.stop(); });
   await tasks.load();
   const task = await tasks.start({ requestId: "uncertain", projectId: "project", accountId: account.accountId, model: "fixture/model", mode: "controlled", prompt: "fixture" });
   await Promise.all([...tasks.running.values()]);

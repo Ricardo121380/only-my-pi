@@ -1,7 +1,8 @@
-import { createMcpHost, until } from "./mcp-host.mjs";
+import { createMcpHost, until, untilPiInitialized } from "./mcp-host.mjs";
 const f = await createMcpHost({ installedExtensions: true });
 await f.mcp({ type: "save", revision: 0, server: { ...f.server, env: { F_MODE: "orphan" }, enabled: true } });
 const task = await f.start();
+await untilPiInitialized(() => f.task(task.taskId));
 await until(() => f.task(task.taskId), (entry) => entry.approvals.length > 0, "actual MCP approval");
 const run = (await f.mcp({ type: "status" })).runs.at(-1);
 process.kill(run.ownerPid, "SIGKILL");
