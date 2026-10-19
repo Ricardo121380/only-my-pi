@@ -368,20 +368,22 @@ test("crashed coding owner keeps real MCP residual effects UNKNOWN and project o
   const received = await mcpReception(orphan); assert.equal(received.filter((entry) => entry.type === "call").length, 1); assert.equal(received.filter((entry) => entry.type === "effect").length, 1);
 });
 
-test("changed write schema and revoked credentials invalidate pending or discovered authority", { timeout: 45000 }, async (t) => {
-  for (const mode of ["list-change", "credential-revoke"]) {
-    const f = await createWriteHost({ mode: mode === "list-change" ? mode : undefined }); t.after(() => f.close());
-    if (mode === "credential-revoke") await f.mcp({ type: "credential", revision: 1, name: "local", envName: "MCP_TOKEN", value: "synthetic-write-credential" });
-    const started = await f.start({ mode: "controlled" }), waiting = await codingApproved(f, started);
-    if (mode === "credential-revoke") {
-      await f.mcp({ type: "revokeCredential", revision: 2, name: "local", envName: "MCP_TOKEN" });
-      await approveWrite(f, waiting);
-    } else assert.equal(waiting.approvals.length, 0);
-    await until(() => f.task(started.taskId), terminal, "changed write authority rejected");
-    const run = (await f.mcp({ type: "status" })).runs.at(-1), receipts = await mcpReception(run);
-    assert.equal(receipts.filter((entry) => entry.type === "call" || entry.type === "effect").length, 0);
-    assert.equal(await fs.readFile(path.join(f.project, "README.md"), "utf8"), "temporary CLI project\n");
-    assert.ok(!JSON.stringify(await f.task(started.taskId)).includes("synthetic-write-credential"));
-    await f.close();
-  }
+// Each independent scenario owns a real Pi startup, cleanup and 45s deadline.
+for (const [mode, name] of [
+  ["list-change", "changed write schema invalidates discovered write authority"],
+  ["credential-revoke", "revoked credentials invalidate pending write authority"],
+]) test(name, { timeout: 45000 }, async (t) => {
+  const f = await createWriteHost({ mode: mode === "list-change" ? mode : undefined }); t.after(() => f.close());
+  if (mode === "credential-revoke") await f.mcp({ type: "credential", revision: 1, name: "local", envName: "MCP_TOKEN", value: "synthetic-write-credential" });
+  const started = await f.start({ mode: "controlled" }), waiting = await codingApproved(f, started);
+  if (mode === "credential-revoke") {
+    await f.mcp({ type: "revokeCredential", revision: 2, name: "local", envName: "MCP_TOKEN" });
+    await approveWrite(f, waiting);
+  } else assert.equal(waiting.approvals.length, 0);
+  await until(() => f.task(started.taskId), terminal, "changed write authority rejected");
+  const run = (await f.mcp({ type: "status" })).runs.at(-1), receipts = await mcpReception(run);
+  assert.equal(receipts.filter((entry) => entry.type === "call" || entry.type === "effect").length, 0);
+  assert.equal(await fs.readFile(path.join(f.project, "README.md"), "utf8"), "temporary CLI project\n");
+  assert.ok(!JSON.stringify(await f.task(started.taskId)).includes("synthetic-write-credential"));
+  await f.close();
 });

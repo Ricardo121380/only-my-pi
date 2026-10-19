@@ -92,14 +92,18 @@ test("task grant reuses one approval for two actual reads, then expires before a
   const next = await f.start(), prompt = await awaiting(f, next.taskId); assert.equal(prompt.approvals.length, 1); await reply(f, prompt, "拒绝");
 });
 
-test("definition changes, oversized inputs, undeclared fields and outside paths reach zero tool calls", { timeout: 45000 }, async (t) => {
-  for (const [mode, args] of [["list-change", { path: "README.md" }], [null, { path: "x".repeat(17000) }], [null, { path: "README.md", extra: "undeclared" }], [null, { path: "../outside" }]]) {
-    const f = await configured(t, { respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "mcp__local__read_file", args) }, mode);
-    const started = await f.start(); await untilPiInitialized(() => f.task(started.taskId));
-    await until(() => f.task(started.taskId), terminal, "denied input");
-    const run = await readRun(f, started.taskId); assert.equal((await reception(run)).filter((item) => item.type === "call").length, 0);
-    await f.close();
-  }
+// Independent hosts need independent startup and cleanup deadlines.
+for (const [name, mode, args] of [
+  ["read definition change", "list-change", { path: "README.md" }],
+  ["oversized read input", null, { path: "x".repeat(17000) }],
+  ["undeclared read field", null, { path: "README.md", extra: "undeclared" }],
+  ["outside read path", null, { path: "../outside" }],
+]) test(`${name} reaches zero tool calls`, { timeout: 45000 }, async (t) => {
+  const f = await configured(t, { respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "mcp__local__read_file", args) }, mode);
+  const started = await f.start(); await untilPiInitialized(() => f.task(started.taskId));
+  await until(() => f.task(started.taskId), terminal, "denied input");
+  const run = await readRun(f, started.taskId); assert.equal((await reception(run)).filter((item) => item.type === "call").length, 0);
+  await f.close();
 });
 
 test("readOnlyHint cannot grant writes: startup and tool effects are physically denied", { timeout: 20000 }, async (t) => {
@@ -112,13 +116,11 @@ test("readOnlyHint cannot grant writes: startup and tool effects are physically 
   assert.equal(await fs.readFile(path.join(f.project, "README.md"), "utf8"), original);
 });
 
-test("crash and oversized result retain UNKNOWN with one independent reception and no replay", { timeout: 30000 }, async (t) => {
-  for (const mode of ["crash", "large-output"]) {
-    const f = await configured(t, {}, mode), started = await f.start(), waiting = await awaiting(f, started.taskId); await reply(f, waiting, "仅本次");
-    await until(() => f.task(started.taskId), terminal, "unknown result");
-    const run = await readRun(f, started.taskId); assert.equal(run.calls[0].status, "unknown"); assert.equal((await reception(run)).filter((item) => item.type === "call").length, 1); assert.ok(run.processes.every((entry) => !entry.alive));
-    await f.close();
-  }
+for (const mode of ["crash", "large-output"]) test(`${mode} retains UNKNOWN with one independent reception and no replay`, { timeout: 30000 }, async (t) => {
+  const f = await configured(t, {}, mode), started = await f.start(), waiting = await awaiting(f, started.taskId); await reply(f, waiting, "仅本次");
+  await until(() => f.task(started.taskId), terminal, "unknown result");
+  const run = await readRun(f, started.taskId); assert.equal(run.calls[0].status, "unknown"); assert.equal((await reception(run)).filter((item) => item.type === "call").length, 1); assert.ok(run.processes.every((entry) => !entry.alive));
+  await f.close();
 });
 
 test("editing the future configuration keeps the old task target; explicit disable rejects its pending call", { timeout: 25000 }, async (t) => {
