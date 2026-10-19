@@ -42,9 +42,11 @@ for (const mode of ["absolute", "relative", "prefix", "id", "continue"]) test(`a
   });
   let failure;
   try { const launched = promisify(execFile)(invocation.executable, invocation.argv.slice(1), {
-    cwd: root, env: invocation.env, timeout: 10000,
+    // Node's coverage hook adds NODE_V8_COVERAGE to spawn options. Keep the
+    // immutable invocation contract intact and pass an owned launch copy.
+    cwd: root, env: { ...invocation.env }, timeout: 10000,
   }); launched.child.stdin.end(); await launched; } catch (error) { failure = error; }
-  assert.equal(failure?.code, 1, JSON.stringify({ stderr: failure?.stderr, stdout: failure?.stdout, signal: failure?.signal, requests }));
+  assert.equal(failure?.code, 1, JSON.stringify({ name: failure?.name, message: failure?.message, stderr: failure?.stderr, stdout: failure?.stdout, signal: failure?.signal, requests }));
   assert.match(failure.stderr, /SESSION_OWNERSHIP_UNAVAILABLE/);
   assert.equal(requests, 0);
   assert.equal(await fs.readFile(file, "utf8"), contents);
