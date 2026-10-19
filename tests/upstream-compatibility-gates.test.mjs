@@ -53,6 +53,16 @@ test("M9 manifest rejects executable protected gates, candidate drift, and deter
   assert.throws(() => validateUpstreamCompatibilityGatesManifest(argvDrift), /contract drifted/u);
 });
 
+test("M9 full regression uses the same bounded budget without widening other gates", () => {
+  const manifest = loadUpstreamCompatibilityGatesManifest();
+  assert.equal(resolveUpstreamCompatibilityGate(manifest, "U8").timeoutMs, 1800000);
+  for (const [id, timeoutMs] of [["U8", 1800001], ["U1", 600001]]) {
+    const invalid = structuredClone(manifest);
+    invalid.gates.find(gate => gate.id === id).timeoutMs = timeoutMs;
+    assert.throws(() => validateUpstreamCompatibilityGatesManifest(invalid), /timeoutMs is invalid/);
+  }
+});
+
 test("M9 runner defaults to inspection and accepts only explicit source-bound protected evidence", () => {
   const inspection = inspectUpstreamCompatibilityGates(["--json"]);
   assert.equal(inspection.executable, false);
