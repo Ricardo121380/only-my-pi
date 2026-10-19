@@ -126,6 +126,9 @@ export class ControlledStdioTransport {
         const pid = this.record.pid;
         if (!Number.isSafeInteger(pid) || pid < 1 || !groupAlive(pid)) break;
         if (!this.record.identity || await processIdentity(pid) !== this.record.identity) {
+          // The service can exit during the asynchronous identity lookup.
+          // Only a surviving group still needs reconciliation.
+          if (!groupAlive(pid)) break;
           this.record.status = "reconciliation"; await preserve(); throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
         }
         try { process.kill(-pid, signal); } catch (error) { if (error.code !== "ESRCH") throw error; }
