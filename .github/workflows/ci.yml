@@ -19,7 +19,7 @@ jobs:
   release-gates:
     name: Node ${{ matrix.node-version }}
     runs-on: ubuntu-latest
-    # v1, v2 Preview and M9 each execute the complete bounded regression suite.
+    # v1, v2 Preview and M9 repeat full tests; M8/M12 also require full coverage.
     timeout-minutes: 120
     strategy:
       fail-fast: false

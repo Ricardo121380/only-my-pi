@@ -53,6 +53,16 @@ test("M8 manifest rejects executable protected gates and deterministic argv drif
   assert.throws(() => validateDailyHarnessGatesManifest(drift), /contract drifted/u);
 });
 
+test("D15 admits the full coverage suite budget while other gate bounds stay fixed", () => {
+  const manifest = loadDailyHarnessGatesManifest();
+  assert.equal(resolveDailyHarnessGate(manifest, "D15").timeoutMs, 1800000);
+  for (const [id, timeoutMs] of [["D15", 1800001], ["D1", 300001]]) {
+    const invalid = structuredClone(manifest);
+    invalid.gates.find(gate => gate.id === id).timeoutMs = timeoutMs;
+    assert.throws(() => validateDailyHarnessGatesManifest(invalid), /timeoutMs is invalid/);
+  }
+});
+
 test("M8 runner defaults to inspection and protected completion requires exact evidence", () => {
   const inspection = inspectDailyHarnessGates(["--json"]);
   assert.equal(inspection.executable, false);
@@ -102,6 +112,11 @@ test("deterministic M8 execution never spawns protected gates", async () => {
 });
 
 test("D15 enforces global and per-runtime coverage through fixed shell-free argv", async () => {
+  const global = M8_DETERMINISTIC_CHECKS.find((check) => check.id === "global-coverage");
+  assert.ok(global.args.includes("--test-concurrency=2"));
+  assert.ok(global.args.includes("--test-coverage-lines=85"));
+  assert.ok(global.args.includes("--test-coverage-branches=69"));
+  assert.ok(global.args.includes("--test-coverage-functions=85"));
   const composer = M8_DETERMINISTIC_CHECKS.find((check) => check.id === "session-composer-coverage");
   const control = M8_DETERMINISTIC_CHECKS.find((check) => check.id === "omp-control-coverage");
   assert.ok(composer.args.includes("--test-coverage-lines=90"));

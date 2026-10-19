@@ -16,7 +16,7 @@ const CHECKS = Object.freeze([
   Object.freeze({
     id: "global-coverage",
     command: process.execPath,
-    args: Object.freeze(["--test", "--experimental-test-coverage", "--test-coverage-lines=85", "--test-coverage-branches=69", "--test-coverage-functions=85"]),
+    args: Object.freeze(["--test", "--test-concurrency=2", "--experimental-test-coverage", "--test-coverage-lines=85", "--test-coverage-branches=69", "--test-coverage-functions=85"]),
   }),
   Object.freeze({
     id: "session-composer-coverage",

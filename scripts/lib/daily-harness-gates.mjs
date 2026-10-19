@@ -106,7 +106,8 @@ function validateGate(gate, id, policy) {
   if (typeof gate.description !== "string" || gate.description.length < 1 || gate.description.length > 240) fail(`gate ${id} description is invalid`);
   if (gate.cwd !== "repository-root") fail(`gate ${id} cwd is invalid`);
   validateEnvironment(gate.env, id);
-  if (!Number.isSafeInteger(gate.timeoutMs) || gate.timeoutMs < 1 || gate.timeoutMs > 300_000) fail(`gate ${id} timeoutMs is invalid`);
+  const maxTimeoutMs = id === "D15" ? 1_800_000 : 300_000;
+  if (!Number.isSafeInteger(gate.timeoutMs) || gate.timeoutMs < 1 || gate.timeoutMs > maxTimeoutMs) fail(`gate ${id} timeoutMs is invalid`);
   if (!Number.isSafeInteger(gate.maxOutputBytes) || gate.maxOutputBytes < 1024 || gate.maxOutputBytes > policy.maxOutputBytes) fail(`gate ${id} maxOutputBytes is invalid`);
   if (gate.sensitiveOutput !== false || gate.required !== true) fail(`gate ${id} must be required and non-sensitive`);
   if (DAILY_HARNESS_DETERMINISTIC_IDS.includes(id)) {
