@@ -706,6 +706,15 @@
     ],
     "independentModelTextEvidence": {
       "finalInput": "browser8-input-final/browser-final-receipt.json",
+      "retainedRequestFields": [
+        "model",
+        "lastRole",
+        "messages",
+        "tools (function names)",
+        "authorization (synthetic fixture only)"
+      ],
+      "rawHttpBody": "NOT_CAPTURED",
+      "proofScope": "Independent parsed messages support model-text, input-ID exclusion and identity assertions; this is not a complete raw HTTP-body archive.",
       "resourceInputI4": "NOT_CAPTURED; preserved valid consumption only, excluded from final model-text proof"
     },
     "unknownPreservedAfterStop": true,
@@ -2022,6 +2031,76 @@
     "dailyInstallation": "NOT_CHANGED",
     "publicRelease": "NOT_RUN",
     "push": "NOT_RUN"
+  },
+  "postAcceptanceRecheck": {
+    "date": "2026-10-19",
+    "openingHead": "dea1f2e780a752237176543a117bc1afe2184599",
+    "openingIssueState": "CLOSED / completed",
+    "scope": "Verify existing delivery discovered at repeated dispatch; documentation-only clarification, no candidate or runtime source change.",
+    "evidenceRoot": "../artifacts/pi130-02-20261019T115517",
+    "openingWorkspace": {
+      "gitVisibleFiles": 1778,
+      "dirtyEntries": 158,
+      "indexEmpty": true
+    },
+    "currentIdentity": {
+      "matchesOriginalFinalAcceptance": true,
+      "unchangedAfterCurrentRuns": true,
+      "compared": [
+        "sourceCommit",
+        "sourceTree",
+        "sourceStatus",
+        "source",
+        "dependencies",
+        "candidate",
+        "nodes"
+      ],
+      "beforeComparison": "current-inputs-vs-acceptance.json",
+      "afterComparison": "current-inputs-after-comparison.json"
+    },
+    "freshRuntimeChecks": {
+      "order": ["22.19.0", "24.19.0"],
+      "22.19.0": {"status": "PASS", "checks": 9, "receipt": "runtime-node22/receipt.json", "command": "runtime-node22.json"},
+      "24.19.0": {"status": "PASS", "checks": 9, "receipt": "runtime-node24/receipt.json", "command": "runtime-node24.json"},
+      "actualCliReceivesPerLane": 2,
+      "historicalPi110": {"status": "PASS", "scope": "Current full material inspection only", "receipt": "historical-check.json"}
+    },
+    "independentReadOnlyReviews": {
+      "fixedPoint": "7f098966c820028e4f1482c6b54214b52aeb8c1c",
+      "branchHead": "dea1f2e780a752237176543a117bc1afe2184599",
+      "privateSource": "dd996352c9f6d8fb514a131729e6ef349d7392ca",
+      "standards": {"status": "PASS", "reviewer": "/root/standards77_recheck", "hardViolations": 0, "blocking": 0, "advisories": 1, "worst": "P3 pre-existing UI timer duplication", "report": "review-standards.md"},
+      "spec": {"status": "PASS", "reviewer": "/root/spec77_recheck", "blocking": 0, "nonblocking": 0, "report": "review-spec.md"},
+      "receiptAudit": {"reviewer": "/root/receipts77_chain", "report": "receipt-audit.md"},
+      "postReviewChange": "Primary agent narrowed request-retention wording to the actually retained fields and recorded current verification; no implementation or behavioral assertion changed."
+    },
+    "reusedFrozenEvidence": {
+      "fullNode22": "Original candidate8 full execution, 1683 PASS / 4 conditional SKIP",
+      "fullNode24": "Original candidate8 full execution, 1687 PASS / 0 SKIP",
+      "linux": "Original same-source affected CLI executions, 52 PASS / 0 SKIP per Node lane",
+      "browser": "Original candidate8 complete journeys in Ego TaskSpace58",
+      "freshFullSuites": "NOT_RUN; runtime inputs are byte/mode/collection-identical and this increment changes documentation only",
+      "freshBrowserJourneys": "NOT_RUN; TaskSpace65 checked availability only and was finished"
+    },
+    "requestRetentionClarification": "Complete messages plus selected parsed fields are retained; complete raw HTTP body is NOT_CAPTURED. Original receipts and historical failures are unchanged.",
+    "upstream": {"checkedAt": "2026-10-19T04:02:56.723958+00:00", "npmLatest": "1.3.0", "githubLatest": "v1.3.0", "exactSriUnchanged": true, "receipt": "upstream/summary.json"},
+    "githubInitialReadback": {"state": "closed", "stateReason": "completed", "blockedBy": [76], "blocking": [26, 57], "preservedOpenIssues": [21, 23], "receipt": "github/summary.json"},
+    "githubFinalReadback": {
+      "readAt": "2026-10-19T04:07:37.865728+00:00",
+      "state": "closed",
+      "stateReason": "completed",
+      "closedAtUnchanged": "2026-10-18T18:59:04Z",
+      "updatedAt": "2026-10-19T04:06:25Z",
+      "bodySha256": "9d6e531e8f96856e5e3d023f70463db7f80f185b1825aa0cd780da3b3b69701b",
+      "bodyExact": true,
+      "singleBodyOnlyMutation": true,
+      "metadataAndCommentsUnchanged": true,
+      "allNativeDependencyIdsUnchanged": true,
+      "protectedIssues76_21_23Unchanged": true,
+      "firstComparison": "Strict nested-object equality stopped on the #76 blocking projection of #77 body and updated_at only; original difference retained. No write retry. Subsequent independent GET verifies both values against the one authorized #77 write; all actual protected issue fields, comments, edge IDs and other dependency objects remain unchanged.",
+      "diagnostic": "github/first-protected-comparison-diagnostic.json",
+      "receipt": "github/77-final-readback-summary.json"
+    }
   },
   "upstreamReadback": {
     "checkedAt": "2026-10-18T15:15:26.511999+00:00",
