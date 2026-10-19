@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import crypto from "node:crypto";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
@@ -405,6 +405,29 @@ test("v2 runner never spawns protected gates and blocks higher promotion without
   assert.equal(result.report.passed, false);
   assert.ok(result.report.gates.some((gate) => gate.id === "pi-subagents-live-readonly-smoke" && gate.status === "NOT_RUN_BY_POLICY"));
   assert.ok(fake.calls.every((call) => !call.args.includes("pi-subagents-live-readonly-smoke")));
+});
+
+test("v2 runner exposes bounded failure diagnostics without storing raw child output in reports", async () => {
+  const sourceCommit = "b".repeat(40);
+  const fake = fakeSpawnRecorder(sourceCommit);
+  const observed = [];
+  const result = await runSubagentsReleaseVerification({
+    promotion: "preview", rootDir: root, requireCleanSource: false, sourceCommit,
+    spawnImpl: (command, args, options) => args.join(" ") === "test"
+      ? spawn(process.execPath, ["-e", [
+        "console.log('not ok 1 - controlled v2 failure');",
+        "console.error('must-not-be-copied'); process.exitCode = 1;",
+      ].join(" ")], options)
+      : fake.spawnImpl(command, args, options),
+    onGate: (gate, diagnostic) => observed.push({ gate, diagnostic }),
+  });
+  assert.equal(result.report.status, "FAILED");
+  const failure = observed.find(({ gate }) => gate.id === "full-tests");
+  assert.equal(failure.gate.exitCode, 1);
+  assert.equal(failure.diagnostic, "TEST_FAILURE:tests=controlled v2 failure");
+  assert.equal(JSON.stringify(result.report).includes("controlled v2 failure"), false);
+  assert.equal(JSON.stringify({ result, observed }).includes("must-not-be-copied"), false);
+  assert.equal(validateSubagentsReleaseReport(result.report, { rootDir: root, expectedSourceCommit: sourceCommit }).ok, true);
 });
 
 test("authorized Alpha import validates files, marks protected gate PASS, and never executes a protected command", async (t) => {
