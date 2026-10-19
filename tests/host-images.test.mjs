@@ -88,11 +88,29 @@ test("image binding changes affect the next task and busy image accounts cannot 
   assert.deepEqual((await f.calls()).tasks.map(task => task.snapshot.image.accountId), [f.account.accountId, second.accountId]);
 });
 
-for (const limit of ["images", "storageBytes", "concurrency"]) test(`image ${limit} reservations are shared across concurrent scripts`, { timeout: 35000 }, async t => {
-  const parallel = `const model = await models.getModelOfType("image","fixtureimage","checkerboard"); text((await Promise.allSettled([models.generateImages(model,${JSON.stringify(imageContext)}),models.generateImages(model,${JSON.stringify(imageContext)})])).map(r => r.status === "rejected" ? {status:r.status,error:String(r.reason)} : {status:r.status,artifacts:r.value.artifacts}));`;
-  const f = await createImageHost({ scripts: [parallel, imageCode] }); t.after(() => f.close()); await f.configure();
+for (const limit of ["images", "storageBytes", "concurrency"]) test(`image ${limit} reservations are shared across nested calls and later scripts`, { timeout: 35000 }, async t => {
+  // A fast response may release concurrency before the second call reserves.
+  // Hold it until a real quota rejection reaches an observable child approval.
+  const rejected = limit === "concurrency" ? `.catch(async error => { if (!String(error).includes("MODEL_BUDGET_EXHAUSTED")) throw error; try { await tools.read({path:"README.md"}); } finally { throw error; } })` : "";
+  const parallel = `const model = await models.getModelOfType("image","fixtureimage","checkerboard"); text((await Promise.allSettled([0,1].map(() => models.generateImages(model,${JSON.stringify(imageContext)})${rejected}))).map(r => r.status === "rejected" ? {status:r.status,error:String(r.reason)} : {status:r.status,artifacts:r.value.artifacts}));`;
+  let firstResponse;
+  const f = await createImageHost({ scripts: [parallel, imageCode], ...(limit === "concurrency" ? { response: ({ res, received }) => {
+    if (received.length === 1) firstResponse = res;
+    else res.end(JSON.stringify(imageReply));
+  } } : {}) }); t.after(() => f.close()); await f.configure();
   await f.select({ ...imageBudget, ...(limit === "images" ? { images: 1 } : limit === "storageBytes" ? { storageBytes: imageBudget.maxStorageBytes } : {}) });
-  const { taskId } = await f.start(); await authorize(f, taskId); const final = await done(f, taskId);
+  const { taskId } = await f.start(); await authorize(f, taskId);
+  if (limit === "concurrency") {
+    const waiting = await until(() => f.task(taskId), task => task.approvals.some(approval => approval.title.startsWith("Codemode · read")), "concurrent image quota rejection");
+    await until(() => firstResponse, Boolean, "first image reception");
+    assert.equal(f.received.length, 1);
+    const pending = (await f.calls()).tasks.at(-1).requests;
+    assert.equal(pending.length, 1); assert.equal(pending[0].status, "dispatched");
+    assert.equal(pending[0].requestId, f.received[0].requestId);
+    firstResponse.end(JSON.stringify(imageReply));
+    await f.request("/api/command", { type: "answerApproval", taskId, approvalId: waiting.approvals.find(approval => approval.title.startsWith("Codemode · read")).approvalId, value: "拒绝" });
+  }
+  const final = await done(f, taskId);
   assert.equal(f.received.length, limit === "concurrency" ? 2 : 1);
   assert.match(final.toolCalls[0].result, /MODEL_BUDGET_EXHAUSTED/);
   if (limit !== "concurrency") assert.match(final.toolCalls.at(-1).result, /MODEL_BUDGET_EXHAUSTED/);
