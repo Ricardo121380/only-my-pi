@@ -2,19 +2,21 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { spawn } from "node:child_process";
+import childProcess, { spawn } from "node:child_process";
+import { syncBuiltinESMExports } from "node:module";
+import { promisify } from "node:util";
 import test from "node:test";
 import { RpcWorker } from "../packages/host/rpc-worker.mjs";
 import { groupAlive } from "../packages/host/ownership.mjs";
 import { AccountCatalog } from "../packages/host/accounts.mjs";
 import { fileURLToPath } from "node:url";
 
-async function fixture(t, malformed = false, uncontrolledExit = false) {
+async function fixture(t, malformed = false, uncontrolledExit = false, holdOpen = false) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-rpc-wire-"))); t.after(() => fs.rm(root, { recursive: true, force: true }));
   const file = path.join(root, "worker.mjs");
   await fs.mkdir(path.join(root, "pi"));
   await fs.writeFile(path.join(root, "pi/package.json"), JSON.stringify({ name: "@earendil-works/pi-coding-agent", version: "0.85.1" }));
-  await fs.writeFile(file, `import {createInterface} from "node:readline"; const lines=createInterface({input:process.stdin}); for await(const line of lines){const c=JSON.parse(line); if(${malformed}){process.stdout.write("not-json\\n");continue;} process.stdout.write(JSON.stringify({id:c.id,type:"response",command:c.type,success:true,data:{sessionId:"fixture-session"}})+"\\n");}`);
+  await fs.writeFile(file, `import {createInterface} from "node:readline"; if(${holdOpen}) setInterval(()=>{},1000); const lines=createInterface({input:process.stdin}); for await(const line of lines){const c=JSON.parse(line); if(${malformed}){process.stdout.write("not-json\\n");continue;} process.stdout.write(JSON.stringify({id:c.id,type:"response",command:c.type,success:true,data:{sessionId:"fixture-session"}})+"\\n");}`);
   const worker = new RpcWorker({ stack: { root, nodePath: process.execPath, piCliPath: file, stackId: `sha256:${"a".repeat(64)}` }, configRoot: root, cwd: root, model: "mock/test", sessionRoot: root,
     ...(uncontrolledExit ? { controlled: true, accountId: "fixture-account" } : {}),
     extensionResolver: async () => ({ extensions: [file] }), spawnImpl: (_node, _argv, options) => spawn(process.execPath, [file], options) });
@@ -24,6 +26,40 @@ test("RPC worker correlates JSONL responses, denies raw commands and confirms pr
   const worker = await fixture(t); assert.equal((await worker.start()).sessionId, "fixture-session");
   const pid = worker.identity.pid; await assert.rejects(worker.command("bash"), { code: "RPC_COMMAND_DENIED" });
   await worker.cancel(); assert.equal(groupAlive(pid), false);
+});
+test("worker stop accepts a group that exits during the real identity probe", { timeout: 10000 }, async (t) => {
+  const worker = await fixture(t, false, false, true);
+  await worker.start();
+  const pid = worker.identity.pid, execFile = childProcess.execFile, kill = process.kill;
+  const signals = []; let probed = false;
+  t.mock.method(process, "kill", (target, signal) => { if (target === -pid && signal !== 0) signals.push(signal); return kill(target, signal); });
+  const intercepted = (...args) => execFile(...args);
+  intercepted[promisify.custom] = async (file, args, options) => {
+    if (file === "/bin/ps" && args[1] === String(pid)) {
+      assert.equal(groupAlive(pid), true, "the initial group probe observes the live worker");
+      kill(pid, "SIGTERM"); await worker.exited;
+      assert.equal(groupAlive(pid), false); probed = true;
+    }
+    return promisify(execFile)(file, args, options);
+  };
+  childProcess.execFile = intercepted; syncBuiltinESMExports();
+  try { await worker.stop(); }
+  finally {
+    childProcess.execFile = execFile; syncBuiltinESMExports();
+    if (!worker.closed) { kill(pid, "SIGKILL"); await worker.exited; }
+  }
+  assert.equal(probed, true); assert.deepEqual(signals, []); assert.equal(groupAlive(pid), false);
+});
+for (const identity of [null, "different-start"]) test(`worker stop cannot signal a live group with identity ${identity}`, { timeout: 10000 }, async (t) => {
+  const worker = await fixture(t, false, true, true);
+  await worker.start();
+  const pid = worker.identity.pid, kill = process.kill, signals = [];
+  worker.identity.start = identity;
+  t.mock.method(process, "kill", (target, signal) => { if (target === -pid && signal !== 0) signals.push(signal); return kill(target, signal); });
+  try {
+    await assert.rejects(worker.stop(), { code: "RPC_TERMINATION_UNCONFIRMED" });
+    assert.equal(groupAlive(pid), true); assert.deepEqual(signals, []);
+  } finally { kill(pid, "SIGKILL"); await worker.exited; }
 });
 test("malformed worker output fails closed without retaining a process", async (t) => {
   const worker = await fixture(t, true); const faults = []; worker.on("fault", (e) => faults.push(e.code));

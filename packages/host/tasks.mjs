@@ -129,7 +129,7 @@ export class HostTasks extends EventEmitter {
     await this.persist(); this.changed(task);
   }
   async run(task, project, resume = null, inputRecord, beforePrompt) {
-    let lease;
+    let lease, finalStatus;
     const sessionRoot = path.join(this.catalog.sessionRoot, `omp-${project.projectId}`);
     let worker;
     try {
@@ -203,19 +203,19 @@ export class HostTasks extends EventEmitter {
       lease ??= await acquireOwnership(this.configRoot, "session", String(state.sessionId));
       this.leases.set(task.taskId, lease);
       await this.persist();
-      if (task.status === "cancelling" || this.closing) { stopping = true; await worker.cancel(); task.status = "cancelled"; return; }
+      if (task.status === "cancelling" || this.closing) { stopping = true; await worker.cancel(); finalStatus = "cancelled"; return; }
       if (task.requestedThinkingLevel !== null) {
         await worker.command("set_thinking_level", { level: task.requestedThinkingLevel });
         const effective = await worker.command("get_state");
         if (effective.thinkingLevel !== task.requestedThinkingLevel) throw hostError("THINKING_LEVEL_MISMATCH", 409);
         task.thinkingLevel = effective.thinkingLevel;
       } else task.thinkingLevel = state.thinkingLevel ?? null;
-      if (task.status === "cancelling" || this.closing) { stopping = true; await worker.cancel(); task.status = "cancelled"; return; }
+      if (task.status === "cancelling" || this.closing) { stopping = true; await worker.cancel(); finalStatus = "cancelled"; return; }
       if (beforePrompt) {
         inputRecord = await beforePrompt(task);
         if (!inputRecord || inputRecord.taskId !== task.taskId || inputRecord.sessionId !== task.sessionId || inputRecord.state !== "dispatching") throw hostError("INPUT_STATE_INVALID");
       }
-      if (task.status === "cancelling" || this.closing) { stopping = true; await worker.cancel(); task.status = "cancelled"; return; }
+      if (task.status === "cancelling" || this.closing) { stopping = true; await worker.cancel(); finalStatus = "cancelled"; return; }
       task.status = "running"; this.changed(task);
       if (inputRecord) {
         const response = await worker.deliverInput(inputRecord);
@@ -242,21 +242,25 @@ export class HostTasks extends EventEmitter {
           status = "failed"; task.error = "IMAGE_OUTPUT_UNAVAILABLE";
         }
       }
-      task.status = status;
-      if (task.status === "cancelled") task.error = null;
-    } catch (error) { task.status = task.status === "cancelling" ? "cancelled" : "failed"; task.error = /^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "TASK_FAILED"; }
+      finalStatus = status;
+      if (finalStatus === "cancelled") task.error = null;
+    } catch (error) { finalStatus = task.status === "cancelling" ? "cancelled" : "failed"; task.error = /^[A-Z_]+$/u.test(error.code ?? "") ? error.code : "TASK_FAILED"; }
     finally {
       clearTimeout(deadline);
       stopping = true;
       let terminationConfirmed = false;
       try { await worker.stop(); task.worker = null; terminationConfirmed = true; }
-      catch { task.status = "failed"; task.error = "RPC_TERMINATION_UNCONFIRMED"; }
+      catch { finalStatus = "failed"; task.error = "RPC_TERMINATION_UNCONFIRMED"; }
       if (terminationConfirmed) {
         this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId);
-        try { await lease?.release(); this.leases.delete(task.taskId); } catch { task.status = "failed"; task.error = "SESSION_RELEASE_FAILED"; }
-        try { await this.projectLeases.get(task.taskId)?.release(); this.projectLeases.delete(task.taskId); } catch { task.status = "failed"; task.error = "PROJECT_RELEASE_FAILED"; }
+        try { await lease?.release(); this.leases.delete(task.taskId); } catch { finalStatus = "failed"; task.error = "SESSION_RELEASE_FAILED"; }
+        try { await this.projectLeases.get(task.taskId)?.release(); this.projectLeases.delete(task.taskId); } catch { finalStatus = "failed"; task.error = "PROJECT_RELEASE_FAILED"; }
         this.workers.delete(task.taskId);
       }
+      // GET /api/task reads this object directly, before the changed event.
+      // Publish the terminal state only after cleanup has reached its outcome.
+      if (finalStatus === "succeeded" && task.status === "cancelling") { finalStatus = "cancelled"; task.error = null; }
+      task.status = finalStatus;
       task.approvals = []; task.access = "inspect";
       for (const call of task.toolCalls ?? []) if (call.status === "running") call.status = task.status === "cancelled" ? "cancelled" : "unknown";
       task.updatedAt = new Date().toISOString(); this.changed(task); await this.persist();

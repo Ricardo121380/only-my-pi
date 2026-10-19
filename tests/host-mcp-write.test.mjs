@@ -171,7 +171,7 @@ test("startup descriptor effects are recorded UNKNOWN even when no tools/call is
   assert.equal(run.calls[0].status, "unknown"); assert.equal(run.calls[0].observedChange, true); assert.equal(await fs.readFile(path.join(f.project, "README.md"), "utf8"), "startup effect");
 });
 
-test("real terminal and Agent/MCP alternate the same canonical project ownership", { timeout: 35000 }, async (t) => {
+for (const cancelDuringRelease of [false, true]) test(`real terminal and Agent/MCP alternate the same canonical project ownership${cancelDuringRelease ? " with cancellation during release" : ""}`, { timeout: 35000 }, async (t) => {
   const f = await createWriteHost(); t.after(() => f.close());
   const manual = await f.request("/api/command", { type: "openTerminal", projectId: f.projectId, cols: 90, rows: 24 });
   await f.request("/api/command", { type: "writeTerminal", terminalId: manual.terminalId, seq: 1, data: "printf manual > terminal-proof.txt\r" });
@@ -183,7 +183,33 @@ test("real terminal and Agent/MCP alternate the same canonical project ownership
   const terminalConflict = await f.request("/api/command", { type: "openTerminal", projectId: f.projectId, cols: 90, rows: 24 }, 500); assert.equal(terminalConflict.code, "OWNERSHIP_HELD");
   const manualConflict = await f.request("/api/command", { type: "enterManual", projectId: f.projectId }, 500); assert.equal(manualConflict.code, "OWNERSHIP_HELD");
   await assert.rejects(new DirectSessionOwnership(f.config).acquire("project", f.project), { code: "OWNERSHIP_HELD" });
-  await approveWrite(f, waiting); await until(() => f.task(started.taskId), terminal, "Agent write complete");
+  // Hold each real lease release in turn: HTTP must not publish completion
+  // while either the session or the canonical project is still owned.
+  const releases = [f.host.tasks.leases, f.host.tasks.projectLeases].map((leases) => {
+    const lease = leases.get(started.taskId), release = lease.release.bind(lease);
+    let entered, unblock;
+    const reached = new Promise(resolve => { entered = resolve; });
+    const gate = new Promise(resolve => { unblock = resolve; });
+    lease.release = async () => { entered(); await gate; return release(); };
+    return { reached, unblock };
+  });
+  try {
+    await approveWrite(f, waiting);
+    for (const release of releases) {
+      await release.reached;
+      const visible = await f.task(started.taskId);
+      assert.equal(terminal(visible), false, "task completion must wait for ownership release");
+      await assert.rejects(new DirectSessionOwnership(f.config).acquire("project", f.project), { code: "OWNERSHIP_HELD" });
+      if (cancelDuringRelease && release === releases[0]) {
+        const cancelled = await f.request("/api/command", { type: "cancelTask", taskId: started.taskId }, 202);
+        assert.equal(cancelled.status, "cancelling");
+      }
+      release.unblock();
+    }
+  } finally { for (const release of releases) release.unblock(); }
+  const ended = await until(() => f.task(started.taskId), terminal, "Agent write complete");
+  assert.equal(ended.status, cancelDuringRelease ? "cancelled" : "succeeded");
+  assert.equal(await fs.readFile(path.join(f.project, "README.md"), "utf8"), "approved MCP file bytes\n");
   const owned = new DirectSessionOwnership(f.config); await owned.acquire("project", f.project); await owned.close();
 });
 

@@ -148,7 +148,12 @@ export class RpcWorker extends EventEmitter {
       const signalGroup = async (signal) => {
         if (!pid || !groupAlive(pid)) return;
         // Never signal a recycled PID or an unidentifiable orphan group.
-        if (!this.identity?.start || await processIdentity(pid) !== this.identity.start) throw hostError("RPC_TERMINATION_UNCONFIRMED");
+        if (!this.identity?.start || await processIdentity(pid) !== this.identity.start) {
+          // The group can finish while the asynchronous identity probe runs.
+          // A surviving group still requires its original leader identity.
+          if (!groupAlive(pid)) return;
+          throw hostError("RPC_TERMINATION_UNCONFIRMED");
+        }
         try { process.kill(-pid, signal); } catch (e) { if (e.code !== "ESRCH") throw e; }
       };
       await signalGroup("SIGTERM");
