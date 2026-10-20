@@ -25,6 +25,8 @@ omp --account ACCOUNT_ID --model openai/MODEL_ID
 
 `login` 在终端隐藏输入，不回显 API Key；Ctrl+C 取消。自动化可以显式使用安全 stdin，例如从已有的秘密管理器将值直接传给 `omp account login ACCOUNT_ID --stdin`。不要把秘密放进启动参数、shell 命令正文、模型输入、临时配置或可回放历史。
 
+API Key 输入同样可以用 `--timeout-ms` 限定等待期限；期限届满返回 `timed_out` 和非零退出码，主动 Ctrl+C 则明确报告取消。查询 `status` 可以核对实际凭据状态，结束并清理后才能重新变更账号。
+
 内置服务不需要覆盖端点。自定义服务使用不含凭据的 JSON 文件：
 
 ```json

@@ -88,3 +88,41 @@ test("formal CLI sets up API key accounts from an empty product catalog and real
   assert.match(implicit.err, /ACCOUNT_SELECTION_REQUIRED/);
   assert.equal(received.length, before + 1, "resuming product-account history cannot silently use the original CLI identity");
 });
+
+test("formal API key login distinguishes a deadline from user cancellation and releases account activity", { timeout: 30000 }, async t => {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-api-key-timeout-")));
+  const f = await createPi110SourceCli(root, { baseUrl: "http://127.0.0.1:1/v1" });
+  const commands = [], children = new Set();
+  t.after(async () => {
+    for (const child of children) { child.kill("SIGKILL"); await child.closed; }
+    await writePiEvidence(t.name, { sdk: f.sdk, scope: "CLIENT-01A_SOURCE_API_KEY_DEADLINE_LOCAL_ONLY", commands });
+    await fs.rm(root, { recursive: true });
+  });
+  const start = args => {
+    const child = spawn(process.execPath, [f.cli, ...args], { cwd: f.project, env: f.env, stdio: ["pipe", "pipe", "pipe"] });
+    const record = { pid: child.pid, args, stdout: "", stderr: "", exit: null }; commands.push(record);
+    child.stdout.on("data", bytes => { record.stdout += bytes; }); child.stderr.on("data", bytes => { record.stderr += bytes; });
+    child.closed = once(child, "close").then(([code, signal]) => { record.exit = { code, signal }; children.delete(child); return record; });
+    children.add(child); return child;
+  };
+  const run = async args => { const child = start(args); child.stdin.end(); const record = await child.closed; assert.equal(record.exit.code, 0, record.stderr); return JSON.parse(record.stdout); };
+  const account = await run(["account", "add", "--provider", "fixture", "--name", "Deadline", "--auth", "api_key"]);
+  const timed = start(["account", "login", account.accountId, "--stdin", "--timeout-ms", "150"]);
+  const timeout = await timed.closed;
+  assert.equal(timeout.exit.code, 1); assert.match(timeout.stdout, /"status":\s*"timed_out"/);
+  assert.equal((await run(["account", "status", account.accountId])).status, "missing");
+  const cancelled = start(["account", "login", account.accountId, "--stdin", "--timeout-ms", "2000"]);
+  const activity = path.join(f.config, "only-my-pi/host/account-activity", `${account.accountId}.json`);
+  let active = false;
+  for (let i = 0; i < 200; i++) {
+    const value = JSON.parse(await fs.readFile(activity, "utf8").catch(() => "null"));
+    if (value?.reservations.some(entry => entry.mode === "change" && entry.processes[0].pid === cancelled.pid)) { active = true; break; }
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+  assert.equal(active, true); cancelled.kill("SIGINT");
+  const cancellation = await cancelled.closed;
+  assert.equal(cancellation.exit.code, 1); assert.match(cancellation.stderr, /ACCOUNT_AUTH_CANCELLED/);
+  assert.equal(cancellation.stdout.includes("timed_out"), false);
+  assert.equal((await run(["account", "status", account.accountId])).status, "missing");
+  assert.equal((await run(["account", "rename", account.accountId, "Released after deadline and cancellation"])).accountId, account.accountId);
+});

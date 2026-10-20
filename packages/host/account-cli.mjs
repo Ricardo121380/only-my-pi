@@ -112,9 +112,15 @@ export async function runAccountCli({ argv, configRoot, resolveStack, env = proc
   try {
     input = secretInput(stdin, stderr, controller, fromStdin);
     if (account.authType === "api_key") {
-      timer = setTimeout(cancel, timeoutMs);
-      return await accountAuth({ stack, configRoot, accounts: catalog, accountId, input: { type: "apiKey" },
-        readSecret: () => input.read("API Key"), env, signal: controller.signal });
+      let timedOut = false;
+      timer = setTimeout(() => { if (!controller.signal.aborted) { timedOut = true; cancel(); } }, timeoutMs);
+      try {
+        return await accountAuth({ stack, configRoot, accounts: catalog, accountId, input: { type: "apiKey" },
+          readSecret: () => input.read("API Key"), env, signal: controller.signal });
+      } catch (error) {
+        if (timedOut && error.code === "ACCOUNT_AUTH_CANCELLED") return { status: "timed_out" };
+        throw error;
+      }
     }
     oauth = new AccountOAuth({ stack, configRoot, accounts: catalog, env, timeoutMs });
     const flow = await oauth.start(accountId);

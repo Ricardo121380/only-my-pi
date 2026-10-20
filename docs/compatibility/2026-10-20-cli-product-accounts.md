@@ -58,6 +58,8 @@ Ego 初次挂起流在长时间观察后显示 `MODEL_REQUEST_FAILED`，保留�
 
 首次独立 Spec 为 PARTIAL：指出 Pi 对同 Provider 未声明模型允许 custom fallback，以及此前崩溃证据只有内部协调 C。正式 CLI 的新增负例复现了未知模型仍被物理接收且退出成功，保留 RED；修复为产品账号只接受目录中精确模型，未知和模糊 ID 均返回 `ACCOUNT_MODEL_NOT_FOUND` 且接收数不增，API Key/OAuth 两条正式路径通过。原 CLI 的 Pi 模型解析归属保留。上述正式 CLI/Pi/认证 worker 崩溃恢复补足 P；初次评审结论与修复后的独立复核分别保存。
 
+第二次独立 Spec 确认上述两项补证，并指出 API Key 输入期限与主动取消共用取消结果。正式 CLI 期限负例复现后，修复为期限届满单独返回 `timed_out`，主动 SIGINT 仍为明确取消；两者均非零退出，真实状态回读 missing，后续变更成功。保留 RED、两次 PARTIAL 和修复后的独立复核。第二次完整回归的两个既有 codemode 存储用例出现失败，同一冻结源码的单独复现为 2 PASS；原完整日志保留，具体原失败原因仍待原错误详情，不把单独通过解释为原失败已修复。
+
 本地原始证据保存在工作区外层 artifacts，公开报告只保留必要的非秘密身份和结论。私有 `codex/dev/cli-webui@7a52fc575634e9e3c672bc0b92a75f18e69d05ac` 的十个 WIP 提交保持原样；本票没有提取旧 WIP 文件或私有原始历史。#76/#77 只保留各自已验收范围。
 
 真实外部或付费 Provider、日常安装切换、产品发行、桌面及新增 Linux 能力为 NOT_RUN / 本票范围外；不执行保护的 Provider/真实根发行门槛。#21/#23 材料阻断保持，#78 不能代表整个客户端阶段或完整 WebUI 通过。
