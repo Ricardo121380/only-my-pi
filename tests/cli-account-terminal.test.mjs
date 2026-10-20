@@ -95,6 +95,17 @@ for (const authType of ["api_key", "oauth"]) test(`actual PTY independently sets
   }
   await completed(loginMark);
   assert.equal(output.includes(key), false);
+  const listOffset = output.length;
+  await completed(command(["account", "list"]));
+  assert.ok(output.slice(listOffset).includes(accountId));
+  assert.match(output.slice(listOffset), /"source":\s*"product"/);
+  assert.match(output.slice(listOffset), /"source":\s*"original_pi"/);
+  const statusOffset = output.length;
+  await completed(command(["account", "status", accountId]));
+  assert.match(output.slice(statusOffset), /"status":\s*"stored"/);
+  const modelsOffset = output.length;
+  await completed(command(["account", "models", accountId]));
+  assert.match(output.slice(modelsOffset), /"id":\s*"openrouter\/controlled-model"/);
   const tuiOffset = output.length;
   const tuiMark = command(["--account", accountId, "--model", "openrouter/controlled-model", "--tui-mode", "regular"]);
   await until(() => output.slice(tuiOffset), text => text.includes("[Extensions]") && text.lastIndexOf("OMP · Inspect") > text.indexOf("[Extensions]"), "real Pi initialization and Inspect editor");

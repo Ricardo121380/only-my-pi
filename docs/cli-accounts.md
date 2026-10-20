@@ -18,6 +18,7 @@ omp account list
 ```sh
 omp account add --provider openai --name "Work API" --auth api_key
 omp account login ACCOUNT_ID
+omp account list
 omp account status ACCOUNT_ID
 omp account models ACCOUNT_ID
 omp --account ACCOUNT_ID --model openai/MODEL_ID
@@ -52,6 +53,7 @@ omp --account ACCOUNT_ID --model PROVIDER_ID/chosen-model -p "Inspect this proje
 ```sh
 omp account add --provider openrouter --name "Personal OAuth" --auth oauth
 omp account login ACCOUNT_ID
+omp account list
 omp account status ACCOUNT_ID
 omp account models ACCOUNT_ID
 omp --account ACCOUNT_ID --model openrouter/MODEL_ID
