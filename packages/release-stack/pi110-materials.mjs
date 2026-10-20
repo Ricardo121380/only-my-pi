@@ -192,6 +192,8 @@ export async function verifyPi110Materials({ root, manifest, componentTrees }) {
   const bytes = await regularBytes(path.join(root, `${contract.id}-materials.json`));
   if (sha256(bytes) !== manifest.runtimeMaterialsDigest) fail("PI110_MATERIALS_DRIFT", "Pi runtime materials differ from the distribution binding");
   const materials = JSON.parse(bytes.toString("utf8"));
+  // Frozen Pi input provenance retains its original validation lanes; this is
+  // not current runtime admission, which is enforced by loadDistribution().
   if (materials.kind !== "only-my-pi-private-runtime-materials" || materials.formatVersion !== 1
     || materials.purpose !== contract.purpose || materials.piVersion !== piVersion
     || materials.sourceCommit !== manifest.sourceCommit || materials.platform !== "darwin-arm64"

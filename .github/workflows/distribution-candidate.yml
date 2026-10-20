@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   macos:
-    name: macOS arm64 build and npm Node 22/24 acceptance
+    name: macOS arm64 build and npm Node 24 acceptance
     runs-on: macos-14
     timeout-minutes: 45
     permissions:
@@ -59,13 +59,6 @@ jobs:
       - name: Full offline and Thin fallback acceptance
         run: node scripts/verify-distribution-archives.mjs "$RUNNER_TEMP/native-candidate" "$RUNNER_TEMP/native-acceptance-archives"
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: "22.19.0"
-
-      - name: Fresh-cache npm/npx and offline lifecycle acceptance on Node 22
-        run: node scripts/verify-distribution-install.mjs "$RUNNER_TEMP/native-candidate" "$RUNNER_TEMP/native-acceptance-node22"
-
       - name: Attest these candidate bytes (not release approval)
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
@@ -88,6 +81,5 @@ jobs:
             ${{ runner.temp }}/native-candidate/only-my-pi.rb
             ${{ runner.temp }}/native-candidate/only-my-pi/package.json
             ${{ runner.temp }}/native-candidate/only-my-pi-runtime-darwin-arm64/package.json
-            ${{ runner.temp }}/native-acceptance-node22/acceptance.json
             ${{ runner.temp }}/native-acceptance-node24/acceptance.json
             ${{ runner.temp }}/native-acceptance-archives/acceptance.json

@@ -37,10 +37,14 @@ test("many complete MCP frames share one finite stdout allowance", { timeout: 20
   await untilPiInitialized(() => f.task(started.taskId));
   const waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length > 0, "approval");
   await f.request("/api/command", { type: "answerApproval", taskId: started.taskId, approvalId: waiting.approvals[0].approvalId, value: "仅本次" });
-  await until(() => f.task(started.taskId), terminal, "finite cumulative output");
+  const completed = await until(() => f.task(started.taskId), terminal, "finite cumulative output");
   const run = (await f.mcp({ type: "status" })).runs.at(-1);
   assert.equal(run.calls[0].status, "unknown"); assert.equal((await mcpReception(run)).filter((item) => item.type === "call").length, 1);
-  assert.ok(run.processes.every((entry) => entry.status === "stopped" && !entry.alive));
+  const diagnostic = JSON.stringify({ taskStatus: completed.status, taskError: completed.error, runStatus: run.status,
+    processes: run.processes.map(({ kind, status, alive, exitCode, signal }) => ({ kind, status, alive, exitCode, signal })) });
+  // Separate coordinates also distinguish these outcomes in bounded CI logs.
+  assert.ok(run.processes.every((entry) => entry.status === "stopped"), diagnostic);
+  assert.ok(run.processes.every((entry) => !entry.alive), diagnostic);
 });
 
 for (const mode of ["readonly", "controlled"]) test(`journal quota failure cannot suppress ${mode} revocation and physical termination`, { timeout: 30000 }, async (t) => {

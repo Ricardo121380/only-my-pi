@@ -66,6 +66,38 @@ test("worker stop waits for a real same-group descendant after the leader closes
     assert.equal(groupAlive(pid), false, "the test's real descendant has finished");
   }
 });
+test("worker stop lets the group drain when its leader exits during identity lookup", { timeout: 10000 }, async (t) => {
+  const worker = await fixture(t, false, true, true);
+  // The descendant stays alive until its real IPC parent exits, then finishes
+  // naturally. It does not inherit the leader's stdout/stderr descriptors.
+  await fs.appendFile(worker.stack.piCliPath, '\nconst { spawn } = await import("node:child_process"); spawn(process.execPath, ["-e", \'process.on("disconnect", () => setTimeout(() => process.exit(0), 150));\'], { stdio: ["ignore", "ignore", "ignore", "ipc"] });\n');
+  await worker.start();
+  const pid = worker.identity.pid, execFile = childProcess.execFile, kill = process.kill;
+  const signals = []; let probed = false, failure, aliveAtStop;
+  t.mock.method(process, "kill", (target, signal) => { if (target === -pid && signal !== 0) signals.push(signal); return kill(target, signal); });
+  const intercepted = (...args) => execFile(...args);
+  intercepted[promisify.custom] = async (file, args, options) => {
+    if (file === "/bin/ps" && args[1] === String(pid)) {
+      assert.equal(groupAlive(pid), true);
+      kill(pid, "SIGTERM"); await worker.exited;
+      assert.equal(groupAlive(pid), true, "the real descendant still outlives its leader");
+      probed = true;
+    }
+    return promisify(execFile)(file, args, options);
+  };
+  childProcess.execFile = intercepted; syncBuiltinESMExports();
+  try { await worker.stop(); aliveAtStop = groupAlive(pid); }
+  catch (error) { failure = error; }
+  finally {
+    childProcess.execFile = execFile; syncBuiltinESMExports();
+    if (!worker.closed) { kill(pid, "SIGKILL"); await worker.exited; }
+    for (let i = 0; i < 40 && groupAlive(pid); i++) await new Promise(resolve => setTimeout(resolve, 25));
+  }
+  t.diagnostic(JSON.stringify({ probed, leaderClosed: worker.closed, aliveAtStop, groupAlive: groupAlive(pid), signals, failure: failure?.code ?? null }));
+  assert.equal(probed, true); assert.ifError(failure);
+  assert.equal(aliveAtStop, false, "stop must confirm group exit before returning");
+  assert.equal(groupAlive(pid), false); assert.deepEqual(signals, []);
+});
 for (const identity of [null, "different-start"]) test(`worker stop cannot signal a live group with identity ${identity}`, { timeout: 10000 }, async (t) => {
   const worker = await fixture(t, false, true, true);
   await worker.start();

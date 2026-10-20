@@ -24,7 +24,7 @@ async function json(filename) {
 
 export async function locateRuntime() {
   const [major, minor] = process.versions.node.split(".").map(Number);
-  if (major < 22 || (major === 22 && minor < 19)) fail("Node >=22.19.0 is required");
+  if (major !== 24 || minor < 19 || process.versions.node.includes("-")) fail("Node >=24.19.0 <25 is required");
   const descriptor = await json(path.join(here, "runtime-packages.json"));
   const target = `${process.platform}-${process.arch}`;
   const expected = descriptor.platforms[target];

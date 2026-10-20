@@ -1,5 +1,9 @@
 # Native Preview release runbook
 
+Current runtime policy (2026-10-20): Node 24 only, `>=24.19.0 <25`, pinned
+to `24.19.0` for acceptance. Earlier completed Node 22 results below remain
+historical; see [Node policy](compatibility/node-pi-matrix.md).
+
 Status: phase-one macOS `0.4.0-preview.1` is published on npm (`latest` and
 `preview`), Homebrew and GitHub Releases. Public npm exact-version and default
 npm/npx installation acceptance passed on Node 22.19.0 and 24.19.0. Signed
@@ -31,7 +35,7 @@ change or bypass the existing `public-preview` environment reviewers.
 
 Use `linux-candidate.yml` on the exact merged source S. It builds the three
 native runtimes, assembles one CLI, generates and signs the macOS Formula, and
-checks final npm/Full/Thin installation on both Node versions. The macOS npm
+checks final npm/Full/Thin installation on Node 24.19.0. The macOS npm
 and Homebrew checks include an upgrade from public `0.4.0-preview.1`; Linux is
 a new channel with reinstall and legacy-entry migration checks. Homebrew
 mutations run only on a disposable hosted macOS runner.
@@ -65,17 +69,17 @@ Dispatch the existing trusted publisher `distribution-publish.yml` with
 `version=0.4.0-preview.2`, S, E, evidence path and the signed candidate run.
 It verifies the source/evidence chain and signatures, then requests the existing
 `public-preview` approval. It publishes the four exact npm archives, verifies
-real public installation on all six platform/Node combinations, then publishes
+real public installation on all three platform/Node 24 combinations, then publishes
 the matching GitHub assets. Partial publication journals retain platform
 identities; resume the same bytes, never rebuild or overwrite the version.
 
 Default-tag promotion is still separate and uses the owner's authenticated npm
-session. For `.2`, the second and third arguments to
-`promote-distribution-tags.mjs` are directories for Node 22 and Node 24 public
-receipts, each containing `darwin-arm64.json`, `linux-arm64.json` and
-`linux-x64.json`. The script validates all six exact public results and all four
+session. For `.2`, the second argument to `promote-distribution-tags.mjs` is
+the Node 24 public-receipt directory, containing `darwin-arm64.json`,
+`linux-arm64.json` and `linux-x64.json`. The script validates all three exact
+public results and all four
 package integrities/provenance records before changing `preview`/`latest`.
-The phase-one file-argument interface remains supported. Recheck the real
+For phase one, the second argument is the single Node 24 acceptance JSON file. Recheck the real
 default npm/npx entry and the public tap after promotion. Only then update the
 bilingual quick starts. Docker is not included in this release gate.
 
@@ -84,7 +88,7 @@ bilingual quick starts. Docker is not included in this release gate.
 1. Merge the implementation source S with the existing required checks. Build
    from a clean, isolated checkout; edits during staging invalidate the build.
 2. Run `Native distribution candidate` on main at S. It builds once, verifies
-   fresh npm/npx installs on Node 22.19.0 and 24.19.0, verifies the Full/Thin
+   fresh npm/npx installs on Node 24.19.0, verifies the Full/Thin
    fallback pair, attests the exact candidate bytes and retains them as
    `native-candidate-S`.
 3. Download those exact artifacts. Complete Homebrew lifecycle and the full
@@ -109,7 +113,7 @@ and the successful candidate workflow run ID. It verifies the evidence-only
 history and all candidate attestations before requesting the existing protected
 environment approval. After approval it rechecks the downloaded attestations,
 publishes the runtime package and CLI using OIDC/provenance to `preview`, and
-installs the exact public version on both Node versions.
+installs the exact public version on Node 24.19.0.
 
 After those public checks, the workflow creates or resumes the GitHub Preview
 release with the same npm packages, Full/Thin archives, build receipt, formula
@@ -120,12 +124,12 @@ Download the `native-publication-S` workflow artifact. From an authenticated npm
 session, first inspect and then apply the default-tag plan:
 
 ```sh
-node scripts/promote-distribution-tags.mjs /candidate /public-node22/acceptance.json /public-node24/acceptance.json
-node scripts/promote-distribution-tags.mjs /candidate /public-node22/acceptance.json /public-node24/acceptance.json --apply
+node scripts/promote-distribution-tags.mjs /candidate /public-node24/acceptance.json
+node scripts/promote-distribution-tags.mjs /candidate /public-node24/acceptance.json --apply
 ```
 
 Then run `scripts/verify-distribution-install.mjs` with `--public-default` on
-both supported Node versions. Exact-version checks and default-entry checks are
+the supported Node 24.19.0 runtime. Exact-version checks and default-entry checks are
 separate requirements.
 
 Dispatch `Update verified OMP formula` in `Ricardo121380/homebrew-tap` with the

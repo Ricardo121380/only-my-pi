@@ -6,7 +6,7 @@ import { homebrewFormula } from "./homebrew.mjs";
 
 export const RELEASE_PLATFORMS = Object.freeze(["darwin-arm64", "linux-arm64", "linux-x64"]);
 export const MULTIPLATFORM_ASSERTIONS = Object.freeze([
-  "npm-node22-lifecycle", "npm-node24-lifecycle", "full-thin-identity", "dependency-complete-startup",
+  "npm-node24-lifecycle", "full-thin-identity", "dependency-complete-startup",
   "models-and-inspect", "coding-approval", "resume-reapproval", "readonly-headless", "readonly-subagents",
   "managed-clone-writer", "project-gates-and-review", "cancel-and-cleanup", "legacy-migration",
   "path-shadow-detection", "unknown-files-preserved",

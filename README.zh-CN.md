@@ -46,7 +46,7 @@ brew install ricardo121380/tap/only-my-pi
 omp --version
 ```
 
-**npm** 复用已有的 **Node >=22.19.0**，并要求 PATH 中已有可用 Git。先准备这两项依赖，再安装：
+**npm** 复用已有的 **Node >=24.19.0 <25**，并要求 PATH 中已有可用 Git。先准备这两项依赖，再安装：
 
 ```bash
 node --version
@@ -55,7 +55,7 @@ npm install -g only-my-pi
 omp --version
 ```
 
-**Linux 前置条件：**使用普通 Git 克隆，准备 Node >=22.19.0、Git、bubblewrap、socat 和 ripgrep。Ubuntu 22.04 示例：
+**Linux 前置条件：**使用普通 Git 克隆，准备 Node >=24.19.0 <25、Git、bubblewrap、socat 和 ripgrep。Ubuntu 22.04 示例：
 
 ```bash
 sudo apt-get update
@@ -522,7 +522,7 @@ env PATH="$omp_payload/node/bin:$PATH" \
 
 ## 开发与贡献
 
-仓库开发需要 **Node.js >=22.19.0**；CI 检查 `22.19.0` 和 `24.19.0`。源码开发与面向用户的受控安装是两条不同路径：
+仓库开发需要 **Node.js >=24.19.0 <25**；CI 固定 `24.19.0`，与 `.node-version` 一致。不再支持 Node 22 或 Node 25+；详见[当前 Node 支持政策](docs/compatibility/node-pi-matrix.md)。源码开发与面向用户的受控安装是两条不同路径：
 
 ```bash
 git clone https://github.com/Ricardo121380/only-my-pi.git

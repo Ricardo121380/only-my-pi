@@ -46,7 +46,7 @@ brew install ricardo121380/tap/only-my-pi
 omp --version
 ```
 
-**npm** reuses your existing **Node >=22.19.0** and requires Git on PATH. Prepare both before installing:
+**npm** reuses your existing **Node >=24.19.0 <25** and requires Git on PATH. Prepare both before installing:
 
 ```bash
 node --version
@@ -55,7 +55,7 @@ npm install -g only-my-pi
 omp --version
 ```
 
-**Linux prerequisites:** use an ordinary Git clone, Node >=22.19.0, Git, bubblewrap, socat and ripgrep. On Ubuntu 22.04:
+**Linux prerequisites:** use an ordinary Git clone, Node >=24.19.0 <25, Git, bubblewrap, socat and ripgrep. On Ubuntu 22.04:
 
 ```bash
 sudo apt-get update
@@ -522,7 +522,7 @@ With OMP already installed, use `omp admin stack install --bundle "$omp_bundle" 
 
 ## Development and contributing
 
-Repository development requires **Node.js >=22.19.0**; CI checks `22.19.0` and `24.19.0`. Source development and the managed end-user installation are separate paths:
+Repository development requires **Node.js >=24.19.0 <25**; CI pins `24.19.0`, also recorded in `.node-version`. Node 22 and Node 25+ are unsupported; see the [current Node policy](docs/compatibility/node-pi-matrix.md). Source development and the managed end-user installation are separate paths:
 
 ```bash
 git clone https://github.com/Ricardo121380/only-my-pi.git

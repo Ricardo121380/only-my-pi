@@ -162,10 +162,10 @@ export class RpcWorker extends EventEmitter {
         if (!pid || !groupAlive(pid)) return;
         // Never signal a recycled PID or an unidentifiable orphan group.
         if (!this.identity?.start || await processIdentity(pid) !== this.identity.start) {
-          // The group can finish while the asynchronous identity probe runs.
-          // A surviving group still requires its original leader identity.
-          if (!groupAlive(pid)) return;
-          throw hostError("RPC_TERMINATION_UNCONFIRMED");
+          // The leader can exit during this lookup while its group drains.
+          // Skip the signal, but retain the remaining bounded exit waits and
+          // final group/acknowledgement checks before confirming shutdown.
+          return;
         }
         try { process.kill(-pid, signal); } catch (e) { if (e.code !== "ESRCH") throw e; }
       };

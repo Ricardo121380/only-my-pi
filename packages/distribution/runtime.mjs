@@ -11,7 +11,7 @@ import { verifyPi110Materials, verifyPi110Declarations, runtimeInputForContract 
 
 export const DISTRIBUTION_VERSION = "0.4.0-preview.1";
 export const DISTRIBUTION_VERSIONS = Object.freeze([DISTRIBUTION_VERSION, "0.4.0-preview.2"]);
-export const NODE_RANGE = ">=22.19.0";
+export const NODE_RANGE = ">=24.19.0 <25";
 export const APP_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 export const PACKAGE_IDS = Object.freeze({
   "plan-mode": "@narumitw/pi-plan-mode", "agent-extensions": "pi-agent-extensions",
@@ -23,6 +23,10 @@ const COMPONENTS = Object.freeze({ app: "only-my-pi/package", pi: "pi", external
 
 export function distributionError(code, message) {
   return Object.assign(new Error(message), { code });
+}
+export function assertSupportedNode(nodeVersion = process.versions.node) {
+  if (!semver.satisfies(nodeVersion, NODE_RANGE))
+    throw distributionError("DISTRIBUTION_NODE_UNSUPPORTED", `only-my-pi requires Node ${NODE_RANGE}`);
 }
 function requireThat(condition, message) {
   if (!condition) throw distributionError("DISTRIBUTION_MANIFEST_INVALID", message);
@@ -67,7 +71,9 @@ export function validateDistributionManifest(manifest) {
   requireThat(canonicalJson(manifest.platform) === canonicalJson(target === "darwin-arm64"
     ? { os: "darwin", arch: "arm64", minimumMacOS: "14.0" }
     : { os: "linux", arch: manifest.platform.arch, libc: "glibc" }), "unexpected platform contract");
-  requireThat(manifest.nodeRange === NODE_RANGE, "unsupported Node contract");
+  // Historical manifests keep their signed identity for inspection and rollback.
+  // Execution still requires the current Node range in loadDistribution().
+  requireThat([NODE_RANGE, ">=22.19.0"].includes(manifest.nodeRange), "unsupported Node contract");
   requireThat(Object.keys(manifest.components ?? {}).sort().join() === Object.keys(COMPONENTS).sort().join(), "component set differs");
   for (const [name, relative] of Object.entries(COMPONENTS)) {
     const component = manifest.components[name];
@@ -93,6 +99,7 @@ export async function hashDistributionTree(root, relative) {
 
 export async function loadDistribution({ packageRoot = APP_ROOT, nodePath = process.execPath, nodeVersion = process.versions.node,
   platform = process.platform, arch = process.arch, kernelRelease = os.release(), glibc = process.platform === "linux" ? process.report?.getReport()?.header?.glibcVersionRuntime : undefined } = {}) {
+  assertSupportedNode(nodeVersion);
   const root = await fs.realpath(path.resolve(packageRoot, "../.."));
   const input = await readRegularJson(path.join(root, "distribution-manifest.json"), { optional: true });
   if (!input) return null;

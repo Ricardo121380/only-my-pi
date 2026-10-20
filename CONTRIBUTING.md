@@ -33,8 +33,9 @@ npm run verify:m11:run
 platform-specific external-package lock without lifecycle scripts. Real
 extension tests use these isolated dependencies, never `~/.pi/agent`.
 
-The complete native test suite runs on macOS 14+ arm64 with Node 22.19.0 and
-24.19.0 because controlled stdio MCP currently requires Seatbelt. Linux
+Use the pinned Node 24.19.0 from `.node-version`; the supported range is
+`>=24.19.0 <25`. The complete native test suite runs on macOS 14+ arm64 with
+Node 24.19.0 because controlled stdio MCP currently requires Seatbelt. Linux
 distribution, installation and sandbox checks run separately in
 `.github/workflows/linux-candidate.yml`; they do not establish Linux MCP support.
 

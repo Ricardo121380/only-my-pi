@@ -11,6 +11,15 @@ import { digest, mcpError, MCP_LIMITS } from "./catalog.mjs";
 // output. A nested codemode call must not place durable MCP receipts there.
 const runtimeRoot = os.tmpdir();
 
+async function waitForServiceExit(transport, ms) {
+  const deadline = Date.now() + ms;
+  while (!transport.childClosed || groupAlive(transport.record.pid)) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) return;
+    await delay(Math.min(25, remaining));
+  }
+}
+
 export async function launchIdentity(server) {
   const files = await Promise.all([server.command, ...server.codePaths].map(async (file) => {
     const canonical = await fs.realpath(file), stat = await fs.lstat(canonical);
@@ -99,7 +108,7 @@ export class ControlledStdioTransport {
       }
     });
     child.stderr.on("data", (chunk) => { stderrBytes += chunk.length; if (stderrBytes > MCP_LIMITS.outputBytes) { this.emit("error", mcpError("MCP_OUTPUT_LIMIT")); void this.close().catch(() => {}); } });
-    this.exited = new Promise((resolve) => child.once("close", (code, signal) => { this.record.exitCode = code; this.record.signal = signal; this.emit("close"); resolve(); }));
+    this.exited = new Promise((resolve) => child.once("close", (code, signal) => { this.childClosed = true; this.record.exitCode = code; this.record.signal = signal; this.emit("close"); resolve(); }));
     child.on("error", () => this.emit("error", mcpError("MCP_START_FAILED")));
     await new Promise((resolve, reject) => { child.once("spawn", resolve); child.once("error", reject); });
     this.record.pid = child.pid; this.identityPending = processIdentity(child.pid); this.record.identity = await this.identityPending;
@@ -121,7 +130,9 @@ export class ControlledStdioTransport {
       if (!this.child) { this.record.status = "stopped"; await preserve(); if (writeError) throw writeError; return; }
       await this.identityPending;
       this.record.status = "stopping"; this.child.stdin.end(); await preserve();
-      await Promise.race([this.exited, delay(100)]);
+      // A leader's close event can precede the final member's exit. Preserve
+      // each existing deadline while observing the whole service group.
+      await waitForServiceExit(this, 100);
       for (const signal of ["SIGTERM", "SIGKILL"]) {
         const pid = this.record.pid;
         if (!Number.isSafeInteger(pid) || pid < 1 || !groupAlive(pid)) break;
@@ -132,7 +143,7 @@ export class ControlledStdioTransport {
           this.record.status = "reconciliation"; await preserve(); throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
         }
         try { process.kill(-pid, signal); } catch (error) { if (error.code !== "ESRCH") throw error; }
-        await Promise.race([this.exited, delay(signal === "SIGTERM" ? 200 : 1000)]);
+        await waitForServiceExit(this, signal === "SIGTERM" ? 200 : 1000);
       }
       if (this.record.pid && groupAlive(this.record.pid)) { this.record.status = "reconciliation"; await preserve(); throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409); }
       this.record.status = "stopped"; await preserve(); this.emit("close"); if (writeError) throw writeError;

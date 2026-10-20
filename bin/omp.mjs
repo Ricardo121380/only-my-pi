@@ -33,7 +33,7 @@ import {
   OMP_AGENT_USAGE,
 } from "../packages/direct-agent/launcher.mjs";
 import { createDirectAgentDoctor } from "../packages/direct-agent/doctor.mjs";
-import { loadDistribution, readRegularJson } from "../packages/distribution/runtime.mjs";
+import { assertSupportedNode, loadDistribution, readRegularJson } from "../packages/distribution/runtime.mjs";
 import { handleDistributionCommand } from "../packages/distribution/commands.mjs";
 import { isPrivateStack } from "../packages/release-stack/contracts.mjs";
 import {
@@ -557,6 +557,7 @@ export async function runOmpEntrypoint(options = {}) {
   const stderr = options.stderr ?? process.stderr;
   let route;
   try {
+    assertSupportedNode();
     if (argv.length === 1 && ["--version", "-v"].includes(argv[0])) {
       const manifest = await readRegularJson(path.join(options.rootDir ?? DEFAULT_ROOT, "package.json"));
       writeText(stdout, `only-my-pi ${manifest.version}\n`);

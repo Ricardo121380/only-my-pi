@@ -1,6 +1,33 @@
 # Node and Pi compatibility matrix
 
-## PI130-02/03 current private identity — 2026-10-19
+## Current Node policy — 2026-10-20
+
+The project now supports **Node 24 only**, with range **`>=24.19.0 <25`**.
+Development, CI, distribution builds and installation acceptance pin **24.19.0**;
+`.node-version`, the root package/lock and generated packages must agree.
+Node 22, Node 25+ and prereleases are not admitted by current CLI/runtime entry
+points. Users of Node 22 must upgrade before running the new candidate.
+
+This user-approved policy supersedes Node 22/24 matrix requirements in dated
+plans for future work. It does not rewrite completed tests, published assets,
+signed receipts or third-party package metadata. In particular:
+
+- `contracts/release/pi110/` and `pi130/` are digest-bound acquired input
+  provenance, including their original Node validation lanes. Their validators
+  keep those bytes and identities; current execution still requires Node 24.
+- `contracts/subagents/compatibility-matrix.json`, its v1 schema/fixtures and the
+  v1 evaluation corpus describe the historical Pi 0.84.1 compatibility evidence.
+  They remain inspectable and do not define today's supported runtime.
+- Historical distribution manifests may retain their original `nodeRange` for
+  inspection and rollback under Node 24. New manifests use the current range;
+  a historical range cannot authorize execution under Node 22 or Node 25.
+- CI retains all platform/product assertions for Node 24 and the Q10 clean-home
+  check. Only the Node 22 lane/installation assertion is retired. This change
+  does not claim new installed, Provider or release acceptance.
+
+The dated results below remain bound to their original sources and runtimes.
+
+## Historical PI130-02/03 private acceptance — 2026-10-19
 
 Exact Pi `1.3.0`, contract `pi130-v1`, private source `dd996352`; GP130-02 PASS, GP130-03 PASS. #77: CLOSED / completed，已独立回读. See [candidate identity, provenance and AC evidence](2026-10-18-pi-1.3.0-private-candidate-acceptance.md).
 
