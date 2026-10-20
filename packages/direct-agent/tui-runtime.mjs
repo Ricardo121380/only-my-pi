@@ -91,11 +91,21 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     diagnostics.push(...scope.diagnostics);
     let model, thinkingLevel;
     if (parsed.model) {
+      let declaredModel;
+      if (productAccount) {
+        const provider = productAccount.account.providerId;
+        if (parsed.provider && parsed.provider !== provider) throw ownershipError("ACCOUNT_MODEL_MISMATCH");
+        const id = parsed.model.startsWith(`${provider}/`) ? parsed.model.slice(provider.length + 1) : parsed.model;
+        declaredModel = services.modelRuntime.getModels(provider).find(item => item.id === id);
+        // Pi's general CLI supports fuzzy names and fabricated custom IDs.
+        // A product account must select an exact model from its own catalog.
+        if (!declaredModel) throw ownershipError("ACCOUNT_MODEL_NOT_FOUND");
+      }
       const resolved = sdk.resolveCliModel({ cliProvider: parsed.provider, cliModel: parsed.model,
         cliThinking: parsed.thinking, modelRuntime: services.modelRuntime });
       if (resolved.error || !resolved.model) throw ownershipError("TUI_MODEL_NOT_FOUND");
       model = resolved.model; thinkingLevel = resolved.thinkingLevel;
-      if (productAccount && model.provider !== productAccount.account.providerId) throw ownershipError("ACCOUNT_MODEL_MISMATCH");
+      if (productAccount && (model.provider !== declaredModel.provider || model.id !== declaredModel.id)) throw ownershipError("ACCOUNT_MODEL_MISMATCH");
       if (resolved.warning) diagnostics.push({ type: "warning", message: resolved.warning });
     } else if (scope.scopedModels.length && !sessionManager.buildSessionContext().messages.length) {
       const selected = scope.scopedModels.find(({ model }) => model.provider === settingsManager.getDefaultProvider()

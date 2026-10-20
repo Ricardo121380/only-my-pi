@@ -62,6 +62,12 @@ test("formal CLI and unmodified Pi OAuth complete local PKCE, callbacks, stored 
     assert.match(request.out, /controlled OAuth account completed/);
     assert.equal(service.calls.length, before + 1); assert.equal(service.calls.at(-1).identity, identity);
     assert.ok(!service.calls.at(-1).tools.some(name => ["write", "edit", "bash"].includes(name)));
+    for (const model of ["openrouter/not-configured", "openrouter/controlled"]) {
+      const denied = start(["--account", account.accountId, "--model", model, "-p", "reject undeclared OAuth model"]); denied.stdin.end();
+      assert.equal((await denied.closed).code, 1);
+      assert.match(denied.err, /ACCOUNT_MODEL_NOT_FOUND/);
+      assert.equal(service.calls.length, before + 1, "OAuth identity cannot authorize a fabricated or fuzzy model");
+    }
     for (const key of service.keys.keys()) assert.equal((request.out + request.err + login.out + login.err + JSON.stringify(service.calls)).includes(key), false);
   }
   assert.equal(service.exchanges.length, 2); assert.ok(service.exchanges.every(exchange => exchange.valid));

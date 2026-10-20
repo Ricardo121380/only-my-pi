@@ -65,6 +65,11 @@ test("formal CLI sets up API key accounts from an empty product catalog and real
   const before = received.length;
   await run(["--account", "00000000-0000-4000-8000-000000000000", "--model", "fixture/one", "-p", "reject"], "", 1);
   await run(["--account", accounts[0].accountId, "--model", "other/wrong", "-p", "reject"], "", 1);
+  for (const model of ["fixture/not-configured", "fixture/on"]) {
+    const denied = await run(["--account", accounts[0].accountId, "--model", model, "-p", "reject undeclared model"], "", 1);
+    assert.match(denied.err, /ACCOUNT_MODEL_NOT_FOUND/);
+    assert.equal(received.length, before, "unknown and fuzzy model IDs must be rejected before a physical request");
+  }
   const invalidKey = "controlled-invalid-key-must-stay-private";
   await run(["account", "login", accounts[0].accountId, "--stdin"], `${invalidKey}\n`);
   const invalid = await run(["--account", accounts[0].accountId, "--model", "fixture/one", "-p", "reject invalid identity"], "", 1);
