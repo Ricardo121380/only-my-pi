@@ -6,11 +6,12 @@ import semver from "semver";
 
 import { canonicalJson } from "../config-runtime/index.mjs";
 import { hashResourcePath } from "../bootstrap/graph-plan.mjs";
-import { CONTROLLED_PI_VERSION, PUBLIC_STACK_PACKAGES, sha256 } from "../release-stack/contracts.mjs";
+import { CONTROLLED_PI_VERSION, PRIVATE_RUNTIME_CONTRACTS, EMBEDDED_NODE_VERSION, PUBLIC_STACK_PACKAGES, sha256, validateStackManifest } from "../release-stack/contracts.mjs";
+import { verifyPi110Materials, verifyPi110Declarations, runtimeInputForContract } from "../release-stack/pi110-materials.mjs";
 
 export const DISTRIBUTION_VERSION = "0.4.0-preview.1";
 export const DISTRIBUTION_VERSIONS = Object.freeze([DISTRIBUTION_VERSION, "0.4.0-preview.2"]);
-export const NODE_RANGE = ">=22.19.0";
+export const NODE_RANGE = ">=24.19.0 <25";
 export const APP_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 export const PACKAGE_IDS = Object.freeze({
   "plan-mode": "@narumitw/pi-plan-mode", "agent-extensions": "pi-agent-extensions",
@@ -22,6 +23,10 @@ const COMPONENTS = Object.freeze({ app: "only-my-pi/package", pi: "pi", external
 
 export function distributionError(code, message) {
   return Object.assign(new Error(message), { code });
+}
+export function assertSupportedNode(nodeVersion = process.versions.node) {
+  if (!semver.satisfies(nodeVersion, NODE_RANGE))
+    throw distributionError("DISTRIBUTION_NODE_UNSUPPORTED", `only-my-pi requires Node ${NODE_RANGE}`);
 }
 function requireThat(condition, message) {
   if (!condition) throw distributionError("DISTRIBUTION_MANIFEST_INVALID", message);
@@ -53,16 +58,22 @@ export function manifestDigest(manifest) {
 }
 
 export function validateDistributionManifest(manifest) {
+  const privateStack = Object.values(PRIVATE_RUNTIME_CONTRACTS).includes(manifest?.runtimeContract);
+  const boundMaterials = Boolean(runtimeInputForContract(manifest?.runtimeContract));
   requireThat(manifest?.formatVersion === 1 && manifest.kind === "only-my-pi-distribution", "unsupported distribution format");
-  requireThat(Object.keys(manifest).sort().join() === ["formatVersion", "kind", "version", "sourceCommit", "platform", "nodeRange", "components", "packages", "distributionId"].sort().join(), "unexpected distribution fields");
-  requireThat(DISTRIBUTION_VERSIONS.includes(manifest.version) && /^[a-f0-9]{40}$/u.test(manifest.sourceCommit ?? ""), "unsupported version or source identity");
+  requireThat(Object.keys(manifest).sort().join() === ["formatVersion", "kind", "version", "sourceCommit", "platform", "nodeRange", "components", "packages", "distributionId", ...(privateStack ? ["runtimeContract"] : []), ...(boundMaterials ? ["runtimeMaterialsDigest"] : [])].sort().join(), "unexpected distribution fields");
+  requireThat(!boundMaterials || DIGEST.test(manifest.runtimeMaterialsDigest ?? ""), "Pi runtime requires bound runtime materials");
+  requireThat((privateStack ? manifest.version === "0.3.0-preview.1" : DISTRIBUTION_VERSIONS.includes(manifest.version)) && /^[a-f0-9]{40}$/u.test(manifest.sourceCommit ?? ""), "unsupported version or source identity");
   const target = `${manifest.platform?.os}-${manifest.platform?.arch}`;
   requireThat(["darwin-arm64", "linux-x64", "linux-arm64"].includes(target), "unsupported distribution platform");
+  requireThat(!privateStack || target === "darwin-arm64", "private candidate supports only darwin-arm64");
   requireThat(manifest.version !== DISTRIBUTION_VERSION || target === "darwin-arm64", "first native Preview supports only darwin-arm64");
   requireThat(canonicalJson(manifest.platform) === canonicalJson(target === "darwin-arm64"
     ? { os: "darwin", arch: "arm64", minimumMacOS: "14.0" }
     : { os: "linux", arch: manifest.platform.arch, libc: "glibc" }), "unexpected platform contract");
-  requireThat(manifest.nodeRange === NODE_RANGE, "unsupported Node contract");
+  // Historical manifests keep their signed identity for inspection and rollback.
+  // Execution still requires the current Node range in loadDistribution().
+  requireThat([NODE_RANGE, ">=22.19.0"].includes(manifest.nodeRange), "unsupported Node contract");
   requireThat(Object.keys(manifest.components ?? {}).sort().join() === Object.keys(COMPONENTS).sort().join(), "component set differs");
   for (const [name, relative] of Object.entries(COMPONENTS)) {
     const component = manifest.components[name];
@@ -88,6 +99,7 @@ export async function hashDistributionTree(root, relative) {
 
 export async function loadDistribution({ packageRoot = APP_ROOT, nodePath = process.execPath, nodeVersion = process.versions.node,
   platform = process.platform, arch = process.arch, kernelRelease = os.release(), glibc = process.platform === "linux" ? process.report?.getReport()?.header?.glibcVersionRuntime : undefined } = {}) {
+  assertSupportedNode(nodeVersion);
   const root = await fs.realpath(path.resolve(packageRoot, "../.."));
   const input = await readRegularJson(path.join(root, "distribution-manifest.json"), { optional: true });
   if (!input) return null;
@@ -98,8 +110,16 @@ export async function loadDistribution({ packageRoot = APP_ROOT, nodePath = proc
     || (platform === "linux" && !glibc)) throw distributionError("DISTRIBUTION_PLATFORM_UNSUPPORTED", "this runtime does not support the current operating system, architecture or libc");
   const ompPackageRoot = await containedPath(root, COMPONENTS.app, { directory: true });
   requireThat(await fs.realpath(packageRoot) === ompPackageRoot, "application is not from this distribution");
+  let componentTrees;
+  if (runtimeInputForContract(manifest.runtimeContract)) {
+    // Compute tree digests from the same fresh file reads as the inventory,
+    // never from stored file hashes or a previous admission.
+    componentTrees = new Map(Object.values(manifest.components).map(component => [component.path, undefined]));
+    await verifyPi110Materials({ root, manifest, componentTrees });
+    await verifyPi110Declarations({ root, manifest });
+  }
   await Promise.all(Object.entries(manifest.components).map(async ([name, component]) => {
-    if (await hashDistributionTree(root, component.path) !== component.treeDigest)
+    if ((componentTrees?.get(component.path) ?? await hashDistributionTree(root, component.path)) !== component.treeDigest)
       throw distributionError("DISTRIBUTION_CONTENT_DRIFT", `${name} runtime content differs from its release manifest`);
   }));
   for (const tool of ["fd", "rg"]) {
@@ -108,13 +128,18 @@ export async function loadDistribution({ packageRoot = APP_ROOT, nodePath = proc
   }
   const app = await readRegularJson(path.join(ompPackageRoot, "package.json"));
   const pi = await readRegularJson(path.join(root, "pi/package.json"));
-  requireThat(app.name === "only-my-pi" && app.version === manifest.version && pi.version === CONTROLLED_PI_VERSION
+  const privateStack = Object.values(PRIVATE_RUNTIME_CONTRACTS).includes(manifest.runtimeContract);
+  const piVersion = Object.keys(PRIVATE_RUNTIME_CONTRACTS).find(key => PRIVATE_RUNTIME_CONTRACTS[key] === manifest.runtimeContract) ?? CONTROLLED_PI_VERSION;
+  requireThat(app.name === "only-my-pi" && app.version === manifest.version && pi.version === piVersion
     && pi.name === "@earendil-works/pi-coding-agent", "application or Pi version differs");
-  const installation = await readRegularJson(path.join(root, "../distribution-installation.json"), { optional: true });
-  const channel = installation?.channel ?? "npm";
-  requireThat(["npm", "homebrew", "docker", "archive"].includes(channel)
+  const privateManifest = privateStack ? validateStackManifest(await readRegularJson(path.join(root, "stack-manifest.json"))) : null;
+  if (privateManifest) requireThat(privateManifest.privateRuntimeDigest === manifest.distributionId && privateManifest.sourceCommit === manifest.sourceCommit && privateManifest.runtime.pi.version === piVersion
+    && nodeVersion === EMBEDDED_NODE_VERSION && await fs.realpath(nodePath) === await containedPath(root, "node/bin/node"), "private runtime is not bound to the embedded Full stack");
+  const installation = privateStack ? null : await readRegularJson(path.join(root, "../distribution-installation.json"), { optional: true });
+  const channel = privateStack ? "stack" : installation?.channel ?? "npm";
+  requireThat(["npm", "homebrew", "docker", "archive", ...(privateStack ? ["stack"] : [])].includes(channel)
     && (!installation || (installation.formatVersion === 1 && installation.version === manifest.version)), "invalid installation context");
-  return Object.freeze({ root, stackId: manifest.distributionId, distribution: manifest, channel,
+  return Object.freeze({ root, stackId: privateManifest?.stackId ?? manifest.distributionId, distribution: manifest, channel,
     nodePath: await fs.realpath(nodePath), ompPackageRoot,
     ompCliPath: await containedPath(root, "only-my-pi/package/bin/omp.mjs"),
     piCliPath: await containedPath(root, "pi/dist/bundle/cli.js"),

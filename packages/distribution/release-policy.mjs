@@ -5,7 +5,7 @@ import { DISTRIBUTION_VERSION, readRegularJson } from "./runtime.mjs";
 import { inspectMultiplatformRelease } from "./multiplatform-release-policy.mjs";
 
 export const NATIVE_RELEASE_ASSERTIONS = Object.freeze([
-  "npm-node22-lifecycle", "npm-node24-lifecycle", "homebrew-lifecycle",
+  "npm-node24-lifecycle", "homebrew-lifecycle",
   "full-thin-identity", "dependency-complete-startup", "models-and-inspect",
   "coding-approval", "resume-reapproval", "readonly-headless", "readonly-subagents",
   "managed-clone-writer", "project-gates-and-review", "cancel-and-cleanup",

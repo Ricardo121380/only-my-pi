@@ -5,7 +5,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { loadReleaseGatesManifest, releaseGatesDigest } from "../scripts/lib/release-gates.mjs";
-import { parseReceiptCheckArgs } from "../scripts/release-receipt-check.mjs";
+import { checkReleaseReceipt, parseReceiptCheckArgs } from "../scripts/release-receipt-check.mjs";
 import { validateReleaseReceipt } from "../scripts/verification-receipt.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -85,6 +85,24 @@ test("release receipt validates exact gate order, digest, e2e evidence, and priv
   assert.equal(result.status, "COMPLETE");
 });
 
+test("current smoke identity is versioned and cannot relabel historical Pi evidence", () => {
+  const current = receipt();
+  for (const value of [current.evidence.freshTarball, current.gates.find(gate => gate.id === "test-e2e").evidence]) {
+    value.formatVersion = 2;
+    value.piVersion = "1.3.0";
+  }
+  current.evidence.compatibility.pi = "1.3.0";
+  assert.equal(validateReleaseReceipt(current, manifest, { expectedSourceCommit: sourceCommit }).ok, true);
+  current.evidence.compatibility.pi = "0.84.1";
+  assert.throws(() => validateReleaseReceipt(current, manifest), /Pi compatibility evidence is invalid/);
+  for (const [formatVersion, piVersion] of [[1, "1.3.0"], [2, "0.84.1"], [2, "1.3.1"]]) {
+    const invalid = receipt();
+    Object.assign(invalid.evidence.freshTarball, { formatVersion, piVersion });
+    invalid.evidence.compatibility.pi = piVersion;
+    assert.throws(() => validateReleaseReceipt(invalid, manifest), /fresh-tarball evidence is invalid/);
+  }
+});
+
 test("release receipt rejects missing gates, raw output, host paths, and source drift", () => {
   const missing = receipt({ gates: receipt().gates.slice(0, -1) });
   assert.throws(() => validateReleaseReceipt(missing, manifest, { expectedSourceCommit: sourceCommit }), /gate results are incomplete/);
@@ -102,4 +120,18 @@ test("receipt checker parser is bounded to the receipts directory", () => {
   assert.equal(parsed.expectParent, true);
   assert.throws(() => parseReceiptCheckArgs(["--receipt", "../outside.json"]), /inside verification\/receipts/);
   assert.throws(() => parseReceiptCheckArgs(["--expect-parent", "--source-commit", sourceCommit]), /mutually exclusive/);
+});
+
+test("historical receipts require their preserved manifest and exact original source", () => {
+  const historical = "verification/manifests/release-gates-v1-2026-08.json";
+  for (const [file, source] of [["2026-08-16-harness-mvp.json", "6941761b3948d96a77596e1302d3205efb5169f1"],
+    ["2026-08-17-post-merge-maintenance.json", "bff3e3be376bb2ee614a441685e7cab14324727a"]]) {
+    const args = ["--receipt", `verification/receipts/${file}`, "--source-commit", source];
+    assert.equal(checkReleaseReceipt([...args, "--manifest", historical]).ok, true);
+    assert.throws(() => checkReleaseReceipt(args), /manifest identity\/digest mismatch/);
+    assert.throws(() => checkReleaseReceipt(["--receipt", `verification/receipts/${file}`, "--source-commit", sourceCommit, "--manifest", historical]), /sourceCommit mismatch/);
+    assert.throws(() => checkReleaseReceipt([...args, "--manifest", "package.json"]), /inside the verification root/);
+  }
+  assert.throws(() => parseReceiptCheckArgs(["--manifest"]), /requires a path/);
+  assert.throws(() => parseReceiptCheckArgs(["--manifest", historical, "--manifest", historical]), /duplicate/);
 });

@@ -17,7 +17,7 @@ import {
   UPSTREAM_COMPATIBILITY_PROTECTED_IDS,
   upstreamCompatibilityGatesDigest,
 } from "./lib/upstream-compatibility-gates.mjs";
-import { repositoryRoot, runCheck } from "./verification-receipt.mjs";
+import { formatGateProgress, repositoryRoot, runCheck } from "./verification-receipt.mjs";
 
 const FULL_SHA = /^[a-f0-9]{40}$/u;
 
@@ -227,6 +227,7 @@ export async function runUpstreamCompatibilityVerification({
 
   for (const gate of manifest.gates) {
     let result;
+    let diagnostic;
     if (gate.execution === "protected-evidence") result = protectedResult(gate, loadedEvidence);
     else {
       const raw = await runCheck(gate, {
@@ -236,9 +237,10 @@ export async function runUpstreamCompatibilityVerification({
         ...(spawnImpl === undefined ? {} : { spawnImpl }),
       });
       result = publicDeterministicResult(raw);
+      diagnostic = raw.diagnostic;
     }
     gates.push(result);
-    onGate(result);
+    onGate(result, diagnostic);
   }
 
   if (requireCleanSource && assertCleanHead(resolvedRoot) !== cleanHead) {
@@ -321,7 +323,7 @@ export async function main(argv = process.argv.slice(2)) {
     output: args.output,
     protectedEvidence: args.protectedEvidence,
     ...(args.sourceCommit ? { sourceCommit: args.sourceCommit } : {}),
-    onGate: (gate) => process.stderr.write(`${gate.status} ${gate.id} (${gate.durationMs} ms)\n`),
+    onGate: (gate, diagnostic) => process.stderr.write(formatGateProgress(gate, diagnostic)),
   });
   const summary = {
     status: report.status,

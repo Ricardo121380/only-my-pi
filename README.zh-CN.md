@@ -4,6 +4,8 @@
 
 **先理解代码，再授权修改。**
 
+**开发最终目标：Only my pi 同时交付直接基于最新稳定版 Pi 内核的 CLI/TUI 和桌面 Agent 客户端。** 两者都是正式产品入口；先完成全部已选 WebUI 范围，再通过 Electron 交付桌面应用。两端以共享会话查看和显式账号下的接续为开发目标；Pi 提供 Agent 运行能力，各端只保留必要的产品接入。已确认决定、核实基线、完整路线和下一轮入口见[开发蓝图](docs/plans/2026-10-17-product-direction-and-iteration-plan.md)。下方安装说明对应已发布的终端预览版。
+
 only-my-pi（OMP）是基于 [Pi](https://github.com/earendil-works/pi) 的终端 AI 编程助手，通过 Homebrew 或 npm 安装。进入项目运行 `omp`，即可阅读代码、分析问题，并在明确授权后进行项目内修改。
 
 Pi 提供终端界面、模型、会话和基础工具；OMP 在此之上增加编程审批、有预算的子代理协作，以及可验证的安装与回滚。
@@ -25,6 +27,8 @@ Pi 提供终端界面、模型、会话和基础工具；OMP 在此之上增加�
 
 日常使用不需要选择 Workflow、Swarm、Goal 或 Ultra。**这些约束不等于操作系统沙箱**，详见[安全边界](#安全与许可证)。
 
+当前分支包含**尚未发布**的 direct-Agent 安全修复：拒绝含物理换行的 Bash 命令；撤权会取消进行中的受管写入；克隆验证通过后，仍须对真实工作区的项目检查单独授权并通过，才能标记完成。补丁可能已应用，但验证仍待进行、失败或被取消。`/omp runs` 和 `/omp runs show <id>` 只读、脱敏，不会恢复写入或编程授权。若 Git apply 启动后取消，应用结果可能不确定，重试前须人工核对。上述修复不代表已发布的 `v0.4.0-preview.2` 二进制已有这些行为。
+
 ## 快速开始
 
 <a id="platform-and-runtime"></a>
@@ -42,7 +46,7 @@ brew install ricardo121380/tap/only-my-pi
 omp --version
 ```
 
-**npm** 复用已有的 **Node >=22.19.0**，并要求 PATH 中已有可用 Git。先准备这两项依赖，再安装：
+**npm** 复用已有的 **Node >=24.19.0 <25**，并要求 PATH 中已有可用 Git。先准备这两项依赖，再安装：
 
 ```bash
 node --version
@@ -51,7 +55,7 @@ npm install -g only-my-pi
 omp --version
 ```
 
-**Linux 前置条件：**使用普通 Git 克隆，准备 Node >=22.19.0、Git、bubblewrap、socat 和 ripgrep。Ubuntu 22.04 示例：
+**Linux 前置条件：**使用普通 Git 克隆，准备 Node >=24.19.0 <25、Git、bubblewrap、socat 和 ripgrep。Ubuntu 22.04 示例：
 
 ```bash
 sudo apt-get update
@@ -518,7 +522,7 @@ env PATH="$omp_payload/node/bin:$PATH" \
 
 ## 开发与贡献
 
-仓库开发需要 **Node.js >=22.19.0**；CI 检查 `22.19.0` 和 `24.19.0`。源码开发与面向用户的受控安装是两条不同路径：
+仓库开发需要 **Node.js >=24.19.0 <25**；CI 固定 `24.19.0`，与 `.node-version` 一致。不再支持 Node 22 或 Node 25+；详见[当前 Node 支持政策](docs/compatibility/node-pi-matrix.md)。源码开发与面向用户的受控安装是两条不同路径：
 
 ```bash
 git clone https://github.com/Ricardo121380/only-my-pi.git

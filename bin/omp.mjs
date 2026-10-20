@@ -4,6 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { realpathSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 
 import { BootstrapService } from "../packages/bootstrap/bootstrap-service.mjs";
@@ -31,8 +33,9 @@ import {
   OMP_AGENT_USAGE,
 } from "../packages/direct-agent/launcher.mjs";
 import { createDirectAgentDoctor } from "../packages/direct-agent/doctor.mjs";
-import { loadDistribution, readRegularJson } from "../packages/distribution/runtime.mjs";
+import { assertSupportedNode, loadDistribution, readRegularJson } from "../packages/distribution/runtime.mjs";
 import { handleDistributionCommand } from "../packages/distribution/commands.mjs";
+import { isPrivateStack } from "../packages/release-stack/contracts.mjs";
 import {
   createGitHubReleasePayloadSource,
   createLocalReleasePayloadSource,
@@ -245,11 +248,20 @@ export function createProductionControlService({
     processAdmission: stackProcessAdmission,
     harness: stackHarness,
     shellProfile,
-    doctor: async () => {
+    doctor: async ({ context }) => {
+      if (isPrivateStack(context.stack)) {
+        const runtime = await loadDistribution({ packageRoot: path.join(context.activeStackPath, "only-my-pi/package"), nodePath: path.join(context.activeStackPath, "node/bin/node") });
+        return { ok: runtime?.stackId === context.stack.stackId, status: "PRIVATE_STACK_VERIFIED" };
+      }
       const result = await bootstrap.doctor({ configRoot: resolvedConfigRoot });
       return { ok: result?.ok === true, status: result?.status ?? "FAIL" };
     },
-    smoke: async () => {
+    smoke: async ({ context }) => {
+      if (isPrivateStack(context.stack)) {
+        const { stdout } = await promisify(execFile)(path.join(context.activeStackPath, "node/bin/node"), [path.join(context.activeStackPath, "pi/dist/bundle/cli.js"), "--version"],
+          { env: { PATH: "/usr/bin:/bin", HOME: context.paths.root }, timeout: 20_000, maxBuffer: 64 * 1024 });
+        return { ok: stdout.trim() === context.stack.runtime.pi.version, status: "PRIVATE_PI_SMOKE" };
+      }
       const settings = await loadSettings(resolvedConfigRoot);
       const result = await stackSmoke({ configRoot: resolvedConfigRoot, settings: settings.settings });
       return { ok: result?.status === "PASS" || result?.ok === true, status: result?.status ?? "FAIL" };
@@ -545,17 +557,41 @@ export async function runOmpEntrypoint(options = {}) {
   const stderr = options.stderr ?? process.stderr;
   let route;
   try {
+    assertSupportedNode();
     if (argv.length === 1 && ["--version", "-v"].includes(argv[0])) {
       const manifest = await readRegularJson(path.join(options.rootDir ?? DEFAULT_ROOT, "package.json"));
       writeText(stdout, `only-my-pi ${manifest.version}\n`);
       return OMP_EXIT_CODES.SUCCESS;
     }
     route = classifyOmpInvocation(argv);
+    if (route.kind === "web") {
+      const { runWebCommand } = await import("../packages/host/cli.mjs");
+      const result = await (options.webCommand ?? runWebCommand)({ argv: route.argv, packageRoot: options.rootDir ?? DEFAULT_ROOT, env: options.env ?? process.env });
+      writeText(stdout, stringifyOmpJson(result));
+      return exitCodeForResult(result);
+    }
     if (route.kind === "agent-help") {
       writeText(stdout, `${OMP_AGENT_USAGE}\n`);
       return OMP_EXIT_CODES.SUCCESS;
     }
     if (route.kind === "admin") {
+      if (["classifier", "image"].includes(route.argv[0])) {
+        const { runClassifierCli } = await import("../packages/model-calls/commands.mjs");
+        const { resolveDirectConfigRoot, resolveControlledStack } = await import("../packages/direct-agent/launcher.mjs");
+        const homeDir = options.homedir ? options.homedir() : os.homedir();
+        const configRoot = resolveDirectConfigRoot({ env: options.env ?? process.env, homeDir });
+        const stack = await resolveControlledStack({ packageRoot: options.rootDir ?? DEFAULT_ROOT, homeDir, stackRoot: options.stackRoot });
+        const result = await runClassifierCli({ argv: route.argv.slice(1), configRoot, stack, kind: route.argv[0] });
+        if (Buffer.isBuffer(result)) stdout.write(result);
+        else writeText(stdout, stringifyOmpJson(result));
+        return OMP_EXIT_CODES.SUCCESS;
+      }
+      if (route.argv[0] === "mcp") {
+        const { runMcpCli } = await import("../packages/mcp/commands.mjs");
+        const { resolveDirectConfigRoot } = await import("../packages/direct-agent/launcher.mjs");
+        const result = await runMcpCli({ argv: route.argv.slice(1), configRoot: resolveDirectConfigRoot({ env: options.env ?? process.env, homeDir: options.homedir ? options.homedir() : os.homedir() }) });
+        writeText(stdout, stringifyOmpJson(result)); return OMP_EXIT_CODES.SUCCESS;
+      }
       const runtime = await loadDistribution({ packageRoot: options.rootDir ?? DEFAULT_ROOT });
       if (runtime) {
         const native = await handleDistributionCommand({ runtime, argv: route.argv,

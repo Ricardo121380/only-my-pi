@@ -41,6 +41,46 @@ test("private run records are atomic, mode-protected, digest-bound and listable"
   await assert.rejects(store.get("run-one"), { code: "RUN_RECORD_TAMPERED" });
 });
 
+test("direct writer records preserve applied facts and reject impossible success", async (t) => {
+  const { store } = await root(t);
+  const initial = { stage: "PREPARING", application: "NOT_STARTED", verification: "NOT_RUN", patchDigest: null, patch: null, receiptDigest: null, failureCode: null, updatedAt: new Date().toISOString() };
+  await store.begin({ ...beginInput("direct-writer-one"), directWriter: initial });
+  const applying = { ...initial, stage: "APPLYING", patchDigest: d("a"), patch: { relativePath: "runs/direct-writer-one/artifacts/direct-writer-one-writer-1.patch", byteLength: 12, digest: d("a") } };
+  await store.update("direct-writer-one", { status: "running", directWriter: applying });
+  const applied = { ...applying, stage: "APPLIED_PENDING_VERIFICATION", application: "APPLIED", verification: "PENDING" };
+  await store.update("direct-writer-one", { status: "paused", directWriter: applied });
+  assert.equal((await store.require("direct-writer-one")).directWriter.application, "APPLIED");
+  await assert.rejects(store.update("direct-writer-one", { directWriter: { ...initial, stage: "BLOCKED" } }), { code: "RUN_DIRECT_WRITER_DRIFT" });
+  await assert.rejects(store.update("direct-writer-one", { directWriter: { ...applied, stage: "VERIFIED", verification: "PASS" } }), { code: "RUN_DIRECT_WRITER_INVALID" });
+  await assert.rejects(store.update("direct-writer-one", { directWriter: { ...applied, stage: "VERIFYING", verification: "PASS" } }), { code: "RUN_DIRECT_WRITER_INVALID" });
+  const verified = { ...applied, stage: "VERIFIED", verification: "PASS", receiptDigest: d("b") };
+  await store.update("direct-writer-one", { status: "completed", directWriter: verified });
+  assert.equal((await store.require("direct-writer-one")).directWriter.stage, "VERIFIED");
+  const service = createRunManagementService({ recordStore: store, coordinator: { async resume() { throw new Error("must not resume direct writer"); }, async cancel() { throw new Error("must not cancel direct writer through coordinator"); } } });
+  const list = await service.list();
+  assert.equal(list.runs[0].directWriter.application, "APPLIED");
+  assert.equal((await service.show("direct-writer-one")).run.directWriter.stage, "VERIFIED");
+  assert.equal(JSON.stringify((await service.show("direct-writer-one")).run).includes("/workspace"), false);
+  assert.equal(JSON.stringify((await service.show("direct-writer-one")).run).includes("artifacts/"), false);
+  assert.equal((await service.resume("direct-writer-one")).code, "DIRECT_WRITER_RECOVERY_UNSUPPORTED");
+  assert.equal((await service.cancel("direct-writer-one")).code, "DIRECT_WRITER_RECOVERY_UNSUPPORTED");
+});
+
+test("writer success is published only after the synchronous final authority boundary", async (t) => {
+  const { store, managedRoot } = await root(t);
+  const initial = { stage: "APPLIED_PENDING_VERIFICATION", application: "APPLIED", verification: "PENDING", patchDigest: d("a"), patch: { relativePath: "runs/direct-publication/artifacts/writer.patch", byteLength: 12, digest: d("a") }, receiptDigest: d("b"), failureCode: null, updatedAt: new Date().toISOString() };
+  await store.begin({ ...beginInput("direct-publication"), directWriter: initial });
+  await store.update("direct-publication", { status: "running" });
+  const verified = { ...initial, stage: "VERIFIED", verification: "PASS" };
+  const target = path.join(managedRoot, "runs", "direct-publication", "run-record.json");
+  const original = await fs.readFile(target, "utf8");
+  await assert.rejects(store.update("direct-publication", { status: "completed", directWriter: verified }, { beforePublish() { throw Object.assign(new Error("revoked"), { code: "DIRECT_WRITER_AUTHORIZATION_REVOKED" }); } }), { code: "DIRECT_WRITER_AUTHORIZATION_REVOKED" });
+  assert.equal(await fs.readFile(target, "utf8"), original);
+  assert.equal((await store.require("direct-publication")).directWriter.application, "APPLIED");
+  await store.update("direct-publication", { status: "completed", directWriter: verified }, { beforePublish() {} });
+  assert.equal((await store.require("direct-publication")).directWriter.stage, "VERIFIED");
+});
+
 test("terminal raw input and artifacts become explicit seven-day GC candidates while interrupted runs never do", async (t) => {
   const startedAt = Date.UTC(2026, 7, 1);
   const { managedRoot, store, setNow } = await root(t, { now: startedAt });

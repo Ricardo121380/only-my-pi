@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { hashResourcePath } from "../bootstrap/graph-plan.mjs";
 import { canonicalJson } from "../config-runtime/index.mjs";
-import { PUBLIC_STACK_PACKAGES, sha256, validateStackManifest } from "./contracts.mjs";
+import { PUBLIC_STACK_PACKAGES, sha256, validateStackManifest, isPrivateStack } from "./contracts.mjs";
 import { hashPackageContentTree } from "./package-content-identity.mjs";
 
 function fail(code, message, details = {}) {
@@ -131,6 +131,8 @@ export async function planStackEnvironment({
   pathValue = process.env.PATH ?? "",
 } = {}) {
   const stack = validateStackManifest(stackManifest);
+  const privateStack = isPrivateStack(stack);
+  if (privateStack && payloadMode !== "full") fail("PRIVATE_STACK_REQUIRES_FULL", "private candidates require a complete offline Full payload");
   if (!layout?.shareRoot || !layout?.configRoot) throw new TypeError("stack planner requires a stack layout");
   if (!["full", "thin"].includes(payloadMode)) fail("PAYLOAD_MODE_INVALID", "payload mode must be full or thin");
   if (platform.os !== "darwin" || platform.arch !== "arm64" || platform.minimumMacOSSatisfied !== true || platform.rosetta === true) fail("PLATFORM_UNSUPPORTED", "public Preview supports native Apple Silicon macOS 14+");
@@ -142,7 +144,7 @@ export async function planStackEnvironment({
   const [ompShim, piShim, external] = await Promise.all([
     inspectShim(layout.ompShim, layout),
     inspectShim(layout.piShim, layout),
-    inspectExternalRoot(layout, stack),
+    privateStack ? { classification: "STACK_PRIVATE", existing: [], missing: [], rootDigest: null } : inspectExternalRoot(layout, stack),
   ]);
   const pathEntries = pathValue.split(path.delimiter).filter(Boolean).map((entry) => path.resolve(entry));
   const pathActionRequired = !pathEntries.includes(path.resolve(layout.binRoot));
@@ -159,8 +161,8 @@ export async function planStackEnvironment({
       existing: external.existing,
       missing: external.missing,
       priorRootDigest: external.rootDigest,
-      switchRequired: external.classification !== "EXACT",
-      ownership: "external/user",
+      switchRequired: !privateStack && external.classification !== "EXACT",
+      ownership: privateStack ? "stack/only-my-pi" : "external/user",
     },
     shims: { omp: ompShim, pi: piShim },
     path: { binRootType: "USER_LOCAL_BIN", actionRequired: pathActionRequired },

@@ -53,6 +53,8 @@ test("default tags require exact public acceptance for the selected platform and
     sourceCommit: receipt.sourceCommit, distributionId: receipt.platforms[platform].distributionId,
     checks: ["global-install", "verify-offline", "version-offline", "doctor-offline", "raw-pi-offline", "npx-fresh-cache", "global-uninstall", "global-reinstall", "reinstall-verify-offline"].map((label) => ({ label, exitCode: 0 })) };
   assert.equal(validatePublicPlatformAcceptance(acceptance, receipt, "24.19.0", platform, buildReceiptDigest), acceptance);
+  for (const node of ["22.19.0", "25.0.0"])
+    assert.throws(() => validatePublicPlatformAcceptance({ ...acceptance, node }, receipt, node, platform, buildReceiptDigest), /public acceptance missing/u);
   for (const changed of [{ node: "22.19.0" }, { platform: "linux-arm64" }, { selector: "only-my-pi" },
     { publicRegistryVerified: false }, { buildReceiptSha256: sha256("provisional CLI") }, { checks: Array(9).fill({ label: "global-install", exitCode: 0 }) }])
     assert.throws(() => validatePublicPlatformAcceptance({ ...acceptance, ...changed }, receipt, "24.19.0", platform, buildReceiptDigest), /public acceptance missing/u);
@@ -92,7 +94,7 @@ test("publication verifies all four npm packages, six archives and generated for
   for (const platform of RELEASE_PLATFORMS) {
     const common = { sourceCommit: f.receipt.sourceCommit, distributionId: f.receipt.platforms[platform].distributionId,
       buildReceiptSha256: sha256(JSON.stringify(f.receipt)) };
-    for (const node of ["22.19.0", "24.19.0"])
+    for (const node of ["24.19.0"])
       await write({ ...common, status: "LOCAL_INSTALL_ACCEPTANCE_PASS", node, publicRegistryVerified: false, productUpgrade: platform === "darwin-arm64",
         checks: ["global-install", "verify-offline", "version-offline", "doctor-offline", "raw-pi-offline", "npx-fresh-cache", "global-uninstall", "global-reinstall", "reinstall-verify-offline",
           ...(platform === "darwin-arm64" ? ["global-install-previous", "upgrade-version-offline"] : [])].map((label) => ({ label, exitCode: 0 })) });
@@ -111,7 +113,7 @@ test("publication verifies all four npm packages, six archives and generated for
   const collect = (output) => execFileSync(process.execPath, ["scripts/collect-multiplatform-evidence.mjs", candidateDirectory, proofs, output], { stdio: "pipe" });
   collect(path.join(candidateDirectory, "evidence.json"));
   const evidence = JSON.parse(await fs.readFile(path.join(candidateDirectory, "evidence.json")));
-  assert.equal(evidence.platforms["linux-x64"].assertions.length, 16);
+  assert.equal(evidence.platforms["linux-x64"].assertions.length, 15);
   const stale = JSON.parse(await fs.readFile(lastLive)); stale.status = "NATIVE_LIVE_SUBSET_PASS";
   await fs.writeFile(lastLive, JSON.stringify(stale));
   assert.throws(() => collect(path.join(candidateDirectory, "refused-evidence.json")), /missing accepted NATIVE_LIVE_ACCEPTANCE_PASS/u);

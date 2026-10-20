@@ -8,7 +8,8 @@ import { hashFile } from "./deterministic-archive.mjs";
 import { inspectExternalRoot, planStackEnvironment } from "./environment-planner.mjs";
 import { listStackJournals, readStackJournal } from "./stack-journal.mjs";
 import { stackTransactionLayout } from "./layout.mjs";
-import { sha256, validateStackManifest, validateStackState } from "./contracts.mjs";
+import { sha256, validateStackManifest, validateStackState, isPrivateStack } from "./contracts.mjs";
+import { inspectResolvedStack } from "./release-builder.mjs";
 
 function fail(code, message, details = {}) {
   const error = new Error(message);
@@ -62,14 +63,17 @@ async function verifyInstalled(layout, state) {
   const identities = {
     node: await digestTree(root, "node"),
     pi: await digestTree(root, "pi"),
-    external: await digestTree(layout.configRoot, path.relative(layout.configRoot, layout.npmRoot)),
+    external: isPrivateStack(manifest) ? await digestTree(root, "external-npm") : await digestTree(layout.configRoot, path.relative(layout.configRoot, layout.npmRoot)),
     onlyMyPi: await hashFile(path.join(root, "only-my-pi.tgz")),
   };
   if (identities.node !== manifest.runtime.node.treeDigest || identities.pi !== manifest.runtime.pi.treeDigest
     || identities.external !== state.externalTree.digest || identities.onlyMyPi !== manifest.onlyMyPi.artifactSha256) {
     fail("STACK_ASSET_DRIFT", "installed stack assets differ from their canonical manifest");
   }
-  if (state.externalTree.verificationBasis === "CANONICAL_RELEASE_TREE") {
+  if (isPrivateStack(manifest)) {
+    if (state.externalTree.verificationBasis !== "STACK_PRIVATE") fail("STACK_EXTERNAL_TREE_AUTHORITY_INVALID", "private stack requires private extension ownership");
+    await inspectResolvedStack({ resolvedRoot: root, stackManifest: manifest });
+  } else if (state.externalTree.verificationBasis === "CANONICAL_RELEASE_TREE") {
     if (state.externalTree.digest !== manifest.externalTreeDigest) fail("STACK_EXTERNAL_TREE_AUTHORITY_INVALID", "canonical external tree state differs from the release manifest");
   } else {
     if (!state.externalPackages.every((entry) => entry.assetDisposition === "PREEXISTING_EXTERNAL")) fail("STACK_EXTERNAL_TREE_AUTHORITY_INVALID", "borrowed external tree state has inconsistent asset disposition");
@@ -181,7 +185,7 @@ export class StackService {
       piVersion: state.pi.version,
       onlyMyPiVersion: state.onlyMyPi.version,
       generationId: state.generation.digest,
-      externalOwnership: { binding: "external", owner: "user", packageCount: state.externalPackages.length },
+      externalOwnership: { binding: state.externalPackages[0].binding, owner: state.externalPackages[0].owner, packageCount: state.externalPackages.length },
       identities: verified.identities,
       incompleteTransactions: incomplete.map((entry) => entry.transactionId),
     });
@@ -220,7 +224,7 @@ export class StackService {
       activeStackId: state.activeStack,
       targetStackId,
       transactionIds,
-      externalOwnership: "external/user",
+      externalOwnership: state.externalTree.verificationBasis === "STACK_PRIVATE" ? "stack/only-my-pi" : "external/user",
       systemHomebrewMutation: false,
       userDataDeletion: false,
     };
@@ -232,7 +236,7 @@ export class StackService {
     const plan = await this.planLifecycle(options);
     if (plan.planDigest !== reviewedPlan?.planDigest) fail("STACK_PLAN_DRIFT", "stack lifecycle state changed after review");
     const result = await this.engine.rollbackCommitted(plan.transactionIds, { terminatePi: options.terminatePi === true, failureCode: options.subcommand === "remove" ? "EXPLICIT_STACK_REMOVE" : "EXPLICIT_STACK_ROLLBACK" });
-    return Object.freeze({ ...result, status: options.subcommand === "remove" ? "REMOVED" : "ROLLED_BACK", code: options.subcommand === "remove" ? "REMOVED" : "ROLLED_BACK", stackId: plan.targetStackId, externalOwnership: "external/user", systemHomebrewModified: false, userDataDeleted: false });
+    return Object.freeze({ ...result, status: options.subcommand === "remove" ? "REMOVED" : "ROLLED_BACK", code: options.subcommand === "remove" ? "REMOVED" : "ROLLED_BACK", stackId: plan.targetStackId, externalOwnership: plan.externalOwnership, systemHomebrewModified: false, userDataDeleted: false });
   }
 }
 

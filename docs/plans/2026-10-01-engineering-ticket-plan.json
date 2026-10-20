@@ -1,0 +1,1840 @@
+{
+  "currentMaterialStatusFile": "2026-10-17-material-closeout-status.json",
+  "currentMaterialStatusRecord": "materialCloseout20261017",
+  "materialCloseout20261017": {
+    "observedOn": "2026-10-17",
+    "scope": "ISSUE_22_ENGINEERING_CLOSEOUT_ONLY",
+    "entryHead": "fc7fdbd01cd414c9c3b49caba0b44b87a2764e0b",
+    "implementationCommit": "2629b888087422ad4c99bdd46125e66d6f1caa5d",
+    "reportClarificationCommit": "fc7fdbd01cd414c9c3b49caba0b44b87a2764e0b",
+    "evidenceMode": "IDENTITY_BOUND_REUSE_AND_READ_ONLY_REHASH_NO_GENERATION_OR_BEHAVIOR_SUITE_RERUN",
+    "acceptanceReport": "2026-10-16-generated-inputs-candidate-acceptance.md",
+    "closeoutReport": "2026-10-17-generated-inputs-engineering-closeout.md",
+    "readbackReceipt": "../../../artifacts/issue22-engineering-closeout-20261017T050927Z/github-readback-verification.json",
+    "evidenceReuseReceipt": "../../../artifacts/issue22-engineering-closeout-20261017T050927Z/evidence-reuse-verification.json",
+    "taskIssueMapping": {
+      "G2-00-02": [
+        20,
+        21,
+        22,
+        23
+      ]
+    },
+    "issue20": {
+      "state": "CLOSED",
+      "evidence": "2026-10-14-libexif-document-candidate-acceptance.md",
+      "observation": "Existing completion retained; closed state reread through issue23 dependency"
+    },
+    "issue21": {
+      "state": "OPEN",
+      "completion": "PARTIAL",
+      "candidateAdmission": "BLOCKED",
+      "bodyCommentsMetadataAndUpdatedAtUnchanged": true,
+      "rerun": false,
+      "evidence": "2026-10-15-gir-candidate-acceptance.md",
+      "userDecision": "没有，保留阻断并交付已核实材料",
+      "progressComment": "https://github.com/Ricardo121380/only-my-pi/issues/21#issuecomment-5950149107",
+      "remoteMutated": false
+    },
+    "issue22": {
+      "state": "CLOSED",
+      "stateReason": "completed",
+      "closedAt": "2026-10-17T05:15:17Z",
+      "bodySha256": "6447701e2a1964e7b9f7d251203ba4c1b5c22e138789c8390cf1e3f39b523d61",
+      "acceptanceChecked": 10,
+      "originalSpecificationRetainedExceptCheckboxes": true,
+      "originalCommentPreserved": true,
+      "comment": "https://github.com/Ricardo121380/only-my-pi/issues/22#issuecomment-6230047786",
+      "independentBodyCommentStateReadbacks": true,
+      "metadataPreserved": true,
+      "blockedBy": [],
+      "blocking": [
+        23
+      ],
+      "completion": "PASS_MATERIAL_SLICE",
+      "acceptanceTotal": 10,
+      "Standards": {
+        "status": "PASS",
+        "findings": 0
+      },
+      "Spec": {
+        "status": "PASS_MATERIAL_SLICE",
+        "findings": 0
+      }
+    },
+    "issue23": {
+      "state": "OPEN",
+      "completion": "BLOCKED",
+      "newKit": "NOT_CREATED",
+      "nativeBlockedByAll": [
+        20,
+        21,
+        22
+      ],
+      "nativeBlockedByActive": [
+        21
+      ],
+      "blockedBy": 1,
+      "totalBlockedBy": 3,
+      "allNativeDependencyIdsPreserved": true,
+      "bodyCommentsMetadataUnchanged": true,
+      "blockingIssue24Snapshot": "EXACT_MATCH_WITH_ONLY_EXPECTED_REPOSITORY_OPEN_ISSUE_COUNTER_42_TO_41",
+      "implementationStarted": false,
+      "remoteMutated": false
+    },
+    "candidateIdentity": {
+      "fixedInputManifestSha256": "fe5c9a74a5142b0b22a29d565143cce8bb7c5977d14eda5168c402c1e8ddf440",
+      "outputSha256": "0053b59a01e9bfc25f635954c0bcf9ff1f6d7e4075f7e90010ff0031d9cfd8ea",
+      "files": 10359,
+      "bytes": 482360128,
+      "fullByteAndExecuteMaskRehash": "PASS"
+    },
+    "reusedValidation": {
+      "targetedPerNode": 11,
+      "negativeExecutions": 40,
+      "networkReceivesPerNodeOutsideInside": [
+        1,
+        0
+      ],
+      "writeProtectionTargets": 4,
+      "nodeRegression": {
+        "pass": 1790,
+        "fail": 0,
+        "cancelled": 0,
+        "skip": 8,
+        "excludedIssue21Tests": 10,
+        "exit": 0
+      },
+      "webRegression": {
+        "files": 17,
+        "pass": 108,
+        "exit": 0
+      }
+    },
+    "remainingGateStatus": {
+      "G2_00_02": "PARTIAL",
+      "F02": "PARTIAL",
+      "F03": "PARTIAL",
+      "licensingClosure": "INCOMPLETE",
+      "applicationBuild": "NOT_RUN",
+      "Full": "NOT_RUN",
+      "U2": "BLOCKED"
+    },
+    "historicalProductAccepted": 20,
+    "historicalProductTotal": 44,
+    "newProductAcceptances": 0,
+    "nextExecutableMaterialIssue": null,
+    "nextAction": "THIS_TASK_FINISHED_AT_22_RETAIN_21_BLOCKER_DO_NOT_START_23_OR_DOWNSTREAM",
+    "historicalFieldsPolicy": "All pre-existing top-level fields and dated workflow/publication/implementation objects retain their exact prior contents and observed dates. This additive record is the current material closeout observation; it does not advance the product or downstream gates.",
+    "readbackFinishedAt": "2026-10-17T05:16:27.329554+00:00",
+    "pushed": false,
+    "downstreamAdvanced": false
+  },
+  "formatVersion": 1,
+  "kind": "only-my-pi-engineering-ticket-plan",
+  "packetId": "OMP-G2-00-02-20261001",
+  "observedOn": "2026-10-01",
+  "state": "PUBLISHED_VERIFIED",
+  "sourceCommit": "e57410a3b3037761a246bf1471939bec0aa0c8eb",
+  "sourceManifest": "2026-10-01-engineering-baseline.files.json",
+  "sourceWorktreeManifestSha256": "f4992558cff41540055e91106ac5ec0d6aa2f813787bb4e8d144ac4b7094e404",
+  "originalTaskBoard": "2026-09-26-webui-optimization-tasks.md",
+  "counts": {
+    "productTasks": 44,
+    "historicallyAcceptedProductTasks": 20,
+    "pendingProductTasks": 24,
+    "g2InternalSteps": 6,
+    "firstPacketDrafts": 4,
+    "newProductAcceptancesThisTurn": 0,
+    "publishedFirstPacketTickets": 4
+  },
+  "tracker": {
+    "provider": "github",
+    "repository": "Ricardo121380/only-my-pi",
+    "observedAllStateIssueCount": 5,
+    "observedDefaultBranch": "main",
+    "existingDefaultTriageLabels": [
+      "ready-for-agent",
+      "wontfix"
+    ],
+    "missingDefaultTriageLabels": [
+      "needs-triage",
+      "needs-info",
+      "ready-for-human"
+    ],
+    "publicationState": "SPEC_AND_FIRST_PACKET_PUBLISHED_VERIFIED",
+    "sourceLinksState": "PUBLISHED_SPEC_WITH_LOCAL_SOURCE_EVIDENCE",
+    "lastVerifiedOn": "2026-10-02",
+    "dependencyMechanism": "GITHUB_NATIVE_BLOCKED_BY_AND_BODY"
+  },
+  "currentFrontier": [
+    "01",
+    "02",
+    "03"
+  ],
+  "recommendedNextDraft": "01",
+  "drafts": [
+    {
+      "id": "01",
+      "originalTaskId": "G2-00-02",
+      "title": "[G2-00-02] 闭合 libexif 文档生成链的剩余材料",
+      "bodyFile": "2026-10-01-engineering-ticket-drafts/01-libexif-css-graphviz.md",
+      "blockedBy": [],
+      "delivers": "固定 CSS/图/剩余生成数据的来源、输入、转换与分发记录",
+      "state": "PUBLISHED",
+      "proposedTriageLabel": "ready-for-agent",
+      "githubIssueNumber": 20,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/20",
+      "specIssueNumber": 19,
+      "specIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/19",
+      "specUserStories": [
+        "US-006",
+        "US-007",
+        "US-010"
+      ],
+      "acceptanceGateRefs": [
+        "G2-00",
+        "F02_NATIVE_MATERIAL_SUBSET"
+      ],
+      "publicationState": "PUBLISHED_VERIFIED",
+      "publishedOn": "2026-10-02",
+      "githubIssueId": 5665351949,
+      "githubIssueState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "assignees": [],
+      "blockedByIssueNumbers": [],
+      "executionState": "PARTIAL",
+      "dependencyReadback": "VERIFIED",
+      "bodyReadback": "MATCH",
+      "implementationStarted": true,
+      "issueCompletion": "PARTIAL",
+      "latestLocalCommit": "c9b756ea6a0e065e9723fbdfa0905db3fecfefe8",
+      "latestEvidenceFile": "2026-10-02-libexif-generation-acceptance.md",
+      "statusObservedOn": "2026-10-02",
+      "acceptanceRevision": "OMP-G2-MATERIAL-CANDIDATE-20261002",
+      "bodySha256": "637d530e50db882a435e860520cfce66b1c3f4b0b6997362782eda59cefc43ad"
+    },
+    {
+      "id": "02",
+      "originalTaskId": "G2-00-02",
+      "title": "[G2-00-02] 闭合 GIR 供应与加工链及手册引文",
+      "bodyFile": "2026-10-01-engineering-ticket-drafts/02-gir-supply-and-quotes.md",
+      "blockedBy": [],
+      "delivers": "固定 GIR 的逐项供应版本、加工链与引文材料",
+      "state": "PUBLISHED",
+      "proposedTriageLabel": "ready-for-agent",
+      "githubIssueNumber": 21,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/21",
+      "specIssueNumber": 19,
+      "specIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/19",
+      "specUserStories": [
+        "US-008"
+      ],
+      "acceptanceGateRefs": [
+        "G2-00",
+        "F02_NATIVE_MATERIAL_SUBSET"
+      ],
+      "publicationState": "PUBLISHED_VERIFIED",
+      "publishedOn": "2026-10-02",
+      "githubIssueId": 5665357123,
+      "githubIssueState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "assignees": [],
+      "blockedByIssueNumbers": [],
+      "executionState": "PARTIAL",
+      "dependencyReadback": "VERIFIED",
+      "bodyReadback": "MATCH",
+      "implementationStarted": true,
+      "issueCompletion": "PARTIAL",
+      "latestLocalCommit": "9e0497cfd64d470cfa51d0282e04743f72067b84",
+      "latestEvidenceFile": "2026-10-02-gir-materials-acceptance.md",
+      "statusObservedOn": "2026-10-02",
+      "acceptanceRevision": "OMP-G2-MATERIAL-CANDIDATE-20261002",
+      "bodySha256": "402ac032e94edf1cac204369943a39e5e8e608b35f213cb50016101752a4dc85"
+    },
+    {
+      "id": "03",
+      "originalTaskId": "G2-00-02",
+      "title": "[G2-00-02] 闭合其余生成输入及工具分发条件",
+      "bodyFile": "2026-10-01-engineering-ticket-drafts/03-generated-input-obligations.md",
+      "blockedBy": [],
+      "delivers": "剩余八输入和宏/脚本的固定工具输入、生成对应与条件台账",
+      "state": "PUBLISHED",
+      "proposedTriageLabel": "ready-for-agent",
+      "githubIssueNumber": 22,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/22",
+      "specIssueNumber": 19,
+      "specIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/19",
+      "specUserStories": [
+        "US-009",
+        "US-010"
+      ],
+      "acceptanceGateRefs": [
+        "G2-00",
+        "F02_NATIVE_MATERIAL_SUBSET"
+      ],
+      "publicationState": "PUBLISHED_VERIFIED",
+      "publishedOn": "2026-10-02",
+      "githubIssueId": 5665357748,
+      "githubIssueState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "assignees": [],
+      "blockedByIssueNumbers": [],
+      "executionState": "PARTIAL",
+      "dependencyReadback": "VERIFIED",
+      "bodyReadback": "MATCH",
+      "implementationStarted": true,
+      "issueCompletion": "PARTIAL",
+      "latestLocalCommit": "f4cc764f280157e1586f8b9d6ac2f50600ceb4a5",
+      "latestEvidenceFile": "2026-10-02-webui-g2-00-generated-inputs.md",
+      "statusObservedOn": "2026-10-02",
+      "acceptanceRevision": "OMP-G2-MATERIAL-CANDIDATE-20261002",
+      "bodySha256": "04b056d4a65cc204bb40d9cd76eeb5295779ee07860da026aec63d0b228c8371"
+    },
+    {
+      "id": "04",
+      "originalTaskId": "G2-00-02",
+      "title": "[G2-00-02] 汇总并核验新的完整 native 材料 kit",
+      "bodyFile": "2026-10-01-engineering-ticket-drafts/04-new-native-material-kit.md",
+      "blockedBy": [
+        "01",
+        "02",
+        "03"
+      ],
+      "delivers": "新 kit 身份、完整集合核验与 G2-00-02 材料出口报告",
+      "state": "PUBLISHED",
+      "proposedTriageLabel": "ready-for-agent",
+      "githubIssueNumber": 23,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/23",
+      "specIssueNumber": 19,
+      "specIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/19",
+      "specUserStories": [
+        "US-005",
+        "US-010",
+        "US-011"
+      ],
+      "acceptanceGateRefs": [
+        "G2-00",
+        "F02_NATIVE_MATERIAL_SUBSET"
+      ],
+      "publicationState": "PUBLISHED_VERIFIED",
+      "publishedOn": "2026-10-02",
+      "githubIssueId": 5665368111,
+      "githubIssueState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "assignees": [],
+      "blockedByIssueNumbers": [
+        20,
+        21,
+        22
+      ],
+      "executionState": "BLOCKED_BY_ISSUES",
+      "dependencyReadback": "VERIFIED",
+      "bodyReadback": "MATCH",
+      "implementationStarted": false,
+      "issueCompletion": "BLOCKED",
+      "latestLocalCommit": "0f258c90e90311a2e539fd3a276ad26c32749216",
+      "latestEvidenceFile": "2026-10-02-native-kit-prerequisite-preflight.md",
+      "statusObservedOn": "2026-10-02",
+      "preflightCompleted": true,
+      "newKit": "NOT_CREATED",
+      "acceptanceRevision": "OMP-G2-MATERIAL-CANDIDATE-20261002",
+      "bodySha256": "f334f1f1e7ec993c4af6931518261c3c5f8dc8a973145dec940ae07b57657e58"
+    }
+  ],
+  "g2InternalSteps": [
+    {
+      "id": "G2-00-01",
+      "recordedStatus": "固定重建输入技术子集已验收",
+      "draftIds": [],
+      "completionPrerequisites": [],
+      "migrationState": "HISTORY_PRESERVED",
+      "countsAsProductTask": false,
+      "githubIssueNumbers": []
+    },
+    {
+      "id": "G2-00-02",
+      "recordedStatus": "PARTIAL",
+      "draftIds": [
+        "01",
+        "02",
+        "03",
+        "04"
+      ],
+      "completionPrerequisites": [
+        "G2-00-01"
+      ],
+      "migrationState": "GITHUB_ISSUES",
+      "countsAsProductTask": false,
+      "githubIssueNumbers": [
+        20,
+        21,
+        22,
+        23
+      ],
+      "githubIssueUrls": [
+        "https://github.com/Ricardo121380/only-my-pi/issues/20",
+        "https://github.com/Ricardo121380/only-my-pi/issues/21",
+        "https://github.com/Ricardo121380/only-my-pi/issues/22",
+        "https://github.com/Ricardo121380/only-my-pi/issues/23"
+      ]
+    },
+    {
+      "id": "G2-00-03",
+      "recordedStatus": "待开始",
+      "draftIds": [],
+      "completionPrerequisites": [
+        "G2-00-02"
+      ],
+      "migrationState": "NOT_MIGRATED",
+      "countsAsProductTask": false,
+      "githubIssueNumbers": []
+    },
+    {
+      "id": "G2-00-04",
+      "recordedStatus": "待前两项",
+      "draftIds": [],
+      "completionPrerequisites": [
+        "G2-00-02",
+        "G2-00-03"
+      ],
+      "migrationState": "NOT_MIGRATED",
+      "countsAsProductTask": false,
+      "githubIssueNumbers": []
+    },
+    {
+      "id": "G2-00-05",
+      "recordedStatus": "待 F02、候选身份",
+      "draftIds": [],
+      "completionPrerequisites": [
+        "G2-00-02",
+        "G2-00-03",
+        "G2-00-04"
+      ],
+      "preparationMayProceedBeforeCompletionPrerequisites": true,
+      "migrationState": "NOT_MIGRATED",
+      "countsAsProductTask": false,
+      "githubIssueNumbers": []
+    },
+    {
+      "id": "G2-00-06",
+      "recordedStatus": "待 F01-F04",
+      "draftIds": [],
+      "completionPrerequisites": [
+        "G2-00-01",
+        "G2-00-02",
+        "G2-00-03",
+        "G2-00-04",
+        "G2-00-05"
+      ],
+      "migrationState": "NOT_MIGRATED",
+      "countsAsProductTask": false,
+      "githubIssueNumbers": []
+    }
+  ],
+  "productTasks": [
+    {
+      "id": "S0-01",
+      "batch": "S0",
+      "originalDelivery": "核对源码/脏文件、运行栈、进程/磁盘、CI与验证入口；在隔离夹具建立适用完整自动化清单与失败台账",
+      "originalPrerequisites": "无",
+      "originalAcceptance": "支持Node矩阵与候选身份明确；当前失败可定位，环境缺失不冒充代码失败或PASS；冻结必需清单，不沿用报告计数；GS0-01",
+      "recordedStatus": "已验收",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "S0-02",
+      "batch": "S0",
+      "originalDelivery": "`direct-agent/workspace.mjs`、`omp-direct/runtime.mjs`路径策略及实际Pi write/edit接口；一致规范化/作用域/子模块/Git元数据边界",
+      "originalPrerequisites": "S0-01",
+      "originalAcceptance": "`@`、`~`、file URL、父目录、链接、大小写负例及合法路径通过；有真实工具链或注入写操作的集成证据，CLI/GUI受影响入口回归；GS0-02",
+      "recordedStatus": "已验收",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "S0-03",
+      "batch": "S0",
+      "originalDelivery": "`direct-agent/workspace.mjs`、shell调用/权限扩展补丁链；危险Git识别与正常命令回归",
+      "originalPrerequisites": "S0-01",
+      "originalAcceptance": "已知包装/参数绕过被拦截，coding grant和权限/沙箱链仍有效；不在用户项目执行破坏命令，不全禁Bash或宣称任意shell隔离；GS0-03",
+      "recordedStatus": "已验收",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "S0-04",
+      "batch": "S0",
+      "originalDelivery": "`web-policy`、`upstream-compatibility/web-safety.mjs`、生产联网工具适配及审批说明",
+      "originalPrerequisites": "S0-01",
+      "originalAcceptance": "实际请求链的私网、DNS及重定向边界有本地受控证据；必需防护落实，不以文案降级关闭失败；GS0-04",
+      "recordedStatus": "已验收",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "S0-05",
+      "batch": "S0",
+      "originalDelivery": "`host/terminal-supervisor.mjs`、`host/terminals.mjs`的ready发布/读取与故障清理",
+      "originalPrerequisites": "S0-01",
+      "originalAcceptance": "可控时序证明不会读到半写发布；提前退出/异常文件/关闭竞态正确，身份与锁释放不退化；GS0-05",
+      "recordedStatus": "已验收",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "S0-06",
+      "batch": "S0",
+      "originalDelivery": "`host/server.mjs`认证session有效期/撤销/容量回收及客户端过期呈现；参数和兼容边界记录",
+      "originalPrerequisites": "S0-01",
+      "originalAcceptance": "超过32次累计配对可在过期/撤销后继续；旧凭据失效、非法来源仍拒绝；历史/账号和既有任务不被清除，不恢复授权；GS0-06",
+      "recordedStatus": "已验收",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "S0-07",
+      "batch": "S0",
+      "originalDelivery": "`verification/manifests/pack-content-v1.json`精确包内容合同、`.github/workflows/ci.yml`显式WebUI检查；已证实阻断门禁的文档链接/状态修复",
+      "originalPrerequisites": "S0-01；最终包检待S0-02至S0-06",
+      "originalAcceptance": "所需node-pty/node-addon-api文件合法、禁止项仍拒绝；WebUI test/build失败能阻断；文档引用可核验，不删历史门禁/包来凑绿；GS0-07",
+      "recordedStatus": "已验收",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "S0-08",
+      "batch": "S0",
+      "originalDelivery": "同一源码候选的完整自动化、真实Pi＋本地可控模型、Ego关键旧功能旅程、隔离安装及回滚/再应用冒烟",
+      "originalPrerequisites": "S0-02至S0-07 PASS",
+      "originalAcceptance": "GS0-01至GS0-08全部通过；记录已测范围/限制及候选身份；无必需FAIL/NOT_RUN/BLOCKED，未切日常active或借用收费额度；GS0-08",
+      "recordedStatus": "已验收",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U0-01",
+      "batch": "U0",
+      "originalDelivery": "核对S0验收后的源码/脏文件、运行栈、进程、磁盘、测试入口及当前未实现入口清单",
+      "originalPrerequisites": "S0门禁PASS",
+      "originalAcceptance": "复用同一未变化候选的有效S0证据；发生变化则补受影响验证，不能省略新失败和集成门禁；不强停用户任务；G0-01",
+      "recordedStatus": "已验收",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U0-02",
+      "batch": "U0",
+      "originalDelivery": "使用前端技能完成Glacier对话优先交互稿、组件/状态/导航合同；安排右侧按需审查及真实终端入口",
+      "originalPrerequisites": "U0-01",
+      "originalAcceptance": "首页、会话、执行、材料、结果、设置与异常样稿可检查；390/761/1440px、焦点和简化动效约定；G0-01",
+      "recordedStatus": "已验收（设计，不是产品）",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U0-03",
+      "batch": "U0",
+      "originalDelivery": "固定Pi 0.85.1补充/队列/分支/图片探针；定义消息ID、消费确认、状态机及协议演进",
+      "originalPrerequisites": "U0-01",
+      "originalAcceptance": "真实子进程＋本地模型证明工具执行期间补充、重复/断连/结束竞态；新旧协议边界明确；G0-02",
+      "recordedStatus": "已验收（SDK可行性）",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U0-04",
+      "batch": "U0",
+      "originalDelivery": "PDF/Office与图片选型、语料、输入/展开/输出/时间/RSS技术上限；许可/来源缺口清单",
+      "originalPrerequisites": "U0-01",
+      "originalAcceptance": "各格式正常/损坏/超限、位置/partial、加密与断网、PDF实际累计展开预算通过；G0-03。完整发行/Full由G2-00承担",
+      "recordedStatus": "已验收（技术可行性）：当前同身份源码双Node各152项文档/预算＋4公开Office；复用原图片37项。PDF单流/单页/多页200MiB及+1、Filter数组/缓存/恢复/复位通过。发行仍PARTIAL/NOT_RUN",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U0-05",
+      "batch": "U0",
+      "originalDelivery": "技能/扩展发现、配置来源与必需集合合同；任务/会话/子代理用量字段及事件来源核验",
+      "originalPrerequisites": "U0-01、U0-03",
+      "originalAcceptance": "可选配置不移除强制集合；明确定义实际生效与未知用量，不猜测Provider字段；G0-04",
+      "recordedStatus": "已验收（合同/真实SDK可行性）；6组检查；生产配置API/UI待U5",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U0-06",
+      "batch": "U0",
+      "originalDelivery": "预览并行PoC：源/缓存/输出、受管副本或受约束源读取、进程/端口/热更新、来源与凭据隔离",
+      "originalPrerequisites": "U0-01",
+      "originalAcceptance": "Agent与预览同时工作且保持项目单写；误写源/残留、同主机跨端口cookie泄漏及服务端伪造Origin重放负例通过；失败阻断U5-04和总验收；G0-05",
+      "recordedStatus": "已验收（固定配方可行性）：Ego25＋faults-2；产品supervisor/UI与安装态待U5/U6",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U1-01",
+      "batch": "U1",
+      "originalDelivery": "Host私有草稿/消息/队列存储、ID、revision、配置快照、恢复Schema；改动模块补实现类型检查，不复用裁剪task摘要",
+      "originalPrerequisites": "U0门禁",
+      "originalAcceptance": "原子写、崩溃恢复、身份绑定、重启暂停、多窗冲突保护；实现与合同一致；G1-02、G1-04、G1-05",
+      "recordedStatus": "已验收；存储C及U1-06整批所需层次通过",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U1-02",
+      "batch": "U1",
+      "originalDelivery": "`contracts.*`/`server.mjs`/`rpc-worker.mjs`/`tasks.mjs`接即时补充与排队；幂等/确认/撤权",
+      "originalPrerequisites": "U1-01、U0-03",
+      "originalAcceptance": "已接收/待生效/已消费可区分；当前工具不强停，结束竞态不偷偷新建任务；G1-03、G1-04",
+      "recordedStatus": "已验收；[原Host/Pi证据](2026-09-30-webui-u1-02-delivery-acceptance.md)与U1-06整批通过；收费Provider/Full未验",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U1-03",
+      "batch": "U1",
+      "originalDelivery": "`App.tsx`/`Composer.tsx`默认续接、明确新建、账号/模型显示、草稿隔离；随改动拆分会话/输入状态职责",
+      "originalPrerequisites": "U1-01",
+      "originalAcceptance": "打开停止历史即续接正确目标；缺失账号拒绝隐式回退；切项目/刷新不丢草稿；抽取前后行为回归，非先全仓重构；G1-01、G1-02",
+      "recordedStatus": "已验收（C/P/B）；[原页面证据](2026-09-30-webui-u1-03-conversation-acceptance.md)与U1-06占用/损坏/多窗复验通过",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U1-04",
+      "batch": "U1",
+      "originalDelivery": "UI区分补充/排队/停止，显示队列、待生效消息，可编辑/删除未投递项",
+      "originalPrerequisites": "U1-02、U1-03",
+      "originalAcceptance": "键盘与触控均可完成，重复提交不重复执行；已投递内容不能假撤回；G1-03、G1-04",
+      "recordedStatus": "已验收（C/P/B）；[原页面证据](2026-09-30-webui-u1-04-input-control-acceptance.md)与U1-06通过，触控为模拟、非实体触屏",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U1-05",
+      "batch": "U1",
+      "originalDelivery": "`useHost.ts`/`TaskControl.tsx`加入真实进度摘要、等待原因、失败恢复入口；取消与重连核对",
+      "originalPrerequisites": "U1-02、U1-04",
+      "originalAcceptance": "迟到审批无效；失败/取消/重启暂停；状态未知不自动重试写入；G1-05",
+      "recordedStatus": "已验收（C/P/B）；[原恢复证据](2026-09-30-webui-u1-05-recovery-acceptance.md)与U1-06强杀/丢ACK/重启复验通过，受控孤儿保守阻断",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U1-06",
+      "batch": "U1",
+      "originalDelivery": "U1集成与Ego使用验收，形成消息链路证据、保存/刷新/错误矩阵",
+      "originalPrerequisites": "U1-01至U1-05",
+      "originalAcceptance": "G1-01至G1-06通过；代码/接口/真实Pi本地模拟/浏览器口径分列",
+      "recordedStatus": "已验收（C/P/B）：[双Node/实际Pi/Ego31整批证据及限制](2026-09-30-webui-u1-06-integration-acceptance.md)，不是Full/日常或收费Provider",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U2-01",
+      "batch": "U2",
+      "originalDelivery": "独立材料上传/引用接口、Host私有内容存储、来源/版本/范围、消息绑定与配额检查",
+      "originalPrerequisites": "U1、U0-04、G2-00 PASS",
+      "originalAcceptance": "项目路径隔离，外部文件仅来自显式上传；原子完成后才能发送；G2-01、G2-04",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U2-02",
+      "batch": "U2",
+      "originalDelivery": "项目文件/代码选区引用与文本解析；`Composer`中@选择、材料卡片、预览和移除",
+      "originalPrerequisites": "U2-01",
+      "originalAcceptance": "文件在发送前变化须重新确认或用冻结快照；超限不静默截断；G2-01、G2-04",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U2-03",
+      "batch": "U2",
+      "originalDelivery": "图片粘贴/拖入、解码限制、缩放来源说明、Pi images真实传递和历史展示",
+      "originalPrerequisites": "U2-01、U0-03",
+      "originalAcceptance": "PNG/JPEG/WebP实际输入可核对；不支持模型阻止发送并保留草稿；G2-02",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U2-04",
+      "batch": "U2",
+      "originalDelivery": "有界PDF/DOCX/XLSX/PPTX解析worker；页/表/单元格/幻灯片位置、局部范围选择",
+      "originalPrerequisites": "U2-01、U0-04",
+      "originalAcceptance": "四种类型正常及负例通过；不执行宏/公式或远程资源；部分解析明确；G2-03、G2-04",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U2-05",
+      "batch": "U2",
+      "originalDelivery": "发送内容快照、原文件与解析物分列、会话关联、存储查看/显式清理及分支引用保留",
+      "originalPrerequisites": "U2-02至U2-04",
+      "originalAcceptance": "原文件变化不改写历史；清理不破坏共享引用，不误删项目原件；G2-05",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U2-06",
+      "batch": "U2",
+      "originalDelivery": "U2与排队/重连整合、Ego材料旅程、打包解析资源检查",
+      "originalPrerequisites": "U2-01至U2-05",
+      "originalAcceptance": "G2-01至G2-06通过；模型收到的字节/块与卡片所示范围一致，不能只验UI上传成功",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U3-01",
+      "batch": "U3",
+      "originalDelivery": "GUI分区/项目归类、会话名称/置顶/归档元数据；App导航与取消归档",
+      "originalPrerequisites": "U2",
+      "originalAcceptance": "不移动项目目录、不重写Pi对话、不删除历史；活动/归档状态可理解；G3-01",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U3-02",
+      "batch": "U3",
+      "originalDelivery": "已登记会话增量消息全文索引、名称检索、跨项目过滤、结果定位、重建/取消",
+      "originalPrerequisites": "U3-01",
+      "originalAcceptance": "结果来自正确消息，新增/删除/损坏不返回虚假完整结果；性能样本与归档过滤；G3-02",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U3-03",
+      "batch": "U3",
+      "originalDelivery": "指定消息分支，源/新会话准入、父身份、附件引用、账号选择和授权失效",
+      "originalPrerequisites": "U3-01、U2-05、U0-03",
+      "originalAcceptance": "原会话不变、项目文件不回滚、无Git工作目录、无重复历史消费；G3-03",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U3-04",
+      "batch": "U3",
+      "originalDelivery": "搜索→打开→续接→分支→归档/恢复的Ego验收与迁移兼容",
+      "originalPrerequisites": "U3-01至U3-03",
+      "originalAcceptance": "G3-01至G3-04通过；旧会话及材料缺失仍可解释，无静默丢历史",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U4-01",
+      "batch": "U4",
+      "originalDelivery": "`Messages`/`RunReceipts`/`Inspector`结果摘要与统一diff；关联命令/回执/来源",
+      "originalPrerequisites": "U3",
+      "originalAcceptance": "执行、应用、验证分别呈现；旧历史和用户改动不伪归因；G4-01",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U4-02",
+      "batch": "U4",
+      "originalDelivery": "Host请求级用量事件、来源与去重；会话聚合、主子Agent和分支继承口径",
+      "originalPrerequisites": "U3、U0-05",
+      "originalAcceptance": "重连/续接/分支不重计，缺失/部分可追溯；G4-02、G4-03",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U4-03",
+      "batch": "U4",
+      "originalDelivery": "输入区简洁统计与详情，实际上下文、有效生成时间、估算费用和来源解释",
+      "originalPrerequisites": "U4-02",
+      "originalAcceptance": "来源存在才显示；缓存定义正确，历史单价不重算，数据缺失不虚构0；G4-03、G4-04",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U4-04",
+      "batch": "U4",
+      "originalDelivery": "结果与用量在分支/取消/长输出/失败场景下集成和Ego验收",
+      "originalPrerequisites": "U4-01至U4-03",
+      "originalAcceptance": "G4-01至G4-04通过，至少受支持夹具的所有选定数据链路可观测",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U5-01",
+      "batch": "U5",
+      "originalDelivery": "已有技能/扩展资源目录、来源和兼容性、强制集合；GUI默认/项目覆盖配置",
+      "originalPrerequisites": "U4、U0-05",
+      "originalAcceptance": "来源可验证、必需集合不能关闭、CLI不变，配置缺失/冲突可解释；G5-01",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U5-02",
+      "batch": "U5",
+      "originalDelivery": "有声明Schema的配置UI、启停及下次执行注入，实际加载反馈、队列配置冲突",
+      "originalPrerequisites": "U5-01",
+      "originalAcceptance": "不热切活动worker，显示待生效/实际生效；无Schema不假装支持任意配置；G5-02",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U5-03",
+      "batch": "U5",
+      "originalDelivery": "项目设置和具名测试/构建命令；显式启动、队列/锁、取消、退出码与结果入口",
+      "originalPrerequisites": "U4",
+      "originalAcceptance": "CLI/Agent/人工入口写入协调保持；失败及进程清理可核对；G5-03",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U5-04",
+      "batch": "U5",
+      "originalDelivery": "实施U0验证的受管预览服务、源变更反映、来源/凭据隔离、恢复与清理；探索合并首页建议",
+      "originalPrerequisites": "U5-03、U0-06 PASS",
+      "originalAcceptance": "Agent与预览同时运行并反映改动；面板关闭不杀服务，停止/退出正确，cookie泄漏/API与WebSocket重放及原写入负例通过；G5-04",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U5-05",
+      "batch": "U5",
+      "originalDelivery": "能力配置→任务→构建→并行预览的整合、Ego验收及旧终端回归",
+      "originalPrerequisites": "U5-01至U5-04",
+      "originalAcceptance": "G5-01至G5-05通过；未通过不称项目能力全部接入",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U6-01",
+      "batch": "U6",
+      "originalDelivery": "按已选范围逐入口/逐状态清单，完整Ego用户旅程，视觉/响应式/键盘与真实IME记录",
+      "originalPrerequisites": "U1–U5",
+      "originalAcceptance": "G6-01通过；每个可见动作有实际结果或合理禁用原因，不能留静态假入口",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U6-02",
+      "batch": "U6",
+      "originalDelivery": "固定长会话/大输出/检索/解析/预览样本，输入/取消/搜索/热更新性能和资源记录",
+      "originalPrerequisites": "U6-01",
+      "originalAcceptance": "G6-02通过；固定硬件与采样口径，进程内存分列，未达标先修影响范围",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U6-03",
+      "batch": "U6",
+      "originalDelivery": "绑定源码的Full候选，解析依赖/资源/协议验真，隔离安装回滚及全新GUI状态/旧历史兼容",
+      "originalPrerequisites": "U6-01、U6-02",
+      "originalAcceptance": "G6-03通过；包中真实资源可用，不依赖开发目录，未污染用户配置历史",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U6-04",
+      "batch": "U6",
+      "originalDelivery": "真实Provider小型验收包：材料/续接、补充/队列/取消、修改/用量/并行预览",
+      "originalPrerequisites": "U6-03＋新的具体调用授权",
+      "originalAcceptance": "G6-04通过；按批准的场景/路由/预算执行，失败首停，不自动加重试",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    },
+    {
+      "id": "U6-05",
+      "batch": "U6",
+      "originalDelivery": "日常晋升、回滚原active、重新应用、真实入口旅程、遗留项/体验核对、最终收口",
+      "originalPrerequisites": "U6-01至U6-04＋切换前活动与权限核对",
+      "originalAcceptance": "G6-05通过；所有已选项及必需证据闭合，更新总计划，之后才启动Electron 3A",
+      "recordedStatus": "待开始",
+      "migrationState": "NOT_MIGRATED",
+      "githubIssueNumber": null,
+      "ticketDraftIds": []
+    }
+  ],
+  "evidenceThisTurn": {
+    "layer": "DOCUMENTATION_STATIC_VERIFICATION",
+    "newRuntimeAcceptance": false,
+    "selectedReceiptSourceBindings": 3,
+    "wholeKitRehash": "NOT_RUN",
+    "nativeApplicationBuild": "NOT_RUN",
+    "Full": "NOT_RUN",
+    "realProvider": "NOT_RUN",
+    "specStructure": {
+      "userStories": 81,
+      "remainingGates": 25,
+      "taskMappings": 30,
+      "result": "PASS"
+    },
+    "specReadback": "BODY_TITLE_LABEL_MATCH",
+    "independentReviewFindings": 5,
+    "independentReviewFindingsResolved": 5,
+    "documentationTests": {
+      "passed": 2,
+      "failed": 0
+    },
+    "publishedSpecNumber": 19,
+    "observedOn": "2026-10-01",
+    "scope": "BASELINE_PREPARATION_AND_SPEC_PUBLICATION"
+  },
+  "candidateFrontier": [
+    "01",
+    "02",
+    "03"
+  ],
+  "candidateRecommendedNextDraft": "01",
+  "workflow": {
+    "phase": "INCREMENTAL_SPEC_AND_TICKETS_COMPLETE",
+    "round": 4,
+    "scopeDecision": "CONFIRMED",
+    "successDecision": "CONFIRMED",
+    "sharedUnderstanding": "CONFIRMED",
+    "testingSeams": "CONFIRMED",
+    "specIssueNumber": 19,
+    "specIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/19",
+    "prerequisitesForTicketReview": [
+      "SHARED_UNDERSTANDING_CONFIRMED",
+      "SPEC_TESTING_SEAMS_CONFIRMED",
+      "SPEC_SYNTHESIZED"
+    ],
+    "scope": {
+      "included": [
+        "G2-00",
+        "U2",
+        "U3",
+        "U4",
+        "U5",
+        "U6"
+      ],
+      "baseline": [
+        "S0",
+        "U0",
+        "U1"
+      ],
+      "firstSpecBoundary": "G2-00_AND_U2-U6_MASTER_SPEC"
+    },
+    "successCriterion": "需求、工单与验收证据对应，使每次开发有明确目标和完成标准",
+    "specOrganizationDecision": "CONFIRMED",
+    "decisions": [
+      {
+        "id": "Q1",
+        "round": 1,
+        "status": "CONFIRMED",
+        "selection": "剩余 WebUI 路线（推荐）",
+        "userReply": "两个问题都按照推荐的来"
+      },
+      {
+        "id": "Q2",
+        "round": 1,
+        "status": "CONFIRMED",
+        "selection": "开发目标、任务与验收能对应（推荐）",
+        "userReply": "两个问题都按照推荐的来"
+      },
+      {
+        "id": "Q3",
+        "round": 2,
+        "status": "CONFIRMED",
+        "topic": "规格与工单组织",
+        "recommendation": "一份总规格，工单逐批细化",
+        "selection": "一份总规格，工单逐批细化（推荐）",
+        "userReply": "一份总规格，工单逐批细化（推荐）"
+      },
+      {
+        "id": "Q4",
+        "round": 3,
+        "status": "CONFIRMED",
+        "topic": "测试与验收入口及共同理解",
+        "recommendation": "确认前三轮结论与所提测试边界，进入 to-spec",
+        "selection": "确认共识与测试边界，进入 to-spec（推荐）",
+        "userReply": "确认共识与测试边界，进入 to-spec（推荐）"
+      },
+      {
+        "id": "Q5",
+        "round": 4,
+        "status": "CONFIRMED",
+        "topic": "首批四张工单拆分与发布",
+        "userReply": "按四张拆分发布",
+        "confirmedOn": "2026-10-02"
+      }
+    ],
+    "specOrganization": {
+      "form": "ONE_MASTER_SPEC",
+      "ticketDetailing": "ROLLING_BY_BATCH",
+      "firstDetailedTask": "G2-00-02"
+    },
+    "testingSeamResearch": "STATIC_EVIDENCE_CONFIRMED",
+    "testingSeamProposal": [
+      {
+        "boundary": "HOST_PUBLIC_API_AND_REAL_PI",
+        "evidence": [
+          "C",
+          "P"
+        ],
+        "observable": [
+          "requests_and_events",
+          "persistent_state_and_history",
+          "actual_pi_requests_and_receipts"
+        ],
+        "limitations": "HTTP tests with a fake Worker and direct real-Pi tests prove distinct scopes"
+      },
+      {
+        "boundary": "EGO_LITE_ACTUAL_WEBUI",
+        "evidence": [
+          "B"
+        ],
+        "observable": [
+          "visible_user_journeys",
+          "save_refresh_failure_recovery"
+        ],
+        "limitations": "Component API mocks do not replace actual-page evidence"
+      },
+      {
+        "boundary": "MATERIAL_CLI_AND_CANDIDATE_FULL_INSTALL",
+        "evidence": [
+          "C",
+          "I"
+        ],
+        "observable": [
+          "input_and_output_identity",
+          "missing_input_or_drift_rejection",
+          "installed_offline_parser_resources",
+          "rollback_and_reapply"
+        ],
+        "limitations": "Legacy M11 identity and U0 rehearsal do not prove current Full; existing phase1 install smoke needs current parser coverage"
+      }
+    ],
+    "pendingConfirmation": [],
+    "specDraftFile": "2026-10-01-webui-remaining-spec.md",
+    "specPublicationAuthorization": "EXPLICIT_Q4",
+    "ticketBreakdownApproval": "CONFIRMED",
+    "specSynthesis": "COMPLETE",
+    "specPublication": "PUBLISHED_VERIFIED",
+    "completedPrerequisitesForTicketReview": [
+      "SHARED_UNDERSTANDING_CONFIRMED",
+      "SPEC_TESTING_SEAMS_CONFIRMED",
+      "SPEC_SYNTHESIZED"
+    ],
+    "ticketPublication": "PUBLISHED_VERIFIED",
+    "nextPhase": "IMPLEMENT_REMAINING_MATERIALS",
+    "implementationStarted": true,
+    "ticketPublicationAuthorization": {
+      "decision": "Q5",
+      "date": "2026-10-02",
+      "userReply": "按四张拆分发布",
+      "scope": "CREATE_FOUR_ISSUES_LINK_SPEC_SET_LABELS_AND_DEPENDENCIES_BACKFILL"
+    }
+  },
+  "lastUpdatedOn": "2026-10-07",
+  "recommendedNextIssueNumber": 20,
+  "publicationVerification": {
+    "observedOn": "2026-10-02",
+    "remoteBodiesTitlesLabelsStates": "PASS_4_OF_4",
+    "nativeBlockingEdges": "PASS_3_OF_3",
+    "frontierIssues": [
+      20,
+      21,
+      22
+    ],
+    "parentIssuePreservation": "PASS_BODY_TITLE_STATE_LABELS",
+    "localStaticValidation": "PASS",
+    "originalTaskBoardChange": "ISSUE_NAVIGATION_PARAGRAPH_ONLY",
+    "newProductAcceptance": false,
+    "nativeApplicationBuild": "NOT_RUN",
+    "Full": "NOT_RUN",
+    "realProvider": "NOT_RUN",
+    "dailyPromotion": "NOT_RUN",
+    "documentationTests": {
+      "passed": 2,
+      "failed": 0
+    },
+    "originalProductTaskRows": "44_OF_44_UNCHANGED",
+    "originalG2Statuses": "6_OF_6_UNCHANGED",
+    "originalBaselineFilesProtected": 231,
+    "configurationFilesProtected": 4,
+    "changedDocumentationFiles": 8,
+    "taskBoardAfterSha256": "588b1950f3f09ff44720b81aaf819ca3515f9eb7a1bcf42749ff115b6f19ed2e",
+    "index": "EMPTY",
+    "remoteIssueCount": 5
+  },
+  "implementationStatus": {
+    "observedOn": "2026-10-02",
+    "sourceCommit": "0f258c90e90311a2e539fd3a276ad26c32749216",
+    "firstThreeIssues": "PARTIAL",
+    "kitIssue": "BLOCKED",
+    "discussionFile": "2026-10-02-material-candidate-discussion.md",
+    "candidateRoute": "NEW_REPRODUCIBLE_CANDIDATE_CONFIRMED",
+    "gateAndTestingDecisions": "CONFIRMED_R2_R3",
+    "remoteProgressSync": "PASS_4_OF_4",
+    "evidenceMode": "EXISTING_REPORTS_NOT_RERUN",
+    "productAccepted": 20,
+    "productTotal": 44,
+    "G2_00_02": "PARTIAL",
+    "licensingClosure": "INCOMPLETE",
+    "Full": "NOT_RUN",
+    "U2": "BLOCKED",
+    "sharedUnderstanding": "CONFIRMED_R4",
+    "progressComments": [
+      {
+        "issue": 20,
+        "url": "https://github.com/Ricardo121380/only-my-pi/issues/20#issuecomment-5950147139"
+      },
+      {
+        "issue": 21,
+        "url": "https://github.com/Ricardo121380/only-my-pi/issues/21#issuecomment-5950149107"
+      },
+      {
+        "issue": 22,
+        "url": "https://github.com/Ricardo121380/only-my-pi/issues/22#issuecomment-5950151002"
+      },
+      {
+        "issue": 23,
+        "url": "https://github.com/Ricardo121380/only-my-pi/issues/23#issuecomment-5950152913"
+      }
+    ],
+    "reviewDraftRoot": "LOCAL_WORKSPACE/artifacts/webui-optimization/G2-material-route-1002-xw6todvm/review",
+    "draftStaticValidation": "PASS",
+    "pendingConfirmation": null,
+    "specAndTicketRevision": "PUBLISHED_VERIFIED",
+    "nextAction": "IMPLEMENT_20_REMAINING_GENERATION",
+    "newCandidateImplementationStarted": false
+  },
+  "incrementalRevision": {
+    "id": "OMP-G2-MATERIAL-CANDIDATE-20261002",
+    "publishedOn": "2026-10-02",
+    "status": "PUBLISHED_VERIFIED",
+    "approval": {
+      "decision": "R4_Q4",
+      "source": "RESPONSE_ANNOTATION_1",
+      "userReply": "确认",
+      "scope": "UPDATE_EXISTING_SPEC_19_AND_TICKETS_20_TO_23_AND_LOCAL_COPIES"
+    },
+    "issues": [
+      {
+        "issue": 19,
+        "status": "PUBLISHED_VERIFIED",
+        "draft": "19-spec.md",
+        "sha256": "85a282db028048c57517f4ec07c4d09ac0d153f3011db86a15ab30f6a5cce5ae",
+        "url": "https://github.com/Ricardo121380/only-my-pi/issues/19",
+        "localBody": "MATCH",
+        "remoteBody": "MATCH",
+        "titleStateLabelsAssigneesComments": "UNCHANGED"
+      },
+      {
+        "issue": 20,
+        "status": "PUBLISHED_VERIFIED",
+        "draft": "20-ticket.md",
+        "sha256": "637d530e50db882a435e860520cfce66b1c3f4b0b6997362782eda59cefc43ad",
+        "url": "https://github.com/Ricardo121380/only-my-pi/issues/20",
+        "localBody": "MATCH",
+        "remoteBody": "MATCH",
+        "titleStateLabelsAssigneesComments": "UNCHANGED"
+      },
+      {
+        "issue": 21,
+        "status": "PUBLISHED_VERIFIED",
+        "draft": "21-ticket.md",
+        "sha256": "402ac032e94edf1cac204369943a39e5e8e608b35f213cb50016101752a4dc85",
+        "url": "https://github.com/Ricardo121380/only-my-pi/issues/21",
+        "localBody": "MATCH",
+        "remoteBody": "MATCH",
+        "titleStateLabelsAssigneesComments": "UNCHANGED"
+      },
+      {
+        "issue": 22,
+        "status": "PUBLISHED_VERIFIED",
+        "draft": "22-ticket.md",
+        "sha256": "04b056d4a65cc204bb40d9cd76eeb5295779ee07860da026aec63d0b228c8371",
+        "url": "https://github.com/Ricardo121380/only-my-pi/issues/22",
+        "localBody": "MATCH",
+        "remoteBody": "MATCH",
+        "titleStateLabelsAssigneesComments": "UNCHANGED"
+      },
+      {
+        "issue": 23,
+        "status": "PUBLISHED_VERIFIED",
+        "draft": "23-ticket.md",
+        "sha256": "f334f1f1e7ec993c4af6931518261c3c5f8dc8a973145dec940ae07b57657e58",
+        "url": "https://github.com/Ricardo121380/only-my-pi/issues/23",
+        "localBody": "MATCH",
+        "remoteBody": "MATCH",
+        "titleStateLabelsAssigneesComments": "UNCHANGED"
+      }
+    ],
+    "nativeBlockedBy": {
+      "issue": 23,
+      "blockers": [
+        20,
+        21,
+        22
+      ],
+      "verification": "PASS_3_OF_3"
+    },
+    "originalTitlesStatesLabelsAssigneesComments": "UNCHANGED_5_OF_5",
+    "materialStatuses": {
+      "20": "PARTIAL",
+      "21": "PARTIAL",
+      "22": "PARTIAL",
+      "23": "BLOCKED"
+    },
+    "localStaticValidation": "PASS",
+    "evidenceRoot": "LOCAL_WORKSPACE/artifacts/webui-optimization/G2-material-route-1002-xw6todvm/publication",
+    "newRuntimeEvidence": false,
+    "newCandidateGeneration": "NOT_RUN",
+    "nativeApplicationBuild": "NOT_RUN",
+    "Full": "NOT_RUN",
+    "U2": "BLOCKED",
+    "productAccepted": 20,
+    "productTotal": 44,
+    "validation": {
+      "status": "PASS",
+      "remoteAndApprovedAndLocalBodies": "MATCH_5_OF_5",
+      "remoteMetadataAndComments": "UNCHANGED_5_OF_5",
+      "nativeBlockingEdges": "PASS_3_OF_3",
+      "userStories": 81,
+      "masterSections": 7,
+      "originalProductStoriesAndImplementation": "UNCHANGED",
+      "originalGateAndTaskMatrices": "UNCHANGED",
+      "g2SixStepSequence": "UNCHANGED",
+      "productTaskRows": "UNCHANGED_44_OF_44",
+      "ticketParentsAndBlockers": "UNCHANGED_4_OF_4",
+      "localLinksChecked": 71,
+      "documentationFilesChanged": 9,
+      "unrelatedEntriesProtected": 1508,
+      "repositoryFileSet": "UNCHANGED",
+      "head": "0f258c90e90311a2e539fd3a276ad26c32749216",
+      "index": "EMPTY",
+      "runtimeTests": "NOT_RUN_DOCUMENT_ONLY",
+      "intentionalMarkdownHardBreaks": 2,
+      "formatCheck": "Tracked git diff --check and exact added-line whitespace/link/fence validation; only Markdown two-space hard breaks permitted."
+    }
+  },
+  "remainingWorkSpecSynthesis": {
+    "id": "OMP-WEBUI-REMAINING-20261007",
+    "observedOn": "2026-10-07",
+    "status": "PUBLISHED_VERIFIED",
+    "request": "将剩下待完成内容进行tospec",
+    "authorization": "EXPLICIT_TO_SPEC_INVOCATION",
+    "sourceCommit": "0f258c90e90311a2e539fd3a276ad26c32749216",
+    "existingWorktreePreserved": true,
+    "testingSeams": "REUSED_CONFIRMED_Q4_R2_R3_R4",
+    "newTestingSeams": false,
+    "pendingConfirmation": [],
+    "specIssue": 19,
+    "specUrl": "https://github.com/Ricardo121380/only-my-pi/issues/19",
+    "specFile": "2026-10-01-webui-remaining-spec.md",
+    "bodySha256": "65788560bd465d4ace280f280afc43dfe154238ea05cde5ba44a5105fa614005",
+    "updatedAt": "2026-10-07T09:36:31Z",
+    "localAndFrozenAndRemoteBody": "MATCH",
+    "readyForAgent": true,
+    "specState": "OPEN",
+    "scope": {
+      "historicallyAcceptedProductTasks": 20,
+      "pendingProductTasks": 24,
+      "productTasks": 44,
+      "g2HistoricalSteps": [
+        "G2-00-01"
+      ],
+      "pendingG2InternalSteps": [
+        "G2-00-02",
+        "G2-00-03",
+        "G2-00-04",
+        "G2-00-05",
+        "G2-00-06"
+      ],
+      "currentMaterialIssues": [
+        20,
+        21,
+        22,
+        23
+      ],
+      "completedMaterialIssues": 0,
+      "userStories": 81,
+      "taskMappings": 30,
+      "remainingGates": 25
+    },
+    "taskCoverage": [
+      {
+        "id": "G2-00-01",
+        "userStories": "US-005、US-010",
+        "delivery": "保留固定重建输入的原身份和适用证据",
+        "completionPrerequisites": "历史基线",
+        "gate": "历史固定输入子集；保留证据",
+        "recordedStatus": "已验收（原技术子集）"
+      },
+      {
+        "id": "G2-00-02",
+        "userStories": "US-005–US-011",
+        "delivery": "#20–#22 新材料候选分别满足条件，再由 #23 交付完整新 kit",
+        "completionPrerequisites": "G2-00-01；#23 须 #20/#21/#22 全部完成",
+        "gate": "native 材料出口；F02 的部分范围",
+        "recordedStatus": "PARTIAL；#23 BLOCKED"
+      },
+      {
+        "id": "G2-00-03",
+        "userStories": "US-012",
+        "delivery": "PDF 字体/CMap/worker/辅助模块/QuickJS 的固定来源、实际构建输入和必要条件闭包",
+        "completionPrerequisites": "G2-00-02",
+        "gate": "PDF 材料/构建出口；F02 的后续范围",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "G2-00-04",
+        "userStories": "US-013",
+        "delivery": "从新材料正式配置和构建资源，绑定新身份并重验图片/Pi/RSS/PDF/资源矩阵",
+        "completionPrerequisites": "G2-00-02、G2-00-03",
+        "gate": "新候选与 F01，绑定 F02 输入",
+        "recordedStatus": "待前置；新构建 NOT_RUN"
+      },
+      {
+        "id": "G2-00-05",
+        "userStories": "US-014",
+        "delivery": "默认准备/组装纳入 parser，最终包与 acquisition/ledger/双 SBOM/notices 逐项对账",
+        "completionPrerequisites": "G2-00-02/03/04；隔离设计和夹具准备可先行",
+        "gate": "F03、F04",
+        "recordedStatus": "F03 PARTIAL；F04 NOT_RUN"
+      },
+      {
+        "id": "G2-00-06",
+        "userStories": "US-015、US-016",
+        "delivery": "干净精确源码形成同候选 Full，隔离断网安装运行包内完整矩阵并核对发行出口",
+        "completionPrerequisites": "F01–F04 全满足、空间与源码身份满足",
+        "gate": "F05、F06，整体 G2-00",
+        "recordedStatus": "NOT_RUN；U2 BLOCKED"
+      },
+      {
+        "id": "U2-01",
+        "userStories": "US-017、US-018、US-028",
+        "delivery": "上传/引用独立于 prompt；材料身份、配额、路径和原子完成可观察",
+        "completionPrerequisites": "U1、U0-04、G2-00 PASS",
+        "gate": "G2-01、G2-04",
+        "recordedStatus": "待开始；入口阻断"
+      },
+      {
+        "id": "U2-02",
+        "userStories": "US-019、US-020、US-029",
+        "delivery": "@文件/选区/文本卡片可预览移除；变化重确认、超限显式处理",
+        "completionPrerequisites": "U2-01",
+        "gate": "G2-01、G2-04",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U2-03",
+        "userStories": "US-021、US-022",
+        "delivery": "三种图片实际进入 Pi，模型能力与解码限制生效，失败保留草稿",
+        "completionPrerequisites": "U2-01、U0-03",
+        "gate": "G2-02",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U2-04",
+        "userStories": "US-023–US-029",
+        "delivery": "四类现代文档经有界 worker 解析，保留真实位置/选择范围/partial，拒绝执行和超限",
+        "completionPrerequisites": "U2-01、U0-04",
+        "gate": "G2-03、G2-04",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U2-05",
+        "userStories": "US-030–US-032",
+        "delivery": "发送内容冻结、原件与快照分列，共享引用和显式清理安全，磁盘故障保旧数据",
+        "completionPrerequisites": "U2-02–U2-04",
+        "gate": "G2-05",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U2-06",
+        "userStories": "US-017–US-033",
+        "delivery": "混合材料在发送/排队/刷新/重连/历史中一致，实际 Pi 输入与安装态资源可核对",
+        "completionPrerequisites": "U2-01–U2-05",
+        "gate": "G2-01–G2-06 整合出口",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U3-01",
+        "userStories": "US-034、US-035",
+        "delivery": "分区、归类、会话命名/置顶/归档持久化，目录与 Pi 历史保持",
+        "completionPrerequisites": "U2",
+        "gate": "G3-01",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U3-02",
+        "userStories": "US-036–US-039",
+        "delivery": "名称/消息全文检索、归档过滤、定位、增量/重建/取消及陈旧/损坏状态",
+        "completionPrerequisites": "U3-01",
+        "gate": "G3-02",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U3-03",
+        "userStories": "US-040–US-042",
+        "delivery": "停止会话指定消息创建新分支身份，保留附件来源，不继承授权和队列，继承消费不重计",
+        "completionPrerequisites": "U3-01、U2-05、U0-03",
+        "gate": "G3-03",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U3-04",
+        "userStories": "US-034–US-043",
+        "delivery": "搜索到续接/分支/归档恢复的实际旅程及旧历史兼容",
+        "completionPrerequisites": "U3-01–U3-03",
+        "gate": "G3-01–G3-04 整合出口",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U4-01",
+        "userStories": "US-044–US-046",
+        "delivery": "执行/应用/验证分列，摘要和 diff 能回到真实来源，未知应用先核对",
+        "completionPrerequisites": "U3",
+        "gate": "G4-01",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U4-02",
+        "userStories": "US-047–US-050、US-054",
+        "delivery": "请求级用量、来源与覆盖率，任务/会话/主子 Agent 聚合及重放/分支去重",
+        "completionPrerequisites": "U3、U0-05",
+        "gate": "G4-02、G4-03",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U4-03",
+        "userStories": "US-048–US-053、US-055",
+        "delivery": "输入区和详情显示有来源的上下文、有效生成速度、缓存/币种与历史价格快照",
+        "completionPrerequisites": "U4-02",
+        "gate": "G4-03、G4-04",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U4-04",
+        "userStories": "US-044–US-055",
+        "delivery": "分支/取消/失败/长输出集成旅程，支持夹具中全部选定计量链可观察",
+        "completionPrerequisites": "U4-01–U4-03",
+        "gate": "G4-01–G4-04 整合出口",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U5-01",
+        "userStories": "US-056、US-057、US-059",
+        "delivery": "已有资源来源/兼容性、必需集合、GUI 默认及项目覆盖，保留 CLI 归属",
+        "completionPrerequisites": "U4、U0-05",
+        "gate": "G5-01",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U5-02",
+        "userStories": "US-058–US-061",
+        "delivery": "声明 Schema 配置与启停、下一 worker 注入、实际加载反馈及队列 revision 冲突",
+        "completionPrerequisites": "U5-01",
+        "gate": "G5-02",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U5-03",
+        "userStories": "US-062、US-063",
+        "delivery": "具名命令显式启动并返回真实目录/日志/退出码，写入串行，残留核验后释放",
+        "completionPrerequisites": "U4",
+        "gate": "G5-03",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U5-04",
+        "userStories": "US-064–US-068",
+        "delivery": "受管预览与 Agent 同时运行、热更新和恢复；源/派生目录及凭据隔离，真实首页建议",
+        "completionPrerequisites": "U5-03、U0-06 PASS",
+        "gate": "G5-04",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U5-05",
+        "userStories": "US-056–US-069",
+        "delivery": "配置到任务/构建/预览/停止全旅程，真实终端与人工入口回归",
+        "completionPrerequisites": "U5-01–U5-04",
+        "gate": "G5-01–G5-05 整合出口",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U6-01",
+        "userStories": "US-070、US-071",
+        "delivery": "逐入口/状态真实旅程，明暗/三种尺寸/键盘/IME 证据分列",
+        "completionPrerequisites": "U1–U5",
+        "gate": "G6-01",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U6-02",
+        "userStories": "US-072–US-074",
+        "delivery": "固定长会话、输出、检索、解析并发及预览样本达到冻结性能目标",
+        "completionPrerequisites": "U6-01",
+        "gate": "G6-02",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U6-03",
+        "userStories": "US-075、US-076",
+        "delivery": "同源码 Full 纯安装、全新 GUI 状态与旧数据兼容、隔离回滚/重新应用",
+        "completionPrerequisites": "U6-01、U6-02",
+        "gate": "G6-03",
+        "recordedStatus": "待开始"
+      },
+      {
+        "id": "U6-04",
+        "userStories": "US-077、US-078",
+        "delivery": "在批准路由和预算内执行 L1–L3，关联 Provider/Host/页面/文件事实及调用账本",
+        "completionPrerequisites": "U6-03＋具体调用授权",
+        "gate": "G6-04",
+        "recordedStatus": "待开始；调用包 NOT_AUTHORIZED"
+      },
+      {
+        "id": "U6-05",
+        "userStories": "US-079–US-081",
+        "delivery": "日常晋升、回滚切换前 active、同候选重应用及真实入口体验和遗留项收口",
+        "completionPrerequisites": "U6-01–U6-04＋切换前活动与权限核对",
+        "gate": "G6-05",
+        "recordedStatus": "待开始"
+      }
+    ],
+    "materialStates": {
+      "20": "PARTIAL",
+      "21": "PARTIAL",
+      "22": "PARTIAL",
+      "23": "BLOCKED"
+    },
+    "nativeKit": "NOT_CREATED",
+    "nativeBlockedBy": [
+      20,
+      21,
+      22
+    ],
+    "tickets20To23": "UNCHANGED_4_OF_4",
+    "productTaskStatesAndDependencies": "UNCHANGED_44_OF_44",
+    "independentStaticReviews": {
+      "product": "PASS",
+      "material": "PASS"
+    },
+    "localStaticValidation": "PASS",
+    "evidenceRoot": "LOCAL_WORKSPACE/artifacts/webui-optimization/remaining-spec-1007-a_65g83n",
+    "newRuntimeEvidence": false,
+    "runtimeTests": "NOT_RUN_DOCUMENT_ONLY",
+    "newCandidateGeneration": "NOT_RUN",
+    "nativeApplicationBuild": "NOT_RUN",
+    "Full": "NOT_RUN",
+    "realProvider": "NOT_RUN",
+    "U2": "BLOCKED",
+    "nextAction": "IMPLEMENT_20_REMAINING_GENERATION",
+    "nextPhase": "IMPLEMENT_REMAINING_MATERIALS",
+    "newImplementationStarted": false,
+    "newGitCommit": false,
+    "gitPush": "NOT_RUN"
+  },
+  "remainingWorkWorkflow1009": {
+    "observedOn": "2026-10-09",
+    "request": "把剩余任务/to-spec然后再/to-tickets",
+    "sourceCommit": "b09ef66184404426a8a33896a65082db024b3ce1",
+    "specPublication": {
+      "status": "PUBLISHED_VERIFIED",
+      "phase": "to-spec",
+      "issue": 19,
+      "url": "https://github.com/Ricardo121380/only-my-pi/issues/19",
+      "updatedAt": "2026-10-09T12:30:29Z",
+      "bodySha256": "e87eb4718089ef7f8142fdfc5610b672d2ccc3b57c8e31bddec10274bc05905c",
+      "stories": 81,
+      "taskMappings": 30,
+      "gates": 25,
+      "newTestingSeams": false,
+      "scope": "ALL_REMAINING_G2_AND_U2_U6",
+      "completedProductTasks": 20,
+      "productTaskTotal": 44,
+      "implementationIssuesClosed": 0,
+      "runtimeTests": "NOT_RUN"
+    },
+    "ticketProposal": "2026-10-09-remaining-ticket-proposal.json",
+    "ticketReview": "2026-10-09-remaining-ticket-review.md",
+    "scope": "ALL_REMAINING_G2_AND_U2_U6",
+    "ticketState": "PUBLISHED_VERIFIED",
+    "newTicketCount": 38,
+    "retainedIssueNumbers": [
+      20,
+      21,
+      22,
+      23
+    ],
+    "newIssueNumbers": [
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61
+    ],
+    "ticketBreakdownApproval": "CONFIRMED_FOR_38_NEW_TICKETS",
+    "currentExecutionState": {
+      "20": "PARTIAL",
+      "21": "PARTIAL",
+      "22": "PARTIAL",
+      "23": "BLOCKED",
+      "G2-00-03": "BLOCKED; preflight only; candidate NOT_CREATED"
+    },
+    "nextExecutableIssue": 20,
+    "productAccepted": 20,
+    "productTotal": 44,
+    "newRuntimeEvidence": false,
+    "historicalFieldsPolicy": "Earlier workflow/publication/implementation objects retain their observed dates; this object records the latest planning workflow.",
+    "ticketBreakdownApprovalReply": "确认",
+    "taskIssueMapping": {
+      "G2-00-02": [
+        20,
+        21,
+        22,
+        23
+      ],
+      "G2-00-03": [
+        24
+      ],
+      "G2-00-04": [
+        25,
+        26
+      ],
+      "G2-00-05": [
+        27
+      ],
+      "G2-00-06": [
+        28
+      ],
+      "U2-01": [
+        29,
+        30
+      ],
+      "U2-02": [
+        31
+      ],
+      "U2-03": [
+        32
+      ],
+      "U2-04": [
+        33,
+        34,
+        35,
+        36
+      ],
+      "U2-05": [
+        37
+      ],
+      "U2-06": [
+        38
+      ],
+      "U3-01": [
+        39,
+        40
+      ],
+      "U3-02": [
+        41,
+        42
+      ],
+      "U3-03": [
+        43
+      ],
+      "U3-04": [
+        44
+      ],
+      "U4-01": [
+        45
+      ],
+      "U4-02": [
+        46,
+        47
+      ],
+      "U4-03": [
+        48
+      ],
+      "U4-04": [
+        49
+      ],
+      "U5-01": [
+        50,
+        51
+      ],
+      "U5-02": [
+        51,
+        52
+      ],
+      "U5-03": [
+        53
+      ],
+      "U5-04": [
+        54,
+        55
+      ],
+      "U5-05": [
+        56
+      ],
+      "U6-01": [
+        57
+      ],
+      "U6-02": [
+        58
+      ],
+      "U6-03": [
+        59
+      ],
+      "U6-04": [
+        60
+      ],
+      "U6-05": [
+        61
+      ]
+    },
+    "ticketPublication": {
+      "status": "PUBLISHED_VERIFIED",
+      "finishedAt": "2026-10-09T13:17:11.316414+00:00",
+      "newIssueCount": 38,
+      "newIssueNumbers": [
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61
+      ],
+      "titleBodyLabelReadbacks": 38,
+      "nativeBlockedByReadbacks": 38,
+      "nativeNewEdges": 47,
+      "nativeRetainedEdges": 3,
+      "parentIssueEdited": false,
+      "existingIssuesEdited": false,
+      "newImplementationStarted": false,
+      "runtimeEvidence": "NOT_RUN",
+      "receipt": "../../../artifacts/webui-optimization/remaining-tickets-publish-1009-lrbvsvnx/journal.json"
+    }
+  }
+}

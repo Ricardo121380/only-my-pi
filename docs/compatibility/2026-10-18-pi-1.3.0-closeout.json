@@ -1,0 +1,1291 @@
+{
+  "issue": 76,
+  "state": "CLOSED",
+  "result": "PASS",
+  "scope": "PI130-01 development source and required local gates only",
+  "implementationCommit": "728dbbe3119c2b603af493a7775cc90448ee2013",
+  "baselineCommits": [
+    "c9a76114bf23b7dffb4a6bfa74fd06f8da0657a6",
+    "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb"
+  ],
+  "supplementCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+  "testedCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+  "testedTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+  "manifestSha256": "2879bd4374426628cd99558e88d75ce3ceebdfe18ed57a77b05a6054a4b43f1a",
+  "lockSha256": "bc9899201e7d74aa3f782d512247badc70b1fa58fab8efabc236cda2e9cfe639",
+  "pi": "1.3.0",
+  "nodes": [
+    "22.19.0",
+    "24.19.0"
+  ],
+  "fullTests": {
+    "22.19.0": {
+      "tests": 1683,
+      "pass": 1679,
+      "fail": 0,
+      "cancelled": 0,
+      "skip": 4,
+      "todo": 0
+    },
+    "24.19.0": {
+      "tests": 1683,
+      "pass": 1679,
+      "fail": 0,
+      "cancelled": 0,
+      "skip": 4,
+      "todo": 0
+    }
+  },
+  "fullFailures": {
+    "22.19.0": [],
+    "24.19.0": []
+  },
+  "fullSourceRunStatus": {
+    "22.19.0": "COMPLETE_PASS",
+    "24.19.0": "COMPLETE_PASS"
+  },
+  "criteria": [
+    {
+      "id": "AC1",
+      "result": "PASS",
+      "evidence": [
+        "final-inputs-before.json",
+        "final-inputs-after-node24.json"
+      ],
+      "scope": "Frozen official Pi 1.3.0, exact manifest/lock and nodes; 1276 regular installed bytes match original tarball."
+    },
+    {
+      "id": "AC2",
+      "result": "PASS",
+      "evidence": [
+        "final-full-node22",
+        "final-full-node24",
+        "../checks/mcp-startup-contract-red-identity.json",
+        "../epoch4/checks/tui-selector-red.json",
+        "regression-findings.json"
+      ],
+      "scope": "All affected public admission/native capability paths and original denial assertions pass; init and denial phases now follow the existing RPC contract."
+    },
+    {
+      "id": "AC3",
+      "result": "PASS",
+      "evidence": [
+        "final-full-node22",
+        "final-full-node24",
+        "../checks/http-publication-red.json",
+        "../pty-full-failure-observations.json"
+      ],
+      "scope": "Real public CLI/PTY and Host HTTP controlled authorization, denial, cancellation/termination pass; delayed publication regression and lifecycle cleanup verified."
+    },
+    {
+      "id": "AC4",
+      "result": "PASS",
+      "evidence": [
+        "final-full-node22",
+        "final-full-node24"
+      ],
+      "scope": "Persistent input association, lost ACK/unknown no replay, fixed account/model, independent receive counts, no warming remain covered by frozen full suites."
+    },
+    {
+      "id": "AC5",
+      "result": "PASS",
+      "evidence": [
+        "final-typecheck-node22",
+        "final-typecheck-node24",
+        "final-test-contract-node22",
+        "final-test-contract-node24",
+        "final-full-node22",
+        "final-full-node24",
+        "linux-source-final-node22",
+        "linux-source-final-node24"
+      ],
+      "scope": "Dual Node exact final source types, contracts and full source suites pass; original concurrency and behavior retained; four installed checks remain #77."
+    },
+    {
+      "id": "AC6",
+      "result": "PASS",
+      "evidence": [
+        "final-inputs-before.json",
+        "final-inputs-after-node24.json",
+        "final-review.json",
+        "regression-findings.json"
+      ],
+      "scope": "Source-bound C/P and original failures retained; macOS primary core, existing affected Linux CLI only; separate reviews, no installed/provider/release expansion."
+    }
+  ],
+  "checks": {
+    "final-combination-serial-node22": {
+      "exitCode": 0,
+      "durationSeconds": 256.319,
+      "trackedUnchanged": true,
+      "logSha256": "11793f2d2946e9d40b3dfbf9b26a3688ddcf27421894a28c4d58c26f228c1cc1",
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin/node",
+        "--test",
+        "--test-concurrency=2",
+        "tests/host-codemode.test.mjs",
+        "tests/host-mcp-write.test.mjs",
+        "tests/direct-pi110-terminal.test.mjs",
+        "tests/host-terminal-http.test.mjs"
+      ],
+      "startedAt": "2026-10-18T11:58:58.577071+00:00",
+      "finishedAt": "2026-10-18T12:03:15.015122+00:00",
+      "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+      "receipt": "checks/final-combination-serial-node22.json",
+      "log": "checks/final-combination-serial-node22.log"
+    },
+    "final-combination-serial-node24": {
+      "exitCode": 0,
+      "durationSeconds": 248.402,
+      "trackedUnchanged": true,
+      "logSha256": "5851c9da6264cbf8727d8f5b1dcae8afc3d0b19f789fe2a04a18f7720712532c",
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/webui-phase2/candidate-9130d02/resolved/node/bin/node",
+        "--test",
+        "--test-concurrency=2",
+        "tests/host-codemode.test.mjs",
+        "tests/host-mcp-write.test.mjs",
+        "tests/direct-pi110-terminal.test.mjs",
+        "tests/host-terminal-http.test.mjs"
+      ],
+      "startedAt": "2026-10-18T12:03:15.051805+00:00",
+      "finishedAt": "2026-10-18T12:07:23.566953+00:00",
+      "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+      "receipt": "checks/final-combination-serial-node24.json",
+      "log": "checks/final-combination-serial-node24.log"
+    },
+    "final-full-node22": {
+      "exitCode": 0,
+      "durationSeconds": 992.829,
+      "trackedUnchanged": true,
+      "logSha256": "6f25693dbdaf0d99eeda65eab5c679b2f3dc23d492084943e214f9963ebfc3ef",
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin/npm",
+        "test"
+      ],
+      "startedAt": "2026-10-18T12:10:13.178872+00:00",
+      "finishedAt": "2026-10-18T12:26:46.119652+00:00",
+      "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+      "receipt": "checks/final-full-node22.json",
+      "log": "checks/final-full-node22.log"
+    },
+    "final-full-node24": {
+      "exitCode": 0,
+      "durationSeconds": 1054.398,
+      "trackedUnchanged": true,
+      "logSha256": "32f2ee8747a4b03d25c4dbac5b09f9538641153288071970fb8a1a4fc94e109a",
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/webui-phase2/candidate-9130d02/resolved/node/bin/npm",
+        "test"
+      ],
+      "startedAt": "2026-10-18T12:26:50.172142+00:00",
+      "finishedAt": "2026-10-18T12:44:24.678752+00:00",
+      "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+      "receipt": "checks/final-full-node24.json",
+      "log": "checks/final-full-node24.log"
+    },
+    "final-typecheck-node22": {
+      "exitCode": 0,
+      "durationSeconds": 6.921,
+      "trackedUnchanged": true,
+      "logSha256": "bed3820c66b3b36d5c28e2b128f662afb04a0d924adfd35b82d02524c6cac6bf",
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin/npm",
+        "run",
+        "typecheck"
+      ],
+      "startedAt": "2026-10-18T12:07:23.609804+00:00",
+      "finishedAt": "2026-10-18T12:07:30.737481+00:00",
+      "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+      "receipt": "checks/final-typecheck-node22.json",
+      "log": "checks/final-typecheck-node22.log"
+    },
+    "final-typecheck-node24": {
+      "exitCode": 0,
+      "durationSeconds": 5.534,
+      "trackedUnchanged": true,
+      "logSha256": "bed3820c66b3b36d5c28e2b128f662afb04a0d924adfd35b82d02524c6cac6bf",
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/webui-phase2/candidate-9130d02/resolved/node/bin/npm",
+        "run",
+        "typecheck"
+      ],
+      "startedAt": "2026-10-18T12:07:34.129104+00:00",
+      "finishedAt": "2026-10-18T12:07:39.786586+00:00",
+      "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+      "receipt": "checks/final-typecheck-node24.json",
+      "log": "checks/final-typecheck-node24.log"
+    },
+    "final-test-contract-node22": {
+      "exitCode": 0,
+      "durationSeconds": 3.201,
+      "trackedUnchanged": true,
+      "logSha256": "38fc405d8f9fb5e9a3ea321aa9b6a487d917d4e4bc398c06d33f07605bb1500a",
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin/npm",
+        "run",
+        "test:contract"
+      ],
+      "startedAt": "2026-10-18T12:07:30.769991+00:00",
+      "finishedAt": "2026-10-18T12:07:34.098546+00:00",
+      "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+      "receipt": "checks/final-test-contract-node22.json",
+      "log": "checks/final-test-contract-node22.log"
+    },
+    "final-test-contract-node24": {
+      "exitCode": 0,
+      "durationSeconds": 2.908,
+      "trackedUnchanged": true,
+      "logSha256": "ea985c80f6bc7e66aee663bce8ae576877dc8d4a60e130fffa8594c57fbc6523",
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/webui-phase2/candidate-9130d02/resolved/node/bin/npm",
+        "run",
+        "test:contract"
+      ],
+      "startedAt": "2026-10-18T12:07:39.819618+00:00",
+      "finishedAt": "2026-10-18T12:07:42.839251+00:00",
+      "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+      "receipt": "checks/final-test-contract-node24.json",
+      "log": "checks/final-test-contract-node24.log"
+    },
+    "final-lint": {
+      "exitCode": 0,
+      "durationSeconds": 14.887,
+      "trackedUnchanged": true,
+      "logSha256": "25d68064082bcd14a27f9f9b3935b817229f97b4597bdf3907f085325cb76766",
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin/npm",
+        "run",
+        "lint"
+      ],
+      "startedAt": "2026-10-18T12:07:42.870512+00:00",
+      "finishedAt": "2026-10-18T12:07:57.869801+00:00",
+      "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+      "receipt": "checks/final-lint.json",
+      "log": "checks/final-lint.log"
+    },
+    "final-secret-scan": {
+      "exitCode": 0,
+      "durationSeconds": 3.407,
+      "trackedUnchanged": true,
+      "logSha256": "0e9985651289ea1c4d8daab6677d25a89c6c9c59e10f2d9130cee219a52a3e48",
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin/npm",
+        "run",
+        "secret:scan"
+      ],
+      "startedAt": "2026-10-18T12:07:57.904000+00:00",
+      "finishedAt": "2026-10-18T12:08:01.426684+00:00",
+      "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+      "receipt": "checks/final-secret-scan.json",
+      "log": "checks/final-secret-scan.log"
+    },
+    "final-schema-check": {
+      "exitCode": 0,
+      "durationSeconds": 0.768,
+      "trackedUnchanged": true,
+      "logSha256": "982074422e5c4942447cafabaa5cd33c5e145100878a93840b16d414f8669d6b",
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin/npm",
+        "run",
+        "schema:check"
+      ],
+      "startedAt": "2026-10-18T12:08:01.457064+00:00",
+      "finishedAt": "2026-10-18T12:08:02.335427+00:00",
+      "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+      "receipt": "checks/final-schema-check.json",
+      "log": "checks/final-schema-check.log"
+    },
+    "final-profile-check": {
+      "exitCode": 0,
+      "durationSeconds": 0.254,
+      "trackedUnchanged": true,
+      "logSha256": "671f065d858915216fbd87cf53ed7c3f1edf35e18aeab08c9845b3b8b58e8fbd",
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin/npm",
+        "run",
+        "profile:check"
+      ],
+      "startedAt": "2026-10-18T12:08:02.367383+00:00",
+      "finishedAt": "2026-10-18T12:08:02.736354+00:00",
+      "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+      "receipt": "checks/final-profile-check.json",
+      "log": "checks/final-profile-check.log"
+    },
+    "final-verify-m11-run": {
+      "exitCode": 0,
+      "durationSeconds": 19.149,
+      "trackedUnchanged": true,
+      "logSha256": "601526a9ea8634744a600cd5f6dd2948166e4b8e8098548747b1c4e3164f9183",
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin/npm",
+        "run",
+        "verify:m11:run"
+      ],
+      "startedAt": "2026-10-18T12:08:02.766803+00:00",
+      "finishedAt": "2026-10-18T12:08:22.063675+00:00",
+      "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+      "receipt": "checks/final-verify-m11-run.json",
+      "log": "checks/final-verify-m11-run.log"
+    },
+    "linux-source-final-node22": {
+      "exitCode": 0,
+      "durationSeconds": 32.633,
+      "trackedUnchanged": true,
+      "logSha256": "9951a25913c6bcbab7cee5604cfc1676ff6a3a7801f68effd940a4ce7bc522f2",
+      "command": [
+        "docker",
+        "--context",
+        "colima-omp-pi130-01-20261018",
+        "exec",
+        "--workdir",
+        "/work/pi130-regression-f5c76352",
+        "omp-pi130-regression-24",
+        "node22",
+        "--test",
+        "--test-concurrency=2",
+        "tests/pi130-runtime.test.mjs",
+        "tests/direct-agent-launcher.test.mjs",
+        "tests/direct-pi110-cli.test.mjs",
+        "tests/host-input-rpc.test.mjs",
+        "tests/phase1-runtime-contracts.test.mjs",
+        "tests/pi110-private-runtime.test.mjs",
+        "tests/terminal-ready-publication.test.mjs"
+      ],
+      "startedAt": "2026-10-18T12:08:47.573047+00:00",
+      "finishedAt": "2026-10-18T12:09:20.350740+00:00",
+      "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+      "receipt": "checks/linux-source-final-node22.json",
+      "log": "checks/linux-source-final-node22.log",
+      "executionRoot": "/work/pi130-regression-f5c76352",
+      "executionIdentityReceipt": "linux-final-inputs.json"
+    },
+    "linux-source-final-node24": {
+      "exitCode": 0,
+      "durationSeconds": 31.433,
+      "trackedUnchanged": true,
+      "logSha256": "64c071783ddd1fda5c316f3823e75520727bfb92db62faacd5b1372dad2e774e",
+      "command": [
+        "docker",
+        "--context",
+        "colima-omp-pi130-01-20261018",
+        "exec",
+        "--workdir",
+        "/work/pi130-regression-f5c76352",
+        "omp-pi130-regression-24",
+        "node",
+        "--test",
+        "--test-concurrency=2",
+        "tests/pi130-runtime.test.mjs",
+        "tests/direct-agent-launcher.test.mjs",
+        "tests/direct-pi110-cli.test.mjs",
+        "tests/host-input-rpc.test.mjs",
+        "tests/phase1-runtime-contracts.test.mjs",
+        "tests/pi110-private-runtime.test.mjs",
+        "tests/terminal-ready-publication.test.mjs"
+      ],
+      "startedAt": "2026-10-18T12:09:20.393268+00:00",
+      "finishedAt": "2026-10-18T12:09:51.941071+00:00",
+      "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+      "receipt": "checks/linux-source-final-node24.json",
+      "log": "checks/linux-source-final-node24.log",
+      "executionRoot": "/work/pi130-regression-f5c76352",
+      "executionIdentityReceipt": "linux-final-inputs.json"
+    }
+  },
+  "review": {
+    "standards": "PASS",
+    "spec": "PASS",
+    "fixedPoint": "2abfbe9beadcf88936c43462c483e90108499ea4",
+    "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+    "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1",
+    "scope": "2abfbe9...f5c7635: 15 source/test files, plus 10 explicitly owned staged documentation files; exact snapshots in review-code.diff, review-documentation.diff and review-snapshot.json",
+    "report": "final-review.md",
+    "snapshot": "review-snapshot.json",
+    "axes": {
+      "standards": {
+        "agent": "/root/final76_standards",
+        "verdict": "PASS",
+        "findings": 1,
+        "hardViolations": 0,
+        "advisories": 1,
+        "worst": "P3",
+        "blocking": false,
+        "advisory": "Possible duplicated PID collection and cleanup observation shape in tests/host-mcp-write.test.mjs:52-55 and tests/host-codemode.test.mjs:235-238.",
+        "disposition": "Accepted as a nonblocking maintenance advisory. Preserve distinct failure observations; no unrelated refactor or source change after the frozen full runs."
+      },
+      "spec": {
+        "agent": "/root/final76_spec",
+        "verdict": "PASS",
+        "findings": 0,
+        "worst": null,
+        "blocking": false,
+        "limitations": "Historical exact MCP/HTTP triggers, codemode cancellation phase and old TUI key consumption remain UNKNOWN. Four installed checks remain #77; no installed, Full, real Provider or material acceptance."
+      }
+    },
+    "independentAgentsReadOnly": true,
+    "sourceChangedAfterReview": false,
+    "postReviewDocumentationChanges": "Record actual review verdicts and counts, then authorized issue closure/readback; no source or acceptance assertion changes."
+  },
+  "m11": {
+    "deterministic": "PASS_10_OF_10",
+    "Q10": "NOT_RUN_PLATFORM",
+    "Q11": "NOT_RUN_BY_POLICY",
+    "status": "HOLD_PLATFORM_AND_PROTECTED"
+  },
+  "evidenceId": "pi130-76-regression-20261018T092951Z/epoch5",
+  "originalEvidenceId": "pi130-01-20261018T032930Z",
+  "installedCandidateSkips": {
+    "owner": 77,
+    "countPerLane": 4
+  },
+  "issue77PrerequisiteSatisfied": true,
+  "remaining": [],
+  "notPerformed": [
+    "#77 implementation",
+    "daily installation switch",
+    "paid Provider",
+    "public release",
+    "push",
+    "dependency graph mutation",
+    "#21/#23 unblock"
+  ],
+  "priorCloseout": {
+    "issue": 76,
+    "state": "OPEN",
+    "result": "PARTIAL",
+    "scope": "PI130-01 development source and required local gates only",
+    "implementationCommit": "728dbbe3119c2b603af493a7775cc90448ee2013",
+    "baselineCommits": [
+      "c9a76114bf23b7dffb4a6bfa74fd06f8da0657a6",
+      "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb"
+    ],
+    "supplementCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+    "testedCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+    "testedTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+    "manifestSha256": "2879bd4374426628cd99558e88d75ce3ceebdfe18ed57a77b05a6054a4b43f1a",
+    "lockSha256": "bc9899201e7d74aa3f782d512247badc70b1fa58fab8efabc236cda2e9cfe639",
+    "pi": "1.3.0",
+    "nodes": [
+      "22.19.0",
+      "24.19.0"
+    ],
+    "fullTests": {
+      "22.19.0": {
+        "tests": 1678,
+        "pass": 1669,
+        "fail": 4,
+        "skip": 4,
+        "cancelled": 1,
+        "todo": 0
+      },
+      "24.19.0": {
+        "tests": 1678,
+        "pass": 1672,
+        "fail": 2,
+        "skip": 4,
+        "cancelled": 0,
+        "todo": 0
+      }
+    },
+    "fullFailures": {
+      "22.19.0": [
+        {
+          "case": "public OMP fullscreen keyboard approval is revoked by /new and Escape cannot approve",
+          "logLine": 1853,
+          "result": "FAIL"
+        },
+        {
+          "case": "public OMP regular keyboard approval is revoked by /new and Escape cannot approve",
+          "logLine": 1873,
+          "result": "FAIL"
+        },
+        {
+          "case": "public OMP Escape cancels an actual Pi request and closes the Provider stream",
+          "logLine": 1893,
+          "result": "CANCELLED"
+        },
+        {
+          "case": "public OMP reload preserves the no-retry policy without changing raw settings",
+          "logLine": 1903,
+          "result": "FAIL"
+        },
+        {
+          "case": "Inspect and an unapproved MCP tool cannot obtain real project write effects",
+          "logLine": 4673,
+          "result": "FAIL"
+        }
+      ],
+      "24.19.0": [
+        {
+          "case": "public OMP regular keyboard approval is revoked by /new and Escape cannot approve",
+          "logLine": 320,
+          "result": "FAIL"
+        },
+        {
+          "case": "terminal HTTP authenticates, validates input and coordinates manual ownership",
+          "logLine": 844,
+          "result": "FAIL"
+        }
+      ]
+    },
+    "fullSourceRunStatus": {
+      "22.19.0": "COMPLETE_FAIL",
+      "24.19.0": "COMPLETE_FAIL"
+    },
+    "criteria": [
+      {
+        "id": "AC1",
+        "result": "PASS",
+        "evidence": [
+          "original upstream acquisition/SRI/tag records",
+          "evidence-audit.json",
+          "delivery-install-node24",
+          "delivery-test-freeze.json"
+        ],
+        "scope": "frozen Pi 1.3.0; official tarball and 1276 installed regular files match; exact manifest/lock"
+      },
+      {
+        "id": "AC2",
+        "result": "PARTIAL",
+        "evidence": [
+          "docs/compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md#2-公开入口与产品职责",
+          "process-node22",
+          "process-node24"
+        ],
+        "scope": "exact-version admission and explicit native MCP/codemode pass targeted checks; final Node22 unapproved-write denial wait failed before zero-effect assertions, so complete policy verification remains partial"
+      },
+      {
+        "id": "AC3",
+        "result": "PARTIAL",
+        "evidence": [
+          "process-node22",
+          "process-node24",
+          "final-pty-node22",
+          "final-pty-node24",
+          "delivery-full-node24"
+        ],
+        "scope": "targeted real public CLI/PTY and Host pass; frozen full-suite regular PTY startup timeout remains unresolved"
+      },
+      {
+        "id": "AC4",
+        "result": "PASS",
+        "evidence": [
+          "final-input-history-node22",
+          "final-input-history-node24",
+          "process-node22",
+          "process-node24"
+        ],
+        "scope": "persistent inputId, lost ACK/unknown not replayed, fixed account/model, independent receive counts and no warming"
+      },
+      {
+        "id": "AC5",
+        "result": "FAIL",
+        "evidence": [
+          "delivery-typecheck-node22",
+          "delivery-typecheck-node24",
+          "delivery-contract-fixed-cache-node22",
+          "delivery-contract-fixed-cache-node24",
+          "delivery-full-node22",
+          "delivery-full-node24",
+          "linux-final-node22",
+          "linux-final-node24"
+        ],
+        "scope": "dual Node types/contracts and targeted processes pass; mandatory final full-suite success is not satisfied"
+      },
+      {
+        "id": "AC6",
+        "result": "PARTIAL",
+        "evidence": [
+          "final-m11-node24",
+          "evidence-audit.json",
+          "docs/compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md"
+        ],
+        "scope": "C/P identities and failures recorded, separate review below; required full-suite gate remains open; Q10/Q11 non-execution states preserved"
+      }
+    ],
+    "checks": {
+      "delivery-typecheck-node22": {
+        "exitCode": 0,
+        "sourceCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+        "sourceTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+        "logSha256": "bed3820c66b3b36d5c28e2b128f662afb04a0d924adfd35b82d02524c6cac6bf",
+        "trackedUnchanged": true,
+        "durationSeconds": 7.431
+      },
+      "delivery-typecheck-node24": {
+        "exitCode": 0,
+        "sourceCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+        "sourceTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+        "logSha256": "bed3820c66b3b36d5c28e2b128f662afb04a0d924adfd35b82d02524c6cac6bf",
+        "trackedUnchanged": true,
+        "durationSeconds": 6.284
+      },
+      "delivery-contract-fixed-cache-node22": {
+        "exitCode": 0,
+        "sourceCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+        "sourceTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+        "logSha256": "b5b2457ca020fa08d1ddeb20c8266165cc8e058a84e8d921794605bc542c27aa",
+        "trackedUnchanged": true,
+        "durationSeconds": 3.287
+      },
+      "delivery-contract-fixed-cache-node24": {
+        "exitCode": 0,
+        "sourceCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+        "sourceTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+        "logSha256": "459ff20fe7e4d0c652032e874d0760b23f174604e26bc629d2518f921354e712",
+        "trackedUnchanged": true,
+        "durationSeconds": 3.426
+      },
+      "delivery-full-node22": {
+        "exitCode": 1,
+        "sourceCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+        "sourceTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+        "logSha256": "50139d4e9dc0fc74c6ffc3de7be54335a20e2ddd9c80f5c75b97c68af6668a23",
+        "trackedUnchanged": true,
+        "durationSeconds": 1147.241
+      },
+      "delivery-full-node24": {
+        "exitCode": 1,
+        "sourceCommit": "22377517c5f2183124af9be05467426f1c8bbd36",
+        "sourceTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+        "logSha256": "bd5c473bdab026843b1ae2ffa89726d49ecc8a6538d7389c88e485f2f4cb4933",
+        "trackedUnchanged": true,
+        "durationSeconds": 1169.174
+      },
+      "final-web-build-node24": {
+        "exitCode": 0,
+        "sourceCommit": "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb",
+        "sourceTree": "70d4d7466978b828305158a3cff5482a0c2ef37d",
+        "logSha256": "60c7b55edd601f9ee6da4404055fdeea8d995ea1aaae8715f7bafd822dd0a783",
+        "trackedUnchanged": true,
+        "durationSeconds": 10.768
+      },
+      "final-web-tests-node24": {
+        "exitCode": 0,
+        "sourceCommit": "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb",
+        "sourceTree": "70d4d7466978b828305158a3cff5482a0c2ef37d",
+        "logSha256": "5fb093207499891b90c559161bd978b9f050c2bb89f012af7ee370418dc70da8",
+        "trackedUnchanged": true,
+        "durationSeconds": 6.347
+      },
+      "final-lint-node24": {
+        "exitCode": 0,
+        "sourceCommit": "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb",
+        "sourceTree": "70d4d7466978b828305158a3cff5482a0c2ef37d",
+        "logSha256": "d198732ed074ba97dc2d4feecb3169084c659017fab4dc5260dd2de199a47328",
+        "trackedUnchanged": true,
+        "durationSeconds": 26.108
+      },
+      "final-schema-node24": {
+        "exitCode": 0,
+        "sourceCommit": "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb",
+        "sourceTree": "70d4d7466978b828305158a3cff5482a0c2ef37d",
+        "logSha256": "982074422e5c4942447cafabaa5cd33c5e145100878a93840b16d414f8669d6b",
+        "trackedUnchanged": true,
+        "durationSeconds": 1.65
+      },
+      "final-profile-node24": {
+        "exitCode": 0,
+        "sourceCommit": "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb",
+        "sourceTree": "70d4d7466978b828305158a3cff5482a0c2ef37d",
+        "logSha256": "671f065d858915216fbd87cf53ed7c3f1edf35e18aeab08c9845b3b8b58e8fbd",
+        "trackedUnchanged": true,
+        "durationSeconds": 0.397
+      },
+      "final-m11-node24": {
+        "exitCode": 0,
+        "sourceCommit": "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb",
+        "sourceTree": "70d4d7466978b828305158a3cff5482a0c2ef37d",
+        "logSha256": "c6f99d98f7ff807814f65b7a6b6ace74946c0720d0cdb6552fd9e3c9595f1e6e",
+        "trackedUnchanged": true,
+        "durationSeconds": 45.416
+      },
+      "final-pty-node22": {
+        "exitCode": 0,
+        "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+        "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+        "logSha256": "5efe5d992755913c61e1459a6fdd75037fee92e869585048ceaaaa115bf87e12",
+        "trackedUnchanged": true,
+        "durationSeconds": 85.568
+      },
+      "final-pty-node24": {
+        "exitCode": 0,
+        "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+        "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+        "logSha256": "4d2d9fa9eb3fac2de2685cb8439e787fe45ec0d0afeccc97e772a9006861bb81",
+        "trackedUnchanged": true,
+        "durationSeconds": 85.412
+      },
+      "final-input-history-node22": {
+        "exitCode": 0,
+        "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+        "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+        "logSha256": "1d9019cc6bf3489f2039724b234135935770dd8bf33daf78f000579a55204a46",
+        "trackedUnchanged": true,
+        "durationSeconds": 20.53
+      },
+      "final-input-history-node24": {
+        "exitCode": 0,
+        "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+        "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+        "logSha256": "85138409a3d0e7caf00a76b71a347fcdd4379ea3afa6ccc9861fcfd26fcdabdc",
+        "trackedUnchanged": true,
+        "durationSeconds": 20.669
+      },
+      "final-baseline-green-node22": {
+        "exitCode": 0,
+        "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+        "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+        "logSha256": "27b9b63102a7cf05d2d69028c7c59681760e9a756d8f6db39f5e6e496c5ff5f6",
+        "trackedUnchanged": true,
+        "durationSeconds": 17.888
+      },
+      "final-baseline-green-node24": {
+        "exitCode": 0,
+        "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+        "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+        "logSha256": "24fdf8a2618e2b6f5ed94d8853978e949ffa39fac367f058b6fed79daedfa135",
+        "trackedUnchanged": true,
+        "durationSeconds": 17.452
+      },
+      "final-secret-node22": {
+        "exitCode": 0,
+        "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+        "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+        "logSha256": "785d6ff1d4348a75df67b80062f499ee3794b547c0f22d2786d651e10210bcc8",
+        "trackedUnchanged": true,
+        "durationSeconds": 3.504
+      },
+      "final-secret-node24": {
+        "exitCode": 0,
+        "sourceCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+        "sourceTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+        "logSha256": "785d6ff1d4348a75df67b80062f499ee3794b547c0f22d2786d651e10210bcc8",
+        "trackedUnchanged": true,
+        "durationSeconds": 3.286
+      },
+      "linux-final-node22": {
+        "exitCode": 0,
+        "sourceCommit": "c9a76114bf23b7dffb4a6bfa74fd06f8da0657a6",
+        "sourceTree": "dbaa1c35c1acaede3894985f54536320d9f98b1e",
+        "logSha256": "0f2774343e16c57ab22574a814cf3721ef3349b1f316a6cf593401acf2383859",
+        "trackedUnchanged": true,
+        "durationSeconds": 41.243,
+        "driverCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+        "driverTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+        "executionSource": "git archive independently installed in /work/pi130-closeout-c9a7611",
+        "executionSourceUnchanged": true,
+        "executionIdentityReceipt": "linux-final-verification-identity.json"
+      },
+      "linux-final-node24": {
+        "exitCode": 0,
+        "sourceCommit": "c9a76114bf23b7dffb4a6bfa74fd06f8da0657a6",
+        "sourceTree": "dbaa1c35c1acaede3894985f54536320d9f98b1e",
+        "logSha256": "fcd8af3184ef6b4986ee5502d13a36a58b8f974099533a91dfca1ba56f43853c",
+        "trackedUnchanged": true,
+        "durationSeconds": 39.632,
+        "driverCommit": "596ebcfafe92393e9c8ea245c61a2abcfd2bc59e",
+        "driverTree": "daf09c008244c4b04665975acba0bbad2e9d3dde",
+        "executionSource": "git archive independently installed in /work/pi130-closeout-c9a7611",
+        "executionSourceUnchanged": true,
+        "executionIdentityReceipt": "linux-final-verification-identity.json"
+      }
+    },
+    "review": {
+      "standards": "PASS",
+      "spec": "PARTIAL; close condition FAIL",
+      "standardsFindings": 0,
+      "standardsWorst": null,
+      "specFindings": 2,
+      "specWorst": "P1",
+      "specDispositions": [
+        {
+          "id": "P1",
+          "state": "OPEN",
+          "condition": "Required real-process gate remains open: full-suite real PTY Inspect startup failure(s); completed Node24 suite additionally failed Host HTTP terminalId, whose original status/body was not captured."
+        },
+        {
+          "id": "P2",
+          "state": "FIXED",
+          "change": "Linux sourceCommit/tree now record the actual c9a7611 git archive; prior host checkout identity is separately driverCommit/tree; actual source byte/mode parity references linux-final-verification-identity.json."
+        }
+      ],
+      "reports": {
+        "review-standards.md": "e18b2e3e43efa944b2d57fd02d46cb2167e08e400f448b9474837abeb7ae622e",
+        "review-spec.md": "192bbf9f6416d9e0851ddf68adb097d9ccb6aac7aaecd1528eba30f02053fca8"
+      },
+      "scope": {
+        "fixedPoint": "728dbbe3119c2b603af493a7775cc90448ee2013",
+        "head": "22377517c5f2183124af9be05467426f1c8bbd36",
+        "headTree": "32550193c0f8f3c235cc35ee1162f0524d744d2a",
+        "stagedTree": "3784aed0c5aed2010cf40db3cc199afa9273c387",
+        "commitDiffCommand": "git diff 728dbbe3119c2b603af493a7775cc90448ee2013...HEAD",
+        "docDiffCommand": "git diff --cached",
+        "commits": "2237751 test: isolate Linux prerequisite checks in clean worktrees (#76)\n83e58bf chore: complete required baseline hygiene for #76\nc9a7611 chore: integrate required development baseline for #76\n",
+        "stagedOwnedPaths": [
+          "docs/README.md",
+          "docs/STATUS.md",
+          "docs/compatibility/2026-10-17-pi-1.3.0-upgrade-preflight.md",
+          "docs/compatibility/2026-10-18-pi-1.3.0-closeout.json",
+          "docs/compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md",
+          "docs/compatibility/node-pi-matrix.md",
+          "docs/plans/2026-09-26-webui-optimization-tasks.md",
+          "docs/plans/2026-10-01-webui-remaining-spec.md",
+          "docs/plans/2026-10-17-product-direction-and-iteration-plan.md",
+          "docs/plans/2026-10-18-client-baseline-work-items.md",
+          "docs/plans/2026-10-18-development-baseline-integration.md"
+        ],
+        "fullSuiteState": "Both serial lanes are frozen and running; Node24 already has a real PTY startup failure. Draft explicitly says OPEN/PARTIAL and does not claim full success. Only actual final counts and reviewed verdict text will be filled later."
+      },
+      "postcheck": {
+        "scope": {
+          "head": "22377517c5f2183124af9be05467426f1c8bbd36",
+          "stagedTree": "36e515beed60c4ed2a44ff90da28674df16e05ab",
+          "ownedPaths": [
+            "docs/compatibility/2026-10-18-pi-1.3.0-runtime-adaptation.md",
+            "docs/compatibility/2026-10-18-pi-1.3.0-closeout.json",
+            "docs/plans/2026-10-17-product-direction-and-iteration-plan.md",
+            "docs/plans/2026-09-26-webui-optimization-tasks.md",
+            "docs/plans/2026-10-18-client-baseline-work-items.md",
+            "docs/plans/2026-10-01-webui-remaining-spec.md",
+            "docs/compatibility/2026-10-17-pi-1.3.0-upgrade-preflight.md",
+            "docs/STATUS.md",
+            "docs/compatibility/node-pi-matrix.md",
+            "docs/README.md",
+            "docs/plans/2026-10-18-development-baseline-integration.md"
+          ],
+          "scope": "post-review factual delta: Linux execution/driver source distinction and final Node24 failures; Node22 suite still in progress, no full PASS claimed"
+        },
+        "spec": "PARTIAL; close condition FAIL",
+        "P2": "FIXED_VERIFIED",
+        "P1": "OPEN",
+        "newInaccuracies": 0,
+        "reportSha256": "286486114aeed8f1b77b6278e715fbac40acad8de98fefcab0c9ab6b9652d775"
+      }
+    },
+    "m11": {
+      "deterministic": "PASS_10_OF_10",
+      "Q10": "NOT_RUN_PLATFORM",
+      "Q11": "NOT_RUN_BY_POLICY",
+      "status": "HOLD_PLATFORM_AND_PROTECTED"
+    },
+    "evidenceId": "pi130-01-closeout-20261018T062251Z",
+    "originalEvidenceId": "pi130-01-20261018T032930Z",
+    "installedCandidateSkips": {
+      "owner": 77,
+      "countPerLane": 4
+    },
+    "issue77PrerequisiteSatisfied": false,
+    "remaining": [
+      "Node22 host-mcp-write negative case timed out before terminal task status and before independent zero-call/zero-effect/file-unchanged assertions; actual effects at that failure are UNKNOWN, requiring captured task/receiver/file state and a source-bound diagnosis.",
+      "Real PTY Inspect startup failures under the original wait threshold in the frozen full-suite environment; identify a source-bound cause, then verify a minimal fix with affected real PTY and required full suites.",
+      "Host terminal HTTP full-suite failure: terminalId absent at tests/host-terminal-http.test.mjs:29; original response status/body was not recorded. A diagnostic single-file pass does not explain or cancel the full failure. Capture actual addProject/openTerminal response and supervisor readiness state before selecting any existing atomic-publication increment."
+    ],
+    "notPerformed": [
+      "#77 implementation",
+      "daily installation switch",
+      "paid Provider",
+      "public release",
+      "push",
+      "dependency graph mutation",
+      "#21/#23 unblock"
+    ]
+  },
+  "regressionFixCommits": [
+    "697db0195364cb7a4e73e6d3480a90f18034a1d6",
+    "82ab81c2cbe7da8246642865696373c780a600c1",
+    "d547048545d9c624a130a4d82ac35e1cfaefaa84",
+    "068803fdb7c8b2d60b6f6abcec0d43d2309e299c",
+    "45c54cf4ad9016128658a8f8ec9c85d89f421b4d",
+    "e85170aeb8651b990d32af9a3dca2ceb33afb590",
+    "c51623d071f8fced0a99d0ca64404de4d892a69e",
+    "f5c763524d398cef67315fbc603aa5aaa84018f9"
+  ],
+  "previousEvidenceId": "pi130-01-closeout-20261018T062251Z",
+  "priorCloseoutMeaning": "Historical closeout through 2abfbe9; original failures and review are retained, not superseded with retroactive PASS.",
+  "dependencyIdentity": {
+    "manifestSha256": "2879bd4374426628cd99558e88d75ce3ceebdfe18ed57a77b05a6054a4b43f1a",
+    "lockSha256": "bc9899201e7d74aa3f782d512247badc70b1fa58fab8efabc236cda2e9cfe639",
+    "sourceDigest": "c35f55b9a74c047bf83e569f71e4fdf1e9a4635ba07997b8841e17b07b9d8a43",
+    "dependencyDigest": "879036ec40128fc2cc1bcbf6ae32bf0d374aabb4defa7d73a75dd7bbf1f6c2d9",
+    "extensionInputDigest": "bf3b53999be5a8420481bc31d052275ec0cfc18351bd8a2bb92d38c86aa14e12",
+    "bindingsSettingsSha256": "5700006128bad3729b42e4584d554b89a06e8543f12645380d8eee53ad96fe6b",
+    "fullManifestReceipt": "final-inputs-before.json"
+  },
+  "regressionFindings": {
+    "historicalExactTriggers": {
+      "MCP": "UNKNOWN: original failed loop/state not recorded; not inferred from later passes",
+      "HTTP": "UNKNOWN: original status/body absent; current public-path race reproduced",
+      "PTY": "original and new full diagnostic startup family observed; cold-transform stage recorded in new failing full run"
+    },
+    "mcp": {
+      "unmodifiedInputRepetition": "repeat-results.json",
+      "trials": 5,
+      "outcome": "all original negatives passed; no original-event reconstruction claim",
+      "controlledReproduction": "checks/mcp-startup-contract-red-identity.json",
+      "failedBranch": {
+        "coding": false,
+        "mode": "readonly",
+        "answer": null,
+        "lastTask": "starting",
+        "receiver": "UNKNOWN",
+        "readmeSha256": "90563903c04ac3b01874743883b938981af73f0927f2cd789290866e9b47fa63"
+      },
+      "fixtureDefect": "asynchronous HTTP 202/starting initialization consumed the 7.5s denial poll",
+      "fix": "separate initialization using existing 30s RpcWorker readiness contract; original 7.5s denial poll, 45s outer case, zero-call/effect/byte/rejected assertions retained; public error code assertion added",
+      "green": "checks/mcp-startup-contract-green-node22.json",
+      "greenIndependentCalls": 0,
+      "greenIndependentEffects": 0
+    },
+    "http": {
+      "red": "checks/http-publication-red.json",
+      "actualStatus": 500,
+      "actualBody": {
+        "code": "EMPTY_JSON"
+      },
+      "readyReadBytes": 0,
+      "fix": "publish fully written and synced ready/cleanup inodes with exclusive hard-link publication; original wx no-replace semantics retained",
+      "adoptedExistingPaths": [
+        "packages/config-runtime/atomic-file.mjs",
+        "packages/host/terminal-supervisor.mjs"
+      ],
+      "green": [
+        "checks/http-publication-green-node24.json",
+        "checks/http-complete-evidence-node22.json"
+      ]
+    },
+    "pty": {
+      "failures": "pty-full-failure-observations.json",
+      "sourceOfDelay": "Repeated cold extension compilation under new private installation paths plus measured first execution overhead of newly copied embedded Node; no asserted OS internal mechanism.",
+      "fix": "reuse a test-process-private installation pathname only after confirmed process exit/group cleanup and directory deletion; recreate all source/config/project/session data each epoch; first cold launch remains timed",
+      "unchangedPoll": "320 x 25ms",
+      "unchangedFileConcurrency": 2,
+      "node22TargetedInspectMs": [
+        6904,
+        2374,
+        2471,
+        2248,
+        2521,
+        2221,
+        2370
+      ],
+      "cleanupStrengthening": "pin shell after its marker and verify exit plus empty process group before deleting/reusing; unknown cleanup retains directory; provider cleanup runs even if one terminal cleanup fails",
+      "additionalFrozenRed": {
+        "sourceCommit": "068803fdb7c8b2d60b6f6abcec0d43d2309e299c",
+        "receipt": "epoch2/checks/final-combination-serial-node22.json",
+        "tests": 36,
+        "pass": 34,
+        "fail": 2,
+        "cancelled": 0,
+        "observedFailures": "First two cold PTY launches; independent received count zero, processes remained in extension initialization."
+      },
+      "nodeImageExperiment": {
+        "receipt": "epoch2/node-image-execution-cost.json",
+        "originalSeconds": [
+          0.022699708999999985,
+          0.016823457999999958
+        ],
+        "copyFirstSeconds": [
+          1.518258125,
+          0.9278610830000003
+        ],
+        "copyRepeatSeconds": [
+          0.019137082999999944,
+          0.01776904200000029
+        ],
+        "exactOSMechanism": "UNKNOWN"
+      },
+      "runtimePreparation": {
+        "fixCommits": [
+          "45c54cf4ad9016128658a8f8ec9c85d89f421b4d",
+          "e85170aeb8651b990d32af9a3dca2ceb33afb590"
+        ],
+        "scope": "PTY fixture only; run relocated Node --version before copying application or Pi; compare process.version and save raw stdout/stderr. No application/SDK/extension import before timed PTY launch.",
+        "applicationPoll": "unchanged 320 x 25ms",
+        "coldExtensionLoadingTimed": true,
+        "boundedPairEvidence": [
+          "epoch2/checks/pty-node-image-identity-probe-1.json",
+          "epoch2/checks/pty-node-image-identity-probe-2.json"
+        ],
+        "firstColdInspectMs": [
+          5467,
+          7690
+        ]
+      }
+    },
+    "scope": "#76 development regressions; no #77, provider, daily install or release work",
+    "expandedMcpReadiness": {
+      "sourceFullEpoch": "82ab81c2cbe7da8246642865696373c780a600c1",
+      "fullReceipt": "checks/final-full-node22.json",
+      "fullResult": {
+        "tests": 1681,
+        "pass": 1674,
+        "fail": 2,
+        "cancelled": 1,
+        "skip": 4,
+        "todo": 0
+      },
+      "sourceAndDependenciesUnchanged": true,
+      "newFailureCases": [
+        {
+          "case": "nested ordinary and MCP writes retain Coding, separate approvals and the canonical project writer",
+          "result": "FAIL",
+          "phase": "Coding request",
+          "logLine": 3429
+        },
+        {
+          "case": "public Host and real Pi approve a single scoped stdio read, show its result and confirm process exit",
+          "result": "FAIL",
+          "phase": "MCP approval",
+          "logLine": 4620
+        },
+        {
+          "case": "startup descriptor effects are recorded UNKNOWN even when no tools/call is dispatched",
+          "result": "CANCELLED",
+          "phase": "outer25000ms timeout",
+          "logLine": 4697
+        }
+      ],
+      "controlledNestedRed": {
+        "receipt": "checks/nested-startup-red.json",
+        "lastTask": "starting",
+        "mode": "controlled",
+        "coding": true,
+        "answer": null,
+        "approvals": 0,
+        "receiver": "UNKNOWN",
+        "readmeUnchanged": true,
+        "cleanup": "final close receipt not written; root retained; independent original PID absent and group empty in nested-red-cleanup-independent.json"
+      },
+      "controlledNestedGreen": "checks/nested-startup-green-node22.json",
+      "coverageAudit": "readiness-coverage-scout.md",
+      "additionalTargeted": [
+        "checks/additional-mcp-readiness-node22.json",
+        "checks/additional-mcp-readiness-node24.json"
+      ],
+      "fixCommits": [
+        "d547048545d9c624a130a4d82ac35e1cfaefaa84",
+        "068803fdb7c8b2d60b6f6abcec0d43d2309e299c"
+      ],
+      "scope": "Test readiness boundaries only; original business polls, outer timeouts, authority/effect and physical cleanup assertions retained. Existing runtime30s initialization contract is reused."
+    },
+    "overlapDiagnostic": "epoch2/overlap-diagnostic-context.json",
+    "evidenceRoots": {
+      "diagnostic": "LOCAL_WORKSPACE/artifacts/pi130-76-regression-20261018T092951Z",
+      "final": "LOCAL_WORKSPACE/artifacts/pi130-76-regression-20261018T092951Z/epoch5",
+      "intermediate": "LOCAL_WORKSPACE/artifacts/pi130-76-regression-20261018T092951Z/epoch2",
+      "preRuntimeCandidate": "LOCAL_WORKSPACE/artifacts/pi130-76-regression-20261018T092951Z/epoch3",
+      "priorFullTuiRed": "LOCAL_WORKSPACE/artifacts/pi130-76-regression-20261018T092951Z/epoch4"
+    },
+    "codemodeLifecycle": {
+      "sourceCommit": "e85170aeb8651b990d32af9a3dca2ceb33afb590",
+      "failedCombination": "epoch3/checks/final-combination-serial-node22.json",
+      "counts": {
+        "tests": 36,
+        "pass": 35,
+        "fail": 0,
+        "cancelled": 1,
+        "skip": 0
+      },
+      "failedCase": "an ordinary target changed during approval cannot retain or consume the previous grant",
+      "historicalPhase": "UNKNOWN; outer 25s timeout had no pre-cleanup phase snapshot.",
+      "boundedObservationalRuns": [
+        {
+          "receipt": "epoch3/checks/codemode-timeout-observed.json",
+          "tests": 18,
+          "pass": 18,
+          "targetCaseElapsedMs": 9286
+        },
+        {
+          "receipt": "epoch3/checks/codemode-private-path-observed.json",
+          "tests": 18,
+          "pass": 18,
+          "targetCaseElapsedMs": 9093
+        }
+      ],
+      "measuredFixtureCost": {
+        "beforeTransforms": 1248,
+        "afterTransforms": 239,
+        "firstColdTransforms": 232,
+        "beforeTransformMs": 17197.136,
+        "afterTransformMs": 3705.677
+      },
+      "fixCommit": "c51623d071f8fced0a99d0ca64404de4d892a69e",
+      "fix": "Codemode test file only: reuse process-private installation path after normal confirmed Host cleanup and full deletion. Rebuild all inputs. Record target case stages and pre-cleanup task/receiver/file/process state. Original outer25s and original business assertions unchanged.",
+      "excludedCallers": "Other MCP unconfirmed cleanup, external TUI/CLI and browser keep:true fixtures retain their allocation behavior."
+    },
+    "referenceBase": "LOCAL_WORKSPACE/artifacts/pi130-76-regression-20261018T092951Z",
+    "tuiApproval": {
+      "failedSourceCommit": "c51623d071f8fced0a99d0ca64404de4d892a69e",
+      "fullReceipt": "epoch4/checks/final-full-node22.json",
+      "fullResult": {
+        "tests": 1682,
+        "pass": 1677,
+        "fail": 1,
+        "cancelled": 0,
+        "skip": 4
+      },
+      "failedCase": "actual CLI TUI writes through the shared approval and physical descriptor contract",
+      "failure": "original 7.5s descriptor-effect poll expired after the test used only durable awaiting_approval as key readiness",
+      "actualFailureReadback": "epoch4/tui-full22-after-failure-before-residual-cleanup.json",
+      "actualFailureState": {
+        "callStatus": "awaiting_approval",
+        "independentReception": "KNOWN",
+        "call": 0,
+        "effect": 0,
+        "readmeUnchanged": true,
+        "keyConsumption": "UNKNOWN"
+      },
+      "cleanupIntervention": [
+        "epoch4/tui-full22-residual-cleanup.json",
+        "epoch4/full22-failed-worker-intervention.json"
+      ],
+      "cleanupInterventionMeaning": "The already failing old after-hook left the real TUI/MCP and Host/provider listeners; identity-checked residual termination and failed-worker termination allowed the original npm test runner to finish. This is retained failed diagnostic evidence, never final acceptance.",
+      "controlledRed": "epoch4/checks/tui-selector-red.json",
+      "controlledRedFacts": {
+        "keyBeforeFocusMs": 1989,
+        "selectorInputs": 0,
+        "call": 0,
+        "effect": 0,
+        "callStatus": "awaiting_approval",
+        "readmeUnchanged": true,
+        "cleanupConfirmed": true
+      },
+      "controlledGreen": [
+        "epoch4/checks/tui-selector-green-node22.json",
+        "epoch4/checks/tui-focused-approval-node22.json",
+        "epoch4/checks/tui-focused-approval-node24.json"
+      ],
+      "controlledGreenFacts": {
+        "originalCombinedInput": "ESC[B then CR",
+        "realSelectorAnswer": "仅本次",
+        "callApplication": "applied",
+        "normalExit": 0,
+        "cleanupConfirmed": true
+      },
+      "cause": "Fixture equated a durable MCP journal state with the real selector being focused. Publication/save unlock and selector/render are separate asynchronous boundaries.",
+      "fixCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+      "fix": "Wait for current MCP write dialog title and all three original choices in actual PTY output before sending the unchanged combined down/Enter; add a copied-SDK 2s pre-focus regression, raw pre-cleanup state, and identity-checked owned TUI/MCP cleanup.",
+      "unchangedContracts": [
+        "outer 45s",
+        "effect poll 300x25ms",
+        "file concurrency 2",
+        "combined arrow and Enter",
+        "actual README bytes",
+        "application applied",
+        "one independent call",
+        "normal CLI exit0"
+      ],
+      "historicalExactKeyConsumption": "UNKNOWN; controlled reproduction demonstrates the defect without claiming a precise timestamp reconstruction of the earlier full event.",
+      "finalCleanupDiagnostic": "postfull-cleanup-diagnostic.json",
+      "finalCleanupDiagnosticMeaning": "Only two visible-selector wait lines removed in a separate source-aligned diagnostic copy; original effect assertion failed, current committed cleanup confirmed and independently queried both owned PIDs/groups absent. Acceptance source unchanged."
+    }
+  },
+  "linuxIdentity": {
+    "receipt": "linux-final-inputs.json",
+    "tests": {
+      "tests": 48,
+      "pass": 48,
+      "fail": 0,
+      "cancelled": 0,
+      "skip": 0,
+      "todo": 0
+    },
+    "scope": "existing affected Linux arm64 CLI",
+    "sourceCommit": "f5c763524d398cef67315fbc603aa5aaa84018f9",
+    "sourceTree": "dd65401a765fa8b6a86aca936e20bd963bce93e1"
+  },
+  "webReuse": "web-check-reuse-input-parity.json",
+  "lifecycleAndInputComparisons": [
+    "final-input-comparison-after-node22.json",
+    "final-input-comparison-after-node24.json",
+    "external-input-final-comparison.json",
+    "final-preservation.json"
+  ],
+  "githubReadback": {
+    "receipt": "github/final-close-readback.json",
+    "closedAt": "2026-10-18T12:52:11Z",
+    "commentUrl": "https://github.com/Ricardo121380/only-my-pi/issues/76#issuecomment-6250137931",
+    "issue77State": "OPEN",
+    "dependencyEdgesPreserved": true
+  },
+  "continuationBaselineCommit": "2abfbe9beadcf88936c43462c483e90108499ea4",
+  "protectedHistoryCommits": [
+    "c9a76114bf23b7dffb4a6bfa74fd06f8da0657a6",
+    "83e58bfa19f7c00c2d36b03a754b2da0c240e6cb",
+    "22377517c5f2183124af9be05467426f1c8bbd36",
+    "2abfbe9beadcf88936c43462c483e90108499ea4"
+  ],
+  "sourceFileCount": 1644,
+  "nodeBinaries": {
+    "22.19.0": {
+      "platform": "darwin-arm64",
+      "sha256": "0d005c18e095027ca8f9fe1cc1126f767ee4ad7b004f4d6fb781ec4228a7c5d1"
+    },
+    "24.19.0": {
+      "platform": "darwin-arm64",
+      "sha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1"
+    }
+  },
+  "piIdentity": {
+    "version": "1.3.0",
+    "tarballSha256": "ae2785e870b81a8c8e1d44510a57b5ee0bfc9e974679ac2faaada4aabee3d3c0",
+    "regularFileParity": 1276,
+    "packages": {
+      "pi-coding-agent": {
+        "name": "@earendil-works/pi-coding-agent",
+        "version": "1.3.0",
+        "manifestSha256": "83c3bb7619f590c213cc96a24216eb29a819a3ef6dc548607cc037ed276e8dc5"
+      },
+      "pi-ai": {
+        "name": "@earendil-works/pi-ai",
+        "version": "1.3.0",
+        "manifestSha256": "4e9ed07b06a91d844485874c251f312b610d015a4a4fd32c78cde58a7862a3f1"
+      },
+      "pi-agent-core": {
+        "name": "@earendil-works/pi-agent-core",
+        "version": "1.3.0",
+        "manifestSha256": "67728d06e96459b7fe96c490b563865fb78f7eafcecb708e7ae43e6dd857a324"
+      },
+      "pi-tui": {
+        "name": "@earendil-works/pi-tui",
+        "version": "1.3.0",
+        "manifestSha256": "a6a82af81ed5b6069267eabfdcf047d0af8013695b0e64d72f3c9f44f8e8124e"
+      },
+      "pi-mcp": {
+        "name": "@earendil-works/pi-mcp",
+        "version": "1.3.0",
+        "manifestSha256": "139827d9a6f2dd45f06b2e9310580183ea11f9b4a003b36234a6d56b67952457"
+      },
+      "pi-codemode": {
+        "name": "@earendil-works/pi-codemode",
+        "version": "1.3.0",
+        "manifestSha256": "537cbc71ff74ac9aee012faa7d0f8b7a082115434d2e3fa4305b434b3f9c000f"
+      }
+    }
+  },
+  "publicRegressionObservations": "public-regression-observations.json",
+  "publicRegressionCoverage": "public-regression-coverage.json",
+  "evidenceReferenceBase": "artifact root pi130-76-regression-20261018T092951Z/epoch5",
+  "evidenceRoots": {
+    "final": "pi130-76-regression-20261018T092951Z/epoch5",
+    "diagnostic": "pi130-76-regression-20261018T092951Z",
+    "priorCloseout": "pi130-01-closeout-20261018T062251Z"
+  }
+}

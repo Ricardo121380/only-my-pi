@@ -6,9 +6,26 @@ tool host.
 
 ## Current availability
 
+As checked on 2026-10-17, the published terminal Preview is
+[v0.4.0-preview.2](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2).
+Use the installation and daily-use instructions in the [English README](../README.md)
+or [Chinese README](../README.zh-CN.md). The [WebUI guide](webui.md) describes
+the local graphical entry; it requires its own compatible runtime.
+
+The [development blueprint](plans/2026-10-17-product-direction-and-iteration-plan.md)
+covers the CLI/desktop target, WebUI delivery, and Pi upgrades. Published
+Preview, development dependencies, candidate runtime, and daily installation
+are separate identities.
+
+## Historical M12/M13 guide
+
+The remaining instructions and installation statements preserve the M12/M13
+acceptance context. They are not the current installation guide or a claim that
+later releases have not been published.
+
 The M13 follow-up to M12 `0.3.0-preview.1` passed local C1-C12 acceptance on source
 `15c40a2` and is installed on the acceptance host. Original M12 evidence remains
-bound to `2d6efbd`. Public distribution remains on hold pending
+bound to `2d6efbd`. At that checkpoint, public distribution remained on hold pending
 hosted CI and the release workflow. There is no public `0.2.0-preview.1`
 Release, and the old installer URL must not be used.
 The checked-in `distribution/install.sh` is a future exact-version M12

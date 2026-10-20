@@ -13,7 +13,7 @@ import { materializeExecutableLinks } from "./npm-layout.mjs";
 import { stagePiBranding } from "./pi-branding.mjs";
 import { stageToolchain } from "./toolchain-builder.mjs";
 import { buildDistributionArchives } from "./archive-builder.mjs";
-import { DISTRIBUTION_VERSION, DISTRIBUTION_VERSIONS, hashDistributionTree, distributionError } from "./runtime.mjs";
+import { DISTRIBUTION_VERSION, DISTRIBUTION_VERSIONS, NODE_RANGE, hashDistributionTree, distributionError } from "./runtime.mjs";
 
 import { stageLinuxDependencies } from "./linux-dependency-builder.mjs";
 import { applyRuntimePatches } from "./runtime-patches.mjs";
@@ -119,7 +119,7 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
     await fs.mkdir(cli);
     await json(path.join(cli, "package.json"), { name: "only-my-pi", version, private: false, type: "module", license: "MIT",
       description: "Guarded terminal coding agent built on Pi (Public Preview)", bin: { omp: "loader.mjs" },
-      engines: { node: ">=22.19.0" }, os: [process.platform], cpu: [process.arch],
+      engines: { node: NODE_RANGE }, os: [process.platform], cpu: [process.arch],
       optionalDependencies: { [runtimeName]: version }, scripts: { postinstall: "node loader.mjs --verify-install" },
       repository: { type: "git", url: "git+https://github.com/Ricardo121380/only-my-pi.git" },
       homepage: "https://github.com/Ricardo121380/only-my-pi", files: ["loader.mjs", "resource-hash.mjs", "runtime-packages.json", "README.md", "LICENSE"] });
@@ -128,7 +128,7 @@ export async function buildNativePackages({ rootDir, outputRoot, seedBundle, sou
     for (const [source, target] of [["distribution/npm/loader.mjs", "loader.mjs"], ["packages/bootstrap/resource-hash.mjs", "resource-hash.mjs"], ["LICENSE", "LICENSE"]])
       await fs.copyFile(path.join(rootDir, source), path.join(cli, target));
     await fs.chmod(path.join(cli, "loader.mjs"), 0o755);
-    await fs.writeFile(path.join(cli, "README.md"), `# only-my-pi ${version}\n\nPublic Preview for ${platform}. Requires Node >=22.19.0 and Git on PATH. Linux additionally requires bubblewrap, socat, ripgrep and a kernel/security policy permitting the strong sandbox. The runtime includes fd and ripgrep.\n\n${platform} 预览版。npm/npx 安装前需准备 Node >=22.19.0 和 Git；Linux 还需 bubblewrap、socat、ripgrep 及允许强沙箱运行的系统策略。\n\nRun \`omp\` after installation. Configure model authentication with \`omp admin pi\`.\n\n[English documentation](https://github.com/Ricardo121380/only-my-pi) · [中文说明](https://github.com/Ricardo121380/only-my-pi/blob/main/README.zh-CN.md)\n`);
+    await fs.writeFile(path.join(cli, "README.md"), `# only-my-pi ${version}\n\nPublic Preview for ${platform}. Requires Node ${NODE_RANGE} and Git on PATH. Linux additionally requires bubblewrap, socat, ripgrep and a kernel/security policy permitting the strong sandbox. The runtime includes fd and ripgrep.\n\n${platform} 预览版。npm/npx 安装前需准备 Node ${NODE_RANGE} 和 Git；Linux 还需 bubblewrap、socat、ripgrep 及允许强沙箱运行的系统策略。\n\nRun \`omp\` after installation. Configure model authentication with \`omp admin pi\`.\n\n[English documentation](https://github.com/Ricardo121380/only-my-pi) · [中文说明](https://github.com/Ricardo121380/only-my-pi/blob/main/README.zh-CN.md)\n`);
 
     const artifacts = [];
     for (const [name, directory] of [[runtimeName, runtimePackage], ["only-my-pi", cli]]) {

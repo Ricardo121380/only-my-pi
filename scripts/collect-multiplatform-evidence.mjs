@@ -43,7 +43,7 @@ for (const platform of RELEASE_PLATFORMS) {
     return match;
   };
   const bindings = {};
-  for (const node of ["22.19.0", "24.19.0"]) {
+  for (const node of ["24.19.0"]) {
     const proof = select("LOCAL_INSTALL_ACCEPTANCE_PASS", (v) => v.node === node);
     assert.equal(proof.value.publicRegistryVerified, false);
     assert.deepEqual(proof.value.checks.map((c) => c.label).sort(),
@@ -51,7 +51,7 @@ for (const platform of RELEASE_PLATFORMS) {
     if (platform === "darwin-arm64") assert.equal(proof.value.productUpgrade, true);
     assert.ok(proof.value.checks.every((c) => c.exitCode === 0));
     bindings[`npm-node${node.split(".")[0]}-lifecycle`] = proof.digest;
-    if (node.startsWith("24.")) bindings["dependency-complete-startup"] = proof.digest;
+    bindings["dependency-complete-startup"] = proof.digest;
   }
   const archive = select("LOCAL_ARCHIVE_ACCEPTANCE_PASS");
   assert.ok(archive.value.fullInstalledOffline && archive.value.thinInstalledFromPinnedNode && archive.value.unknownFilesPreserved);

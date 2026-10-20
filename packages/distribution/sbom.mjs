@@ -45,6 +45,16 @@ export async function createDistributionSbom({ runtimeRoot, manifest, dependency
     }
   }
   await addApplicationPackage(appRoot);
+  const frontend = await readRegularJson(path.join(appRoot, "webui/dist/dependencies.json"), { optional: true });
+  if (frontend) for (const item of frontend) {
+    if (!item.name || !item.version || typeof item.license !== "string") throw new Error("frontend dependency lacks a declared license");
+    const record = packageRecord(item.name, item.version, item.license);
+    record.comment = "Bundled frontend module; full license in webui/dist/THIRD_PARTY_NOTICES.txt";
+    const key = `${item.name}@${item.version}`;
+    const existing = packages.get(key);
+    if (existing) existing.comment = [existing.comment, record.comment].filter(Boolean).join("; ");
+    else packages.set(key, record);
+  }
   const toolchain = await readRegularJson(path.join(runtimeRoot, "pi/vendor-tools/toolchain.json"));
   for (const tool of toolchain.tools) {
     const record = packageRecord(tool.name, tool.version, tool.license, tool.url);

@@ -16,7 +16,7 @@ import {
   loadDailyHarnessProtectedEvidence,
   resolveDailyHarnessGate,
 } from "./lib/daily-harness-gates.mjs";
-import { repositoryRoot, runCheck } from "./verification-receipt.mjs";
+import { formatGateProgress, repositoryRoot, runCheck } from "./verification-receipt.mjs";
 
 const FULL_SHA = /^[a-f0-9]{40}$/u;
 
@@ -219,6 +219,7 @@ export async function runDailyHarnessVerification({
   const gates = [];
   for (const gate of manifest.gates) {
     let result;
+    let diagnostic;
     if (gate.execution === "protected-evidence") result = protectedResult(gate, loadedEvidence[gate.id]);
     else {
       const raw = await runCheck(gate, {
@@ -228,9 +229,10 @@ export async function runDailyHarnessVerification({
         ...(spawnImpl === undefined ? {} : { spawnImpl }),
       });
       result = publicDeterministicResult(raw);
+      diagnostic = raw.diagnostic;
     }
     gates.push(result);
-    onGate(result);
+    onGate(result, diagnostic);
   }
   if (requireCleanSource && assertCleanHead(resolvedRoot) !== cleanHead) fail("source commit changed while gates were running");
   const deterministic = gates.filter((gate) => gate.execution === "deterministic");
@@ -289,7 +291,7 @@ export async function main(argv = process.argv.slice(2)) {
     output: args.output,
     protectedEvidence: args.protectedEvidence,
     ...(args.sourceCommit ? { sourceCommit: args.sourceCommit } : {}),
-    onGate: (gate) => process.stderr.write(`${gate.status} ${gate.id} (${gate.durationMs} ms)\n`),
+    onGate: (gate, diagnostic) => process.stderr.write(formatGateProgress(gate, diagnostic)),
   });
   const summary = {
     status: report.status,

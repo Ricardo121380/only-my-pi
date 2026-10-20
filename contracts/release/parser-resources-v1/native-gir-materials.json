@@ -1,0 +1,2883 @@
+{
+  "schemaVersion": 1,
+  "kind": "only-my-pi-fixed-gir-materials",
+  "issue": 21,
+  "task": "G2-00-02",
+  "requirements": [
+    "US-001",
+    "US-002",
+    "US-003",
+    "US-004",
+    "US-008"
+  ],
+  "status": "PARTIAL",
+  "issueCompletion": "PARTIAL",
+  "licensingClosure": "INCOMPLETE",
+  "generatorExecution": "NOT_RUN",
+  "Full": "NOT_RUN",
+  "U2": "BLOCKED",
+  "fixedCommit": "6cef10cd64dfe5839e6693676852479fe7c9aac8",
+  "fixedTree": "a47ef519d573ae54d7a7df720cbf6e202c69e4c3",
+  "kit": {
+    "id": "sha256:4a3e418e0601374b5e072f13981fc8b9472e2aa7659846d6ccae7a6fd58c6622",
+    "receipt": {
+      "path": "kit.json",
+      "sha256": "sha256:79fc7887dc1df885d46caba30d693e882f0fbe9f94ff810c552325d437864733",
+      "bytes": 1510,
+      "mode": "100644"
+    },
+    "sourceInventory": {
+      "path": "source-inventory.json",
+      "sha256": "sha256:893ed818deef7d1c289febe11bf3aa908ba4acfd784c0711dd8daa721963f053",
+      "bytes": 5463375,
+      "mode": "100644"
+    },
+    "girPrefix": "sources/rsvg/librsvg-rebind/gir-files"
+  },
+  "priorReviewSha256": "sha256:66a3be81e96ff1f341a2cf89e981a1ac9d67f634534045b46104336e25b36369",
+  "originsInventory": {
+    "path": "inventory.json",
+    "sha256": "sha256:c6b33c541b7e17eab77a9d9e3abca666ee5fd0a4100b1b6eb48b75f35ddae75e",
+    "bytes": 14346,
+    "mode": "100644"
+  },
+  "originFiles": 74,
+  "fixedFiles": [
+    {
+      "path": ".github/FUNDING.yml",
+      "sha256": "sha256:8b30adecb3e11963063f08b013fcc7f56726886502dc81acc40aba9991efa817",
+      "bytes": 24,
+      "mode": "100644",
+      "gitBlob": "1d8307f3671c7646834d619ebfdb9b578d2123ba"
+    },
+    {
+      "path": ".github/dependabot.yml",
+      "sha256": "sha256:cc155956fec79314d07b89ac25c86107b1443523a63661b0369118e7b873a210",
+      "bytes": 255,
+      "mode": "100644",
+      "gitBlob": "700707ced32fb4e449f9beaf23ec7d5f77b7657d"
+    },
+    {
+      "path": ".github/workflows/CI.yml",
+      "sha256": "sha256:bd9d3691c55fa46cb544213c5a9e288ef8bd06bf4af579781ac8a75167106704",
+      "bytes": 771,
+      "mode": "100644",
+      "gitBlob": "0d02b4ffaaf563a5884609c7a838b3e2bb1bb8de"
+    },
+    {
+      "path": ".github/workflows/auto-merge.yml",
+      "sha256": "sha256:c90777c3610c643f2bebc6cd9dc37e810df0b6a525544be9344032b4073d2910",
+      "bytes": 1206,
+      "mode": "100644",
+      "gitBlob": "4c08e9f8012979b548954d06219fa8a4b57e8949"
+    },
+    {
+      "path": ".github/workflows/auto-update.yml",
+      "sha256": "sha256:3ca9a3aee3494142f7a7d22b1d9a8ca68a0425404fa107468e8ce6488bb20d9e",
+      "bytes": 469,
+      "mode": "100644",
+      "gitBlob": "0d870f59a23ae7feca9f6b4428913adfcc603454"
+    },
+    {
+      "path": ".github/workflows/regenerate_scheduled.yml",
+      "sha256": "sha256:faac30522411f0041df60e5f0a35a83fc9116bbc6ef228adbca1cb80723c02a3",
+      "bytes": 1574,
+      "mode": "100644",
+      "gitBlob": "2e1f54e9287f2e45fc0e0bdcb1fd4b469933e017"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "sha256:75591c01bdc5fa50fc24ca335f1e9aca845f2ee35b8488a3a9638c0e040d9788",
+      "bytes": 23,
+      "mode": "100644",
+      "gitBlob": "c0d60806700dfc54f6b2182fdb83d93b9867a80a"
+    },
+    {
+      "path": "Atk-1.0.gir",
+      "sha256": "sha256:addfd5c631963b2d0602a9be57e80da6ee3e36a9b323fc4db44eaa717dee178d",
+      "bytes": 835389,
+      "mode": "100644",
+      "gitBlob": "160065623b77bf01d72d7cbe87b6b5052bca1672"
+    },
+    {
+      "path": "GL-1.0.gir",
+      "sha256": "sha256:c6a447ab4d5b32557a9fa93bf71a3f2438e4917a27bb2c5c2f9777e8e26d4fa3",
+      "bytes": 1084,
+      "mode": "100644",
+      "gitBlob": "b81887137be1b1f11a9637eb128e8f781add2ae4"
+    },
+    {
+      "path": "GLib-2.0.gir",
+      "sha256": "sha256:86d5c40557f2c5d18e0daf349d74e4cee64052f5453d0370e90e4cb6436b4935",
+      "bytes": 3077434,
+      "mode": "100644",
+      "gitBlob": "553a7fc09995f8a1782ca4ffb16ce969c4f70f22"
+    },
+    {
+      "path": "GLibUnix-2.0.gir",
+      "sha256": "sha256:5e1b39a87b50a1dce9ef1d72de22fa88a1e4d7edda2f00e49a9d12e2370a08fb",
+      "bytes": 16700,
+      "mode": "100644",
+      "gitBlob": "a9daff40e12ba53970e12aeac7806721a1b0baff"
+    },
+    {
+      "path": "GLibWin32-2.0.gir",
+      "sha256": "sha256:0f4ec8188c46aca808d993bf07e4a7365251011fd2b8e7c8e71758463dfadb04",
+      "bytes": 6829,
+      "mode": "100644",
+      "gitBlob": "2ef518815d6fb89e57794f6c1c46ce82ec4e2d35"
+    },
+    {
+      "path": "GModule-2.0.gir",
+      "sha256": "sha256:c502901875ca5e72ed39a7754643214a9cb2763190b3b60e0729616cca5146b4",
+      "bytes": 48534,
+      "mode": "100644",
+      "gitBlob": "78364234fc28909263dcd8a9873d901e10f0c4b1"
+    },
+    {
+      "path": "GObject-2.0.gir",
+      "sha256": "sha256:fe437dbea196cd5495dd294f18ab807dd02ad032448d9b1a661c915a09cf4fbc",
+      "bytes": 974799,
+      "mode": "100644",
+      "gitBlob": "79e0df02a787199905e7afc8a4ca82d5232d1340"
+    },
+    {
+      "path": "Gdk-3.0.gir",
+      "sha256": "sha256:3a38168e49bd05b00deb1704e1918f4605c1ac698008ea80dce92120e43de7b2",
+      "bytes": 1250360,
+      "mode": "100644",
+      "gitBlob": "95577210944aec39e9ac52f87bc79cc987d83658"
+    },
+    {
+      "path": "Gdk-4.0.gir",
+      "sha256": "sha256:e6315aff2f64d6bb132b39b971626c99750887875712a56cbe253eaa0e1233ed",
+      "bytes": 1150238,
+      "mode": "100644",
+      "gitBlob": "8828b672d8dc5e1089e7e8f7e28adabc4748c9c5"
+    },
+    {
+      "path": "GdkMacos-4.0.gir",
+      "sha256": "sha256:873689dce954262cc899c8e8d5d3dbe334ec95accaf8b45c65649f47978b9330",
+      "bytes": 8748,
+      "mode": "100644",
+      "gitBlob": "3ab4c3e3290249108effcbad7f6b73d2ed5b398f"
+    },
+    {
+      "path": "GdkPixbuf-2.0.gir",
+      "sha256": "sha256:45e112442b14c3e399823aaacaddc6fd269ae8f0e2001736b617597332bd4c29",
+      "bytes": 244753,
+      "mode": "100644",
+      "gitBlob": "24be5968c1733dc5ed88f6846543f1a72b7e74c2"
+    },
+    {
+      "path": "GdkPixdata-2.0.gir",
+      "sha256": "sha256:8ea51bdd30a4722501655b3dcb0aba7110385dba375e56b6c6656efe5922cbe5",
+      "bytes": 15576,
+      "mode": "100644",
+      "gitBlob": "1d57738dc0e257d0bf1135586a90acbabd629ff2"
+    },
+    {
+      "path": "GdkWayland-4.0.gir",
+      "sha256": "sha256:c389bb6c55d339c9e31f9296177f978b1c7bc6a604a6699fce559840dcc06f95",
+      "bytes": 30766,
+      "mode": "100644",
+      "gitBlob": "025f073c26e5191aecdfed2027995072f87ea771"
+    },
+    {
+      "path": "GdkWin32-4.0.gir",
+      "sha256": "sha256:57ef407c9cebbd05f9f8b3066d12eefa0244effe57987fd700656a1e77e07cff",
+      "bytes": 47107,
+      "mode": "100644",
+      "gitBlob": "3eea0212dd240127e46183ad757b125924b3406c"
+    },
+    {
+      "path": "GdkX11-3.0.gir",
+      "sha256": "sha256:e94062ada31614394fa293f0fa5e454aed16bee732bce2b3f4ee33450d6b4e8e",
+      "bytes": 88464,
+      "mode": "100644",
+      "gitBlob": "e97843ed2725b3589bd1b5a25a6e90fc141b9a55"
+    },
+    {
+      "path": "GdkX11-4.0.gir",
+      "sha256": "sha256:7350f687e4b0896a45f7fc2ea9a13e7d5c33ffca51be38ecc210953eb50b0f39",
+      "bytes": 74754,
+      "mode": "100644",
+      "gitBlob": "aed9081b5eb5ef10858ac78c35d567fed20b23c1"
+    },
+    {
+      "path": "Gio-2.0.gir",
+      "sha256": "sha256:fcbb70f4e41015737237463b8fe0fe98191f4c520fdc1b47955e6043ea89ea60",
+      "bytes": 4627311,
+      "mode": "100644",
+      "gitBlob": "b042def04ffbc9afe2d6d5e7e85988cf35c2590a"
+    },
+    {
+      "path": "GioUnix-2.0.gir",
+      "sha256": "sha256:b7c64fc7d768aa70360de5be2aaff14d962e12f3c7bd861f48078f6010781ab6",
+      "bytes": 134117,
+      "mode": "100644",
+      "gitBlob": "7ac212947e0500bbad36618692a33c95ba0a55a3"
+    },
+    {
+      "path": "GioWin32-2.0.gir",
+      "sha256": "sha256:b9209b3eb4cb41f5e97d1aa59a5b4887b30255a6f5e751d14a5c6f7ebe25bc75",
+      "bytes": 18725,
+      "mode": "100644",
+      "gitBlob": "0f93600ad16158e4d11611b081c9c4232b60ef77"
+    },
+    {
+      "path": "Graphene-1.0.gir",
+      "sha256": "sha256:114361b537c7699573a2d48403a7060e77cc6cbaef8c6f6f15f659904aed2820",
+      "bytes": 461361,
+      "mode": "100644",
+      "gitBlob": "7ebd248bfb79fda30dbef5c3ce3ccaf55612e780"
+    },
+    {
+      "path": "Gsk-4.0.gir",
+      "sha256": "sha256:a57e409ce29d6c90de694b30dc1930970e709a84d235e1c9aa00c29e8756ceed",
+      "bytes": 435375,
+      "mode": "100644",
+      "gitBlob": "ab089d38ea5592002027c72538af18a5bed9a661"
+    },
+    {
+      "path": "Gtk-3.0.gir",
+      "sha256": "sha256:b2c42e2f7ddeb7c5ca10819827eb12a9160f489a387c2d473d13966ee0d167c5",
+      "bytes": 7403562,
+      "mode": "100644",
+      "gitBlob": "e191c254b058bcb097075564d38ebdcd3e830c5e"
+    },
+    {
+      "path": "Gtk-4.0.gir",
+      "sha256": "sha256:02ae4ee18b55ad9b28c1859403c5df7a2a67cea5efd013203175952f46ec2338",
+      "bytes": 6181098,
+      "mode": "100644",
+      "gitBlob": "47fa1f14020075f7ea79477951dc99f97d708e4e"
+    },
+    {
+      "path": "HarfBuzz-0.0.gir",
+      "sha256": "sha256:1ae4a9e1fa6a9aea574c53350d9c689aeaa4c73e94552e41ca9c453380132148",
+      "bytes": 956909,
+      "mode": "100644",
+      "gitBlob": "cce63a502909b1dcee050d4bffe4d6337a9b1edf"
+    },
+    {
+      "path": "Pango-1.0.gir",
+      "sha256": "sha256:df9b33b57a4e161ea6054317ab0b0b5a6dd87dbf77164003a3dfe889d2ea0867",
+      "bytes": 747660,
+      "mode": "100644",
+      "gitBlob": "ddeba5c68ee27159047f8ae028825268fe81d6d5"
+    },
+    {
+      "path": "PangoCairo-1.0.gir",
+      "sha256": "sha256:ad4ad2a10fbbe1a5d56c876506757ede4c566b655d6cf0f9acf0ef860fa81fcf",
+      "bytes": 37660,
+      "mode": "100644",
+      "gitBlob": "09faedfc4c7a1c92bfa7fbbadf9a4ef5b0b8ba7c"
+    },
+    {
+      "path": "PangoFT2-1.0.gir",
+      "sha256": "sha256:735e921ce470d4a61f0f823c87ef5511191079ab7117bd033fbeb716d8749b66",
+      "bytes": 22119,
+      "mode": "100644",
+      "gitBlob": "4fd2a3ee28812d5e0abc1f07c08789c81d288500"
+    },
+    {
+      "path": "PangoFc-1.0.gir",
+      "sha256": "sha256:5048113f56327826d7bb18f70889ad6d9027f5b734f1540f395a73203868f49a",
+      "bytes": 40923,
+      "mode": "100644",
+      "gitBlob": "dbb31d5081f6ed298d774a36cdea652dee07b978"
+    },
+    {
+      "path": "PangoOT-1.0.gir",
+      "sha256": "sha256:52ab42254652365db13e94682afb35d4d909b36ff622d730624d2c490c19a056",
+      "bytes": 51122,
+      "mode": "100644",
+      "gitBlob": "cdde38479470f2403d1d8811dbdd29e7fce19b6e"
+    },
+    {
+      "path": "PangoXft-1.0.gir",
+      "sha256": "sha256:91ebbc57bc504b948da687339e0a16265fa550e5263d615d75dc9a274b588f53",
+      "bytes": 32297,
+      "mode": "100644",
+      "gitBlob": "5cec93d71bcc23ee1c2ebd5b33bb39beb8727927"
+    },
+    {
+      "path": "README.md",
+      "sha256": "sha256:268402bd67960a4a4ebfdba4e72916e32a0bb6ceb2d08799c0a653abaaac6fb9",
+      "bytes": 1495,
+      "mode": "100644",
+      "gitBlob": "286708574565979cbc6ff45eaadc3cdbcc38e66c"
+    },
+    {
+      "path": "Vulkan-1.0.gir",
+      "sha256": "sha256:be9063a1596bbe552ae0220eb1f0ec0cb79d14db729354ba94d9b3e15ede27e0",
+      "bytes": 158965,
+      "mode": "100644",
+      "gitBlob": "24d9c6d97c88eeb97390b5ea81516fd1df5a2c8c"
+    },
+    {
+      "path": "cairo-1.0.gir",
+      "sha256": "sha256:4b922935ea2405b4214f56029d3db86cc55fe50aa385e4599c56245b191cac76",
+      "bytes": 21888,
+      "mode": "100644",
+      "gitBlob": "6e69a00a8c2d76f5bb12f3873e422bddf219c05c"
+    },
+    {
+      "path": "dl-gtk-macos.py",
+      "sha256": "sha256:bac1d5aed6a83536befdb7f8d3519565fcb5719eb7164994f8842760344dc437",
+      "bytes": 3471,
+      "mode": "100644",
+      "gitBlob": "4028a76621261b720c263078d0aa09f7f04187a0"
+    },
+    {
+      "path": "dl-win32.sh",
+      "sha256": "sha256:ed63bdc525d3ba0db3a09d6151dd4a3e0002e994ca4f1f9fb94eb6becaf85745",
+      "bytes": 783,
+      "mode": "100755",
+      "gitBlob": "28dc7e2c20b360dff353b9ec8a5f885eddc177fd"
+    },
+    {
+      "path": "dl.py",
+      "sha256": "sha256:e7b53f6bb899716f80f5ece17a36bc97a55be58b113dedf2c74b7ac45962ec16",
+      "bytes": 966,
+      "mode": "100755",
+      "gitBlob": "9ead7dfb658419b9e5bb1b5c8659524f0287d482"
+    },
+    {
+      "path": "fix.sh",
+      "sha256": "sha256:2169b02117a952203851fd2487f304c8ac7764967f7613cd23045d4876cdd1d1",
+      "bytes": 13090,
+      "mode": "100755",
+      "gitBlob": "fe6a0df4baa2ac3623059856cbb533e25ed5ccec"
+    },
+    {
+      "path": "fontconfig-2.0.gir",
+      "sha256": "sha256:a1668f43f9c8aa9b152e87b874d689d93d22939380f72623fd68649f505e918c",
+      "bytes": 630,
+      "mode": "100644",
+      "gitBlob": "f86a8baaebd23f6d0f9e759567ac714c5ed94090"
+    },
+    {
+      "path": "freetype2-2.0.gir",
+      "sha256": "sha256:86f57ef58044b8cc1193d39c01961b2674d67e4bc8f9a9ca8f06305dd2fe6a3b",
+      "bytes": 411,
+      "mode": "100644",
+      "gitBlob": "ec4efd660f2dfab39effe44af5b60d4b53ae6793"
+    },
+    {
+      "path": "libxml2-2.0.gir",
+      "sha256": "sha256:72798ce5da0402c8e4bdd4111aa5cfbf0c9d2d7647dc6ef9e751590743f23790",
+      "bytes": 902,
+      "mode": "100644",
+      "gitBlob": "1b1c9e2c9372a070a3e2b38eab7b68ed6edd1cd1"
+    },
+    {
+      "path": "reformat.sh",
+      "sha256": "sha256:7aff3daac997d5626cc544b4547d60351ea83519bb4b6c36d477f7d2d288a364",
+      "bytes": 215,
+      "mode": "100755",
+      "gitBlob": "b80b7fc70b466199f5d177f2c63fbd5bb110fbd5"
+    },
+    {
+      "path": "win32-1.0.gir",
+      "sha256": "sha256:cdbc8213eb96ff1048428f17ce2bb26a06675464814a7fdc4d34f69926583cbd",
+      "bytes": 699,
+      "mode": "100644",
+      "gitBlob": "c3020e27f790ee1e63a28f0bd9f2b36cb7da6144"
+    },
+    {
+      "path": "xfixes-4.0.gir",
+      "sha256": "sha256:266ee95b8eda963d2de077177f48413de09f89a9a03a989841b9feea1bd641ca",
+      "bytes": 325,
+      "mode": "100644",
+      "gitBlob": "40eff81f8c05908d95eafbf6d985276e42ef1f3e"
+    },
+    {
+      "path": "xft-2.0.gir",
+      "sha256": "sha256:31d7ba26a921d57b5f2d55194866f6acbe20ee81fbee66c1df489d51f6aa8c3a",
+      "bytes": 707,
+      "mode": "100644",
+      "gitBlob": "035ddf59c59ae735aef43a35ab446fefb3a50de5"
+    },
+    {
+      "path": "xlib-2.0.gir",
+      "sha256": "sha256:920078b90e03144d9197514b3b9a1d0baa0f0f211e8d4f221a1b7e0979edea5a",
+      "bytes": 2287,
+      "mode": "100644",
+      "gitBlob": "3288d22db05f7144999090e3bb23cffb88e5417e"
+    },
+    {
+      "path": "xrandr-1.3.gir",
+      "sha256": "sha256:ac125cdadcb54f88699dcea1ef28f6ffedc61da5d50173e3e7059d012c68c281",
+      "bytes": 772,
+      "mode": "100644",
+      "gitBlob": "4def5b59979de1ac3ade6630e9245309cb0693a5"
+    }
+  ],
+  "rows": [
+    {
+      "path": "Atk-1.0.gir",
+      "packages": [
+        "atk"
+      ],
+      "namespace": {
+        "name": "Atk",
+        "abiVersion": "1.0",
+        "sharedLibrary": "libatk-1.0.so.0"
+      },
+      "versionClues": [
+        {
+          "attributes": {
+            "name": "MAJOR_VERSION",
+            "value": "2",
+            "c:type": "ATK_MAJOR_VERSION",
+            "version": "2.7.4"
+          },
+          "line": 4719
+        },
+        {
+          "attributes": {
+            "name": "MICRO_VERSION",
+            "value": "0",
+            "c:type": "ATK_MICRO_VERSION",
+            "version": "2.7.4"
+          },
+          "line": 4725
+        },
+        {
+          "attributes": {
+            "name": "MINOR_VERSION",
+            "value": "57",
+            "c:type": "ATK_MINOR_VERSION",
+            "version": "2.7.4"
+          },
+          "line": 4731
+        },
+        {
+          "attributes": {
+            "name": "VERSION_MIN_REQUIRED",
+            "value": "2",
+            "c:type": "ATK_VERSION_MIN_REQUIRED",
+            "version": "2.14"
+          },
+          "line": 14492
+        }
+      ],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "Atk-1.0.gir",
+        "sha256": "sha256:addfd5c631963b2d0602a9be57e80da6ee3e36a9b323fc4db44eaa717dee178d",
+        "bytes": 835389,
+        "mode": "100644",
+        "gitBlob": "160065623b77bf01d72d7cbe87b6b5052bca1672"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 127,
+          "endLine": 129,
+          "sha256": "sha256:00407b7944ac589c2fe65b0d38fe05498c19e34ec233a511893716a1b190dd00",
+          "targets": [
+            "Atk-1.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "GL-1.0.gir",
+      "packages": [],
+      "namespace": {
+        "name": "GL",
+        "abiVersion": "1.0",
+        "sharedLibrary": null
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "GL-1.0.gir",
+        "sha256": "sha256:c6a447ab4d5b32557a9fa93bf71a3f2438e4917a27bb2c5c2f9777e8e26d4fa3",
+        "bytes": 1084,
+        "mode": "100644",
+        "gitBlob": "b81887137be1b1f11a9637eb128e8f781add2ae4"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "GLib-2.0.gir",
+      "packages": [
+        "glib-2.0"
+      ],
+      "namespace": {
+        "name": "GLib",
+        "abiVersion": "2.0",
+        "sharedLibrary": "libgobject-2.0.so.0,libglib-2.0.so.0"
+      },
+      "versionClues": [
+        {
+          "attributes": {
+            "name": "C_STD_VERSION",
+            "value": "199000",
+            "c:type": "G_C_STD_VERSION",
+            "version": "2.76"
+          },
+          "line": 3713
+        },
+        {
+          "attributes": {
+            "name": "KEY_FILE_DESKTOP_KEY_VERSION",
+            "value": "Version",
+            "c:type": "G_KEY_FILE_DESKTOP_KEY_VERSION",
+            "version": "2.14"
+          },
+          "line": 12668
+        },
+        {
+          "attributes": {
+            "name": "MAJOR_VERSION",
+            "value": "2",
+            "c:type": "GLIB_MAJOR_VERSION"
+          },
+          "line": 15411
+        },
+        {
+          "attributes": {
+            "name": "MICRO_VERSION",
+            "value": "0",
+            "c:type": "GLIB_MICRO_VERSION"
+          },
+          "line": 15443
+        },
+        {
+          "attributes": {
+            "name": "MINOR_VERSION",
+            "value": "87",
+            "c:type": "GLIB_MINOR_VERSION"
+          },
+          "line": 15467
+        },
+        {
+          "attributes": {
+            "name": "VERSION_MIN_REQUIRED",
+            "value": "2",
+            "c:type": "GLIB_VERSION_MIN_REQUIRED",
+            "version": "2.32"
+          },
+          "line": 36589
+        }
+      ],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "GLib-2.0.gir",
+        "sha256": "sha256:86d5c40557f2c5d18e0daf349d74e4cee64052f5453d0370e90e4cb6436b4935",
+        "bytes": 3077434,
+        "mode": "100644",
+        "gitBlob": "553a7fc09995f8a1782ca4ffb16ce969c4f70f22"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 11,
+          "endLine": 13,
+          "sha256": "sha256:727ae944b5408203d544980be2eaf1be197355df3149cd707add708b5567c755",
+          "targets": [
+            "GLib-2.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        },
+        {
+          "startLine": 35,
+          "endLine": 41,
+          "sha256": "sha256:616d749fde8d301fee4ce83e8457df2f0396e07b1bc02bc0a059842895aaedb5",
+          "targets": [
+            "GLib-2.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "PARTIAL_GLIB_FILE_ERROR_ONLY",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "GLibUnix-2.0.gir",
+      "packages": [
+        "glib-2.0"
+      ],
+      "namespace": {
+        "name": "GLibUnix",
+        "abiVersion": "2.0",
+        "sharedLibrary": "libgobject-2.0.so.0,libglib-2.0.so.0"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "GLibUnix-2.0.gir",
+        "sha256": "sha256:5e1b39a87b50a1dce9ef1d72de22fa88a1e4d7edda2f00e49a9d12e2370a08fb",
+        "bytes": 16700,
+        "mode": "100644",
+        "gitBlob": "a9daff40e12ba53970e12aeac7806721a1b0baff"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 187,
+          "endLine": 190,
+          "sha256": "sha256:c2f29cb2a4bbb0058c501e490880cb0225b2880b1e2402900f4fbd79acbea6c8",
+          "targets": [
+            "GLibUnix-2.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "GLibWin32-2.0.gir",
+      "packages": [
+        "glib-2.0"
+      ],
+      "namespace": {
+        "name": "GLibWin32",
+        "abiVersion": "2.0",
+        "sharedLibrary": "libgobject-2.0-0.dll,libglib-2.0-0.dll"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "MSYS2_UCRT64",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "GLibWin32-2.0.gir",
+        "sha256": "sha256:0f4ec8188c46aca808d993bf07e4a7365251011fd2b8e7c8e71758463dfadb04",
+        "bytes": 6829,
+        "mode": "100644",
+        "gitBlob": "2ef518815d6fb89e57794f6c1c46ce82ec4e2d35"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 193,
+          "endLine": 195,
+          "sha256": "sha256:d77fca178d59fc97e259ab7329413af38762fa481ba016ec6e260af87cc667b8",
+          "targets": [
+            "GLibWin32-2.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "GModule-2.0.gir",
+      "packages": [
+        "gmodule-2.0"
+      ],
+      "namespace": {
+        "name": "GModule",
+        "abiVersion": "2.0",
+        "sharedLibrary": "libgmodule-2.0.so.0"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "GModule-2.0.gir",
+        "sha256": "sha256:c502901875ca5e72ed39a7754643214a9cb2763190b3b60e0729616cca5146b4",
+        "bytes": 48534,
+        "mode": "100644",
+        "gitBlob": "78364234fc28909263dcd8a9873d901e10f0c4b1"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "GObject-2.0.gir",
+      "packages": [
+        "gobject-2.0"
+      ],
+      "namespace": {
+        "name": "GObject",
+        "abiVersion": "2.0",
+        "sharedLibrary": "libgobject-2.0.so.0"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "GObject-2.0.gir",
+        "sha256": "sha256:fe437dbea196cd5495dd294f18ab807dd02ad032448d9b1a661c915a09cf4fbc",
+        "bytes": 974799,
+        "mode": "100644",
+        "gitBlob": "79e0df02a787199905e7afc8a4ca82d5232d1340"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 44,
+          "endLine": 51,
+          "sha256": "sha256:fe4f1bb5eac00bf409ddf10cb03b51a073ebb4fe6e2293b25c59a320af5c8af8",
+          "targets": [
+            "GObject-2.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        },
+        {
+          "startLine": 54,
+          "endLine": 57,
+          "sha256": "sha256:38d7a01b3fa67d1ca7be2738c1daf532cba29d5f9ff5e2435a22d507c7c7dba9",
+          "targets": [
+            "GObject-2.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "Gdk-3.0.gir",
+      "packages": [
+        "gdk-3.0"
+      ],
+      "namespace": {
+        "name": "Gdk",
+        "abiVersion": "3.0",
+        "sharedLibrary": "libgdk-3.so.0"
+      },
+      "versionClues": [
+        {
+          "attributes": {
+            "name": "KEY_Greek_OMICRON",
+            "value": "1999",
+            "c:type": "GDK_KEY_Greek_OMICRON"
+          },
+          "line": 9236
+        },
+        {
+          "attributes": {
+            "name": "KEY_Greek_OMICRONaccent",
+            "value": "1959",
+            "c:type": "GDK_KEY_Greek_OMICRONaccent"
+          },
+          "line": 9239
+        },
+        {
+          "attributes": {
+            "name": "MAJOR_VERSION",
+            "value": "3",
+            "c:type": "GDK_MAJOR_VERSION"
+          },
+          "line": 14776
+        },
+        {
+          "attributes": {
+            "name": "MICRO_VERSION",
+            "value": "50",
+            "c:type": "GDK_MICRO_VERSION"
+          },
+          "line": 14782
+        },
+        {
+          "attributes": {
+            "name": "MINOR_VERSION",
+            "value": "24",
+            "c:type": "GDK_MINOR_VERSION"
+          },
+          "line": 14785
+        }
+      ],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "Gdk-3.0.gir",
+        "sha256": "sha256:3a38168e49bd05b00deb1704e1918f4605c1ac698008ea80dce92120e43de7b2",
+        "bytes": 1250360,
+        "mode": "100644",
+        "gitBlob": "95577210944aec39e9ac52f87bc79cc987d83658"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 60,
+          "endLine": 63,
+          "sha256": "sha256:8582046cbed292958c63175cf1297e31fbb8fe6f967839d69fcb8161e1102967",
+          "targets": [
+            "Gdk-3.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "Gdk-4.0.gir",
+      "packages": [
+        "gtk4"
+      ],
+      "namespace": {
+        "name": "Gdk",
+        "abiVersion": "4.0",
+        "sharedLibrary": "libgtk-4.so.1"
+      },
+      "versionClues": [
+        {
+          "attributes": {
+            "name": "KEY_Greek_OMICRON",
+            "value": "1999",
+            "c:type": "GDK_KEY_Greek_OMICRON"
+          },
+          "line": 10642
+        },
+        {
+          "attributes": {
+            "name": "KEY_Greek_OMICRONaccent",
+            "value": "1959",
+            "c:type": "GDK_KEY_Greek_OMICRONaccent"
+          },
+          "line": 10645
+        }
+      ],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "Gdk-4.0.gir",
+        "sha256": "sha256:e6315aff2f64d6bb132b39b971626c99750887875712a56cbe253eaa0e1233ed",
+        "bytes": 1150238,
+        "mode": "100644",
+        "gitBlob": "8828b672d8dc5e1089e7e8f7e28adabc4748c9c5"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "GdkMacos-4.0.gir",
+      "packages": [
+        "gtk4-macos"
+      ],
+      "namespace": {
+        "name": "GdkMacos",
+        "abiVersion": "4.0",
+        "sharedLibrary": "libgtk-4.1.dylib"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GNOME_GITLAB_MACOS",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "GdkMacos-4.0.gir",
+        "sha256": "sha256:873689dce954262cc899c8e8d5d3dbe334ec95accaf8b45c65649f47978b9330",
+        "bytes": 8748,
+        "mode": "100644",
+        "gitBlob": "3ab4c3e3290249108effcbad7f6b73d2ed5b398f"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "GdkPixbuf-2.0.gir",
+      "packages": [
+        "gdk-pixbuf-2.0"
+      ],
+      "namespace": {
+        "name": "GdkPixbuf",
+        "abiVersion": "2.0",
+        "sharedLibrary": "libgdk_pixbuf-2.0.so.0"
+      },
+      "versionClues": [
+        {
+          "attributes": {
+            "name": "PIXBUF_MAJOR",
+            "value": "2",
+            "c:type": "GDK_PIXBUF_MAJOR"
+          },
+          "line": 327
+        },
+        {
+          "attributes": {
+            "name": "PIXBUF_MICRO",
+            "value": "4",
+            "c:type": "GDK_PIXBUF_MICRO"
+          },
+          "line": 332
+        },
+        {
+          "attributes": {
+            "name": "PIXBUF_MINOR",
+            "value": "44",
+            "c:type": "GDK_PIXBUF_MINOR"
+          },
+          "line": 337
+        },
+        {
+          "attributes": {
+            "name": "PIXBUF_VERSION",
+            "value": "2.44.4",
+            "c:type": "GDK_PIXBUF_VERSION"
+          },
+          "line": 366
+        }
+      ],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "GdkPixbuf-2.0.gir",
+        "sha256": "sha256:45e112442b14c3e399823aaacaddc6fd269ae8f0e2001736b617597332bd4c29",
+        "bytes": 244753,
+        "mode": "100644",
+        "gitBlob": "24be5968c1733dc5ed88f6846543f1a72b7e74c2"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 66,
+          "endLine": 69,
+          "sha256": "sha256:176d2c32201a26eaf515027418bc8c7501aa8f523fc9fe803a2b1ac97d7dd0c0",
+          "targets": [
+            "GdkPixbuf-2.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "GdkPixdata-2.0.gir",
+      "packages": [
+        "gdk-pixbuf-2.0"
+      ],
+      "namespace": {
+        "name": "GdkPixdata",
+        "abiVersion": "2.0",
+        "sharedLibrary": "libgdk_pixbuf-2.0.so.0"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "GdkPixdata-2.0.gir",
+        "sha256": "sha256:8ea51bdd30a4722501655b3dcb0aba7110385dba375e56b6c6656efe5922cbe5",
+        "bytes": 15576,
+        "mode": "100644",
+        "gitBlob": "1d57738dc0e257d0bf1135586a90acbabd629ff2"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "GdkWayland-4.0.gir",
+      "packages": [
+        "gtk4-wayland"
+      ],
+      "namespace": {
+        "name": "GdkWayland",
+        "abiVersion": "4.0",
+        "sharedLibrary": "libgtk-4.so.1"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "GdkWayland-4.0.gir",
+        "sha256": "sha256:c389bb6c55d339c9e31f9296177f978b1c7bc6a604a6699fce559840dcc06f95",
+        "bytes": 30766,
+        "mode": "100644",
+        "gitBlob": "025f073c26e5191aecdfed2027995072f87ea771"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 132,
+          "endLine": 144,
+          "sha256": "sha256:e2e97548fbb878997de7a5eddb84755736f7d0abd621cd56029687ce1c7c4b31",
+          "targets": [
+            "GdkWayland-4.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "GdkWin32-4.0.gir",
+      "packages": [
+        "gtk4-win32"
+      ],
+      "namespace": {
+        "name": "GdkWin32",
+        "abiVersion": "4.0",
+        "sharedLibrary": "libgtk-4-1.dll"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "MSYS2_UCRT64",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "GdkWin32-4.0.gir",
+        "sha256": "sha256:57ef407c9cebbd05f9f8b3066d12eefa0244effe57987fd700656a1e77e07cff",
+        "bytes": 47107,
+        "mode": "100644",
+        "gitBlob": "3eea0212dd240127e46183ad757b125924b3406c"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 163,
+          "endLine": 176,
+          "sha256": "sha256:071c19964eba8284a81a0c3383d1f6311814d9adbbc795cebd57c3d881de4afb",
+          "targets": [
+            "GdkWin32-4.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "GdkX11-3.0.gir",
+      "packages": [
+        "gdk-x11-3.0"
+      ],
+      "namespace": {
+        "name": "GdkX11",
+        "abiVersion": "3.0",
+        "sharedLibrary": "libgdk-3.so.0"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "GdkX11-3.0.gir",
+        "sha256": "sha256:e94062ada31614394fa293f0fa5e454aed16bee732bce2b3f4ee33450d6b4e8e",
+        "bytes": 88464,
+        "mode": "100644",
+        "gitBlob": "e97843ed2725b3589bd1b5a25a6e90fc141b9a55"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "GdkX11-4.0.gir",
+      "packages": [
+        "gtk4-x11"
+      ],
+      "namespace": {
+        "name": "GdkX11",
+        "abiVersion": "4.0",
+        "sharedLibrary": "libgtk-4.so.1"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "GdkX11-4.0.gir",
+        "sha256": "sha256:7350f687e4b0896a45f7fc2ea9a13e7d5c33ffca51be38ecc210953eb50b0f39",
+        "bytes": 74754,
+        "mode": "100644",
+        "gitBlob": "aed9081b5eb5ef10858ac78c35d567fed20b23c1"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 147,
+          "endLine": 161,
+          "sha256": "sha256:a8fa99e6cb0bc1d25a88235979deb83eb6f5229d7c7f55f5b323d456a157293b",
+          "targets": [
+            "GdkX11-4.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "Gio-2.0.gir",
+      "packages": [
+        "gio-2.0"
+      ],
+      "namespace": {
+        "name": "Gio",
+        "abiVersion": "2.0",
+        "sharedLibrary": "libgio-2.0.so.0"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "Gio-2.0.gir",
+        "sha256": "sha256:fcbb70f4e41015737237463b8fe0fe98191f4c520fdc1b47955e6043ea89ea60",
+        "bytes": 4627311,
+        "mode": "100644",
+        "gitBlob": "b042def04ffbc9afe2d6d5e7e85988cf35c2590a"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "GioUnix-2.0.gir",
+      "packages": [
+        "gio-unix-2.0"
+      ],
+      "namespace": {
+        "name": "GioUnix",
+        "abiVersion": "2.0",
+        "sharedLibrary": "libgio-2.0.so.0"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "GioUnix-2.0.gir",
+        "sha256": "sha256:b7c64fc7d768aa70360de5be2aaff14d962e12f3c7bd861f48078f6010781ab6",
+        "bytes": 134117,
+        "mode": "100644",
+        "gitBlob": "7ac212947e0500bbad36618692a33c95ba0a55a3"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "GioWin32-2.0.gir",
+      "packages": [
+        "gio-windows-2.0"
+      ],
+      "namespace": {
+        "name": "GioWin32",
+        "abiVersion": "2.0",
+        "sharedLibrary": "libgio-2.0-0.dll"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "MSYS2_UCRT64",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "GioWin32-2.0.gir",
+        "sha256": "sha256:b9209b3eb4cb41f5e97d1aa59a5b4887b30255a6f5e751d14a5c6f7ebe25bc75",
+        "bytes": 18725,
+        "mode": "100644",
+        "gitBlob": "0f93600ad16158e4d11611b081c9c4232b60ef77"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 198,
+          "endLine": 201,
+          "sha256": "sha256:71c9cace7a3de79ba5f1b8f6c5b436258d1258622c99c987fe99141228a9a5b4",
+          "targets": [
+            "GioWin32-2.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "Graphene-1.0.gir",
+      "packages": [
+        "graphene-gobject-1.0"
+      ],
+      "namespace": {
+        "name": "Graphene",
+        "abiVersion": "1.0",
+        "sharedLibrary": "libgraphene-1.0.so.0"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "Graphene-1.0.gir",
+        "sha256": "sha256:114361b537c7699573a2d48403a7060e77cc6cbaef8c6f6f15f659904aed2820",
+        "bytes": 461361,
+        "mode": "100644",
+        "gitBlob": "7ebd248bfb79fda30dbef5c3ce3ccaf55612e780"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "Gsk-4.0.gir",
+      "packages": [
+        "gtk4"
+      ],
+      "namespace": {
+        "name": "Gsk",
+        "abiVersion": "4.0",
+        "sharedLibrary": "libgtk-4.so.1"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "Gsk-4.0.gir",
+        "sha256": "sha256:a57e409ce29d6c90de694b30dc1930970e709a84d235e1c9aa00c29e8756ceed",
+        "bytes": 435375,
+        "mode": "100644",
+        "gitBlob": "ab089d38ea5592002027c72538af18a5bed9a661"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "Gtk-3.0.gir",
+      "packages": [
+        "gtk+-3.0"
+      ],
+      "namespace": {
+        "name": "Gtk",
+        "abiVersion": "3.0",
+        "sharedLibrary": "libgtk-3.so.0"
+      },
+      "versionClues": [
+        {
+          "attributes": {
+            "name": "MAJOR_VERSION",
+            "value": "3",
+            "c:type": "GTK_MAJOR_VERSION"
+          },
+          "line": 63329
+        },
+        {
+          "attributes": {
+            "name": "MICRO_VERSION",
+            "value": "50",
+            "c:type": "GTK_MICRO_VERSION"
+          },
+          "line": 63537
+        },
+        {
+          "attributes": {
+            "name": "MINOR_VERSION",
+            "value": "24",
+            "c:type": "GTK_MINOR_VERSION"
+          },
+          "line": 63543
+        },
+        {
+          "attributes": {
+            "name": "PRINT_SETTINGS_WIN32_DRIVER_VERSION",
+            "value": "win32-driver-version",
+            "c:type": "GTK_PRINT_SETTINGS_WIN32_DRIVER_VERSION"
+          },
+          "line": 71061
+        }
+      ],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "Gtk-3.0.gir",
+        "sha256": "sha256:b2c42e2f7ddeb7c5ca10819827eb12a9160f489a387c2d473d13966ee0d167c5",
+        "bytes": 7403562,
+        "mode": "100644",
+        "gitBlob": "e191c254b058bcb097075564d38ebdcd3e830c5e"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 16,
+          "endLine": 19,
+          "sha256": "sha256:9efd66b7dcf4fdb0ccc1907d01312e4fd442bf114327b201a0fcdef82bd2e722",
+          "targets": [
+            "Gtk-3.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        },
+        {
+          "startLine": 22,
+          "endLine": 25,
+          "sha256": "sha256:a9eb9c31ec8e6a135972b5d8a1601d15a1b4d84983581cb64bbade4e1e738c8e",
+          "targets": [
+            "Gtk-3.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        },
+        {
+          "startLine": 28,
+          "endLine": 32,
+          "sha256": "sha256:e888eb70d252661ae15c2de56074f6cbea0e70015618fe2b8555c3dcfb0b923a",
+          "targets": [
+            "Gtk-3.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        },
+        {
+          "startLine": 72,
+          "endLine": 75,
+          "sha256": "sha256:441b0e08dce349177b34d45b8fef96986777c38753c87d0a8b23058cad973fa9",
+          "targets": [
+            "Gtk-3.0.gir",
+            "Gtk-4.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        },
+        {
+          "startLine": 78,
+          "endLine": 80,
+          "sha256": "sha256:4888ecb876061c9c7736c67a24124403a4391a20e8a3ca157b0164389d1f581e",
+          "targets": [
+            "Gtk-3.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        },
+        {
+          "startLine": 83,
+          "endLine": 92,
+          "sha256": "sha256:ea61ae042716dab841ee7dd0d58e039b257cd4c69c4fd5c807ba0687934d7588",
+          "targets": [
+            "Gtk-3.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        },
+        {
+          "startLine": 179,
+          "endLine": 184,
+          "sha256": "sha256:d33729dcca47107413efed425ad653edb2d718c4c0b6014ceff67098fc8c0c0e",
+          "targets": [
+            "Gtk-3.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "Gtk-4.0.gir",
+      "packages": [
+        "gtk4"
+      ],
+      "namespace": {
+        "name": "Gtk",
+        "abiVersion": "4.0",
+        "sharedLibrary": "libgtk-4.so.1"
+      },
+      "versionClues": [
+        {
+          "attributes": {
+            "name": "MAJOR_VERSION",
+            "value": "4",
+            "c:type": "GTK_MAJOR_VERSION"
+          },
+          "line": 60232
+        },
+        {
+          "attributes": {
+            "name": "MICRO_VERSION",
+            "value": "4",
+            "c:type": "GTK_MICRO_VERSION"
+          },
+          "line": 60260
+        },
+        {
+          "attributes": {
+            "name": "MINOR_VERSION",
+            "value": "21",
+            "c:type": "GTK_MINOR_VERSION"
+          },
+          "line": 60266
+        },
+        {
+          "attributes": {
+            "name": "PRINT_SETTINGS_WIN32_DRIVER_VERSION",
+            "value": "win32-driver-version",
+            "c:type": "GTK_PRINT_SETTINGS_WIN32_DRIVER_VERSION"
+          },
+          "line": 66099
+        }
+      ],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "Gtk-4.0.gir",
+        "sha256": "sha256:02ae4ee18b55ad9b28c1859403c5df7a2a67cea5efd013203175952f46ec2338",
+        "bytes": 6181098,
+        "mode": "100644",
+        "gitBlob": "47fa1f14020075f7ea79477951dc99f97d708e4e"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 72,
+          "endLine": 75,
+          "sha256": "sha256:441b0e08dce349177b34d45b8fef96986777c38753c87d0a8b23058cad973fa9",
+          "targets": [
+            "Gtk-3.0.gir",
+            "Gtk-4.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "HarfBuzz-0.0.gir",
+      "packages": [
+        "harfbuzz",
+        "harfbuzz-gobject"
+      ],
+      "namespace": {
+        "name": "HarfBuzz",
+        "abiVersion": "0.0",
+        "sharedLibrary": "libharfbuzz-gobject.so.0,libharfbuzz.so.0"
+      },
+      "versionClues": [
+        {
+          "attributes": {
+            "name": "VERSION_MAJOR",
+            "value": "12",
+            "c:type": "HB_VERSION_MAJOR"
+          },
+          "line": 351
+        },
+        {
+          "attributes": {
+            "name": "VERSION_MICRO",
+            "value": "0",
+            "c:type": "HB_VERSION_MICRO"
+          },
+          "line": 354
+        },
+        {
+          "attributes": {
+            "name": "VERSION_MINOR",
+            "value": "3",
+            "c:type": "HB_VERSION_MINOR"
+          },
+          "line": 357
+        },
+        {
+          "attributes": {
+            "name": "VERSION_STRING",
+            "value": "12.3.0",
+            "c:type": "HB_VERSION_STRING"
+          },
+          "line": 360
+        }
+      ],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "HarfBuzz-0.0.gir",
+        "sha256": "sha256:1ae4a9e1fa6a9aea574c53350d9c689aeaa4c73e94552e41ca9c453380132148",
+        "bytes": 956909,
+        "mode": "100644",
+        "gitBlob": "cce63a502909b1dcee050d4bffe4d6337a9b1edf"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 95,
+          "endLine": 106,
+          "sha256": "sha256:1538be352bc6cb0e806cd749b00114f7dc4c5f06edabd59b6df97381270a4277",
+          "targets": [
+            "HarfBuzz-0.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "Pango-1.0.gir",
+      "packages": [
+        "pango"
+      ],
+      "namespace": {
+        "name": "Pango",
+        "abiVersion": "1.0",
+        "sharedLibrary": "libpango-1.0.so.0"
+      },
+      "versionClues": [
+        {
+          "attributes": {
+            "name": "VERSION_MAJOR",
+            "value": "1",
+            "c:type": "PANGO_VERSION_MAJOR"
+          },
+          "line": 12347
+        },
+        {
+          "attributes": {
+            "name": "VERSION_MICRO",
+            "value": "1",
+            "c:type": "PANGO_VERSION_MICRO"
+          },
+          "line": 12351
+        },
+        {
+          "attributes": {
+            "name": "VERSION_MINOR",
+            "value": "57",
+            "c:type": "PANGO_VERSION_MINOR"
+          },
+          "line": 12355
+        },
+        {
+          "attributes": {
+            "name": "VERSION_STRING",
+            "value": "1.57.1",
+            "c:type": "PANGO_VERSION_STRING"
+          },
+          "line": 12359
+        }
+      ],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "Pango-1.0.gir",
+        "sha256": "sha256:df9b33b57a4e161ea6054317ab0b0b5a6dd87dbf77164003a3dfe889d2ea0867",
+        "bytes": 747660,
+        "mode": "100644",
+        "gitBlob": "ddeba5c68ee27159047f8ae028825268fe81d6d5"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 109,
+          "endLine": 118,
+          "sha256": "sha256:9057f1afa36b6e6bec40ffc77008cea66514aed2eacd241fc805b4151cd998e9",
+          "targets": [
+            "Pango-1.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        },
+        {
+          "startLine": 121,
+          "endLine": 124,
+          "sha256": "sha256:1304d5ca799fe2c0c2aef37ca90075aff82d32642640934810757f4d94cf798a",
+          "targets": [
+            "Pango-1.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "PangoCairo-1.0.gir",
+      "packages": [
+        "pangocairo"
+      ],
+      "namespace": {
+        "name": "PangoCairo",
+        "abiVersion": "1.0",
+        "sharedLibrary": "libpangocairo-1.0.so.0"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "PangoCairo-1.0.gir",
+        "sha256": "sha256:ad4ad2a10fbbe1a5d56c876506757ede4c566b655d6cf0f9acf0ef860fa81fcf",
+        "bytes": 37660,
+        "mode": "100644",
+        "gitBlob": "09faedfc4c7a1c92bfa7fbbadf9a4ef5b0b8ba7c"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "PangoFT2-1.0.gir",
+      "packages": [
+        "pangoft2"
+      ],
+      "namespace": {
+        "name": "PangoFT2",
+        "abiVersion": "1.0",
+        "sharedLibrary": "libpangoft2-1.0.so.0"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "PangoFT2-1.0.gir",
+        "sha256": "sha256:735e921ce470d4a61f0f823c87ef5511191079ab7117bd033fbeb716d8749b66",
+        "bytes": 22119,
+        "mode": "100644",
+        "gitBlob": "4fd2a3ee28812d5e0abc1f07c08789c81d288500"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "PangoFc-1.0.gir",
+      "packages": [
+        "pangofc"
+      ],
+      "namespace": {
+        "name": "PangoFc",
+        "abiVersion": "1.0",
+        "sharedLibrary": "libpangoft2-1.0.so.0"
+      },
+      "versionClues": [
+        {
+          "attributes": {
+            "name": "VERSION",
+            "value": "pangoversion",
+            "c:type": "PANGO_FC_VERSION",
+            "version": "1.20"
+          },
+          "line": 824
+        }
+      ],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "PangoFc-1.0.gir",
+        "sha256": "sha256:5048113f56327826d7bb18f70889ad6d9027f5b734f1540f395a73203868f49a",
+        "bytes": 40923,
+        "mode": "100644",
+        "gitBlob": "dbb31d5081f6ed298d774a36cdea652dee07b978"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "PangoOT-1.0.gir",
+      "packages": [
+        "pangoot"
+      ],
+      "namespace": {
+        "name": "PangoOT",
+        "abiVersion": "1.0",
+        "sharedLibrary": "libpangoft2-1.0.so.0"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "PangoOT-1.0.gir",
+        "sha256": "sha256:52ab42254652365db13e94682afb35d4d909b36ff622d730624d2c490c19a056",
+        "bytes": 51122,
+        "mode": "100644",
+        "gitBlob": "cdde38479470f2403d1d8811dbdd29e7fce19b6e"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "PangoXft-1.0.gir",
+      "packages": [
+        "pangoxft"
+      ],
+      "namespace": {
+        "name": "PangoXft",
+        "abiVersion": "1.0",
+        "sharedLibrary": "libpangoxft-1.0.so.0"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "PangoXft-1.0.gir",
+        "sha256": "sha256:91ebbc57bc504b948da687339e0a16265fa550e5263d615d75dc9a274b588f53",
+        "bytes": 32297,
+        "mode": "100644",
+        "gitBlob": "5cec93d71bcc23ee1c2ebd5b33bb39beb8727927"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "Vulkan-1.0.gir",
+      "packages": [],
+      "namespace": {
+        "name": "Vulkan",
+        "abiVersion": "1.0",
+        "sharedLibrary": null
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "Vulkan-1.0.gir",
+        "sha256": "sha256:be9063a1596bbe552ae0220eb1f0ec0cb79d14db729354ba94d9b3e15ede27e0",
+        "bytes": 158965,
+        "mode": "100644",
+        "gitBlob": "24d9c6d97c88eeb97390b5ea81516fd1df5a2c8c"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "cairo-1.0.gir",
+      "packages": [
+        "cairo-gobject"
+      ],
+      "namespace": {
+        "name": "cairo",
+        "abiVersion": "1.0",
+        "sharedLibrary": "libcairo-gobject.so.2"
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "cairo-1.0.gir",
+        "sha256": "sha256:4b922935ea2405b4214f56029d3db86cc55fe50aa385e4599c56245b191cac76",
+        "bytes": 21888,
+        "mode": "100644",
+        "gitBlob": "6e69a00a8c2d76f5bb12f3873e422bddf219c05c"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "fontconfig-2.0.gir",
+      "packages": [],
+      "namespace": {
+        "name": "fontconfig",
+        "abiVersion": "2.0",
+        "sharedLibrary": null
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "fontconfig-2.0.gir",
+        "sha256": "sha256:a1668f43f9c8aa9b152e87b874d689d93d22939380f72623fd68649f505e918c",
+        "bytes": 630,
+        "mode": "100644",
+        "gitBlob": "f86a8baaebd23f6d0f9e759567ac714c5ed94090"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "freetype2-2.0.gir",
+      "packages": [],
+      "namespace": {
+        "name": "freetype2",
+        "abiVersion": "2.0",
+        "sharedLibrary": null
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "freetype2-2.0.gir",
+        "sha256": "sha256:86f57ef58044b8cc1193d39c01961b2674d67e4bc8f9a9ca8f06305dd2fe6a3b",
+        "bytes": 411,
+        "mode": "100644",
+        "gitBlob": "ec4efd660f2dfab39effe44af5b60d4b53ae6793"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [
+        {
+          "startLine": 5,
+          "endLine": 7,
+          "sha256": "sha256:1e3bb8fae2cfd74d227fcc149877d28e754bed722a3c33d76c7bacae7706dee3",
+          "targets": [
+            "freetype2-2.0.gir"
+          ],
+          "material": "snapshot/fix.sh"
+        }
+      ],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "libxml2-2.0.gir",
+      "packages": [
+        "libxml-2.0"
+      ],
+      "namespace": {
+        "name": "libxml2",
+        "abiVersion": "2.0",
+        "sharedLibrary": null
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "libxml2-2.0.gir",
+        "sha256": "sha256:72798ce5da0402c8e4bdd4111aa5cfbf0c9d2d7647dc6ef9e751590743f23790",
+        "bytes": 902,
+        "mode": "100644",
+        "gitBlob": "1b1c9e2c9372a070a3e2b38eab7b68ed6edd1cd1"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "win32-1.0.gir",
+      "packages": [],
+      "namespace": {
+        "name": "win32",
+        "abiVersion": "1.0",
+        "sharedLibrary": null
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "win32-1.0.gir",
+        "sha256": "sha256:cdbc8213eb96ff1048428f17ce2bb26a06675464814a7fdc4d34f69926583cbd",
+        "bytes": 699,
+        "mode": "100644",
+        "gitBlob": "c3020e27f790ee1e63a28f0bd9f2b36cb7da6144"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "xfixes-4.0.gir",
+      "packages": [],
+      "namespace": {
+        "name": "xfixes",
+        "abiVersion": "4.0",
+        "sharedLibrary": null
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "xfixes-4.0.gir",
+        "sha256": "sha256:266ee95b8eda963d2de077177f48413de09f89a9a03a989841b9feea1bd641ca",
+        "bytes": 325,
+        "mode": "100644",
+        "gitBlob": "40eff81f8c05908d95eafbf6d985276e42ef1f3e"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "xft-2.0.gir",
+      "packages": [],
+      "namespace": {
+        "name": "xft",
+        "abiVersion": "2.0",
+        "sharedLibrary": null
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "xft-2.0.gir",
+        "sha256": "sha256:31d7ba26a921d57b5f2d55194866f6acbe20ee81fbee66c1df489d51f6aa8c3a",
+        "bytes": 707,
+        "mode": "100644",
+        "gitBlob": "035ddf59c59ae735aef43a35ab446fefb3a50de5"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "xlib-2.0.gir",
+      "packages": [],
+      "namespace": {
+        "name": "xlib",
+        "abiVersion": "2.0",
+        "sharedLibrary": null
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "xlib-2.0.gir",
+        "sha256": "sha256:920078b90e03144d9197514b3b9a1d0baa0f0f211e8d4f221a1b7e0979edea5a",
+        "bytes": 2287,
+        "mode": "100644",
+        "gitBlob": "3288d22db05f7144999090e3bb23cffb88e5417e"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    },
+    {
+      "path": "xrandr-1.3.gir",
+      "packages": [],
+      "namespace": {
+        "name": "xrandr",
+        "abiVersion": "1.3",
+        "sharedLibrary": null
+      },
+      "versionClues": [],
+      "configuredSupplyRoute": "GTK_RS_CONTAINER",
+      "originalPackageVersion": "UNVERIFIED",
+      "originalBytes": "NOT_ACQUIRED",
+      "originalSha256": null,
+      "currentCandidate": {
+        "path": "xrandr-1.3.gir",
+        "sha256": "sha256:ac125cdadcb54f88699dcea1ef28f6ffedc61da5d50173e3e7059d012c68c281",
+        "bytes": 772,
+        "mode": "100644",
+        "gitBlob": "4def5b59979de1ac3ade6630e9245309cb0693a5"
+      },
+      "reformat": "snapshot/reformat.sh",
+      "fixCommands": [],
+      "historicalToolIdentity": "UNVERIFIED",
+      "historicalManualChanges": "UNVERIFIED",
+      "offlineReplay": "BLOCKED_MISSING_SUPPLIER_INPUTS_AND_TOOL_IDENTITY",
+      "documentationReview": "NOT_COMPLETE",
+      "distributionStatus": "BLOCKED_PENDING_SCOPED_SOURCE_AND_DOCUMENTATION_MATERIALS"
+    }
+  ],
+  "quotes": [
+    {
+      "symbol": "G_FILE_ERROR_EXIST",
+      "member": "exist",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 423628,
+        "endByteExclusive": 423771,
+        "sha256": "sha256:a23f963ddcbc2998b9e1e1a01a1259c772adc1d58d635de5e5b9000278e33910"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 1450,
+        "endByteExclusive": 1600,
+        "sha256": "sha256:2b628cb16893f58ac273d71a7c15c81678678f4ff23e21ae9f9309ab5ff337df"
+      },
+      "normalizedSha256": "sha256:3b3bd8adea0791d9a7a76ac507228a039da3bc1893dd2966dc9a4b271ec3fb07",
+      "manualMacro": "EPERM",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 5700,
+        "endByteExclusive": 5911,
+        "sha256": "sha256:a19f5966a8d5721f41d1ed859640e96814ea0e144f82771e67abfcf57c4b62e3"
+      },
+      "manualRelationship": "SAME_PROSE_AFTER_WHITESPACE_ONLY",
+      "historicalManualVersion": "UNVERIFIED",
+      "observation": "The retained EXIST description matches EPERM rather than EEXIST; preserve the supplier text, do not correct or infer historical intent."
+    },
+    {
+      "symbol": "G_FILE_ERROR_ISDIR",
+      "member": "isdir",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 423900,
+        "endByteExclusive": 424003,
+        "sha256": "sha256:8fa7e662c6c11709938284e76a82340c420012ea85912463489383bf2f8a007e"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 1624,
+        "endByteExclusive": 1731,
+        "sha256": "sha256:2cdce9890c9c7857ef1c4923bdb983b388c6c04e4764b6325f13d9b08f360a5b"
+      },
+      "normalizedSha256": "sha256:2b7393d0c0a63c9753150680fc9c9f761fd9ce096d589ec15f9503b97574d31f",
+      "manualMacro": "EISDIR",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 11406,
+        "endByteExclusive": 11583,
+        "sha256": "sha256:cd0b4ae6dfd729a11fecedb939cb19def9debe891b0c6cc836218f963a15a2f0"
+      },
+      "manualRelationship": "SAME_PROSE_AFTER_WHITESPACE_ONLY",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_ACCES",
+      "member": "acces",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 424132,
+        "endByteExclusive": 424213,
+        "sha256": "sha256:ecd9a3d6c56ccaf774659a7256eb82438e7584db567c2148708019aa2530d5d9"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 1755,
+        "endByteExclusive": 1840,
+        "sha256": "sha256:1493972e09fd3d20d7d29141ffa03e9376a2fa25c2bd37b48861a1b12aaeec14"
+      },
+      "normalizedSha256": "sha256:7c1defb76a49bbcd794a7b87a370275e6f774988849e73a6d354c2d2150ba59f",
+      "manualMacro": "EACCES",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 9316,
+        "endByteExclusive": 9471,
+        "sha256": "sha256:8ad4415d51bea2dca622f3c56a45786a7e19aa0301ed91a906757b92f1aca796"
+      },
+      "manualRelationship": "SAME_PROSE_AFTER_WHITESPACE_ONLY",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_NAMETOOLONG",
+      "member": "nametoolong",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 424354,
+        "endByteExclusive": 424372,
+        "sha256": "sha256:366c0443f19d23e646f3a66ce457097795e1717a490032d959fafbf44faa4634"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 1870,
+        "endByteExclusive": 1889,
+        "sha256": "sha256:bccc76e8073459dde7ec78673ed4e253af491cf9611643789d8cb477bd79fec6"
+      },
+      "normalizedSha256": "sha256:366c0443f19d23e646f3a66ce457097795e1717a490032d959fafbf44faa4634",
+      "manualMacro": "ENAMETOOLONG",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 24853,
+        "endByteExclusive": 25108,
+        "sha256": "sha256:fcfecd4c6d63f2bec5c1c400812924b20c07a787ad51499a96701f97d78523c0"
+      },
+      "manualRelationship": "ADAPTED_OR_REPHRASED_DESCRIPTION",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_NOENT",
+      "member": "noent",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 424501,
+        "endByteExclusive": 424665,
+        "sha256": "sha256:e40aa5c7639aa8523f48eec0cd85fe7ce82d1b46790026bc06d812f94db69f48"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 1913,
+        "endByteExclusive": 2084,
+        "sha256": "sha256:735efdd4abb0be67c1c408c6138e5f6a212ab8f0463ecbf547e5b8466aaae474"
+      },
+      "normalizedSha256": "sha256:6f270c8ed55234048a7038c87a1e27ed9d056dd3ad1dbd2fc7b4b439ebb4629e",
+      "manualMacro": "ENOENT",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 5974,
+        "endByteExclusive": 6210,
+        "sha256": "sha256:509c6090448db9b5912ac737c21297aa315202ac147827e5ff0481eec56c8421"
+      },
+      "manualRelationship": "SAME_PROSE_WITH_QUOTATION_FORMAT_CHANGE",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_NOTDIR",
+      "member": "notdir",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 424796,
+        "endByteExclusive": 424873,
+        "sha256": "sha256:0550afa81766fc6515c485a986cae105729aabaee536a70965f6ebacf3014bd5"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 2109,
+        "endByteExclusive": 2190,
+        "sha256": "sha256:d73a4bbe4759e5445fa764cc0f2c5bfc1d99685b95d8ac178a724e8c480df8c3"
+      },
+      "normalizedSha256": "sha256:ba51d1544b48da9aaa7f8824f2bb7a390017ee9468be92c0fcd5ccc25e689bb3",
+      "manualMacro": "ENOTDIR",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 11202,
+        "endByteExclusive": 11354,
+        "sha256": "sha256:9be2a7ed7159d39d57124d0c2db3dd61da2ae623f24c53e79a0ff491fa13bf08"
+      },
+      "manualRelationship": "SAME_PROSE_AFTER_WHITESPACE_ONLY",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_NXIO",
+      "member": "nxio",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 425000,
+        "endByteExclusive": 425291,
+        "sha256": "sha256:9494dffe3fa09a1d22cdce0f955e5c767af2be93fb525bb237d814370078fe11"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 2213,
+        "endByteExclusive": 2517,
+        "sha256": "sha256:f75d7af343ddcbfa73bca8473b668ffbb402d3aacdbec899b79f929ba71998de"
+      },
+      "normalizedSha256": "sha256:d401559595abaf1b19ae362cc66216e3f1a17dbd984f9a4f54e97546ebdedc7b",
+      "manualMacro": "ENXIO",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 7073,
+        "endByteExclusive": 7425,
+        "sha256": "sha256:61a8d08b22323b79285d063c26749b282e225e6e4cf9f5a84f0630f694bb5d10"
+      },
+      "manualRelationship": "SAME_PROSE_AFTER_WHITESPACE_ONLY",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_NODEV",
+      "member": "nodev",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 425420,
+        "endByteExclusive": 425505,
+        "sha256": "sha256:5c7a87c90c6ea07c13b5dfb3f0677353fae3130e210acfb3863cc9d41fe0cbcb"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 2541,
+        "endByteExclusive": 2630,
+        "sha256": "sha256:3e50979d99afb147fa9caa3438a9f04f1ce658641f460498662652890d0ea2fa"
+      },
+      "normalizedSha256": "sha256:43d758d02412e88c9bf0651c571171efa0bcbc8da7ea72095e0d74d2a57ac4f3",
+      "manualMacro": "ENODEV",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 10981,
+        "endByteExclusive": 11149,
+        "sha256": "sha256:0eec06ecbec4c542682220e01c7fc153b6567fc175754db8b274cfe16ea09519"
+      },
+      "manualRelationship": "ADAPTED_OR_REPHRASED_DESCRIPTION",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_ROFS",
+      "member": "rofs",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 425632,
+        "endByteExclusive": 425732,
+        "sha256": "sha256:40c0a4e72a203d587abe90f5af0e0e1e38f1c96368f1745690ba9803e9f097e9"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 2653,
+        "endByteExclusive": 2757,
+        "sha256": "sha256:3bcca5f75c1eff1b2ce0e219ad8834240d2e64e9c9105a33a83943fe9b2fddaa"
+      },
+      "normalizedSha256": "sha256:a159a15f03f3bd422474741f7e432c7d447c9dded899e819a26107adcc16887f",
+      "manualMacro": "EROFS",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 14051,
+        "endByteExclusive": 14195,
+        "sha256": "sha256:a52fecfe75ec1036de540f2ed27f5336b6da4472c4750071df69ab8c127959f3"
+      },
+      "manualRelationship": "ADAPTED_OR_REPHRASED_DESCRIPTION",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_TXTBSY",
+      "member": "txtbsy",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 425863,
+        "endByteExclusive": 425878,
+        "sha256": "sha256:a1845d4a43a44c8443425ce331e3f0784d17d209b142a367a6f6d4a7ea72fcba"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 2782,
+        "endByteExclusive": 2798,
+        "sha256": "sha256:73ddddd52654d5cc9f9f9145c7fda4854919a2728d14dc1481b780df3ed6833c"
+      },
+      "normalizedSha256": "sha256:a1845d4a43a44c8443425ce331e3f0784d17d209b142a367a6f6d4a7ea72fcba",
+      "manualMacro": "ETXTBSY",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 12972,
+        "endByteExclusive": 13394,
+        "sha256": "sha256:258269a4be312d786eacc01597ee8499af07e2411cf5794379f1f511cb2794e5"
+      },
+      "manualRelationship": "ADAPTED_OR_REPHRASED_DESCRIPTION",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_FAULT",
+      "member": "fault",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 426008,
+        "endByteExclusive": 426127,
+        "sha256": "sha256:4a866fd46f5e90ab568b5372b3869e7711a2cacada40e80aca72bdd2668fdb4c"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 2822,
+        "endByteExclusive": 2948,
+        "sha256": "sha256:73170c30beacf3dbecaab5efc8c0f07c783d0944dd35c5b33ab2415ce9c06503"
+      },
+      "normalizedSha256": "sha256:fa031e48da26a4e1ddfad3c86256b05eebfa754624f8c15a235cd5b23421482c",
+      "manualMacro": "EFAULT",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 9520,
+        "endByteExclusive": 9714,
+        "sha256": "sha256:a42ff26601505bff6ce5940cf4b4c9cf274cdbe856e433b6699ca9428c1b40ff"
+      },
+      "manualRelationship": "ADAPTED_OR_REPHRASED_DESCRIPTION",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_LOOP",
+      "member": "loop",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 426255,
+        "endByteExclusive": 426388,
+        "sha256": "sha256:53dd1ea77690041ebdc8d698f30b1d39b655c2e71030e314cbac8c0af196d26a"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 2971,
+        "endByteExclusive": 3111,
+        "sha256": "sha256:edead9e8e7ca383ccbbf20dd87e0d99449dac0ca2c6aaabc4484670f09b7b5b3"
+      },
+      "normalizedSha256": "sha256:21640ec09e7667f2f7c1726e58422d9dcdf43135c695ea0b037a2846eb9bc13f",
+      "manualMacro": "ELOOP",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 24595,
+        "endByteExclusive": 24797,
+        "sha256": "sha256:e2dcefeb28347accd27798de2e3aa771adf9a9f18139da07c014c95650eddd2e"
+      },
+      "manualRelationship": "SAME_PROSE_AFTER_WHITESPACE_ONLY",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_NOSPC",
+      "member": "nospc",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 426518,
+        "endByteExclusive": 426605,
+        "sha256": "sha256:62a7ec887fe5baccf4a01e2c913bdd7f818808ae8c1d3d7c64a0668b4c3c177e"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 3135,
+        "endByteExclusive": 3226,
+        "sha256": "sha256:acbed30241098c5aa6554986a0b481180811315ed7747f79de0813e141b1cebd"
+      },
+      "normalizedSha256": "sha256:0d9593aa6f67aa87f167de0ee92faa80e394269e907a38460345a88d1f49a69a",
+      "manualMacro": "ENOSPC",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 13660,
+        "endByteExclusive": 13821,
+        "sha256": "sha256:d95c19fad9b0508d9f5f02daef5162ca1387c76f3b4380b1e2498f1395e43d2f"
+      },
+      "manualRelationship": "SAME_PROSE_AFTER_WHITESPACE_ONLY",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_NOMEM",
+      "member": "nomem",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 426735,
+        "endByteExclusive": 426836,
+        "sha256": "sha256:b4f75a86b208d85d1005675aca1545c986f54c1ca4efc6ddbe9a9481bdab4a5a"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 3250,
+        "endByteExclusive": 3355,
+        "sha256": "sha256:a23bc7ac94d631f1801d2b1a0d53f2cda935a66a70fa21bb6f7b48aaca6fa637"
+      },
+      "normalizedSha256": "sha256:dc8a9d21e47f15404dc29f6dbe3bfcaca5b9e2e65af34e5967ec507a2e6cd4e1",
+      "manualMacro": "ENOMEM",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 9085,
+        "endByteExclusive": 9261,
+        "sha256": "sha256:b16fef3f06eb1c82ca5b91be7507513578390baf20ae74ab1d33ed559bcf7965"
+      },
+      "manualRelationship": "SAME_PROSE_AFTER_WHITESPACE_ONLY",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_MFILE",
+      "member": "mfile",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 426966,
+        "endByteExclusive": 427092,
+        "sha256": "sha256:a7586a94944121c51a24636d4c55e2d64e20f5a97c313a1fbc107fbf206cc859"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 3379,
+        "endByteExclusive": 3512,
+        "sha256": "sha256:03bacca2ada3a4d5ca8e257166c1e57f02d032e87f03707a9e08d67afd1d6fa2"
+      },
+      "normalizedSha256": "sha256:e9920f4204f2da25225ac8363363af27c5441e20d0a40850801f83ed8c3fd062",
+      "manualMacro": "EMFILE",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 11896,
+        "endByteExclusive": 12332,
+        "sha256": "sha256:7cb55d0fe1a135a8a33a7efaec94449ad581e11003e3e65c2d43fe1f5b06f1b5"
+      },
+      "manualRelationship": "EXCERPT_OF_MANUAL_DESCRIPTION",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_NFILE",
+      "member": "nfile",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 427222,
+        "endByteExclusive": 427289,
+        "sha256": "sha256:e82e197f0932bf2e2470a5000666132607d472f9bda1cef5f61a64186a2a3706"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 3536,
+        "endByteExclusive": 3607,
+        "sha256": "sha256:b78578571d6ea8b5915792476e8fcb444285a566fbdbcb998745265ca88e1ce3"
+      },
+      "normalizedSha256": "sha256:073f458da0053778a13dad2073007fb10dd5d085339ee6eb74d3916cc4096666",
+      "manualMacro": "ENFILE",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 12399,
+        "endByteExclusive": 12684,
+        "sha256": "sha256:5df2df7c943d0573fbe5fcd9f8cb3d58cfe43b056ca7361c09322de037746ea1"
+      },
+      "manualRelationship": "EXCERPT_OF_MANUAL_DESCRIPTION",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_BADF",
+      "member": "badf",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 427417,
+        "endByteExclusive": 427567,
+        "sha256": "sha256:f2626532c58167f01ed686778e53f8969b68b2c5988d1e1d7cb25befd3c1facf"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 3630,
+        "endByteExclusive": 3787,
+        "sha256": "sha256:91aa2331db8baabed9d9197b949025db0f54b2e22bfb711f950513e7a5a51f26"
+      },
+      "normalizedSha256": "sha256:32a4c623f6510bec37f4143c694957301829640b8ece7ac0017191e7c57e4051",
+      "manualMacro": "EBADF",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 8097,
+        "endByteExclusive": 8315,
+        "sha256": "sha256:6983f2af86ba391f3bd70f4781882264113fe5cfa8cdd4140c508578cfbd33db"
+      },
+      "manualRelationship": "SAME_PROSE_AFTER_WHITESPACE_ONLY",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_INVAL",
+      "member": "inval",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 427697,
+        "endByteExclusive": 427828,
+        "sha256": "sha256:54f4a0d3fd8ee2fd00c55c284c4232d73557b89f7ff9e479c97e1575f8538a8c"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 3811,
+        "endByteExclusive": 3949,
+        "sha256": "sha256:d1300f24044f7a05aa19d17b7c3380e5f4d392e3ca4a44bcfb656f4b07b3921d"
+      },
+      "normalizedSha256": "sha256:5048ddcd8a54ab0bf1d2335445deb482decadeb58030afbb375c0ad716b555d8",
+      "manualMacro": "EINVAL",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 11637,
+        "endByteExclusive": 11839,
+        "sha256": "sha256:0690fd22b0f53bab1a81e1b9490b0b39aad857616182ab842b98f55989db3b2a"
+      },
+      "manualRelationship": "SAME_PROSE_AFTER_WHITESPACE_ONLY",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_PIPE",
+      "member": "pipe",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 427956,
+        "endByteExclusive": 428292,
+        "sha256": "sha256:83f5821072771cc9db3784043a2444e5033505accddb22860d7d71d80e0db058"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 3972,
+        "endByteExclusive": 4324,
+        "sha256": "sha256:1b6cfab27ff3da2c85a4e0adfe27cb203d986f9080e2baa459ba06a274432421"
+      },
+      "normalizedSha256": "sha256:63f85a41ef60c2126692168d9729487413bbffd0186622d7d00b970634d58267",
+      "manualMacro": "EPIPE",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 14573,
+        "endByteExclusive": 14980,
+        "sha256": "sha256:967d146f9b07f51ebc3de5521ec72294e1b405e32e4e96c382194cbf6892a421"
+      },
+      "manualRelationship": "ADAPTED_OR_REPHRASED_DESCRIPTION",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_AGAIN",
+      "member": "again",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 428422,
+        "endByteExclusive": 428503,
+        "sha256": "sha256:a3589f0be0f8be4c58986d5d64aad9f7250c33b56401b23e62ff1afe823ac8e7"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 4348,
+        "endByteExclusive": 4433,
+        "sha256": "sha256:db6a781c7171dd39a8e5c053237aacca830ee53cfb401f9ffa258d5bd50feb2b"
+      },
+      "normalizedSha256": "sha256:f81042fe4ae7c53af3b38207a6ef8944629c785b4cf4f8c2dd88ff194528af55",
+      "manualMacro": "EAGAIN",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 15586,
+        "endByteExclusive": 17078,
+        "sha256": "sha256:1b55dd9f18be80b3d87fc5997a67361a150e9fb217af2e6497814aa2f1ef3065"
+      },
+      "manualRelationship": "EXCERPT_OF_MANUAL_DESCRIPTION",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_INTR",
+      "member": "intr",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 428631,
+        "endByteExclusive": 428785,
+        "sha256": "sha256:17ffce36eda176a9622cb86d886e36000dce1e953c478c189f02bb2f2ac3fc5c"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 4456,
+        "endByteExclusive": 4617,
+        "sha256": "sha256:4854ed179074ad05e890aed0e787006dbd4af98b36d264db594e8289c99a8ba1"
+      },
+      "normalizedSha256": "sha256:66b4171a631c849528d7a17128bc5d35ddd8ce7ccb4240e7ea0cac5a65f1acd4",
+      "manualMacro": "EINTR",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 6444,
+        "endByteExclusive": 6813,
+        "sha256": "sha256:aa4db5de3a763cefe98ac6aa6ab54fd0cd56b7f8c8a50cabd6b9b1c37bdc899f"
+      },
+      "manualRelationship": "EXCERPT_OF_MANUAL_DESCRIPTION",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_IO",
+      "member": "io",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 428909,
+        "endByteExclusive": 429051,
+        "sha256": "sha256:b9608146b6403fb4cc725a9d78a8b2ceb0c5153e114817ebd5d1c0102786df8e"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 4638,
+        "endByteExclusive": 4787,
+        "sha256": "sha256:a63144103b90567afa2527c2bdb6e373cba59168c2c0910d2252ace0953cb973"
+      },
+      "normalizedSha256": "sha256:e5a8e533b06be02980b8eaf8ab25d9949b3b99a67d9070e7c62f05af75f4e63c",
+      "manualMacro": "EIO",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 6869,
+        "endByteExclusive": 7010,
+        "sha256": "sha256:bee709cba494bf6a47ae52af4545e763838e1fe42c636d5045163793a159eaa0"
+      },
+      "manualRelationship": "ADAPTED_OR_REPHRASED_DESCRIPTION",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_PERM",
+      "member": "perm",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 429179,
+        "endByteExclusive": 429320,
+        "sha256": "sha256:c7acac1c382f5ca48049ce236f425839e1a8e0bfe748bcf5530132cc09885d36"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 4810,
+        "endByteExclusive": 4958,
+        "sha256": "sha256:6b1131919717d6212c55ace4cd02afac9aac720737fd3547fdf1d82429f04f30"
+      },
+      "normalizedSha256": "sha256:3b3bd8adea0791d9a7a76ac507228a039da3bc1893dd2966dc9a4b271ec3fb07",
+      "manualMacro": "EPERM",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 5700,
+        "endByteExclusive": 5911,
+        "sha256": "sha256:a19f5966a8d5721f41d1ed859640e96814ea0e144f82771e67abfcf57c4b62e3"
+      },
+      "manualRelationship": "SAME_PROSE_AFTER_WHITESPACE_ONLY",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_NOSYS",
+      "member": "nosys",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 429450,
+        "endByteExclusive": 429540,
+        "sha256": "sha256:521b38d5678bd771e7b140e3a1e9751f2749ba83dfe235c356ababef19b3e357"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 4982,
+        "endByteExclusive": 5076,
+        "sha256": "sha256:d80fa129a0a238539d74a34cea1f76b614db826e83b033e09500c87b59cfdd95"
+      },
+      "normalizedSha256": "sha256:98ec9cfe0cce885d7d7f5eb5b4a00e3ce4c97f833fadb90931e75572ba1690d8",
+      "manualMacro": "ENOSYS",
+      "manualSection": {
+        "path": "acquisition/gnu-libc-223/errno.texi",
+        "startByte": 29050,
+        "endByteExclusive": 29463,
+        "sha256": "sha256:461e41bb2f77ef0d85dc9dde70d933e176320e933fc359b285e6174b5a8ba880"
+      },
+      "manualRelationship": "ADAPTED_OR_REPHRASED_DESCRIPTION",
+      "historicalManualVersion": "UNVERIFIED"
+    },
+    {
+      "symbol": "G_FILE_ERROR_FAILED",
+      "member": "failed",
+      "gir": {
+        "path": "GLib-2.0.gir",
+        "startByte": 429672,
+        "endByteExclusive": 429872,
+        "sha256": "sha256:6663985f41b41481554c3cfd12dcf5302693cf59110917a0022cd1076d0c0b3e"
+      },
+      "source": {
+        "path": "acquisition/glib-287/glib/gfileutils.c",
+        "startByte": 5101,
+        "endByteExclusive": 5311,
+        "sha256": "sha256:1e119ceca72182355c62132bd7a53e6ff99fcd174f1a6299fcfa9b162f24448c"
+      },
+      "normalizedSha256": "sha256:c5f3aa9ac6e986dc9fa2c28658cc73f3f9e25ac5fbc7689ec2b8f4e286b342c8",
+      "manualMacro": null,
+      "manualSection": null,
+      "manualRelationship": "GLIB_SPECIFIC_FAILURE_DESCRIPTION",
+      "historicalManualVersion": "UNVERIFIED"
+    }
+  ],
+  "glibComparatorCommit": "837a6eca8e20340a7a6a81e82c3a6cb0dd70b8e0",
+  "gnuComparatorCommit": "fa39bea49e8023069711bded87d3d1398717bc1a",
+  "ciRun": {
+    "id": 20569759517,
+    "jobId": 59074482738,
+    "headSha": "ef7c8d351e5796ae223496d46d05d0d94d49ae50",
+    "generatedCommit": "2d3eca5c177410cb3f2a48ced7b64809b0ee3c72",
+    "relationship": "MATCHING_PARENT_AND_TIME_WINDOW_NOT_CREATE_PR_LOG_PROOF",
+    "logsAccess": "BLOCKED_HTTP_403",
+    "currentArtifactCount": 0
+  },
+  "transformations": {
+    "supplyOrder": [
+      "dl.py",
+      "dl-win32.sh",
+      "dl-gtk-macos.py"
+    ],
+    "processingOrder": [
+      "reformat.sh",
+      "fix.sh"
+    ],
+    "tool": "xmlstarlet ed -L",
+    "historicalVersions": "UNVERIFIED",
+    "reformat": "DELETES_DOC_FILENAME_LINE_AND_SOURCE_POSITION",
+    "replay": "BLOCKED_MISSING_RAW_INPUTS_AND_TOOL_IDENTITY",
+    "invertible": false
+  },
+  "distribution": {
+    "currentNativeLibraryMembership": "NOT_REMEASURED",
+    "sourcePackageObligations": "RETAINED_REGARDLESS_OF_CURRENT_LIBRARY_GRAPH",
+    "generatorMitDoesNotCoverInputs": true,
+    "completeOriginalTexts": [
+      "acquisition/glib-287/glib/gfileutils.c",
+      "acquisition/glib-287/COPYING",
+      "acquisition/glib-287/LICENSES/LGPL-2.1-or-later.txt",
+      "acquisition/gnu-libc-223/libc.texinfo",
+      "acquisition/gnu-libc-223/lgpl.texinfo",
+      "acquisition/gnu-libc-223/errno.texi",
+      "acquisition/gnu-libc-223-manual.html"
+    ],
+    "gnu223Conditions": "Verbatim copies retain copyright and permission notice. Modified copies additionally retain the GNU Library General Public License section exactly and carry the same permission notice. Translation of that license section requires FSF accuracy approval. This comparator is not proof of the historical manual version or permission for all GIR sources.",
+    "actualRedistributionFulfillment": "UNVERIFIED",
+    "otherGirDocumentation": "NOT_FULLY_REVIEWED"
+  },
+  "pending": [
+    "36 container original inputs and immutable image/build identity",
+    "Two exact MSYS2 packages/versions/checksums for three Windows GIR files",
+    "GNOME macOS job/source/artifact identity and original GdkMacos GIR",
+    "Historical xmlstarlet/libxml2 versions and manual changes; actual original-to-fixed replay",
+    "Historical GNU manual version and applicable permission notice; other GIR documentation/source statements",
+    "Actual scoped redistribution conditions/fulfillment; new complete kit integration remains separate"
+  ],
+  "quoteReviewScope": "25 FileError members and their attribution; full files/statements retained, other GIR documentation not fully reviewed. GLib2.87 and GNU2.2.3 are fixed comparators, not identified historical suppliers.",
+  "attribution": {
+    "gir": {
+      "path": "GLib-2.0.gir",
+      "startByte": 422849,
+      "endByteExclusive": 423515,
+      "sha256": "sha256:9763a16583c166ce0ab25a23e3e1f33be69abbc06c7e29039bbbed0a00f16667"
+    },
+    "source": {
+      "path": "acquisition/glib-287/glib/gfileutils.c",
+      "startByte": 5314,
+      "endByteExclusive": 6016,
+      "sha256": "sha256:d7cd97f2e8fcdfc9fd66c23f2efaedd06c11f5f54500d8071f04eddcfc549900"
+    }
+  }
+}

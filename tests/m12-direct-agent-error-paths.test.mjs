@@ -61,7 +61,7 @@ function contextFixture({ mode = "tui", select, currentModel = null, availableMo
     model: currentModel,
     scopedModels,
     modelRegistry: { getAvailable: () => availableModels },
-    sessionManager: { getEntries: () => [] },
+    sessionManager: { getEntries: () => [], getSessionId: () => "m12-error-path-session" },
     ui: {
       select: select ?? (async () => undefined),
       notify: (message, type) => calls.notifications.push({ message, type }),

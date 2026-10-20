@@ -78,10 +78,23 @@ test("a rehashed manifest cannot redirect component paths outside the payload", 
 
 test("unsupported Node, macOS, OS and architecture have no legacy fallback", async (t) => {
   const f = await fixture(t);
-  await assert.rejects(loadDistribution({ ...f.options, nodeVersion: "20.19.0" }), { code: "DISTRIBUTION_NODE_UNSUPPORTED" });
+  for (const nodeVersion of ["20.19.0", "22.19.0", "22.99.0", "24.18.9", "24.19.0-rc.1", "25.0.0", "26.0.0"])
+    await assert.rejects(loadDistribution({ ...f.options, nodeVersion }), { code: "DISTRIBUTION_NODE_UNSUPPORTED" });
   for (const overrides of [{ kernelRelease: "22.0.0" }, { platform: "linux", glibc: "2.36" }, { arch: "x64" }]) {
     await assert.rejects(loadDistribution({ ...f.options, ...overrides }), { code: "DISTRIBUTION_PLATFORM_UNSUPPORTED" });
   }
+});
+
+test("new manifests require Node 24 while historical manifests retain their identity", async (t) => {
+  const f = await fixture(t);
+  assert.equal(f.manifest.nodeRange, ">=24.19.0 <25");
+  assert.ok(await loadDistribution({ ...f.options, nodeVersion: "24.20.0" }));
+  f.manifest.nodeRange = ">=22.19.0";
+  f.manifest.distributionId = manifestDigest(f.manifest);
+  await f.write("distribution-manifest.json", f.manifest);
+  assert.equal((await loadDistribution(f.options)).distribution.distributionId, f.manifest.distributionId);
+  await assert.rejects(loadDistribution({ ...f.options, nodeVersion: "22.19.0" }), { code: "DISTRIBUTION_NODE_UNSUPPORTED" });
+  await assert.rejects(loadDistribution({ ...f.options, nodeVersion: "25.0.0" }), { code: "DISTRIBUTION_NODE_UNSUPPORTED" });
 });
 
 test("manifest digest and audited dependency identities are mandatory", async (t) => {

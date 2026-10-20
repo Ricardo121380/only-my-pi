@@ -9,7 +9,7 @@ import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { canonicalJson } from "../packages/config-runtime/index.mjs";
-import { repositoryRoot, runCheck } from "./verification-receipt.mjs";
+import { formatGateProgress, repositoryRoot, runCheck } from "./verification-receipt.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MANIFEST = "verification/m11-public-preview-gates-v1.json";
@@ -243,14 +243,17 @@ export async function runM11ReleaseVerification({ rootDir = repositoryRoot, outp
   const results = [];
   for (const gate of manifest.gates) {
     let result;
+    let diagnostic;
     if (gate.id === PROTECTED_ID) result = evidence ? Object.freeze({ ...skippedResult(gate.id, gate.execution, "PASS"), passed: true, evidence: { evidenceId: evidence.evidenceId, evidenceDigest: evidence.evidenceDigest, assertionCount: evidence.assertions.length } }) : skippedResult(gate.id, gate.execution, gate.defaultStatus);
     else if (gate.id === PLATFORM_ID && !includePlatform) result = skippedResult(gate.id, gate.execution, gate.defaultStatus);
     else {
       const gateEnv = { CI: "1", NO_COLOR: "1", PI_TELEMETRY: "0", ...(gate.id === PLATFORM_ID ? { M11_Q10_RELEASE_ROOT: resolveM11PlatformReleaseRoot(env, resolvedRoot) } : {}) };
-      result = publicResult(await runCheckImpl({ ...gate, cwd: "repository-root", env: gateEnv, sensitiveOutput: false, required: true }, { cwd: resolvedRoot, maxOutputBytes: Math.min(gate.maxOutputBytes, manifest.policy.maxOutputBytes), env }), gate.execution);
+      const raw = await runCheckImpl({ ...gate, cwd: "repository-root", env: gateEnv, sensitiveOutput: false, required: true }, { cwd: resolvedRoot, maxOutputBytes: Math.min(gate.maxOutputBytes, manifest.policy.maxOutputBytes), env });
+      result = publicResult(raw, gate.execution);
+      diagnostic = raw.diagnostic;
     }
     results.push(result);
-    onGate(result);
+    onGate(result, diagnostic);
   }
   if (requireCleanSource && cleanHead(resolvedRoot) !== executionCommit) fail("M11_GATE_SOURCE_CHANGED", "source changed while M11 gates were running");
   const deterministicPassed = results.filter((entry) => entry.execution === "deterministic").every((entry) => entry.status === "PASS");
@@ -288,7 +291,7 @@ export async function main(argv = process.argv.slice(2)) {
     process.stdout.write(`${JSON.stringify(inspectM11Gates(argv), null, args.json || args.gate ? 2 : 0)}\n`);
     return 0;
   }
-  const { report, target } = await runM11ReleaseVerification({ output: args.output, includePlatform: args.includePlatform, sourceCommit: args.sourceCommit, protectedEvidence: args.evidence, onGate: (gate) => process.stderr.write(`${gate.status} ${gate.id} (${gate.durationMs} ms)\n`) });
+  const { report, target } = await runM11ReleaseVerification({ output: args.output, includePlatform: args.includePlatform, sourceCommit: args.sourceCommit, protectedEvidence: args.evidence, onGate: (gate, diagnostic) => process.stderr.write(formatGateProgress(gate, diagnostic)) });
   process.stdout.write(`${JSON.stringify({ status: report.status, passed: report.passed, deterministicPassed: report.deterministicPassed, summary: report.summary, ...(target ? { report: path.relative(repositoryRoot, target) } : {}) }, null, args.json ? 2 : 0)}\n`);
   return report.passed || (report.deterministicPassed && (!args.includePlatform || report.summary.platformPassed === 1) && report.summary.protectedNotRunByPolicy === 1) ? 0 : 1;
 }

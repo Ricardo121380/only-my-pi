@@ -4,6 +4,8 @@
 
 **Inspect first. Code with approval.**
 
+**Development goal:** Only my pi delivers both a CLI/TUI and a desktop Agent client, directly built on the latest stable Pi core. The complete selected WebUI scope comes before the Electron application. Both clients are first-class product interfaces, with shared session viewing and explicit-account continuation as a development goal. Pi supplies the Agent runtime, with only the application integration each interface needs. See the [development blueprint](docs/plans/2026-10-17-product-direction-and-iteration-plan.md) for confirmed decisions, verified status, remaining work, and the next iteration. The installation guide below describes the published terminal Preview.
+
 only-my-pi (OMP) is a terminal coding agent built on [Pi](https://github.com/earendil-works/pi), distributed through Homebrew and npm. Run `omp` in a project to inspect code, investigate problems, and make project-local changes after explicit approval.
 
 Pi provides the terminal UI, models, sessions, and core tools. OMP adds coding approvals, budgeted subagent collaboration, and verifiable installation and rollback.
@@ -25,6 +27,8 @@ Pi provides the terminal UI, models, sessions, and core tools. OMP adds coding a
 
 You do not need to choose a Workflow, Swarm, Goal, or Ultra to do everyday work. **These controls are not an OS sandbox.** See [security boundaries](#security-and-license).
 
+The current branch contains **unreleased** direct-Agent hardening: physical multiline Bash is rejected; revocation cancels in-flight managed writing; and a clone-verified patch is not complete until a separately approved gate passes in the real worktree. A patch may be applied while its verification is pending, failed, or cancelled. `/omp runs` and `/omp runs show <id>` expose a redacted, read-only record; they do not resume a writer or restore coding permission. A cancelled Git apply can leave an unknown application outcome, which requires manual inspection before retry. These statements do not describe the published `v0.4.0-preview.2` binaries.
+
 ## Quick start
 
 <a id="platform-and-runtime"></a>
@@ -42,7 +46,7 @@ brew install ricardo121380/tap/only-my-pi
 omp --version
 ```
 
-**npm** reuses your existing **Node >=22.19.0** and requires Git on PATH. Prepare both before installing:
+**npm** reuses your existing **Node >=24.19.0 <25** and requires Git on PATH. Prepare both before installing:
 
 ```bash
 node --version
@@ -51,7 +55,7 @@ npm install -g only-my-pi
 omp --version
 ```
 
-**Linux prerequisites:** use an ordinary Git clone, Node >=22.19.0, Git, bubblewrap, socat and ripgrep. On Ubuntu 22.04:
+**Linux prerequisites:** use an ordinary Git clone, Node >=24.19.0 <25, Git, bubblewrap, socat and ripgrep. On Ubuntu 22.04:
 
 ```bash
 sudo apt-get update
@@ -518,12 +522,13 @@ With OMP already installed, use `omp admin stack install --bundle "$omp_bundle" 
 
 ## Development and contributing
 
-Repository development requires **Node.js >=22.19.0**; CI checks `22.19.0` and `24.19.0`. Source development and the managed end-user installation are separate paths:
+Repository development requires **Node.js >=24.19.0 <25**; CI pins `24.19.0`, also recorded in `.node-version`. Node 22 and Node 25+ are unsupported; see the [current Node policy](docs/compatibility/node-pi-matrix.md). Source development and the managed end-user installation are separate paths:
 
 ```bash
 git clone https://github.com/Ricardo121380/only-my-pi.git
 cd only-my-pi
 npm ci --ignore-scripts --no-audit --no-fund
+npm run test:prepare
 
 npm run lint
 npm run typecheck

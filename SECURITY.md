@@ -13,9 +13,19 @@ attach Provider keys, cookies, `auth.json`, sessions, raw prompts, raw model
 output, memory databases or host-specific archives.
 
 The supported security-update scope for this Preview is the latest published
-`0.2.0-preview.N` on macOS 14+ arm64. No response-time SLA or stable
+`0.4.0-preview.N` on macOS 14+ arm64 and Linux glibc x64/arm64. No response-time SLA or stable
 compatibility window is promised during Preview. The repository never requests
 a security report through a public issue or third-party chat account.
+
+Unreleased direct-Agent hardening rejects physical multiline Bash commands,
+invalidates in-flight writer authority on revocation, and separates clone
+verification from an independently approved real-worktree gate. A cancelled
+Git apply may already have changed files: `APPLICATION_UNKNOWN` and
+`APPLIED_PENDING_VERIFICATION` require inspection, not automatic retry or
+rollback. Read-only run queries never restore authority. Project gates use a
+process allowlist and scrubbed environment, **not** filesystem or network
+isolation. These changes are repository work, not claims about the published
+Preview binary.
 
 ## Never commit
 

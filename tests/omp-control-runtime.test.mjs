@@ -351,6 +351,7 @@ test("/omp run supports current-session background execution and /omp runs manag
   assert.equal(started.status, "RUN_STARTED_BACKGROUND");
   assert.equal(started.runId, "background-run");
   assert.equal((await runtime.execute("runs", ctx)).status, "RUN_LIST");
+  assert.equal((await runtime.execute("runs list", ctx)).status, "RUN_LIST");
   assert.equal((await runtime.execute("runs show background-run", ctx)).status, "RUN_SHOW");
   finish();
   await new Promise((resolve) => setImmediate(resolve));

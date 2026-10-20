@@ -49,7 +49,7 @@ test("a project-relative Git shadow is rejected before executing it", async (t) 
 test("Linux requires all declared tools and reports Git separately", async (t) => {
   const root = await fixture(t);
   await fs.writeFile(path.join(root, "git"), '#!/bin/sh\nprintf "git version 2.45.2\\n"\n', { mode: 0o755 });
-  const options = { platform: "linux", env: { PATH: root } };
+  const options = { platform: "linux", cwd: root, env: { PATH: root } };
   const missing = await inspectSystemDependencies(options);
   assert.equal(missing.git.ok, true);
   assert.equal(missing.reason, "LINUX_TOOLS_UNAVAILABLE");

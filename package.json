@@ -84,6 +84,10 @@
     "packages/bootstrap/",
     "packages/control-service/",
     "packages/direct-agent/",
+    "packages/host/",
+    "packages/mcp/",
+    "packages/model-calls/",
+    "webui/dist/",
     "packages/daily-config/",
     "packages/project-gates/",
     "packages/run-management/",
@@ -125,7 +129,10 @@
     "profile:diff": "node scripts/profile-resolver.mjs profiles/coding.json --diff profiles/research.json",
     "safe": "node scripts/safe-mode.mjs",
     "schema:check": "node scripts/schema-check.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.safety.json && tsc -p tsconfig.host.json && tsc -p webui/tsconfig.json",
+    "test:host": "node --test tests/host-*.test.mjs",
+    "build:web": "vite build --config webui/vite.config.ts",
+    "test:web": "vitest run --config webui/vite.config.ts",
     "pack:check": "node scripts/pack-check.mjs",
     "lint": "node scripts/lint.mjs",
     "secret:scan": "node scripts/secret-scan.mjs",
@@ -180,36 +187,61 @@
     "test:subagents": "node --test tests/subagents-*.test.mjs",
     "eval:subagents": "node --test tests/subagents-evaluation.test.mjs",
     "checkpoint": "node packages/workspace-checkpoint/cli.mjs",
-    "test": "node --test",
+    "test:prepare": "node scripts/prepare-test-pty.mjs && node scripts/prepare-test-extensions.mjs",
+    "test": "node --test --test-concurrency=2",
     "test:distribution": "node --test tests/distribution-*.test.mjs"
   },
   "engines": {
-    "node": ">=22.19.0"
+    "node": ">=24.19.0 <25"
   },
   "dependencies": {
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
+    "node-pty": "1.1.0",
     "semver": "7.8.5",
-    "ssri": "13.0.1"
+    "ssri": "13.0.1",
+    "ws": "8.21.3"
   },
   "bundleDependencies": [
     "ajv",
     "ajv-formats",
+    "node-pty",
     "semver",
-    "ssri"
+    "ssri",
+    "ws"
   ],
   "bundledDependencies": [
     "ajv",
     "ajv-formats",
+    "node-pty",
     "semver",
-    "ssri"
+    "ssri",
+    "ws"
   ],
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"
   },
+  "overrides": {
+    "monaco-editor": {
+      "dompurify": "3.4.13"
+    }
+  },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "0.84.3",
-    "typescript": "5.9.3"
+    "@earendil-works/pi-coding-agent": "1.3.0",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.7",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@xterm/addon-fit": "0.11.0",
+    "@xterm/xterm": "6.0.0",
+    "jsdom": "30.1.0",
+    "monaco-editor": "0.56.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-markdown": "10.1.0",
+    "typescript": "5.9.3",
+    "vite": "8.3.0",
+    "vitest": "5.0.1"
   },
   "pi": {
     "extensions": [

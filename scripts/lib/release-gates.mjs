@@ -142,7 +142,8 @@ function validateGate(gate, expectedId, policy) {
   }
   if (gate.cwd !== "repository-root") fail(`gate ${gate.id} cwd must be repository-root`);
   validateEnvironment(gate.env, gate.id);
-  if (!Number.isInteger(gate.timeoutMs) || gate.timeoutMs < 1 || gate.timeoutMs > 300000) {
+  const maxTimeoutMs = gate.id === "full-tests" ? 1800000 : 300000;
+  if (!Number.isInteger(gate.timeoutMs) || gate.timeoutMs < 1 || gate.timeoutMs > maxTimeoutMs) {
     fail(`gate ${gate.id} timeoutMs is invalid`);
   }
   if (!Number.isInteger(gate.maxOutputBytes) || gate.maxOutputBytes < 1024 || gate.maxOutputBytes > policy.maxOutputBytes) {

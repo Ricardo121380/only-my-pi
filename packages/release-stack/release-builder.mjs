@@ -13,7 +13,11 @@ import {
   validateArtifactLedger,
   validateReleaseIndex,
   validateStackManifest,
+  isPrivateStack,
+  PRIVATE_RUNTIME_CONTRACTS,
 } from "./contracts.mjs";
+import { validateDistributionManifest } from "../distribution/runtime.mjs";
+import { verifyPi110Materials, verifyPi110Declarations, runtimeInputForContract } from "./pi110-materials.mjs";
 import { createDeterministicTarGzip, hashFile } from "./deterministic-archive.mjs";
 import { hashPackageContentTree } from "./package-content-identity.mjs";
 import { validateSpdxSbom } from "./sbom.mjs";
@@ -71,6 +75,15 @@ export async function inspectResolvedStack({ resolvedRoot, stackManifest } = {})
   if (typeof resolvedRoot !== "string" || !path.isAbsolute(resolvedRoot)) throw new TypeError("inspectResolvedStack requires an absolute resolvedRoot");
   const root = await realDirectory(path.resolve(resolvedRoot), "RESOLVED_STACK_ROOT_UNSAFE");
   const stack = validateStackManifest(stackManifest);
+  if (isPrivateStack(stack)) {
+    const runtime = validateDistributionManifest(await jsonFile(root, "distribution-manifest.json"));
+    if (runtime.runtimeContract !== PRIVATE_RUNTIME_CONTRACTS[stack.runtime.pi.version] || runtime.distributionId !== stack.privateRuntimeDigest || runtime.sourceCommit !== stack.sourceCommit) fail("STACK_PRIVATE_RUNTIME_INVALID", "private runtime descriptor differs from the Full stack");
+    if (runtimeInputForContract(runtime.runtimeContract)) {
+      await verifyPi110Materials({ root, manifest: runtime });
+      await verifyPi110Declarations({ root, manifest: runtime });
+    }
+    for (const component of Object.values(runtime.components)) if (await treeDigest(root, component.path) !== component.treeDigest) fail("STACK_PRIVATE_RUNTIME_INVALID", "private runtime component differs from its descriptor");
+  }
   for (const directory of ["node", "pi", "external-npm"]) await realDirectory(path.join(root, directory), "RESOLVED_STACK_ROOT_UNSAFE");
   const onlyMyPi = await boundedFile(root, "only-my-pi.tgz", { maxBytes: 512 * 1024 * 1024 });
   const identities = {

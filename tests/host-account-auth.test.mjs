@@ -1,0 +1,33 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { accountAuth } from "../packages/host/account-auth.mjs";
+
+test("public auth worker saves and removes only the selected account; responses contain no key", { timeout: 15000 }, async (t) => {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-auth-worker-")));
+  t.after(() => fs.rm(root, { recursive: true }));
+  await fs.symlink(path.dirname(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")))), path.join(root, "pi"));
+  const accounts = new AccountCatalog(root), account = await accounts.create({ providerId: "openai", name: "Test", authType: "api_key" });
+  await fs.writeFile(path.join(root, "auth.json"), "CLI sentinel");
+  const options = { stack: { root, nodePath: process.execPath }, configRoot: root, accounts, accountId: account.accountId, env: { PATH: process.env.PATH } };
+  assert.deepEqual(await accountAuth({ ...options, input: { type: "status" } }), { status: "missing" });
+  assert.deepEqual(await accountAuth({ ...options, input: { type: "apiKey", key: "fixture-key-not-real" } }), { status: "stored" });
+  assert.deepEqual(await accountAuth({ ...options, input: { type: "status" } }), { status: "stored" });
+  const release = accounts.beginUse(account.accountId);
+  await assert.rejects(accountAuth({ ...options, input: { type: "logout" } }), { code: "ACCOUNT_BUSY" });
+  release();
+  assert.deepEqual(await accountAuth({ ...options, input: { type: "logout" } }), { status: "missing" });
+  assert.equal(await fs.readFile(path.join(root, "auth.json"), "utf8"), "CLI sentinel");
+  const cancelled = new AbortController();
+  cancelled.abort();
+  await assert.rejects(accountAuth({ ...options, input: { type: "status" }, signal: cancelled.signal }), { code: "ACCOUNT_AUTH_CANCELLED" });
+  const running = new AbortController();
+  const pending = accountAuth({ ...options, input: { type: "status" }, signal: running.signal });
+  setTimeout(() => running.abort(), 20);
+  await assert.rejects(pending, { code: "ACCOUNT_AUTH_CANCELLED" });
+  assert.deepEqual(await accountAuth({ ...options, input: { type: "status" } }), { status: "missing" });
+});

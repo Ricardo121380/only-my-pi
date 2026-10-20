@@ -1,0 +1,2337 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-all-remaining-ticket-proposal",
+  "observedOn": "2026-10-09",
+  "status": "PUBLISHED_VERIFIED",
+  "scope": "ALL_REMAINING_G2_AND_U2_U6",
+  "request": "把剩余任务/to-spec然后再/to-tickets",
+  "sourceCommit": "b09ef66184404426a8a33896a65082db024b3ce1",
+  "specIssueNumber": 19,
+  "specBodySha256": "e87eb4718089ef7f8142fdfc5610b672d2ccc3b57c8e31bddec10274bc05905c",
+  "specPublication": "PUBLISHED_VERIFIED",
+  "specChangedDuringTicketPhase": false,
+  "scopeBasis": "CURRENT_USER_REQUEST_ALL_REMAINING; retain staged execution and original Task IDs",
+  "approval": "CONFIRMED_FOR_38_NEW_TICKETS",
+  "createdIssues": [
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61
+  ],
+  "nextExecutableIssue": 20,
+  "existingTickets": [
+    {
+      "id": "#20",
+      "issueNumber": 20,
+      "originalTasks": [
+        "G2-00-02"
+      ],
+      "status": "OPEN",
+      "completion": "PARTIAL",
+      "blockedBy": [],
+      "stories": "US-006,US-007,US-010"
+    },
+    {
+      "id": "#21",
+      "issueNumber": 21,
+      "originalTasks": [
+        "G2-00-02"
+      ],
+      "status": "OPEN",
+      "completion": "PARTIAL",
+      "blockedBy": [],
+      "stories": "US-008"
+    },
+    {
+      "id": "#22",
+      "issueNumber": 22,
+      "originalTasks": [
+        "G2-00-02"
+      ],
+      "status": "OPEN",
+      "completion": "PARTIAL",
+      "blockedBy": [],
+      "stories": "US-009,US-010"
+    },
+    {
+      "id": "#23",
+      "issueNumber": 23,
+      "originalTasks": [
+        "G2-00-02"
+      ],
+      "status": "OPEN",
+      "completion": "BLOCKED",
+      "blockedBy": [
+        "#20",
+        "#21",
+        "#22"
+      ],
+      "stories": "US-005,US-010,US-011"
+    }
+  ],
+  "newTickets": [
+    {
+      "id": "G2-N01",
+      "title": "闭合 PDF 资源的来源与构建材料",
+      "originalTasks": [
+        "G2-00-03"
+      ],
+      "stories": "US-012",
+      "gates": [
+        "F02"
+      ],
+      "blockedBy": [
+        "#23"
+      ],
+      "delivery": "维护者能从一组身份明确、实际取得的来源和构建输入，核对当前 PDF 字体、CMap、worker、WASM、辅助模块与 QuickJS 资源的生成来路、完整材料和适用条件，形成可交给新资源构建的独立 PDF 材料候选。保留已有字节对应、历史未知和失败；需要新生成时以新身份接受验收。",
+      "evidenceLayers": [
+        "C"
+      ],
+      "executionConditions": [
+        "具体生成、构建或隔离安装范围按总规格及实施条件核对；工单批准不放宽费用、切换及公开发行边界。"
+      ],
+      "carriedFrom": "docs/plans/2026-10-07-g2-ticket-drafts/01-pdf-material-closure.md",
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/01-g2-n01.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 24,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/24",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "a95643fcf62870f28199ac2cf5ffe95783cb5a09537f846486420b88fd5320cf",
+      "acceptanceCriteriaCount": 8,
+      "approvedDraftSha256": "db62fefe557c935643820a0dbd287c152ffa1c2bc94e0cf02102c6a501b0602b",
+      "githubIssueDatabaseId": 5778640573,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        23
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-24-final-readback.json"
+      }
+    },
+    {
+      "id": "G2-N02",
+      "title": "从固定材料生成可运行的 native 构建候选",
+      "originalTasks": [
+        "G2-00-04"
+      ],
+      "stories": "US-013",
+      "gates": [
+        "F02"
+      ],
+      "blockedBy": [
+        "G2-N01"
+      ],
+      "delivery": "维护者能以已核验的新 native kit 和固定构建环境，执行实际配置、编译及链接，得到具有独立身份且可实际加载使用的 macOS arm64 native 产物。构建输入、最终锁、补丁和生成结果可以互相核对，不依赖旧 dylib、开发机隐含依赖或未绑定的工具。",
+      "evidenceLayers": [
+        "C"
+      ],
+      "executionConditions": [
+        "具体生成、构建或隔离安装范围按总规格及实施条件核对；工单批准不放宽费用、切换及公开发行边界。"
+      ],
+      "carriedFrom": "docs/plans/2026-10-07-g2-ticket-drafts/02-native-build-candidate.md",
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/02-g2-n02.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 25,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/25",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "3cfb4373f91d8574b4876fa9744bfff443addc0fd200d8f825fadea3adee8b2c",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "52982c23c45dab32bb56bccc993f207b0d9731d48a045e1269bf57a8f9e989c0",
+      "githubIssueDatabaseId": 5778642295,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        24
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-25-final-readback.json"
+      }
+    },
+    {
+      "id": "G2-N03",
+      "title": "形成新图片与文档资源候选并通过运行矩阵",
+      "originalTasks": [
+        "G2-00-04"
+      ],
+      "stories": "US-013",
+      "gates": [
+        "F01",
+        "F02"
+      ],
+      "blockedBy": [
+        "G2-N02"
+      ],
+      "delivery": "维护者能把已实际构建的新 native 产物、已闭合的 PDF 构建材料、当前有界解析 worker 和辅助模块组成完整图片/文档资源候选，在隔离副本中真实加载并核对功能、预算和 Pi 互操作，获得可交给默认发行链的资源身份。",
+      "evidenceLayers": [
+        "C",
+        "P"
+      ],
+      "executionConditions": [
+        "具体生成、构建或隔离安装范围按总规格及实施条件核对；工单批准不放宽费用、切换及公开发行边界。"
+      ],
+      "carriedFrom": "docs/plans/2026-10-07-g2-ticket-drafts/03-parser-resource-candidate.md",
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/03-g2-n03.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 26,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/26",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "5683f26c34c84f6ca8f458ddde34ec1d833fe9542cad4f8275b751b8b6451b12",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "bbe7d05aa761ad6ce7d97ba6889a7b0bac1cb0f7dee17ff7e8cbf7ba13247a53",
+      "githubIssueDatabaseId": 5778644264,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        25
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-26-final-readback.json"
+      }
+    },
+    {
+      "id": "G2-N04",
+      "title": "让默认发行包完整携带 parser 资源与元数据",
+      "originalTasks": [
+        "G2-00-05"
+      ],
+      "stories": "US-014",
+      "gates": [
+        "F03",
+        "F04"
+      ],
+      "blockedBy": [
+        "G2-N03"
+      ],
+      "delivery": "维护者使用正常的受控发行准备与组装入口，就能从已验收的 parser 候选得到完整 app 包及对应获取台账、两种 SBOM 和 notices。无需手工注入、复制开发目录或依赖演练用途；丢失资源、声明或身份不一致时，正常流程明确失败。",
+      "evidenceLayers": [
+        "C"
+      ],
+      "executionConditions": [
+        "具体生成、构建或隔离安装范围按总规格及实施条件核对；工单批准不放宽费用、切换及公开发行边界。"
+      ],
+      "carriedFrom": "docs/plans/2026-10-07-g2-ticket-drafts/04-default-parser-release.md",
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/04-g2-n04.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 27,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/27",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "9482dc723aa324ed898037690b3af7a455469fba1711c8b5575a9d12a7be2608",
+      "acceptanceCriteriaCount": 8,
+      "approvedDraftSha256": "dd8179b3b1c0c10a85799331f0988d6717a714fd4c54c878d78aa07615bbf9c9",
+      "githubIssueDatabaseId": 5778646004,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        26
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-27-final-readback.json"
+      }
+    },
+    {
+      "id": "G2-N05",
+      "title": "验证隔离 Full 并完成 G2-00 入口验收",
+      "originalTasks": [
+        "G2-00-06"
+      ],
+      "stories": "US-015,US-016",
+      "gates": [
+        "F05",
+        "F06",
+        "G2-00"
+      ],
+      "blockedBy": [
+        "G2-N04"
+      ],
+      "delivery": "维护者能从已核验的默认发行产物建立身份一致的隔离 Full，在真实禁网、无开发依赖回退的环境中安装并运行完整图片/文档能力，核对安装、回滚、重新应用和全部发行前置，明确是否可以开始 U2 产品集成。",
+      "evidenceLayers": [
+        "C",
+        "P",
+        "I"
+      ],
+      "executionConditions": [
+        "具体生成、构建或隔离安装范围按总规格及实施条件核对；工单批准不放宽费用、切换及公开发行边界。"
+      ],
+      "carriedFrom": "docs/plans/2026-10-07-g2-ticket-drafts/05-isolated-full-gate.md",
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/05-g2-n05.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 28,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/28",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "bd089a7fe80b50c66b4157ae51e0e3b5bc1d0f04659792b03236f04e1841d0fa",
+      "acceptanceCriteriaCount": 8,
+      "approvedDraftSha256": "590c68d3da7816fedf9a6b08ee3229f976b2415e3721de1d9d012278474aa628",
+      "githubIssueDatabaseId": 5778647766,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        27
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-28-final-readback.json"
+      }
+    },
+    {
+      "id": "U2-N01",
+      "title": "上传文本材料并冻结后发送给真实 Pi",
+      "originalTasks": [
+        "U2-01"
+      ],
+      "stories": "US-017,US-018,US-028,US-029,US-030,US-033",
+      "gates": [
+        "G2-01",
+        "G2-04"
+      ],
+      "blockedBy": [
+        "G2-N05"
+      ],
+      "delivery": "用户从页面显式上传一个文本文件，看到准备结果和来源，随正文发送后能在真实 Pi 请求与历史中核对同一份冻结内容；页面刷新仍保留未发送材料。",
+      "criteria": [
+        "上传独立于 prompt，以稳定材料身份关联项目、会话和消息；Host 原子完成材料发布后才能引用，浏览器不得指定任意主机源路径。",
+        "最小闭环包含材料卡片、加载/完成/失败/移除、保存与刷新恢复；未接入类型明确不可用，不能先放行文件名占位。",
+        "从首个实现开始绑定实际发送字节、摘要、来源与材料版本，inputId/contentDigest 和消费回执保持一致；原件变化不改变已接受内容。",
+        "单文件 20 MiB、每文件文本 2 MiB、提交 50 MiB/10 个材料的总界限在公开入口生效；首片可只开放单文件交互，但不得绕过这些界限或放大全部路由的请求体。",
+        "覆盖伪装格式、跨项目材料 ID、未完成上传、同 ID 内容冲突、磁盘不足、持久化结果未知与断连；失败保留旧草稿和历史，未知投递先读回执，不自动重发。",
+        "页面→公开 Host→固定 Pi 的本地受控模型收到精确文本，并能对应卡片、持久记录及执行历史；Host 认证、Origin、协议、授权和纯文本原流程回归通过。",
+        "模型上下文与材料资源配额独立检查：覆盖文件/文本配额内但加上实际历史已超过模型上下文的用例，要求用户明确缩小或移除材料；容量无法可靠取得时显示未知并说明范围，不静默截断或冒充可完整容纳。公开 Host 与页面拒绝/待处理状态均可核对。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [
+        "G2-00 已 PASS；历史 U1 和 U0-04 证据仅在身份及范围匹配时复用。"
+      ],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/06-u2-n01.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 29,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/29",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "4b348997ead3f45064dfa71e35536f0ae1b4a9c72aac804b2baaf3a60ce0d050",
+      "acceptanceCriteriaCount": 8,
+      "approvedDraftSha256": "28a4198970525db50d93e5034ec447a840b9748ab4303a5e4d6a0e48a0bb64a9",
+      "githubIssueDatabaseId": 5778649391,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        28
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-29-final-readback.json"
+      }
+    },
+    {
+      "id": "U2-N02",
+      "title": "完成批量材料准备、配额与中断恢复",
+      "originalTasks": [
+        "U2-01"
+      ],
+      "stories": "US-017,US-018,US-028,US-029,US-032,US-033",
+      "gates": [
+        "G2-01",
+        "G2-04"
+      ],
+      "blockedBy": [
+        "U2-N01"
+      ],
+      "delivery": "用户一次准备多个文本材料，看到每项和整组状态；只有符合配额且准备完整的集合可以提交，中断后能明确恢复或移除。",
+      "criteria": [
+        "页面支持多文件选择并展示项目、来源、大小及逐项准备状态，独立上传结果组成为明确的发送集合；未完成或失败成员不能被静默漏发。",
+        "实际公开入口覆盖单文件 20 MiB、总量 50 MiB、最多 10 个与每文件文本 2 MiB 的边界和 +1；批量与并发不以多次小请求绕过总配额。",
+        "取消上传、网络中断、重复提交、刷新、多窗 revision 冲突和并发完成都保持稳定材料身份；重试准备不会重复发送模型任务。",
+        "只有完整且当前有效的冻结集合进入输入账本；发布失败及结果未知时明确阻断，草稿、已发送材料和旧历史保留。",
+        "临时对象有确定归属，取消或失败仅回收本次未被引用的自有对象；不得自动删除历史或其他会话材料来腾出空间。",
+        "通过实际页面操作、公开接口边界及真实 Pi 请求比较整组文件的顺序/身份/内容，记录批量恢复和残留核验结果。",
+        "批量组合按实际历史加全部冻结材料执行独立的上下文检查；覆盖每文件合规但组合超模型上下文、部分模型容量未知的公开入口与页面用例，要求用户明确处理范围，不静默漏掉成员或截断后发送。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/07-u2-n02.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 30,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/30",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "54034e48a51f30e9382fb28d5f7a5f4a8d452dc4361de1594f288d514fe241bf",
+      "acceptanceCriteriaCount": 8,
+      "approvedDraftSha256": "577bdbe8853218b8ee1f1ac2f7262c82237ee0074f0c246e2560222eb34da4de",
+      "githubIssueDatabaseId": 5778651236,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        29
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-30-final-readback.json"
+      }
+    },
+    {
+      "id": "U2-N03",
+      "title": "引用项目文件和代码选区并核对发送范围",
+      "originalTasks": [
+        "U2-02"
+      ],
+      "stories": "US-019,US-020,US-029,US-030",
+      "gates": [
+        "G2-01",
+        "G2-04"
+      ],
+      "blockedBy": [
+        "U2-N02"
+      ],
+      "delivery": "用户用 @文件或编辑器代码选区生成材料卡片，检查来源和范围后发送；文件变化时由用户确认新版本或使用已冻结版本。",
+      "criteria": [
+        "从实际项目文件选择及编辑器选区到卡片、预览、移除、发送与历史形成完整路径，保留文件、行范围、版本和摘要。",
+        "复用规范化、项目 realpath、符号链接与敏感路径检查，在读取及发送准入再次核验；拒绝越界、链接替换、错误项目和已失效身份。",
+        "文件被修改、删除或版本冲突时明确展示变化；未经用户处理不得悄悄读取新内容，已冻结输入的内容和范围不可漂移。",
+        "文本解码和截断有明确状态；材料资源上限与模型上下文预算分别检查，未知容量如实说明，超限要求缩小范围，不静默截断。",
+        "选择多个引用、切换项目、刷新和排队保留各自草稿与材料关联；失败不清空输入或隐式换账号。",
+        "真实 Pi 的最终输入与已确认文件/选区逐字对应，公开负例证明拒绝无读取泄漏或执行副作用，Ego Lite 完成选择到历史核对旅程。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/08-u2-n03.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 31,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/31",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "21362e633ea7277aae3ef17faf05c6724cc7072f1f93b8a787b339cefaa87090",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "49c4cb2802110104775c6e8d2c2772bf890a9c940be6d95772b052bda90e5266",
+      "githubIssueDatabaseId": 5778652699,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        30
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-31-final-readback.json"
+      }
+    },
+    {
+      "id": "U2-N04",
+      "title": "粘贴或拖入图片并通过真实 Pi 发送",
+      "originalTasks": [
+        "U2-03"
+      ],
+      "stories": "US-021,US-022,US-028,US-029,US-030,US-033",
+      "gates": [
+        "G2-02",
+        "G2-04"
+      ],
+      "blockedBy": [
+        "U2-N02"
+      ],
+      "delivery": "用户粘贴或拖入 PNG、JPEG、WebP，看到图片、必要转换与限制说明，发送后模型实际收到与卡片一致的图片内容。",
+      "criteria": [
+        "三种支持格式都贯通选择/粘贴/拖入、准备、预览/移除、冻结、真实图片块投递和历史回看，不以 base64 文字替代 Pi 图片输入。",
+        "扩展名、内容类型和实际解码一致核验；40 MP、单文件/批次配额、解码时间和资源限制实际生效，覆盖透明图、大图、损坏图及伪装格式。",
+        "转换或缩放记录原始与发送版本、策略、尺寸及摘要，卡片能说明发送的实际版本；不无提示丢失必要内容。",
+        "按绑定模型的真实能力检查图片支持；不支持则阻止发送并保留草稿，不丢图继续执行、不静默换模型。",
+        "prompt、即时补充及队列的图片载荷与 inputId/回执关联保持一致；消费待核对、重连、取消、刷新不能重新发送或换图。",
+        "真实 Pi/loopback 模型请求核对图片块、内容及顺序，Ego Lite 验证完整旅程；支持 Node 两侧的受影响解析与输入合同回归通过。",
+        "图片与正文/历史组合的模型上下文或容量估算按可获得来源独立核对，超限要求用户处理，图片 token 或容量未知时明确说明，不以文件大小/像素配额内推定一定可容纳。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [
+        "历史 U0-03 图片 SDK 证据需匹配固定 Pi；当前图片资源使用已验收 G2 候选。"
+      ],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/09-u2-n04.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 32,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/32",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "49c093ddef94dfe9987cf72b104c81dcbe1fb287aa38fd4afe33e918fd77730d",
+      "acceptanceCriteriaCount": 8,
+      "approvedDraftSha256": "e3c099b0fd982967dffca80c3314071362f6cc4298449d2c1f235b7a062c768d",
+      "githubIssueDatabaseId": 5778654437,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        30
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-32-final-readback.json"
+      }
+    },
+    {
+      "id": "U2-N05",
+      "title": "选择 PDF 页并经有界解析发送",
+      "originalTasks": [
+        "U2-04"
+      ],
+      "stories": "US-023,US-027,US-028,US-029,US-030",
+      "gates": [
+        "G2-03",
+        "G2-04"
+      ],
+      "blockedBy": [
+        "U2-N02"
+      ],
+      "delivery": "用户上传文字 PDF，查看实际页位置和解析状态，选择页范围后把确切内容发送到 Pi；此首个文档切片同时建立共享的有界解析与材料发布接口。",
+      "criteria": [
+        "从页面上传到独立受限进程解析、页范围选择、冻结、真实 Pi 输入及历史完整贯通；绑定已验收 worker、辅助模块、字体/CMap/WASM 和资源身份。",
+        "共享文档解析生命周期以本 PDF 路径实际使用：输入、进程、预算、结果/partial、位置、取消及清理均可观察；不新建只有接口而无人调用的基础层工单。",
+        "实际执行 PDF 200 页、文本 2 MiB、累计展开 200 MiB、30 秒、512 MiB 采样 RSS 及通用上传配额；覆盖单流/多页、过滤器数组、缓存、恢复及重置，不把 RSS 采样称为 OS 硬上限。",
+        "损坏、扫描/空页、加密和部分解析明确区分；不运行文档动作、脚本或远程资源，真实网络拒绝及缺资源/资源漂移可核对。",
+        "页位置、所选文本和发送快照一致；上下文超限要求选择更小范围，未知容量明确，partial 未经明确处理不冒充完整。",
+        "取消、超时、解析进程退出、重复材料和刷新保持 Host 可用、旧草稿完整并确认子进程/临时对象归属；Node 22.19.0/24.19.0、真实 Pi 与 Ego Lite 的本路径必需证据分别记录。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [
+        "使用当前 G2 已验收资源；不能补写历史缺失 root 或借开发目录使新入口通过。"
+      ],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/10-u2-n05.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 33,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/33",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "73e92f9223d9b7e902854302a9afff68acf443026bd04439dc22e5023f7496ef",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "37a33293aa03ee9904a3cf2b4c36ed604aa7c180e586a3b53e9a1975eee9581a",
+      "githubIssueDatabaseId": 5778655990,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        30
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-33-final-readback.json"
+      }
+    },
+    {
+      "id": "U2-N06",
+      "title": "按段落和表格选择 DOCX 内容并发送",
+      "originalTasks": [
+        "U2-04"
+      ],
+      "stories": "US-024,US-027,US-028,US-029,US-030",
+      "gates": [
+        "G2-03",
+        "G2-04"
+      ],
+      "blockedBy": [
+        "U2-N05"
+      ],
+      "delivery": "用户上传 DOCX，按标题、段落或表格查看和选择内容，模型收到与页面范围对应的冻结文本。",
+      "criteria": [
+        "复用已通过实际 PDF 路径的有界 worker/材料接口，交付 DOCX 上传、结构解析、局部选择、卡片、真实 Pi 发送及历史核对。",
+        "保留标题、段落、表格/单元格等真实结构定位；没有可靠页码时不生成假页码，空内容及部分提取可解释。",
+        "通用配额、文本 2 MiB、实际展开 200 MiB、ZIP 10,000 条目、30 秒和 512 MiB 采样 RSS 在实际公开路径生效；边界及 +1、损坏压缩包覆盖。",
+        "宏、嵌入脚本、外部关系/远程资源不执行或联网；加密、旧 DOC、伪装格式明确拒绝并保留草稿。",
+        "选定结构的文本与真实 Pi 输入逐项对应；超上下文、partial、取消、刷新、worker 失败不静默漏内容或自动重试执行。",
+        "双 Node 解析及负例、实际 Host/Pi 路径和 Ego Lite 选择到历史旅程分列留证；不回归破坏已交付 PDF 与纯文本输入。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/11-u2-n06.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 34,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/34",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "cc35923f2937e42b6af8619e6a11c7e91ec6f40af8d42d83850ea960981497e0",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "0888309ee2fa8dd3d8cf0a1d93581733e6225f04ab6cf1d7c0dcc81a6caea916",
+      "githubIssueDatabaseId": 5778657697,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        33
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-34-final-readback.json"
+      }
+    },
+    {
+      "id": "U2-N07",
+      "title": "按工作表和单元格选择 XLSX 内容并发送",
+      "originalTasks": [
+        "U2-04"
+      ],
+      "stories": "US-025,US-027,US-028,US-029,US-030",
+      "gates": [
+        "G2-03",
+        "G2-04"
+      ],
+      "blockedBy": [
+        "U2-N05"
+      ],
+      "delivery": "用户上传 XLSX，选择工作表或单元格范围，区分公式文本和已有缓存值，并核对实际发送的表格内容。",
+      "criteria": [
+        "复用有界文档接口贯通上传、工作表/单元格定位、局部范围预览、冻结、真实 Pi 发送和历史。",
+        "公式文本与已有缓存值分列，缺缓存值如实显示；不计算公式、不运行宏或访问外部链接。",
+        "200,000 非空单元格、通用上传配额、文本 2 MiB、实际展开 200 MiB、ZIP 10,000 条目、30 秒和 512 MiB 采样 RSS 在实际入口生效。",
+        "覆盖损坏、加密、旧 XLS、伪装类型、空表、稀疏表、边界/+1 和部分提取，用户能理解实际可选范围及缺失内容。",
+        "选定单元格、值的表示方式、摘要与模型实际输入一致；超上下文要求用户缩小范围，不静默截断，取消/刷新/失败保留草稿。",
+        "双 Node、公开 Host/Pi 与 Ego Lite 的代表性正常及负例通过，旧格式的未支持状态不会展示成已成功解析。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/12-u2-n07.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 35,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/35",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "648d1573034022a2e09c486b7310a0c7dbf75aa683169db0dcf7f69661cc0720",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "87bb4e498f343bd6b2d5f4fcba1260be8249b1c790b52f5d24ee38079eb49bc0",
+      "githubIssueDatabaseId": 5778659349,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        33
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-35-final-readback.json"
+      }
+    },
+    {
+      "id": "U2-N08",
+      "title": "选择 PPTX 幻灯片内容并发送",
+      "originalTasks": [
+        "U2-04"
+      ],
+      "stories": "US-026,US-027,US-028,US-029,US-030",
+      "gates": [
+        "G2-03",
+        "G2-04"
+      ],
+      "blockedBy": [
+        "U2-N05"
+      ],
+      "delivery": "用户上传 PPTX，按真实幻灯片位置查看和选择可提取内容，发送后能从历史核对相同范围。",
+      "criteria": [
+        "贯通上传、有界解析、幻灯片位置/范围选择、材料卡片、冻结、真实 Pi 投递和历史来源，不伪称图表语义或扫描图已识别。",
+        "200 张幻灯片、通用配额、文本 2 MiB、展开 200 MiB、ZIP 10,000 条目、30 秒和 512 MiB 采样 RSS 实际生效并覆盖边界/+1。",
+        "保留真实幻灯片顺序与位置，空页、部分提取及不支持内容分别显示；所选文本不能混入未选择页。",
+        "宏、嵌入脚本、文档动作和远程资源不执行；损坏、加密、旧 PPT 和类型伪装明确拒绝。",
+        "上下文超限、解析失败、取消或重连保留输入并要求明确处理，不静默丢页或自动换模型/重发。",
+        "双 Node 的解析矩阵、真实 Host/Pi 输入核对与 Ego Lite 旅程分别留证，保留其他已交付格式的回归。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/13-u2-n08.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 36,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/36",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "abf98b695ffcfb13d1c9b22852c1c0f608c94d9f569ff08c97c9a476821822bc",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "b7a6fdc596ca418374515084e73cbb672355695b267f0d2ff384ddcda2f3edce",
+      "githubIssueDatabaseId": 5778661153,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        33
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-36-final-readback.json"
+      }
+    },
+    {
+      "id": "U2-N09",
+      "title": "查看发送快照并安全清理材料存储",
+      "originalTasks": [
+        "U2-05"
+      ],
+      "stories": "US-030,US-031,US-032",
+      "gates": [
+        "G2-05"
+      ],
+      "blockedBy": [
+        "U2-N03",
+        "U2-N04",
+        "U2-N06",
+        "U2-N07",
+        "U2-N08"
+      ],
+      "delivery": "用户能区分原上传、解析结果和已发送内容，查看各自空间与引用，明确确认影响后清理可删除材料，同时保留共享历史。",
+      "criteria": [
+        "统一展示各已交付材料类型的原件、解析物、实际发送版本、摘要、解析器/资源身份和选择范围；延续首个材料切片已有的不可变快照，不重写旧消息。",
+        "修改或删除项目原件后仍可核对已发送内容，归档不删除材料；读取已清理内容时给出明确不可用标记。",
+        "按消息/会话及共享引用核算清理影响，给出待删对象与受影响引用再由用户显式确认；共享对象仍被引用时不得误删，不删除项目原件。",
+        "清理与新发送、草稿移除、恢复及未来分支引用取得之间保持原子引用保护；本票用共享引用验证边界，实际指定消息分支旅程在 U3 验收。",
+        "磁盘不足、部分删除失败、崩溃及重新打开时保留旧历史和未完成操作状态；不自动删历史补空间，不将未知删除状态报为成功。",
+        "从实际存储页与 Host 公开入口验证查看、选择、确认、删除、失败和读回；核对真实文件及其他会话引用未受损。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/14-u2-n09.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 37,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/37",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "ee86d8416ec15b0cd146e6d555efc52696a4eb1fed07c3f336d11abe3c6660f8",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "3b37db8ad77c33e3d43601c718d7095a9722c2cd34d7e437d43d014f954560d9",
+      "githubIssueDatabaseId": 5778662863,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        31,
+        32,
+        34,
+        35,
+        36
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-37-final-readback.json"
+      }
+    },
+    {
+      "id": "U2-N10",
+      "title": "验收混合材料的发送、排队与安装态旅程",
+      "originalTasks": [
+        "U2-06"
+      ],
+      "stories": "US-017–US-033",
+      "gates": [
+        "G2-01",
+        "G2-02",
+        "G2-03",
+        "G2-04",
+        "G2-05",
+        "G2-06"
+      ],
+      "blockedBy": [
+        "U2-N09"
+      ],
+      "delivery": "用户在同一会话混合文本、引用、图片和四种文档，完成发送、补充、排队、刷新、重连及历史核对，安装态也能使用相同资源。",
+      "criteria": [
+        "用实际 Host→固定 Pi→本地受控模型贯通混合材料，核对每张卡片范围、材料版本、inputId、模型请求、消费回执和历史的对应。",
+        "覆盖即时补充、FIFO、编辑/移除未投递项、取消、身份/配置变化、多窗冲突和确认丢失；未知状态先回读，既有授权与恢复约束保持。",
+        "所有选定格式、通用/格式上限、上下文超限、partial、坏数据和资源缺失的跨类型组合保持真实拒绝，不通过逐文件拆请求逃避整批限额。",
+        "Ego Lite 完成上传/引用→选择范围→发送→排队→刷新→历史→清理旅程，包含键盘与失败恢复；组件 mock 不代实际页面。",
+        "在绑定本批源码的隔离候选包内运行解析资源与混合旅程所需路径，证明确切加载路径、断网可用和没有 checkout/全局回退；沿用 G2 来源证据须核对身份仍匹配。",
+        "核对 G2-01–G2-06 全部必需层，受影响完整回归、Standards/Spec 与证据映射完成后才关闭 U2 阶段；真实外部 Provider 和日常晋升留在 U6。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B",
+        "I"
+      ],
+      "executionConditions": [
+        "实际构建和隔离安装的范围、空间与候选身份在实施时核对。"
+      ],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/15-u2-n10.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 38,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/38",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "6b0162c5f0de3dcdd758c7e71ebe93a21e86da744345febb5333fbcdbd809928",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "f39af2800a23a29b896b9ee3623cd5b3aed5e07ff97d5c8b3a7471988f207bc7",
+      "githubIssueDatabaseId": 5778666021,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        37
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-38-final-readback.json"
+      }
+    },
+    {
+      "id": "U3-N01",
+      "title": "创建项目分区并持久化项目归类",
+      "originalTasks": [
+        "U3-01"
+      ],
+      "stories": "US-034",
+      "gates": [
+        "G3-01"
+      ],
+      "blockedBy": [
+        "U2-N10"
+      ],
+      "delivery": "用户创建、重命名和排序项目分区，调整已登记项目归属，刷新或重启后仍能按相同组织方式找到项目。",
+      "criteria": [
+        "页面操作贯通 Host 私有元数据持久化和目录列表回读；未分组项目保留明确入口，项目仍使用原稳定身份。",
+        "创建、重命名、排序、移动归类及重置为未分组具有确定 revision，多窗口冲突不覆盖他人已保存结果。",
+        "分区操作不移动项目目录、不改变会话文件、账号或编程授权；切换分区不会自动启动任务。",
+        "覆盖空名称、重复显示名、已移除项目、损坏元数据、写入失败、重启及迟到响应，原数据保留且错误可恢复。",
+        "最高公开接口和 Ego Lite 核对实际保存、刷新、排序与项目打开；前后目录及 Pi 历史字节保持，现有导航和草稿隔离回归通过。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/16-u3-n01.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 39,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/39",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "663092ac15f784cd3567582b48566a55c5f0f68e96411cc527c7c36184f42e0f",
+      "acceptanceCriteriaCount": 6,
+      "approvedDraftSha256": "647f55e3d893aff06249fc97d78c3c9275470e782c5fa326c5c4863b212bc9d5",
+      "githubIssueDatabaseId": 5778667897,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        38
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-39-final-readback.json"
+      }
+    },
+    {
+      "id": "U3-N02",
+      "title": "重命名、置顶、归档和恢复会话",
+      "originalTasks": [
+        "U3-01"
+      ],
+      "stories": "US-035",
+      "gates": [
+        "G3-01"
+      ],
+      "blockedBy": [
+        "U2-N10"
+      ],
+      "delivery": "用户整理会话列表，归档后仍可显式找到并恢复原会话，已有任务和执行历史保持原身份。",
+      "criteria": [
+        "从会话菜单到 Host 元数据、列表投影和重启读回完整贯通重命名、置顶、归档/恢复；不通过重命名或移动 Pi 文件改变 sessionKey。",
+        "活动与归档状态清楚，归档不删除历史、材料或停止正在运行的任务；打开恢复后的会话仍重新做既有准入检查。",
+        "归档过滤、排序及名称冲突有确定呈现，旧无元数据会话可以兼容读取，不覆盖原历史头或内容。",
+        "多窗口 CAS、历史被删/损坏、写入失败、切项目及迟到列表响应可解释，草稿不会被另一个会话替换或误发送。",
+        "公开接口与 Ego Lite 验证保存、刷新、归档查找和恢复路径，核对原历史、共享附件及任务状态保持。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/17-u3-n02.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 40,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/40",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "da4823f9b3a28da20e3317c48cf4fcaf9146e704d0acfad08c23653c2555090e",
+      "acceptanceCriteriaCount": 6,
+      "approvedDraftSha256": "2faafdde4410333774cbbe1d76438c200b5612ca62a861fd42fe8cc42cbf700c",
+      "githubIssueDatabaseId": 5778669644,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        38
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-40-final-readback.json"
+      }
+    },
+    {
+      "id": "U3-N03",
+      "title": "全文搜索已登记历史并定位到消息",
+      "originalTasks": [
+        "U3-02"
+      ],
+      "stories": "US-036,US-037,US-039",
+      "gates": [
+        "G3-02"
+      ],
+      "blockedBy": [
+        "U3-N01",
+        "U3-N02"
+      ],
+      "delivery": "用户跨已登记项目搜索名称和用户/助手消息，查看匹配片段与来源，点击后打开准确会话和消息位置。",
+      "criteria": [
+        "索引范围仅已登记项目的可读取用户/助手消息，保留 U1 输入载荷的真实用户语义；不扫描全盘、凭据、隐藏推理、工具二进制或未约定日志。",
+        "查询返回项目、会话、时间、entry 定位、片段和覆盖范围，支持名称及归档过滤；从结果打开、分页定位与导航迟到响应保护贯通。",
+        "不能直接把已截断的历史展示投影当完整全文源；长消息匹配能核对原有效消息及分支语义，引用未收录范围时状态明确。",
+        "首片提供有界建立/刷新可查询索引的实际入口；源变更、删除或损坏时至少使受影响结果失效并提示陈旧/不完整，禁止旧结果冒充当前完整。",
+        "空查询、无结果、不合法范围、缺失 entry、重复点击和索引不可用有真实可恢复状态，不为打开搜索结果误发模型任务。",
+        "公开查询与 Ego Lite 使用固定语料核对命中、漏收录说明、归档过滤、长消息片段和消息定位；原历史不被改写。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/18-u3-n03.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 41,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/41",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "fe8d75a3f14287379f902a9e66192779f271b34c26f320f039810165a7fc2843",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "167a20c1dc84dc56d9b3826641d23bca59efab30a475e7e9c46f1650e4767dad",
+      "githubIssueDatabaseId": 5778671524,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        39,
+        40
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-41-final-readback.json"
+      }
+    },
+    {
+      "id": "U3-N04",
+      "title": "增量更新、取消和重建全文索引",
+      "originalTasks": [
+        "U3-02"
+      ],
+      "stories": "US-038,US-039",
+      "gates": [
+        "G3-02"
+      ],
+      "blockedBy": [
+        "U3-N03"
+      ],
+      "delivery": "用户在持续新增历史时获得可解释的最新搜索结果，可查看进度、取消或重建索引，并识别陈旧和损坏部分。",
+      "criteria": [
+        "在已能查询与定位的路径上接入新增/变更/删除历史的增量更新，索引与原数据身份关联，完成一批后原子发布可查询版本。",
+        "从页面显式启动、查看范围/进度、取消与重建；后台工作有界且不阻塞输入，取消后已有效结果与未完成范围分列。",
+        "源损坏、历史删除、部分不可读、worker 退出、重启及重复重建不伪装完整结果、不删除原历史，保留重试或人工处理入口。",
+        "变化期间点击旧结果须重新核对 entry 与源身份；不定位到同序号但不同内容的消息，权限和范围不能因缓存扩大。",
+        "固定语料比较增量结果与从相同源完整重建的可观察结果，核对新增、删除、损坏和恢复；性能原始样本保留并交给 U6 的冻结性能门禁。",
+        "实际 Host 和 Ego Lite 完成重建→取消→恢复→搜索→定位旅程，旧正确结果和材料引用保持。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/19-u3-n04.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 42,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/42",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "a171882d41a66eb3b0f2109aba3c51581cbaf368c78b8e05f9275536b2e66698",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "04188337328e95ec1e89ddc14aec7f3f57681db29ec2584de379fdff39fef712",
+      "githubIssueDatabaseId": 5778673504,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        41
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-42-final-readback.json"
+      }
+    },
+    {
+      "id": "U3-N05",
+      "title": "从停止会话的指定消息创建分支",
+      "originalTasks": [
+        "U3-03"
+      ],
+      "stories": "US-040,US-041,US-042",
+      "gates": [
+        "G3-03"
+      ],
+      "blockedBy": [
+        "U3-N01",
+        "U3-N02"
+      ],
+      "delivery": "用户从停止会话的有效消息创建新的编程会话，保留所选消息及之前上下文和附件来源，使用当前项目文件继续工作。",
+      "criteria": [
+        "页面选择消息，经 Host 验证源/目标准入与锁，使用固定 Pi 公开 at-entry 分支语义生成新身份；源位置包含所选消息，不意外沿用 before 默认语义。",
+        "只允许有效且停止的源会话，覆盖活动 worker、CLI 占用、坏 entry、源替换及锁竞争；拒绝时没有半创建或错误释放。",
+        "源历史保持，新分支不建 Git worktree、不回滚项目文件、不继承编程授权、未投递队列或活动进程；账号缺失不静默回退。",
+        "共享附件引用仅包含分支位置已有内容，以原子引用保护避免与清理竞争；已失效材料明确显示，源/新会话身份和 lineage 可回读。",
+        "继承历史消费只作为来源记录，不记作新分支实际消费；具体聚合由 U4 交付，本票必须保存可追踪 lineage。",
+        "真实 Pi 分支与公开 Host 入口核对 entry、compaction/label、源字节及新会话继续；Ego Lite 完成创建→打开→显式准入→续接，重复操作及失败恢复受控。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [
+        "沿用历史 U0-03 的固定 SDK 合同；附件引用保护由已完成 U2 提供。"
+      ],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/20-u3-n05.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 43,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/43",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "f996f2ee7d57cf631c9a9cdfc3db756ecd5ceb9cb5aef338042d6bdbf2616e98",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "2c431e524d84aff4e1b6ffa58ed671ab369aea7608156faed8b849f802f5d753",
+      "githubIssueDatabaseId": 5778675359,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        39,
+        40
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-43-final-readback.json"
+      }
+    },
+    {
+      "id": "U3-N06",
+      "title": "验收搜索、续接、分支与归档完整旅程",
+      "originalTasks": [
+        "U3-04"
+      ],
+      "stories": "US-034–US-043",
+      "gates": [
+        "G3-01",
+        "G3-02",
+        "G3-03",
+        "G3-04"
+      ],
+      "blockedBy": [
+        "U3-N04",
+        "U3-N05"
+      ],
+      "delivery": "用户从组织后的项目和历史中搜索、打开、续接、分支、归档并恢复，旧历史和缺失材料的状态都能解释。",
+      "criteria": [
+        "实际 Host、固定 Pi 与 Ego Lite 完成跨项目搜索→准确消息→停止历史续接→指定消息分支→归档→恢复的完整路径。",
+        "逐项核对项目/会话/entry、账号/模型、授权与队列归属，切换、刷新、多窗、迟到响应和断连不误发或串历史。",
+        "旧格式会话、compaction/labels、损坏与已清理附件有兼容或明确拒绝，原文件与用户数据不被重写以凑成功。",
+        "分支共享材料、清理竞争和继承 lineage 与 U2 一致；不把继承消费当新请求，也不提前声称 U4 计量完成。",
+        "G3-01–G3-04 的全部必要正负路径及受影响 U1/U2 回归通过，保存来源和证据层后关闭 U3 阶段。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/21-u3-n06.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 44,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/44",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "1a2353e283c117edbd792fa9f5954ed3267c6dbc9eda71da27483de33f723102",
+      "acceptanceCriteriaCount": 6,
+      "approvedDraftSha256": "305fd80db5cce7305a7800a30982cfafd383263f4367e5a18fd919737d78ead1",
+      "githubIssueDatabaseId": 5778677446,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        42,
+        43
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-44-final-readback.json"
+      }
+    },
+    {
+      "id": "U4-N01",
+      "title": "贯通结果摘要、统一差异与真实验证回执",
+      "originalTasks": [
+        "U4-01"
+      ],
+      "stories": "US-044,US-045,US-046",
+      "gates": [
+        "G4-01"
+      ],
+      "blockedBy": [
+        "U3-N06"
+      ],
+      "delivery": "用户能从结果摘要进入对应差异、命令和回执，分别判断执行是否结束、改动是否应用及目标工作区是否验证通过。",
+      "criteria": [
+        "会话/任务结果贯通真实 run 投影、Host 查询、文件差异和页面跳转，以稳定关联标识匹配，不按时间猜测归属。",
+        "执行、应用、验证各自显示状态；只有真实目标工作区有效回执能标验证通过，模型自述、克隆验证或绿色终态不能替代。",
+        "当前工作区含用户原改动时区分可归因任务改动与未归因差异；无基线的旧历史明确标当前工作区差异。",
+        "APPLICATION_UNKNOWN 必须先回读对账并阻断重复应用，不因刷新或重连自动重放写入；原失败及部分验证保留。",
+        "差异视图处理 staged/unstaged、untracked 未覆盖说明、非 Git、空/截断/大输出及缺失关联，不调用不可信外部 diff 或过滤器。",
+        "公开接口和 Ego Lite 用成功、已应用但验证失败、状态未知及混有用户修改的样本完成摘要→文件→回执核对。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/22-u4-n01.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 45,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/45",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "5190b986a79cbbb8d44675646bbab53a87b1537215353c8ba6f6279437e2318f",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "12d34d93c37f2da17782b0a6783c426d47cc06812df9986953aca337b066fd64",
+      "githubIssueDatabaseId": 5778679964,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        44
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-45-final-readback.json"
+      }
+    },
+    {
+      "id": "U4-N02",
+      "title": "按请求身份记录用量并聚合任务与会话",
+      "originalTasks": [
+        "U4-02"
+      ],
+      "stories": "US-047,US-048,US-049,US-050",
+      "gates": [
+        "G4-02",
+        "G4-03"
+      ],
+      "blockedBy": [
+        "U3-N06"
+      ],
+      "delivery": "用户看到有来源、可追溯的请求/工具用量及任务、会话汇总，重连或重启不会重复计数，历史估算使用请求当时的价格。",
+      "criteria": [
+        "由实际 Pi/运行回执取得稳定请求与工具身份，持久化原始来源、计数、覆盖率及时间/价格快照；任务提交幂等不代请求级去重。",
+        "同一事件重复、断连补发、重启读回、续接和工具重试不会重复累计；身份冲突拒绝或显式待核对，不合并无依据的事件。",
+        "原 Provider 缓存语义保留并按来源计算，不统一假定 input 含/不含缓存；未知、部分与具有权威来源的真实零值分列。",
+        "费用使用请求当时单价及币种快照，当前设置变化不重算旧历史；没有来源时保持未知，SDK 估算不冒充真实账单。",
+        "公开读回合同和页面提供至少请求→任务→会话的可检查汇总及来源详情；旧历史覆盖不足保留部分状态。",
+        "使用真实 Pi 的本地受控请求链和持久化/重启负例对账，Ego Lite 查看汇总；主子 Agent 和分支的扩展聚合由下一片验收，当前范围明确显示。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [
+        "历史 U0-05 用量字段证据按当前固定运行身份复核。"
+      ],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/23-u4-n02.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 46,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/46",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "de6f6c819328b0a7114638d00549970821c30e127c2efd88d0a39c450a0f2afd",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "eeb6d7be3fe2e39e466cd4ebdaf8b72350f46edcae0f2cc9a015991661d22893",
+      "githubIssueDatabaseId": 5778681804,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        44
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-46-final-readback.json"
+      }
+    },
+    {
+      "id": "U4-N03",
+      "title": "核对主子 Agent 与分支继承的用量归属",
+      "originalTasks": [
+        "U4-02"
+      ],
+      "stories": "US-047,US-048,US-049,US-050,US-054",
+      "gates": [
+        "G4-02",
+        "G4-03"
+      ],
+      "blockedBy": [
+        "U4-N02"
+      ],
+      "delivery": "用户能分别查看主 Agent、子 Agent、分支继承和新消费，汇总既不漏掉受支持来源，也不重复计入历史。",
+      "criteria": [
+        "将受支持子 Agent 的实际请求/工具回执连接到稳定父任务与会话 lineage，页面可展开主子明细及覆盖范围。",
+        "同一子任务回执重复、晚到、失败或取消时按请求身份去重，未知父关联显式保留，不按汇总差额猜消费。",
+        "分支已继承历史与分支创建后实际请求分别展示；原会话、多个分支及共享请求来源不重复累计。",
+        "保留各请求的缓存语义、币种/价格快照、部分和真实零值；不同覆盖范围不能以单一总数掩盖。",
+        "至少受支持夹具的主/子请求→任务→会话→分支整条数据链可核对，不能全部 unknown 就关闭。",
+        "真实受控 Pi/子代理回执、重连/重启/取消负例与 Ego Lite 明细旅程分别留证；本地受控模型不代真实外部 Provider。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/24-u4-n03.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 47,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/47",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "872fd40a824be3263104431f3d699658725a420a953347f5a8430ece8250cdeb",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "eff0ae1cc8f378bc588f30c096d495ae56f00275a082b92f1fc53d04624d8c4f",
+      "githubIssueDatabaseId": 5778683757,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        46
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-47-final-readback.json"
+      }
+    },
+    {
+      "id": "U4-N04",
+      "title": "展示有来源的上下文、生成速度和费用详情",
+      "originalTasks": [
+        "U4-03"
+      ],
+      "stories": "US-048–US-053,US-055",
+      "gates": [
+        "G4-03",
+        "G4-04"
+      ],
+      "blockedBy": [
+        "U4-N03"
+      ],
+      "delivery": "用户在输入区看到简洁统计，展开后可解释上下文、有效生成速度、缓存、费用及覆盖范围。",
+      "criteria": [
+        "输入区与详情消费同一可追溯汇总，任务/会话、主子 Agent、继承与新消费口径可选择且不互相误标。",
+        "上下文来自实际请求或 runtime 快照，保留模型容量和来源；累计消费不能替当前上下文，没有来源则明确未知。",
+        "速率以输出 token 和有效生成时间计算，排除排队/工具等待，首 token 延迟另列；缺时刻、不完整或取消样本状态明确。",
+        "费用、缓存及币种沿请求快照显示，更新设置不改历史；零、未知、部分有可理解的独立呈现。",
+        "至少一组有工具等待、排队及取消的受支持实际 Pi 夹具贯通时间采集→持久化→公开读回→页面，字段不能全部未知。",
+        "Ego Lite 核对紧凑显示、详情展开、长会话/切换/重连和错误状态，键盘及焦点可用且不挤占对话。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/25-u4-n04.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 48,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/48",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "62004c7c899ab9465e076ef63c49f9165c125bb50a93e39102fc798afc2b5275",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "e7c0cfe0bb2af25ecf54a0bee317741b61cbc12dfa0026f381ad4633911d3e97",
+      "githubIssueDatabaseId": 5778685581,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        47
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-48-final-readback.json"
+      }
+    },
+    {
+      "id": "U4-N05",
+      "title": "验收结果与用量的故障和分支旅程",
+      "originalTasks": [
+        "U4-04"
+      ],
+      "stories": "US-044–US-055",
+      "gates": [
+        "G4-01",
+        "G4-02",
+        "G4-03",
+        "G4-04"
+      ],
+      "blockedBy": [
+        "U4-N01",
+        "U4-N04"
+      ],
+      "delivery": "用户在成功、失败、取消、长输出和分支会话中，仍能把结果、真实改动、验证状态和用量来源核对起来。",
+      "criteria": [
+        "用同一真实 Host/Pi 候选贯通执行→应用/验证回执→请求用量→会话/子 Agent 聚合→实际页面。",
+        "覆盖失败、取消、长输出、重复事件、重启、分支及旧历史，结果事实不丢失、消费不重复、未知状态不虚构。",
+        "受支持夹具中所有选定用量来源均有正例，价格/缓存/上下文/有效生成时长与原回执可逐项对账。",
+        "Ego Lite 从会话结果进入 diff/命令/验证与用量详情，来源、覆盖率和账号/模型一致。",
+        "G4-01–G4-04 全部必需层及相关历史/输入/所有权回归通过，Standards/Spec 与原始证据齐备后才关闭 U4 阶段。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/26-u4-n05.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 49,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/49",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "b5c55ecc7dddf6bed70406541959ae5e38fad87c2d0ade3305f05517f4314e6f",
+      "acceptanceCriteriaCount": 6,
+      "approvedDraftSha256": "7985ac2768f3cdfae207dca8cfd31f49d3dc7215f02aea5ae3259c5422363934",
+      "githubIssueDatabaseId": 5778687401,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        45,
+        48
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-49-final-readback.json"
+      }
+    },
+    {
+      "id": "U5-N01",
+      "title": "查看已有资源的来源、兼容性和配置归属",
+      "originalTasks": [
+        "U5-01"
+      ],
+      "stories": "US-056,US-057,US-059",
+      "gates": [
+        "G5-01"
+      ],
+      "blockedBy": [
+        "U4-N05"
+      ],
+      "delivery": "用户在项目能力页查看已有技能和扩展的真实来源、必需集合、兼容性以及 GUI 默认/项目覆盖的配置归属。",
+      "criteria": [
+        "从实际资源发现到 Host 只读目录和页面完整贯通，区分 stack 自带、用户及项目资源，记录可核验身份和来源。",
+        "必需安全/所有权/预算集合清楚标识且不能关闭；未知、缺失和不兼容资源有原因，不把静态存在冒充实际加载。",
+        "页面区分当前可用值、GUI 默认、项目覆盖及运行时实际状态；此片未接入的修改动作明确禁用，不能展示假已启用。",
+        "读取或刷新不改 CLI/TUI 原配置、用户原包及凭据；来源冲突或坏声明 fail closed，不扩大搜索到任意磁盘。",
+        "通过公开目录入口、固定 Pi 的实际资源发现信息及 Ego Lite 核对已存在/缺失/不兼容资源、来源与必需集合。",
+        "本票交付查看路径；U5-01 中默认/项目覆盖的持久化与实际生效由 U5-N02 一并完成，两个子项通过后才关闭原 U5-01。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [
+        "历史 U0-05 资源合同按当前候选身份复核。"
+      ],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/27-u5-n01.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 50,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/50",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "ffa69516a83b4313417a5af6ab3466e4eb5a5a1379f7b13115fcda444b3d526a",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "df4963c163b031303bfab14e870c3f6e7c44f998d65a704d7043055e91254b81",
+      "githubIssueDatabaseId": 5778689688,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        49
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-50-final-readback.json"
+      }
+    },
+    {
+      "id": "U5-N02",
+      "title": "配置可选资源并在下一次执行生效",
+      "originalTasks": [
+        "U5-01",
+        "U5-02"
+      ],
+      "stories": "US-057,US-059,US-060,US-061",
+      "gates": [
+        "G5-01",
+        "G5-02"
+      ],
+      "blockedBy": [
+        "U5-N01"
+      ],
+      "delivery": "用户调整 GUI 默认或项目覆盖中的可选资源启停，看到待生效状态，新任务实际加载该快照，正在运行的任务保持原配置。",
+      "criteria": [
+        "页面保存、Host 原子持久化、revision、项目覆盖/重置覆盖和下一 worker 启动注入形成完整路径；覆盖删除回到 GUI 默认，不改 CLI。",
+        "把资源 revision 贯通任务绑定、输入账本、实际 Pi 载荷桥和加载回执，不能只把固定零值改成任意通过。",
+        "运行中保存只影响下一执行；页面区分请求值、待生效与实际加载值，活动 worker 不热切，启动失败不冒充生效。",
+        "队列绑定旧 revision 时暂停并展示差异，用户明确确认后再创建当前有效投递；重连/重复点击不变更已接受语义。",
+        "禁止关闭必需集合，拒绝未知来源/不兼容组合和跨项目覆盖；失败保留最后有效 GUI 配置及用户草稿。",
+        "实际公开 Host→新 Pi worker→加载回执→Ego Lite 读回证明启停与项目覆盖生效，并验证旧 worker 不变及原 CLI 行为。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/28-u5-n02.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 51,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/51",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "3e73f38129ee9c2d350637b5c273a6844b7ab2986aeffc1ca25e885cbce96af4",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "e72a29e571211159c55454463dd3c2f59abfece039c7f8c0db86d0ac7efa337d",
+      "githubIssueDatabaseId": 5778691454,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        50
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-51-final-readback.json"
+      }
+    },
+    {
+      "id": "U5-N03",
+      "title": "编辑声明配置并处理加载失败与恢复",
+      "originalTasks": [
+        "U5-02"
+      ],
+      "stories": "US-058,US-060,US-061",
+      "gates": [
+        "G5-02"
+      ],
+      "blockedBy": [
+        "U5-N02"
+      ],
+      "delivery": "用户为声明配置 Schema 的已有资源编辑参数，明确看到校验、待生效、实际加载或失败，并能恢复最后有效配置。",
+      "criteria": [
+        "由资源声明生成受支持的配置表单，完整贯通输入校验、持久 revision、下一 worker 加载与实际值反馈；无 Schema 明确不支持通用编辑。",
+        "不提供任意代码执行配置框，不把 Provider 凭据混入普通配置；账号秘密仍走已有账号入口且不进日志、模型或页面持久存储。",
+        "非法值、Schema/资源版本漂移、加载失败、配置冲突和重复保存有公开拒绝及恢复路径，最后有效 GUI 配置保留。",
+        "启用新配置期间不热改活动 worker；旧 revision 队列暂停、用户处理后再投递，失败与重启不能隐式放行。",
+        "通过真实 Pi 运行回执核对请求值与实际加载值，Ego Lite 完成配置→下一任务→失败→恢复旅程。",
+        "本票与 U5-N02 全部完成后才关闭原 U5-02，C/P/B 与受影响 U1 输入/账号/权限回归分别留证。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/29-u5-n03.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 52,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/52",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "b35027d71de9eeee9ff1d02151800181ee9d7d49184279ee7c5382346b14099a",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "1b0afd62a472a28092ba769720bf649bbce3d3265a35d7b026ae61c9768c3611",
+      "githubIssueDatabaseId": 5778693237,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        51
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-52-final-readback.json"
+      }
+    },
+    {
+      "id": "U5-N04",
+      "title": "配置并运行具名测试和构建命令",
+      "originalTasks": [
+        "U5-03"
+      ],
+      "stories": "US-062,US-063",
+      "gates": [
+        "G5-03"
+      ],
+      "blockedBy": [
+        "U4-N05"
+      ],
+      "delivery": "用户保存具名项目命令并显式启动，查看真实工作目录、输出、退出码和结果；占用、取消及残留进程都有明确处理。",
+      "criteria": [
+        "从项目设置到持久配置、公开启动/状态入口、实际进程及结果页面贯通；发现脚本仅建议，不自动执行。",
+        "测试/构建按可能写项目处理，和 Agent、CLI、人工编辑/终端共用单写所有权；等待、排队或拒绝的状态明确，不能凭命令名豁免。",
+        "记录精确命令、目录、启动身份、输出、结束/退出码及日志来源；空配置、无效目录、非零退出和超限输出不伪装成功。",
+        "取消按进程及子进程身份处理，确认已退后释放；未知孤儿保留阻断，不因页面关闭或 leader 消失猜测已安全。",
+        "刷新、Host 退出、重连和重复启动不能启动第二个相同执行或覆盖正在运行的任务，配置变更不暗改当前进程。",
+        "实际 Host/Pi 相关所有权回归与 Ego Lite 的配置→运行→占用→取消/失败→结果路径留证，原真实终端和人工编辑仍可用。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/30-u5-n04.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 53,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/53",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "4f5a4053a6c18324d60bc69ce903dafe83dab892c6b19e856918e27752222401",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "aa64b5926d07185e3c9022f53709d5af7e70f48427175eedff49b383e5e67ba8",
+      "githubIssueDatabaseId": 5778695106,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        49
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-53-final-readback.json"
+      }
+    },
+    {
+      "id": "U5-N05",
+      "title": "让受管预览与 Agent 并行更新",
+      "originalTasks": [
+        "U5-04"
+      ],
+      "stories": "US-064,US-065,US-066,US-067,US-068",
+      "gates": [
+        "G5-04"
+      ],
+      "blockedBy": [
+        "U5-N04"
+      ],
+      "delivery": "用户显式启动受支持配方的受管预览，Agent 修改项目时页面持续更新，且预览不能写回源项目或取得 Host 凭据。",
+      "criteria": [
+        "把已验证配方接到生产 Host supervisor、持久状态和 UI，明确支持的项目/文件规则及真实本机来源；不把仅三文件的 synthetic PoC 当一般项目已支持。",
+        "源读取、同步镜像、缓存与派生输出的边界有实际证据；误写原项目、链接替换、未允许输入和向源写回均拒绝，不建 Git worktree。",
+        "真实受控 Agent 与预览同时运行，多次源变更能在页面看到正确新内容；命令/终端/人工入口的单写规则保持。",
+        "首片就完成凭据与来源隔离：环境、Cookie/Authorization、请求/响应头、HTTP 及 WebSocket 代理和重定向受限，不允许任意 URL 代理。",
+        "实际覆盖 localhost 与 127.0.0.1 的配对后泄漏、服务端伪造 Host/Origin/协议头重放 HTTP/WS 负例，不能仅凭端口不同或浏览器 CORS 宣称安全。",
+        "显示启动/端口冲突/运行/停止/失败与重连状态；关闭面板不杀服务，停止及 Host 退出核对子进程后再释放；未知残留在此片就保守阻断。",
+        "首页预览/探索建议触发真实已支持入口；Ego Lite 核对并行修改、更新、重连、停止与受限嵌入，必要独立标签仍绑定同一受管来源。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [
+        "U0-06 固定配方门禁及当前适用性核对；不默认新增容器、全局权限、公开端口或下载用户项目依赖。"
+      ],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/31-u5-n05.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 54,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/54",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "5d4e0e6f7de8f04dda5265eb931fdbf8f6447520f61fc1d4e47020735d412cb7",
+      "acceptanceCriteriaCount": 8,
+      "approvedDraftSha256": "ea8f0aa0e71ad229c1a0d0208773cc109f17b41f8b8972ef504356e3dfe9bbb2",
+      "githubIssueDatabaseId": 5778696968,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        53
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-54-final-readback.json"
+      }
+    },
+    {
+      "id": "U5-N06",
+      "title": "恢复预览故障并核对残留进程",
+      "originalTasks": [
+        "U5-04"
+      ],
+      "stories": "US-064,US-065,US-066,US-067",
+      "gates": [
+        "G5-04"
+      ],
+      "blockedBy": [
+        "U5-N05"
+      ],
+      "delivery": "预览崩溃、端口冲突或 Host 重启后，用户能看到真实状态并通过受控入口恢复；未知残留不会被错误接管或清理。",
+      "criteria": [
+        "在已安全可用的预览路径上交付崩溃→状态呈现→显式恢复、端口冲突处理、刷新重连和 Host 重启后的对账。",
+        "leader 退出但后代存活时保留占用并拒绝重启，核对实际进程组/身份后才能释放或重用路径与端口，不能误杀无关进程。",
+        "恢复后保持同步与资源边界，Agent 再修改仍能看到正确更新；失败过程不向源写回、不损坏用户文件。",
+        "恢复/重新启动后重跑适用凭据泄漏和 HTTP/WS 重放负例，localhost 与 127.0.0.1 均保持隔离；旧配对状态不能被预览继承。",
+        "实际进程故障注入、锁竞争、残留清理和页面恢复分别留证，说明软件注入与物理故障范围。",
+        "U5-N05 和本票全部满足 G5-04 后才关闭原 U5-04，PoC 及同进程 lease 负例不能代生产第二执行方的证据。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/32-u5-n06.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 55,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/55",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "17c4ac425e46f15080e0faecc0ccb67edca712a79f566581ac5d5d8bb3e1ac0b",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "b964254ddd7123b0915431e4ab65a619edf81e95ef4a25f0d3c5dbc05a9a2dc6",
+      "githubIssueDatabaseId": 5778698843,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        54
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-55-final-readback.json"
+      }
+    },
+    {
+      "id": "U5-N07",
+      "title": "验收资源配置、命令与并行预览整条旅程",
+      "originalTasks": [
+        "U5-05"
+      ],
+      "stories": "US-056–US-069",
+      "gates": [
+        "G5-01",
+        "G5-02",
+        "G5-03",
+        "G5-04",
+        "G5-05"
+      ],
+      "blockedBy": [
+        "U5-N03",
+        "U5-N06"
+      ],
+      "delivery": "用户配置项目资源，启动实际任务、构建并查看持续预览，最后停止服务，同时保留既有终端和人工编辑能力。",
+      "criteria": [
+        "实际 Host/Pi 与 Ego Lite 完成资源来源→GUI 默认/项目覆盖→下一任务加载→具名构建→Agent 并行预览→停止的完整路径。",
+        "配置 revision、账号/模型、任务、命令进程和预览身份可追溯，旧队列/活动 worker 不被新设置暗改。",
+        "覆盖失败、取消、Host 退出、重连、端口冲突及未知残留，单写、审批、撤权、源边界和凭据隔离全部保持。",
+        "真实终端、人工编辑、CLI 原配置与首页建议回归，页面控件均触发实际结果或显示有依据的禁用原因。",
+        "G5-01–G5-05 必需证据及受影响完整回归、Standards/Spec 和限制齐备才关闭 U5；安装态、真实 Provider 及日常晋升继续由 U6 验收。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "P",
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/33-u5-n07.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 56,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/56",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "9b1af4ea489ba3bbc66ceebca7a521b2e49e9e329545f10f74886c56fd4350a4",
+      "acceptanceCriteriaCount": 6,
+      "approvedDraftSha256": "1e3614ad3ad45691d996ab4dc9765c0ab8a3ca13efa6ebb25437ca6880691f8f",
+      "githubIssueDatabaseId": 5778700974,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        52,
+        55
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-56-final-readback.json"
+      }
+    },
+    {
+      "id": "U6-N01",
+      "title": "验收全部 WebUI 入口、状态和操作旅程",
+      "originalTasks": [
+        "U6-01"
+      ],
+      "stories": "US-070,US-071",
+      "gates": [
+        "G6-01"
+      ],
+      "blockedBy": [
+        "U5-N07"
+      ],
+      "delivery": "用户能在日常使用的窗口、主题和输入方式下完成全部已选 WebUI 功能，任何可见操作都有真实结果或明确可解释的禁用条件。",
+      "criteria": [
+        "建立逐入口/逐状态清单覆盖已选 U1–U5，至少空、加载、忙、审批/占用、只读、失败、断连和能力不支持；遗漏入口保持未验收。",
+        "用 Ego Lite 连接实际 Host 完成跨功能日常旅程，记录源码/运行栈/页面身份，不用组件 mock、截图存在或 HTTP 200 替代操作。",
+        "Glacier 明暗主题与 390/761/1440px 尺寸可读可用，对话优先、右侧按需、真实终端、焦点顺序和键盘操作保持。",
+        "真实 IME 与合成 composition、模拟触控与物理触屏证据分列；必要真实输入条件缺失则记录具体缺口。",
+        "导航、恢复、材料、分支、用量、配置、命令/预览各可见动作核对实际后端结果，发现行为缺陷先修相应功能而非禁用来凑清单。",
+        "G6-01 全部必需项、实际查看的截图与交互证据、Standards/Spec 记录齐备；本票不代表性能或安装晋升通过。"
+      ],
+      "evidenceLayers": [
+        "B"
+      ],
+      "executionConditions": [],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/34-u6-n01.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 57,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/57",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "6f21a62f06900616b571ba8faa5977e95ce74b48b486e0a1bac7fda0d158b1cc",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "30ca5ea9a66fb5cde85604484af7c3a8638a59c308f49ffa82809e05d8a2b55f",
+      "githubIssueDatabaseId": 5778703183,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        56
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-57-final-readback.json"
+      }
+    },
+    {
+      "id": "U6-N02",
+      "title": "验证固定性能样本与进程资源占用",
+      "originalTasks": [
+        "U6-02"
+      ],
+      "stories": "US-072,US-073,US-074",
+      "gates": [
+        "G6-02"
+      ],
+      "blockedBy": [
+        "U6-N01"
+      ],
+      "delivery": "用户在长历史、大输出、检索、解析和连续预览中仍可及时输入与取消；维护者能用固定样本复验响应与资源表现。",
+      "criteria": [
+        "绑定硬件、源码/候选、前台窗口、数据集、计时口径和原始样本，至少 30 个有效输入样本，异常样本及失败不能静默丢弃。",
+        "10,000 事件、5 MiB 输出与长 diff 下，输入 P95 <100 ms、本地取消确认 P95 <500 ms；取消确认不冒充进程已退或 Provider 停止计费。",
+        "100 会话/100,000 消息的热索引检索 P95 <500 ms；连续 20 次预览变更的可见更新 P95 <2 秒，记录正确性与丢更新。",
+        "解析并发分别记录排队、限额、时间和资源表现，Host/worker/PTY/预览/共享浏览器内存分列，不从单 worker 结论推广总量。",
+        "使用绑定本批源码的候选及隔离安装取得 C/B/I 必需证据；必要性能安装是本票验证准备，不预写下一票完整 Full、兼容及回滚验收通过。",
+        "未达标定位并修正影响范围后重验对应样本，不降低目标后称原目标通过；保留前后原始值和证据身份。"
+      ],
+      "evidenceLayers": [
+        "C",
+        "B",
+        "I"
+      ],
+      "executionConditions": [
+        "隔离性能候选准备、空间和运行授权按实施范围核对，不切日常 active。"
+      ],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/35-u6-n02.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 58,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/58",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "98ba6cf8740da862ef50a1ba4c55333bfa7f5586855771f9b741de3a1e02261b",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "51c0ef43283f8a0feeab7aec6eeefdfab37298921cdfcc74745be5f440a47e5a",
+      "githubIssueDatabaseId": 5778705174,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        57
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-58-final-readback.json"
+      }
+    },
+    {
+      "id": "U6-N03",
+      "title": "验证同一 Full 候选的纯安装与数据兼容",
+      "originalTasks": [
+        "U6-03"
+      ],
+      "stories": "US-075,US-076",
+      "gates": [
+        "G6-03"
+      ],
+      "blockedBy": [
+        "U6-N02"
+      ],
+      "delivery": "用户能在不依赖开发目录的完整安装中使用已交付功能，隔离升级、回滚和重新应用后保留凭据与新历史。",
+      "criteria": [
+        "从精确 clean commit 与固定完整输入形成可追溯 Full 候选，绑定 Node/Pi/资源/协议和 stackId；保留当前脏工作树，用独立源码与输出。",
+        "在全新隔离前缀启动真实 Host/WebUI、Pi 和必要解析资源，核对包内加载路径、内容清单和实际能力，无 checkout/全局依赖回退。",
+        "全新 GUI 状态与旧会话/草稿/材料/索引/配置数据均有兼容或明确拒绝，不能覆盖坏数据或旧凭据以制造成功。",
+        "隔离安装→回滚升级前已核验候选→同候选再应用，逐次核对身份、真实入口、协议以及新历史/凭据保持；异常与残留分别留证。",
+        "适用完整自动化、parser 包内矩阵、原终端/所有权回归及 Ego Lite 安装态关键旅程通过，G6-03 的 I/B 证据绑定同一候选。",
+        "保留运行义务、原 FAIL/OPEN_UNATTRIBUTED 和升级回滚证据；本票不代后续真实 Provider、日常切换或公开发行。"
+      ],
+      "evidenceLayers": [
+        "I",
+        "B"
+      ],
+      "executionConditions": [
+        "确认干净精确源码、空间、隔离安装范围；不得直接在当前脏仓执行会构建源目录的默认 Full。"
+      ],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/36-u6-n03.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 59,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/59",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "a06f596cb62ed51232b08e16a950feaa624fbbca3d6a83ca1e4ba7eefcabe995",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "2cbecb5a9830472ad6a2fffaba1c3cae4718f3a05d1dca68a79d3ebc70375863",
+      "githubIssueDatabaseId": 5778706975,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        58
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-59-final-readback.json"
+      }
+    },
+    {
+      "id": "U6-N04",
+      "title": "执行获准的真实 Provider 小型验收包",
+      "originalTasks": [
+        "U6-04"
+      ],
+      "stories": "US-077,US-078",
+      "gates": [
+        "G6-04"
+      ],
+      "blockedBy": [
+        "U6-N03"
+      ],
+      "delivery": "用户在明确批准的实际路由和预算内，验证材料续接、输入控制及修改/用量/并行预览，知道真实服务支持的范围。",
+      "criteria": [
+        "执行前形成具体路由/模型、账号引用、合成场景、调用上限、token/时长/费用口径与账本；取得该具体包的授权后才发实际请求，旧阶段额度不挪用。",
+        "L1 合成图片/现代文档/引用核对并续接，主响应最多 4、无子代理；L2 工具期间补充/队列/取消，主响应最多 4、无子代理。",
+        "L3 合成项目修改、验证、用量与并行预览，最多 1 个受管 writer 和 1 个 reviewer，主响应最多 4、子响应合计最多 6；运行与证据归属可核对。",
+        "建议总包 3 场景加至多 1 次失败重试，共最多 4 次场景尝试、每次 5 分钟、总计 100,000 token；执行采用实际获准上限，token 不冒充固定费用。",
+        "失败首停、诊断后只有明确获准的重试才执行；不通过新会话、脚本、路由或批次重置计数，不外发真实敏感附件。",
+        "将 Provider、实际安装 Host/Pi、Ego Lite 页面、文件/回执与用量账本逐项对应，仅声明实测能力；缺授权或预算时完成独立准备并保持 NOT_RUN/BLOCKED。"
+      ],
+      "evidenceLayers": [
+        "L",
+        "I",
+        "B"
+      ],
+      "executionConditions": [
+        "当前真实调用包 NOT_AUTHORIZED、已用 0；工单发布或关闭前置不授予收费调用与数据外发权限。"
+      ],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/37-u6-n04.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 60,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/60",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "750a977d02c407f6ea4cc66843d2151acf08208a11c86bf35bee057bce12b7d8",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "2815343611687f846a68175ac6b609abe454877229dcf0865f1f6721a3588dd1",
+      "githubIssueDatabaseId": 5778708804,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        59
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-60-final-readback.json"
+      }
+    },
+    {
+      "id": "U6-N05",
+      "title": "晋升日常栈并完成回滚、重应用和体验收口",
+      "originalTasks": [
+        "U6-05"
+      ],
+      "stories": "US-079,US-080,US-081",
+      "gates": [
+        "G6-05"
+      ],
+      "blockedBy": [
+        "U6-N04"
+      ],
+      "delivery": "用户通过日常真实入口使用同一已验收候选，能够回滚到切换前的有效栈并重新应用，全部选定 WebUI 能力和遗留项有最终结论。",
+      "criteria": [
+        "切换前核对 G6-01–G6-04、活动会话/终端/进程、权限、候选与当前 active 身份，冻结备份与恢复材料；活动冲突时等待，不强停用户工作。",
+        "沿既有支持的 Full 机制晋升、回滚切换前重新验证的 active、再应用同候选；active 发生变化立即停止重新绑定，不能回滚任意旧 LKG。",
+        "每步核对 PATH/真实入口、完整内容、Pi/Node/协议/资源身份、状态根与进程；长期证据和恢复材料放在不会被回滚移除的位置。",
+        "凭据和新会话/材料/元数据不因代码回滚被旧快照覆盖；失败或未知结果保持可恢复并明确阻断，不自动重复切换。",
+        "Ego Lite 从日常入口完成已选关键旅程，体验、遗留项、全部必需 Gate 与真实 Provider 实测范围逐项核对；无未获同意降级或必需未验项。",
+        "完成后更新原 Task/总计划与候选证据映射，才满足 WebUI 收口并允许后续 Electron 3A；本票不执行 Electron 实现、签名公证或公开软件发行。"
+      ],
+      "evidenceLayers": [
+        "I",
+        "B"
+      ],
+      "executionConditions": [
+        "切换前重新核对具体日常安装授权、活动及身份；工单发布本身不切换运行栈。"
+      ],
+      "draftFile": "docs/plans/2026-10-09-remaining-ticket-drafts/38-u6-n05.md",
+      "status": "PUBLISHED_VERIFIED",
+      "githubIssueNumber": 61,
+      "githubIssueUrl": "https://github.com/Ricardo121380/only-my-pi/issues/61",
+      "proposedTriageLabel": "ready-for-agent",
+      "bodySha256": "48244c389fb4229fb93d8fc1d68a7d9698010f44f6f9929157baacf2acf99a49",
+      "acceptanceCriteriaCount": 7,
+      "approvedDraftSha256": "84d28fcd76a0ca8c323ee5453116d87ccdcf277841c9dedf63d40c13383089f6",
+      "githubIssueDatabaseId": 5778710534,
+      "githubState": "OPEN",
+      "triageLabel": "ready-for-agent",
+      "blockedByIssueNumbers": [
+        60
+      ],
+      "publicationReadback": {
+        "body": "MATCH",
+        "title": "MATCH",
+        "label": "MATCH",
+        "nativeBlockedBy": "MATCH",
+        "readbackFile": "issue-61-final-readback.json"
+      }
+    }
+  ],
+  "taskMapping": {
+    "G2-00-02": [
+      "#20",
+      "#21",
+      "#22",
+      "#23"
+    ],
+    "G2-00-03": [
+      "G2-N01"
+    ],
+    "G2-00-04": [
+      "G2-N02",
+      "G2-N03"
+    ],
+    "G2-00-05": [
+      "G2-N04"
+    ],
+    "G2-00-06": [
+      "G2-N05"
+    ],
+    "U2-01": [
+      "U2-N01",
+      "U2-N02"
+    ],
+    "U2-02": [
+      "U2-N03"
+    ],
+    "U2-03": [
+      "U2-N04"
+    ],
+    "U2-04": [
+      "U2-N05",
+      "U2-N06",
+      "U2-N07",
+      "U2-N08"
+    ],
+    "U2-05": [
+      "U2-N09"
+    ],
+    "U2-06": [
+      "U2-N10"
+    ],
+    "U3-01": [
+      "U3-N01",
+      "U3-N02"
+    ],
+    "U3-02": [
+      "U3-N03",
+      "U3-N04"
+    ],
+    "U3-03": [
+      "U3-N05"
+    ],
+    "U3-04": [
+      "U3-N06"
+    ],
+    "U4-01": [
+      "U4-N01"
+    ],
+    "U4-02": [
+      "U4-N02",
+      "U4-N03"
+    ],
+    "U4-03": [
+      "U4-N04"
+    ],
+    "U4-04": [
+      "U4-N05"
+    ],
+    "U5-01": [
+      "U5-N01",
+      "U5-N02"
+    ],
+    "U5-02": [
+      "U5-N02",
+      "U5-N03"
+    ],
+    "U5-03": [
+      "U5-N04"
+    ],
+    "U5-04": [
+      "U5-N05",
+      "U5-N06"
+    ],
+    "U5-05": [
+      "U5-N07"
+    ],
+    "U6-01": [
+      "U6-N01"
+    ],
+    "U6-02": [
+      "U6-N02"
+    ],
+    "U6-03": [
+      "U6-N03"
+    ],
+    "U6-04": [
+      "U6-N04"
+    ],
+    "U6-05": [
+      "U6-N05"
+    ]
+  },
+  "counts": {
+    "retainedExistingIssues": 4,
+    "newProposedIssues": 38,
+    "totalRemainingExecutionTickets": 42,
+    "newByGroup": {
+      "G2": 5,
+      "U2": 10,
+      "U3": 6,
+      "U4": 5,
+      "U5": 7,
+      "U6": 5
+    },
+    "historicallyAcceptedProductTasks": 20,
+    "productTasksTotal": 44,
+    "pendingProductTasks": 24,
+    "pendingG2InternalSteps": 5,
+    "newProductAcceptances": 0,
+    "newPublishedIssues": 38,
+    "newNativeBlockedByEdges": 47,
+    "totalNativeBlockedByEdges": 50
+  },
+  "supersedesForReview": "2026-10-07-g2-ticket-proposal.json",
+  "preservedHistoricalDrafts": "2026-10-07-g2-ticket-drafts",
+  "publicationPlan": [
+    "Re-read current issues and reject duplicate IDs/titles",
+    "Create only approved new tickets in topological order; use actual Issue numbers",
+    "Use blocker numeric database IDs for native dependencies, never assume issue numbers are database IDs",
+    "Read back each title/body/ready-for-agent label, native edge direction and OPEN state",
+    "Update only local Task mapping with actual Issue numbers; preserve parent #19 and existing #20–#23 during to-tickets"
+  ],
+  "runtimeEvidence": "NOT_RUN",
+  "approvalRecord": {
+    "userReply": "确认",
+    "scope": "Publish the approved 38 tickets, ready-for-agent labels and native dependencies; retain #19–#23",
+    "recordedAt": "2026-10-09T13:08:37.706839+00:00",
+    "approvedProposalSha256": "e4cde14a4df8ad85756e96f252bc63fcc3b19986d23acf1b14b7a8443121e9d2"
+  },
+  "taskIssueMapping": {
+    "G2-00-02": [
+      20,
+      21,
+      22,
+      23
+    ],
+    "G2-00-03": [
+      24
+    ],
+    "G2-00-04": [
+      25,
+      26
+    ],
+    "G2-00-05": [
+      27
+    ],
+    "G2-00-06": [
+      28
+    ],
+    "U2-01": [
+      29,
+      30
+    ],
+    "U2-02": [
+      31
+    ],
+    "U2-03": [
+      32
+    ],
+    "U2-04": [
+      33,
+      34,
+      35,
+      36
+    ],
+    "U2-05": [
+      37
+    ],
+    "U2-06": [
+      38
+    ],
+    "U3-01": [
+      39,
+      40
+    ],
+    "U3-02": [
+      41,
+      42
+    ],
+    "U3-03": [
+      43
+    ],
+    "U3-04": [
+      44
+    ],
+    "U4-01": [
+      45
+    ],
+    "U4-02": [
+      46,
+      47
+    ],
+    "U4-03": [
+      48
+    ],
+    "U4-04": [
+      49
+    ],
+    "U5-01": [
+      50,
+      51
+    ],
+    "U5-02": [
+      51,
+      52
+    ],
+    "U5-03": [
+      53
+    ],
+    "U5-04": [
+      54,
+      55
+    ],
+    "U5-05": [
+      56
+    ],
+    "U6-01": [
+      57
+    ],
+    "U6-02": [
+      58
+    ],
+    "U6-03": [
+      59
+    ],
+    "U6-04": [
+      60
+    ],
+    "U6-05": [
+      61
+    ]
+  },
+  "publicationVerification": {
+    "status": "PUBLISHED_VERIFIED",
+    "finishedAt": "2026-10-09T13:17:11.316414+00:00",
+    "newIssueCount": 38,
+    "newIssueNumbers": [
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61
+    ],
+    "titleBodyLabelReadbacks": 38,
+    "nativeBlockedByReadbacks": 38,
+    "nativeNewEdges": 47,
+    "nativeRetainedEdges": 3,
+    "parentIssueEdited": false,
+    "existingIssuesEdited": false,
+    "newImplementationStarted": false,
+    "runtimeEvidence": "NOT_RUN",
+    "receipt": "../../../artifacts/webui-optimization/remaining-tickets-publish-1009-lrbvsvnx/journal.json"
+  }
+}

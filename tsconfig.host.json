@@ -1,0 +1,4 @@
+{
+  "compilerOptions": { "target": "ES2022", "module": "NodeNext", "moduleResolution": "NodeNext", "strict": true, "noEmit": true, "skipLibCheck": true, "allowJs": true, "checkJs": false },
+  "files": ["packages/host/contracts.d.ts", "packages/host/input-contracts.mjs", "packages/host/input-store.mjs", "packages/host/input-protocol.mjs", "packages/host/input-controller.mjs", "packages/host/pi-input-bridge.mjs", "tests/types/host-contracts.mts", "tests/types/host-input-store.mts", "tests/types/host-input-protocol.mts"]
+}

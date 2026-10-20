@@ -1,5 +1,9 @@
 # Multi-channel distribution implementation
 
+Current runtime policy (2026-10-20): Node 24 only, `>=24.19.0 <25`, pinned
+to `24.19.0` for acceptance. Earlier completed Node 22 results below remain
+historical; see [Node policy](compatibility/node-pi-matrix.md).
+
 Status: phase-one macOS `0.4.0-preview.1` is released and accepted on public
 Homebrew/npm/npx. Phase two Linux/Docker is in implementation and **not released**.
 
@@ -15,7 +19,7 @@ not publication authority for the separately versioned native distribution.
 - Public CLI: `only-my-pi`; executable: `omp`.
 - Prebuilt packages: `only-my-pi-runtime-darwin-arm64`,
   `only-my-pi-runtime-linux-x64`, `only-my-pi-runtime-linux-arm64`.
-- npm uses the user's supported Node; Homebrew supplies Node 24; Docker uses the
+- npm requires Node `>=24.19.0 <25`; Homebrew supplies Node 24; Docker uses the
   reviewed Node 24.19.0 image. First launch must not download dependencies.
 - Package managers own program files. Existing Pi credentials, preferences,
   sessions and user-owned packages remain in place.
@@ -83,7 +87,7 @@ AppArmor, seccomp, system-path masks or kernel restrictions. Failures retain
 This is only an environment feasibility gate, not full OMP acceptance. Linux
 still needs a platform-native locked dependency build (the current builder
 intentionally accepts only the reviewed macOS seed), exact-version CLI assembly,
-Node 22/24 lifecycle tests and the protected product matrix. Docker additionally
+Node 24 lifecycle tests and the protected product matrix. Docker additionally
 needs UID/GID persistence, signal handling, Compose and real product isolation
 acceptance. A successful native Linux probe does not validate Docker.
 
@@ -126,8 +130,8 @@ node scripts/build-homebrew-formula.mjs /absolute/candidate /absolute/only-my-pi
 npm run test:distribution
 ```
 
-The `Native distribution candidate` workflow runs the two supported Node
-versions against the same macOS artifacts. Its attestations identify candidate
+The `Native distribution candidate` workflow runs the pinned Node 24.19.0
+against the macOS artifacts. Its attestations identify candidate
 bytes; they do not constitute protected product acceptance or public release.
 The local registry used by the verification script is not the public npm
 registry. Public installation and default-tag checks remain separate gates.
@@ -158,7 +162,7 @@ The assembler requires exactly macOS arm64, Linux arm64 and Linux x64 from the
 same clean source and version. It verifies runtime content and emits one CLI
 with all three exact optional dependencies. Full/Thin are then assembled with
 that same public CLI and unchanged core/Node bytes. The combined CLI is tested
-on Node 22.19.0 and 24.19.0 on all three platforms, and final fallbacks are
+on Node 24.19.0 on all three platforms, and final fallbacks are
 retested. These checks do not substitute for protected product acceptance.
 
 ```sh

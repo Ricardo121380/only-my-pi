@@ -277,8 +277,15 @@ export async function atomicWriteText(configRootInput, targetInput, contents, op
     await assertSafeContainedPath(configRoot, target);
     await runPhase(options, "BEFORE_RENAME", context);
     if (typeof options.beforeRename === "function") await options.beforeRename(context);
-    await fs.rename(temporary, target);
-    renamed = true;
+    if (options.exclusive === true) {
+      // Publish a complete inode without replacing another writer's receipt.
+      await fs.link(temporary, target);
+      renamed = true;
+      await fs.unlink(temporary);
+    } else {
+      await fs.rename(temporary, target);
+      renamed = true;
+    }
     await runPhase(options, "AFTER_RENAME", context);
     await syncDirectory(parent);
     await runPhase(options, "AFTER_DIRECTORY_SYNC", context);

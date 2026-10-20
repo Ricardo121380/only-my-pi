@@ -5,7 +5,7 @@ export function validatePublicPlatformAcceptance(acceptance, receipt, node, plat
     "global-uninstall", "global-reinstall", "reinstall-verify-offline",
     ...(platform === "darwin-arm64" ? ["global-install-previous", "upgrade-version-offline"] : [])].sort();
   if (receipt?.version !== "0.4.0-preview.2" || !RELEASE_PLATFORMS.includes(platform)
-    || !["22.19.0", "24.19.0"].includes(node) || acceptance?.status !== "PUBLIC_INSTALL_ACCEPTANCE_PASS"
+    || node !== "24.19.0" || acceptance?.status !== "PUBLIC_INSTALL_ACCEPTANCE_PASS"
     || acceptance.publicRegistryVerified !== true || acceptance.node !== node || acceptance.platform !== platform
     || acceptance.version !== receipt.version || acceptance.selector !== `only-my-pi@${receipt.version}`
     || !/^sha256:[a-f0-9]{64}$/u.test(buildReceiptDigest ?? "") || acceptance.buildReceiptSha256 !== buildReceiptDigest

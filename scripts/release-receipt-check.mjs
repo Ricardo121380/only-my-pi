@@ -17,11 +17,17 @@ function git(args) {
 }
 
 export function parseReceiptCheckArgs(argv) {
-  const output = { receipt: defaultReceiptPath(), expectParent: false, sourceCommit: null };
+  const output = { receipt: defaultReceiptPath(), manifest: defaultReleaseGatesPath, expectParent: false, sourceCommit: null };
   const seen = new Set();
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
-    if (arg === "--receipt") {
+    if (arg === "--manifest") {
+      if (seen.has("manifest")) throw new Error("duplicate --manifest");
+      seen.add("manifest");
+      const value = argv[++index];
+      if (!value || value.startsWith("-")) throw new Error("--manifest requires a path");
+      output.manifest = path.resolve(ROOT, value);
+    } else if (arg === "--receipt") {
       if (seen.has("receipt")) throw new Error("duplicate --receipt");
       seen.add("receipt");
       const value = argv[++index];
@@ -51,7 +57,9 @@ export function parseReceiptCheckArgs(argv) {
 
 export function checkReleaseReceipt(argv = process.argv.slice(2)) {
   const args = parseReceiptCheckArgs(argv);
-  const manifest = loadReleaseGatesManifest(defaultReleaseGatesPath);
+  // Historical receipts keep their original source identity and canonical
+  // manifest digest even when the current suite's execution budget changes.
+  const manifest = loadReleaseGatesManifest(args.manifest);
   const receipt = JSON.parse(fs.readFileSync(args.receipt, "utf8"));
   const expectedSourceCommit = args.expectParent
     ? git(["rev-parse", "HEAD^"])

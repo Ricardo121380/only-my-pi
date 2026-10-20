@@ -1,0 +1,20 @@
+{
+  "formatVersion": 1,
+  "purpose": "LIBEXIF_DOCUMENT_CANDIDATE_ONLY",
+  "manifestSha256": "sha256:c4a4e0e10fa003d12383b031f2c30eddc7020d851f03d9df40fab9a07a23febd",
+  "reviewedOutputRepair": "Exact 148 crawler enum-detail links to existing enum-declaration anchors; retain the complete raw helper and dated modification notice.",
+  "versions": { "libexif": "0.6.26", "doxygen": "1.16.1", "graphviz": "14.1.2" },
+  "commits": { "doxygen": "669aeeefca743c148e2d935b3d3c69535c7491e6", "graphviz": "397dc2a41288a28663c87b6e03438758b2f6d029" },
+  "graphs": [
+    "graph_legend.svg",
+    "struct__ExifContent__coll__graph.svg",
+    "struct__ExifData__coll__graph.svg",
+    "struct__ExifEntry__coll__graph.svg",
+    "struct__ExifMnoteData__coll__graph.svg"
+  ],
+  "scope": "New local reproducible documents; prior CSS, six components, nine assets, 106 files and failure receipts retained. Historical configuration remains UNVERIFIED and historical dot inputs UNBOUND.",
+  "gates": { "kit": "#23", "applicationBuild": "G2-00-04", "distribution": "G2-00-05", "Full": "G2-00-06" },
+  "nativeBuild": "NOT_RUN",
+  "licensingClosure": "INCOMPLETE",
+  "Full": "NOT_RUN"
+}

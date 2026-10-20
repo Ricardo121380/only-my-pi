@@ -7,12 +7,34 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
+test("all current CI and distribution lanes use the pinned Node 24", () => {
+  assert.equal(fs.readFileSync(path.join(root, ".node-version"), "utf8").trim(), "24.19.0");
+  const metadata = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+  const lock = JSON.parse(fs.readFileSync(path.join(root, "package-lock.json"), "utf8"));
+  assert.equal(metadata.engines.node, ">=24.19.0 <25");
+  assert.equal(lock.packages[""].engines.node, metadata.engines.node);
+  for (const name of fs.readdirSync(path.join(root, ".github/workflows"))) {
+    const workflow = fs.readFileSync(path.join(root, ".github/workflows", name), "utf8");
+    assert.doesNotMatch(workflow, /22\.19\.0|node22|Node 22/u, name);
+  }
+  for (const name of ["distribution-public-verify.yml", "distribution-publish.yml", "linux-candidate.yml"]) {
+    const workflow = fs.readFileSync(path.join(root, ".github/workflows", name), "utf8");
+    for (const platform of ["darwin-arm64", "linux-arm64", "linux-x64"])
+      assert.match(workflow, new RegExp(`platform: ${platform}(?:, node: |\n\\s+node: )["']24\\.19\\.0`, "u"), `${name}: ${platform}`);
+  }
+});
+
 test("CI executes the same manifest-backed verify runner without credentials", () => {
   const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "ci.yml"), "utf8");
   assert.match(workflow, /push:\n\s+branches:\n\s+- main/u);
   assert.doesNotMatch(workflow, /branches:\n\s+- "\*\*"/u);
   assert.match(workflow, /npm ci --ignore-scripts/);
-  assert.match(workflow, /node-version: \["22\.19\.0", "24\.19\.0"\]/u);
+  assert.match(workflow, /NPM_CONFIG_IGNORE_SCRIPTS: "true"/u);
+  assert.equal((workflow.match(/npm run test:prepare/gu) ?? []).length, 2);
+  assert.ok(workflow.indexOf("npm run test:prepare") < workflow.indexOf("npm run verify -- --run"));
+  const prepare = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).scripts["test:prepare"];
+  assert.equal(prepare, "node scripts/prepare-test-pty.mjs && node scripts/prepare-test-extensions.mjs");
+  assert.match(workflow, /node-version: \["24\.19\.0"\]/u);
   assert.doesNotMatch(workflow, /node-version:.*24\.x/u);
   assert.match(workflow, /npm run verify -- --run/);
   assert.match(workflow, /npm run verify:m8:run/u);
@@ -23,6 +45,7 @@ test("CI executes the same manifest-backed verify runner without credentials", (
   assert.match(workflow, /npm run verify:m12:run/u);
   assert.match(workflow, /cancel-in-progress: true/u);
   assert.match(workflow, /runs-on: macos-14/u);
+  assert.match(workflow.split("  m11-q10:")[0], /runs-on: macos-14/u, "the full native suite requires the admitted Seatbelt MCP platform");
   assert.doesNotMatch(workflow, /runs-on: macos-14-xlarge/u);
   assert.match(workflow, /npm run verify:m11:q10:ci/u);
   assert.match(workflow, /receipt:check/);

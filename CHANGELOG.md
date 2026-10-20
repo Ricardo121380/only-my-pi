@@ -76,6 +76,22 @@ session. Third-party packages and Labs remain opt-in and require review.
 
 ## Unreleased
 
+### Direct-Agent safety and verification hardening
+
+- Reject physical multiline Bash before mutation approval checks.
+- Invalidate stale coding approvals and cancel in-flight managed writers on
+  revocation, session changes, shutdown, or budget exhaustion.
+- Bound owned Git and project-gate process termination; preserve private
+  clone/index evidence when termination is unconfirmed.
+- Record patch application separately from clone and real-worktree
+  verification. A real-worktree gate requires a fresh plan and approval;
+  pending, failed, or cancelled verification is not a successful run.
+- Expose redacted read-only writer states through run queries. Queries do not
+  resume a writer, reapply a patch, or restore authority.
+
+These changes have not been published. A process allowlist and scrubbed
+environment are not a filesystem or network sandbox.
+
 ### Added
 
 - completed the source-bound Stable promotion chain: source `2207d72`, direct

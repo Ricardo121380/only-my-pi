@@ -1,0 +1,31 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { createMcpHost, until, untilPiInitialized, mcpReception } from "./fixtures/mcp-host.mjs";
+
+test("public Host and real Pi approve a single scoped stdio read, show its result and confirm process exit", { timeout: 30000 }, async (t) => {
+  const f = await createMcpHost({ installedExtensions: true }); t.after(() => f.close());
+  await f.mcp({ type: "save", revision: 0, server: f.server });
+  await f.mcp({ type: "enable", revision: 1, name: "local", enabled: true });
+  const started = await f.start();
+  await untilPiInitialized(() => f.task(started.taskId));
+  const waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length > 0 || ["failed", "succeeded"].includes(task.status), "MCP approval");
+  assert.ok(waiting.approvals.length > 0, JSON.stringify(waiting));
+  assert.equal(waiting.mode, "readonly");
+  const runs = await f.mcp({ type: "status" });
+  const run = runs.runs.find((entry) => entry.taskId === started.taskId);
+  const receivedFile = path.join(run.processes[0].runtimeDir, "received.jsonl");
+  const before = (await fs.readFile(receivedFile, "utf8")).trim().split("\n").map(JSON.parse);
+  assert.equal(before.filter((entry) => entry.type === "call").length, 0);
+  assert.equal(before[0].ambient, null);
+  await f.request("/api/command", { type: "answerApproval", taskId: started.taskId, approvalId: waiting.approvals[0].approvalId, value: "仅本次" });
+  const completed = await until(() => f.task(started.taskId), (task) => ["succeeded", "failed"].includes(task.status), "MCP completion");
+  assert.equal(completed.status, "succeeded", JSON.stringify(completed));
+  assert.match(JSON.stringify(f.requests.at(-1).body.messages), /temporary CLI project/);
+  const final = (await f.mcp({ type: "status" })).runs.find((entry) => entry.taskId === started.taskId);
+  assert.equal((await mcpReception(final)).filter((entry) => entry.type === "call").length, 1);
+  assert.ok(final.processes.every((process) => process.status === "stopped"));
+  assert.equal(final.calls[0].status, "completed");
+  assert.equal(final.revision, 2);
+});

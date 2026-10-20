@@ -1,0 +1,41 @@
+{
+  "formatVersion": 1,
+  "issue": 21,
+  "purpose": "GIR_MATERIAL_CANDIDATE_ONLY",
+  "manifestSha256": "sha256:7d74632f459e665763477177a028a425d45cf85d700bea60091f98e5f95ccc25",
+  "files": 53,
+  "girFiles": 40,
+  "candidateAdmission": "BLOCKED",
+  "blockers": [
+    {
+      "id": "CURRENT_QUOTATION_CONDITIONS",
+      "status": "BLOCKED",
+      "objects": [
+        "GLib-2.0.gir",
+        "Gio-2.0.gir",
+        "Gtk-4.0.gir",
+        "Graphene-1.0.gir",
+        "Gdk-4.0.gir"
+      ],
+      "condition": "#21 AC3/AC6 current quotation and copying/modification evidence incomplete; do not defer current prerequisites to future Gates."
+    },
+    {
+      "id": "PANGOXFT_INTERFACE_METADATA",
+      "status": "BLOCKED",
+      "objects": [
+        "PangoXft-1.0.gir"
+      ],
+      "condition": "Additive Gio.ListModel metadata needs confirmation or an unchanged-contract fixed supplier; no implicit acceptance."
+    }
+  ],
+  "historicalSupplierIdentity": "UNVERIFIED",
+  "licensingClosure": "INCOMPLETE",
+  "runtimeCompatibility": "NOT_RUN_G2-00-04",
+  "Full": "NOT_RUN",
+  "U2": "BLOCKED",
+  "inputs": "External fixed-inputs-v2 supplement; v1 and its failed replay retained",
+  "protectedInputRoots": [
+    "LOCAL_WORKSPACE/artifacts/webui-optimization/G2-00-02-1002-exgdn48v/frozen-origins",
+    "LOCAL_WORKSPACE/artifacts/webui-optimization/G2-00-locale-1001-EpCrn4/verified-node22/native-build-kit"
+  ]
+}

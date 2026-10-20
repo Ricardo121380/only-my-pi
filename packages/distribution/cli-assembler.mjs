@@ -5,7 +5,7 @@ import { execFile as callback } from "node:child_process";
 import { promisify } from "node:util";
 import { createDeterministicTarGzip, hashFile } from "../release-stack/deterministic-archive.mjs";
 import { extractVerifiedTarGzip } from "../release-stack/safe-extract.mjs";
-import { validateDistributionManifest, hashDistributionTree } from "./runtime.mjs";
+import { NODE_RANGE, validateDistributionManifest, hashDistributionTree } from "./runtime.mjs";
 import { homebrewFormula } from "./homebrew.mjs";
 
 const PLATFORMS = ["darwin-arm64", "linux-arm64", "linux-x64"];
@@ -71,7 +71,7 @@ export async function assemblePublicCli({ rootDir, platformDirectories, outputRo
     await fs.mkdir(cli);
     const metadata = { name: "only-my-pi", version, private: false, type: "module", license: "MIT",
       description: "Guarded terminal coding agent built on Pi (Public Preview)", bin: { omp: "loader.mjs" },
-      engines: { node: ">=22.19.0" }, os: ["darwin", "linux"], cpu: ["arm64", "x64"],
+      engines: { node: NODE_RANGE }, os: ["darwin", "linux"], cpu: ["arm64", "x64"],
       optionalDependencies: Object.fromEntries(Object.values(platforms).map(({ name }) => [name, version])),
       scripts: { postinstall: "node loader.mjs --verify-install" },
       repository: { type: "git", url: "git+https://github.com/Ricardo121380/only-my-pi.git" },
@@ -81,7 +81,7 @@ export async function assemblePublicCli({ rootDir, platformDirectories, outputRo
     for (const [source, target] of [["distribution/npm/loader.mjs", "loader.mjs"], ["packages/bootstrap/resource-hash.mjs", "resource-hash.mjs"], ["LICENSE", "LICENSE"]])
       await fs.copyFile(path.join(rootDir, source), path.join(cli, target));
     await fs.chmod(path.join(cli, "loader.mjs"), 0o755);
-    await fs.writeFile(path.join(cli, "README.md"), `# only-my-pi ${version} Public Preview\n\nmacOS 14+ Apple Silicon and Linux glibc x64/arm64. Requires Node >=22.19.0 and Git; Linux also requires bubblewrap, socat, ripgrep and a system policy permitting the strong sandbox.\n\n支持 macOS 14+ Apple Silicon 与 Linux glibc x64/arm64。需准备 Node >=22.19.0 和 Git；Linux 还需 bubblewrap、socat、ripgrep 及允许强沙箱的系统策略。\n\nConfigure models with \`omp admin pi\`, then run \`omp\` inside your project.\n\n[English](https://github.com/Ricardo121380/only-my-pi) · [中文](https://github.com/Ricardo121380/only-my-pi/blob/main/README.zh-CN.md)\n`);
+    await fs.writeFile(path.join(cli, "README.md"), `# only-my-pi ${version} Public Preview\n\nmacOS 14+ Apple Silicon and Linux glibc x64/arm64. Requires Node ${NODE_RANGE} and Git; Linux also requires bubblewrap, socat, ripgrep and a system policy permitting the strong sandbox.\n\n支持 macOS 14+ Apple Silicon 与 Linux glibc x64/arm64。需准备 Node ${NODE_RANGE} 和 Git；Linux 还需 bubblewrap、socat、ripgrep 及允许强沙箱的系统策略。\n\nConfigure models with \`omp admin pi\`, then run \`omp\` inside your project.\n\n[English](https://github.com/Ricardo121380/only-my-pi) · [中文](https://github.com/Ricardo121380/only-my-pi/blob/main/README.zh-CN.md)\n`);
     const filename = `only-my-pi-${version}.tgz`;
     await createDeterministicTarGzip({ rootDir: cli, outputPath: path.join(outputRoot, filename), rootName: "package" });
     const cliArtifact = { name: "only-my-pi", version, filename, sha256: await hashFile(path.join(outputRoot, filename)) };

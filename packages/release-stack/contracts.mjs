@@ -15,6 +15,24 @@ export const EMBEDDED_NODE_VERSION = "24.19.0";
 export const EMBEDDED_NODE_ARCHIVE_SHA256 = "sha256:8294b7aa9b03997481c06babf1e8b270c859358f27da57a11509afe537ac381d";
 export const CONTROLLED_PI_VERSION = "0.84.3";
 export const CONTROLLED_PI_INTEGRITY = "sha512-Yr2p9PubrbFZmYEPYI+C8KmZP9xlFuLDnAG64RtU0ZDgrdiXYWa+y7WGyJO5OlqPliOkVCMd9IzVszO3/t0D0w==";
+// Keep the historical default stable: candidate staging must opt in explicitly.
+export const CANDIDATE_PI_VERSION = "0.85.1";
+export const PI110_VERSION = "1.1.0";
+export const PI130_VERSION = "1.3.0";
+export const PI_RUNTIME_CONTRACTS = Object.freeze({
+  [CONTROLLED_PI_VERSION]: Object.freeze({ version: CONTROLLED_PI_VERSION, integrity: CONTROLLED_PI_INTEGRITY }),
+  [CANDIDATE_PI_VERSION]: Object.freeze({ version: CANDIDATE_PI_VERSION, integrity: "sha512-FGRN+OHbWaefBPGaTggAdLjrIHW+s2PzLyglz/5dfLzb9of7uuXMXYC0fJIeZTw+shS32o2cuQ9jF7YSDuL/oQ==" }),
+  [PI110_VERSION]: Object.freeze({ version: PI110_VERSION, integrity: "sha512-SeEi/4hdcHNgA9UWlefZl7ZZpm3dzi2OoxNjDHsBJ9o298LNOtbL4DGKgitlEj6uCTccvtw6f2hlCkTPVJ2RXg==" }),
+  [PI130_VERSION]: Object.freeze({ version: PI130_VERSION, integrity: "sha512-V/WoCjA2hQSe3QLWIUB24cTRdtEdeLiIzkDqU5RMXV6VWuD+KGZnzVBMhglwdnQTySkehZsjt8a3g6Jd2g4nnw==" }),
+});
+
+export function piRuntimeContract(version = CONTROLLED_PI_VERSION) {
+  if (typeof version !== "string" || !Object.hasOwn(PI_RUNTIME_CONTRACTS, version)) fail("STACK_PI_IDENTITY_INVALID", "unknown controlled Pi version");
+  return PI_RUNTIME_CONTRACTS[version];
+}
+
+export const PRIVATE_RUNTIME_CONTRACTS = Object.freeze({ "0.85.1": "phase1-pi0851", "1.1.0": "pi110-v1", "1.3.0": "pi130-v1" });
+export function isPrivateStack(stack) { return Object.hasOwn(PRIVATE_RUNTIME_CONTRACTS, stack?.runtime?.pi?.version ?? ""); }
 
 export const PUBLIC_STACK_PACKAGES = Object.freeze([
   ["@narumitw/pi-plan-mode", "0.55.2"],
@@ -93,7 +111,7 @@ export function stackStateDigest(document) {
   return digestWithout(document, ["$schema", "stateDigest"]);
 }
 
-function assertPackageTuple(packages, { code = "STACK_MANIFEST_PACKAGE_TUPLE_INVALID", requireEvidence = true } = {}) {
+function assertPackageTuple(packages, { code = "STACK_MANIFEST_PACKAGE_TUPLE_INVALID", requireEvidence = true, privateStack = false } = {}) {
   if (!Array.isArray(packages) || packages.length !== PUBLIC_STACK_PACKAGES.length) fail(code, "public stack must contain exactly nine top-level packages");
   const seen = new Set();
   for (const entry of packages) {
@@ -108,7 +126,7 @@ function assertPackageTuple(packages, { code = "STACK_MANIFEST_PACKAGE_TUPLE_INV
       lifecycleNames.add(script?.name);
       return valid;
     });
-    if (requireEvidence && (!SRI.test(entry.integrity ?? "") || !SHA256.test(entry.treeDigest ?? "") || entry.binding !== "external" || entry.owner !== "user" || !lifecycleValid)) {
+    if (requireEvidence && (!SRI.test(entry.integrity ?? "") || !SHA256.test(entry.treeDigest ?? "") || entry.binding !== (privateStack ? "stack" : "external") || entry.owner !== (privateStack ? "only-my-pi" : "user") || !lifecycleValid)) {
       fail(code, `package evidence or ownership is invalid: ${entry.name}`);
     }
   }
@@ -119,7 +137,9 @@ function assertPackageTuple(packages, { code = "STACK_MANIFEST_PACKAGE_TUPLE_INV
 
 export function validateStackManifest(input) {
   rejectSensitiveShape(input);
-  exactKeys(input, ["$schema", "formatVersion", "kind", "stackId", "sourceCommit", "onlyMyPi", "platform", "runtime", "externalPackages", "externalTreeDigest", "transitiveLedgerSha256", "generationTargetGraphDigest", "defaultPreset", "overlays", "capabilityCeiling", "policy", "removalPolicy"], "stack manifest", "STACK_MANIFEST_SCHEMA_INVALID");
+  const privateStack = isPrivateStack(input);
+  exactKeys(input, ["$schema", "formatVersion", "kind", "stackId", "sourceCommit", "onlyMyPi", "platform", "runtime", "externalPackages", "externalTreeDigest", "transitiveLedgerSha256", "generationTargetGraphDigest", "defaultPreset", "overlays", "capabilityCeiling", "policy", "removalPolicy", ...(privateStack ? ["privateRuntimeDigest"] : [])], "stack manifest", "STACK_MANIFEST_SCHEMA_INVALID");
+  if (privateStack && (!SHA256.test(input.privateRuntimeDigest ?? "") || input.onlyMyPi?.version !== DIRECT_AGENT_VERSION)) fail("STACK_PRIVATE_RUNTIME_INVALID", "candidate requires a bound private runtime and current OMP product");
   if (input.$schema !== "../../schemas/stack-manifest-v1.schema.json" || input.formatVersion !== 1 || input.kind !== "only-my-pi-stack-manifest") fail("STACK_MANIFEST_IDENTITY_INVALID", "stack manifest identity is invalid");
   if (!COMMIT.test(input.sourceCommit ?? "") || !SHA256.test(input.stackId ?? "") || input.stackId !== stackManifestDigest(input)) fail("STACK_MANIFEST_DIGEST_INVALID", "stack manifest digest is invalid");
   exactKeys(input.onlyMyPi, ["version", "artifactSha256"], "only-my-pi identity", "STACK_MANIFEST_SCHEMA_INVALID");
@@ -133,12 +153,13 @@ export function validateStackManifest(input) {
   exactKeys(input.runtime.node, ["version", "archiveName", "archiveSha256", "license", "treeDigest"], "Node runtime", "STACK_MANIFEST_SCHEMA_INVALID");
   if (input.runtime.node.version !== EMBEDDED_NODE_VERSION || input.runtime.node.archiveName !== "node-v24.19.0-darwin-arm64.tar.gz" || input.runtime.node.archiveSha256 !== EMBEDDED_NODE_ARCHIVE_SHA256 || input.runtime.node.license !== "MIT" || !SHA256.test(input.runtime.node.treeDigest ?? "")) fail("STACK_NODE_IDENTITY_INVALID", "embedded Node identity is invalid");
   exactKeys(input.runtime.pi, ["name", "version", "integrity", "treeDigest", "entry"], "Pi runtime", "STACK_MANIFEST_SCHEMA_INVALID");
-  if (input.runtime.pi.name !== "@earendil-works/pi-coding-agent" || input.runtime.pi.version !== CONTROLLED_PI_VERSION || input.runtime.pi.integrity !== CONTROLLED_PI_INTEGRITY || !SHA256.test(input.runtime.pi.treeDigest ?? "") || input.runtime.pi.entry !== "dist/bundle/cli.js") fail("STACK_PI_IDENTITY_INVALID", "controlled Pi identity is invalid");
-  assertPackageTuple(input.externalPackages);
+  const piContract = piRuntimeContract(input.runtime.pi.version);
+  if (input.runtime.pi.name !== "@earendil-works/pi-coding-agent" || input.runtime.pi.integrity !== piContract.integrity || !SHA256.test(input.runtime.pi.treeDigest ?? "") || input.runtime.pi.entry !== "dist/bundle/cli.js") fail("STACK_PI_IDENTITY_INVALID", "controlled Pi identity is invalid");
+  assertPackageTuple(input.externalPackages, { privateStack });
   if (![input.externalTreeDigest, input.transitiveLedgerSha256, input.generationTargetGraphDigest].every((value) => SHA256.test(value ?? ""))) fail("STACK_MANIFEST_EVIDENCE_INVALID", "stack manifest evidence digest is invalid");
   if (input.defaultPreset !== "daily" || canonicalJson(input.overlays) !== canonicalJson(productBoundary.overlays)) fail("STACK_PROFILE_INVALID", "public stack profile or overlays drifted");
   if (canonicalJson(input.capabilityCeiling) !== canonicalJson(productBoundary.capabilityCeiling)) fail("STACK_CAPABILITY_INVALID", "public stack capability ceiling does not match its product version");
-  if (canonicalJson(input.policy) !== canonicalJson({ lifecycleScriptsDisabled: true, networkDuringApply: false, externalOwner: "user", webConfirmation: "PER_RUN", browserCookies: false })) fail("STACK_POLICY_INVALID", "stack security policy drifted");
+  if (canonicalJson(input.policy) !== canonicalJson({ lifecycleScriptsDisabled: true, networkDuringApply: false, externalOwner: privateStack ? "only-my-pi" : "user", webConfirmation: "PER_RUN", browserCookies: false })) fail("STACK_POLICY_INVALID", "stack security policy drifted");
   if (canonicalJson(input.removalPolicy) !== canonicalJson({ preservePreexisting: true, removeOnlyVerifiedProvisioned: true, preserveUserData: true })) fail("STACK_REMOVAL_POLICY_INVALID", "stack removal policy drifted");
   rejectSensitiveShape(input);
   return Object.freeze(structuredClone(input));
@@ -198,7 +219,7 @@ export function validateReleaseIndex(input) {
   if (!SHA256.test(input.stackManifestSha256 ?? "") || !SHA256.test(input.protectedEvidenceDigest ?? "") || input.bootstrap?.asset !== "install.sh" || !SHA256.test(input.bootstrap?.sha256 ?? "")) fail("RELEASE_INDEX_EVIDENCE_INVALID", "release index evidence is incomplete");
   const assets = Object.values(input.assets ?? {});
   if (assets.length !== 6 || new Set(assets.map((entry) => entry?.name)).size !== 6 || assets.some((entry) => !Number.isSafeInteger(entry?.bytes) || entry.bytes < 1 || entry.bytes > 2_147_483_648 || !SHA256.test(entry?.sha256 ?? ""))) fail("RELEASE_ASSETS_INVALID", "release assets are invalid or duplicated");
-  if (input.supportedStack?.nodeVersion !== EMBEDDED_NODE_VERSION || input.supportedStack?.piVersion !== CONTROLLED_PI_VERSION || input.supportedStack?.packageTupleDigest !== packageTupleDigest()) fail("RELEASE_STACK_TUPLE_INVALID", "release stack tuple is invalid");
+  if (input.supportedStack?.nodeVersion !== EMBEDDED_NODE_VERSION || typeof input.supportedStack?.piVersion !== "string" || !Object.hasOwn(PI_RUNTIME_CONTRACTS, input.supportedStack.piVersion) || input.supportedStack?.packageTupleDigest !== packageTupleDigest()) fail("RELEASE_STACK_TUPLE_INVALID", "release stack tuple is invalid");
   if (!["RC", "PUBLISHED"].includes(input.status)) fail("RELEASE_STATUS_INVALID", "release status is invalid");
   rejectSensitiveShape(input);
   return Object.freeze(structuredClone(input));
@@ -211,9 +232,10 @@ export function validateStackState(input) {
   if (input.status !== "REMOVED" && ![input.activeStack, input.manifestDigest].every((value) => SHA256.test(value ?? ""))) fail("STACK_STATE_ACTIVE_INVALID", "active stack identity is missing");
   if (input.status === "REMOVED" && input.activeStack !== null) fail("STACK_STATE_REMOVED_INVALID", "removed state cannot retain an active stack");
   for (const key of ["node", "pi", "onlyMyPi", "generation", "cliArtifact"]) if (typeof input[key]?.version !== "string" || !SHA256.test(input[key]?.digest ?? "")) fail("STACK_STATE_ASSET_INVALID", `stack state ${key} identity is invalid`);
-  if (!SHA256.test(input.externalTree?.digest ?? "") || !["CANONICAL_RELEASE_TREE", "BORROWED_PREFLIGHT_SNAPSHOT"].includes(input.externalTree?.verificationBasis)) fail("STACK_STATE_EXTERNAL_TREE_INVALID", "stack state external tree identity is invalid");
+  const privateStack = isPrivateStack({ runtime: { pi: input.pi } });
+  if (!SHA256.test(input.externalTree?.digest ?? "") || !(privateStack ? ["STACK_PRIVATE"] : ["CANONICAL_RELEASE_TREE", "BORROWED_PREFLIGHT_SNAPSHOT"]).includes(input.externalTree?.verificationBasis)) fail("STACK_STATE_EXTERNAL_TREE_INVALID", "stack state external tree identity is invalid");
   assertPackageTuple(input.externalPackages, { code: "STACK_STATE_PACKAGE_TUPLE_INVALID", requireEvidence: false });
-  for (const entry of input.externalPackages) if (entry.binding !== "external" || entry.owner !== "user" || !DISPOSITIONS.has(entry.assetDisposition) || !SHA256.test(entry.treeDigest ?? "")) fail("STACK_STATE_OWNERSHIP_INVALID", `stack state ownership is invalid: ${entry.name}`);
+  for (const entry of input.externalPackages) if (entry.binding !== (privateStack ? "stack" : "external") || entry.owner !== (privateStack ? "only-my-pi" : "user") || !(privateStack ? entry.assetDisposition === "STACK_PRIVATE" : DISPOSITIONS.has(entry.assetDisposition)) || !SHA256.test(entry.treeDigest ?? "")) fail("STACK_STATE_OWNERSHIP_INVALID", `stack state ownership is invalid: ${entry.name}`);
   if (!SHA256.test(input.stateDigest ?? "") || input.stateDigest !== stackStateDigest(input)) fail("STACK_STATE_DIGEST_INVALID", "stack state digest is invalid");
   rejectSensitiveShape(input);
   return Object.freeze(structuredClone(input));

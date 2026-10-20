@@ -38,7 +38,7 @@
       "required": ["nodeVersion", "piVersion", "packageTupleDigest"],
       "properties": {
         "nodeVersion": { "const": "24.19.0" },
-        "piVersion": { "const": "0.84.3" },
+        "piVersion": { "enum": ["0.84.3", "0.85.1", "1.1.0"] },
         "packageTupleDigest": { "$ref": "#/$defs/sha256" }
       }
     },

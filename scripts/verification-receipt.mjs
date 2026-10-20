@@ -47,7 +47,13 @@ function boundedFailureDiagnostic(stderr) {
   return `${match[1]}:${message}`;
 }
 
-const TEST_GATE_IDS = new Set(["test-unit", "test-contract", "test-integration", "full-tests"]);
+const TEST_GATE_IDS = new Set([
+  "test-unit", "test-contract", "test-integration", "full-tests",
+  "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D15",
+  "U1", "U2", "U3", "U4", "U5", "U6", "U7", "U8",
+  "Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9", "Q10", "Q12",
+  "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10",
+]);
 
 function sanitizedTestLabel(value) {
   return String(value)
@@ -65,23 +71,67 @@ export function boundedTestFailureDiagnostic(stdout, stderr) {
     .split(/\r?\n/u);
   const failures = [];
   const codes = [];
+  const frames = [];
+  const operators = [];
+  const kinds = [];
+  const timeouts = [];
+  const coverage = [];
+  const tapReporter = lines.some(line => /^\s*(?:TAP version 13$|not ok \d+ - )/u.test(line));
+  let diagnosticIndent;
   const remember = (target, value, maximum) => {
     const sanitized = sanitizedTestLabel(value);
     if (sanitized && !target.includes(sanitized) && target.length < maximum) target.push(sanitized);
   };
   for (const line of lines) {
-    const tap = /^\s*not ok \d+ - (.+)$/u.exec(line);
+    const yamlStart = /^(\s*)---$/u.exec(line);
+    if (yamlStart) diagnosticIndent = yamlStart[1];
+    if (/^\s*\.\.\.$/u.test(line)) diagnosticIndent = undefined;
+    const tap = /^(\s*)not ok \d+ - (.+)$/u.exec(line);
     const spec = /^\s*✖\s+(.+?)(?:\s+\([\d.]+ms\))?$/u.exec(line);
-    if (tap?.[1]) remember(failures, tap[1], 16);
+    if (tap) {
+      // A bounded/clipped TAP excerpt may omit its header and YAML marker.
+      diagnosticIndent = tap[1] + "  ";
+      remember(failures, tap[2], 16);
+    }
     else if (spec?.[1] && spec[1] !== "failing tests:") remember(failures, spec[1], 16);
-    const code = /^\s*(?:code|failureType):\s*['"]?([A-Z][A-Z0-9_-]{1,127})['"]?\s*$/u.exec(line);
+    // Only error fields at the reporter's diagnostic root are metadata.
+    // An assertion's actual/expected object can itself contain a secret code.
+    const rootField = tapReporter ? diagnosticIndent !== undefined && line.startsWith(diagnosticIndent) && !/^\s/u.test(line.slice(diagnosticIndent.length)) : /^ {4}\S/u.test(line);
+    const code = rootField && /^\s*code:\s*['"]?([A-Z][A-Z0-9_-]{1,127})['"]?,?\s*$/u.exec(line);
     if (code?.[1]) remember(codes, code[1], 16);
+    const kind = rootField && /^\s*failureType:\s*['"]?(testCodeFailure|testTimeoutFailure|cancelledByParent|subtestsFailed|hookFailed)['"]?,?\s*$/u.exec(line);
+    if (kind?.[1]) remember(kinds, kind[1], 5);
+    const timeout = /\btest timed out after (\d{1,9})ms\b/u.exec(line);
+    if (timeout) remember(timeouts, `${timeout[1]}ms`, 8);
+    // Keep repository test coordinates, never absolute paths, assertion values
+    // or arbitrary error messages from provider/extension output.
+    const frame = /^\s+(?:at\s+)?(?:async\s+)?[\w$.<>]+\s+\((?:file:\/\/)?[^)\r\n]*\/(tests\/[A-Za-z0-9_.-]+\.test\.mjs:\d+:\d+)\)$/u.exec(line);
+    if (frame?.[1]) remember(frames, frame[1], 8);
+    const operator = /^\s*operator:\s*['"]?(strictEqual|notStrictEqual|deepStrictEqual|notDeepStrictEqual|match|doesNotMatch|fail|ok|throws|doesNotThrow|rejects|doesNotReject)['"]?,?\s*$/u.exec(line);
+    if (operator?.[1]) remember(operators, operator[1], 8);
+    const threshold = /^\s*(?:ℹ\s*|#\s*)?Error: (\d+(?:\.\d+)?)% (line|branch|function) coverage does not meet threshold of (\d+(?:\.\d+)?)%\.\s*$/u.exec(line);
+    if (threshold) remember(coverage, `${threshold[2]}:${threshold[1]}<${threshold[3]}`, 3);
   }
   const parts = [
-    failures.length > 0 ? `tests=${failures.join(" | ")}` : "tests=UNPARSEABLE",
+    // Reserve space for the cause even when many long test labels fail.
+    failures.length > 0 ? `tests=${failures.join(" | ").slice(0, 500)}` : "tests=UNPARSEABLE",
     ...(codes.length > 0 ? [`codes=${codes.join(",")}`] : []),
+    ...(kinds.length > 0 ? [`kinds=${kinds.join(",")}`] : []),
+    ...(timeouts.length > 0 ? [`timeouts=${timeouts.join(",")}`] : []),
+    ...(frames.length > 0 ? [`frames=${frames.join(",")}`] : []),
+    ...(operators.length > 0 ? [`operators=${operators.join(",")}`] : []),
+    ...(coverage.length > 0 ? [`coverage=${coverage.join(",")}`] : []),
   ];
   return `TEST_FAILURE:${parts.join(";")}`.slice(0, 1200);
+}
+
+export function formatGateProgress(gate, diagnostic) {
+  let output = `${gate.status} ${gate.id} (${gate.durationMs} ms)\n`;
+  if (gate.status === "FAIL") {
+    output += `failure ${gate.id}: exitCode=${gate.exitCode} signal=${gate.signal} timedOut=${gate.timedOut} outputLimitExceeded=${gate.outputLimitExceeded}\n`;
+  }
+  if (diagnostic) output += `diagnostic ${gate.id}: ${diagnostic}\n`;
+  return output;
 }
 
 function exactKeys(value, allowed, label) {
@@ -179,11 +229,13 @@ function extractFreshEvidence(stdout) {
     return null;
   }
   const safe = value
-    && value.formatVersion === 1
+    // Preserve historical v1 receipts; current v2 smoke reads the installed
+    // runtime identity instead of repeating the old 0.84.1 label.
+    && ((value.formatVersion === 1 && value.piVersion === "0.84.1")
+      || (value.formatVersion === 2 && value.piVersion === "1.3.0"))
     && value.status === "PASS"
     && FULL_SHA.test(value.sourceCommit ?? "")
     && typeof value.nodeVersion === "string"
-    && value.piVersion === "0.84.1"
     && SHA256.test(`sha256:${value.tarball?.sha256 ?? ""}`)
     && SHA512_SRI.test(value.tarball?.integrity ?? "")
     && value.install?.scripts === "disabled"
@@ -376,7 +428,7 @@ export async function runReleaseVerification({
       freshTarball: gates.find((gate) => gate.id === "test-e2e")?.evidence ?? null,
       compatibility: {
         node: process.version,
-        pi: "0.84.1",
+        pi: gates.find((gate) => gate.id === "test-e2e")?.evidence?.piVersion ?? null,
         platform: process.platform,
         arch: process.arch,
       },
@@ -454,7 +506,7 @@ export function validateReleaseReceipt(receipt, manifest, { expectedSourceCommit
   if (!Number.isFinite(Date.parse(receipt.startedAt)) || !Number.isFinite(Date.parse(receipt.completedAt))) throw new Error("release receipt timestamps are invalid");
   if (Date.parse(receipt.completedAt) < Date.parse(receipt.startedAt)) throw new Error("release receipt completedAt precedes startedAt");
   validateFreshEvidence(receipt.evidence?.freshTarball, receipt.sourceCommit);
-  if (receipt.evidence?.compatibility?.pi !== "0.84.1") throw new Error("release receipt Pi compatibility evidence is invalid");
+  if (receipt.evidence?.compatibility?.pi !== receipt.evidence.freshTarball.piVersion) throw new Error("release receipt Pi compatibility evidence is invalid");
   if (receipt.privacy?.rawOutputStored !== false || receipt.privacy?.hostPathsStored !== false || receipt.privacy?.credentialsRead !== false) {
     throw new Error("release receipt privacy boundary is invalid");
   }

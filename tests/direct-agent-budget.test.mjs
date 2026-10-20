@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
-import { EventEmitter } from "node:events";
+import { EventEmitter, once } from "node:events";
+import { realpathSync } from "node:fs";
 import test from "node:test";
 import { DIRECT_DELEGATION_EVENTS as EVENTS, createDirectCodingOrchestrator } from "../packages/direct-agent/orchestration.mjs";
 import { DirectSessionController } from "../extensions/omp-direct/runtime.mjs";
 
 const USAGE = { input: 5, output: 5, cacheRead: 0, cacheWrite: 0, cost: 0.001, turns: 1, toolCalls: 1, durationMs: 10 };
+const PROJECT_ROOT = realpathSync("/tmp");
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 function fixture(t, budget = {}, options = {}) {
@@ -13,14 +15,18 @@ function fixture(t, budget = {}, options = {}) {
   const cancellations = [];
   events.on(EVENTS.request, (request) => requests.push(request));
   events.on(EVENTS.cancel, (request) => cancellations.push(request));
+  let writerRecord;
   const orchestrator = createDirectCodingOrchestrator({
     configRoot: "/tmp/omp-direct-budget",
-    getContext: () => ({ cwd: "/tmp/project", model: { provider: "test", id: "test" }, mode: "print" }),
+    getContext: () => ({ cwd: PROJECT_ROOT, model: { provider: "test", id: "test" }, mode: "print" }),
     transport: {
       subscribe(name, handler) { events.on(name, handler); return () => events.off(name, handler); },
       emit(name, value) { events.emit(name, value); },
     },
     budget,
+    recordStore: { async begin({ id, directWriter }) { writerRecord = { runId: id, status: "planned", directWriter }; return writerRecord; }, async update(_id, patch) { writerRecord = { ...writerRecord, ...patch }; return writerRecord; } },
+    contextProvider: async () => ({ sessionId: "session", repository: { root: PROJECT_ROOT, head: "a".repeat(40) }, configurationDigest: `sha256:${"c".repeat(64)}` }),
+    verifyRealWorkspace: async () => ({ status: "BLOCKED", code: "WRITER_REAL_GATE_DENIED" }),
     ...options,
   });
   t.after(() => orchestrator.dispose());
@@ -199,7 +205,7 @@ test("per-child and cumulative returned-result byte limits reject oversized resu
   }
 });
 
-test("an exhausted writer budget cannot reach verification or modify the real workspace", async (t) => {
+test("an exhausted writer budget cannot reach verification or modify the real workspace", { timeout: 5000 }, async (t) => {
   let captured = false;
   let applied = false;
   const f = fixture(t, { maxCostUsd: 0.001 }, {
@@ -209,23 +215,24 @@ test("an exhausted writer budget cannot reach verification or modify the real wo
       apply: async () => { applied = true; },
     },
   });
+  const dispatched = once(f.events, EVENTS.request);
   const rejected = assert.rejects(f.orchestrator.delegateWriter({
     task: "fix", plan: "fix and test", scope: ["app.js"], approvedScope: ["app.js"],
     baseline: { status: "GIT_REPOSITORY", head: "a".repeat(40), paths: [] },
   }), { code: "DIRECT_CHILD_BUDGET_EXHAUSTED", resource: "costUsd" });
-  await flush();
-  f.respond(f.requests[0], { result: { kind: "structured", value: { status: "completed", changedPaths: ["app.js"], summary: "fixed", verification: [], followUp: [] } } });
+  const [request] = await dispatched;
+  f.respond(request, { result: { kind: "structured", value: { status: "completed", changedPaths: ["app.js"], summary: "fixed", verification: [], followUp: [] } } });
   await rejected;
   assert.equal(captured, false);
   assert.equal(applied, false);
 });
 
-test("the shared deadline is rechecked after writer verification and review before integration", async (t) => {
+test("the shared deadline is rechecked after writer verification and review before integration", { timeout: 5000 }, async (t) => {
   t.mock.timers.enable({ apis: ["Date", "setTimeout"], now: 1000 });
   let captures = 0;
   let applied = false;
   const head = "a".repeat(40);
-  const patch = { status: "READY", sha256: `sha256:${"b".repeat(64)}`, changedPaths: ["app.js"], patchPath: "/tmp/omp-direct-budget/patch.diff" };
+  const patch = { status: "READY", sha256: `sha256:${"b".repeat(64)}`, changedPaths: ["app.js"], patchPath: "/tmp/omp-direct-budget/only-my-pi/runs/fixture/artifacts/fixture-writer-1.patch" };
   const f = fixture(t, { maxWallSeconds: 1 }, {
     cloneService: {
       create: async () => ({ cloneRoot: "/tmp/clone", patchRoot: "/tmp/omp-direct-budget" }),
@@ -237,14 +244,16 @@ test("the shared deadline is rechecked after writer verification and review befo
     },
     verifyWriter: async () => ({ status: "PASS", patchDigest: patch.sha256, baseCommit: head, results: [{ status: "PASS", exitCode: 0, killed: false }] }),
   });
+  const dispatched = once(f.events, EVENTS.request);
   const rejected = assert.rejects(f.orchestrator.delegateWriter({
     task: "fix", plan: "fix and test", scope: ["app.js"], approvedScope: ["app.js"],
     baseline: { status: "GIT_REPOSITORY", head, paths: [] },
   }), { code: "DIRECT_CHILD_BUDGET_EXHAUSTED", resource: "wallTime" });
-  await flush();
-  f.respond(f.requests[0], { result: { kind: "structured", value: { status: "completed", changedPaths: ["app.js"], summary: "fixed", verification: [], followUp: [] } } });
-  await flush();
-  f.respond(f.requests[1], { result: { kind: "structured", value: { verdict: "pass", findings: [], tested: [], unverified: [] } } });
+  const [writer] = await dispatched;
+  const reviewing = once(f.events, EVENTS.request);
+  f.respond(writer, { result: { kind: "structured", value: { status: "completed", changedPaths: ["app.js"], summary: "fixed", verification: [], followUp: [] } } });
+  const [reviewer] = await reviewing;
+  f.respond(reviewer, { result: { kind: "structured", value: { verdict: "pass", findings: [], tested: [], unverified: [] } } });
   await rejected;
   assert.equal(applied, false);
 });
@@ -257,7 +266,7 @@ test("agents status exposes observed child usage and explicitly excludes the mai
     pi: { getActiveTools: () => [], setActiveTools() {} },
   });
   controller.attachOrchestrator(f.orchestrator);
-  controller.agentsCommand({ ui: { notify: (message) => notifications.push(message) } });
+  await controller.agentsCommand({ ui: { notify: (message) => notifications.push(message) } });
   assert.match(notifications[0], /main Agent usage is separate/u);
   assert.match(notifications[0], /Reported tokens: 0\/50000/u);
   assert.equal(f.orchestrator.snapshot().budget.mainAgentIncluded, false);

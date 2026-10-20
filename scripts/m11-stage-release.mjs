@@ -20,10 +20,10 @@ function parse(argv) {
     if (token === "--stage") result.stage = true;
     else if (token === "--yes") result.yes = true;
     else if (token === "--json") result.json = true;
-    else if (["--source-commit", "--output"].includes(token)) {
+    else if (["--source-commit", "--output", "--pi-version"].includes(token)) {
       const value = argv[index + 1];
       if (!value || value.startsWith("--")) fail(`${token} requires a value`);
-      result[token === "--source-commit" ? "sourceCommit" : "outputRoot"] = value;
+      result[{ "--source-commit": "sourceCommit", "--output": "outputRoot", "--pi-version": "piVersion" }[token]] = value;
       index += 1;
     } else fail(`unsupported argument: ${token}`);
   }

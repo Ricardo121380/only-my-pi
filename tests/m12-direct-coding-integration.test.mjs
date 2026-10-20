@@ -59,7 +59,7 @@ function context(root) {
     model: { provider: "fixture", id: "model" },
     scopedModels: [],
     modelRegistry: { getAvailable: () => [] },
-    sessionManager: { getEntries: () => [] },
+    sessionManager: { getEntries: () => [], getSessionId: () => "m12-integration-session" },
     shutdown: () => {},
     ui: {
       select: async (_title, options) => options[0],

@@ -1,0 +1,71 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-libexif-generation-materials",
+  "issue": 20,
+  "task": "G2-00-02",
+  "requirements": ["US-006", "US-007", "US-010"],
+  "purpose": "FIXED_CSS_CORRESPONDENCE_AND_GENERATION_LEDGER_ONLY",
+  "priorReportSha256": "sha256:809d8a44bd25092ac911b82f42f7665ba990d513ae8f15e03e36aa13c1baa98c",
+  "priorSupplementSha256": "sha256:34c1a90f44e896943ce2043b23a6d07041eb9afb995f91f3c51aa7259a94ed80",
+  "priorSupplementFiles": 239,
+  "originInventorySha256": "sha256:a356d7f9a1d60da139879a7dde378ff88ff15d3f0da8349e400e91968778fc1d",
+  "originFiles": 104,
+  "documentationFiles": 106,
+  "retainedSourcePages": 19,
+  "retainedAssetBindings": 9,
+  "remainingGeneratedFiles": 63,
+  "doxygen": {
+    "version": "1.16.1",
+    "commit": "669aeeefca743c148e2d935b3d3c69535c7491e6",
+    "sourceBlobVerification": "REQUIRED",
+    "signatureVerification": "NOT_RUN"
+  },
+  "css": {
+    "name": "doxygen.css",
+    "bytes": 55162,
+    "matchedConfiguration": {
+      "HTML_COLORSTYLE": "AUTO_LIGHT",
+      "HTML_COLORSTYLE_HUE": 220,
+      "HTML_COLORSTYLE_SAT": 100,
+      "HTML_COLORSTYLE_GAMMA": 80,
+      "FULL_SIDEBAR_AND_TREEVIEW": false,
+      "TIMESTAMP": "NO",
+      "BUILD_DATE_USED": false,
+      "HTML_EXTRA_STYLESHEET": []
+    },
+    "historicalConfiguration": "UNVERIFIED",
+    "method": "FIXED_TEMPLATE_COMPOSITION_AND_COLOR_ALGORITHM_NOT_GENERATOR_EXECUTION"
+  },
+  "graphviz": {
+    "version": "14.1.2",
+    "commit": "397dc2a41288a28663c87b6e03438758b2f6d029",
+    "toolNotice": "EPL-1.0_FIXED_SOURCE_NOT_OUTPUT_LICENSE",
+    "historicalToolIdentity": "UNVERIFIED",
+    "exactDotInputs": "UNBOUND",
+    "outputs": [
+      "graph_legend.svg",
+      "struct__ExifContent__coll__graph.svg",
+      "struct__ExifData__coll__graph.svg",
+      "struct__ExifEntry__coll__graph.svg",
+      "struct__ExifMnoteData__coll__graph.svg"
+    ]
+  },
+  "footer": {
+    "candidate": "DEFAULT_DOXYGEN_SVG_FOOTER",
+    "retainedTemplate": "MAINTAINER_MODE_CONDITIONAL_CUSTOM_PNG_FOOTER",
+    "historicalMaintainerConfiguration": "UNVERIFIED"
+  },
+  "generatorExecution": "NOT_RUN",
+  "archiveRegeneration": "NOT_RUN",
+  "nativeBuild": "NOT_RUN",
+  "Full": "NOT_RUN",
+  "U2": "BLOCKED",
+  "licensingClosure": "INCOMPLETE",
+  "issueCompletion": "PARTIAL",
+  "pending": [
+    "Historical effective Doxyfile, maintainer substitutions and builder identity are not available in the fixed inputs.",
+    "The five exact historical dot inputs and Graphviz executable/environment are not bound; SVG markers alone are insufficient.",
+    "The 63 remaining generated HTML/JavaScript files have an input/rule/notice ledger, not a byte-exact generation proof.",
+    "Actual redistribution fulfillment and output-specific conditions remain unverified; generator source licenses do not classify outputs."
+  ]
+}

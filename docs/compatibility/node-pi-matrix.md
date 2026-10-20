@@ -1,5 +1,64 @@
 # Node and Pi compatibility matrix
 
+## Current Node policy — 2026-10-20
+
+The project now supports **Node 24 only**, with range **`>=24.19.0 <25`**.
+Development, CI, distribution builds and installation acceptance pin **24.19.0**;
+`.node-version`, the root package/lock and generated packages must agree.
+Node 22, Node 25+ and prereleases are not admitted by current CLI/runtime entry
+points. Users of Node 22 must upgrade before running the new candidate.
+
+This user-approved policy supersedes Node 22/24 matrix requirements in dated
+plans for future work. It does not rewrite completed tests, published assets,
+signed receipts or third-party package metadata. In particular:
+
+- `contracts/release/pi110/` and `pi130/` are digest-bound acquired input
+  provenance, including their original Node validation lanes. Their validators
+  keep those bytes and identities; current execution still requires Node 24.
+- `contracts/subagents/compatibility-matrix.json`, its v1 schema/fixtures and the
+  v1 evaluation corpus describe the historical Pi 0.84.1 compatibility evidence.
+  They remain inspectable and do not define today's supported runtime.
+- Historical distribution manifests may retain their original `nodeRange` for
+  inspection and rollback under Node 24. New manifests use the current range;
+  a historical range cannot authorize execution under Node 22 or Node 25.
+- CI retains all platform/product assertions for Node 24 and the Q10 clean-home
+  check. Only the Node 22 lane/installation assertion is retired. This change
+  does not claim new installed, Provider or release acceptance.
+
+The dated results below remain bound to their original sources and runtimes.
+
+## Historical PI130-02/03 private acceptance — 2026-10-19
+
+Exact Pi `1.3.0`, contract `pi130-v1`, private source `dd996352`; GP130-02 PASS, GP130-03 PASS. #77: CLOSED / completed，已独立回读. See [candidate identity, provenance and AC evidence](2026-10-18-pi-1.3.0-private-candidate-acceptance.md).
+
+| Platform / runtime | Applicable evidence | Result and limits |
+| --- | --- | --- |
+| macOS arm64 / Node22.19.0 | Complete source lane, same packaged Pi/SDK/WASM/native/MCP | PASS; 1683 PASS / 0 FAIL / 0 CANCELLED / 4 SKIP; the embedded OMP/Host contract requires actual Node24 |
+| macOS arm64 / Node24.19.0 | Candidate's embedded OMP/Host, four required installed flows, CLI/PTY/Ego and complete source lane | PASS; 1687 PASS / 0 FAIL / 0 CANCELLED / 0 SKIP; separate installed suite 8 PASS / 0 SKIP |
+| Linux arm64 / Node22.19.0 | Affected existing CLI and contracts from the same frozen source export | 52 PASS / 0 SKIP; actual Pi and independent receivers; no new Linux candidate/capability claim |
+| Linux arm64 / Node24.19.0 | Same Linux source/dependencies and affected scope | 52 PASS / 0 SKIP |
+| Historical Pi1.1.0 candidate | Existing `pi110-v1` byte/mode/material inspection by current verifier | PASS; preserved, no daily installation switch |
+| Daily installation / Full / external Provider | Separate evidence and authorization | Unchanged / NOT_RUN in #77 |
+
+The actual Mac is macOS27.0 arm64; the contract's minimum macOS14 is a declared floor, not a test of every release. Node22 does not impersonate the embedded Node24. Conditional installed SKIPs in its source lane do not complete #77: all four required flows have actual packaged Node24 results. #76 remains CLOSED/completed on its own `f5c7635` source, with 1679 PASS and four inherited installed SKIPs per lane. Historical rows below keep their dated meaning.
+
+## Historical identities — checked 2026-10-17
+
+| Identity | Version / state | Evidence and limits |
+| --- | --- | --- |
+| Published terminal Preview | OMP `v0.4.0-preview.2`; packaged Pi `0.84.3` is documented in the release guide | [Published release](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2), [README](../../README.md); release metadata was checked, binaries were not rerun |
+| Development dependency | Pi `1.1.0` | Exact manifest, lock and installed package metadata; not proof of the daily runtime |
+| Accepted controlled candidate | Pi `1.1.0` / `pi110-v1` | [Historical integrated acceptance](../plans/2026-10-13-pi110-integrated-acceptance.md); limited to that candidate and C/P/B scope |
+| Next stable-core target | Pi `1.3.0` | [Upgrade preflight](2026-10-17-pi-1.3.0-upgrade-preflight.md); new-version runtime acceptance NOT_RUN |
+| Supported development/CI matrix | Node `22.19.0` / `24.19.0` | Each new runtime change must pass its applicable checks; old rows do not certify new candidates |
+| User's current daily installation | UNKNOWN in this discussion | Must inspect the actual active stack before an installation change |
+
+See the [development blueprint](../plans/2026-10-17-product-direction-and-iteration-plan.md)
+for the upgrade policy and current milestones. Values below retain their
+historical M0–M10 scope.
+
+## Historical M0–M10 compatibility evidence
+
 | Runtime | Role | Evidence |
 | --- | --- | --- |
 | Node 22.19.0 | minimum supported/CI lane | Exact GitHub Actions lane; repository, topology, migration, and resource lifecycle gates pass |
@@ -25,5 +84,6 @@ The M9 candidate row is governed by
 machine-readable
 [`upstream-candidates.json`](../../contracts/compatibility/upstream-candidates.json).
 M10 supplied the separate reviewed promotion and real-root rollback/reapply
-evidence; Pi `0.84.3` is therefore the current Stable default while `0.84.1`
-remains the recorded historical rollback baseline.
+evidence; Pi `0.84.3` was the Stable default for that recorded M10 generation,
+while `0.84.1` remains its historical rollback baseline. Neither version is the
+current development target or a substitute for a fresh pre-upgrade active-stack check.

@@ -4,7 +4,7 @@
   "description": "Subagents successor release gates. It digest-pins every v1 gate, adds exact deterministic S5 gates, and represents live Provider/child/writer checks only as separately authorized protected evidence.",
   "base": {
     "path": "verification/release-gates-v1.json",
-    "digest": "sha256:f024cf936e658bf21b13119a62db136534365db3d2b6d145749883452deaaca6"
+    "digest": "sha256:2f64914b1ad79887207dc40927e6a63b5f499d53d1b1c43c45406afdf28f319c"
   },
   "policy": {
     "cwd": "repository-root",

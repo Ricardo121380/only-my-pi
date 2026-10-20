@@ -1,11 +1,15 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
 import { resolveBoundPackageRoot } from "../bootstrap/runtime-package-binding.mjs";
-import { loadDistribution, resolveDistributionPackage } from "../distribution/runtime.mjs";
+import { APP_ROOT, loadDistribution, resolveDistributionPackage } from "../distribution/runtime.mjs";
+import { loadIntrinsicDistribution } from "../distribution/intrinsic.mjs";
 import { OMP_CONTROL_COMMANDS } from "../control-service/cli-parser.mjs";
+import { McpCatalog, mcpToolNames } from "../mcp/catalog.mjs";
+import { usesNativePiTools } from "../upstream-compatibility/native-pi.mjs";
 
 const STACK_DIRECTORY = /^[a-f0-9]{64}$/u;
 const UUID = /^[a-f0-9-]{36}$/u;
@@ -66,7 +70,7 @@ const SAFE_VALUE_FLAGS = new Set([
   "--export",
 ]);
 
-const CONTROL_COMMANDS = new Set(OMP_CONTROL_COMMANDS);
+const CONTROL_COMMANDS = new Set([...OMP_CONTROL_COMMANDS, "classifier", "image"]);
 
 export const OMP_AGENT_USAGE = `only-my-pi - guarded terminal coding Agent
 
@@ -81,6 +85,10 @@ Daily Agent:
   omp -r                      Choose a session to resume
   omp -p "review this repo"   Run a read-only non-interactive task
   omp --model <provider/id>   Select a model without the startup picker
+  omp --tui-mode regular      Use the scrollback terminal (default: fullscreen)
+  omp web                     Open the local read-only workbench
+  omp web status              Inspect the local Host
+  omp web stop                Stop the Host and its tasks
 
 Management:
   omp admin status
@@ -146,15 +154,17 @@ export function classifyOmpInvocation(argv = []) {
   if (argv[0] === "--") {
     return Object.freeze({ kind: "agent", argv: argv.slice(1), compatibilityAlias: false });
   }
+  if (argv[0] === "web") return Object.freeze({ kind: "web", argv: argv.slice(1), compatibilityAlias: false });
   if (typeof argv[0] === "string" && CONTROL_COMMANDS.has(argv[0])) {
     return Object.freeze({ kind: "admin", argv: [...argv], compatibilityAlias: true });
   }
   return Object.freeze({ kind: "agent", argv: [...argv], compatibilityAlias: false });
 }
 
-export function inspectDirectAgentArguments(argv) {
+export function inspectDirectAgentArguments(argv, { interactive = true } = {}) {
   if (!Array.isArray(argv) || argv.length > 128) fail("OMP_ARGUMENTS_INVALID", "too many Agent arguments");
   let separator = false;
+  let tuiMode;
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     if (typeof token !== "string" || token.includes("\0") || token.includes("\n") || token.includes("\r")) {
@@ -173,6 +183,11 @@ export function inspectDirectAgentArguments(argv) {
       if (typeof value !== "string" || value.startsWith("-") || value.includes("\0") || value.includes("\n") || value.includes("\r")) {
         fail("OMP_AGENT_OPTION_INVALID", `${token} requires a bounded value`);
       }
+      if (token === "--tui-mode") {
+        if (tuiMode !== undefined || !["fullscreen", "regular"].includes(value))
+          fail("OMP_AGENT_OPTION_INVALID", "--tui-mode requires one fullscreen or regular value");
+        tuiMode = value;
+      }
       index += 1;
       continue;
     }
@@ -180,7 +195,7 @@ export function inspectDirectAgentArguments(argv) {
   }
 
   const outputMode = flagValue(argv, "--mode");
-  const headless = hasFlag(argv, "--print", "-p") || outputMode === "json" || outputMode === "rpc";
+  const headless = !interactive || hasFlag(argv, "--print", "-p") || outputMode === "json" || outputMode === "rpc";
   const explicitModel = hasFlag(argv, "--model");
   return Object.freeze({ headless, explicitModel });
 }
@@ -261,7 +276,11 @@ async function inspectStackRoot(candidate) {
 
 export async function resolveControlledStack({ packageRoot, homeDir = os.homedir(), stackRoot } = {}) {
   if (packageRoot) {
-    const distribution = await loadDistribution({ packageRoot });
+    // Revalidate each public admission. Intrinsic consumers in this process
+    // share that completed check instead of scanning the same stack again.
+    const distribution = path.resolve(packageRoot) === APP_ROOT
+      ? await loadIntrinsicDistribution({ refresh: true })
+      : await loadDistribution({ packageRoot });
     if (distribution) return distribution;
   }
   const candidates = [];
@@ -345,8 +364,17 @@ export async function resolveDirectExtensionSet({
   });
 }
 
-export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = process.env, randomUUIDImpl = randomUUID } = {}) {
-  const inspected = inspectDirectAgentArguments(argv ?? []);
+function nativeToolsForStack(stack) {
+  let manifest;
+  try { manifest = JSON.parse(readFileSync(path.join(stack.root, "pi/package.json"), "utf8")); }
+  catch { fail("OMP_PI_RUNTIME_UNSUPPORTED", "Pi package identity is unavailable"); }
+  if (manifest?.name !== "@earendil-works/pi-coding-agent") fail("OMP_PI_RUNTIME_UNSUPPORTED", "Pi package identity is invalid");
+  return usesNativePiTools(manifest.version);
+}
+
+export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames = [], env = process.env, randomUUIDImpl = randomUUID, interactive = true, runtimeOwner = "direct" } = {}) {
+  if (!["direct", "host"].includes(runtimeOwner)) fail("OMP_CONTROLLED_STACK_INVALID", "unknown runtime owner");
+  const inspected = inspectDirectAgentArguments(argv ?? [], { interactive });
   if (!stack || typeof stack.nodePath !== "string" || typeof stack.piCliPath !== "string" || !/^sha256:[a-f0-9]{64}$/u.test(stack.stackId ?? "")) {
     fail("OMP_CONTROLLED_STACK_INVALID", "direct Agent launch requires a verified controlled stack");
   }
@@ -359,16 +387,35 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = pro
   const launchId = randomUUIDImpl();
   if (typeof launchId !== "string" || !UUID.test(launchId)) fail("OMP_LAUNCH_ID_INVALID", "launch id generator returned an invalid UUID");
 
+  const nativeTools = nativeToolsForStack(stack);
   const piArgs = [
     stack.piCliPath,
     "--no-extensions",
+    // Native Pi CLI otherwise starts its built-in MCP discovery independently of
+    // the audited extension allowlist. Older controlled stacks lack this flag.
+    ...(nativeTools ? ["--no-mcp"] : []),
     ...extensionPaths.flatMap((entry) => ["--extension", entry]),
     "--tools",
-    inspected.headless ? HEADLESS_TOOLS : INTERACTIVE_TOOLS,
+    [inspected.headless ? HEADLESS_TOOLS : INTERACTIVE_TOOLS, ...(nativeTools ? ["codemode"] : []), ...mcpNames].join(","),
     "--perm",
     inspected.headless ? "plan" : "build",
     ...(argv ?? []),
   ];
+  const mode = flagValue(argv ?? [], "--mode");
+  const utility = hasFlag(argv ?? [], "--export", "--version", "-v");
+  // Host owns admission and its account-specific SDK entry. This internal
+  // ownership distinction is not a CLI flag or an environment override.
+  const entry = utility || runtimeOwner === "host" ? undefined : mode === "rpc" ? "rpc-entry.mjs"
+    : !inspected.headless && [undefined, "text"].includes(mode) ? "tui-entry.mjs"
+    : inspected.headless && [undefined, "text", "json"].includes(mode) ? "session-entry.mjs" : undefined;
+  if (entry) {
+    const beforeSeparator = (argv ?? []).slice(0, (argv ?? []).includes("--") ? argv.indexOf("--") : undefined);
+    if (["--mode", "--session"].some((flag) => beforeSeparator.filter((token) => token === flag).length > 1))
+      fail("OMP_AGENT_OPTION_INVALID", "duplicate session/mode options cannot be admitted unambiguously");
+    if (!path.isAbsolute(stack.ompPackageRoot ?? "")) fail("OMP_CONTROLLED_STACK_INVALID", "admission requires the controlled package root");
+    piArgs.splice(0, 1, path.join(stack.ompPackageRoot, "packages/direct-agent", entry),
+      path.resolve(path.dirname(stack.piCliPath), "../index.js"));
+  }
   const childEnv = {
     ...cleanEnvironment(env),
     ...(stack.distribution ? { PATH: `${path.join(stack.root, "pi/vendor-tools/bin")}${path.delimiter}${env.PATH ?? "/usr/bin:/bin"}`,
@@ -379,6 +426,7 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = pro
       OMP_CODING_AGENT_SESSION_DIR: env.PI_CODING_AGENT_SESSION_DIR ?? "",
       ONLY_MY_PI_DISTRIBUTION_VERSION: stack.distribution.version } : {}),
     ONLY_MY_PI_DIRECT: "1",
+    OMP_MCP_SDK_FILE: path.resolve(path.dirname(stack.piCliPath), "../index.js"),
     ONLY_MY_PI_HEADLESS: inspected.headless ? "1" : "0",
     ONLY_MY_PI_MODEL_EXPLICIT: inspected.explicitModel ? "1" : "0",
     ONLY_MY_PI_LAUNCH_ID: launchId,
@@ -389,14 +437,23 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, env = pro
 
 export async function launchDirectAgent({ argv = [], packageRoot, homeDir, stackRoot, env = process.env, execve = process.execve, randomUUIDImpl } = {}) {
   if (typeof execve !== "function") fail("OMP_EXECVE_UNAVAILABLE", "this Node runtime does not support process.execve()");
+  const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+  const inspected = inspectDirectAgentArguments(argv, { interactive });
   const stack = await resolveControlledStack({ packageRoot, homeDir, stackRoot });
+  nativeToolsForStack(stack); // Reject unknown identity before importing SDK/extensions.
   if (stack.distribution) {
     const { requireSystemDependencies } = await import("../distribution/system-dependencies.mjs");
     await requireSystemDependencies({ env });
   }
   const configRoot = resolveDirectConfigRoot({ env, homeDir });
-  const directExtensions = await resolveDirectExtensionSet({ stack, configRoot, headless: inspectDirectAgentArguments(argv).headless });
-  const invocation = buildDirectPiInvocation({ argv, stack, extensionPaths: directExtensions.extensions, env, randomUUIDImpl });
+  const directExtensions = await resolveDirectExtensionSet({ stack, configRoot, headless: inspected.headless });
+  const mcp = await new McpCatalog(configRoot).snapshot(await fs.realpath(process.cwd()));
+  const mcpNames = mcpToolNames(mcp);
+  const invocation = buildDirectPiInvocation({ argv, stack, extensionPaths: directExtensions.extensions, mcpNames, env, randomUUIDImpl, interactive });
+  if (invocation.argv[1] !== stack.piCliPath) {
+    await resolveContainedRegularFile(stack.ompPackageRoot, path.relative(stack.ompPackageRoot, invocation.argv[1]), "session admission entry");
+    await resolveContainedRegularFile(stack.root, "pi/dist/index.js", "controlled Pi SDK");
+  }
   execve(invocation.executable, [...invocation.argv], { ...invocation.env });
   fail("OMP_EXECVE_RETURNED", "controlled Pi process replacement returned unexpectedly");
 }

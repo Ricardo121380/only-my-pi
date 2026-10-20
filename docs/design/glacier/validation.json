@@ -1,0 +1,596 @@
+{
+  "artifact": "Pi Agent Glacier",
+  "browser": "144.0.7559.96",
+  "method": "fresh page + set_content(final HTML)",
+  "file_navigation": "blocked by environment administrator; not certified",
+  "storage": "opaque-origin memory fallback tested; persistent storage not verified",
+  "duration_seconds": 33.88,
+  "passed": 114,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "initial session matches selected navigation",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "hierarchy remains partition / project / session",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no workspace object label in visible UI",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "two separate upper-right panel controls",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "dock closed and inert initially",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "stop composer not shown when idle",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "sample usage explicitly labelled",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "total tokens do not double count cache",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "cache hit formula is 89%",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "generation speed derives from output/time",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "last-run mock price reconciles",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "session totals reconcile across 10 records",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "session cost reconciles",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "context occupancy independent of billed total",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "usage opens detailed dialog",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "definitions disclose mock prices and unknowns",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "missing state uses unknown instead of zero",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "restoring preview restores samples",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "usage export labels fixtures and fictional rates",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "context compaction preview preserves messages",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "effort radio supports arrow-key selection",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "bottom dock opens without closing inspector",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "agent log is read-only",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "stop command hidden when no process",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "dock spans centre and right, not sidebar",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "dock resizes by keyboard",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "closing right rail leaves terminal open",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "manual terminal reveals editable simulator",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "pwd returns explicit sample path",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "arbitrary shell commands never execute",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "new terminal tab is independent",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "terminal drafts survive tab switch",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "clear display retains terminal identity",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "closing terminal tab does not close whole dock",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "dock close returns focus to toggle",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "Ctrl-backquote toggles bottom dock",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "authorized command opens bottom dock, not terminal in right rail",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "one-time approval starts only the simulation",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "hiding terminal does not kill command simulation",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "reopened dock retains finished logs",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "completed approval cannot be replayed",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "denial does not execute or delete artifacts",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "read-only mode blocks command simulation",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "review state does not grant approval",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "branch creates a new session in same project",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "branch never inherits approval or queue",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "conversation drafts remain isolated",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "moving a project preserves its session relationships",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "quiet material option removes composer blur",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "reduced transparency overrides expressive glass",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "dark palette uses independent surfaces",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "system reduced-motion suppresses transitions",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "stop leaves queued message paused",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "stopped usage freezes and marks partial",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "explicit queue resume creates separate usage record",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "automatic queue continuation settles both usage records",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "completed runs have unique usage identities",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "usage timers removed after completion",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "360x800: no global horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "360x800: send and terminal controls on screen",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "360: composer controls remain inside their own surface",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "360: terminal is a modal with inert background",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "360: Escape closes terminal and restores focus",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "360: inspector uses its own modal state",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "390x844: no global horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "390x844: send and terminal controls on screen",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "390: composer controls remain inside their own surface",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "390: terminal is a modal with inert background",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "390: Escape closes terminal and restores focus",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "390: inspector uses its own modal state",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "760x900: no global horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "760x900: send and terminal controls on screen",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "760: composer controls remain inside their own surface",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "760: terminal is a modal with inert background",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "760: Escape closes terminal and restores focus",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "760: inspector uses its own modal state",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "761x900: no global horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "761x900: send and terminal controls on screen",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "761: composer controls remain inside their own surface",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "761: terminal leaves a usable composer",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "900x900: no global horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "900x900: send and terminal controls on screen",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "900: composer controls remain inside their own surface",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "900: terminal leaves a usable composer",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1100x900: no global horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1100x900: send and terminal controls on screen",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1100: composer controls remain inside their own surface",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1100: terminal leaves a usable composer",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1101x900: no global horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1101x900: send and terminal controls on screen",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1101: composer controls remain inside their own surface",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1101: terminal leaves a usable composer",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1280x800: no global horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1280x800: send and terminal controls on screen",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1280: composer controls remain inside their own surface",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1280: terminal leaves a usable composer",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1440x900: no global horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1440x900: send and terminal controls on screen",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1440: composer controls remain inside their own surface",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1440: terminal leaves a usable composer",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1536x1000: no global horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1536x1000: send and terminal controls on screen",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1536: composer controls remain inside their own surface",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1536: terminal leaves a usable composer",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1920x1080: no global horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1920x1080: send and terminal controls on screen",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1920: composer controls remain inside their own surface",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1920: terminal leaves a usable composer",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1024x600: no global horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1024x600: send and terminal controls on screen",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1024: composer controls remain inside their own surface",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1024: terminal leaves a usable composer",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no JavaScript runtime errors across scenarios",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "no outbound network requests by prototype",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "javascript_errors": [],
+  "network_requests": [],
+  "not_tested": [
+    "Safari",
+    "Firefox",
+    "VoiceOver",
+    "Electron packaging",
+    "native Apple Liquid Glass",
+    "real Agent",
+    "real PTY",
+    "real billing",
+    "persistent storage",
+    "OS file:// opening"
+  ]
+}

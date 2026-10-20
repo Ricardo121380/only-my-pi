@@ -186,14 +186,6 @@ jobs:
         if: inputs.version == '0.4.0-preview.1'
         run: node scripts/verify-distribution-install.mjs "$RUNNER_TEMP/accepted/${{ needs.verify.outputs.candidate_subdir }}" "$RUNNER_TEMP/public-node24" --public-exact
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: "22.19.0"
-
-      - name: Verify the exact public npm version on Node 22
-        if: inputs.version == '0.4.0-preview.1'
-        run: node scripts/verify-distribution-install.mjs "$RUNNER_TEMP/accepted/${{ needs.verify.outputs.candidate_subdir }}" "$RUNNER_TEMP/public-node22" --public-exact
-
       - name: Publish or recover the verified GitHub Preview release without rebuilding
         if: inputs.version == '0.4.0-preview.1'
         run: node scripts/publish-distribution-release.mjs "$RUNNER_TEMP/accepted/${{ needs.verify.outputs.candidate_subdir }}" "$RUNNER_TEMP/native-protected-evidence.json" "$SOURCE_COMMIT" --publish
@@ -208,7 +200,6 @@ jobs:
             ${{ runner.temp }}/accepted/**/npm-publication.json
             ${{ runner.temp }}/accepted/**/github-publication.json
             ${{ runner.temp }}/public-node24/acceptance.json
-            ${{ runner.temp }}/public-node22/acceptance.json
 
   public-install:
     name: Exact public ${{ matrix.platform }} Node ${{ matrix.node }}
@@ -218,11 +209,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { runner: ubuntu-22.04, platform: linux-x64, node: '22.19.0' }
           - { runner: ubuntu-22.04, platform: linux-x64, node: '24.19.0' }
-          - { runner: ubuntu-22.04-arm, platform: linux-arm64, node: '22.19.0' }
           - { runner: ubuntu-22.04-arm, platform: linux-arm64, node: '24.19.0' }
-          - { runner: macos-14, platform: darwin-arm64, node: '22.19.0' }
           - { runner: macos-14, platform: darwin-arm64, node: '24.19.0' }
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 20

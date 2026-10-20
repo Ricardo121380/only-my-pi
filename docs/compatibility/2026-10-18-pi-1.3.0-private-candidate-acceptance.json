@@ -1,0 +1,2123 @@
+{
+  "formatVersion": 1,
+  "issue": 77,
+  "updatedAt": "2026-10-18T19:00:07.366542+00:00",
+  "acceptance": "PASS",
+  "gates": {
+    "GP130-02": "PASS",
+    "GP130-03": "PASS"
+  },
+  "evidenceRoot": "../artifacts/pi130-02-20261018T132819Z",
+  "identity": {
+    "sourceCommit": "dd996352c9f6d8fb514a131729e6ef349d7392ca",
+    "sourceTree": "f5916d83d26543d44097da6687aa602b66e06ebe",
+    "stackId": "sha256:3e2ec9369e348400b3c8c6010e41cb2f7fbcb89113a01cbdf6e1667ee892461f",
+    "distributionId": "sha256:70cd8109e74807f73dc26b7fcf584fa55447c64b434f8876efcf1c6d6e0cd331",
+    "materialDigest": "sha256:0ce346f56d8ac10e7278096cb463d8d872daa4a9ee9eb883566ad9038c7b11f5",
+    "root": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full",
+    "runtimeContract": "pi130-v1",
+    "pi": {
+      "name": "@earendil-works/pi-coding-agent",
+      "version": "1.3.0",
+      "integrity": "sha512-V/WoCjA2hQSe3QLWIUB24cTRdtEdeLiIzkDqU5RMXV6VWuD+KGZnzVBMhglwdnQTySkehZsjt8a3g6Jd2g4nnw==",
+      "treeDigest": "sha256:b5b8f7c3737155468447cd0951b6fc910b8ef61a5493c08538da43a51990021e",
+      "entry": "dist/bundle/cli.js"
+    },
+    "node": {
+      "version": "24.19.0",
+      "archiveName": "node-v24.19.0-darwin-arm64.tar.gz",
+      "archiveSha256": "sha256:8294b7aa9b03997481c06babf1e8b270c859358f27da57a11509afe537ac381d",
+      "license": "MIT",
+      "treeDigest": "sha256:2e7191cb121aa8c7da53770961ee020a6d2a1f784b1dc653ae48ea6a2b3a4a27",
+      "binarySha256": "sha256:27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1"
+    },
+    "externalTreeDigest": "sha256:7324ddc19dc1bc37b87121b78d2945fcb705cd3b73ab1cad118ea0b13295f8b3",
+    "entries": 38906,
+    "files": 35291,
+    "bytes": 490912013,
+    "licenses": 281,
+    "ledgerArtifacts": 273,
+    "piProductionInstances": 117,
+    "externalProductionInstances": 159,
+    "extensionPackages": [
+      {
+        "id": "plan-mode",
+        "name": "@narumitw/pi-plan-mode",
+        "version": "0.55.2",
+        "path": "external-npm/node_modules/@narumitw/pi-plan-mode",
+        "treeDigest": "sha256:802f3788ff89d7e0bc2710dd7e49e42c4c51e7285b10f6358a7dec1032080174",
+        "resourceFilter": []
+      },
+      {
+        "id": "agent-extensions",
+        "name": "pi-agent-extensions",
+        "version": "0.5.4",
+        "path": "external-npm/node_modules/pi-agent-extensions",
+        "treeDigest": "sha256:afb222e4fe3a43292f9d52492c04e4ead56fdf82a8eb2d75cb7678a8351dd30f",
+        "resourceFilter": [
+          "extensions/context/index.ts",
+          "extensions/notify/index.ts",
+          "extensions/review/index.ts",
+          "extensions/sessions/index.ts"
+        ]
+      },
+      {
+        "id": "web-access",
+        "name": "pi-web-access",
+        "version": "0.25.0",
+        "path": "external-npm/node_modules/pi-web-access",
+        "treeDigest": "sha256:b23263489e15d39219f39a04ac9079aa0b12b86631987f1330941599afcc83b3",
+        "resourceFilter": []
+      },
+      {
+        "id": "subagents",
+        "name": "pi-subagents",
+        "version": "0.57.0",
+        "path": "external-npm/node_modules/pi-subagents",
+        "treeDigest": "sha256:ba38de4088b39e50551e8d51a8a25e1e512f2b71f42a92b8d84031254bae6bfc",
+        "resourceFilter": []
+      },
+      {
+        "id": "permission-modes",
+        "name": "pi-permission-modes",
+        "version": "2.2.0",
+        "path": "external-npm/node_modules/pi-permission-modes",
+        "treeDigest": "sha256:708caa3557cd0f3b6093a9e1e5969311c83b579fe4381f041f7cf0d7a01c18fc",
+        "resourceFilter": []
+      },
+      {
+        "id": "lsp",
+        "name": "@narumitw/pi-lsp",
+        "version": "0.49.6",
+        "path": "external-npm/node_modules/@narumitw/pi-lsp",
+        "treeDigest": "sha256:c0e418eed898a14d4611579ddad274c112f5da79b3ef55648dd27691223c6ec9",
+        "resourceFilter": []
+      },
+      {
+        "id": "usage",
+        "name": "@sreetej510/pi-usage",
+        "version": "0.7.1",
+        "path": "external-npm/node_modules/@sreetej510/pi-usage",
+        "treeDigest": "sha256:30b73b345bbb9b79f4953a4b715a22d1ac7b42a3f062f7843b74bfe276b23361",
+        "resourceFilter": []
+      },
+      {
+        "id": "memory",
+        "name": "pi-memory",
+        "version": "0.4.1",
+        "path": "external-npm/node_modules/pi-memory",
+        "treeDigest": "sha256:d4717f0feedbcb4049b69c1bf7766880ed96f5bd10b2a1f56d6f6ac369be459a",
+        "resourceFilter": []
+      },
+      {
+        "id": "git-sync",
+        "name": "pi-git-sync",
+        "version": "0.1.3",
+        "path": "external-npm/node_modules/pi-git-sync",
+        "treeDigest": "sha256:2cb8dbb4da323eddf36e9fad32fdc40c772fab4dceabd6186e73246a9bbdb1c4",
+        "resourceFilter": []
+      }
+    ],
+    "inputSha256": "sha256:9fb1a3df114bb57722112ed527997bfdaea5652c0f6637d13a2bc3de9ce4487d",
+    "productionLockSha256": "sha256:b37851ca9cadcff8238033aa97300bcee92389b589b6b2efdf57916e2d65be4e",
+    "developmentLockSha256": "sha256:bc9899201e7d74aa3f782d512247badc70b1fa58fab8efabc236cda2e9cfe639",
+    "sourceInputOwnership": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-source-input-ownership.json"
+  },
+  "openingBaseline": {
+    "head": "7f098966c820028e4f1482c6b54214b52aeb8c1c",
+    "branch": "codex/webui-phase1",
+    "dirtyEntries": 158,
+    "indexEmpty": true
+  },
+  "mainBranchImplementationCommits": [
+    "16d454135bcfbe6d900e02a579ee952870f53d76",
+    "8a34ec99c80ba10260faebe8e50dfab6c51d041e",
+    "d81341d495b1944e826821b7f16f38ced5088674",
+    "49bb3bf8b06479764502f22d18d92f384e953052",
+    "0a5a90f276e555278231088c5548bc6f354e3057",
+    "367429ee6c2a71a195a71edd948a50e1cc4ef5cf",
+    "5fc1e822ff11b8f38a15acca0e553ca38ca373e4"
+  ],
+  "privateSourceInput": {
+    "purpose": "#77 required pre-existing WebUI draft/supplement/queue/cancel-recovery regression input",
+    "baseCodeCommit": "5fc1e822ff11b8f38a15acca0e553ca38ca373e4",
+    "ownership": "PREEXISTING_WORKSPACE_INPUT; no authorship reassignment; not staged or committed on codex/webui-phase1",
+    "sourceRoot": "LOCAL_WORKSPACE/repo",
+    "privateSnapshotRoot": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+    "files": [
+      {
+        "path": "webui/src/App.tsx",
+        "mode": "0o644",
+        "type": "file",
+        "size": 32690,
+        "sha256": "6858142536eca7a6ceeca7c73ab655a1371be447208a822cc757f1ce38dd43ec"
+      },
+      {
+        "path": "webui/src/Composer.tsx",
+        "mode": "0o644",
+        "type": "file",
+        "size": 13338,
+        "sha256": "15488805e49cac610c74cc621e57a557ec25a4ee4f20a2ff78b7c0690c2b92af"
+      },
+      {
+        "path": "webui/src/ProjectHome.tsx",
+        "mode": "0o644",
+        "type": "file",
+        "size": 2759,
+        "sha256": "620b9dca48c99bab2a07861b41e76a4f8003c66d64d9a0b9d14c307e14e0fc9d"
+      },
+      {
+        "path": "webui/src/TaskControl.tsx",
+        "mode": "0o644",
+        "type": "file",
+        "size": 5600,
+        "sha256": "71deee7d2097e53b9e8ae20f359b9746f2e10bdc6292050cfc02b7ffaac08b39"
+      },
+      {
+        "path": "webui/src/api.ts",
+        "mode": "0o644",
+        "type": "file",
+        "size": 9795,
+        "sha256": "4ca1472723cc8c36599199cd08f9918cbed10838cea2cb52625122bfa607214a"
+      },
+      {
+        "path": "webui/src/host-ui.css",
+        "mode": "0o644",
+        "type": "file",
+        "size": 9559,
+        "sha256": "461881004cc660684d78946e8de24141c245409eb4365cf3721fdc2f9418e324"
+      },
+      {
+        "path": "webui/src/task-control.test.tsx",
+        "mode": "0o644",
+        "type": "file",
+        "size": 3790,
+        "sha256": "5efa89f4da19b6050f06e5a8f51f9476660bf7d8e5c58e10812210e38752662e"
+      },
+      {
+        "path": "webui/src/useHost.ts",
+        "mode": "0o644",
+        "type": "file",
+        "size": 6086,
+        "sha256": "304d0d8a9e02adb649568f7bf6fde3293c915b7bc60b577eec1824bec9c293ed"
+      },
+      {
+        "path": "webui/src/DraftNotice.tsx",
+        "mode": "0o644",
+        "type": "file",
+        "size": 3069,
+        "sha256": "0575108d62c9f2e77ebefc09555c26b7b7d55671d6629225a2b7e27568a91fe8"
+      },
+      {
+        "path": "webui/src/InputQueue.tsx",
+        "mode": "0o644",
+        "type": "file",
+        "size": 9929,
+        "sha256": "a2ae01754f8ee4aecdb74495efdb1d3889d14ca4d271ef9fd3a4a2ffd3f371c5"
+      },
+      {
+        "path": "webui/src/TaskProgress.tsx",
+        "mode": "0o644",
+        "type": "file",
+        "size": 4627,
+        "sha256": "d0745e2539fc493bc9e4caeeb650751ab2e3029c88dd8bc37957c7af1f4678b4"
+      },
+      {
+        "path": "webui/src/conversation-flow.test.tsx",
+        "mode": "0o644",
+        "type": "file",
+        "size": 19730,
+        "sha256": "7a726e119b6b51711111eaf10a2c3c4d50ce147b3897d90ee3a6bc31298fbf6b"
+      },
+      {
+        "path": "webui/src/input-delivery-ui.test.tsx",
+        "mode": "0o644",
+        "type": "file",
+        "size": 20300,
+        "sha256": "c2929e3dd12b39f51e6014e58113773a2435a78ccf7bb615b99793ed1e3633da"
+      },
+      {
+        "path": "webui/src/task-progress.test.tsx",
+        "mode": "0o644",
+        "type": "file",
+        "size": 3339,
+        "sha256": "e178872645c4daca84d79ee23d0742ed1b749aa4635635d3324b5fbda89d7fb5"
+      },
+      {
+        "path": "webui/src/useConversation.test.tsx",
+        "mode": "0o644",
+        "type": "file",
+        "size": 1669,
+        "sha256": "a1f34ab9792a1153a2c884942db2d4eda6a8b89fb3649ce600ac18bf978af54a"
+      },
+      {
+        "path": "webui/src/useConversation.ts",
+        "mode": "0o644",
+        "type": "file",
+        "size": 2249,
+        "sha256": "c53d2f1cb85aff3d014e1021a7d316161fbef329370e2cd7404304adb54f1e21"
+      },
+      {
+        "path": "webui/src/useHost.test.tsx",
+        "mode": "0o644",
+        "type": "file",
+        "size": 10070,
+        "sha256": "a7eed12fd5d11d650f980a363de87b95ef932fbefe550fa0421c94cd0fc1ab09"
+      },
+      {
+        "path": "webui/src/useInputDraft.test.tsx",
+        "mode": "0o644",
+        "type": "file",
+        "size": 18419,
+        "sha256": "b5261050ee07ce7aadb71e102d388f8693cac7e4354eb3ca1063f8cfd6c94695"
+      },
+      {
+        "path": "webui/src/useInputDraft.ts",
+        "mode": "0o644",
+        "type": "file",
+        "size": 24933,
+        "sha256": "f8d0c3a6ffb219a98919427c7dedd77925fe5fb69ad397413ce2e46d5b10e0d0"
+      }
+    ],
+    "matchesOpeningBaseline": true,
+    "excludedDirtyEntries": "all other pre-existing dirty work; including material, global configuration and dependencies",
+    "noNewDependencies": true,
+    "privateSnapshotCommit": "dd996352c9f6d8fb514a131729e6ef349d7392ca",
+    "privateSnapshotTree": "f5916d83d26543d44097da6687aa602b66e06ebe",
+    "cleanStatus": "",
+    "patch": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-source-input.patch",
+    "patchSha256": "3437e907540c2beeb1fb9b6d026bfb722a00c00c0ff1936486897105824a8cf9"
+  },
+  "piInputContract": {
+    "formatVersion": 1,
+    "purpose": "GP130-02_PI_INPUT",
+    "platform": "darwin-arm64",
+    "nodeVersions": [
+      "22.19.0",
+      "24.19.0"
+    ],
+    "package": {
+      "name": "@earendil-works/pi-coding-agent",
+      "version": "1.3.0",
+      "url": "https://registry.npmjs.org/@earendil-works/pi-coding-agent/-/pi-coding-agent-1.3.0.tgz",
+      "bytes": 7578261,
+      "sha256": "sha256:ae2785e870b81a8c8e1d44510a57b5ee0bfc9e974679ac2faaada4aabee3d3c0",
+      "integrity": "sha512-V/WoCjA2hQSe3QLWIUB24cTRdtEdeLiIzkDqU5RMXV6VWuD+KGZnzVBMhglwdnQTySkehZsjt8a3g6Jd2g4nnw==",
+      "manifestSha256": "sha256:83c3bb7619f590c213cc96a24216eb29a819a3ef6dc548607cc037ed276e8dc5"
+    },
+    "files": {
+      "package.json": "sha256:f41871a589e48a6408db8cfddc1caf496209bd2603d250320641e37770110a61",
+      "package-lock.json": "sha256:b37851ca9cadcff8238033aa97300bcee92389b589b6b2efdf57916e2d65be4e"
+    },
+    "resources": [
+      {
+        "package": "quickjs-wasi",
+        "version": "3.6.2",
+        "path": "node_modules/quickjs-wasi/extensions/crypto/crypto.so",
+        "bytes": 120228,
+        "sha256": "sha256:fa26b6fafda251c3b1442dcc4c876b3ac73689639519f4ddfc2c410ebdb5b7c2",
+        "executable": 0
+      },
+      {
+        "package": "quickjs-wasi",
+        "version": "3.6.2",
+        "path": "node_modules/quickjs-wasi/extensions/encoding/encoding.so",
+        "bytes": 7715,
+        "sha256": "sha256:d501aa2a8410ee07c196103f0d169b226ec61c922883713510fd723fe14036c3",
+        "executable": 0
+      },
+      {
+        "package": "quickjs-wasi",
+        "version": "3.6.2",
+        "path": "node_modules/quickjs-wasi/extensions/headers/headers.so",
+        "bytes": 8896,
+        "sha256": "sha256:42c847104d6aa8d4666fa41bb74d324c2ee9a4d15c2492fca013b1631232b011",
+        "executable": 0
+      },
+      {
+        "package": "quickjs-wasi",
+        "version": "3.6.2",
+        "path": "node_modules/quickjs-wasi/extensions/structured-clone/structured-clone.so",
+        "bytes": 6007,
+        "sha256": "sha256:0ac5a36c0545c659ba6f9f8de5af11862df84546d151d0f15ec5184c95fd6cb3",
+        "executable": 0
+      },
+      {
+        "package": "quickjs-wasi",
+        "version": "3.6.2",
+        "path": "node_modules/quickjs-wasi/extensions/url/url.so",
+        "bytes": 397332,
+        "sha256": "sha256:af780a79f1fb131b5e6fa1d6fedc481e265420cf2f254fe966255230f4c1bc62",
+        "executable": 0
+      },
+      {
+        "package": "quickjs-wasi",
+        "version": "3.6.2",
+        "path": "node_modules/quickjs-wasi/quickjs.wasm",
+        "bytes": 637405,
+        "sha256": "sha256:d4c9375f2b1ca4dc95f72c8aa2982a7a9951ac8011490d79c6582df732b4bbd9",
+        "executable": 0
+      },
+      {
+        "package": "@earendil-works/pi-tui",
+        "version": "1.3.0",
+        "path": "node_modules/@earendil-works/pi-tui/native/darwin/prebuilds/darwin-arm64/darwin-platform.node",
+        "bytes": 52024,
+        "sha256": "sha256:36e909adf35c2734a2a52b3d65b7dbfb83f2278f306d51b7e32c5045516dfb7f",
+        "executable": 73
+      },
+      {
+        "package": "@earendil-works/pi-tui",
+        "version": "1.3.0",
+        "path": "node_modules/@earendil-works/pi-tui/native/darwin/prebuilds/darwin-x64/darwin-platform.node",
+        "bytes": 22784,
+        "sha256": "sha256:7ec59a02fff9562f6354274ad070ba35f8e0998b3b111eb27ad3de579ffb6c65",
+        "executable": 73
+      },
+      {
+        "package": "@earendil-works/pi-tui",
+        "version": "1.3.0",
+        "path": "node_modules/@earendil-works/pi-tui/native/linux/prebuilds/linux-arm64/linux-platform-x11.node",
+        "bytes": 67240,
+        "sha256": "sha256:63d4545349a25b5c97e352ea6d254cea50ff3c14161212ad3ddb3fc28022ddb5",
+        "executable": 73
+      },
+      {
+        "package": "@earendil-works/pi-tui",
+        "version": "1.3.0",
+        "path": "node_modules/@earendil-works/pi-tui/native/linux/prebuilds/linux-x64/linux-platform-x11.node",
+        "bytes": 18008,
+        "sha256": "sha256:522d2550f7fa5d0d5bd204f45983f786ce2be9cf80f27f00179640d31d0689d6",
+        "executable": 73
+      },
+      {
+        "package": "@earendil-works/pi-tui",
+        "version": "1.3.0",
+        "path": "node_modules/@earendil-works/pi-tui/native/win32/prebuilds/win32-arm64/win32-platform.node",
+        "bytes": 9216,
+        "sha256": "sha256:0e5671ab39ef577940483ced58fdf29ecdf5f864f368d90a771eec4aeeae11b8",
+        "executable": 73
+      },
+      {
+        "package": "@earendil-works/pi-tui",
+        "version": "1.3.0",
+        "path": "node_modules/@earendil-works/pi-tui/native/win32/prebuilds/win32-x64/win32-platform.node",
+        "bytes": 8704,
+        "sha256": "sha256:51bee02bcb73b165ab92af75ae15b88aba3f5d99f072e63ef60af92ffdc4d565",
+        "executable": 73
+      },
+      {
+        "package": "@silvia-odwyer/photon-node",
+        "version": "0.3.4",
+        "path": "node_modules/@silvia-odwyer/photon-node/photon_rs_bg.wasm",
+        "bytes": 1881634,
+        "sha256": "sha256:10468181565c56004c867f3a4af96f89a0ef5a63a72f2b5fb12c1f1992a3615c",
+        "executable": 0
+      }
+    ],
+    "lockOrigin": "OMP production lock resolved from the official Pi 1.3.0 manifest with scripts disabled; six direct Pi packages and telemetry pinned to 1.3.0. Upstream tarball has no shrinkwrap.",
+    "parserQuickjsEvidence": false,
+    "lifecycleScriptsExecuted": false
+  },
+  "freeze": {
+    "before": {
+      "sourceCommit": "dd996352c9f6d8fb514a131729e6ef349d7392ca",
+      "sourceTree": "f5916d83d26543d44097da6687aa602b66e06ebe",
+      "source": {
+        "count": 1663,
+        "digest": "3cbfebe7c3518f725356d480735f0cf5ceb73fe6271bf9e44b56b20aaadc397a"
+      },
+      "dependencies": {
+        "count": 24994,
+        "digest": "cd3e49f16be2095e3d144ce59f1840785d3ec0a47be087cadf2ff92011d91511"
+      },
+      "candidate": {
+        "count": 39198,
+        "digest": "b6c9cc0bd62cf2924a547be628dd622ccf411761018208b56715f912b6321d78"
+      }
+    },
+    "preFullComparison": {
+      "sourceCommit": true,
+      "sourceTree": true,
+      "sourceStatus": true,
+      "source": true,
+      "dependencies": true,
+      "candidate": true,
+      "nodes": true
+    },
+    "finalComparison": {
+      "sourceCommit": true,
+      "sourceTree": true,
+      "sourceStatus": true,
+      "source": true,
+      "dependencies": true,
+      "candidate": true,
+      "nodes": true
+    }
+  },
+  "criteria": [
+    {
+      "id": "AC1",
+      "gate": "GP130-02",
+      "layers": "C",
+      "status": "PASS",
+      "result": "精确来源、生产锁、完整文件/字节/执行位、资源和声明；保留旧来源",
+      "evidence": [
+        "stage8-result.json",
+        "stage8-downloads.json",
+        "stage8-commands.json",
+        "c8-before.json"
+      ]
+    },
+    {
+      "id": "AC2",
+      "gate": "GP130-02",
+      "layers": "C",
+      "status": "PASS",
+      "result": "六处补丁逐项重核原始字节、平台、包版本与唯一锚点；同长字节漂移拒绝",
+      "evidence": [
+        "patch8-review.json"
+      ]
+    },
+    {
+      "id": "AC3",
+      "gate": "GP130-02",
+      "layers": "P",
+      "status": "PASS",
+      "result": "候选真实 CLI/SDK/账号入口与九个扩展包；四项必需 installed 已实际通过",
+      "evidence": [
+        "c8-runtime-node22.json",
+        "c8-runtime-node24.json",
+        "c8-installed-node24.json"
+      ]
+    },
+    {
+      "id": "AC4",
+      "gate": "GP130-02",
+      "layers": "C/P",
+      "status": "PASS",
+      "result": "22 项实际候选拒绝；旧 pi110-v1 当前验证通过",
+      "evidence": [
+        "rejections8.json",
+        "historical-contract-c8.json"
+      ]
+    },
+    {
+      "id": "AC5",
+      "gate": "GP130-03",
+      "layers": "P",
+      "status": "PASS",
+      "result": "同候选实际 CLI/PTY 项目、fullscreen/regular、对话/审批/工具、取消/退出/历史",
+      "evidence": [
+        "cli-journey8-receipt.json",
+        "integrated8/receipt.json"
+      ]
+    },
+    {
+      "id": "AC6",
+      "gate": "GP130-03",
+      "layers": "B",
+      "status": "PASS",
+      "result": "Ego 配对、账号/项目、补充/队列/编辑/移除、取消/显式恢复、MCP/资源、分类/生图、下载/导出、Monaco/PTY 交接",
+      "evidence": [
+        "browser8-verification.json",
+        "browser8/",
+        "resource-browser8/",
+        "browser8-input-final/"
+      ]
+    },
+    {
+      "id": "AC7",
+      "gate": "GP130-03",
+      "layers": "P/B",
+      "status": "PASS",
+      "result": "真实 Pi 与独立受控服务：固定身份、授权/预算、未知保留、不重放、去重和实际产物",
+      "evidence": [
+        "integrated8/receipt.json",
+        "browser8/full-after-independent.json",
+        "resource-browser8/unknown-receipt.json"
+      ]
+    },
+    {
+      "id": "AC8",
+      "gate": "GP130-03",
+      "layers": "C/P/B",
+      "status": "PASS",
+      "result": "最终冻结源码的完整回归及独立 Standards/Spec",
+      "evidence": [
+        "c8-full-node22.json",
+        "c8-full-node24.json",
+        "final-review.json"
+      ]
+    },
+    {
+      "id": "AC9",
+      "gate": "GP130-02/03",
+      "layers": "C/P/B",
+      "status": "PASS",
+      "result": "完整身份/命令/退出与前后冻结；macOS 主平台及既有 Linux CLI 范围分列",
+      "evidence": [
+        "c8-before.json",
+        "c8-after.json",
+        "linux8-frozen-inputs.json",
+        "browser8-verification.json"
+      ]
+    }
+  ],
+  "browserVerification": {
+    "status": "PASS",
+    "verifiedAt": "2026-10-18T18:04:30.549828+00:00",
+    "identity": {
+      "sourceCommit": "dd996352c9f6d8fb514a131729e6ef349d7392ca",
+      "sourceTree": "f5916d83d26543d44097da6687aa602b66e06ebe",
+      "stackId": "sha256:3e2ec9369e348400b3c8c6010e41cb2f7fbcb89113a01cbdf6e1667ee892461f",
+      "distributionId": "sha256:70cd8109e74807f73dc26b7fcf584fa55447c64b434f8876efcf1c6d6e0cd331",
+      "materialDigest": "sha256:0ce346f56d8ac10e7278096cb463d8d872daa4a9ee9eb883566ad9038c7b11f5",
+      "root": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full",
+      "runtimeContract": "pi130-v1",
+      "pi": {
+        "name": "@earendil-works/pi-coding-agent",
+        "version": "1.3.0",
+        "integrity": "sha512-V/WoCjA2hQSe3QLWIUB24cTRdtEdeLiIzkDqU5RMXV6VWuD+KGZnzVBMhglwdnQTySkehZsjt8a3g6Jd2g4nnw==",
+        "treeDigest": "sha256:b5b8f7c3737155468447cd0951b6fc910b8ef61a5493c08538da43a51990021e",
+        "entry": "dist/bundle/cli.js"
+      },
+      "node": {
+        "version": "24.19.0",
+        "archiveName": "node-v24.19.0-darwin-arm64.tar.gz",
+        "archiveSha256": "sha256:8294b7aa9b03997481c06babf1e8b270c859358f27da57a11509afe537ac381d",
+        "license": "MIT",
+        "treeDigest": "sha256:2e7191cb121aa8c7da53770961ee020a6d2a1f784b1dc653ae48ea6a2b3a4a27",
+        "binarySha256": "sha256:27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1"
+      },
+      "externalTreeDigest": "sha256:7324ddc19dc1bc37b87121b78d2945fcb705cd3b73ab1cad118ea0b13295f8b3",
+      "entries": 38906,
+      "files": 35291,
+      "bytes": 490912013,
+      "licenses": 281,
+      "ledgerArtifacts": 273,
+      "piProductionInstances": 117,
+      "externalProductionInstances": 159,
+      "extensionPackages": [
+        {
+          "id": "plan-mode",
+          "name": "@narumitw/pi-plan-mode",
+          "version": "0.55.2",
+          "path": "external-npm/node_modules/@narumitw/pi-plan-mode",
+          "treeDigest": "sha256:802f3788ff89d7e0bc2710dd7e49e42c4c51e7285b10f6358a7dec1032080174",
+          "resourceFilter": []
+        },
+        {
+          "id": "agent-extensions",
+          "name": "pi-agent-extensions",
+          "version": "0.5.4",
+          "path": "external-npm/node_modules/pi-agent-extensions",
+          "treeDigest": "sha256:afb222e4fe3a43292f9d52492c04e4ead56fdf82a8eb2d75cb7678a8351dd30f",
+          "resourceFilter": [
+            "extensions/context/index.ts",
+            "extensions/notify/index.ts",
+            "extensions/review/index.ts",
+            "extensions/sessions/index.ts"
+          ]
+        },
+        {
+          "id": "web-access",
+          "name": "pi-web-access",
+          "version": "0.25.0",
+          "path": "external-npm/node_modules/pi-web-access",
+          "treeDigest": "sha256:b23263489e15d39219f39a04ac9079aa0b12b86631987f1330941599afcc83b3",
+          "resourceFilter": []
+        },
+        {
+          "id": "subagents",
+          "name": "pi-subagents",
+          "version": "0.57.0",
+          "path": "external-npm/node_modules/pi-subagents",
+          "treeDigest": "sha256:ba38de4088b39e50551e8d51a8a25e1e512f2b71f42a92b8d84031254bae6bfc",
+          "resourceFilter": []
+        },
+        {
+          "id": "permission-modes",
+          "name": "pi-permission-modes",
+          "version": "2.2.0",
+          "path": "external-npm/node_modules/pi-permission-modes",
+          "treeDigest": "sha256:708caa3557cd0f3b6093a9e1e5969311c83b579fe4381f041f7cf0d7a01c18fc",
+          "resourceFilter": []
+        },
+        {
+          "id": "lsp",
+          "name": "@narumitw/pi-lsp",
+          "version": "0.49.6",
+          "path": "external-npm/node_modules/@narumitw/pi-lsp",
+          "treeDigest": "sha256:c0e418eed898a14d4611579ddad274c112f5da79b3ef55648dd27691223c6ec9",
+          "resourceFilter": []
+        },
+        {
+          "id": "usage",
+          "name": "@sreetej510/pi-usage",
+          "version": "0.7.1",
+          "path": "external-npm/node_modules/@sreetej510/pi-usage",
+          "treeDigest": "sha256:30b73b345bbb9b79f4953a4b715a22d1ac7b42a3f062f7843b74bfe276b23361",
+          "resourceFilter": []
+        },
+        {
+          "id": "memory",
+          "name": "pi-memory",
+          "version": "0.4.1",
+          "path": "external-npm/node_modules/pi-memory",
+          "treeDigest": "sha256:d4717f0feedbcb4049b69c1bf7766880ed96f5bd10b2a1f56d6f6ac369be459a",
+          "resourceFilter": []
+        },
+        {
+          "id": "git-sync",
+          "name": "pi-git-sync",
+          "version": "0.1.3",
+          "path": "external-npm/node_modules/pi-git-sync",
+          "treeDigest": "sha256:2cb8dbb4da323eddf36e9fad32fdc40c772fab4dceabd6186e73246a9bbdb1c4",
+          "resourceFilter": []
+        }
+      ],
+      "inputSha256": "sha256:9fb1a3df114bb57722112ed527997bfdaea5652c0f6637d13a2bc3de9ce4487d",
+      "productionLockSha256": "sha256:b37851ca9cadcff8238033aa97300bcee92389b589b6b2efdf57916e2d65be4e",
+      "developmentLockSha256": "sha256:bc9899201e7d74aa3f782d512247badc70b1fa58fab8efabc236cda2e9cfe639",
+      "sourceInputOwnership": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-source-input-ownership.json"
+    },
+    "browser": {
+      "engine": "Ego Lite",
+      "version": "0.5.1.13",
+      "spaceId": 58
+    },
+    "scope": [
+      "pairing",
+      "GUI account creation/configuration and actual identity",
+      "project registration",
+      "native tasks and per-child approvals",
+      "steer/queue consumption once",
+      "queued editing/removal",
+      "cancel/pause/explicit recovery/fresh approvals",
+      "stdio/HTTP/OAuth tools",
+      "classification/image fixed bindings and budgets",
+      "history download/explicit export without regeneration",
+      "native Monaco save",
+      "PTY effect/ownership refusal/cleanup/manual handoff",
+      "MCP deferred tools/resources",
+      "hidden refusal known zero receive delta",
+      "lost resource response unknown and no replay"
+    ],
+    "independentModelTextEvidence": {
+      "finalInput": "browser8-input-final/browser-final-receipt.json",
+      "retainedRequestFields": [
+        "model",
+        "lastRole",
+        "messages",
+        "tools (function names)",
+        "authorization (synthetic fixture only)"
+      ],
+      "rawHttpBody": "NOT_CAPTURED",
+      "proofScope": "Independent parsed messages support model-text, input-ID exclusion and identity assertions; this is not a complete raw HTTP-body archive.",
+      "resourceInputI4": "NOT_CAPTURED; preserved valid consumption only, excluded from final model-text proof"
+    },
+    "unknownPreservedAfterStop": true,
+    "removedInputId": "cf56ebfc-cbac-4dd9-a272-8337bcff502e",
+    "chatIdentity": {
+      "model": "one",
+      "syntheticCredentialOnly": true,
+      "fullJourneyReceives": 2
+    },
+    "nonchatIndependentReceives": 4,
+    "resourceUnknown": {
+      "authorization": "once",
+      "callId": "71449b59-4ff4-4cb5-b4f2-9fb7767d70cf",
+      "code": "MCP_HTTP_FAILED",
+      "definitionDigest": "38e1cdcadddbd360a5b104d4c9b07c6ade49a057c67cb1c5061e971435bd2a9f",
+      "effect": "read",
+      "kind": "resource",
+      "parentToolCallId": "0dfaf888-1a47-44e8-ba7f-2a157c5bc024",
+      "revision": 12,
+      "server": "remote",
+      "startedAt": "2026-10-18T17:55:37.837Z",
+      "status": "unknown",
+      "target": "mcp://remote/readme",
+      "targetDigest": "b8ace9ab3cf0ea48dcbbfac27e34d8e0d1e7bca18bba51a1c2510fe7c45b93a0",
+      "taskId": "ab4dd42d-d76f-45c2-a42a-c212b0e6f2a2",
+      "tool": "resources/read",
+      "toolCallId": "0dfaf888-1a47-44e8-ba7f-2a157c5bc024/1",
+      "uri": "mcp://remote/readme"
+    },
+    "firstFailuresPreserved": [
+      "candidate3 missing pre-existing input UI; browser3/",
+      "historical browser4 initial unhandled approval timeout",
+      "historical browser4/input-driver-r1.log pending session draft admission",
+      "historical browser4/cancel-driver-r1.log pointer interception; keyboard follow-up and fresh R2",
+      "historical c4-browser-terminal.json missing explicit cleanup confirmation; browser4/terminal-receipt.json follow-up"
+    ],
+    "servicesStopped": true,
+    "receipt": "browser8-verification.json",
+    "receiptSha256": "cbc7234e3af9cd83ed83a53642cc765b5d7c5854c8950a5a27af5e98f31cc7be",
+    "nativeConsumption": [
+      {
+        "inputId": "eebebef05c59f14bb4706ecabd4385283f4422e14edb75a580f46472bc416d7f",
+        "consumedEntryId": "87a12ce6",
+        "nativeOccurrences": 1,
+        "syntheticTextSha256": "fbca72a40e553bd9cd8b8874f6b6266ec869b6f9975026c91f9f6abef8ed351e",
+        "evidence": "browser8-input-final/journey-NhkvPO/config/sessions/omp-294f0dcf76f1f58af5edf4f7181eec5af8d5a141f40a37ed0e21eee8c15deec4/2026-10-18T18-02-07-618Z_01a1502d-9782-7604-8026-153276ba9d2e.jsonl"
+      },
+      {
+        "inputId": "578db8a2-7ac8-4558-9f88-5afa9a1cca18",
+        "consumedEntryId": "cedb6be9",
+        "nativeOccurrences": 1,
+        "syntheticTextSha256": "f358c903b89f8f2d50d52ad469ebc11283fdb8cb1b96d3daf154bb67c59ffda5",
+        "evidence": "browser8-input-final/journey-NhkvPO/config/sessions/omp-294f0dcf76f1f58af5edf4f7181eec5af8d5a141f40a37ed0e21eee8c15deec4/2026-10-18T18-02-07-618Z_01a1502d-9782-7604-8026-153276ba9d2e.jsonl"
+      },
+      {
+        "inputId": "635a3de3-7444-47a3-bfda-c92d1f14873e",
+        "consumedEntryId": "d25f7649",
+        "nativeOccurrences": 1,
+        "syntheticTextSha256": "df4d65a407f46245ea188a8b8aaedab57bf15542f6a7fdaefd89cce773a75b68",
+        "evidence": "browser8-input-final/journey-NhkvPO/config/sessions/omp-294f0dcf76f1f58af5edf4f7181eec5af8d5a141f40a37ed0e21eee8c15deec4/2026-10-18T18-02-07-618Z_01a1502d-9782-7604-8026-153276ba9d2e.jsonl"
+      },
+      {
+        "inputId": "4f332ba080c9cd2cc46e0fee0dd06e7c0290c4e52f0d6fe4c4e5e16141a866e8",
+        "consumedEntryId": "74e93429",
+        "nativeOccurrences": 1,
+        "syntheticTextSha256": "c3b61cadc19ab806c875b501150cf472a4e31ab95a6697a2ac598b1b68198d29",
+        "evidence": "browser8/journey-ds7vHz/config/sessions/omp-ca3a892d8730158ac004a9b45ecf7ac675360161984dea92e68bf095c3039072/2026-10-18T17-34-36-500Z_01a15014-65d4-72ca-98c1-a6212c92a5c7.jsonl"
+      },
+      {
+        "inputId": "f7461872-ad18-4606-acc6-c8a2810f0496",
+        "consumedEntryId": "a9c8cd96",
+        "nativeOccurrences": 1,
+        "syntheticTextSha256": "0a48d6713dd9ffb001efc6314ee8344f84ecd2b33a0e0ffdc75e88fa5ff553a4",
+        "evidence": "browser8/journey-ds7vHz/config/sessions/omp-ca3a892d8730158ac004a9b45ecf7ac675360161984dea92e68bf095c3039072/2026-10-18T17-34-36-500Z_01a15014-65d4-72ca-98c1-a6212c92a5c7.jsonl"
+      },
+      {
+        "inputId": "2ae14e1ebcdba1b77dcb1c8c9aadfd957fd736f53ec47eae238224b6fcab4180",
+        "consumedEntryId": "48cb9c30",
+        "nativeOccurrences": 1,
+        "syntheticTextSha256": "51b84c6100825d81d7d3a10d6f954d81382e09d321fc29b45f6997fe24c5680b",
+        "evidence": "browser8/journey-ds7vHz/config/sessions/omp-ca3a892d8730158ac004a9b45ecf7ac675360161984dea92e68bf095c3039072/2026-10-18T17-25-00-684Z_01a1500b-9c8b-73ae-8fb7-2aeebbceee93.jsonl"
+      }
+    ],
+    "cleanInputJourney": {
+      "status": "PASS",
+      "stackId": "sha256:3e2ec9369e348400b3c8c6010e41cb2f7fbcb89113a01cbdf6e1667ee892461f",
+      "tasks": [
+        {
+          "taskId": "236f1bf9-b4f9-4d48-8134-a740b75bc545",
+          "status": "succeeded",
+          "toolCalls": [
+            {
+              "name": "codemode",
+              "status": "completed"
+            },
+            {
+              "name": "read",
+              "status": "completed"
+            },
+            {
+              "name": "codemode",
+              "status": "completed"
+            },
+            {
+              "name": "read",
+              "status": "completed"
+            }
+          ]
+        },
+        {
+          "taskId": "c48d19f9-fb0d-4308-a060-e387c212a46a",
+          "status": "succeeded",
+          "toolCalls": [
+            {
+              "name": "codemode",
+              "status": "completed"
+            },
+            {
+              "name": "read",
+              "status": "completed"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "checks": {
+    "stage8": {
+      "status": "PASS",
+      "exitCode": 0,
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-7/payloads/full/node/bin/node",
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/stage8.mjs"
+      ],
+      "cwd": "LOCAL_WORKSPACE",
+      "log": "stage8-result.json",
+      "endedAt": "2026-10-18T17:05:39.078Z"
+    },
+    "c8-installed-node24": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {
+        "tests": 8,
+        "suites": 0,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/node",
+        "--test",
+        "--test-concurrency=2",
+        "tests/host-controlled-rpc.test.mjs",
+        "tests/host-installed-runtime.test.mjs",
+        "tests/host-installed-history.test.mjs"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "OMP_TEST_STACK_PACKAGE": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/only-my-pi/package"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-installed-node24.log",
+      "startedAt": "2026-10-18T17:07:32.018339+00:00",
+      "endedAt": "2026-10-18T17:08:12.475214+00:00"
+    },
+    "c8-deadline-regression": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {
+        "tests": 16,
+        "suites": 0,
+        "pass": 16,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/node",
+        "--test",
+        "--test-concurrency=2",
+        "tests/direct-rpc-runtime.test.mjs",
+        "tests/host-account-rpc-success.test.mjs",
+        "tests/host-controlled-rpc.test.mjs",
+        "tests/host-installed-runtime.test.mjs",
+        "tests/host-installed-history.test.mjs"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "OMP_TEST_STACK_PACKAGE": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/only-my-pi/package",
+        "OMP_PI110_INSTALLED_EXTENSIONS": "1",
+        "OMP_INPUT_PI110_SOURCE": "1",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-deadline-regression.log",
+      "startedAt": "2026-10-18T17:06:04.958794+00:00",
+      "endedAt": "2026-10-18T17:07:12.054401+00:00"
+    },
+    "c8-typecheck-node22": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin/npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-typecheck-node22.log",
+      "startedAt": "2026-10-18T17:08:12.508816+00:00",
+      "endedAt": "2026-10-18T17:08:21.044269+00:00"
+    },
+    "c8-typecheck-node24": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-typecheck-node24.log",
+      "startedAt": "2026-10-18T17:08:35.868194+00:00",
+      "endedAt": "2026-10-18T17:08:41.968675+00:00"
+    },
+    "c8-test-contract-node22": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {
+        "tests": 159,
+        "suites": 0,
+        "pass": 159,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin/npm",
+        "run",
+        "test:contract"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-test-contract-node22.log",
+      "startedAt": "2026-10-18T17:08:21.073815+00:00",
+      "endedAt": "2026-10-18T17:08:24.378993+00:00"
+    },
+    "c8-test-contract-node24": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {
+        "tests": 159,
+        "suites": 0,
+        "pass": 159,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/npm",
+        "run",
+        "test:contract"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-test-contract-node24.log",
+      "startedAt": "2026-10-18T17:08:41.998225+00:00",
+      "endedAt": "2026-10-18T17:08:44.818931+00:00"
+    },
+    "c8-runtime-node22": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin/node",
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/pi130-smoke8.mjs",
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full",
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-runtime-node22-evidence"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-runtime-node22.log",
+      "startedAt": "2026-10-18T17:08:24.410833+00:00",
+      "endedAt": "2026-10-18T17:08:35.836371+00:00"
+    },
+    "c8-runtime-node24": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/node",
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/pi130-smoke8.mjs",
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full",
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-runtime-node24-evidence"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-runtime-node24.log",
+      "startedAt": "2026-10-18T17:08:44.849289+00:00",
+      "endedAt": "2026-10-18T17:08:54.726981+00:00"
+    },
+    "c8-patch-review": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/node",
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/patch8-review.mjs"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-patch-review.log",
+      "startedAt": "2026-10-18T17:08:54.766269+00:00",
+      "endedAt": "2026-10-18T17:08:54.843145+00:00"
+    },
+    "historical-contract-c8": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/node",
+        "--input-type=module",
+        "-e",
+        "import fs from 'node:fs/promises';import {inspectResolvedStack} from './packages/release-stack/release-builder.mjs';const root=process.argv[1];const stackManifest=JSON.parse(await fs.readFile(root+'/stack-manifest.json'));console.log(JSON.stringify(await inspectResolvedStack({resolvedRoot:root,stackManifest})));",
+        "LOCAL_WORKSPACE/artifacts/pi110-n04-20261013/candidate-2/payloads/full"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/historical-contract-c8.log",
+      "startedAt": "2026-10-18T17:13:09.078850+00:00",
+      "endedAt": "2026-10-18T17:13:18.580593+00:00"
+    },
+    "c8-candidate-rejections": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/negative-c8-copy/node/bin/node",
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/pi130-rejections8.mjs",
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/negative-c8-copy"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/negative-c8-copy/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-candidate-rejections.log",
+      "startedAt": "2026-10-18T17:09:09.800480+00:00",
+      "endedAt": "2026-10-18T17:09:38.961464+00:00"
+    },
+    "c8-cli-journey": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/node",
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/cli-journey8.mjs"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-cli-journey.log",
+      "startedAt": "2026-10-18T17:09:38.995070+00:00",
+      "endedAt": "2026-10-18T17:09:54.416458+00:00"
+    },
+    "c8-integrated-process": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/node",
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui/scripts/probes/pi110-integrated-acceptance.mjs",
+        "--run",
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full",
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/integrated8",
+        "1.3.0"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 1200,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-integrated-process.log",
+      "startedAt": "2026-10-18T17:09:54.449953+00:00",
+      "endedAt": "2026-10-18T17:12:48.530271+00:00"
+    },
+    "linux8-inputs-before": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "docker",
+        "--context",
+        "colima-omp-pi130-01-20261018",
+        "exec",
+        "omp-pi130-regression-24",
+        "node",
+        "/tmp/pi130-77-c8-verify.cjs",
+        "/work/pi130-77-dd996352",
+        "/tmp/pi130-77-c8-expected.json",
+        "before"
+      ],
+      "cwd": "/",
+      "env": {
+        "HOME": "LOCAL_HOME",
+        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/linux8-inputs-before.log",
+      "startedAt": "2026-10-18T17:59:45.494517+00:00",
+      "endedAt": "2026-10-18T17:59:46.884209+00:00"
+    },
+    "linux8-final-node22": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {
+        "tests": 52,
+        "suites": 0,
+        "pass": 52,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "command": [
+        "docker",
+        "--context",
+        "colima-omp-pi130-01-20261018",
+        "exec",
+        "--workdir",
+        "/work/pi130-77-dd996352",
+        "omp-pi130-regression-24",
+        "node22",
+        "--test",
+        "--test-concurrency=2",
+        "tests/pi130-runtime.test.mjs",
+        "tests/direct-agent-launcher.test.mjs",
+        "tests/direct-pi110-cli.test.mjs",
+        "tests/host-input-rpc.test.mjs",
+        "tests/phase1-runtime-contracts.test.mjs",
+        "tests/pi110-private-runtime.test.mjs",
+        "tests/pi130-private-runtime.test.mjs",
+        "tests/terminal-ready-publication.test.mjs",
+        "tests/resource-hash-order.test.mjs"
+      ],
+      "cwd": "/",
+      "env": {
+        "HOME": "LOCAL_HOME",
+        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/linux8-final-node22.log",
+      "startedAt": "2026-10-18T17:59:46.919260+00:00",
+      "endedAt": "2026-10-18T18:00:18.488862+00:00"
+    },
+    "linux8-final-node24": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {
+        "tests": 52,
+        "suites": 0,
+        "pass": 52,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "command": [
+        "docker",
+        "--context",
+        "colima-omp-pi130-01-20261018",
+        "exec",
+        "--workdir",
+        "/work/pi130-77-dd996352",
+        "omp-pi130-regression-24",
+        "node",
+        "--test",
+        "--test-concurrency=2",
+        "tests/pi130-runtime.test.mjs",
+        "tests/direct-agent-launcher.test.mjs",
+        "tests/direct-pi110-cli.test.mjs",
+        "tests/host-input-rpc.test.mjs",
+        "tests/phase1-runtime-contracts.test.mjs",
+        "tests/pi110-private-runtime.test.mjs",
+        "tests/pi130-private-runtime.test.mjs",
+        "tests/terminal-ready-publication.test.mjs",
+        "tests/resource-hash-order.test.mjs"
+      ],
+      "cwd": "/",
+      "env": {
+        "HOME": "LOCAL_HOME",
+        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/linux8-final-node24.log",
+      "startedAt": "2026-10-18T18:00:18.536017+00:00",
+      "endedAt": "2026-10-18T18:00:46.704165+00:00"
+    },
+    "linux8-inputs-after": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "docker",
+        "--context",
+        "colima-omp-pi130-01-20261018",
+        "exec",
+        "omp-pi130-regression-24",
+        "node",
+        "/tmp/pi130-77-c8-verify.cjs",
+        "/work/pi130-77-dd996352",
+        "/tmp/pi130-77-c8-expected.json",
+        "after"
+      ],
+      "cwd": "/",
+      "env": {
+        "HOME": "LOCAL_HOME",
+        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/linux8-inputs-after.log",
+      "startedAt": "2026-10-18T18:00:46.750450+00:00",
+      "endedAt": "2026-10-18T18:00:47.739605+00:00"
+    },
+    "linux8-environment-restored": {
+      "status": "PASS"
+    },
+    "c8-full-node22": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {
+        "tests": 1687,
+        "suites": 0,
+        "pass": 1683,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 4,
+        "todo": 0
+      },
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin/npm",
+        "test"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/only-my-pi-artifacts/multichannel-2026-09-12/node22/node-v22.19.0-darwin-arm64/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "OMP_PI110_INSTALLED_EXTENSIONS": "1",
+        "OMP_INPUT_PI110_SOURCE": "1",
+        "OMP_PI085_SDK_ROOT": "LOCAL_WORKSPACE/artifacts/webui-phase2/candidate-9130d02/resolved/pi",
+        "OMP_CLASSIFIER_LOCAL_ACCEPTANCE": "1",
+        "OMP_IMAGE_LOCAL_ACCEPTANCE": "1",
+        "OMP_PI130_EVIDENCE_ROOT": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-full-node22-pi130",
+        "OMP_INPUT_EVIDENCE_ROOT": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-full-node22-input",
+        "OMP_REGRESSION_EVIDENCE_ROOT": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-full-node22-regression"
+      },
+      "timeout": 2400,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-full-node22.log",
+      "startedAt": "2026-10-18T18:05:30.832557+00:00",
+      "endedAt": "2026-10-18T18:21:07.979133+00:00"
+    },
+    "c8-full-node24": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {
+        "tests": 1687,
+        "suites": 0,
+        "pass": 1687,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/npm",
+        "test"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1",
+        "OMP_PI110_INSTALLED_EXTENSIONS": "1",
+        "OMP_INPUT_PI110_SOURCE": "1",
+        "OMP_PI085_SDK_ROOT": "LOCAL_WORKSPACE/artifacts/webui-phase2/candidate-9130d02/resolved/pi",
+        "OMP_CLASSIFIER_LOCAL_ACCEPTANCE": "1",
+        "OMP_IMAGE_LOCAL_ACCEPTANCE": "1",
+        "OMP_PI130_EVIDENCE_ROOT": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-full-node24-pi130",
+        "OMP_INPUT_EVIDENCE_ROOT": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-full-node24-input",
+        "OMP_REGRESSION_EVIDENCE_ROOT": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-full-node24-regression",
+        "OMP_TEST_STACK_PACKAGE": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/only-my-pi/package"
+      },
+      "timeout": 2400,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-full-node24.log",
+      "startedAt": "2026-10-18T18:21:08.014714+00:00",
+      "endedAt": "2026-10-18T18:38:02.462001+00:00"
+    },
+    "c8-test-web": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/npm",
+        "run",
+        "test:web",
+        "--",
+        "--no-cache"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-test-web.log",
+      "startedAt": "2026-10-18T18:38:02.505040+00:00",
+      "endedAt": "2026-10-18T18:38:10.263750+00:00"
+    },
+    "c8-lint": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/npm",
+        "run",
+        "lint"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-lint.log",
+      "startedAt": "2026-10-18T18:38:10.295130+00:00",
+      "endedAt": "2026-10-18T18:38:28.248475+00:00"
+    },
+    "c8-secret-scan": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/npm",
+        "run",
+        "secret:scan"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-secret-scan.log",
+      "startedAt": "2026-10-18T18:38:28.279346+00:00",
+      "endedAt": "2026-10-18T18:38:31.744551+00:00"
+    },
+    "c8-schema-check": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/npm",
+        "run",
+        "schema:check"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-schema-check.log",
+      "startedAt": "2026-10-18T18:38:31.772537+00:00",
+      "endedAt": "2026-10-18T18:38:32.367050+00:00"
+    },
+    "c8-profile-check": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/npm",
+        "run",
+        "profile:check"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-profile-check.log",
+      "startedAt": "2026-10-18T18:38:32.396195+00:00",
+      "endedAt": "2026-10-18T18:38:32.582493+00:00"
+    },
+    "c8-pack-check": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/npm",
+        "run",
+        "pack:check"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 600,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-pack-check.log",
+      "startedAt": "2026-10-18T18:38:32.612304+00:00",
+      "endedAt": "2026-10-18T18:38:35.784261+00:00"
+    },
+    "c8-m11-r2": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin/node",
+        "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui/scripts/m11-release-gates.mjs",
+        "--run",
+        "--json"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home",
+        "PATH": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/candidate-8/payloads/full/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        "npm_config_cache": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/home/.npm",
+        "PI_OFFLINE": "1",
+        "PI_SKIP_VERSION_CHECK": "1"
+      },
+      "timeout": 1200,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-m11-r2.log",
+      "startedAt": "2026-10-18T18:41:29.443327+00:00",
+      "endedAt": "2026-10-18T18:41:48.717003+00:00"
+    },
+    "c8-browser-full-r2": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "/bin/zsh",
+        "-c",
+        "LOCAL_HOME/.local/bin/ego-browser nodejs < LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/browser8-full.js"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_HOME",
+        "PATH": "/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/opt/homebrew/bin:LOCAL_HOME/.codex/tmp/arg0/codex-arg0QrVOBy:/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/sbin:LOCAL_HOME/.cargo/bin:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources"
+      },
+      "timeout": 240,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-browser-full-r2.log",
+      "startedAt": "2026-10-18T17:24:54.898770+00:00",
+      "endedAt": "2026-10-18T17:25:09.422496+00:00"
+    },
+    "c8-browser-artifacts": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "/bin/zsh",
+        "-c",
+        "LOCAL_HOME/.local/bin/ego-browser nodejs < LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/browser8-artifacts.js"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_HOME",
+        "PATH": "/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/opt/homebrew/bin:LOCAL_HOME/.codex/tmp/arg0/codex-arg0QrVOBy:/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/sbin:LOCAL_HOME/.cargo/bin:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources"
+      },
+      "timeout": 240,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-browser-artifacts.log",
+      "startedAt": "2026-10-18T17:29:38.399834+00:00",
+      "endedAt": "2026-10-18T17:29:41.263471+00:00"
+    },
+    "c8-browser-editor": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "/bin/zsh",
+        "-c",
+        "LOCAL_HOME/.local/bin/ego-browser nodejs < LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/browser8-editor.js"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_HOME",
+        "PATH": "/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/opt/homebrew/bin:LOCAL_HOME/.codex/tmp/arg0/codex-arg0QrVOBy:/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/sbin:LOCAL_HOME/.cargo/bin:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources"
+      },
+      "timeout": 240,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-browser-editor.log",
+      "startedAt": "2026-10-18T17:44:37.064031+00:00",
+      "endedAt": "2026-10-18T17:44:41.213511+00:00"
+    },
+    "c8-browser-input-final": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "/bin/zsh",
+        "-c",
+        "LOCAL_HOME/.local/bin/ego-browser nodejs < LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/browser8-input-final.js"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_HOME",
+        "PATH": "/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/opt/homebrew/bin:LOCAL_HOME/.codex/tmp/arg0/codex-arg0QrVOBy:/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/sbin:LOCAL_HOME/.cargo/bin:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources"
+      },
+      "timeout": 240,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-browser-input-final.log",
+      "startedAt": "2026-10-18T18:02:02.811160+00:00",
+      "endedAt": "2026-10-18T18:02:29.875028+00:00"
+    },
+    "c8-browser-recover-paused": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "/bin/zsh",
+        "-c",
+        "LOCAL_HOME/.local/bin/ego-browser nodejs < LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/browser8-recover-paused.js"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_HOME",
+        "PATH": "/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/opt/homebrew/bin:LOCAL_HOME/.codex/tmp/arg0/codex-arg0QrVOBy:/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/sbin:LOCAL_HOME/.cargo/bin:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources"
+      },
+      "timeout": 240,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-browser-recover-paused.log",
+      "startedAt": "2026-10-18T17:38:05.956496+00:00",
+      "endedAt": "2026-10-18T17:38:13.649745+00:00"
+    },
+    "c8-browser-terminal": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "/bin/zsh",
+        "-c",
+        "LOCAL_HOME/.local/bin/ego-browser nodejs < LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/browser8-terminal.js"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_HOME",
+        "PATH": "/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/opt/homebrew/bin:LOCAL_HOME/.codex/tmp/arg0/codex-arg0QrVOBy:/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/sbin:LOCAL_HOME/.cargo/bin:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources"
+      },
+      "timeout": 240,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-browser-terminal.log",
+      "startedAt": "2026-10-18T17:46:20.510780+00:00",
+      "endedAt": "2026-10-18T17:46:31.851545+00:00"
+    },
+    "c8-resource-positive": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "/bin/zsh",
+        "-c",
+        "LOCAL_HOME/.local/bin/ego-browser nodejs < LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/resource8-positive.js"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_HOME",
+        "PATH": "/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/opt/homebrew/bin:LOCAL_HOME/.codex/tmp/arg0/codex-arg0QrVOBy:/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/sbin:LOCAL_HOME/.cargo/bin:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources"
+      },
+      "timeout": 240,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-resource-positive.log",
+      "startedAt": "2026-10-18T17:54:21.077702+00:00",
+      "endedAt": "2026-10-18T17:54:30.860420+00:00"
+    },
+    "c8-resource-negative": {
+      "status": "PASS",
+      "exitCode": 0,
+      "counts": {},
+      "command": [
+        "/bin/zsh",
+        "-c",
+        "LOCAL_HOME/.local/bin/ego-browser nodejs < LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/resource8-negative.js"
+      ],
+      "cwd": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/source-c8-input-ui",
+      "env": {
+        "HOME": "LOCAL_HOME",
+        "PATH": "/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/opt/homebrew/bin:LOCAL_HOME/.codex/tmp/arg0/codex-arg0QrVOBy:/opt/homebrew/lib/node_modules/@openai/codex/vendor/aarch64-apple-darwin/codex-path:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:LOCAL_HOME/.grok/bin:LOCAL_HOME/.local/bin:/opt/homebrew/sbin:LOCAL_HOME/.cargo/bin:LOCAL_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources"
+      },
+      "timeout": 240,
+      "log": "LOCAL_WORKSPACE/artifacts/pi130-02-20261018T132819Z/c8-resource-negative.log",
+      "startedAt": "2026-10-18T17:55:18.011169+00:00",
+      "endedAt": "2026-10-18T17:55:40.914739+00:00"
+    }
+  },
+  "reviews": {
+    "reviewedAt": "2026-10-18T18:57:31.349797+00:00",
+    "fixedPoint": "7f098966c820028e4f1482c6b54214b52aeb8c1c",
+    "sourceCommit": "dd996352c9f6d8fb514a131729e6ef349d7392ca",
+    "sourceDiffSha256": "977c773bec124bff89af96165fe096ed4d09b0efb37c88cdca76319a509a0049",
+    "ownedDocsDiffSha256AtReview": "c8c148e7d906c192fe76151619de17510b9fd093d9e31eb835b28983cd7ab6aa",
+    "inputs": "review-inputs.json",
+    "standards": {
+      "status": "PASS",
+      "reviewer": "/root/final_standards77",
+      "hardViolations": 0,
+      "smellFindings": 1,
+      "worst": "LOW possible Duplicated Code",
+      "originalReport": "final-review-standards.md",
+      "disposition": "Nonblocking existing TaskControl/TaskProgress timer duplication retained; no unrelated change to opening UI ownership."
+    },
+    "spec": {
+      "status": "PASS",
+      "reviewer": "/root/final_spec77",
+      "blockingFindings": 0,
+      "missingRequirements": 0,
+      "scopeCreep": 0,
+      "codeBehaviorFindings": 0,
+      "documentationFindings": 1,
+      "worst": "P3 rejection-count summary",
+      "originalReport": "final-review-spec.md",
+      "disposition": "RESOLVED: raw rejections8.json has 22 PASS rejection checks; successful admission is separate. Corrected both committed report generator and authorized issue-body draft."
+    },
+    "primaryVerification": {
+      "rejectionChecks": 22,
+      "allRejectionsPass": true,
+      "runtimeSourceChangedAfterReview": false,
+      "remainingBlockingFindings": 0
+    },
+    "scopeLimits": "Read-only independent source/evidence inspection; execution and final verification remain primary-agent responsibility."
+  },
+  "github": {
+    "number": 77,
+    "state": "CLOSED",
+    "state_reason": "completed",
+    "url": "https://github.com/Ricardo121380/only-my-pi/issues/77",
+    "updatedAt": "2026-10-18T18:59:04Z",
+    "closedAt": "2026-10-18T18:59:04Z",
+    "readAt": "2026-10-18T18:59:23.288447+00:00",
+    "verification": "PASS: separate GET after body-only PATCH and completion PATCH; body, metadata, comments and complete native edges verified",
+    "bodySha256": "b2a9c9bbdc58e95049060d279399023fbe31ab030c228935f43d1a560177dedb",
+    "blockedBy": [
+      76
+    ],
+    "blocking": [
+      26,
+      57
+    ],
+    "preservedIssues": [
+      76,
+      21,
+      23
+    ],
+    "evidence": "github-closeout/"
+  },
+  "failureHistory": [
+    {
+      "epoch": "candidate-1 / smoke r1,r2",
+      "status": "FAIL",
+      "kind": "harness assumption",
+      "finding": "Pi 1.1 esbuild assumptions were invalid for 1.3. Actual declared Jiti 2.7.0 executes TypeScript; no candidate edit was used to conceal these failures.",
+      "evidence": [
+        "candidate-runtime-node22.json",
+        "candidate-runtime-r2-node22.json",
+        "runtime-failure-attribution.json"
+      ]
+    },
+    {
+      "epoch": "candidate-1 / installed",
+      "status": "FAIL",
+      "kind": "product admission plus deadline",
+      "finding": "Host whitelist rejected pi130-v1; writer reached original deadline, including an independent reproduction. First unavailable receive state stays UNKNOWN.",
+      "evidence": [
+        "installed-four-node24.json",
+        "installed-writer-isolated-candidate1.json"
+      ]
+    },
+    {
+      "epoch": "candidate-2 / installed",
+      "status": "FAIL",
+      "kind": "aggregate runtime admission cost",
+      "finding": "7 PASS and one history CANCELLED at original 30 seconds; standalone phase observation PASS did not replace the failed combined run. Bounded file IO plus sharing the completed intrinsic check preserves fresh public revalidation.",
+      "evidence": [
+        "final-installed-node24.json",
+        "candidate2-history-phase-observation.json"
+      ]
+    },
+    {
+      "epoch": "candidate-2 / public version",
+      "status": "FAIL",
+      "kind": "product identity",
+      "finding": "Actual public admin version reported 0.84.3 for packaged 1.3.0; exact private contract mapping corrected.",
+      "evidence": [
+        "candidate2-public-version-red.json"
+      ]
+    },
+    {
+      "epoch": "candidate-3 / browser",
+      "status": "PARTIAL",
+      "kind": "source selection",
+      "finding": "Committed-only source omitted existing supplement/queue UI. Nineteen opening-baseline files were explicitly frozen into a private source snapshot; main branch retains them uncommitted. No C3 result is used as C4 acceptance.",
+      "evidence": [
+        "browser3/05-no-input-controls.snapshot.txt",
+        "c4-source-input-ownership.json",
+        "c4-source-input.patch"
+      ]
+    },
+    {
+      "epoch": "candidate-4 / Ego attempts",
+      "status": "PARTIAL_AUTOMATION",
+      "kind": "preserved local journey attempts",
+      "finding": "Hidden-dialog waits, stale/transient targets, native EditContext focus, pointer interception, and missing terminal cleanup confirmation were corrected in the browser driver. Initial unhandled approval timeouts and all prior task/input records remain. Successful journeys use real native input/keyboard/consent and independent readback, on this same candidate.",
+      "evidence": [
+        "browser4/04-first-approval-timeout-receipt.json",
+        "browser4/input-driver-r1.log",
+        "browser4/cancel-driver-r1.log",
+        "c4-browser-terminal.json",
+        "browser4/terminal-receipt.json",
+        "browser4-verification.json"
+      ]
+    },
+    {
+      "epoch": "candidate-4 / full Node24",
+      "status": "FAIL",
+      "kind": "preserved original deadlines",
+      "finding": "1683 PASS, 0 FAIL, 3 CANCELLED, 0 SKIP. Memory RPC EOF reached 15 seconds; four-account start/resume and installed writer reached 30 seconds. Node22 1682 PASS / 4 conditional SKIP belongs only to C4. All seven before/after comparisons were equal; it is not combined with final-candidate acceptance.",
+      "evidence": [
+        "c4-full-node22.json",
+        "c4-full-node24.json",
+        "c4-after-comparison.json",
+        "candidate4-acceptance.json"
+      ]
+    },
+    {
+      "epoch": "candidate-5 / combined deadlines",
+      "status": "FAIL",
+      "kind": "remaining account startup cost",
+      "finding": "15 PASS, 0 FAIL, 1 CANCELLED, 0 SKIP. Memory RPC and writer passed their unchanged deadlines; four-account RPC still reached 30 seconds, including the separate phase observation. File-read prefetch alone was insufficient. Final implementation derives raw tree digests and file SHA from the same fresh bounded reads, with no cross-admission cache or stored-digest shortcut.",
+      "evidence": [
+        "c5-deadline-regression.json",
+        "c5-account-phase-observation.json",
+        "candidate5-account-phase-observation.json",
+        "c5-after-comparison.json"
+      ]
+    },
+    {
+      "epoch": "worker inventory proposal",
+      "status": "REJECTED_PERFORMANCE",
+      "kind": "uncommitted diagnostic proposal",
+      "finding": "The worker prototype preserved complete old/new material inventories but serial I/O regressed latency. Its source and observations were archived, and the prototype was not committed or included in any accepted candidate.",
+      "evidence": [
+        "c6-worker-parity-node22.json",
+        "c6-worker-parity-node24.json",
+        "worker-inventory-rejected/decision.json"
+      ]
+    },
+    {
+      "epoch": "unified-read diagnostic caller",
+      "status": "FAIL_HARNESS_IDENTITY",
+      "kind": "foreign embedded Node path",
+      "finding": "The diagnostic attempted the historical private root using candidate5 Node; public admission correctly refused it. Subsequent observations use each candidate actual embedded Node. No node identity override was introduced.",
+      "evidence": [
+        "c6-unified-admission.json",
+        "c6-unified-caller-attribution.json",
+        "c6-unified-candidate5-r2.json",
+        "c6-unified-historical-r2.json"
+      ]
+    },
+    {
+      "epoch": "candidate-6 / combined deadlines and account phase",
+      "status": "FAIL",
+      "kind": "deadline plus exact native registry assertion",
+      "finding": "The 16-case combination retained one 30-second account cancellation. The isolated account observation reached the end of all four start/resume flows and exposed an exact-list mismatch: the installed readonly entry explicitly requests native codemode, while the source-only flag fixture registers only four physical read tools. The correction selects the exact registry by the frozen native Pi contract and adds a real native nested-write rejection without removing direct-write, account, credential, usage, thinking, history, receive-count or deadline assertions. The first red remains; it is not counted as a candidate pass.",
+      "evidence": [
+        "c6-deadline-regression.json",
+        "c6-account-phase-observation.json",
+        "c6-after-comparison.json",
+        "r7-account-registry-r2.json"
+      ]
+    },
+    {
+      "epoch": "resource prefetch descriptor proposal",
+      "status": "NOT_ADOPTED",
+      "kind": "uncommitted performance diagnostic",
+      "finding": "Golden tree checks passed, but the 2562.70ms admission observation showed no demonstrated improvement. Source and decision were archived; the smaller committed implementation was retained.",
+      "evidence": [
+        "r7-resource-prefetch-rejected/decision.json",
+        "r7-resource-golden.json",
+        "r7-resource-admission-diagnostic.json"
+      ]
+    },
+    {
+      "epoch": "account probe import resolution",
+      "status": "FAIL_HARNESS",
+      "kind": "standalone probe could not resolve source SDK",
+      "finding": "A copied test outside the source tree could not resolve its source-only SDK symlink input. The next observation resolves that exact source SDK path; runtime, SDK and extensions for the installed worker still come from the candidate.",
+      "evidence": [
+        "r7-account-registry.json",
+        "r7-account-registry-r2.json"
+      ]
+    },
+    {
+      "epoch": "candidate-7 / initial combined deadlines",
+      "status": "FAIL",
+      "kind": "preserved overlap condition",
+      "finding": "Both initial and quiescent combinations retained 15 PASS and one 30-second account cancellation. The first run overlapped a read-only before-freeze inventory; the quiescent reproduction proved that overlap was not the only cause. Both failures and unchanged seven-part freezes remain. The next implementation keeps descriptor stat/read/close together and is independently re-frozen.",
+      "evidence": [
+        "c7-deadline-regression.json",
+        "c7-first-deadline-conditions.json",
+        "c7-deadline-quiescent.json",
+        "c7-after-comparison.json",
+        "c8-material-parity-node22.json",
+        "c8-material-parity-node24.json"
+      ]
+    },
+    {
+      "epoch": "candidate-8 / GUI setup and first model picker",
+      "status": "FAIL_AUTOMATION_SETUP",
+      "kind": "preserved native browser controls and explicit account setup",
+      "finding": "Initial unsupported selector, collapsed static-provider form, pointer interception and screenshot timeout were retained. The first full driver stopped at the model picker with an empty account credential store. After an explicit native Save Credentials click, the real SDK returned exactly fixture/one; independent chat and nonchat receives were still zero before the successful business journey. No source or candidate byte changed, no fallback account was used.",
+      "evidence": [
+        "browser8/setup-driver-failures.json",
+        "browser8/account-empty-models-readback.json",
+        "c8-browser-full.json",
+        "browser8/full-driver-r1-failure.snapshot.txt",
+        "browser8/account-ready-readback.json",
+        "c8-browser-full-r2.json"
+      ]
+    },
+    {
+      "epoch": "candidate-8 / input driver fixture mode",
+      "status": "FAIL_AUTOMATION_PRECONDITION",
+      "kind": "continuation without resubmission",
+      "finding": "The initial input driver retained the full controlled reply scenario and stopped while waiting for separately authorized model budgets. The existing task and three inputs were preserved. A continuation explicitly approved the already-delivered local model work and selected ordinary replies for future turns; it did not resend a prompt or input. The initial input task retained one failed parent codemode script; its subsequent native consumption and all additional controlled model receipts remain. A separate correctly preset input journey on the same candidate uses new inputs BASE4/STEER4/QUEUE_FOUR and asserts both associated tasks succeed with every tool completed. Its tool and consumption checks remain supplemental; final acceptance uses I5, which also retains independent request bodies. No failed parent is counted as a clean pass.",
+      "evidence": [
+        "c8-browser-input.json",
+        "browser8/input-independent-receipt.json",
+        "c8-browser-input-continuation.json",
+        "browser8/input-continuation-before.json",
+        "browser8/input-independent-final.json",
+        "c8-browser-input-clean.json",
+        "resource-browser8/input-native-clean.json"
+      ]
+    },
+    {
+      "epoch": "candidate-8 / paused-queue browser control",
+      "status": "FAIL_AUTOMATION_POINTER",
+      "kind": "independent state readback before continuation",
+      "finding": "The original driver had already cancelled the native task and persisted the paused/removed queue evidence, then pointer interception stopped it before opening recovery. A subsequent stop-focused probe found no stop button; independent Host readback confirmed cancelled, one paused and one removed item. Recovery continued from those same input IDs through the explicit confirmation, without another stop or resubmission.",
+      "evidence": [
+        "c8-browser-cancel.json",
+        "c8-browser-cancel-continuation.json",
+        "browser8/cancel-stop-readback-state.json",
+        "browser8/cancel-paused-independent.json",
+        "c8-browser-recover-paused.json"
+      ]
+    },
+    {
+      "epoch": "candidate-8 / browser screenshots",
+      "status": "RESOLVED_BROWSER_ENVIRONMENT",
+      "kind": "Ego Lite capture interface",
+      "finding": "Initial high-level and Page.captureScreenshot calls timed out; Monaco also remained at zero layout size. Activating the existing Ego Lite app restored visible/nonzero layout and screenshot capture. Current candidate editor and terminal screenshots are inspected before native mouse/keyboard actions, with independent saved-file/PTY readback. No browser was substituted and no editor model was mutated programmatically; earlier failures and historical screenshots remain.",
+      "evidence": [
+        "browser8/setup-driver-failures.json",
+        "browser8/full-image-wait.snapshot.txt",
+        "browser8/editor-before.png",
+        "browser8/20-editor-saved.png",
+        "browser8/21-terminal-start.png"
+      ]
+    },
+    {
+      "epoch": "candidate-8 / resource input request-body retention",
+      "status": "PARTIAL_EVIDENCE_NOT_CAPTURED",
+      "kind": "independent model-text proof",
+      "finding": "I4 native input consumption and all tools passed, but the resource fixture retained only the independent chat count, not request bodies. The missing body proof is NOT_CAPTURED, not inferred absent. Final I5 input acceptance uses the same candidate and existing body-recording main fixture in a fresh isolated profile, with new input IDs and no resubmission; both tasks and every tool must complete, and actual independent request bodies must exclude those IDs. Earlier valid I4 consumption remains supplemental.",
+      "evidence": [
+        "browser8-verifier-first.json",
+        "c8-browser-input-clean.json",
+        "resource-browser8/input-native-clean.json",
+        "c8-browser-input-final.json",
+        "browser8-input-final/input-native-clean.json",
+        "browser8-input-final/browser-final-receipt.json"
+      ]
+    },
+    {
+      "epoch": "candidate-8 / M11 output destination",
+      "status": "FAIL_HARNESS_OUTPUT_POLICY",
+      "kind": "public CLI rejected before gate execution",
+      "finding": "The initial M11 caller requested a JSON output outside verification/receipts; the existing safe-output guard rejected the command before running gates. The corrected caller uses the canonical --run --json interface with no output argument, preserves stdout/stderr in the external evidence root, and leaves source/candidate, concurrency, assertions, timeouts and Q10/Q11 policy unchanged.",
+      "evidence": [
+        "c8-m11.json",
+        "c8-m11.log",
+        "c8-m11-r2.json",
+        "c8-m11-r2.log"
+      ]
+    }
+  ],
+  "supportMatrix": {
+    "macOS-arm64-Node22": "source complete lane and same packaged Pi/SDK/resources/native protocol; external Node22 cannot impersonate embedded OMP Node24",
+    "macOS-arm64-Node24": "actual embedded candidate OMP/Host/installed/CLI/PTY/Ego plus complete source lane",
+    "linux-arm64-Node22": "52 affected existing CLI/contract checks on independently frozen source export",
+    "linux-arm64-Node24": "52 affected existing CLI/contract checks on the same Linux source/dependencies"
+  },
+  "nonAcceptance": {
+    "Full": "NOT_RUN",
+    "materialAdmission": "BLOCKED unchanged #21/#23",
+    "newClients78to84": "NOT_RUN",
+    "newLinuxCapability": "NOT_RUN",
+    "remoteCI": "NOT_RUN",
+    "externalProvider": "NOT_RUN_BY_POLICY",
+    "dailyInstallation": "NOT_CHANGED",
+    "publicRelease": "NOT_RUN",
+    "push": "NOT_RUN"
+  },
+  "postAcceptanceRecheck": {
+    "date": "2026-10-19",
+    "openingHead": "dea1f2e780a752237176543a117bc1afe2184599",
+    "openingIssueState": "CLOSED / completed",
+    "scope": "Verify existing delivery discovered at repeated dispatch; documentation-only clarification, no candidate or runtime source change.",
+    "evidenceRoot": "../artifacts/pi130-02-20261019T115517",
+    "openingWorkspace": {
+      "gitVisibleFiles": 1778,
+      "dirtyEntries": 158,
+      "indexEmpty": true
+    },
+    "currentIdentity": {
+      "matchesOriginalFinalAcceptance": true,
+      "unchangedAfterCurrentRuns": true,
+      "compared": [
+        "sourceCommit",
+        "sourceTree",
+        "sourceStatus",
+        "source",
+        "dependencies",
+        "candidate",
+        "nodes"
+      ],
+      "beforeComparison": "current-inputs-vs-acceptance.json",
+      "afterComparison": "current-inputs-after-comparison.json"
+    },
+    "freshRuntimeChecks": {
+      "order": ["22.19.0", "24.19.0"],
+      "22.19.0": {"status": "PASS", "checks": 9, "receipt": "runtime-node22/receipt.json", "command": "runtime-node22.json"},
+      "24.19.0": {"status": "PASS", "checks": 9, "receipt": "runtime-node24/receipt.json", "command": "runtime-node24.json"},
+      "actualCliReceivesPerLane": 2,
+      "historicalPi110": {"status": "PASS", "scope": "Current full material inspection only", "receipt": "historical-check.json"}
+    },
+    "independentReadOnlyReviews": {
+      "fixedPoint": "7f098966c820028e4f1482c6b54214b52aeb8c1c",
+      "branchHead": "dea1f2e780a752237176543a117bc1afe2184599",
+      "privateSource": "dd996352c9f6d8fb514a131729e6ef349d7392ca",
+      "standards": {"status": "PASS", "reviewer": "/root/standards77_recheck", "hardViolations": 0, "blocking": 0, "advisories": 1, "worst": "P3 pre-existing UI timer duplication", "report": "review-standards.md"},
+      "spec": {"status": "PASS", "reviewer": "/root/spec77_recheck", "blocking": 0, "nonblocking": 0, "report": "review-spec.md"},
+      "receiptAudit": {"reviewer": "/root/receipts77_chain", "report": "receipt-audit.md"},
+      "postReviewChange": "Primary agent narrowed request-retention wording to the actually retained fields and recorded current verification; no implementation or behavioral assertion changed."
+    },
+    "reusedFrozenEvidence": {
+      "fullNode22": "Original candidate8 full execution, 1683 PASS / 4 conditional SKIP",
+      "fullNode24": "Original candidate8 full execution, 1687 PASS / 0 SKIP",
+      "linux": "Original same-source affected CLI executions, 52 PASS / 0 SKIP per Node lane",
+      "browser": "Original candidate8 complete journeys in Ego TaskSpace58",
+      "freshFullSuites": "NOT_RUN; runtime inputs are byte/mode/collection-identical and this increment changes documentation only",
+      "freshBrowserJourneys": "NOT_RUN; TaskSpace65 checked availability only and was finished"
+    },
+    "requestRetentionClarification": "Complete messages plus selected parsed fields are retained; complete raw HTTP body is NOT_CAPTURED. Original receipts and historical failures are unchanged.",
+    "upstream": {"checkedAt": "2026-10-19T04:02:56.723958+00:00", "npmLatest": "1.3.0", "githubLatest": "v1.3.0", "exactSriUnchanged": true, "receipt": "upstream/summary.json"},
+    "githubInitialReadback": {"state": "closed", "stateReason": "completed", "blockedBy": [76], "blocking": [26, 57], "preservedOpenIssues": [21, 23], "receipt": "github/summary.json"},
+    "githubFinalReadback": {
+      "readAt": "2026-10-19T04:07:37.865728+00:00",
+      "state": "closed",
+      "stateReason": "completed",
+      "closedAtUnchanged": "2026-10-18T18:59:04Z",
+      "updatedAt": "2026-10-19T04:06:25Z",
+      "bodySha256": "9d6e531e8f96856e5e3d023f70463db7f80f185b1825aa0cd780da3b3b69701b",
+      "bodyExact": true,
+      "singleBodyOnlyMutation": true,
+      "metadataAndCommentsUnchanged": true,
+      "allNativeDependencyIdsUnchanged": true,
+      "protectedIssues76_21_23Unchanged": true,
+      "firstComparison": "Strict nested-object equality stopped on the #76 blocking projection of #77 body and updated_at only; original difference retained. No write retry. Subsequent independent GET verifies both values against the one authorized #77 write; all actual protected issue fields, comments, edge IDs and other dependency objects remain unchanged.",
+      "diagnostic": "github/first-protected-comparison-diagnostic.json",
+      "receipt": "github/77-final-readback-summary.json"
+    }
+  },
+  "upstreamReadback": {
+    "checkedAt": "2026-10-18T15:15:26.511999+00:00",
+    "frozenVersion": "1.3.0",
+    "npmLatest": {
+      "version": "1.3.0",
+      "integrity": "sha512-V/WoCjA2hQSe3QLWIUB24cTRdtEdeLiIzkDqU5RMXV6VWuD+KGZnzVBMhglwdnQTySkehZsjt8a3g6Jd2g4nnw==",
+      "tarball": "https://registry.npmjs.org/@earendil-works/pi-coding-agent/-/pi-coding-agent-1.3.0.tgz"
+    },
+    "githubLatest": {
+      "tag_name": "v1.3.0",
+      "target_commitish": "main",
+      "published_at": "2026-10-15T19:17:33Z",
+      "draft": false,
+      "prerelease": false,
+      "html_url": "https://github.com/earendil-works/pi/releases/tag/v1.3.0"
+    },
+    "scope": "Metadata readback only; exact 1.3.0 remains the authorized target; later upstream changes are a separate epoch."
+  }
+}

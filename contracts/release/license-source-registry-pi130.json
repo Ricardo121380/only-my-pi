@@ -1,0 +1,79 @@
+{
+  "formatVersion": 1,
+  "kind": "only-my-pi-license-source-registry",
+  "piVersion": "1.3.0",
+  "sources": [
+    {
+      "id": "aws-sdk-js-v3-apache-2.0",
+      "declaredLicense": "Apache-2.0",
+      "file": "aws-apache-2.0.txt",
+      "contentSha256": "sha256:4186c3f89c23f27b4c0caab574737c49ee5137c36a3c103484feaca4aeec2310",
+      "sourceUrl": "https://raw.githubusercontent.com/aws/aws-sdk-js-v3/c47a84766e65e9a7f3d7151ff10d58aba29e6df0/LICENSE",
+      "normalization": "ENSURE_TRAILING_NEWLINE"
+    },
+    {
+      "id": "boolbase-isc",
+      "declaredLicense": "ISC",
+      "file": "boolbase-isc.txt",
+      "contentSha256": "sha256:cdf4d87ae0a6c160227263bf4e39a0a10e30e89ae7256e0f7ac7bde0836552c6",
+      "sourceUrl": "https://raw.githubusercontent.com/fb55/boolbase/54811f01c797a6bb1c263183ae90b7dd627e0638/LICENSE",
+      "normalization": "EXACT"
+    },
+    {
+      "id": "data-uri-to-buffer-mit",
+      "declaredLicense": "MIT",
+      "file": "data-uri-to-buffer-mit.txt",
+      "contentSha256": "sha256:5ba048e083aeb4461a7b5296a81c08e3b9e3bd7dfa5a5a1b2816cb95b121c4fe",
+      "sourceUrl": "https://raw.githubusercontent.com/TooTallNate/node-data-uri-to-buffer/85cd8c854aefbf1bb636789d80364cfac8ea1583/README.md",
+      "normalization": "EXTRACT_LINES_64_87_ENSURE_TRAILING_NEWLINE"
+    },
+    {
+      "id": "esbuild-mit",
+      "declaredLicense": "MIT",
+      "file": "esbuild-mit.txt",
+      "contentSha256": "sha256:b40ec5baec7bb34fa5b1c09521fa3cd52d5fad7adafed74932a2010d3612a681",
+      "sourceUrl": "https://raw.githubusercontent.com/evanw/esbuild/609683d892977362a0f99026cb74b96263d728a9/LICENSE.md",
+      "normalization": "EXACT"
+    },
+    {
+      "id": "pi130-mit",
+      "declaredLicense": "MIT",
+      "file": "pi130-mit.txt",
+      "contentSha256": "sha256:0457f5bcec3b3b211605dfb5d1a49042fd638f3686a410fe099c24a25af13c48",
+      "sourceUrl": "https://raw.githubusercontent.com/earendil-works/pi/71023aec1546d6d677a65669c5665c0927ce0dd0/LICENSE",
+      "normalization": "EXACT"
+    },
+    {
+      "id": "proxy-agent-negotiate-mit",
+      "declaredLicense": "MIT",
+      "file": "proxy-agent-negotiate-mit.txt",
+      "contentSha256": "sha256:8d8c55319c7729d57be811c747452636688d54f19701ee0752b6b15ad3771d9a",
+      "sourceUrl": "https://raw.githubusercontent.com/TooTallNate/proxy-agents/b7e5f7ccce1a3ac5b339cc4c587974e8989cbc16/packages/agent-base/LICENSE",
+      "normalization": "EXACT"
+    },
+    {
+      "id": "standardwebhooks-mit",
+      "declaredLicense": "MIT",
+      "file": "standardwebhooks-mit.txt",
+      "contentSha256": "sha256:5ec8c7b26b64d881a6706617bed25c049f97f2f35de034c756de8546fd6dbe27",
+      "sourceUrl": "https://raw.githubusercontent.com/standard-webhooks/standard-webhooks/b4d2c14fc5b4ccff3ff271e3b087dff812254c59/libraries/LICENSE",
+      "normalization": "EXACT"
+    }
+  ],
+  "bindings": {
+    "@aws-sdk/credential-provider-http@3.972.76": "aws-sdk-js-v3-apache-2.0",
+    "@aws-sdk/credential-provider-login@3.972.81": "aws-sdk-js-v3-apache-2.0",
+    "@aws-sdk/nested-clients@3.997.48": "aws-sdk-js-v3-apache-2.0",
+    "@earendil-works/pi-agent-core@1.3.0": "pi130-mit",
+    "@earendil-works/pi-ai@1.3.0": "pi130-mit",
+    "@earendil-works/pi-codemode@1.3.0": "pi130-mit",
+    "@earendil-works/pi-coding-agent@1.3.0": "pi130-mit",
+    "@earendil-works/pi-mcp@1.3.0": "pi130-mit",
+    "@earendil-works/pi-telemetry@1.3.0": "pi130-mit",
+    "@earendil-works/pi-tui@1.3.0": "pi130-mit",
+    "boolbase@1.0.0": "boolbase-isc",
+    "data-uri-to-buffer@4.0.1": "data-uri-to-buffer-mit",
+    "proxy-agent-negotiate@1.1.0": "proxy-agent-negotiate-mit",
+    "standardwebhooks@1.1.1": "standardwebhooks-mit"
+  }
+}

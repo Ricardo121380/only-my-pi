@@ -1,0 +1,35 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { randomUUID } from "node:crypto";
+import * as sdk from "@earendil-works/pi-coding-agent";
+import { readSessionSnapshot } from "../packages/direct-agent/session-history.mjs";
+import { prepareHeadlessSession } from "../packages/direct-agent/session-selection.mjs";
+import { imageDigest } from "./fixtures/image-host.mjs";
+import { pathToFileURL } from "node:url";
+test("image history rejects future or malformed references and a known incompatible headless reader before admission", async t => {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-image-reader-"))); t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const file = path.join(root, "session.jsonl"), requestId = randomUUID();
+  const artifact = { requestId, index: 0, projectPath: root, sessionId: "source", taskId: "task", accountId: "synthetic", model: "synthetic/draw", parentToolCallId: "script", inputDigest: "digest", createdAt: "2026-10-11T00:00:00Z", sha256: imageDigest, bytes: 253, width: 64, height: 64, mimeType: "image/png" };
+  const entries = [{ type: "session", id: "source", version: 3, cwd: root }, { type: "custom", id: "image", parentId: null, customType: "omp-image-artifacts", data: { version: 1, requestId, artifacts: [artifact] } }];
+  const write = async () => { const bytes = Buffer.from(entries.map(e => JSON.stringify(e)).join("\n") + "\n"); await fs.writeFile(file, bytes); return bytes; };
+  let before = await write(); assert.equal((await readSessionSnapshot(file)).manager.getBranch()[0].customType, "omp-image-artifacts");
+  class IncompatibleReader extends sdk.SessionManager {} Object.defineProperty(IncompatibleReader.prototype, "buildSessionProjection", { value: undefined });
+  let admissions = 0;
+  await assert.rejects(prepareHeadlessSession({ args: ["--session", file, "--print", "must not run"], sdk: { ...sdk, SessionManager: IncompatibleReader }, configRoot: root, cwd: root, env: {}, admissions: { admit() { admissions++; }, create() { admissions++; } } }), { code: "SESSION_READER_UPGRADE_REQUIRED" });
+  assert.equal(admissions, 0); assert.deepEqual(await fs.readFile(file), before);
+  entries[1].data.version = 2; before = await write(); await assert.rejects(readSessionSnapshot(file), { code: "SESSION_READER_UPGRADE_REQUIRED" }); assert.deepEqual(await fs.readFile(file), before);
+  entries[1].data.version = 1; entries[1].data.artifacts[0].sha256 = "broken"; before = await write(); await assert.rejects(readSessionSnapshot(file), { code: "SESSION_TREE_INVALID" }); assert.deepEqual(await fs.readFile(file), before);
+});
+test("the installed Pi 0.85.1 public reader is refused on image history before headless admission", { skip: !process.env.OMP_PI085_SDK_ROOT }, async t => {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-image-old-reader-"))); t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const oldRoot = process.env.OMP_PI085_SDK_ROOT, manifest = JSON.parse(await fs.readFile(path.join(oldRoot, "package.json"), "utf8")); assert.equal(manifest.version, "0.85.1");
+  const old = await import(pathToFileURL(path.join(oldRoot, "dist/index.js"))), file = path.join(root, "session.jsonl"), requestId = randomUUID();
+  const data = { version: 1, requestId, artifacts: [{ requestId, index: 0, projectPath: root, sessionId: "source", taskId: "task", accountId: "synthetic", model: "synthetic/draw", parentToolCallId: "script", inputDigest: "digest", createdAt: "2026-10-11T00:00:00Z", sha256: imageDigest, bytes: 253, width: 64, height: 64, mimeType: "image/png" }] };
+  const before = Buffer.from([{ type: "session", id: "source", version: 3, cwd: root }, { type: "custom", id: "image", parentId: null, customType: "omp-image-artifacts", data }].map(e => JSON.stringify(e)).join("\n") + "\n"); await fs.writeFile(file, before);
+  let admitted = 0;
+  await assert.rejects(prepareHeadlessSession({ args: ["--session", file, "--print", "must not run"], sdk: old, configRoot: root, cwd: root, env: {}, admissions: { admit() { admitted++; }, create() { admitted++; } } }), { code: "SESSION_READER_UPGRADE_REQUIRED" });
+  assert.equal(admitted, 0); assert.deepEqual(await fs.readFile(file), before);
+});

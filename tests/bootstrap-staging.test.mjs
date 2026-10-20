@@ -136,6 +136,7 @@ function createFakeRunner({
   reportIntegrity = true,
   install = true,
   escapingSymlinkTarget,
+  nestedBinLink,
   installedScripts,
   installedPeerDependencies,
   installForbiddenHost = false,
@@ -179,6 +180,11 @@ function createFakeRunner({
       await fs.mkdir(binRoot, { recursive: true });
       await fs.symlink("../omp-malicious-lifecycle/lifecycle.mjs", path.join(binRoot, "fixture-lifecycle"));
       if (escapingSymlinkTarget) await fs.symlink(escapingSymlinkTarget, path.join(binRoot, "escape"));
+      if (nestedBinLink) {
+        const nestedBin = path.join(target, "node_modules", ".bin");
+        await fs.mkdir(nestedBin, { recursive: true });
+        await fs.symlink(nestedBinLink, path.join(nestedBin, "fixture-lifecycle"));
+      }
       if (installForbiddenHost) {
         const hostRoot = path.join(prefix, "node_modules", "@earendil-works", "pi-coding-agent");
         await fs.mkdir(hostRoot, { recursive: true });
@@ -400,6 +406,9 @@ test("promoted minimal generation closes the /omp mode runtime import graph", as
   }
 
   const runtimeModule = await import(`${pathToFileURL(path.join(root, "resources/extensions/omp-control/runtime.mjs"))}?m3=${Date.now()}`);
+  // Pi loads the extension entrypoint, whose imports may exceed runtime.mjs.
+  const entryModule = await import(pathToFileURL(path.join(root, "resources/extensions/omp-control/index.ts")));
+  assert.equal(typeof entryModule.default, "function");
   const runtime = runtimeModule.createOmpRuntime();
   const listed = await runtime.execute("mode list");
   assert.equal(listed.ok, true, JSON.stringify(listed));
@@ -499,6 +508,16 @@ test("promoted daily generation closes the direct Agent runtime import graph", a
   const runtimeModule = await import(`${pathToFileURL(path.join(root, "resources/extensions/omp-direct/runtime.mjs"))}?m12=${Date.now()}`);
   assert.equal(typeof runtimeModule.createDirectSessionController, "function");
   assert.ok(runtimeModule.DIRECT_READ_ONLY_AGENTS.includes("omp-reviewer"));
+  const entryModule = await import(pathToFileURL(path.join(root, "resources/extensions/omp-direct/index.ts")));
+  const previous = process.env.ONLY_MY_PI_DIRECT;
+  delete process.env.ONLY_MY_PI_DIRECT;
+  try {
+    // A Harness-only generation must load without activating native clients.
+    await entryModule.default(Object.freeze({}));
+  } finally {
+    if (previous === undefined) delete process.env.ONLY_MY_PI_DIRECT;
+    else process.env.ONLY_MY_PI_DIRECT = previous;
+  }
 });
 
 test("integrity mismatch fails before install and before generation promotion", async (t) => {
@@ -679,6 +698,28 @@ test("npm tree verification permits contained bin links but rejects a symlink es
   await assert.rejects(fs.access(layout.generationRoot));
   await fs.access(layout.stagingRoot);
   await removeStagingGeneration({ layout });
+});
+
+test("nested npm bin links survive promotion but cannot escape or drift on readback", async (t) => {
+  const { root, artifactRoot, configRoot } = await createArtifact(t);
+  const plan = await planOwnedGraph({ packageInventory: packageInventory(), resourceInventory: resourceInventory([]), profile: profile(), artifactRoot });
+  const generation = await stageAndPromoteGeneration({
+    plan, configRoot, transactionId: "nested-bin", artifactRoot,
+    runCommand: createFakeRunner({ nestedBinLink: "../../lifecycle.mjs" }),
+  });
+  await verifyGenerationByManifest({ layout: generation.layout });
+  const link = path.join(generation.layout.generationRoot, "npm/node_modules/omp-malicious-lifecycle/node_modules/.bin/fixture-lifecycle");
+  const outside = path.join(root, "outside-npm");
+  await fs.writeFile(outside, "outside\n");
+  for (const [target, code] of [[outside, "UNSAFE_TREE_SYMLINK"], ["./missing", "UNSAFE_TREE_SYMLINK"], ["../../package.json", "INSTALLED_PACKAGE_DRIFT"]]) {
+    await fs.unlink(link);
+    await fs.symlink(target, link);
+    await assert.rejects(verifyGenerationByManifest({ layout: generation.layout }), { code });
+  }
+  await assert.rejects(stageAndPromoteGeneration({
+    plan, configRoot: path.join(root, "escape-config"), transactionId: "nested-bin-escape", artifactRoot,
+    runCommand: createFakeRunner({ nestedBinLink: outside }),
+  }), { code: "UNSAFE_TREE_SYMLINK" });
 });
 
 test("promotion seam must move rather than copy the verified staging generation", async (t) => {

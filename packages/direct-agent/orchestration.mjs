@@ -1,6 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { DEFAULT_BUDGET } from "../daily-config/index.mjs";
+import { isValidRealWorkspaceReceipt } from "./contracts.mjs";
 
 import {
   applyWriterPatch,
@@ -136,7 +138,7 @@ function terminalError(response) {
 }
 
 class DirectDelegationClient {
-  constructor({ transport, budget, idFactory = randomUUID, onStatus = () => {} } = {}) {
+  constructor({ transport, budget, idFactory = randomUUID, onStatus = () => {}, onStop = () => {} } = {}) {
     const maximumConcurrency = Math.min(2, budget.maxConcurrency);
     const maximumChildren = Math.min(8, budget.maxChildren);
     if (typeof transport?.subscribe !== "function" || typeof transport?.emit !== "function") throw new TypeError("direct delegation requires the shared Pi event transport");
@@ -153,6 +155,7 @@ class DirectDelegationClient {
     this.used = { tokens: 0, costUsd: 0, toolCalls: 0, resultBytes: 0 };
     this.idFactory = idFactory;
     this.onStatus = onStatus;
+    this.onStop = onStop;
     this.active = 0;
     this.total = 0;
     this.pending = new Map();
@@ -200,6 +203,7 @@ class DirectDelegationClient {
   stop(error) {
     if (this.budgetError) return;
     this.budgetError = error;
+    this.onStop(error);
     clearTimeout(this.deadlineTimer);
     this.cancelAll();
     for (const attempt of this.pending.values()) attempt.reject(error);
@@ -380,7 +384,7 @@ class DirectDelegationClient {
 }
 
 export class DirectCodingOrchestrator {
-  constructor({ transport, configRoot, getContext, budget = {}, webAuthorizer = null, webEnabled = false, verifyWriter = null, cloneService = {}, idFactory = randomUUID, now = () => new Date().toISOString() } = {}) {
+  constructor({ transport, configRoot, getContext, budget = {}, webAuthorizer = null, webEnabled = false, verifyWriter = null, verifyRealWorkspace = null, recordStore = null, contextProvider = null, cloneService = {}, idFactory = randomUUID, now = () => new Date().toISOString() } = {}) {
     if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("DirectCodingOrchestrator requires absolute configRoot");
     if (typeof getContext !== "function") throw new TypeError("DirectCodingOrchestrator requires getContext()");
     this.configRoot = path.resolve(configRoot);
@@ -391,6 +395,9 @@ export class DirectCodingOrchestrator {
     this.webEnabled = webEnabled;
     this.budget = { ...DEFAULT_BUDGET, ...structuredClone(budget) };
     this.verifyWriter = verifyWriter;
+    this.verifyRealWorkspace = verifyRealWorkspace;
+    this.recordStore = recordStore;
+    this.contextProvider = contextProvider;
     this.cloneService = {
       create: cloneService.create ?? createManagedClone,
       capture: cloneService.capture ?? captureWriterPatch,
@@ -399,11 +406,14 @@ export class DirectCodingOrchestrator {
     this.children = new Map();
     this.writerUsed = false;
     this.writerActive = false;
+    this.writerOperationAbort = null;
     this.disposed = false;
+    this.disposalAbort = new AbortController();
     this.client = new DirectDelegationClient({
       transport,
       budget: this.budget,
       idFactory,
+      onStop: () => this.writerOperationAbort?.abort(),
       onStatus: (label, status, data) => {
         const prior = this.children.get(label) ?? { label, agent: data?.agent ?? null };
         this.children.set(label, { ...prior, status, updatedAt: this.now(), toolCount: data?.toolCount ?? prior.toolCount ?? null, tokens: data?.tokens ?? prior.tokens ?? null });
@@ -478,7 +488,11 @@ export class DirectCodingOrchestrator {
     }
   }
 
-  async delegateWriter({ task, plan, scope, verification = [], baseline, approvedScope, signal } = {}) {
+  async delegateWriter({ task, plan, scope, verification = [], baseline, approvedScope, signal, assertAuthority } = {}) {
+    const writerAbort = new AbortController();
+    const operationSignal = signal ? AbortSignal.any([signal, this.disposalAbort.signal, writerAbort.signal]) : AbortSignal.any([this.disposalAbort.signal, writerAbort.signal]);
+    if (operationSignal.aborted) fail("DIRECT_WRITER_CANCELLED", "managed writer was cancelled before starting");
+    assertAuthority?.(this.getContext());
     if (this.writerUsed || this.writerActive) fail("DIRECT_WRITER_LIMIT_REACHED", "only one managed-clone writer is allowed in an OMP process");
     const ctx = this.getContext();
     if (!ctx) fail("DIRECT_SESSION_CONTEXT_UNAVAILABLE", "direct session context is unavailable");
@@ -487,17 +501,43 @@ export class DirectCodingOrchestrator {
     if (!scopeIsSubset(writerScope, approvedScope ?? [])) fail("DIRECT_WRITER_SCOPE_EXPANSION", "writer scope exceeds the approved coding scope");
     const overlap = writerScopeOverlapsDirtyPaths(baseline, writerScope);
     if (overlap.length > 0) return Object.freeze({ status: "MAIN_AGENT_FALLBACK_DIRTY_OVERLAP", overlap, message: "The main Agent must implement this scope in the original dirty worktree." });
+    if (!this.recordStore || typeof this.recordStore.begin !== "function" || typeof this.recordStore.update !== "function" || typeof this.contextProvider !== "function" || typeof this.verifyRealWorkspace !== "function") fail("DIRECT_WRITER_SAFETY_DEPENDENCY_UNAVAILABLE", "managed writing requires durable records and a real-worktree verifier before application");
     this.client.requireBudget();
     this.writerActive = true;
     this.writerUsed = true;
-    const runId = `direct-writer-${this.idFactory()}`;
+    this.writerOperationAbort = writerAbort;
+    const runId = `directwriter:${createHash("sha256").update(this.idFactory()).digest("hex").slice(0, 32)}`;
+    let writerRecord = null;
+    const recordState = async (stage, application = "NOT_STARTED", verificationState = "NOT_RUN", patch = null, receiptDigest = null, failureCode = null, recordStatus = "running", beforePublish = null) => {
+      if (!this.recordStore) return;
+      const state = { stage, application, verification: verificationState, patchDigest: patch?.sha256 ?? writerRecord?.directWriter?.patchDigest ?? null, patch: patch ? { relativePath: relativeArtifact(path.join(this.configRoot, "only-my-pi"), patch.patchPath), byteLength: patch.bytes, digest: patch.sha256 } : writerRecord?.directWriter?.patch ?? null, receiptDigest, failureCode, updatedAt: this.now() };
+      writerRecord = await this.recordStore.update(runId, { status: recordStatus, directWriter: state }, { beforePublish });
+    };
+    const assertCanApply = () => {
+      this.client.requireBudget();
+      if (operationSignal.aborted) fail("DIRECT_WRITER_CANCELLED", "managed writer was cancelled before application");
+      const current = this.getContext();
+      if (!current || path.resolve(current.cwd) !== path.resolve(ctx.cwd)) fail("DIRECT_WRITER_CONTEXT_CHANGED", "writer target project changed during delegation");
+      assertAuthority?.(current);
+    };
     try {
+      if (this.recordStore) {
+        if (typeof this.contextProvider !== "function") fail("DIRECT_WRITER_RECORD_CONTEXT_UNAVAILABLE", "writer record context is unavailable");
+        const context = await this.contextProvider();
+        if (context.repository?.root !== await fs.realpath(ctx.cwd) || context.repository?.head !== baseline.head) fail("DIRECT_WRITER_RECORD_CONTEXT_DRIFT", "writer record repository differs from the approved baseline");
+        const planDigest = `sha256:${createHash("sha256").update(plan).digest("hex")}`;
+        writerRecord = await this.recordStore.begin({ id: runId, sessionId: context.sessionId, repository: context.repository, configurationDigest: context.configurationDigest, planDigest, executionEnvelopeDigest: planDigest, input: { task, scope: writerScope }, inputDigest: `sha256:${createHash("sha256").update(JSON.stringify({ task, scope: writerScope })).digest("hex")}`, directWriter: { stage: "PREPARING", application: "NOT_STARTED", verification: "NOT_RUN", patchDigest: null, patch: null, receiptDigest: null, failureCode: null, updatedAt: this.now() } });
+        writerRecord = await this.recordStore.update(runId, { status: "running" });
+      }
       const managed = await this.cloneService.create({
         repositoryRoot: ctx.cwd,
         runId,
         baseCommit: baseline.head,
         runsRoot: path.join(this.configRoot, "only-my-pi", "runs"),
+        signal: operationSignal,
       });
+      if (operationSignal.aborted) fail("DIRECT_WRITER_CANCELLED", "managed writer was cancelled before delegation");
+      assertAuthority?.(this.getContext());
       const writerTask = [
         "Implement the approved project-local plan in this managed ordinary Git clone.",
         `Task: ${boundedText(task, "task", 16_384)}`,
@@ -519,25 +559,33 @@ export class DirectCodingOrchestrator {
         maximumTurns: 8,
         maximumToolCalls: 16,
         result: { kind: "structured", schema: WRITER_RESULT_SCHEMA },
-        signal,
+        signal: operationSignal,
       });
-      if (writer.result?.status !== "completed") return Object.freeze({ status: "WRITER_BLOCKED", summary: writer.result?.summary ?? "Writer reported a blocked implementation." });
-      const capture = { cloneRoot: managed.cloneRoot, baseCommit: baseline.head, scope: writerScope, patchRoot: managed.patchRoot, runId, nodeId: "writer-1" };
+      if (writer.result?.status !== "completed") { await recordState("BLOCKED", "NOT_STARTED", "NOT_RUN", null, null, "WRITER_BLOCKED", "interrupted"); return Object.freeze({ status: "WRITER_BLOCKED", summary: writer.result?.summary ?? "Writer reported a blocked implementation." }); }
+      const capture = { cloneRoot: managed.cloneRoot, baseCommit: baseline.head, scope: writerScope, patchRoot: managed.patchRoot, runId, nodeId: "writer-1", signal: operationSignal };
       const patch = await this.cloneService.capture(capture);
-      if (patch.status === "NO_CHANGES") return Object.freeze({ status: "WRITER_NO_CHANGES", summary: writer.result.summary, usage: writer.usage });
+      if (patch.status === "NO_CHANGES") { await recordState("BLOCKED", "NOT_STARTED", "NOT_RUN", null, null, "WRITER_NO_CHANGES", "completed"); return Object.freeze({ status: "WRITER_NO_CHANGES", summary: writer.result.summary, usage: writer.usage }); }
+      await recordState("PATCH_CAPTURED", "NOT_STARTED", "NOT_RUN", patch);
       const reported = [...new Set((writer.result.changedPaths ?? []).map((entry) => normalizeRelativePath(entry, "writer reported path")))].sort();
       if (JSON.stringify(reported) !== JSON.stringify([...patch.changedPaths].sort())) fail("DIRECT_WRITER_REPORT_DRIFT", "writer-reported paths do not match the captured patch");
-      const blocked = (code, receipt = null) => Object.freeze({ status: "WRITER_VERIFICATION_BLOCKED", code, patchDigest: patch.sha256, artifact: relativeArtifact(this.configRoot, patch.patchPath), verificationReceipt: receipt });
-      if (!this.verifyWriter) return blocked("WRITER_VERIFIER_UNAVAILABLE");
-      const verified = await this.verifyWriter({ cloneRoot: managed.cloneRoot, patch, requestedVerification: verification, signal });
+      const blocked = async (code, receipt = null) => { await recordState("BLOCKED", "NOT_STARTED", "NOT_RUN", patch, receipt?.receiptDigest ?? null, code, "interrupted"); return Object.freeze({ status: "WRITER_VERIFICATION_BLOCKED", code, patchDigest: patch.sha256, artifact: relativeArtifact(this.configRoot, patch.patchPath), verificationReceipt: receipt }); };
+      if (!this.verifyWriter) return await blocked("WRITER_VERIFIER_UNAVAILABLE");
+      const verified = await this.verifyWriter({ cloneRoot: managed.cloneRoot, patch, requestedVerification: verification, signal: operationSignal });
       if (verified?.status !== "PASS" || verified.patchDigest !== patch.sha256 || verified.baseCommit !== baseline.head || !Array.isArray(verified.results) || verified.results.length === 0 || verified.results.some((result) => result.status !== "PASS" || result.exitCode !== 0 || result.killed !== false)) {
-        return blocked(verified?.code ?? "WRITER_TESTS_NOT_VERIFIED", verified);
+        return await blocked(verified?.code ?? "WRITER_TESTS_NOT_VERIFIED", verified);
       }
+      await recordState("CLONE_VERIFIED", "NOT_STARTED", "NOT_RUN", patch, verified.receiptDigest);
       const unchanged = async () => {
         const current = await this.cloneService.capture({ ...capture, nodeId: "verification-check" });
         return current.status === "READY" && current.sha256 === patch.sha256 && JSON.stringify(current.changedPaths) === JSON.stringify(patch.changedPaths);
       };
-      if (signal?.aborted || !await unchanged()) return blocked("WRITER_VERIFIED_PATCH_DRIFT", verified);
+      if (!await unchanged()) return await blocked("WRITER_VERIFIED_PATCH_DRIFT", verified);
+      this.client.requireBudget();
+      if (operationSignal.aborted) return await blocked("DIRECT_WRITER_CANCELLED", verified);
+      try { assertCanApply(); } catch (error) {
+        if (/^DIRECT_CHILD_/u.test(error?.code ?? "")) throw error;
+        return await blocked(error?.code ?? "DIRECT_WRITER_AUTHORIZATION_REVOKED", verified);
+      }
       const review = await this.client.execute({
         ownerRunId: runId,
         nodeId: "reviewer-1",
@@ -550,9 +598,10 @@ export class DirectCodingOrchestrator {
         maximumTurns: 6,
         maximumToolCalls: 12,
         result: { kind: "structured", schema: REVIEW_RESULT_SCHEMA },
-        signal,
+        signal: operationSignal,
       });
       if (review.result?.verdict !== "pass") {
+        await recordState("BLOCKED", "NOT_STARTED", "NOT_RUN", patch, verified.receiptDigest, "WRITER_REVIEW_BLOCKED", "interrupted");
         return Object.freeze({
           status: "WRITER_REVIEW_BLOCKED",
           patchDigest: patch.sha256,
@@ -561,27 +610,62 @@ export class DirectCodingOrchestrator {
           artifact: relativeArtifact(this.configRoot, patch.patchPath),
         });
       }
-      if (signal?.aborted || !await unchanged()) return blocked("WRITER_VERIFIED_PATCH_DRIFT", verified);
+      await recordState("REVIEWED", "NOT_STARTED", "NOT_RUN", patch, verified.receiptDigest);
+      if (!await unchanged()) return await blocked("WRITER_VERIFIED_PATCH_DRIFT", verified);
       this.client.requireBudget();
-      const applied = await this.cloneService.apply({ patch, repositoryRoot: ctx.cwd, scope: writerScope, baseline });
+      if (operationSignal.aborted) return await blocked("DIRECT_WRITER_CANCELLED", verified);
+      try { assertCanApply(); } catch (error) {
+        if (/^DIRECT_CHILD_/u.test(error?.code ?? "")) throw error;
+        return await blocked(error?.code ?? "DIRECT_WRITER_AUTHORIZATION_REVOKED", verified);
+      }
+      await recordState("APPLYING", "NOT_STARTED", "NOT_RUN", patch, verified.receiptDigest);
+      let applied;
+      try {
+        applied = await this.cloneService.apply({ patch, repositoryRoot: ctx.cwd, scope: writerScope, baseline, signal: operationSignal, assertAuthority: assertCanApply });
+      } catch (error) {
+        if (error?.code === "WRITER_PATCH_APPLICATION_UNKNOWN") await recordState("APPLICATION_UNKNOWN", "UNKNOWN", "NOT_RUN", patch, verified.receiptDigest, error.code).catch(() => {});
+        throw error;
+      }
+      try { await recordState("APPLIED_PENDING_VERIFICATION", "APPLIED", "PENDING", patch, verified.receiptDigest); }
+      catch (error) { return Object.freeze({ status: "WRITER_PATCH_APPLIED_RECORD_FAILED", patchDigest: applied.patchDigest, changedPaths: applied.changedPaths, code: error?.code ?? "RUN_RECORD_WRITE_FAILED" }); }
+      let realVerification = { status: "BLOCKED", code: "WRITER_REAL_VERIFIER_UNAVAILABLE" };
+      if (this.verifyRealWorkspace) {
+        try {
+          await recordState("VERIFYING", "APPLIED", "RUNNING", patch, verified.receiptDigest);
+          realVerification = await this.verifyRealWorkspace({ repositoryRoot: ctx.cwd, patch, runId, cloneManifestDigest: verified.manifestDigest, signal: operationSignal });
+        } catch (error) { realVerification = { status: "BLOCKED", code: error?.code ?? "WRITER_REAL_GATE_EXECUTION_ERROR" }; }
+      }
+      const receiptBody = { ...realVerification };
+      delete receiptBody.receiptDigest;
+      const realRoot = await fs.realpath(ctx.cwd);
+      let authorityCurrent = false;
+      try { assertCanApply(); authorityCurrent = true; } catch { /* Application fact remains, but verification cannot become successful. */ }
+      const realPassed = authorityCurrent && isValidRealWorkspaceReceipt(realVerification, { runId, patchDigest: patch.sha256, head: baseline.head, manifestDigest: verified.manifestDigest, repositoryRootDigest: `sha256:${createHash("sha256").update(realRoot).digest("hex")}`, receiptDigest: `sha256:${createHash("sha256").update(JSON.stringify(receiptBody)).digest("hex")}` });
+      try { await recordState(realPassed ? "VERIFIED" : "APPLIED_PENDING_VERIFICATION", "APPLIED", realPassed ? "PASS" : realVerification.status === "FAIL" ? "FAIL" : "BLOCKED", patch, realPassed ? realVerification.receiptDigest : verified.receiptDigest, realPassed ? null : realVerification.code ?? "WRITER_REAL_GATE_FAILED", realPassed ? "completed" : "interrupted", realPassed ? assertCanApply : null); }
+      catch (error) { return Object.freeze({ status: "WRITER_PATCH_APPLIED_RECORD_FAILED", patchDigest: applied.patchDigest, changedPaths: applied.changedPaths, code: error?.code ?? "RUN_RECORD_WRITE_FAILED" }); }
       return Object.freeze({
-        status: "WRITER_PATCH_APPLIED_REQUIRES_REAL_WORKSPACE_VERIFICATION",
+        status: realPassed ? "WRITER_PATCH_VERIFIED" : "WRITER_PATCH_APPLIED_REQUIRES_REAL_WORKSPACE_VERIFICATION",
         patchDigest: applied.patchDigest,
         changedPaths: applied.changedPaths,
         summary: writer.result.summary,
         cloneVerification: writer.result.verification,
         verificationReceipt: verified,
+        realVerificationReceipt: realVerification,
         reviewer: { verdict: review.result.verdict, findings: review.result.findings, unverified: review.result.unverified },
         requiredVerification: Array.isArray(verification) ? verification.slice(0, 16) : [],
       });
     } finally {
+      if (writerRecord?.status === "running" && this.recordStore) await this.recordStore.update(runId, { status: "interrupted" }).catch(() => {});
       this.writerActive = false;
+      if (this.writerOperationAbort === writerAbort) this.writerOperationAbort = null;
     }
   }
 
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
+    this.disposalAbort.abort();
+    this.writerOperationAbort?.abort();
     this.client.dispose();
     this.getContext()?.ui?.setWidget?.("omp-direct-agents", undefined);
   }

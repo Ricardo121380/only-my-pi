@@ -1,0 +1,269 @@
+{
+  "verifiedAt": "2026-10-13T05:52:29.785387+00:00",
+  "currentIssue": 75,
+  "stopAfterIssue": 75,
+  "issues": {
+    "65": {
+      "state": "closed",
+      "closed_at": "2026-10-13T02:51:23Z",
+      "dependencies": [],
+      "dependencySummary": {
+        "blocked_by": 0,
+        "total_blocked_by": 0,
+        "blocking": 2,
+        "total_blocking": 2
+      },
+      "state_reason": "completed",
+      "acceptance": {
+        "gate": "GP110-04",
+        "C": "PASS",
+        "P": {
+          "Node22": "8/8 PASS",
+          "Node24": "8/8 PASS"
+        },
+        "Standards": "PASS",
+        "Spec": "PASS",
+        "fullRegression": {
+          "status": "FAIL",
+          "pass": 1763,
+          "fail": 9,
+          "cancelled": 10,
+          "skipped": 7,
+          "exitCode": 1
+        },
+        "failedCasesIsolated": {
+          "pass": 19,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "exitCode": 0
+        },
+        "report": "2026-10-13-pi110-private-runtime-acceptance.md",
+        "commentUrl": "https://github.com/Ricardo121380/only-my-pi/issues/65#issuecomment-6137132012"
+      }
+    },
+    "73": {
+      "state": "closed",
+      "closed_at": "2026-10-11T10:34:15Z",
+      "dependencies": [
+        {
+          "number": 72,
+          "state": "closed",
+          "title": "[PI110-N11] 用固定账号模型执行有预算的分类"
+        }
+      ],
+      "dependencySummary": {
+        "blocked_by": 0,
+        "total_blocked_by": 1,
+        "blocking": 0,
+        "total_blocking": 1
+      },
+      "state_reason": "completed"
+    },
+    "74": {
+      "state": "closed",
+      "closed_at": "2026-10-11T12:17:24Z",
+      "dependencies": [
+        {
+          "number": 73,
+          "state": "closed",
+          "title": "[PI110-N12] 生成并保存有来源的会话图片"
+        },
+        {
+          "number": 63,
+          "state": "closed",
+          "title": "[PI110-N02] 贯通新版输入反馈、历史续接和位置分支"
+        }
+      ],
+      "dependencySummary": {
+        "blocked_by": 0,
+        "total_blocked_by": 2,
+        "blocking": 2,
+        "total_blocking": 2
+      },
+      "state_reason": "completed"
+    },
+    "75": {
+      "state": "closed",
+      "closed_at": "2026-10-13T06:10:45Z",
+      "dependencies": [
+        {
+          "number": 64,
+          "state": "closed",
+          "title": "[PI110-N03] 交付 fullscreen 默认与 regular 终端选项"
+        },
+        {
+          "number": 67,
+          "state": "closed",
+          "title": "[PI110-N06] 通过 MCP 安全修改项目并核对单写"
+        },
+        {
+          "number": 69,
+          "state": "closed",
+          "title": "[PI110-N08] 完成 MCP OAuth 登录、取消与撤销"
+        },
+        {
+          "number": 71,
+          "state": "closed",
+          "title": "[PI110-N10] 受控发现 MCP 工具并读取资源"
+        },
+        {
+          "number": 74,
+          "state": "closed",
+          "title": "[PI110-N13] 恢复会话产物并显式下载或写入项目"
+        },
+        {
+          "number": 65,
+          "state": "closed",
+          "title": "[PI110-N04] 生成可核验的 Pi 1.1.0 私有运行时"
+        }
+      ],
+      "dependencySummary": {
+        "blocked_by": 0,
+        "total_blocked_by": 6,
+        "blocking": 1,
+        "total_blocking": 1
+      },
+      "implementationStarted": true,
+      "acceptance": {
+        "gate": "GP110-08",
+        "C": "PASS",
+        "P": {
+          "status": "PASS",
+          "checks": 23,
+          "segments": [
+            {
+              "evidence": "acceptance-p-9/receipt.json",
+              "pass": 20,
+              "runExitCode": 1
+            },
+            {
+              "evidence": "acceptance-p-11/receipt.json",
+              "pass": 3,
+              "runExitCode": 0
+            }
+          ],
+          "candidate": "pi110-n14-20261013/candidate-2",
+          "resourceSupplement": {
+            "status": "PASS",
+            "checks": 7,
+            "evidence": "acceptance-b-resources-2/browser-result.json",
+            "sameNativeProcessAndBrowserJourney": true,
+            "serveExitCode": 0
+          }
+        },
+        "B": {
+          "status": "PASS",
+          "checks": 20,
+          "tool": "Ego Lite",
+          "taskSpace": 50,
+          "segments": [
+            {
+              "evidence": "acceptance-b-1/browser-result.json",
+              "pass": 13,
+              "businessVerificationExitCode": 0,
+              "serveExitCode": 1
+            },
+            {
+              "evidence": "acceptance-b-resources-2/browser-result.json",
+              "pass": 7,
+              "businessVerificationExitCode": 0,
+              "serveExitCode": 0
+            }
+          ],
+          "taskSpaceFinished": true,
+          "finishEvidence": "ego-finish.json"
+        },
+        "Standards": "PASS",
+        "Spec": "PASS",
+        "fullRegression": {
+          "status": "PASS",
+          "tests": 1792,
+          "suites": 0,
+          "pass": 1784,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 8,
+          "todo": 0,
+          "duration_ms": 783246.819708,
+          "exitCode": 0,
+          "failures": [],
+          "evidence": "full-node24-final-3",
+          "testFileConcurrency": 2
+        },
+        "priorFinalRegressions": [
+          {
+            "evidence": "full-node24-final",
+            "status": "FAIL",
+            "pass": 1782,
+            "fail": 1,
+            "cancelled": 1,
+            "skipped": 8,
+            "exitCode": 1
+          },
+          {
+            "evidence": "full-node24-final-2",
+            "status": "FAIL",
+            "pass": 1782,
+            "fail": 1,
+            "cancelled": 1,
+            "skipped": 8,
+            "exitCode": 1
+          }
+        ],
+        "report": "2026-10-13-pi110-integrated-acceptance.md",
+        "notRun": [
+          "Full",
+          "real paid Provider",
+          "daily installation switch",
+          "GP110-09",
+          "remote CI",
+          "release",
+          "Linux",
+          "Windows"
+        ],
+        "reviewHistory": [
+          {
+            "axis": "Standards",
+            "verdict": "PASS",
+            "evidence": "standards-review-first.md",
+            "blocking": 0
+          },
+          {
+            "axis": "Spec",
+            "verdict": "PARTIAL",
+            "evidence": "spec-review-first.md",
+            "blocker": "N2 resource B binding missing",
+            "supplementEvidence": "acceptance-b-resources-2/browser-result.json"
+          },
+          {
+            "axis": "Standards",
+            "verdict": "PASS",
+            "evidence": "standards-review-final.md",
+            "blocking": 0,
+            "fixedPoint": "06e53f509ec911c3995aa405cea4dbe4e41e58f7",
+            "head": "9a9ee19f61ced0b66073c33417aad57f1b02faf1"
+          },
+          {
+            "axis": "Spec",
+            "verdict": "PASS",
+            "evidence": "spec-review-final.md",
+            "blocking": 0,
+            "resolvedFirstReviewBlocker": "N2 resource B binding",
+            "fixedPoint": "06e53f509ec911c3995aa405cea4dbe4e41e58f7",
+            "head": "9a9ee19f61ced0b66073c33417aad57f1b02faf1"
+          }
+        ],
+        "reviewPacket": "review-packet-2.json",
+        "closedConditionsMet": true,
+        "commentUrl": "https://github.com/Ricardo121380/only-my-pi/issues/75#issuecomment-6139434444",
+        "closeReadback": "closure-mutations.json",
+        "checkedAcceptanceCriteria": 7
+      },
+      "state_reason": "completed"
+    }
+  },
+  "publicationFieldsAreHistorical": true,
+  "status": "completed",
+  "completedIssue": 75
+}

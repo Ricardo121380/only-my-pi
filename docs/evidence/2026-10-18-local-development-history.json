@@ -1,0 +1,2308 @@
+{
+  "scope": "local-only provenance; no runtime or release acceptance",
+  "entries": [
+    {
+      "id": "local-6cc62f5d9429765b",
+      "path": "contracts/release/parser-resources-v1/contract.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/contract.json",
+      "sha256": "a7f342d5ce2ead6610fb5cc2624307ca90c31a0f6540fb1b64a63fd2475edb70",
+      "mode": "0o644",
+      "bytes": 210286,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-parser-full-integration.md",
+          "line": 11,
+          "raw": "../../contracts/release/parser-resources-v1/contract.json",
+          "path": "contracts/release/parser-resources-v1/contract.json",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-resource-integration-acceptance.md",
+          "line": 7,
+          "raw": "../../contracts/release/parser-resources-v1/contract.json",
+          "path": "contracts/release/parser-resources-v1/contract.json",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-10-01-engineering-baseline.md",
+          "line": 83,
+          "raw": "../../contracts/release/parser-resources-v1/contract.json",
+          "path": "contracts/release/parser-resources-v1/contract.json",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-10-17-product-direction-and-iteration-plan.md",
+          "line": 332,
+          "raw": "../../contracts/release/parser-resources-v1/contract.json",
+          "path": "contracts/release/parser-resources-v1/contract.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-10432c7f6b8b6f0f",
+      "path": "contracts/release/parser-resources-v1/documents/licenses/saxes-6.0.0.txt",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/documents/licenses/saxes-6.0.0.txt",
+      "sha256": "0fac2374380621b22e6b50451057721a9c52935b02d16d106a9f04897f061d0e",
+      "mode": "0o644",
+      "bytes": 3011,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-resource-integration-acceptance.md",
+          "line": 8,
+          "raw": "../../contracts/release/parser-resources-v1/documents/licenses/saxes-6.0.0.txt",
+          "path": "contracts/release/parser-resources-v1/documents/licenses/saxes-6.0.0.txt",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-ed4c5ef8cf6ab86a",
+      "path": "contracts/release/parser-resources-v1/documents/package-lock.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/documents/package-lock.json",
+      "sha256": "3120e2d01ad9b390ae9e8eec16674752fb8a032e933644340354866779fa9ee5",
+      "mode": "0o644",
+      "bytes": 10116,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-resource-integration-acceptance.md",
+          "line": 8,
+          "raw": "../../contracts/release/parser-resources-v1/documents/package-lock.json",
+          "path": "contracts/release/parser-resources-v1/documents/package-lock.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-05662b02d519cc37",
+      "path": "contracts/release/parser-resources-v1/images/package-lock.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/images/package-lock.json",
+      "sha256": "0e5020f83038a0105d9894b6a51c18be9c1fe351144f39252931932f7da606ed",
+      "mode": "0o644",
+      "bytes": 20136,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-resource-integration-acceptance.md",
+          "line": 8,
+          "raw": "../../contracts/release/parser-resources-v1/images/package-lock.json",
+          "path": "contracts/release/parser-resources-v1/images/package-lock.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-be4fbd06374c1ea0",
+      "path": "contracts/release/parser-resources-v1/native-generated-materials.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/native-generated-materials.json",
+      "sha256": "3e2320986cfa631f6f319174a0ea456dfba200067a1c354bf9a7246c734b4bf4",
+      "mode": "0o644",
+      "bytes": 12043,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-generated-materials.md",
+          "line": 51,
+          "raw": "../../contracts/release/parser-resources-v1/native-generated-materials.json",
+          "path": "contracts/release/parser-resources-v1/native-generated-materials.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-72382d39a7bd05fe",
+      "path": "contracts/release/parser-resources-v1/native-generated-notices.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/native-generated-notices.json",
+      "sha256": "6e2bc96d5f17e364d38a42f7f71c48dc90244ae5cd7c61d0addaca64ea08445b",
+      "mode": "0o644",
+      "bytes": 6101,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-notice-inventory.md",
+          "line": 44,
+          "raw": "../../contracts/release/parser-resources-v1/native-generated-notices.json",
+          "path": "contracts/release/parser-resources-v1/native-generated-notices.json",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-notice-inventory.md",
+          "line": 65,
+          "raw": "../../contracts/release/parser-resources-v1/native-generated-notices.json",
+          "path": "contracts/release/parser-resources-v1/native-generated-notices.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-04d05abb68265073",
+      "path": "contracts/release/parser-resources-v1/native-libexif-doc-materials.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/native-libexif-doc-materials.json",
+      "sha256": "30087a1105214fc766e1cabb9488f0dffc7df6a703288bab01dbd910d9b142a8",
+      "mode": "0o644",
+      "bytes": 6555,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-libexif-doc-materials.md",
+          "line": 55,
+          "raw": "../../contracts/release/parser-resources-v1/native-libexif-doc-materials.json",
+          "path": "contracts/release/parser-resources-v1/native-libexif-doc-materials.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-524475a1f7e49ca8",
+      "path": "contracts/release/parser-resources-v1/native-locale-adapter.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/native-locale-adapter.json",
+      "sha256": "397241e267a73c4591a2c035ce2039adfb394cb2cdb92cbf4da686413fb9a5fc",
+      "mode": "0o644",
+      "bytes": 1447,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-locale-adapter-acceptance.md",
+          "line": 9,
+          "raw": "../../contracts/release/parser-resources-v1/native-locale-adapter.json",
+          "path": "contracts/release/parser-resources-v1/native-locale-adapter.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-a30e5be2ba566108",
+      "path": "contracts/release/parser-resources-v1/native-missing-texts-review.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/native-missing-texts-review.json",
+      "sha256": "9f8e36922f8794465f207cf2c1683223bb6a59541bf515c51c83b98a0e07feae",
+      "mode": "0o644",
+      "bytes": 3418,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-parser-boundaries-acceptance.md",
+          "line": 38,
+          "raw": "../../contracts/release/parser-resources-v1/native-missing-texts-review.json",
+          "path": "contracts/release/parser-resources-v1/native-missing-texts-review.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-22a4853329924f3c",
+      "path": "contracts/release/parser-resources-v1/native-primary-texts-review.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/native-primary-texts-review.json",
+      "sha256": "73b0a5f231f92baaa5f92e751f678aa2791ee2287f671528aadc0710aea3d640",
+      "mode": "0o644",
+      "bytes": 6806,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-native-materials-acceptance.md",
+          "line": 15,
+          "raw": "../../contracts/release/parser-resources-v1/native-primary-texts-review.json",
+          "path": "contracts/release/parser-resources-v1/native-primary-texts-review.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-673977b45ac0b821",
+      "path": "contracts/release/parser-resources-v1/native-primary-texts.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/native-primary-texts.json",
+      "sha256": "7ffd3455bc1faeffd47717bfe6fe6636a2e8b7909a122f881d04e55e7840556a",
+      "mode": "0o644",
+      "bytes": 21081,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-native-materials-acceptance.md",
+          "line": 11,
+          "raw": "../../contracts/release/parser-resources-v1/native-primary-texts.json",
+          "path": "contracts/release/parser-resources-v1/native-primary-texts.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-337cc74fd07640ca",
+      "path": "contracts/release/parser-resources-v1/native-rebuild-inputs.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/native-rebuild-inputs.json",
+      "sha256": "e8074756b7f92e2d9f8e08e4c8d1c865ba1f1701cd4db0aea285c054d36135a5",
+      "mode": "0o644",
+      "bytes": 4658,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-30-webui-g2-00-rebuild-inputs-progress.md",
+          "line": 21,
+          "raw": "../../contracts/release/parser-resources-v1/native-rebuild-inputs.json",
+          "path": "contracts/release/parser-resources-v1/native-rebuild-inputs.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-60bab7a3c128f1f1",
+      "path": "contracts/release/parser-resources-v1/native-winapi-materials.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/native-winapi-materials.json",
+      "sha256": "f9a104859db26d302826e7a03c6afd780a552d2bcb492f0437055ece41db5aa5",
+      "mode": "0o644",
+      "bytes": 2421,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-cross-platform-materials.md",
+          "line": 38,
+          "raw": "../../contracts/release/parser-resources-v1/native-winapi-materials.json",
+          "path": "contracts/release/parser-resources-v1/native-winapi-materials.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-35395dc5075a97e5",
+      "path": "contracts/release/parser-resources-v1/npm-acquisition-review.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/npm-acquisition-review.json",
+      "sha256": "b2c77805f43cfec2aac3d58ec37512a15bc02e73ac7480c04b22f25afa66640f",
+      "mode": "0o644",
+      "bytes": 14919,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-acquisition-acceptance.md",
+          "line": 13,
+          "raw": "../../contracts/release/parser-resources-v1/npm-acquisition-review.json",
+          "path": "contracts/release/parser-resources-v1/npm-acquisition-review.json",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-parser-full-integration.md",
+          "line": 30,
+          "raw": "../../contracts/release/parser-resources-v1/npm-acquisition-review.json",
+          "path": "contracts/release/parser-resources-v1/npm-acquisition-review.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-29b62b6456c65a15",
+      "path": "contracts/release/parser-resources-v1/parser-boundaries-review.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/parser-boundaries-review.json",
+      "sha256": "bd355c8baf1d06587502178c6fc6ddaf4ad7b603eedf61fd03aed757b7b35cfb",
+      "mode": "0o644",
+      "bytes": 3300,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-parser-boundaries-acceptance.md",
+          "line": 11,
+          "raw": "../../contracts/release/parser-resources-v1/parser-boundaries-review.json",
+          "path": "contracts/release/parser-resources-v1/parser-boundaries-review.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-6ed8887283cc4e75",
+      "path": "contracts/release/parser-resources-v1/pdf-asset-license-review.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/pdf-asset-license-review.json",
+      "sha256": "1dc39f7dce324ed31e343098dee87750a8e62743b1a4f7f098812f523cf53db1",
+      "mode": "0o644",
+      "bytes": 3808,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-acquisition-acceptance.md",
+          "line": 13,
+          "raw": "../../contracts/release/parser-resources-v1/pdf-asset-license-review.json",
+          "path": "contracts/release/parser-resources-v1/pdf-asset-license-review.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-4668305eeffd23cf",
+      "path": "contracts/release/parser-resources-v1/pdf-budget-review.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/pdf-budget-review.json",
+      "sha256": "66283e875bc5517114971c680a4aed1526029f15759328b45a749c478c4440b8",
+      "mode": "0o644",
+      "bytes": 3550,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-webui-u0-progress.md",
+          "line": 234,
+          "raw": "../../contracts/release/parser-resources-v1/pdf-budget-review.json",
+          "path": "contracts/release/parser-resources-v1/pdf-budget-review.json",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-pdf-budget-acceptance.md",
+          "line": 5,
+          "raw": "../../contracts/release/parser-resources-v1/pdf-budget-review.json",
+          "path": "contracts/release/parser-resources-v1/pdf-budget-review.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-31984cd3173ed4d4",
+      "path": "contracts/release/parser-resources-v1/pdf-build-inputs-review.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/pdf-build-inputs-review.json",
+      "sha256": "e82eb279c62581a5e4e56e7753b7fbfe2079cbe0c8d065be1c74dd0dd5db3d49",
+      "mode": "0o644",
+      "bytes": 6736,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-parser-full-integration.md",
+          "line": 51,
+          "raw": "../../contracts/release/parser-resources-v1/pdf-build-inputs-review.json",
+          "path": "contracts/release/parser-resources-v1/pdf-build-inputs-review.json",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-pdf-inputs-acceptance.md",
+          "line": 16,
+          "raw": "../../contracts/release/parser-resources-v1/pdf-build-inputs-review.json",
+          "path": "contracts/release/parser-resources-v1/pdf-build-inputs-review.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-46197c576c9e6828",
+      "path": "contracts/release/parser-resources-v1/pdf-build-inputs.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/pdf-build-inputs.json",
+      "sha256": "5a168315d9bdb6198f9e94cd72ae2a5adadbd239f1c63c18ca819d61339c37e5",
+      "mode": "0o644",
+      "bytes": 12610,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-pdf-inputs-acceptance.md",
+          "line": 12,
+          "raw": "../../contracts/release/parser-resources-v1/pdf-build-inputs.json",
+          "path": "contracts/release/parser-resources-v1/pdf-build-inputs.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-159d46e4e64e3e95",
+      "path": "contracts/release/parser-resources-v1/source-materials-review.json",
+      "location": "LOCAL_WORKSPACE/repo/contracts/release/parser-resources-v1/source-materials-review.json",
+      "sha256": "1a996e004928ac1ad0f1400f54f5af6ba630bfadd8e4ac6281d32b597bda4853",
+      "mode": "0o644",
+      "bytes": 8828,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-source-and-cleanup-acceptance.md",
+          "line": 17,
+          "raw": "../../contracts/release/parser-resources-v1/source-materials-review.json",
+          "path": "contracts/release/parser-resources-v1/source-materials-review.json",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-2c04d1cf7ff3d45f",
+      "path": "packages/direct-agent/shell-policy.mjs",
+      "location": "LOCAL_WORKSPACE/repo/packages/direct-agent/shell-policy.mjs",
+      "sha256": "be10ba5c73b27bd4c59de159332f5aa48f0ad33ec111d9c30f48d1d0e73701a6",
+      "mode": "0o644",
+      "bytes": 4877,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-webui-s0-remediation.md",
+          "line": 45,
+          "raw": "../../packages/direct-agent/shell-policy.mjs",
+          "path": "packages/direct-agent/shell-policy.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-cdc7313e329dac67",
+      "path": "packages/release-stack/parser-acquisition.mjs",
+      "location": "LOCAL_WORKSPACE/repo/packages/release-stack/parser-acquisition.mjs",
+      "sha256": "392bd00a0a7ca0c20b1623d72c46f5371c955c1048c5aba4ec530011219d6a00",
+      "mode": "0o644",
+      "bytes": 11267,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-acquisition-acceptance.md",
+          "line": 11,
+          "raw": "../../packages/release-stack/parser-acquisition.mjs",
+          "path": "packages/release-stack/parser-acquisition.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-1e2ee4d02bb62fa7",
+      "path": "packages/release-stack/parser-resources.mjs",
+      "location": "LOCAL_WORKSPACE/repo/packages/release-stack/parser-resources.mjs",
+      "sha256": "e9c64f7a0348a194213fc82ce2c93c82f555457f89a883ee8b81be0881a6a98b",
+      "mode": "0o644",
+      "bytes": 14789,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-parser-full-integration.md",
+          "line": 22,
+          "raw": "../../packages/release-stack/parser-resources.mjs",
+          "path": "packages/release-stack/parser-resources.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-resource-integration-acceptance.md",
+          "line": 9,
+          "raw": "../../packages/release-stack/parser-resources.mjs",
+          "path": "packages/release-stack/parser-resources.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-10-01-engineering-baseline.md",
+          "line": 80,
+          "raw": "../../packages/release-stack/parser-resources.mjs",
+          "path": "packages/release-stack/parser-resources.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-10-17-product-direction-and-iteration-plan.md",
+          "line": 316,
+          "raw": "../../packages/release-stack/parser-resources.mjs",
+          "path": "packages/release-stack/parser-resources.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-8ef90e052f9668f4",
+      "path": "scripts/probes/fixtures/locale-corefoundation.rs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/fixtures/locale-corefoundation.rs",
+      "sha256": "c3f533022f0f12ebdb5127540c6626a94c9e238faaaf3ccbed4f7f86cd724931",
+      "mode": "0o644",
+      "bytes": 5794,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-locale-adapter-acceptance.md",
+          "line": 9,
+          "raw": "../../scripts/probes/fixtures/locale-corefoundation.rs",
+          "path": "scripts/probes/fixtures/locale-corefoundation.rs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-784e7e4c2cef56d3",
+      "path": "scripts/probes/lib/pdf-budget-cases.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/lib/pdf-budget-cases.mjs",
+      "sha256": "7047c152c6f1bbc9f3da65a86f74a88eda7f1b2cdb962ac956e361c4ee07aa39",
+      "mode": "0o644",
+      "bytes": 7040,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-pdf-budget-acceptance.md",
+          "line": 11,
+          "raw": "../../scripts/probes/lib/pdf-budget-cases.mjs",
+          "path": "scripts/probes/lib/pdf-budget-cases.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-3dffbfa6c782c1cd",
+      "path": "scripts/probes/lib/pdf-decode-budget.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/lib/pdf-decode-budget.mjs",
+      "sha256": "b5e9a82bcc5206838c59c80eb975dfac26783627d083c47f76220e9bae26dcee",
+      "mode": "0o644",
+      "bytes": 11151,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-pdf-budget-acceptance.md",
+          "line": 9,
+          "raw": "../../scripts/probes/lib/pdf-decode-budget.mjs",
+          "path": "scripts/probes/lib/pdf-decode-budget.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-2b38d999b6a36a28",
+      "path": "scripts/probes/lib/resource-native-generated-materials.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/lib/resource-native-generated-materials.mjs",
+      "sha256": "bf0472c11d1a9cba7496bc0c28a3735d0095c7cf9d2c068335519a74493b5a8e",
+      "mode": "0o644",
+      "bytes": 3767,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-generated-materials.md",
+          "line": 51,
+          "raw": "../../scripts/probes/lib/resource-native-generated-materials.mjs",
+          "path": "scripts/probes/lib/resource-native-generated-materials.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-109ec9ea8e9f4000",
+      "path": "scripts/probes/lib/resource-native-generated-notices.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/lib/resource-native-generated-notices.mjs",
+      "sha256": "59749cbd70e644167103efec1de2d154cf001a920c9f056fc8259cc8f27b2160",
+      "mode": "0o644",
+      "bytes": 3206,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-engineering-baseline.md",
+          "line": 70,
+          "raw": "../../scripts/probes/lib/resource-native-generated-notices.mjs",
+          "path": "scripts/probes/lib/resource-native-generated-notices.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-notice-inventory.md",
+          "line": 65,
+          "raw": "../../scripts/probes/lib/resource-native-generated-notices.mjs",
+          "path": "scripts/probes/lib/resource-native-generated-notices.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-f57cf034904e70a2",
+      "path": "scripts/probes/lib/resource-native-libexif-docs.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/lib/resource-native-libexif-docs.mjs",
+      "sha256": "7a6fd3f5d1623cd77dc78b38f81aaa46cfc78e8f78f7b4a7a4209db37752bf6f",
+      "mode": "0o644",
+      "bytes": 5849,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-engineering-baseline.md",
+          "line": 71,
+          "raw": "../../scripts/probes/lib/resource-native-libexif-docs.mjs",
+          "path": "scripts/probes/lib/resource-native-libexif-docs.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-libexif-doc-materials.md",
+          "line": 55,
+          "raw": "../../scripts/probes/lib/resource-native-libexif-docs.mjs",
+          "path": "scripts/probes/lib/resource-native-libexif-docs.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-55d021c0d3cb5395",
+      "path": "scripts/probes/lib/resource-native-locale.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/lib/resource-native-locale.mjs",
+      "sha256": "bbe91670a0e2b35817e1b892dd7630efeff9dfa7b908764cca90a025feff7af5",
+      "mode": "0o644",
+      "bytes": 5047,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-locale-adapter-acceptance.md",
+          "line": 9,
+          "raw": "../../scripts/probes/lib/resource-native-locale.mjs",
+          "path": "scripts/probes/lib/resource-native-locale.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-5098848ed003cbad",
+      "path": "scripts/probes/lib/resource-native-materials.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/lib/resource-native-materials.mjs",
+      "sha256": "aad2ed77077e2507608157fbd7343273e292fca284c72783eca28bea58b0c02e",
+      "mode": "0o644",
+      "bytes": 10456,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-native-materials-acceptance.md",
+          "line": 12,
+          "raw": "../../scripts/probes/lib/resource-native-materials.mjs",
+          "path": "scripts/probes/lib/resource-native-materials.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-49e25ec972b4a7c3",
+      "path": "scripts/probes/lib/resource-native-rebuild.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/lib/resource-native-rebuild.mjs",
+      "sha256": "9db1935252b5ecfcfa16f7cc64e7545e6a6c237c2f755288e8e56fcc86658fce",
+      "mode": "0o644",
+      "bytes": 10509,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-30-webui-g2-00-rebuild-inputs-progress.md",
+          "line": 22,
+          "raw": "../../scripts/probes/lib/resource-native-rebuild.mjs",
+          "path": "scripts/probes/lib/resource-native-rebuild.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-f58831d63d596c1e",
+      "path": "scripts/probes/lib/resource-native-unit-graph.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/lib/resource-native-unit-graph.mjs",
+      "sha256": "1c1af22f64a17132687c66b024d725e9556ab05ae29550656d040246224f5783",
+      "mode": "0o644",
+      "bytes": 4285,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-native-closure-review.md",
+          "line": 15,
+          "raw": "../../scripts/probes/lib/resource-native-unit-graph.mjs",
+          "path": "scripts/probes/lib/resource-native-unit-graph.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-6728fbcc9d5f6290",
+      "path": "scripts/probes/lib/resource-native-winapi.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/lib/resource-native-winapi.mjs",
+      "sha256": "0ddeca61ca1bf404d5b83955e8cfa58078157903f3cf236d33dcb344cd69363d",
+      "mode": "0o644",
+      "bytes": 2283,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-cross-platform-materials.md",
+          "line": 38,
+          "raw": "../../scripts/probes/lib/resource-native-winapi.mjs",
+          "path": "scripts/probes/lib/resource-native-winapi.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-82c208797aa2bda4",
+      "path": "scripts/probes/lib/resource-rehearsal-child.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/lib/resource-rehearsal-child.mjs",
+      "sha256": "b4f2f9b28b66e37ed872f55b8f3cc91ccb14384f698d0201bbe2aee5566c8131",
+      "mode": "0o644",
+      "bytes": 4326,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-resource-integration-acceptance.md",
+          "line": 10,
+          "raw": "../../scripts/probes/lib/resource-rehearsal-child.mjs",
+          "path": "scripts/probes/lib/resource-rehearsal-child.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-source-and-cleanup-acceptance.md",
+          "line": 13,
+          "raw": "../../scripts/probes/lib/resource-rehearsal-child.mjs",
+          "path": "scripts/probes/lib/resource-rehearsal-child.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-f3bf483bcf6bb664",
+      "path": "scripts/probes/lib/resource-source-materials.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/lib/resource-source-materials.mjs",
+      "sha256": "5b55646f26d64c322b3088ebe36c79eb65a7c2ed1ba8863245537cd20dd363ac",
+      "mode": "0o644",
+      "bytes": 16004,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-pdf-inputs-acceptance.md",
+          "line": 11,
+          "raw": "../../scripts/probes/lib/resource-source-materials.mjs",
+          "path": "scripts/probes/lib/resource-source-materials.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-source-and-cleanup-acceptance.md",
+          "line": 15,
+          "raw": "../../scripts/probes/lib/resource-source-materials.mjs",
+          "path": "scripts/probes/lib/resource-source-materials.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-25ad188a665f69c9",
+      "path": "scripts/probes/webui-g2-native-generated-materials.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-g2-native-generated-materials.mjs",
+      "sha256": "22c52c4a5a859ce4e0c681028dcf6da1897770f36bc14a851c06fae371d171a2",
+      "mode": "0o644",
+      "bytes": 7882,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-generated-materials.md",
+          "line": 51,
+          "raw": "../../scripts/probes/webui-g2-native-generated-materials.mjs",
+          "path": "scripts/probes/webui-g2-native-generated-materials.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-19faf80995c5327c",
+      "path": "scripts/probes/webui-g2-native-generated-notices.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-g2-native-generated-notices.mjs",
+      "sha256": "7595e43b3121dcae101d3570420d3fd60f5c9463f279d28d744dafce1ed20e15",
+      "mode": "0o644",
+      "bytes": 12912,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-notice-inventory.md",
+          "line": 65,
+          "raw": "../../scripts/probes/webui-g2-native-generated-notices.mjs",
+          "path": "scripts/probes/webui-g2-native-generated-notices.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-a56facf825f530fa",
+      "path": "scripts/probes/webui-g2-native-libexif-docs.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-g2-native-libexif-docs.mjs",
+      "sha256": "1f97c9113ffdd18361cd42b4a5cbe11113397123550716a125c5c9544e047a24",
+      "mode": "0o644",
+      "bytes": 14395,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-engineering-baseline.md",
+          "line": 72,
+          "raw": "../../scripts/probes/webui-g2-native-libexif-docs.mjs",
+          "path": "scripts/probes/webui-g2-native-libexif-docs.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-libexif-doc-materials.md",
+          "line": 55,
+          "raw": "../../scripts/probes/webui-g2-native-libexif-docs.mjs",
+          "path": "scripts/probes/webui-g2-native-libexif-docs.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-8429dd3db210ba55",
+      "path": "scripts/probes/webui-g2-native-locale.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-g2-native-locale.mjs",
+      "sha256": "4ab22b4c71d6c1733aa617e2fd026f98524e2146fe489e133ee96cf274bc5056",
+      "mode": "0o644",
+      "bytes": 29669,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-locale-adapter-acceptance.md",
+          "line": 9,
+          "raw": "../../scripts/probes/webui-g2-native-locale.mjs",
+          "path": "scripts/probes/webui-g2-native-locale.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-d5039564f52b286c",
+      "path": "scripts/probes/webui-g2-native-rebuild-inputs.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-g2-native-rebuild-inputs.mjs",
+      "sha256": "476d2601c6e1cab378f0fd2300b4cd2fa44c39519ebf2588ad594dd6c44d437a",
+      "mode": "0o644",
+      "bytes": 2970,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-30-webui-g2-00-rebuild-inputs-progress.md",
+          "line": 22,
+          "raw": "../../scripts/probes/webui-g2-native-rebuild-inputs.mjs",
+          "path": "scripts/probes/webui-g2-native-rebuild-inputs.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-375f008af5ee740f",
+      "path": "scripts/probes/webui-g2-native-target-graph.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-g2-native-target-graph.mjs",
+      "sha256": "657b3c15f92ff9cb5c8e7280bff54d4efdaf3a4abae6abceb255920c49406cef",
+      "mode": "0o644",
+      "bytes": 9633,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-native-closure-review.md",
+          "line": 15,
+          "raw": "../../scripts/probes/webui-g2-native-target-graph.mjs",
+          "path": "scripts/probes/webui-g2-native-target-graph.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-fe336ca481eef687",
+      "path": "scripts/probes/webui-g2-native-winapi.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-g2-native-winapi.mjs",
+      "sha256": "90cbff9c4499f1f154d7aa792d025130a5b2ffb761ee642ba8f0f92e680fed66",
+      "mode": "0o644",
+      "bytes": 9592,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-cross-platform-materials.md",
+          "line": 38,
+          "raw": "../../scripts/probes/webui-g2-native-winapi.mjs",
+          "path": "scripts/probes/webui-g2-native-winapi.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-09a4f6ca9c34694e",
+      "path": "scripts/probes/webui-u0-documents.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-documents.mjs",
+      "sha256": "69d019f5c2b8d26960fa2fa8dd276e61f03670aa274ded36c63de751fde1be4d",
+      "mode": "0o644",
+      "bytes": 82842,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-webui-u0-parser-study.md",
+          "line": 3,
+          "raw": "../../scripts/probes/webui-u0-documents.mjs",
+          "path": "scripts/probes/webui-u0-documents.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-document-coverage-acceptance.md",
+          "line": 7,
+          "raw": "../../scripts/probes/webui-u0-documents.mjs",
+          "path": "scripts/probes/webui-u0-documents.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-parser-boundaries-acceptance.md",
+          "line": 7,
+          "raw": "../../scripts/probes/webui-u0-documents.mjs",
+          "path": "scripts/probes/webui-u0-documents.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-pdf-budget-acceptance.md",
+          "line": 10,
+          "raw": "../../scripts/probes/webui-u0-documents.mjs",
+          "path": "scripts/probes/webui-u0-documents.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-10-17-product-direction-and-iteration-plan.md",
+          "line": 316,
+          "raw": "../../scripts/probes/webui-u0-documents.mjs",
+          "path": "scripts/probes/webui-u0-documents.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-4b974ef2c1516392",
+      "path": "scripts/probes/webui-u0-image-candidate.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-image-candidate.mjs",
+      "sha256": "644e763bf10eebfb178a5fdc8f2a042d9aea95305781b2914a69fca54d260e93",
+      "mode": "0o644",
+      "bytes": 3604,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-image-compat-acceptance.md",
+          "line": 18,
+          "raw": "../../scripts/probes/webui-u0-image-candidate.mjs",
+          "path": "scripts/probes/webui-u0-image-candidate.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-10-17-product-direction-and-iteration-plan.md",
+          "line": 316,
+          "raw": "../../scripts/probes/webui-u0-image-candidate.mjs",
+          "path": "scripts/probes/webui-u0-image-candidate.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-f1c707d5ef328256",
+      "path": "scripts/probes/webui-u0-images.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-images.mjs",
+      "sha256": "6c59b4b63fe2e16b40fb38e67ac0b515485d68014b4556b5274e7c6a256004f8",
+      "mode": "0o644",
+      "bytes": 9809,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-webui-u0-parser-study.md",
+          "line": 3,
+          "raw": "../../scripts/probes/webui-u0-images.mjs",
+          "path": "scripts/probes/webui-u0-images.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-image-memory-study.md",
+          "line": 13,
+          "raw": "../../scripts/probes/webui-u0-images.mjs",
+          "path": "scripts/probes/webui-u0-images.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-8a2fa89f51048fe1",
+      "path": "scripts/probes/webui-u0-native-materials.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-native-materials.mjs",
+      "sha256": "9ff1d52215e346340664e2fb545a65dbf91d6857b9c279d09913cdf50925fa14",
+      "mode": "0o644",
+      "bytes": 8576,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-native-materials-acceptance.md",
+          "line": 13,
+          "raw": "../../scripts/probes/webui-u0-native-materials.mjs",
+          "path": "scripts/probes/webui-u0-native-materials.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-7f412ae433051d81",
+      "path": "scripts/probes/webui-u0-native-provenance.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-native-provenance.mjs",
+      "sha256": "345365eaf1cb24acb299f1246b18a49c58c7165c850382f029b701b653ba9b7c",
+      "mode": "0o644",
+      "bytes": 6759,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-document-coverage-acceptance.md",
+          "line": 7,
+          "raw": "../../scripts/probes/webui-u0-native-provenance.mjs",
+          "path": "scripts/probes/webui-u0-native-provenance.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-4a6e8e5a9e48de24",
+      "path": "scripts/probes/webui-u0-office-corpus.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-office-corpus.mjs",
+      "sha256": "2b0577f8950abff22aba6f8a4e2dd114c2a751911ce041ddbfab36ecd3343e16",
+      "mode": "0o644",
+      "bytes": 6585,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-webui-u0-parser-study.md",
+          "line": 3,
+          "raw": "../../scripts/probes/webui-u0-office-corpus.mjs",
+          "path": "scripts/probes/webui-u0-office-corpus.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-document-coverage-acceptance.md",
+          "line": 7,
+          "raw": "../../scripts/probes/webui-u0-office-corpus.mjs",
+          "path": "scripts/probes/webui-u0-office-corpus.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-9a399b5915a8c65d",
+      "path": "scripts/probes/webui-u0-parser-acquisition.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-parser-acquisition.mjs",
+      "sha256": "4b32509ff20321e882399da3b4ba97fbea93d62222f58ddb82a3a22170f6227f",
+      "mode": "0o644",
+      "bytes": 10955,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-acquisition-acceptance.md",
+          "line": 12,
+          "raw": "../../scripts/probes/webui-u0-parser-acquisition.mjs",
+          "path": "scripts/probes/webui-u0-parser-acquisition.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-32d11e67c0264a10",
+      "path": "scripts/probes/webui-u0-parser-integration.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-parser-integration.mjs",
+      "sha256": "b1c4300f2b8c429373160ce1c70a075f3f664deb0cad71ae02277b40b3fd66c2",
+      "mode": "0o644",
+      "bytes": 11662,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-parser-full-integration.md",
+          "line": 22,
+          "raw": "../../scripts/probes/webui-u0-parser-integration.mjs",
+          "path": "scripts/probes/webui-u0-parser-integration.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-resource-integration-acceptance.md",
+          "line": 10,
+          "raw": "../../scripts/probes/webui-u0-parser-integration.mjs",
+          "path": "scripts/probes/webui-u0-parser-integration.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-30af436d2533866e",
+      "path": "scripts/probes/webui-u0-parser-offline.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-parser-offline.mjs",
+      "sha256": "950400848cd9037698c2de41c7a95eabb607d5aa137e87ce16dabecaf186111a",
+      "mode": "0o644",
+      "bytes": 4231,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-webui-u0-parser-study.md",
+          "line": 3,
+          "raw": "../../scripts/probes/webui-u0-parser-offline.mjs",
+          "path": "scripts/probes/webui-u0-parser-offline.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-parser-boundaries-acceptance.md",
+          "line": 10,
+          "raw": "../../scripts/probes/webui-u0-parser-offline.mjs",
+          "path": "scripts/probes/webui-u0-parser-offline.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-pdf-budget-acceptance.md",
+          "line": 12,
+          "raw": "../../scripts/probes/webui-u0-parser-offline.mjs",
+          "path": "scripts/probes/webui-u0-parser-offline.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-10-01-engineering-ticket-map.md",
+          "line": 55,
+          "raw": "../../scripts/probes/webui-u0-parser-offline.mjs",
+          "path": "scripts/probes/webui-u0-parser-offline.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-726eaca9bc7428d1",
+      "path": "scripts/probes/webui-u0-parser-package.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-parser-package.mjs",
+      "sha256": "ba0965c24b6710542aaa6aa1172e47bc54aeacc87605abd5ae7033bcfb389ba8",
+      "mode": "0o644",
+      "bytes": 4979,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-webui-u0-parser-study.md",
+          "line": 3,
+          "raw": "../../scripts/probes/webui-u0-parser-package.mjs",
+          "path": "scripts/probes/webui-u0-parser-package.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-ef6f42fe5eea4bff",
+      "path": "scripts/probes/webui-u0-pdf-inputs.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-pdf-inputs.mjs",
+      "sha256": "2310da60d2f8c15eb42ca2208aac30840ea25686e6ee5ec81a6c73a615d206df",
+      "mode": "0o644",
+      "bytes": 10294,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-pdf-inputs-acceptance.md",
+          "line": 12,
+          "raw": "../../scripts/probes/webui-u0-pdf-inputs.mjs",
+          "path": "scripts/probes/webui-u0-pdf-inputs.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-99a255bf3b22ac80",
+      "path": "scripts/probes/webui-u0-pi-child.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-pi-child.mjs",
+      "sha256": "f85223f125686202ddaac718e863518467c819200ef696d4024b80efa03a1a60",
+      "mode": "0o644",
+      "bytes": 3609,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/decisions/ADR-0018-host-input-ledger-and-pi-correlation.md",
+          "line": 20,
+          "raw": "../../scripts/probes/webui-u0-pi-child.mjs",
+          "path": "scripts/probes/webui-u0-pi-child.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-965efbefb09536f7",
+      "path": "scripts/probes/webui-u0-pi.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-pi.mjs",
+      "sha256": "56797e2754953d538836cdf1a84252a67a4cc57e02f6b98ec95da876740375dd",
+      "mode": "0o644",
+      "bytes": 13174,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/decisions/ADR-0018-host-input-ledger-and-pi-correlation.md",
+          "line": 20,
+          "raw": "../../scripts/probes/webui-u0-pi.mjs",
+          "path": "scripts/probes/webui-u0-pi.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-5e05fe11db1cb09f",
+      "path": "scripts/probes/webui-u0-preview-agent.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-preview-agent.mjs",
+      "sha256": "95b4952029916cd78c0a5a05028d2d148eac592dd0f9138cf00cc69ce73ab677",
+      "mode": "0o644",
+      "bytes": 2614,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-webui-u0-progress.md",
+          "line": 104,
+          "raw": "../../scripts/probes/webui-u0-preview-agent.mjs",
+          "path": "scripts/probes/webui-u0-preview-agent.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-842786bb53735340",
+      "path": "scripts/probes/webui-u0-preview-managed.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-preview-managed.mjs",
+      "sha256": "0198b4763cb5b2e9eb55949571bb03e8d6812a95d204080ddcfb302c17a47d53",
+      "mode": "0o644",
+      "bytes": 24808,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-webui-u0-progress.md",
+          "line": 104,
+          "raw": "../../scripts/probes/webui-u0-preview-managed.mjs",
+          "path": "scripts/probes/webui-u0-preview-managed.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-39ca247dd1bf4e82",
+      "path": "scripts/probes/webui-u0-preview-worker.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-preview-worker.mjs",
+      "sha256": "bf65eb7c7a37738d8a051592389043c8b644527543feb7484d27b408ec885641",
+      "mode": "0o644",
+      "bytes": 4644,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-webui-u0-progress.md",
+          "line": 104,
+          "raw": "../../scripts/probes/webui-u0-preview-worker.mjs",
+          "path": "scripts/probes/webui-u0-preview-worker.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-ff53951d7e466900",
+      "path": "scripts/probes/webui-u0-resources.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-resources.mjs",
+      "sha256": "31fe353b8188b6cd734585ae845e4a7868234934760f318be1eef063dadcc20b",
+      "mode": "0o644",
+      "bytes": 7276,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-webui-u0-progress.md",
+          "line": 89,
+          "raw": "../../scripts/probes/webui-u0-resources.mjs",
+          "path": "scripts/probes/webui-u0-resources.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-ef8873682f166796",
+      "path": "scripts/probes/webui-u0-sharp-compat.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-sharp-compat.mjs",
+      "sha256": "2911d8ef2bc186bba11742257adf33302033de654a7ebfc05535a595d029acfe",
+      "mode": "0o644",
+      "bytes": 15854,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-image-compat-acceptance.md",
+          "line": 18,
+          "raw": "../../scripts/probes/webui-u0-sharp-compat.mjs",
+          "path": "scripts/probes/webui-u0-sharp-compat.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-2395d314b7a14217",
+      "path": "scripts/probes/webui-u0-sharp-images.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-sharp-images.mjs",
+      "sha256": "2ed313a4fa4a29c12ffabfd09edf7a206a8e86b68c722df44cbd236ae5c6befa",
+      "mode": "0o644",
+      "bytes": 7285,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-image-memory-study.md",
+          "line": 14,
+          "raw": "../../scripts/probes/webui-u0-sharp-images.mjs",
+          "path": "scripts/probes/webui-u0-sharp-images.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-8c8e2dd0c38139ba",
+      "path": "scripts/probes/webui-u0-source-materials.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u0-source-materials.mjs",
+      "sha256": "dee7970425d0fd07de74ff9301f6c981988f686f530d1f6693904ebbf4d28a5f",
+      "mode": "0o644",
+      "bytes": 11417,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-source-and-cleanup-acceptance.md",
+          "line": 16,
+          "raw": "../../scripts/probes/webui-u0-source-materials.mjs",
+          "path": "scripts/probes/webui-u0-source-materials.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-0a68cbaea5200199",
+      "path": "scripts/probes/webui-u1-storage.mjs",
+      "location": "LOCAL_WORKSPACE/repo/scripts/probes/webui-u1-storage.mjs",
+      "sha256": "12ad23b44fac75339b255c363b9d65a7527095f8882182ea115b67b3fbee3fe6",
+      "mode": "0o644",
+      "bytes": 9696,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u1-01-storage-acceptance.md",
+          "line": 17,
+          "raw": "../../scripts/probes/webui-u1-storage.mjs",
+          "path": "scripts/probes/webui-u1-storage.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-30-webui-u1-02-delivery-acceptance.md",
+          "line": 20,
+          "raw": "../../scripts/probes/webui-u1-storage.mjs",
+          "path": "scripts/probes/webui-u1-storage.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-30-webui-u1-03-conversation-acceptance.md",
+          "line": 42,
+          "raw": "../../scripts/probes/webui-u1-storage.mjs",
+          "path": "scripts/probes/webui-u1-storage.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-30-webui-u1-06-integration-acceptance.md",
+          "line": 25,
+          "raw": "../../scripts/probes/webui-u1-storage.mjs",
+          "path": "scripts/probes/webui-u1-storage.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-d56c06df314acfbf",
+      "path": "tests/direct-path-normalization.test.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/direct-path-normalization.test.mjs",
+      "sha256": "e0199f90895c161f4af41455b8e7669c0cc0e04d1a94c012817ad0be828a4af9",
+      "mode": "0o644",
+      "bytes": 2572,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-webui-s0-remediation.md",
+          "line": 40,
+          "raw": "../../tests/direct-path-normalization.test.mjs",
+          "path": "tests/direct-path-normalization.test.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-678d44f4f6bc811e",
+      "path": "tests/fixtures/web-runtime-probe.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/fixtures/web-runtime-probe.mjs",
+      "sha256": "f37b0175a25aa51296f49cf2fbaa357fb9d3aee914453b266904b0bbe09c21ce",
+      "mode": "0o644",
+      "bytes": 5680,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-webui-s0-remediation.md",
+          "line": 53,
+          "raw": "../../tests/fixtures/web-runtime-probe.mjs",
+          "path": "tests/fixtures/web-runtime-probe.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-fd1b7cf87451df2e",
+      "path": "tests/release-native-generated-materials.test.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/release-native-generated-materials.test.mjs",
+      "sha256": "89c7820fe023e5cc0d4304e994451c6c563a93571fc7f31e34ed261586627c5d",
+      "mode": "0o644",
+      "bytes": 7523,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-generated-materials.md",
+          "line": 51,
+          "raw": "../../tests/release-native-generated-materials.test.mjs",
+          "path": "tests/release-native-generated-materials.test.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-49bb2b7cb98cd8a5",
+      "path": "tests/release-native-generated-notices.test.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/release-native-generated-notices.test.mjs",
+      "sha256": "4c8ef3e906381fec68e91a20e4c32664153271c9e074085e2009ddc44b365d1f",
+      "mode": "0o644",
+      "bytes": 6004,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-notice-inventory.md",
+          "line": 65,
+          "raw": "../../tests/release-native-generated-notices.test.mjs",
+          "path": "tests/release-native-generated-notices.test.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-8ccffca555cc2dca",
+      "path": "tests/release-native-libexif-docs.test.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/release-native-libexif-docs.test.mjs",
+      "sha256": "a080345ef5362d9a8dc9b59aacd94c1eec55a13022199d1472c29fdf1af6a586",
+      "mode": "0o644",
+      "bytes": 8053,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-libexif-doc-materials.md",
+          "line": 55,
+          "raw": "../../tests/release-native-libexif-docs.test.mjs",
+          "path": "tests/release-native-libexif-docs.test.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-0cf0b35192eac3ca",
+      "path": "tests/release-native-locale.test.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/release-native-locale.test.mjs",
+      "sha256": "27aedd4b5a475f45a1563c344d7a2abd006c6345276d37768902d5d6fb572108",
+      "mode": "0o644",
+      "bytes": 7870,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-locale-adapter-acceptance.md",
+          "line": 9,
+          "raw": "../../tests/release-native-locale.test.mjs",
+          "path": "tests/release-native-locale.test.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-bc3d2654de9b5a83",
+      "path": "tests/release-native-materials.test.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/release-native-materials.test.mjs",
+      "sha256": "eda1ce611cdfd80544f8834ccdf073c65825ba6d9d69523796d04246c99d3866",
+      "mode": "0o644",
+      "bytes": 10758,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-native-materials-acceptance.md",
+          "line": 14,
+          "raw": "../../tests/release-native-materials.test.mjs",
+          "path": "tests/release-native-materials.test.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-53db7a7f258983a4",
+      "path": "tests/release-native-rebuild-inputs.test.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/release-native-rebuild-inputs.test.mjs",
+      "sha256": "7b3bedf3976e5c42c9474eb26b11038142f1aeee9513bdca915815e7aaf77509",
+      "mode": "0o644",
+      "bytes": 11599,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-30-webui-g2-00-rebuild-inputs-progress.md",
+          "line": 35,
+          "raw": "../../tests/release-native-rebuild-inputs.test.mjs",
+          "path": "tests/release-native-rebuild-inputs.test.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-1296815cb740d1bc",
+      "path": "tests/release-native-target-graph-cli.test.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/release-native-target-graph-cli.test.mjs",
+      "sha256": "45a327af8de7a7ffdc59fac7e80a9cd614241fd58730856c38f3e100f307f1fe",
+      "mode": "0o644",
+      "bytes": 2569,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-native-closure-review.md",
+          "line": 57,
+          "raw": "../../tests/release-native-target-graph-cli.test.mjs",
+          "path": "tests/release-native-target-graph-cli.test.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-2f594c0357445de8",
+      "path": "tests/release-native-unit-graph.test.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/release-native-unit-graph.test.mjs",
+      "sha256": "2bc597d86e5f07805a17c39791f0c118f7150109fa6a66f9013fe9067b2215da",
+      "mode": "0o644",
+      "bytes": 4399,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-native-closure-review.md",
+          "line": 57,
+          "raw": "../../tests/release-native-unit-graph.test.mjs",
+          "path": "tests/release-native-unit-graph.test.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-40b491e7533a1eb6",
+      "path": "tests/release-native-winapi.test.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/release-native-winapi.test.mjs",
+      "sha256": "adfbf828a874ef27d5e94f336dde93869e5c31f5f52040ff7e022e1f3ea47308",
+      "mode": "0o644",
+      "bytes": 5423,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-webui-g2-00-cross-platform-materials.md",
+          "line": 38,
+          "raw": "../../tests/release-native-winapi.test.mjs",
+          "path": "tests/release-native-winapi.test.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-f3eb6304b5a068b4",
+      "path": "tests/release-parser-acquisition.test.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/release-parser-acquisition.test.mjs",
+      "sha256": "6ec6647c76751e60efd4a79676630b569675fa899f74c2e7e6f5d79a4c632efb",
+      "mode": "0o644",
+      "bytes": 13644,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-acquisition-acceptance.md",
+          "line": 14,
+          "raw": "../../tests/release-parser-acquisition.test.mjs",
+          "path": "tests/release-parser-acquisition.test.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-58fbac31c7565b70",
+      "path": "tests/release-parser-resources.test.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/release-parser-resources.test.mjs",
+      "sha256": "778c231d8fc0eae155fac51ab08b06814795c80eef13c40ea76747ac592fcde3",
+      "mode": "0o644",
+      "bytes": 24675,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-resource-integration-acceptance.md",
+          "line": 10,
+          "raw": "../../tests/release-parser-resources.test.mjs",
+          "path": "tests/release-parser-resources.test.mjs",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-source-and-cleanup-acceptance.md",
+          "line": 14,
+          "raw": "../../tests/release-parser-resources.test.mjs",
+          "path": "tests/release-parser-resources.test.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-4632dfec7350dd4f",
+      "path": "tests/release-parser-source-materials.test.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/release-parser-source-materials.test.mjs",
+      "sha256": "ba2d2a30f0410788325778632aad7cfcac00fcc2c651ed34efefce334c12f340",
+      "mode": "0o644",
+      "bytes": 6367,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-source-and-cleanup-acceptance.md",
+          "line": 15,
+          "raw": "../../tests/release-parser-source-materials.test.mjs",
+          "path": "tests/release-parser-source-materials.test.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-1cb5313f229ca8c4",
+      "path": "tests/release-pdf-build-inputs.test.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/release-pdf-build-inputs.test.mjs",
+      "sha256": "04a156cfca8aa4a06990c182d4b4aec78402f7a5042ca66052257b73426dc803",
+      "mode": "0o644",
+      "bytes": 12990,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-29-webui-u0-pdf-inputs-acceptance.md",
+          "line": 15,
+          "raw": "../../tests/release-pdf-build-inputs.test.mjs",
+          "path": "tests/release-pdf-build-inputs.test.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-d9b4593ba2c05d2a",
+      "path": "tests/terminal-ready-publication.test.mjs",
+      "location": "LOCAL_WORKSPACE/repo/tests/terminal-ready-publication.test.mjs",
+      "sha256": "db218ac2995c5a38a48302ccc4fbc0a22e142ab56b7cab9bd181cea760966d07",
+      "mode": "0o644",
+      "bytes": 2300,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-webui-s0-remediation.md",
+          "line": 59,
+          "raw": "../../tests/terminal-ready-publication.test.mjs",
+          "path": "tests/terminal-ready-publication.test.mjs",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-33912591b4556b6c",
+      "path": "webui/src/DraftNotice.tsx",
+      "location": "LOCAL_WORKSPACE/repo/webui/src/DraftNotice.tsx",
+      "sha256": "0575108d62c9f2e77ebefc09555c26b7b7d55671d6629225a2b7e27568a91fe8",
+      "mode": "0o644",
+      "bytes": 3069,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-30-webui-u1-03-conversation-acceptance.md",
+          "line": 20,
+          "raw": "../../webui/src/DraftNotice.tsx",
+          "path": "webui/src/DraftNotice.tsx",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-30-webui-u1-06-integration-acceptance.md",
+          "line": 20,
+          "raw": "../../webui/src/DraftNotice.tsx",
+          "path": "webui/src/DraftNotice.tsx",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-b529319bbdb71859",
+      "path": "webui/src/InputQueue.tsx",
+      "location": "LOCAL_WORKSPACE/repo/webui/src/InputQueue.tsx",
+      "sha256": "a2ae01754f8ee4aecdb74495efdb1d3889d14ca4d271ef9fd3a4a2ffd3f371c5",
+      "mode": "0o644",
+      "bytes": 9929,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-30-webui-u1-05-recovery-acceptance.md",
+          "line": 23,
+          "raw": "../../webui/src/InputQueue.tsx",
+          "path": "webui/src/InputQueue.tsx",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-30-webui-u1-06-integration-acceptance.md",
+          "line": 22,
+          "raw": "../../webui/src/InputQueue.tsx",
+          "path": "webui/src/InputQueue.tsx",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-7368e6af373d8881",
+      "path": "webui/src/TaskProgress.tsx",
+      "location": "LOCAL_WORKSPACE/repo/webui/src/TaskProgress.tsx",
+      "sha256": "d0745e2539fc493bc9e4caeeb650751ab2e3029c88dd8bc37957c7af1f4678b4",
+      "mode": "0o644",
+      "bytes": 4627,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-30-webui-u1-05-recovery-acceptance.md",
+          "line": 20,
+          "raw": "../../webui/src/TaskProgress.tsx",
+          "path": "webui/src/TaskProgress.tsx",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-f2a5fca51c9ff18b",
+      "path": "webui/src/input-delivery-ui.test.tsx",
+      "location": "LOCAL_WORKSPACE/repo/webui/src/input-delivery-ui.test.tsx",
+      "sha256": "c2929e3dd12b39f51e6014e58113773a2435a78ccf7bb615b99793ed1e3633da",
+      "mode": "0o644",
+      "bytes": 20300,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-10-01-engineering-ticket-map.md",
+          "line": 52,
+          "raw": "../../webui/src/input-delivery-ui.test.tsx",
+          "path": "webui/src/input-delivery-ui.test.tsx",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-b13224862d606451",
+      "path": "webui/src/useConversation.ts",
+      "location": "LOCAL_WORKSPACE/repo/webui/src/useConversation.ts",
+      "sha256": "c53d2f1cb85aff3d014e1021a7d316161fbef329370e2cd7404304adb54f1e21",
+      "mode": "0o644",
+      "bytes": 2249,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-30-webui-u1-03-conversation-acceptance.md",
+          "line": 19,
+          "raw": "../../webui/src/useConversation.ts",
+          "path": "webui/src/useConversation.ts",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-8d8580a8972b8722",
+      "path": "webui/src/useInputDraft.test.tsx",
+      "location": "LOCAL_WORKSPACE/repo/webui/src/useInputDraft.test.tsx",
+      "sha256": "b5261050ee07ce7aadb71e102d388f8693cac7e4354eb3ca1063f8cfd6c94695",
+      "mode": "0o644",
+      "bytes": 18419,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-30-webui-u1-06-integration-acceptance.md",
+          "line": 21,
+          "raw": "../../webui/src/useInputDraft.test.tsx",
+          "path": "webui/src/useInputDraft.test.tsx",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-f423e05274e70cdc",
+      "path": "webui/src/useInputDraft.ts",
+      "location": "LOCAL_WORKSPACE/repo/webui/src/useInputDraft.ts",
+      "sha256": "f8d0c3a6ffb219a98919427c7dedd77925fe5fb69ad397413ce2e46d5b10e0d0",
+      "mode": "0o644",
+      "bytes": 24933,
+      "source": "pre-existing untracked working file; captured before this closeout",
+      "ownership": "historical implementation/test/material input, retained locally; author not inferred",
+      "decision": "retain-local",
+      "reason": "referenced by historical documentation; no #76 runtime dependency established",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-30-webui-u1-03-conversation-acceptance.md",
+          "line": 20,
+          "raw": "../../webui/src/useInputDraft.ts",
+          "path": "webui/src/useInputDraft.ts",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-30-webui-u1-05-recovery-acceptance.md",
+          "line": 24,
+          "raw": "../../webui/src/useInputDraft.ts",
+          "path": "webui/src/useInputDraft.ts",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-30-webui-u1-06-integration-acceptance.md",
+          "line": 20,
+          "raw": "../../webui/src/useInputDraft.ts",
+          "path": "webui/src/useInputDraft.ts",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-09-30-webui-u1-06-integration-acceptance.md",
+          "line": 21,
+          "raw": "../../webui/src/useInputDraft.ts",
+          "path": "webui/src/useInputDraft.ts",
+          "local": true
+        },
+        {
+          "source": "docs/plans/2026-10-09-webui-u2-prerequisite-preflight.md",
+          "line": 64,
+          "raw": "../../webui/src/useInputDraft.ts",
+          "path": "webui/src/useInputDraft.ts",
+          "local": true
+        }
+      ]
+    },
+    {
+      "id": "local-e2577f044ec5fd9d",
+      "path": "artifacts/webui-phase2/cold-start-36FBe0/metrics.json",
+      "location": "LOCAL_WORKSPACE/artifacts/webui-phase2/cold-start-36FBe0/metrics.json",
+      "sha256": "f111d86aabdb8ee146d5b14ded316a617f079dd7bb6f3b09cfaf5bbbcc1cea54",
+      "mode": "0o644",
+      "bytes": 390,
+      "source": "pre-existing workspace evidence outside the Git repository",
+      "ownership": "historical M2 evidence, original date/candidate/failure scope retained",
+      "decision": "retain-local",
+      "reason": "raw evidence is local and is not a repository deliverable",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-omp-resource-transfer-acceptance.md",
+          "raw": "../../../artifacts/webui-phase2/cold-start-36FBe0/metrics.json",
+          "path": "LOCAL_WORKSPACE/artifacts/webui-phase2/cold-start-36FBe0/metrics.json"
+        }
+      ]
+    },
+    {
+      "id": "local-158f40906969dd9c",
+      "path": "artifacts/webui-phase2/live-cpar-cancel-sep26/report.json",
+      "location": "LOCAL_WORKSPACE/artifacts/webui-phase2/live-cpar-cancel-sep26/report.json",
+      "sha256": "c776dde7e7178ff98fb2a157c16eb8665ad48618b9ae961a34dc4dc96db796cd",
+      "mode": "0o600",
+      "bytes": 6344,
+      "source": "pre-existing workspace evidence outside the Git repository",
+      "ownership": "historical M2 evidence, original date/candidate/failure scope retained",
+      "decision": "retain-local",
+      "reason": "raw evidence is local and is not a repository deliverable",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-omp-resource-transfer-acceptance.md",
+          "raw": "../../../artifacts/webui-phase2/live-cpar-cancel-sep26/report.json",
+          "path": "LOCAL_WORKSPACE/artifacts/webui-phase2/live-cpar-cancel-sep26/report.json"
+        }
+      ]
+    },
+    {
+      "id": "local-481796b71db4724e",
+      "path": "artifacts/webui-phase2/live-cpar-summary-sep25/report.json",
+      "location": "LOCAL_WORKSPACE/artifacts/webui-phase2/live-cpar-summary-sep25/report.json",
+      "sha256": "98be6bac0645ae9f97492e43efc02211f54dedbcfdc5d3611e783942be8e2cac",
+      "mode": "0o600",
+      "bytes": 10677,
+      "source": "pre-existing workspace evidence outside the Git repository",
+      "ownership": "historical M2 evidence, original date/candidate/failure scope retained",
+      "decision": "retain-local",
+      "reason": "raw evidence is local and is not a repository deliverable",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-omp-resource-transfer-acceptance.md",
+          "raw": "../../../artifacts/webui-phase2/live-cpar-summary-sep25/report.json",
+          "path": "LOCAL_WORKSPACE/artifacts/webui-phase2/live-cpar-summary-sep25/report.json"
+        }
+      ]
+    },
+    {
+      "id": "local-89b6cd05f7955d19",
+      "path": "artifacts/webui-phase2/live-cpar-writer-sep25/report.json",
+      "location": "LOCAL_WORKSPACE/artifacts/webui-phase2/live-cpar-writer-sep25/report.json",
+      "sha256": "931afff207272036736118e09ceac3aeb0955cc5fa1de0042f4804b839b162d2",
+      "mode": "0o600",
+      "bytes": 8810,
+      "source": "pre-existing workspace evidence outside the Git repository",
+      "ownership": "historical M2 evidence, original date/candidate/failure scope retained",
+      "decision": "retain-local",
+      "reason": "raw evidence is local and is not a repository deliverable",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-omp-resource-transfer-acceptance.md",
+          "raw": "../../../artifacts/webui-phase2/live-cpar-writer-sep25/report.json",
+          "path": "LOCAL_WORKSPACE/artifacts/webui-phase2/live-cpar-writer-sep25/report.json"
+        }
+      ]
+    },
+    {
+      "id": "local-c4a07a3d0d088181",
+      "path": "artifacts/webui-phase2/resources-sep26-transfer/baseline.json",
+      "location": "LOCAL_WORKSPACE/artifacts/webui-phase2/resources-sep26-transfer/baseline.json",
+      "sha256": "27765e63f3d5854bf41ba17992e178dcbca7b2b80b6fac301b5714ee83e4ef10",
+      "mode": "0o644",
+      "bytes": 528,
+      "source": "pre-existing workspace evidence outside the Git repository",
+      "ownership": "historical M2 evidence, original date/candidate/failure scope retained",
+      "decision": "retain-local",
+      "reason": "raw evidence is local and is not a repository deliverable",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-omp-resource-transfer-acceptance.md",
+          "raw": "../../../artifacts/webui-phase2/resources-sep26-transfer/baseline.json",
+          "path": "LOCAL_WORKSPACE/artifacts/webui-phase2/resources-sep26-transfer/baseline.json"
+        }
+      ]
+    },
+    {
+      "id": "local-03aa7a97dee5baee",
+      "path": "artifacts/webui-phase2/resources-sep26-transfer/component-allocation.json",
+      "location": "LOCAL_WORKSPACE/artifacts/webui-phase2/resources-sep26-transfer/component-allocation.json",
+      "sha256": "2f3b84bba8ef5d34223b8204d398c42db1d13ab9faee398f390e72b1f0345873",
+      "mode": "0o644",
+      "bytes": 716,
+      "source": "pre-existing workspace evidence outside the Git repository",
+      "ownership": "historical M2 evidence, original date/candidate/failure scope retained",
+      "decision": "retain-local",
+      "reason": "raw evidence is local and is not a repository deliverable",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-omp-resource-transfer-acceptance.md",
+          "raw": "../../../artifacts/webui-phase2/resources-sep26-transfer/component-allocation.json",
+          "path": "LOCAL_WORKSPACE/artifacts/webui-phase2/resources-sep26-transfer/component-allocation.json"
+        }
+      ]
+    },
+    {
+      "id": "local-214960c83968db77",
+      "path": "artifacts/webui-phase2/resources-sep26-transfer/transfer.json",
+      "location": "LOCAL_WORKSPACE/artifacts/webui-phase2/resources-sep26-transfer/transfer.json",
+      "sha256": "83f3cbc733516840e80d0d0754b9e3f777583b45b86bfe38e697fcfa3febcd6b",
+      "mode": "0o600",
+      "bytes": 1682,
+      "source": "pre-existing workspace evidence outside the Git repository",
+      "ownership": "historical M2 evidence, original date/candidate/failure scope retained",
+      "decision": "retain-local",
+      "reason": "raw evidence is local and is not a repository deliverable",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-omp-resource-transfer-acceptance.md",
+          "raw": "../../../artifacts/webui-phase2/resources-sep26-transfer/transfer.json",
+          "path": "LOCAL_WORKSPACE/artifacts/webui-phase2/resources-sep26-transfer/transfer.json"
+        }
+      ]
+    },
+    {
+      "id": "local-a746e227e7e3e308",
+      "path": "artifacts/webui-phase2/resources-sep26/cleanup.json",
+      "location": "LOCAL_WORKSPACE/artifacts/webui-phase2/resources-sep26/cleanup.json",
+      "sha256": "07c80d89acea51eda687a708b302876d1a3d60acc52469115fdcdc80bb65bf9e",
+      "mode": "0o644",
+      "bytes": 245,
+      "source": "pre-existing workspace evidence outside the Git repository",
+      "ownership": "historical M2 evidence, original date/candidate/failure scope retained",
+      "decision": "retain-local",
+      "reason": "raw evidence is local and is not a repository deliverable",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-omp-resource-transfer-acceptance.md",
+          "raw": "../../../artifacts/webui-phase2/resources-sep26/cleanup.json",
+          "path": "LOCAL_WORKSPACE/artifacts/webui-phase2/resources-sep26/cleanup.json"
+        }
+      ]
+    },
+    {
+      "id": "local-d9a965ed348eb0d8",
+      "path": "artifacts/webui-phase2/resources-sep26/pty-cleanup.json",
+      "location": "LOCAL_WORKSPACE/artifacts/webui-phase2/resources-sep26/pty-cleanup.json",
+      "sha256": "eda129d15e71a1551fe4f561f087d810a49854e9ccaf2b6174fc8e3a7f391f61",
+      "mode": "0o644",
+      "bytes": 130,
+      "source": "pre-existing workspace evidence outside the Git repository",
+      "ownership": "historical M2 evidence, original date/candidate/failure scope retained",
+      "decision": "retain-local",
+      "reason": "raw evidence is local and is not a repository deliverable",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-omp-resource-transfer-acceptance.md",
+          "raw": "../../../artifacts/webui-phase2/resources-sep26/pty-cleanup.json",
+          "path": "LOCAL_WORKSPACE/artifacts/webui-phase2/resources-sep26/pty-cleanup.json"
+        }
+      ]
+    },
+    {
+      "id": "local-184e527dd4218a2f",
+      "path": "artifacts/webui-phase2/resources-sep26/pty.png",
+      "location": "LOCAL_WORKSPACE/artifacts/webui-phase2/resources-sep26/pty.png",
+      "sha256": "c7d6516b41116e84f7666b703a83c28109ec86eb3fd706fb4e6fc398fdcb7123",
+      "mode": "0o644",
+      "bytes": 307999,
+      "source": "pre-existing workspace evidence outside the Git repository",
+      "ownership": "historical M2 evidence, original date/candidate/failure scope retained",
+      "decision": "retain-local",
+      "reason": "raw evidence is local and is not a repository deliverable",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-omp-resource-transfer-acceptance.md",
+          "raw": "../../../artifacts/webui-phase2/resources-sep26/pty.png",
+          "path": "LOCAL_WORKSPACE/artifacts/webui-phase2/resources-sep26/pty.png"
+        }
+      ]
+    },
+    {
+      "id": "local-5bedcf6f7c15885c",
+      "path": "artifacts/webui-phase2/resources-sep26/summary.json",
+      "location": "LOCAL_WORKSPACE/artifacts/webui-phase2/resources-sep26/summary.json",
+      "sha256": "244464959ae7427766dac58be3ee3afc04e15c5dea58297e568441984d1a6962",
+      "mode": "0o644",
+      "bytes": 7399,
+      "source": "pre-existing workspace evidence outside the Git repository",
+      "ownership": "historical M2 evidence, original date/candidate/failure scope retained",
+      "decision": "retain-local",
+      "reason": "raw evidence is local and is not a repository deliverable",
+      "references": [
+        {
+          "source": "docs/plans/2026-09-26-omp-resource-transfer-acceptance.md",
+          "raw": "../../../artifacts/webui-phase2/resources-sep26/summary.json",
+          "path": "LOCAL_WORKSPACE/artifacts/webui-phase2/resources-sep26/summary.json"
+        }
+      ]
+    }
+  ],
+  "originalDocuments": [
+    {
+      "id": "u0-document-coverage-original",
+      "originalDocument": "docs/plans/2026-09-29-webui-u0-document-coverage-acceptance.md",
+      "archiveLocation": "artifacts/pi130-01-closeout-20261018T062251Z/baseline-inputs/docs/plans/2026-09-29-webui-u0-document-coverage-acceptance.md",
+      "originalIdentity": {
+        "path": "docs/plans/2026-09-29-webui-u0-document-coverage-acceptance.md",
+        "mode": "0o644",
+        "type": "file",
+        "bytes": 9542,
+        "sha256": "dbf1e60e54f41c0039447be3924369b834252c6760b7422af5797a47022eb55f"
+      },
+      "scope": "original path and text retained locally; historical temporary installation not reauthenticated"
+    }
+  ]
+}

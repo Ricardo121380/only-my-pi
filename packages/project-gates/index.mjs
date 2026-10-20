@@ -11,6 +11,12 @@ const ENV_NAME = /^[A-Z][A-Z0-9_]{0,63}$/u;
 const SECRET_ENV = /(?:KEY|TOKEN|SECRET|PASSWORD|COOKIE|AUTH)/u;
 const MAX_OUTPUT_BYTES = 2_097_152;
 const DEFAULT_ENV = Object.freeze({ CI: "1", NO_COLOR: "1", PI_TELEMETRY: "0", npm_config_audit: "false", npm_config_fund: "false", npm_config_update_notifier: "false" });
+// Module-owned evidence, shared by all gate/clone executors in this runtime.
+// An unconfirmed termination remains registered even after its promise settles.
+const executions = new Set();
+export function projectExecutionState() {
+  return { active: executions.size, unconfirmed: [...executions].some((entry) => entry.unconfirmed) };
+}
 
 function fail(code, message, details = {}) { const error = new Error(message); error.code = code; Object.assign(error, details); throw error; }
 function object(value, label) { if (!value || typeof value !== "object" || Array.isArray(value)) fail("PROJECT_GATE_MANIFEST_INVALID", `${label} must be an object`); return value; }
@@ -100,41 +106,51 @@ async function resolveExecutable(command, environmentPath = process.env.PATH ?? 
 
 function execResultCode(result) { return Number.isInteger(result?.code) ? result.code : Number.isInteger(result?.exitCode) ? result.exitCode : null; }
 
-async function gitRepository(exec, projectRoot) {
+async function gitRepository(exec, projectRoot, signal) {
   const realProjectRoot = await fs.realpath(projectRoot);
-  const rootResult = await exec("git", ["-C", realProjectRoot, "rev-parse", "--show-toplevel"], { cwd: realProjectRoot, timeout: 10_000 });
+  const rootResult = await exec("git", ["-C", realProjectRoot, "rev-parse", "--show-toplevel"], { cwd: realProjectRoot, timeout: 10_000, signal });
   if (execResultCode(rootResult) !== 0) fail("PROJECT_GATE_GIT_REQUIRED", "project gates require a Git repository");
   const rawRoot = String(rootResult.stdout ?? "").trim();
   if (!path.isAbsolute(rawRoot)) fail("PROJECT_GATE_GIT_INVALID", "Git returned a non-absolute repository root");
   const repositoryRoot = await fs.realpath(rawRoot);
   await assertContainedPath(repositoryRoot, repositoryRoot);
   if (!inside(repositoryRoot, realProjectRoot)) fail("PROJECT_GATE_PROJECT_ESCAPE", "current project is outside the Git repository root");
-  const headResult = await exec("git", ["-C", repositoryRoot, "rev-parse", "HEAD"], { cwd: repositoryRoot, timeout: 10_000 });
+  const headResult = await exec("git", ["-C", repositoryRoot, "rev-parse", "HEAD"], { cwd: repositoryRoot, timeout: 10_000, signal });
   const head = String(headResult.stdout ?? "").trim();
   if (execResultCode(headResult) !== 0 || !/^[a-f0-9]{40}$/u.test(head)) fail("PROJECT_GATE_HEAD_UNAVAILABLE", "project gate Git HEAD is unavailable");
   return { repositoryRoot, head };
 }
 
 export class ProjectGateService {
-  constructor({ configRoot, getContext, exec, environmentPath = process.env.PATH ?? "", clock = Date.now } = {}) {
+  constructor({ configRoot, getContext, exec, environmentPath = process.env.PATH ?? "", clock = Date.now, isContextTrusted = (ctx) => ctx?.isProjectTrusted?.() === true } = {}) {
     if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("ProjectGateService requires absolute configRoot");
     if (typeof getContext !== "function") throw new TypeError("ProjectGateService requires getContext()");
     if (typeof exec !== "function") throw new TypeError("ProjectGateService requires an exec adapter");
     this.configRoot = path.resolve(configRoot);
     this.getContext = getContext;
+    this.isContextTrusted = isContextTrusted;
     this.exec = exec;
     this.environmentPath = environmentPath;
     this.clock = clock;
     this.grants = new Map();
+    this.active = new Map();
+    this.planEpochs = new WeakMap();
+    this.generation = 0;
+    this.disposed = false;
+    this.terminationUnconfirmed = false;
   }
 
   async plan(gateIds = null, options = {}) {
+    if (this.disposed) fail("PROJECT_GATE_DISPOSED", "project gate service is disposed");
+    if (options.signal?.aborted) fail("PROJECT_GATE_CANCELLED", "project gate planning was cancelled");
+    const generation = this.generation;
     const ctx = this.getContext();
-    if (options.requireTrust !== false && ctx?.isProjectTrusted?.() !== true) fail("PROJECT_TRUST_REQUIRED", "project gate manifest is ignored until Pi Project Trust is active");
+    if (options.requireTrust !== false && this.isContextTrusted(ctx) !== true) fail("PROJECT_TRUST_REQUIRED", "project gate manifest requires current project authority");
     const sessionId = ctx?.sessionManager?.getSessionId?.();
     if (typeof sessionId !== "string" || !sessionId) fail("PI_SESSION_ID_UNAVAILABLE", "project gate authorization requires a Pi session id");
     const requestedRoot = path.resolve(options.projectRoot ?? ctx?.cwd ?? "");
-    const { repositoryRoot, head } = await gitRepository(this.exec, requestedRoot);
+    const { repositoryRoot, head } = await gitRepository(this.exec, requestedRoot, options.signal);
+    if (options.signal?.aborted) fail("PROJECT_GATE_CANCELLED", "project gate planning was cancelled");
     const { document } = await readManifest(repositoryRoot);
     const { manifest, manifestDigest } = validateProjectGateManifest(document);
     const requestedIds = gateIds ?? manifest.gates.map((gate) => gate.id);
@@ -161,11 +177,19 @@ export class ProjectGateService {
       gateIds: gates.map((gate) => gate.id),
       tupleDigests: gates.map((gate) => gate.tupleDigest),
     };
-    return Object.freeze({ ok: true, status: "PROJECT_GATE_PLAN", mutation: false, repositoryRoot, binding: Object.freeze({ ...binding, bindingDigest: digest(binding) }), gates: Object.freeze(gates), warning: "Process execution allowlist only; build artifacts are not filesystem-sandboxed." });
+    if (options.signal?.aborted) fail("PROJECT_GATE_CANCELLED", "project gate planning was cancelled");
+    if (this.disposed || generation !== this.generation) fail("PROJECT_GATE_PLAN_STALE", "project gate plan was reset while being prepared");
+    const plan = Object.freeze({ ok: true, status: "PROJECT_GATE_PLAN", mutation: false, repositoryRoot, binding: Object.freeze({ ...binding, bindingDigest: digest(binding) }), gates: Object.freeze(gates), warning: "Process execution allowlist only; build artifacts are not filesystem-sandboxed." });
+    this.planEpochs.set(plan, generation);
+    return plan;
   }
 
-  async grant(plan) {
-    const current = await this.plan(plan?.binding?.gateIds);
+  async grant(plan, { signal } = {}) {
+    const generation = this.generation;
+    if (this.planEpochs.get(plan) !== generation) fail("PROJECT_GATE_PLAN_STALE", "project gate approval used a stale or foreign plan");
+    const current = await this.plan(plan?.binding?.gateIds, { signal });
+    if (signal?.aborted) fail("PROJECT_GATE_CANCELLED", "project gate approval was cancelled");
+    if (this.disposed || generation !== this.generation) fail("PROJECT_GATE_PLAN_STALE", "project gate authorization was reset while planning");
     if (current.binding.bindingDigest !== plan?.binding?.bindingDigest) fail("PROJECT_GATE_PLAN_STALE", "project gate plan changed before authorization");
     this.grants.set(current.binding.sessionId, current);
     return Object.freeze({ ok: true, status: "PROJECT_GATE_TRUSTED_SESSION", mutation: true, bindingDigest: current.binding.bindingDigest, gateIds: current.binding.gateIds, expires: "session-shutdown" });
@@ -179,32 +203,75 @@ export class ProjectGateService {
 
   reset() {
     const sessionId = this.getContext()?.sessionManager?.getSessionId?.();
+    this.generation += 1;
+    for (const entry of this.active.get(sessionId) ?? []) entry.controller.abort();
     const removed = this.grants.delete(sessionId);
     return Object.freeze({ ok: true, status: removed ? "PROJECT_GATE_TRUST_RESET" : "NO_CHANGES", mutation: removed });
   }
 
   async run(gateId, { signal, dryRun = false } = {}) {
+    if (this.disposed) fail("PROJECT_GATE_DISPOSED", "project gate service is disposed");
+    if (signal?.aborted) fail("PROJECT_GATE_CANCELLED", "project gate was cancelled before planning");
+    const generation = this.generation;
     const sessionId = this.getContext()?.sessionManager?.getSessionId?.();
     const grant = this.grants.get(sessionId);
     if (!grant || !grant.binding.gateIds.includes(gateId)) fail("PROJECT_GATE_AUTHORIZATION_REQUIRED", `project gate ${gateId} is not authorized for this session`);
-    const current = await this.plan(grant.binding.gateIds);
+    const current = await this.plan(grant.binding.gateIds, { signal });
+    if (this.disposed || generation !== this.generation || this.grants.get(sessionId) !== grant || this.getContext()?.sessionManager?.getSessionId?.() !== sessionId) fail("PROJECT_GATE_AUTHORIZATION_REQUIRED", "project gate authorization changed before execution");
     if (current.binding.bindingDigest !== grant.binding.bindingDigest) { this.grants.delete(sessionId); fail("PROJECT_GATE_GRANT_DRIFT", "project gate authorization drifted and was revoked"); }
     const gate = current.gates.find((entry) => entry.id === gateId);
     if (dryRun) return Object.freeze({ status: "PLANNED", gateId, bindingDigest: current.binding.bindingDigest, tupleDigest: gate.tupleDigest, shell: false });
+    if (signal?.aborted) fail("PROJECT_GATE_CANCELLED", "project gate was cancelled before execution");
     const gateHome = path.join(this.configRoot, "only-my-pi", "gate-home");
     await fs.mkdir(gateHome, { recursive: true, mode: 0o700 });
+    if (this.disposed || generation !== this.generation || this.grants.get(sessionId) !== grant || signal?.aborted || this.isContextTrusted(this.getContext()) !== true) fail("PROJECT_GATE_AUTHORIZATION_REQUIRED", "project gate authorization changed before execution");
     const safePath = this.environmentPath.split(path.delimiter).filter((entry) => path.isAbsolute(entry)).slice(0, 64).join(path.delimiter);
     const envArgs = Object.entries({ ...DEFAULT_ENV, ...gate.env, PATH: safePath, HOME: gateHome, TMPDIR: os.tmpdir() }).map(([name, value]) => `${name}=${value}`);
     const started = this.clock();
-    const result = await this.exec("/usr/bin/env", ["-i", ...envArgs, gate.executableRealpath, ...gate.args], { cwd: gate.cwd, timeout: gate.timeoutSeconds * 1000, signal });
+    const controller = new AbortController();
+    const entry = { controller, done: null, started: false };
+    if (!this.active.has(sessionId)) this.active.set(sessionId, new Set());
+    this.active.get(sessionId).add(entry);
+    const combinedSignal = signal ? AbortSignal.any([signal, controller.signal]) : controller.signal;
+    let result;
+    try {
+      entry.done = Promise.resolve().then(() => {
+        if (this.disposed || generation !== this.generation || this.grants.get(sessionId) !== grant || combinedSignal.aborted || this.getContext()?.sessionManager?.getSessionId?.() !== sessionId || this.isContextTrusted(this.getContext()) !== true) fail("PROJECT_GATE_AUTHORIZATION_REQUIRED", "project gate authorization changed before process start");
+        entry.started = true;
+        return this.exec("/usr/bin/env", ["-i", ...envArgs, gate.executableRealpath, ...gate.args], { cwd: gate.cwd, timeout: gate.timeoutSeconds * 1000, signal: combinedSignal });
+      });
+      result = await entry.done;
+      if (result?.terminationUnconfirmed === true) this.terminationUnconfirmed = true;
+    } catch (error) {
+      if (entry.started) this.terminationUnconfirmed = true;
+      throw error;
+    } finally {
+      this.active.get(sessionId)?.delete(entry);
+      if (this.active.get(sessionId)?.size === 0) this.active.delete(sessionId);
+    }
     if (result.outputLimitExceeded === true) fail("PROJECT_GATE_OUTPUT_LIMIT", `project gate ${gateId} output exceeded 2 MiB`);
     const combined = Buffer.from(`${result.stdout ?? ""}${result.stderr ?? ""}`, "utf8");
     if (combined.byteLength > MAX_OUTPUT_BYTES) fail("PROJECT_GATE_OUTPUT_LIMIT", `project gate ${gateId} output exceeded 2 MiB`);
     const exitCode = execResultCode(result);
-    return Object.freeze({ status: exitCode === 0 ? "PASS" : "FAIL", gateId, exitCode, killed: result.killed === true, durationMs: Math.max(0, this.clock() - started), outputBytes: combined.byteLength, outputDigest: digest(combined), bindingDigest: current.binding.bindingDigest, tupleDigest: gate.tupleDigest, shell: false, network: "not-enforced" });
+    return Object.freeze({ status: exitCode === 0 && result.killed !== true && result.terminationUnconfirmed !== true && generation === this.generation && !this.disposed ? "PASS" : "FAIL", gateId, exitCode, killed: result.killed === true, reason: result.reason ?? null, terminationUnconfirmed: result.terminationUnconfirmed === true, durationMs: Math.max(0, this.clock() - started), outputBytes: combined.byteLength, outputDigest: digest(combined), bindingDigest: current.binding.bindingDigest, tupleDigest: gate.tupleDigest, shell: false, network: "not-enforced" });
   }
 
-  async dispose() { this.grants.clear(); return { status: "DISPOSED" }; }
+  async dispose() {
+    this.disposed = true;
+    this.generation += 1;
+    this.grants.clear();
+    const running = [...this.active.values()].flatMap((entries) => [...entries]);
+    for (const entry of running) entry.controller.abort();
+    if (running.length === 0) return { status: "DISPOSED", terminationUnconfirmed: this.terminationUnconfirmed };
+    let timer;
+    const settled = await Promise.race([
+      Promise.allSettled(running.map((entry) => entry.done)),
+      new Promise((resolve) => { timer = setTimeout(() => resolve(false), 2000); }),
+    ]);
+    clearTimeout(timer);
+    const uncertain = settled === false || settled.some((entry) => entry.status === "rejected" || entry.value?.terminationUnconfirmed === true);
+    return { status: "DISPOSED", terminationUnconfirmed: this.terminationUnconfirmed || uncertain };
+  }
 }
 
 export function createProjectGateService(options = {}) { return new ProjectGateService(options); }
@@ -216,29 +283,100 @@ export { digest as projectGateDigest };
 
 export function createNodeExecAdapter({ spawnImpl = nodeSpawn, maxOutputBytes = MAX_OUTPUT_BYTES } = {}) {
   return (command, args, options = {}) => new Promise((resolve) => {
-    const child = spawnImpl(command, args, { cwd: options.cwd, shell: false, stdio: ["ignore", "pipe", "pipe"] });
+    if (options.signal?.aborted) {
+      resolve({ stdout: options.encoding === "buffer" ? Buffer.alloc(0) : "", stderr: options.encoding === "buffer" ? Buffer.alloc(0) : "", code: 1, killed: true, started: false, reason: "cancelled", outputLimitExceeded: false });
+      return;
+    }
+    const groupOwned = process.platform !== "win32";
+    let child;
+    try {
+      child = spawnImpl(command, args, { cwd: options.cwd, shell: false, stdio: ["ignore", "pipe", "pipe"], detached: groupOwned, ...(options.env ? { env: options.env } : {}) });
+    } catch (error) {
+      resolve({ stdout: options.encoding === "buffer" ? Buffer.alloc(0) : "", stderr: options.encoding === "buffer" ? Buffer.from(error.message) : error.message, code: 1, killed: false, started: false, reason: "spawn-failed", outputLimitExceeded: false });
+      return;
+    }
     const output = { stdout: [], stderr: [] };
+    const execution = { unconfirmed: false };
+    executions.add(execution);
     let bytes = 0;
     let killed = false;
+    let reason = null;
     let outputLimitExceeded = false;
     let settled = false;
     let timer;
-    const finish = (value) => { if (settled) return; settled = true; resolve(value); };
+    let killTimer;
+    let settleTimer;
+    let pollTimer;
+    let closedCode;
+    const groupAlive = () => {
+      if (!groupOwned || !Number.isSafeInteger(child.pid) || child.pid <= 0) return false;
+      try { process.kill(-child.pid, 0); return true; }
+      catch (error) { return error?.code === "EPERM"; }
+    };
+    const sendSignal = (name) => {
+      try {
+        if (groupOwned && Number.isSafeInteger(child.pid) && child.pid > 0) process.kill(-child.pid, name);
+        else child.kill(name);
+      } catch (error) {
+        if (error?.code !== "ESRCH") {
+          try { child.kill(name); } catch { /* termination remains unconfirmed */ }
+        }
+      }
+    };
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      clearTimeout(killTimer);
+      clearTimeout(settleTimer);
+      clearInterval(pollTimer);
+      options.signal?.removeEventListener?.("abort", abort);
+      if (value.terminationUnconfirmed === true) execution.unconfirmed = true;
+      else executions.delete(execution);
+      resolve(value);
+    };
+    const result = (code, extra = {}) => ({ stdout: options.encoding === "buffer" ? Buffer.concat(output.stdout) : Buffer.concat(output.stdout).toString("utf8"), stderr: options.encoding === "buffer" ? Buffer.concat(output.stderr) : Buffer.concat(output.stderr).toString("utf8"), code: Number.isInteger(code) ? code : 1, killed, started: true, reason, outputLimitExceeded, ...extra });
+    const maybeFinish = () => {
+      if (closedCode === undefined || settled) return;
+      if (groupAlive()) {
+        if (!killed) stop("descendant-active");
+        return;
+      }
+      finish(result(closedCode));
+    };
+    const stop = (why) => {
+      if (settled || killed) return;
+      killed = true;
+      reason = why;
+      sendSignal("SIGTERM");
+      killTimer = setTimeout(() => {
+        if (groupAlive() || !groupOwned) sendSignal("SIGKILL");
+        pollTimer = setInterval(maybeFinish, 50);
+        maybeFinish();
+      }, 300);
+      settleTimer = setTimeout(() => {
+        child.stdout?.destroy();
+        child.stderr?.destroy();
+        finish(result(1, { terminationUnconfirmed: true }));
+      }, 1500);
+    };
     const append = (field, chunk) => {
+      if (outputLimitExceeded) return;
       bytes += chunk.length;
-      if (bytes > maxOutputBytes) { outputLimitExceeded = true; killed = true; child.kill("SIGTERM"); return; }
+      if (bytes > maxOutputBytes) { outputLimitExceeded = true; stop("output-limit"); return; }
       output[field].push(Buffer.from(chunk));
+      options.onData?.(Buffer.from(chunk));
     };
     child.stdout?.on("data", (chunk) => append("stdout", chunk));
     child.stderr?.on("data", (chunk) => append("stderr", chunk));
-    const abort = () => { killed = true; child.kill("SIGTERM"); };
+    const abort = () => stop("cancelled");
     options.signal?.addEventListener?.("abort", abort, { once: true });
-    if (options.timeout) timer = setTimeout(abort, options.timeout);
-    child.once("error", (error) => finish({ stdout: "", stderr: error.message, code: 1, killed, outputLimitExceeded }));
-    child.once("close", (code) => {
-      if (timer) clearTimeout(timer);
-      options.signal?.removeEventListener?.("abort", abort);
-      finish({ stdout: Buffer.concat(output.stdout).toString("utf8"), stderr: Buffer.concat(output.stderr).toString("utf8"), code: Number.isInteger(code) ? code : 1, killed, outputLimitExceeded });
-    });
+    if (options.signal?.aborted) abort();
+    if (options.timeout && !killed) timer = setTimeout(() => stop("timeout"), options.timeout);
+    child.once("error", (error) => finish({ stdout: options.encoding === "buffer" ? Buffer.alloc(0) : "", stderr: options.encoding === "buffer" ? Buffer.from(error.message) : error.message, code: 1, killed, started: true, reason: "spawn-failed", outputLimitExceeded }));
+    // Descendants can retain the shell's pipes after the shell itself exits.
+    // Do not wait forever for close before starting group cleanup.
+    child.once("exit", () => { if (!settled && groupAlive()) stop("descendant-active"); });
+    child.once("close", (code) => { closedCode = code; maybeFinish(); });
   });
 }

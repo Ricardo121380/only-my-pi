@@ -9,7 +9,7 @@ import { resolveBoundPackageRoot } from "../../bootstrap/runtime-package-binding
 import { createBatchSwarmControlService } from "../../control-service/batch-swarm-service.mjs";
 import { createDailyConfigService, selectRoleModel } from "../../daily-config/index.mjs";
 import { createDirectCodingOrchestrator } from "../../direct-agent/orchestration.mjs";
-import { createWriterVerification } from "../../direct-agent/writer-verification.mjs";
+import { createRealWorkspaceVerification, createWriterVerification } from "../../direct-agent/writer-verification.mjs";
 import { createWorkflowRegistry } from "../../workflow-core/index.mjs";
 import { createNodeExecAdapter, createProjectGateService } from "../../project-gates/index.mjs";
 import { createManagedCoordinator, createRecordedGoalController, createRecordedUltraRouter, createRunManagementService, createRunRecordStore } from "../../run-management/index.mjs";
@@ -602,7 +602,7 @@ function wrapArtifactStore(base, configurationProvider) {
   });
 }
 
-export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, getContext, dependencies = {} } = {}) {
+export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, getContext, isHostAuthorized, dependencies = {} } = {}) {
   if (typeof rootDir !== "string" || !path.isAbsolute(rootDir)) throw new TypeError("session composer requires absolute rootDir");
   if (typeof configRoot !== "string" || !path.isAbsolute(configRoot)) throw new TypeError("session composer requires absolute configRoot");
   if (typeof getContext !== "function") throw new TypeError("session composer requires getContext()");
@@ -917,7 +917,10 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
         budget: configuration.budget,
         webAuthorizer,
         webEnabled: configuration.hardOverlays.includes("web"),
-        verifyWriter: createWriterVerification({ configRoot, getContext }),
+        verifyWriter: createWriterVerification({ configRoot, getContext, isHostAuthorized }),
+        verifyRealWorkspace: createRealWorkspaceVerification({ configRoot, getContext, isHostAuthorized }),
+        recordStore,
+        contextProvider,
       })
       : null;
     ceilingHandle = registerCeiling({
@@ -972,8 +975,8 @@ export async function createSessionRuntimeComposer({ pi, rootDir, configRoot, ge
     async dispose() {
       if (disposed) return { status: "DISPOSED" };
       disposed = true;
-      await coordinator.shutdown?.().catch(() => {});
       directCodingOrchestrator?.dispose?.();
+      await coordinator.shutdown?.().catch(() => {});
       ceilingHandle.dispose();
       await backend.dispose().catch(() => {});
       transport.dispose?.();

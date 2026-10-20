@@ -529,7 +529,11 @@ export async function verifyGenerationByManifest({ layout, expectedManifestDiges
     if (packageManifest.name !== installed.name || packageManifest.version !== installed.version) {
       fail("INSTALLED_PACKAGE_IDENTITY_MISMATCH", `installed package identity drifted for ${installed.id}`);
     }
-    const treeSha256 = await hashResourcePath({ artifactRoot: layout.generationRoot, relativePath: installed.installedPath });
+    const treeSha256 = await hashResourcePath({
+      artifactRoot: path.join(layout.generationRoot, "npm"),
+      relativePath: installed.installedPath.slice("npm/".length),
+      allowContainedSymlinks: true,
+    });
     if (treeSha256 !== installed.treeSha256) fail("INSTALLED_PACKAGE_DRIFT", `installed package content drifted for ${installed.id}`);
   }
   const npmTreeSha256 = await hashResourcePath({
@@ -840,7 +844,11 @@ async function stagePackages({ plan, layout, runCommand }) {
       integrity: entry.integrity,
       tarballPath: entry.tarballPath,
       installedPath: entry.installedPath,
-      treeSha256: await hashResourcePath({ artifactRoot: layout.stagingRoot, relativePath: entry.installedPath }),
+      treeSha256: await hashResourcePath({
+        artifactRoot: layout.npmRoot,
+        relativePath: entry.installedPath.slice("npm/".length),
+        allowContainedSymlinks: true,
+      }),
       lifecycleScripts,
       lifecycleExecution: "DISABLED",
     });

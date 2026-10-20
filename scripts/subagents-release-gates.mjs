@@ -503,7 +503,7 @@ export async function runSubagentsReleaseVerification({
     }
     const publicResult = publicGateResult(gate, result);
     gates.push(publicResult);
-    onGate(publicResult);
+    onGate(publicResult, result.diagnostic);
   }
   if (requireCleanSource) {
     const afterCommit = assertCleanSource(resolvedRoot);
@@ -601,7 +601,13 @@ export function main(argv = process.argv.slice(2)) {
       output: args.output,
       protectedEvidence: args.protectedEvidence,
       ...(args.sourceCommit ? { sourceCommit: args.sourceCommit } : {}),
-      onGate: (gate) => process.stderr.write(`${gate.status} ${gate.id} (${gate.durationMs} ms)\n`),
+      onGate: (gate, diagnostic) => {
+        process.stderr.write(`${gate.status} ${gate.id} (${gate.durationMs} ms)\n`);
+        if (gate.status === "FAIL") {
+          process.stderr.write(`failure ${gate.id}: exitCode=${gate.exitCode} signal=${gate.signal} timedOut=${gate.timedOut} outputLimitExceeded=${gate.outputLimitExceeded}\n`);
+        }
+        if (diagnostic) process.stderr.write(`diagnostic ${gate.id}: ${diagnostic}\n`);
+      },
     }).then(({ report, target }) => {
       const summary = {
         status: report.status,

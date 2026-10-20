@@ -3,10 +3,11 @@ import test from "node:test";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { createWriterVerification } from "../packages/direct-agent/writer-verification.mjs";
+import { createRealWorkspaceVerification, createWriterVerification } from "../packages/direct-agent/writer-verification.mjs";
 
-test("clone verification runs real argv gates and binds the result without raw output", async (t) => {
+for (const mode of ["tui", "rpc"]) test(`${mode} clone verification runs real argv gates and binds the result without raw output`, async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-writer-gates-"));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const project = path.join(root, "project");
@@ -21,8 +22,10 @@ test("clone verification runs real argv gates and binds the result without raw o
   git("clone", "--no-local", project, clone);
   let approved = true;
   let confirms = 0;
-  const ctx = { cwd: project, mode: "tui", isProjectTrusted: () => true, sessionManager: { getSessionId: () => "test-session" }, ui: { async confirm(_title, description) { confirms++; assert.match(description, /NOT a filesystem/u); return approved; } } };
-  const verify = createWriterVerification({ configRoot: root, getContext: () => ctx });
+  let hostGranted = mode === "rpc";
+  const ctx = { cwd: project, mode, hasUI: true, isProjectTrusted: () => mode === "tui", sessionManager: { getSessionId: () => "test-session" }, ui: { async confirm(_title, description) { confirms++; assert.match(description, /NOT a filesystem/u); return approved; } } };
+  const isHostAuthorized = (current) => hostGranted && current === ctx;
+  const verify = createWriterVerification({ configRoot: root, getContext: () => ctx, isHostAuthorized });
   const input = { cloneRoot: clone, patch: { sha256: `sha256:${"a".repeat(64)}`, baseCommit: git("rev-parse", "HEAD") }, requestedVerification: ["node test.mjs"] };
   const passed = await verify(input);
   assert.equal(passed.status, "PASS");
@@ -30,6 +33,48 @@ test("clone verification runs real argv gates and binds the result without raw o
   assert.equal(passed.patchDigest, input.patch.sha256);
   assert.ok(!JSON.stringify(passed).includes("PRIVATE_TEST_OUTPUT"));
   assert.ok(!JSON.stringify(passed).includes(root));
+  const verifyReal = createRealWorkspaceVerification({ configRoot: root, getContext: () => ctx, isHostAuthorized });
+  await fs.writeFile(path.join(project, "math.mjs"), "export const add = (a,b) => { return a+b; };\n");
+  const patchPath = path.join(root, "real.patch");
+  const patchBytes = execFileSync("git", ["diff", "--", "math.mjs"], { cwd: project });
+  await fs.writeFile(patchPath, patchBytes);
+  const realInput = { repositoryRoot: project, patch: { ...input.patch, sha256: `sha256:${createHash("sha256").update(patchBytes).digest("hex")}`, patchPath, changedPaths: ["math.mjs"] }, runId: "directwriter:test", cloneManifestDigest: passed.manifestDigest };
+  if (mode === "rpc") {
+    hostGranted = false;
+    assert.equal((await verify(input)).code, "WRITER_GATE_TRUST_REQUIRED");
+    assert.equal((await verifyReal(realInput)).code, "WRITER_REAL_GATE_TRUST_REQUIRED");
+    hostGranted = true;
+    const confirm = ctx.ui.confirm;
+    ctx.ui.confirm = async () => { hostGranted = false; return true; };
+    assert.equal((await verify(input)).code, "WRITER_GATE_TRUST_REQUIRED");
+    hostGranted = true;
+    assert.equal((await verifyReal(realInput)).code, "WRITER_REAL_GATE_CANCELLED");
+    ctx.ui.confirm = confirm; hostGranted = true;
+  }
+  const realPassed = await verifyReal(realInput);
+  assert.equal(realPassed.status, "PASS", JSON.stringify(realPassed));
+  assert.equal(realPassed.phase, "real-workspace");
+  assert.equal(realPassed.runId, realInput.runId);
+  assert.ok(!JSON.stringify(realPassed).includes("PRIVATE_TEST_OUTPUT"));
+  assert.ok(!JSON.stringify(realPassed).includes(root));
+  await fs.writeFile(path.join(project, "math.mjs"), "export const add = (a,b) => Math.abs(a+b);\n");
+  const failingPatch = execFileSync("git", ["diff", "--", "math.mjs"], { cwd: project });
+  await fs.writeFile(patchPath, failingPatch);
+  const failingInput = { ...realInput, patch: { ...realInput.patch, sha256: `sha256:${createHash("sha256").update(failingPatch).digest("hex")}` } };
+  const realFailed = await verifyReal(failingInput);
+  assert.equal(realFailed.status, "FAIL");
+  assert.equal(realFailed.results[0].exitCode, 1);
+  approved = false;
+  assert.equal((await verifyReal(failingInput)).code, "WRITER_REAL_GATE_DENIED");
+  approved = true;
+  await fs.writeFile(path.join(project, "test.mjs"), "import fs from 'node:fs'; fs.appendFileSync('test.mjs', '// changed during gate\\n');\n");
+  assert.equal((await verifyReal(failingInput)).code, "WRITER_REAL_GATE_DRIFT");
+  await fs.writeFile(path.join(project, "test.mjs"), "import fs from 'node:fs'; import {execFileSync} from 'node:child_process'; fs.writeFileSync('new-input.mjs', 'export const x = 1;\\n'); execFileSync('git', ['add', 'new-input.mjs']);\n");
+  assert.equal((await verifyReal(failingInput)).code, "WRITER_REAL_GATE_DRIFT");
+  git("reset", "--", "new-input.mjs");
+  await fs.unlink(path.join(project, "new-input.mjs"));
+  await fs.writeFile(path.join(project, "test.mjs"), "import fs from 'node:fs'; fs.mkdirSync('dist', {recursive:true}); fs.writeFileSync('dist/bundle.js', 'generated');\n");
+  assert.equal((await verifyReal(failingInput)).status, "PASS");
   await fs.writeFile(path.join(clone, "math.mjs"), "export const add = (a,b) => Math.abs(a+b);\n");
   const failed = await verify(input);
   assert.equal(failed.status, "FAIL"); assert.equal(failed.results[0].exitCode, 1);

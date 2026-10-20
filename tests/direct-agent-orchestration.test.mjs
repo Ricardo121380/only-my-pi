@@ -3,8 +3,11 @@ import { EventEmitter } from "node:events";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import { createWebRunAuthorizer } from "../packages/web-policy/index.mjs";
+import { createRunRecordStore } from "../packages/run-management/index.mjs";
+import { isValidRealWorkspaceReceipt } from "../packages/direct-agent/contracts.mjs";
 
 import {
   DIRECT_DELEGATION_EVENTS,
@@ -14,6 +17,17 @@ import {
 const HEAD = "a".repeat(40);
 const verifiedPatch = async ({ patch }) => ({ status: "PASS", patchDigest: patch.sha256, baseCommit: HEAD, results: [{ status: "PASS", exitCode: 0, killed: false }] });
 const USAGE = Object.freeze({ input: 10, output: 5, cacheRead: 0, cacheWrite: 0, cost: 0.001, turns: 1, toolCalls: 1, durationMs: 10 });
+const mockPatchPath = (configRoot) => path.join(configRoot, "only-my-pi", "runs", "fixture", "artifacts", "fixture-writer-1.patch");
+
+test("real-worktree receipt rejects wrong phase, root, digest, empty or uncertain gates", () => {
+  const hash = `sha256:${"a".repeat(64)}`;
+  const receipt = { kind: "omp-real-workspace-verification", phase: "real-workspace", status: "PASS", runId: "run", patchDigest: hash, head: HEAD, manifestDigest: hash, repositoryRootDigest: hash, sourceScopeDigest: hash, sourceDigest: hash, bindingDigest: hash, receiptDigest: hash, results: [{ status: "PASS", exitCode: 0, killed: false, bindingDigest: hash }] };
+  const expected = { runId: "run", patchDigest: hash, head: HEAD, manifestDigest: hash, repositoryRootDigest: hash, receiptDigest: hash };
+  assert.equal(isValidRealWorkspaceReceipt(receipt, expected), true);
+  for (const invalid of [{ phase: "clone" }, { repositoryRootDigest: `sha256:${"b".repeat(64)}` }, { receiptDigest: `sha256:${"b".repeat(64)}` }, { results: [] }, { results: [{ ...receipt.results[0], terminationUnconfirmed: true }] }]) {
+    assert.equal(isValidRealWorkspaceReceipt({ ...receipt, ...invalid }, expected), false);
+  }
+});
 
 function makeTransport({ responseFor } = {}) {
   const events = new EventEmitter();
@@ -68,8 +82,13 @@ async function setup(t) {
     thinkingLevel: "medium",
     mode: "print",
   };
+  const records = new Map();
+  const recordStore = {
+    async begin({ id, directWriter }) { const record = { runId: id, status: "planned", directWriter }; records.set(id, record); return record; },
+    async update(id, patch) { const record = { ...records.get(id), ...patch }; records.set(id, record); return record; },
+  };
   let sequence = 0;
-  return { configRoot, projectRoot, ctx, idFactory: () => `id-${++sequence}` };
+  return { configRoot, projectRoot, ctx, recordStore, contextProvider: async () => ({ sessionId: "session", repository: { root: await fs.realpath(projectRoot), head: HEAD }, configurationDigest: `sha256:${"e".repeat(64)}` }), verifyRealWorkspace: async () => ({ status: "BLOCKED", code: "WRITER_REAL_GATE_DENIED" }), idFactory: () => `id-${++sequence}` };
 }
 
 test("direct research requires per-task Web approval and releases its grant", async (t) => {
@@ -120,6 +139,7 @@ test("read-only delegation uses the shared pi-subagents owner and enforces concu
   const seen = [];
   held.subscribe(DIRECT_DELEGATION_EVENTS.request, (request) => seen.push(request));
   const bounded = createDirectCodingOrchestrator({
+    ...fixture,
     transport: held,
     configRoot: fixture.configRoot,
     getContext: () => fixture.ctx,
@@ -154,6 +174,7 @@ test("dirty scope falls back to the main Agent before a writer clone is created"
   const transport = makeTransport({ responseFor: () => ({ kind: "text", text: "unused" }) });
   let creates = 0;
   const orchestrator = createDirectCodingOrchestrator({
+    ...fixture,
     transport,
     configRoot: fixture.configRoot,
     getContext: () => fixture.ctx,
@@ -178,6 +199,7 @@ test("managed writer cannot widen an approved single-level glob", async (t) => {
   const fixture = await setup(t);
   const transport = makeTransport();
   const orchestrator = createDirectCodingOrchestrator({
+    ...fixture,
     transport,
     configRoot: fixture.configRoot,
     getContext: () => fixture.ctx,
@@ -207,8 +229,9 @@ test("managed writer requires exact captured paths and a fresh passing review be
     },
   });
   const calls = [];
-  const patch = { status: "READY", sha256: `sha256:${"b".repeat(64)}`, changedPaths: ["src/fix.ts"], patchPath: path.join(fixture.configRoot, "patch.diff") };
+  const patch = { status: "READY", sha256: `sha256:${"b".repeat(64)}`, changedPaths: ["src/fix.ts"], patchPath: mockPatchPath(fixture.configRoot) };
   const orchestrator = createDirectCodingOrchestrator({
+    ...fixture,
     transport,
     configRoot: fixture.configRoot,
     getContext: () => fixture.ctx,
@@ -243,6 +266,99 @@ test("managed writer requires exact captured paths and a fresh passing review be
   );
 });
 
+test("managed writer records application before independent real-worktree verification", async (t) => {
+  const fixture = await setup(t);
+  const transport = makeTransport({ responseFor(request) {
+    return request.agent === "omp-implementer"
+      ? { kind: "structured", value: { status: "completed", changedPaths: ["src/fix.ts"], summary: "fixed", verification: [], followUp: [] } }
+      : { kind: "structured", value: { verdict: "pass", findings: [], tested: [], unverified: [] } };
+  } });
+  const store = createRunRecordStore({ managedRoot: path.join(fixture.configRoot, "only-my-pi") });
+  const patchDigest = `sha256:${"b".repeat(64)}`;
+  const manifestDigest = `sha256:${"c".repeat(64)}`;
+  const receiptDigest = `sha256:${"d".repeat(64)}`;
+  let runId;
+  let applyCalls = 0;
+  const orchestrator = createDirectCodingOrchestrator({
+    transport, configRoot: fixture.configRoot, getContext: () => fixture.ctx, idFactory: fixture.idFactory,
+    recordStore: store,
+    contextProvider: async () => ({ sessionId: "session", repository: { root: await fs.realpath(fixture.projectRoot), head: HEAD }, configurationDigest: `sha256:${"e".repeat(64)}` }),
+    verifyWriter: async ({ patch }) => ({ status: "PASS", patchDigest: patch.sha256, baseCommit: HEAD, manifestDigest, receiptDigest, results: [{ status: "PASS", exitCode: 0, killed: false }] }),
+    verifyRealWorkspace: async ({ patch, runId: id }) => {
+      const record = await store.require(id);
+      assert.equal(record.directWriter.stage, "VERIFYING");
+      assert.equal(record.directWriter.application, "APPLIED");
+      const receipt = { status: "PASS", kind: "omp-real-workspace-verification", phase: "real-workspace", runId: id, patchDigest: patch.sha256, head: HEAD, manifestDigest, repositoryRootDigest: `sha256:${createHash("sha256").update(await fs.realpath(fixture.projectRoot)).digest("hex")}`, sourceScopeDigest: receiptDigest, sourceDigest: receiptDigest, bindingDigest: receiptDigest, results: [{ status: "PASS", exitCode: 0, killed: false, bindingDigest: receiptDigest }] };
+      return { ...receipt, receiptDigest: `sha256:${createHash("sha256").update(JSON.stringify(receipt)).digest("hex")}` };
+    },
+    cloneService: {
+      async create({ runId: id }) { runId = id; return { cloneRoot: path.join(fixture.configRoot, "clone"), patchRoot: path.join(fixture.configRoot, "only-my-pi", "runs", id, "artifacts") }; },
+      async capture({ patchRoot }) { return { status: "READY", sha256: patchDigest, bytes: 4, changedPaths: ["src/fix.ts"], patchPath: path.join(patchRoot, `${runId}-writer-1.patch`) }; },
+      async apply() { applyCalls++; assert.equal((await store.require(runId)).directWriter.stage, "APPLYING"); return { patchDigest, changedPaths: ["src/fix.ts"] }; },
+    },
+  });
+  t.after(() => orchestrator.dispose());
+  const result = await orchestrator.delegateWriter({ task: "Fix", plan: "Apply reviewed patch", scope: ["src/**"], approvedScope: ["src/**"], baseline: { status: "GIT_REPOSITORY", head: HEAD, paths: [] } });
+  assert.equal(result.status, "WRITER_PATCH_VERIFIED");
+  assert.equal(applyCalls, 1);
+  const record = await store.require(runId);
+  assert.equal(record.directWriter.stage, "VERIFIED");
+  assert.equal(record.directWriter.verification, "PASS");
+  assert.equal(record.directWriter.patch.relativePath, `runs/${runId}/artifacts/${runId}-writer-1.patch`);
+});
+
+test("cancellation during the final patch freshness check prevents apply", async (t) => {
+  const fixture = await setup(t);
+  const abort = new AbortController();
+  const transport = makeTransport({ responseFor: (request) => request.agent === "omp-implementer"
+    ? { kind: "structured", value: { status: "completed", changedPaths: ["src/fix.ts"], summary: "fixed", verification: [], followUp: [] } }
+    : { kind: "structured", value: { verdict: "pass", findings: [], tested: [], unverified: [] } } });
+  const patch = { status: "READY", sha256: `sha256:${"b".repeat(64)}`, changedPaths: ["src/fix.ts"], patchPath: mockPatchPath(fixture.configRoot) };
+  let captures = 0;
+  let applies = 0;
+  const orchestrator = createDirectCodingOrchestrator({
+    ...fixture,
+    getContext: () => fixture.ctx,
+    transport,
+    verifyWriter: verifiedPatch,
+    cloneService: {
+      async create() { return { cloneRoot: path.join(fixture.configRoot, "clone"), patchRoot: path.join(fixture.configRoot, "artifacts") }; },
+      async capture() { captures++; if (captures === 3) abort.abort(); return patch; },
+      async apply() { applies++; return { patchDigest: patch.sha256, changedPaths: patch.changedPaths }; },
+    },
+  });
+  t.after(() => orchestrator.dispose());
+  const result = await orchestrator.delegateWriter({ task: "Fix", plan: "Plan", scope: ["src/**"], approvedScope: ["src/**"], baseline: { status: "GIT_REPOSITORY", head: HEAD, paths: [] }, signal: abort.signal });
+  assert.equal(result.status, "WRITER_VERIFICATION_BLOCKED");
+  assert.equal(applies, 0);
+});
+
+test("the final apply callback rechecks a budget exhausted during target preflight", async (t) => {
+  const fixture = await setup(t);
+  const transport = makeTransport({ responseFor: (request) => request.agent === "omp-implementer"
+    ? { kind: "structured", value: { status: "completed", changedPaths: ["src/fix.ts"], summary: "fixed", verification: [], followUp: [] } }
+    : { kind: "structured", value: { verdict: "pass", findings: [], tested: [], unverified: [] } } });
+  const patch = { status: "READY", sha256: `sha256:${"b".repeat(64)}`, changedPaths: ["src/fix.ts"], patchPath: mockPatchPath(fixture.configRoot) };
+  let orchestrator;
+  orchestrator = createDirectCodingOrchestrator({
+    ...fixture,
+    getContext: () => fixture.ctx,
+    transport,
+    verifyWriter: verifiedPatch,
+    cloneService: {
+      async create() { return { cloneRoot: path.join(fixture.configRoot, "clone"), patchRoot: path.join(fixture.configRoot, "artifacts") }; },
+      async capture() { return patch; },
+      async apply({ assertAuthority }) {
+        orchestrator.client.budgetError = Object.assign(new Error("budget reached"), { code: "DIRECT_CHILD_BUDGET_EXHAUSTED" });
+        assertAuthority();
+        return { patchDigest: patch.sha256, changedPaths: patch.changedPaths };
+      },
+    },
+  });
+  t.after(() => orchestrator.dispose());
+  await assert.rejects(orchestrator.delegateWriter({ task: "Fix", plan: "Plan", scope: ["src/**"], approvedScope: ["src/**"], baseline: { status: "GIT_REPOSITORY", head: HEAD, paths: [] } }), { code: "DIRECT_CHILD_BUDGET_EXHAUSTED" });
+});
+
 test("fresh reviewer failure preserves the patch artifact without applying it", async (t) => {
   const fixture = await setup(t);
   const transport = makeTransport({
@@ -256,6 +372,7 @@ test("fresh reviewer failure preserves the patch artifact without applying it", 
   let applied = false;
   const patchPath = path.join(fixture.configRoot, "only-my-pi", "runs", "run", "artifacts", "patch.diff");
   const orchestrator = createDirectCodingOrchestrator({
+    ...fixture,
     transport,
     configRoot: fixture.configRoot,
     getContext: () => fixture.ctx,
@@ -291,7 +408,7 @@ test("writer reports cannot bypass runtime verification or post-review patch fre
       const transport = makeTransport({ responseFor: (request) => ({ kind: "structured", value: request.agent === "omp-implementer"
         ? { status: "completed", changedPaths: ["src/fix.ts"], summary: "all tests passed", verification: ["PASS"], followUp: [] }
         : { verdict: "pass", findings: [], tested: ["PASS"], unverified: [] } }) });
-      const patch = { status: "READY", sha256: `sha256:${"b".repeat(64)}`, changedPaths: ["src/fix.ts"], patchPath: path.join(fixture.configRoot, "patch.diff") };
+      const patch = { status: "READY", sha256: `sha256:${"b".repeat(64)}`, changedPaths: ["src/fix.ts"], patchPath: mockPatchPath(fixture.configRoot) };
       const verifyWriter = scenario === "missing" ? null : async (input) => {
         if (scenario === "throws") throw new Error("verification unavailable");
         const result = await verifiedPatch(input);
@@ -302,7 +419,7 @@ test("writer reports cannot bypass runtime verification or post-review patch fre
         if (scenario === "cancelled") abort.abort();
         return result;
       };
-      const orchestrator = createDirectCodingOrchestrator({ transport, configRoot: fixture.configRoot, getContext: () => fixture.ctx, verifyWriter, cloneService: {
+      const orchestrator = createDirectCodingOrchestrator({ ...fixture, transport, configRoot: fixture.configRoot, getContext: () => fixture.ctx, verifyWriter, cloneService: {
         async create() { return { cloneRoot: fixture.projectRoot, patchRoot: fixture.configRoot }; },
         async capture() {
           captures++;

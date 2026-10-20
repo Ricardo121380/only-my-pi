@@ -52,6 +52,19 @@ test("destructive Git and shell escape commands are denied without shell executi
   assert.equal(inspectMutationCommand("npm test -- --runInBand"), null);
 });
 
+test("physical multiline Bash cannot bypass the destructive Git policy", () => {
+  for (const command of [
+    "echo ok\ngit reset --hard HEAD",
+    "echo ok\n  git commit -m fix",
+    "echo ok\\\ngit push origin main --force",
+    "printf 'first\nsecond'",
+  ]) {
+    assert.equal(inspectMutationCommand(command)?.code, "BASH_MULTILINE_UNSUPPORTED");
+    assert.equal(inspectMutationCommand(command, { allowCommit: true })?.code, "BASH_MULTILINE_UNSUPPORTED");
+  }
+  assert.equal(inspectMutationCommand(String.raw`printf '\n'`), null);
+});
+
 test("porcelain v2 status parser returns branch and bounded path inventory", () => {
   const output = [
     "# branch.oid abcdef012345678901234567890123456789abcd",

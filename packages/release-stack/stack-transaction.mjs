@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { canonicalJson } from "../config-runtime/index.mjs";
-import { finalizeStackState, sha256, validateStackManifest } from "./contracts.mjs";
+import { finalizeStackState, sha256, validateStackManifest, isPrivateStack } from "./contracts.mjs";
 import { inspectResolvedStack } from "./release-builder.mjs";
 import { stackTransactionLayout } from "./layout.mjs";
 import {
@@ -210,7 +210,7 @@ function receipt(context, status, failureCode = null) {
     failureCode,
     stackId: context.stack.stackId,
     payloadMode: context.plan.payloadMode,
-    externalOwnership: { binding: "external", owner: "user", packageCount: 9 },
+    externalOwnership: context.plan.external?.ownership === "stack/only-my-pi" ? { binding: "stack", owner: "only-my-pi", packageCount: 9 } : { binding: "external", owner: "user", packageCount: 9 },
     systemHomebrewModified: false,
     authRead: false,
     sessionsRead: false,
@@ -256,6 +256,13 @@ export class StackTransactionEngine {
       await this.advance(context, "PI_STAGED");
       await this.stageDirectory(context, "pi");
       await this.advance(context, "EXTERNAL_TREE_STAGED");
+      if (isPrivateStack(stack)) {
+        if (plan.external.switchRequired || plan.external.ownership !== "stack/only-my-pi" || plan.payloadMode !== "full") fail("STACK_PRIVATE_PLAN_INVALID", "private runtime cannot mutate shared extensions");
+        await this.stageDirectory(context, "external-npm");
+        await fs.copyFile(path.join(resolvedRoot, "distribution-manifest.json"), path.join(paths.stage, "distribution-manifest.json"));
+        await this.stageDirectory(context, "LICENSES");
+        for (const name of ["runtime-sbom.spdx.json", "transitive-artifact-ledger.json", "sbom.spdx.json", "THIRD_PARTY_NOTICES.txt"]) await fs.copyFile(path.join(resolvedRoot, name), path.join(paths.stage, name));
+      }
       if (plan.external.switchRequired) await fs.cp(path.join(resolvedRoot, "external-npm"), paths.externalStage, { recursive: true, errorOnExist: true, force: false, preserveTimestamps: false, verbatimSymlinks: true });
       await this.advance(context, "OMP_ARTIFACT_STAGED");
       await fs.cp(path.join(resolvedRoot, "only-my-pi.tgz"), path.join(paths.stage, "only-my-pi.tgz"), { force: false, errorOnExist: true });
@@ -326,9 +333,10 @@ export class StackTransactionEngine {
       externalRootExisted: Boolean(await lstatOrNull(this.layout.npmRoot)),
       externalRootDigest: context.plan.external.priorRootDigest,
       externalSwitchRequired: context.plan.external.switchRequired,
+      settingsUntouched: isPrivateStack(context.stack),
       targetSettingsDigest: null,
       targetSettingsContentBase64: null,
-      authorizedPackageNames: context.stack.externalPackages.map((entry) => entry.name).sort(),
+      authorizedPackageNames: isPrivateStack(context.stack) ? [] : context.stack.externalPackages.map((entry) => entry.name).sort(),
       shellProfile: context.plan.shellProfile,
     };
     await writeStackJson(context.paths.rollback, rollback);
@@ -349,6 +357,11 @@ export class StackTransactionEngine {
   async publishSettings(context) {
     const current = await readFileSnapshot(this.layout.settingsFile);
     if (current.digest !== context.rollback.settings.digest) fail("CONCURRENT_TARGETED_SETTINGS_CHANGE", "settings changed after the reviewed plan");
+    if (isPrivateStack(context.stack)) {
+      // A private stack uses its intrinsic package graph, not raw Pi settings.
+      context.harnessGenerationId = context.stack.generationTargetGraphDigest;
+      return;
+    }
     const original = current.exists ? JSON.parse(Buffer.from(current.contentBase64, "base64").toString("utf8")) : {};
     const published = publishPackageSettings(original, context.stack);
     const harnessResult = await this.harness?.publish?.({ context, settings: published });
@@ -376,6 +389,7 @@ export class StackTransactionEngine {
   }
 
   async recordState(context) {
+    const privateStack = isPrivateStack(context.stack);
     const priorState = context.rollback.state.exists
       ? JSON.parse(Buffer.from(context.rollback.state.contentBase64, "base64").toString("utf8"))
       : null;
@@ -405,14 +419,14 @@ export class StackTransactionEngine {
       },
       externalTree: {
         digest: context.plan.external.classification === "EXACT" ? context.plan.external.priorRootDigest : context.stack.externalTreeDigest,
-        verificationBasis: context.plan.external.classification === "EXACT" ? "BORROWED_PREFLIGHT_SNAPSHOT" : "CANONICAL_RELEASE_TREE",
+        verificationBasis: privateStack ? "STACK_PRIVATE" : context.plan.external.classification === "EXACT" ? "BORROWED_PREFLIGHT_SNAPSHOT" : "CANONICAL_RELEASE_TREE",
       },
       externalPackages: context.stack.externalPackages.map((entry) => ({
         name: entry.name,
         version: entry.version,
-        binding: "external",
-        owner: "user",
-        assetDisposition: dispositions.get(entry.name) ?? "PROVISIONED_FOR_USER",
+        binding: privateStack ? "stack" : "external",
+        owner: privateStack ? "only-my-pi" : "user",
+        assetDisposition: privateStack ? "STACK_PRIVATE" : dispositions.get(entry.name) ?? "PROVISIONED_FOR_USER",
         treeDigest: entry.treeDigest,
       })),
       transactionIds: [...(priorState?.transactionIds ?? []), context.transactionId],
@@ -529,8 +543,12 @@ export class StackTransactionEngine {
     await restoreLink(this.layout.piShim, rollback.piShim);
     await restoreLink(this.layout.currentStack, rollback.currentStack);
     await restoreLink(this.layout.lkgStack, rollback.lkgStack);
-    if (restoredSettings !== null) await atomicWriteBytes(this.layout.settingsFile, restoredSettings);
-    else await fs.rm(this.layout.settingsFile, { force: true });
+    // No target settings means this private transaction never published them.
+    // Preserve any legitimate user settings changes since installation.
+    if (rollback.settingsUntouched !== true) {
+      if (restoredSettings !== null) await atomicWriteBytes(this.layout.settingsFile, restoredSettings);
+      else await fs.rm(this.layout.settingsFile, { force: true });
+    }
     if (rollback.state.exists) await atomicWriteBytes(this.layout.stateFile, Buffer.from(rollback.state.contentBase64, "base64"));
     else await fs.rm(this.layout.stateFile, { force: true });
     if (rollback.externalSwitchRequired) {

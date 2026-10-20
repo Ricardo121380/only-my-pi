@@ -1,0 +1,35 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { promisify } from "node:util";
+import { execFile } from "node:child_process";
+import pty from "node-pty";
+import { createMcpHost, until } from "./fixtures/mcp-host.mjs";
+import { createOAuthMcpServer } from "./fixtures/mcp-oauth-server.mjs";
+const exec = promisify(execFile);
+
+test("real CLI, Pi TUI and authenticated Host read the same stored and revoked OAuth identity without automatic authentication", { timeout: 60000 }, async (t) => {
+  const service = await createOAuthMcpServer(); t.after(() => service.close());
+  const f = await createMcpHost({ installedExtensions: true }); t.after(() => f.close());
+  const state = await f.mcp({ type: "save", revision: 0, server: { name: "remote", transport: "streamable-http", url: service.url, credentialRefs: {}, tools: [{ name: "echo", effect: "remote" }], enabled: true } });
+  const flow = await f.mcp({ type: "oauthStart", revision: state.revision, name: "remote" });
+  const open = await fetch(`${f.host.origin}/api/mcp-oauth/open?flowId=${flow.flowId}`, { headers: { Origin: f.host.origin, Cookie: f.cookie }, redirect: "manual" });
+  const answer = await fetch(open.headers.get("location"), { method: "POST", body: new URLSearchParams({ decision: "allow" }), redirect: "manual" });
+  await fetch(answer.headers.get("location"));
+  await until(() => f.mcp({ type: "oauthStatus", flowId: flow.flowId }), (value) => value.status === "stored", "CLI OAuth stored");
+  const runCli = async () => JSON.parse((await exec(process.execPath, [f.cli, "admin", "mcp", "list", "--project", f.project], { env: f.env, cwd: f.project, timeout: 20000 })).stdout);
+  const hostState = await f.mcp({ type: "list" }); assert.deepEqual((await runCli()).authentication, hostState.authentication);
+  let output = "", exited;
+  const terminal = pty.spawn(process.execPath, [f.cli, "--model", "fixture/one", "--no-session", "--tui-mode", "regular"], { cwd: f.project, env: f.env, cols: 160, rows: 50 });
+  terminal.onData((data) => { output += data; }); terminal.onExit((value) => { exited = value; });
+  t.after(async () => { if (!exited) { terminal.kill("SIGTERM"); await until(() => exited, Boolean, "OAuth TUI owned exit"); } });
+  await until(() => output, (text) => text.includes("Inspect") || exited, "OAuth TUI ready", 30000); assert.equal(exited, undefined, output);
+  output = ""; terminal.write("/mcp list\r"); await until(() => output, (text) => text.includes('"connected"'), "TUI same stored identity");
+  assert.ok(output.includes(hostState.authentication.remote.ref));
+  await f.mcp({ type: "revokeCredential", name: "remote", envName: "MCP_TOKEN", revision: hostState.revision });
+  const revoked = await f.mcp({ type: "list" }); assert.equal(revoked.authentication.remote.state, "revoked");
+  assert.deepEqual((await runCli()).authentication, revoked.authentication);
+  output = ""; terminal.write("/mcp list\r"); await until(() => output, (text) => text.includes('"revoked"'), "TUI same revoked identity");
+  terminal.write("\x04"); await until(() => exited, Boolean, "OAuth TUI complete exit"); assert.equal(exited.exitCode, 0);
+  assert.equal(service.received.filter((entry) => entry.type === "token").length, 1); assert.equal(service.received.filter((entry) => entry.type === "mcp").length, 0);
+  for (const value of service.privateValues) assert.ok(!JSON.stringify([hostState, revoked, output, f.requests.map((entry) => entry.body)]).includes(value));
+});
