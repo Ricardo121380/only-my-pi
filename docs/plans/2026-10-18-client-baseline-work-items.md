@@ -1,6 +1,6 @@
 # Q12 已确认基线：工作组范围与已发布工单映射
 
-**2026-10-20 CLIENT-01A / #78 当前更新：** 独立 CLI 产品账号基础与账号 OAuth 已实现，正式 CLI/PTY、真实 Pi / 本地受控服务和 Ego Lite 双向互操作已形成分层证据；最终独立评审、完整回归与远程状态以 [#78 验收记录](../compatibility/2026-10-20-cli-product-accounts.md)及其关联 PR/工单为准。当前源码固定 Node 24.19.0 / Pi 1.3.0；#78 只覆盖 GCLIENT-01 的账号基础与账号 OAuth，两段之外的 MCP 认证、共享设置和会话发现/交接仍属 #79–#83。#21/#23 保持阻断，日常安装及产品发行未推进。
+**2026-10-20 CLIENT-01A / #78 当前更新：** 独立 CLI 产品账号基础与账号 OAuth 已实现；正式 CLI/PTY、真实 Pi / 本地受控服务、Ego Lite 双向互操作、最终隔离完整覆盖和既有 Linux CLI 回归均通过。独立 Standards PASS，Spec 无新增源码或证据阻断；公开合并、必需 CI 与工单最终状态以 [#78 验收记录](../compatibility/2026-10-20-cli-product-accounts.md)及其关联 PR/工单的独立回读为准。当前源码固定 Node 24.19.0 / Pi 1.3.0；#78 只覆盖 GCLIENT-01 的账号基础与账号 OAuth，两段之外的 MCP 认证、共享设置和会话发现/交接仍属 #79–#83。#21/#23 保持阻断，日常安装及产品发行未推进。
 
 **历史记录：2026-10-19 #77 同候选验收更新：** Pi 1.3.0 / `pi130-v1` 私有候选已形成；GP130-02 PASS，GP130-03 PASS。被测私有源码 `dd996352` 明确包含本轮增量及 19 个开工既有 WebUI 文件，该记录的私有工作分支保留其原归属；四项必需 installed 已从候选实际通过，CLI/PTY、Ego Lite 与独立本地受控服务证据完整，双 Node 与 Linux 分列。#77 CLOSED / completed，已独立回读，见[同候选验收报告](../compatibility/2026-10-18-pi-1.3.0-private-candidate-acceptance.md)。#76 已 CLOSED / completed；#21/#23 材料阻断保持，Full、真实 Provider、日常安装和新增客户端门槛未推进。下方有日期的规划与发布记录保留其历史含义。
 

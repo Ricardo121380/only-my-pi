@@ -1,6 +1,6 @@
 # CLIENT-01A / #78 CLI 产品账号验收
 
-状态：账号基础和账号 OAuth 已实现，C/P/B 的实际入口验证已形成；最终完整回归、独立评审和远程合并门槛仍需按下方记录完成。范围为 GCLIENT-01 的账号基础和账号 OAuth；MCP、共享设置、会话发现和交接分别由 #79–#83 承担。使用方法见 [CLI 账号指南](../cli-accounts.md)。
+本报告是公开同步前的本地验收快照（2026-10-20）：账号基础和账号 OAuth 已实现，C/P/B 的实际入口、最终隔离完整覆盖及适用 Linux 回归通过；独立 Standards 通过，Spec 未识别出新的源码或证据阻断。最终 PR、必需 CI、保护合并和工单状态以 [#78 验收回写](https://github.com/Ricardo121380/only-my-pi/issues/78)及其关联 PR 的独立回读为准。范围为 GCLIENT-01 的账号基础和账号 OAuth；MCP、共享设置、会话发现和交接分别由 #79–#83 承担。使用方法见 [CLI 账号指南](../cli-accounts.md)。
 
 开工基线为公开 `main@6b2cf19f834f18fad0965e6ce925b7ef291f119a`，工作区和暂存区干净。使用 Node 24.19.0、精确 Pi 1.3.0 以及当前 manifest/lock。私有开发分支与历史候选不作为本次 PASS。原 #21/#23 材料阻断保持。
 
@@ -17,12 +17,12 @@
 | 7 | OAuth 取消/超时/重复及过期答复/失效/撤销和登录竞争正确 | 实际 CLI 登录取消/超时、重复/迟到回调、服务撤销；GUI/CLI 登录期间另一端使用和变更被拒绝，取消重新登录保留原身份（C/P/B） | PASS，本地受控范围 |
 | 8 | 秘密和回调隔离，认证不授予编程或工具权限 | 隐藏终端/stdin；终端、请求正文、JSONL 与普通输出检查；原生 /login、/logout 拒绝绕过；单独编程批准前无工具写入（C/P） | PASS，本地受控范围 |
 | 9 | 真实 CLI/PTY OAuth 到真实 Pi，GUI 状态一致 | 实际 Pi OAuth 实现、独立受控授权/交换/模型接收服务，实际 Ego 回读；替身测试单列（P/B） | PASS，本地受控范围 |
-| 10 | 同一源码和运行身份的 C/P/B、独立评审及适用回归 | 下方源码/运行身份、完整回归、Linux 范围、Standards/Spec、PR CI 分列 | 待最终门槛 |
+| 10 | 同一源码和运行身份的 C/P/B、独立评审及适用回归 | 下方源码/运行身份、完整回归、Linux 范围、Standards/Spec、PR CI 分列 | 本地证据及评审已齐；远程终态见工单回读 |
 
 ## 运行身份和受控边界
 
 - 开工主线：`6b2cf19f834f18fad0965e6ce925b7ef291f119a`；功能分支 `codex/feat/cli-product-accounts`。最终 B 使用 `8f91f21938705194147b35f1a695c3eeef1c77ae`，17 个账号相关核心文件及 manifest/lock 的组合摘要为 `646fbbb6de11031a08fe47d03b40ea0e29f5ec315707c50290ab4f25e49e6a9b`。后续测试和文档提交不改变这些运行文件；最终回归和评审身份分别记录。
-- 当前回归冻结为 `a3418d6d8aa4c277bb1153d672ed5ffc20338d50`；全部本轮非文档文件及 manifest/lock 的组合摘要为 `6f72e8764bc705615dfa458034246172b3f32a0bedd528f7fcdd8a3ecce6a30a`。其产品核心文件与最终 B 逐项一致；差异只在补全 PTY 流程及验证夹具的覆盖收集范围。
+- 当前回归冻结为 `a3418d6d8aa4c277bb1153d672ed5ffc20338d50`；全部本轮非文档文件及 manifest/lock 的组合摘要为 `6f72e8764bc705615dfa458034246172b3f32a0bedd528f7fcdd8a3ecce6a30a`。其产品核心文件与最终 B 逐项一致；差异只在补全 PTY 流程及验证夹具的覆盖收集范围。验证后再次读取 39 个文件的内容与权限，独立回归工作树保持干净，均与冻结记录一致。
 - Node：`v24.19.0`，macOS arm64 可执行文件 SHA-256 `27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1`。仅在本轮局部 PATH 选择，不更改全局 Node。
 - Pi：精确 `1.3.0`；原 SDK 入口 SHA-256 `4569157e6038be9840fa514db4b00a27fd0be9e3622cc7b49a281de6c027d7ff`；manifest SHA-256 `83c3bb7619f590c213cc96a24216eb29a819a3ef6dc548607cc037ed276e8dc5`。
 - 根 manifest SHA-256 `014f527f0cb00ac9c0bfd11992d9118f7cc6c265e25eec05d8f666b708843d92`；lock SHA-256 `3e71a355116a7243519565feb72b838b4761aeb3dd3d2eda43610a77a0e83a3f`。依赖来自当前 lock 与 `test:prepare`，未借用用户 Pi HOME。
@@ -45,7 +45,13 @@
 
 当前定向结果：账号/认证/Pi 路径、真实进程及 PTY 验证通过；受影响直接运行入口回归 127 PASS；模型能力与任务协调回归 48 PASS；WebUI 11 文件、40 PASS；构建、类型与 lint 已通过。Linux arm64 的受影响既有 CLI 回归 140 PASS、0 FAIL、0 SKIP：固定 Node 24.19.0 / Pi 1.3.0、独立 manifest/lock 与 test:prepare，准备后容器无网络接口，操作系统返回 ENETUNREACH。固定镜像为 `node@sha256:4196d66a565c6f195728d9952f161f4adfe2ad753052a08b7ec7f1c5a6bda42b`，Linux Node SHA-256 为 `3e53e5ff5eaa922f1b4308312d50da9091db62d40b87716ad36c60b347e7f984`。实际文件内容与 Git 可执行位一致；归档产生的额外 group-write 权限另存身份，不声称跨平台权限完全相同。验证后新容器与专用 VM 已停止，Docker 默认 context 保持。
 
-最终隔离完整回归、独立 Standards/Spec 与远程 CI 仍待本节收口，不以这些定向通过替代。
+最终独立评审固定比较 `6b2cf19...0980910` 的全部 45 个变更文件。Standards 为 PASS，文档硬性违规 0、十二类基线异味 0。Spec 未识别出新的源码或证据阻断，确认此前的精确模型准入、正式进程崩溃恢复及 API Key 超时区分均已补齐；同时明确 AC10 必须等待最终完整回归、PR 必需 CI、保护合并和独立回读。评审是静态结论，不代替这些操作门槛。
+
+最终隔离工作树按自身 manifest/lock 完成 `npm ci --ignore-scripts --no-audit --no-fund` 和 `test:prepare`；lint、typecheck、schema、WebUI 测试与生产构建全部通过。M11 的十项确定性检查 PASS；本地 Q10 为 NOT_RUN_PLATFORM，Q11 为 NOT_RUN_BY_POLICY，不能将整体发行门槛写成 PASS。
+
+最终 M12 C1–C10 全部 PASS；C10 耗时 1,464,628 毫秒，在原 30 分钟预算内完成全仓测试发现、覆盖及后续定向检查，原并发、断言、期限和阈值保持。全仓阈值为行 85% / 分支 69% / 函数 85%，直接运行入口阈值为 90% / 80% / 90%。没有另外重复执行相同的 plain Full。C11/C12 为 NOT_RUN_BY_POLICY，完整受保护门槛仍为 pending；这不是外部 Provider 或产品发行通过。
+
+最终生产 WebUI `index.html` SHA-256 为 `b29b51290abdd3d42707295a06edcab90d841099e1b020c67a6b6d0e093d5692`，与 Ego 实际加载构建一致。远程必需 CI 的两个检查为 `Node 24.19.0` 与 `M11 Q10 macOS arm64 clean-home`；创建 PR 后按实际运行回读，合并后 main 自动运行单列，不预记 PASS。
 
 现有八项 SKIP 分别属于 opt-in 的生产 SDK scout/writer 两例、真实 Pi Host readonly/controlled 两例、已安装 Host 原生历史/实际 PTY 两例，以及历史 Pi 0.85 图像历史/恢复两例。它们不表示本票 API Key 或 OAuth 缺失；本票新增的完整路径和正式崩溃恢复均另有实际验证。
 
