@@ -136,13 +136,12 @@ export class ControlledStdioTransport {
       for (const signal of ["SIGTERM", "SIGKILL"]) {
         const pid = this.record.pid;
         if (!Number.isSafeInteger(pid) || pid < 1 || !groupAlive(pid)) break;
-        if (!this.record.identity || await processIdentity(pid) !== this.record.identity) {
-          // The service can exit during the asynchronous identity lookup.
-          // Only a surviving group still needs reconciliation.
-          if (!groupAlive(pid)) break;
-          this.record.status = "reconciliation"; await preserve(); throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
+        // A departed leader cannot authorize a signal, but its remaining group
+        // can still finish within the existing grace periods. Confirm exit
+        // below before reporting stopped; a surviving group stays unresolved.
+        if (this.record.identity && await processIdentity(pid) === this.record.identity) {
+          try { process.kill(-pid, signal); } catch (error) { if (error.code !== "ESRCH") throw error; }
         }
-        try { process.kill(-pid, signal); } catch (error) { if (error.code !== "ESRCH") throw error; }
         await waitForServiceExit(this, signal === "SIGTERM" ? 200 : 1000);
       }
       if (this.record.pid && groupAlive(this.record.pid)) { this.record.status = "reconciliation"; await preserve(); throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409); }
