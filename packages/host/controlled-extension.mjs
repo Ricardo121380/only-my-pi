@@ -50,14 +50,18 @@ export function createControlledExtension({ transport = process } = {}) {
     };
     const disconnect = () => { closed = true; clearInterval(projectionTimer); capability.invalidate(); revoke(); transport.exit?.(1); };
     transport.on("message", receive); transport.once("disconnect", disconnect);
-    pi.on("session_shutdown", () => {
+    pi.on("session_shutdown", async () => {
       // OMP control's earlier shutdown handler disposes the shared runtime.
       // Never turn a detached gate's unconfirmed exit into released ownership.
       const clean = (!managedRuntimeSeen || executionProbes.length > 0)
         && executionProbes.every((probe) => { const state = probe(); return state.active === 0 && state.unconfirmed === false; });
-      if (shutdownId && transport.connected !== false) transport.send({ type: "shutdown_confirmed", id: shutdownId, clean });
       publish(); closed = true; clearInterval(projectionTimer); capability.invalidate();
       transport.off("message", receive); transport.off("disconnect", disconnect);
+      // Pi exits after these handlers finish. Keep the real IPC send alive
+      // until its callback; a queued message is not a delivered receipt.
+      if (shutdownId && transport.connected !== false) await new Promise((resolve, reject) => {
+        transport.send({ type: "shutdown_confirmed", id: shutdownId, clean }, (error) => error ? reject(error) : resolve());
+      });
     });
   };
 }

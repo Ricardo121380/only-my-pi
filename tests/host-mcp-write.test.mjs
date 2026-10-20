@@ -155,8 +155,23 @@ test("actual mutation followed by receipt loss remains UNKNOWN and cannot auto r
   await f.request("/api/command", { type: "cancelTask", taskId: next.taskId }, 202);
 });
 
-for (const action of ["revokeTask", "cancelTask"]) test(`actual dispatched write ${action} keeps effects truthful and stops service`, { timeout: writeJourneyTimeout }, async (t) => {
+for (const [action, delayedReceipt] of [["revokeTask", false], ["cancelTask", false], ["revokeTask", true]]) test(`actual dispatched write ${action} keeps effects truthful and stops service${delayedReceipt ? " with delayed shutdown receipt" : ""}`, { timeout: writeJourneyTimeout }, async (t) => {
   const f = await createWriteHost({ mode: "gated" }); t.after(() => f.close());
+  if (delayedReceipt) {
+    // Keep the real SDK, cleanup and IPC payload. Delay only this send to
+    // expose process.exit racing a receipt still queued in the child.
+    await fs.rename(f.sdk, path.join(path.dirname(f.sdk), "index-before-delayed-receipt.js"));
+    await fs.writeFile(f.sdk, `export * from "./index-before-delayed-receipt.js";
+      import { createAgentSessionServices as real } from "./index-before-delayed-receipt.js";
+      export async function createAgentSessionServices(options) {
+        const services = await real(options), send = process.send.bind(process);
+        process.send = (message, ...args) => {
+          if (message?.type !== "shutdown_confirmed") return send(message, ...args);
+          setTimeout(() => send(message, ...args), 100); return false;
+        };
+        return services;
+      }`);
+  }
   const started = await f.start({ mode: "controlled" }), waiting = await codingApproved(f, started); await approveWrite(f, waiting);
   await until(() => dispatched(f), (entries) => entries.some((entry) => entry.type === "call"), "actual dispatch");
   // Cross the former 2s window while the real service remains at the effect gate.
