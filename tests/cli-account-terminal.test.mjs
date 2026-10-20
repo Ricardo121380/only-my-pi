@@ -56,6 +56,10 @@ for (const authType of ["api_key", "oauth"]) test(`actual PTY independently sets
   const completed = async (mark, code = 0) => {
     await until(() => output, text => text.includes(`${mark}${code}\r\n`), mark);
   };
+  // A PTY is a byte stream: wait for the entire stty reply before queuing
+  // another shell command whose echo could otherwise interrupt that reply.
+  const terminalSetting = label => output.slice(0, output.lastIndexOf("\n") + 1)
+    .split(/[\r\n]+/).find(line => line.startsWith(`${label}=`))?.slice(label.length + 1);
   t.after(async () => {
     try {
       if (!exited && shellIdentity && await processIdentity(shell.pid) === shellIdentity) process.kill(-shell.pid, "SIGKILL");
@@ -68,6 +72,7 @@ for (const authType of ["api_key", "oauth"]) test(`actual PTY independently sets
   await until(() => output, text => text.includes("OMP_SHELL> "), "isolated shell");
   shellIdentity = await processIdentity(shell.pid);
   shell.write("printf 'CLIENT_STTY_BEFORE='; stty -g\r");
+  await until(() => terminalSetting("CLIENT_STTY_BEFORE"), Boolean, "complete original terminal settings");
   const addMark = command(["account", "add", "--provider", "openrouter", "--name", `PTY ${authType}`, "--auth", authType]);
   await completed(addMark);
   const accountId = /"accountId":\s*"([0-9a-f-]{36})"/.exec(output)?.[1]; assert.ok(accountId);
@@ -117,7 +122,6 @@ for (const authType of ["api_key", "oauth"]) test(`actual PTY independently sets
   assert.equal(service.calls.length, 3); assert.ok(service.calls.every(call => call.valid && call.identity === authType));
   shell.write("\x04"); await completed(tuiMark);
   shell.write("printf 'CLIENT_STTY_AFTER='; stty -g\r");
-  const terminalSetting = label => output.split(/[\r\n]+/).find(line => line.startsWith(`${label}=`))?.slice(label.length + 1);
   await until(() => terminalSetting("CLIENT_STTY_AFTER"), Boolean, "same terminal restored");
   assert.equal(terminalSetting("CLIENT_STTY_BEFORE"), terminalSetting("CLIENT_STTY_AFTER"));
   await completed(command(["account", "rename", accountId, "Released after exit"]));
