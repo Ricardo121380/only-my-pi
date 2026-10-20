@@ -10,6 +10,7 @@ import { loadIntrinsicDistribution } from "../distribution/intrinsic.mjs";
 import { OMP_CONTROL_COMMANDS } from "../control-service/cli-parser.mjs";
 import { McpCatalog, mcpToolNames } from "../mcp/catalog.mjs";
 import { usesNativePiTools } from "../upstream-compatibility/native-pi.mjs";
+import { accountWorkerEnvironment } from "../host/models.mjs";
 
 const STACK_DIRECTORY = /^[a-f0-9]{64}$/u;
 const UUID = /^[a-f0-9-]{36}$/u;
@@ -55,6 +56,7 @@ const SAFE_BOOLEAN_FLAGS = new Set([
 ]);
 
 const SAFE_VALUE_FLAGS = new Set([
+  "--account",
   "--provider",
   "--model",
   "--thinking",
@@ -70,7 +72,7 @@ const SAFE_VALUE_FLAGS = new Set([
   "--export",
 ]);
 
-const CONTROL_COMMANDS = new Set([...OMP_CONTROL_COMMANDS, "classifier", "image"]);
+const CONTROL_COMMANDS = new Set([...OMP_CONTROL_COMMANDS, "classifier", "image", "account"]);
 
 export const OMP_AGENT_USAGE = `only-my-pi - guarded terminal coding Agent
 
@@ -85,6 +87,8 @@ Daily Agent:
   omp -r                      Choose a session to resume
   omp -p "review this repo"   Run a read-only non-interactive task
   omp --model <provider/id>   Select a model without the startup picker
+  omp account help           Set up or log in to a product account without a Host
+  omp --account <id> --model <provider/id>  Explicitly use a product account
   omp --tui-mode regular      Use the scrollback terminal (default: fullscreen)
   omp web                     Open the local read-only workbench
   omp web status              Inspect the local Host
@@ -197,6 +201,10 @@ export function inspectDirectAgentArguments(argv, { interactive = true } = {}) {
   const outputMode = flagValue(argv, "--mode");
   const headless = !interactive || hasFlag(argv, "--print", "-p") || outputMode === "json" || outputMode === "rpc";
   const explicitModel = hasFlag(argv, "--model");
+  const accountId = flagValue(argv, "--account");
+  if (accountId !== undefined && !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(accountId))
+    fail("ACCOUNT_NOT_FOUND", "Select an existing product account ID from omp account list");
+  if (accountId && !explicitModel) fail("ACCOUNT_MODEL_REQUIRED", "Product account use requires an explicit --model provider/model");
   return Object.freeze({ headless, explicitModel });
 }
 
@@ -388,6 +396,18 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames 
   if (typeof launchId !== "string" || !UUID.test(launchId)) fail("OMP_LAUNCH_ID_INVALID", "launch id generator returned an invalid UUID");
 
   const nativeTools = nativeToolsForStack(stack);
+  const accountId = flagValue(argv ?? [], "--account");
+  const forwarded = [];
+  let separator = false;
+  for (let i = 0; i < (argv ?? []).length; i++) {
+    const token = argv[i];
+    if (token === "--") separator = true;
+    if (!separator && token === "--account") {
+      if (forwarded.includes("--account") || argv.slice(i + 2, argv.indexOf("--") < 0 ? undefined : argv.indexOf("--")).includes("--account")) fail("OMP_AGENT_OPTION_INVALID", "Duplicate account selection");
+      i++; continue;
+    }
+    forwarded.push(token);
+  }
   const piArgs = [
     stack.piCliPath,
     "--no-extensions",
@@ -399,10 +419,11 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames 
     [inspected.headless ? HEADLESS_TOOLS : INTERACTIVE_TOOLS, ...(nativeTools ? ["codemode"] : []), ...mcpNames].join(","),
     "--perm",
     inspected.headless ? "plan" : "build",
-    ...(argv ?? []),
+    ...forwarded,
   ];
   const mode = flagValue(argv ?? [], "--mode");
   const utility = hasFlag(argv ?? [], "--export", "--version", "-v");
+  if (accountId && (utility || runtimeOwner !== "direct")) fail("OMP_AGENT_OPTION_INVALID", "Product account selection requires a direct execution mode");
   // Host owns admission and its account-specific SDK entry. This internal
   // ownership distinction is not a CLI flag or an environment override.
   const entry = utility || runtimeOwner === "host" ? undefined : mode === "rpc" ? "rpc-entry.mjs"
@@ -417,7 +438,8 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames 
       path.resolve(path.dirname(stack.piCliPath), "../index.js"));
   }
   const childEnv = {
-    ...cleanEnvironment(env),
+    ...cleanEnvironment(accountId ? { ...accountWorkerEnvironment(env), PI_CODING_AGENT_DIR: resolveDirectConfigRoot({ env }),
+      PI_OFFLINE: env.PI_OFFLINE ?? "", PI_SKIP_VERSION_CHECK: "1", TERM: env.TERM ?? "xterm-256color", COLORTERM: env.COLORTERM ?? "" } : env),
     ...(stack.distribution ? { PATH: `${path.join(stack.root, "pi/vendor-tools/bin")}${path.delimiter}${env.PATH ?? "/usr/bin:/bin"}`,
       PI_SUBAGENT_EXTRA_AGENT_DIRS: path.join(stack.root, "only-my-pi/package/bundles/only-my-pi-agent-bundle/agents"),
       PI_SKIP_VERSION_CHECK: "1",
@@ -431,6 +453,9 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames 
     ONLY_MY_PI_MODEL_EXPLICIT: inspected.explicitModel ? "1" : "0",
     ONLY_MY_PI_LAUNCH_ID: launchId,
     ONLY_MY_PI_STACK_ID: stack.stackId,
+    OMP_PRODUCT_ACCOUNT_ID: accountId ?? "",
+    ...(accountId ? { OMP_HOST_ACCOUNT_ID: accountId, OMP_HOST_ACCOUNT_CONFIG_ROOT: resolveDirectConfigRoot({ env }),
+      PI_SUBAGENT_PI_BINARY: path.join(stack.ompPackageRoot, "bin/omp-account-child.mjs") } : {}),
   };
   return Object.freeze({ executable: stack.nodePath, argv: Object.freeze([stack.nodePath, ...piArgs]), env: Object.freeze(childEnv), headless: inspected.headless });
 }

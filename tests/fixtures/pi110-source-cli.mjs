@@ -51,7 +51,7 @@ export async function createPi110SourceCli(root, { baseUrl, installedExtensions 
   await fs.cp(piRoot, path.join(stack, "pi"), { recursive: true });
   await fs.symlink(path.join(repo, "node_modules"), path.join(stack, "node_modules"));
   await fs.symlink(path.join(repo, "node_modules"), path.join(omp, "node_modules"));
-  for (const name of ["bin", "packages", "extensions", "bundles", "schemas", "templates", "scripts", "package.json"]) {
+  for (const name of ["bin", "packages", "extensions", "bundles", "schemas", "templates", "scripts", "package.json", "package-lock.json"]) {
     if (await fs.stat(path.join(repo, name)).catch(() => null)) await fs.cp(path.join(repo, name), path.join(omp, name), { recursive: true });
   }
   const bindings = [];
@@ -101,5 +101,9 @@ export async function createPi110SourceCli(root, { baseUrl, installedExtensions 
   ] } } }));
   await fs.writeFile(path.join(project, "README.md"), "temporary CLI project\n");
   const env = { PATH: process.env.PATH, HOME: home, TERM: "xterm-256color", LANG: "en_US.UTF-8", PI_CODING_AGENT_DIR: config, PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1" };
-  return { home, config, project, stack, omp, env, cli: path.join(omp, "bin/omp.mjs"), sdk: path.join(stack, "pi/dist/index.js"), bindings, piVersion, nodeRuntime };
+  // Only copied CLI entrypoints use this environment. Their sources are outside
+  // the checkout coverage include pattern; an explicit empty value prevents
+  // Node from automatically profiling them. Checkout Host workers keep env.
+  const cliEnv = { ...env, NODE_V8_COVERAGE: "" };
+  return { home, config, project, stack, omp, env, cliEnv, cli: path.join(omp, "bin/omp.mjs"), sdk: path.join(stack, "pi/dist/index.js"), bindings, piVersion, nodeRuntime };
 }

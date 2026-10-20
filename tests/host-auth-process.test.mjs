@@ -16,6 +16,11 @@ test("authentication subprocess identity is durable before begin; recovery confi
   const record = JSON.parse(await fs.readFile(path.join(directory, names[0]), "utf8"));
   assert.equal(record.pid, child.pid); assert.match(record.identity, /^[a-f0-9]{64}$/);
   await recoverAuthProcesses(root);
+  assert.equal(process.kill(child.pid, 0), true, "a live independent authentication owner is preserved");
+  assert.equal((await fs.readdir(directory)).length, 1);
+  // Legacy orphan records have no live parent ownership and remain recoverable.
+  await atomicWriteJson(root, path.join(directory, names[0]), { pid: record.pid, identity: record.identity });
+  await recoverAuthProcesses(root);
   assert.throws(() => process.kill(child.pid, 0), { code: "ESRCH" });
   assert.deepEqual(await fs.readdir(directory), []);
   const reused = path.join(directory, "aaaa.json");

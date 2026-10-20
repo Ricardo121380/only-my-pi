@@ -575,6 +575,16 @@ export async function runOmpEntrypoint(options = {}) {
       return OMP_EXIT_CODES.SUCCESS;
     }
     if (route.kind === "admin") {
+      if (route.argv[0] === "account") {
+        const { runAccountCli } = await import("../packages/host/account-cli.mjs");
+        const { resolveDirectConfigRoot, resolveControlledStack } = await import("../packages/direct-agent/launcher.mjs");
+        const env = options.env ?? process.env, homeDir = options.homedir ? options.homedir() : os.homedir();
+        const result = await runAccountCli({ argv: route.argv.slice(1), env, stderr,
+          configRoot: resolveDirectConfigRoot({ env, homeDir }),
+          resolveStack: () => resolveControlledStack({ packageRoot: options.rootDir ?? DEFAULT_ROOT, homeDir, stackRoot: options.stackRoot }) });
+        writeText(stdout, stringifyOmpJson(result));
+        return ["failed", "cancelled", "timed_out", "stored_sync_failed", "removed_sync_failed"].includes(result.status) ? OMP_EXIT_CODES.FAILURE : OMP_EXIT_CODES.SUCCESS;
+      }
       if (["classifier", "image"].includes(route.argv[0])) {
         const { runClassifierCli } = await import("../packages/model-calls/commands.mjs");
         const { resolveDirectConfigRoot, resolveControlledStack } = await import("../packages/direct-agent/launcher.mjs");

@@ -29,6 +29,8 @@ Pi 提供终端界面、模型、会话和基础工具；OMP 在此之上增加�
 
 当前分支包含**尚未发布**的 direct-Agent 安全修复：拒绝含物理换行的 Bash 命令；撤权会取消进行中的受管写入；克隆验证通过后，仍须对真实工作区的项目检查单独授权并通过，才能标记完成。补丁可能已应用，但验证仍待进行、失败或被取消。`/omp runs` 和 `/omp runs show <id>` 只读、脱敏，不会恢复写入或编程授权。若 Git apply 启动后取消，应用结果可能不确定，重试前须人工核对。上述修复不代表已发布的 `v0.4.0-preview.2` 二进制已有这些行为。
 
+开发版 CLI 也提供独立产品账号设置：`omp account add`、`configure`、`login`、`list`、`status`，随后用 `omp --account ACCOUNT_ID --model PROVIDER/MODEL` 显式调用。API Key 与 Pi 支持的 OAuth 共用图形端的产品账号，无需启动 WebUI Host；凭据仍由 Pi 保存在各账号私有目录，登录不授予编程权限。见 [CLI 账号指南](docs/cli-accounts.md)及 [CLIENT-01A 验收范围](docs/compatibility/2026-10-20-cli-product-accounts.md)。这些命令尚未产品发行。
+
 ## 快速开始
 
 <a id="platform-and-runtime"></a>

@@ -17,9 +17,9 @@ test("public auth worker saves and removes only the selected account; responses 
   assert.deepEqual(await accountAuth({ ...options, input: { type: "status" } }), { status: "missing" });
   assert.deepEqual(await accountAuth({ ...options, input: { type: "apiKey", key: "fixture-key-not-real" } }), { status: "stored" });
   assert.deepEqual(await accountAuth({ ...options, input: { type: "status" } }), { status: "stored" });
-  const release = accounts.beginUse(account.accountId);
+  const release = await accounts.beginUse(account.accountId);
   await assert.rejects(accountAuth({ ...options, input: { type: "logout" } }), { code: "ACCOUNT_BUSY" });
-  release();
+  await release();
   assert.deepEqual(await accountAuth({ ...options, input: { type: "logout" } }), { status: "missing" });
   assert.equal(await fs.readFile(path.join(root, "auth.json"), "utf8"), "CLI sentinel");
   const cancelled = new AbortController();

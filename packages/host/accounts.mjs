@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import Ajv from "ajv";
 import { atomicWriteJson, readJsonObject, ensureConfigDirectory, withConfigLock, assertSafeContainedPath } from "../config-runtime/index.mjs";
 import { hostError, CLI_ACCOUNT_ID } from "./contracts.mjs";
+import { reserveAccount } from "./account-activity.mjs";
 
 const fields = {
   providerId: { type: "string", pattern: "^[a-zA-Z0-9_-]{1,128}$" },
@@ -37,26 +38,18 @@ export class AccountCatalog {
     this.configRoot = path.resolve(configRoot);
     this.directory = "only-my-pi/host/accounts";
     this.file = path.join(this.configRoot, this.directory, "catalog.json");
-    this.users = new Map(); this.changing = new Set();
   }
-  // One instance is shared by the singleton Host's task and account services.
-  beginUse(accountId) {
-    if (this.changing.has(accountId)) throw hostError("ACCOUNT_BUSY", 409);
-    this.users.set(accountId, (this.users.get(accountId) ?? 0) + 1);
-    let released = false;
-    return () => {
-      if (released) return;
-      released = true;
-      const remaining = this.users.get(accountId) - 1;
-      if (remaining) this.users.set(accountId, remaining); else this.users.delete(accountId);
-    };
+  async beginUse(accountId) {
+    const release = await reserveAccount(this.configRoot, accountId, "use");
+    try { if (accountId !== CLI_ACCOUNT_ID) await this.get(accountId); }
+    catch (error) { await release(); throw error; }
+    return release;
   }
   async change(accountId, operation) {
     if (accountId === CLI_ACCOUNT_ID) throw hostError("ACCOUNT_READ_ONLY", 403);
-    if (this.changing.has(accountId) || this.users.has(accountId)) throw hostError("ACCOUNT_BUSY", 409);
-    this.changing.add(accountId);
-    try { return await operation(await this.get(accountId)); }
-    finally { this.changing.delete(accountId); }
+    const release = await reserveAccount(this.configRoot, accountId, "change");
+    try { return await operation(await this.get(accountId), release); }
+    finally { await release(); }
   }
   async list() {
     let value;

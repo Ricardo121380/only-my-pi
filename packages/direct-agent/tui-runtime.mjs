@@ -8,6 +8,7 @@ import { prepareTuiInput } from "./initial-input.mjs";
 import { disableOmpCacheWarming } from "./cache-warming-policy.mjs";
 import { McpCatalog, mcpToolNames } from "../mcp/catalog.mjs";
 import { applyOmpRequestPolicy } from "./request-policy.mjs";
+import { openProductAccount } from "../host/account-runtime.mjs";
 
 // Controlled CLI bootstrap using only Pi's public SDK. All modes share the
 // same tool, account, request and session-admission policy.
@@ -32,6 +33,8 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
   if (parsed.name !== undefined && !name) throw ownershipError("OMP_AGENT_OPTION_INVALID");
   const selection = inspectSessionSelection(args);
   if (parsed.noSession && selection.fork) throw ownershipError("OMP_AGENT_OPTION_INVALID");
+  const productAccount = env.OMP_PRODUCT_ACCOUNT_ID ? await openProductAccount({ sdk, configRoot, accountId: env.OMP_PRODUCT_ACCOUNT_ID }) : undefined;
+  if (productAccount) modelRuntime = productAccount.runtime;
   const prepared = parsed.noSession
     ? { sessionManager: await admissions.createMemory(cwd, { id: selection.id }) }
     : await prepareHeadlessSession({ args, sdk, admissions, configRoot, cwd, env, selectResume });
@@ -60,6 +63,8 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     return projectTrusted;
   };
   const createRuntime = async ({ cwd: effectiveCwd, agentDir, sessionManager, sessionStartEvent, projectTrustContext }) => {
+    const priorAccount = sessionManager.getBranch().findLast(entry => entry.type === "custom" && entry.customType === "omp-account-binding")?.data?.accountId;
+    if (!productAccount && typeof priorAccount === "string" && priorAccount !== "cli-readonly") throw ownershipError("ACCOUNT_SELECTION_REQUIRED");
     const projectTrusted = await resolveProjectTrust(effectiveCwd, projectTrustContext, !sessionStartEvent);
     const settingsManager = applyOmpRequestPolicy(sdk.SettingsManager.create(effectiveCwd, agentDir, { projectTrusted }));
     if (parsed.useTheme !== undefined) settingsManager.applyOverrides({ theme: parsed.useTheme });
@@ -86,10 +91,21 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     diagnostics.push(...scope.diagnostics);
     let model, thinkingLevel;
     if (parsed.model) {
+      let declaredModel;
+      if (productAccount) {
+        const provider = productAccount.account.providerId;
+        if (parsed.provider && parsed.provider !== provider) throw ownershipError("ACCOUNT_MODEL_MISMATCH");
+        const id = parsed.model.startsWith(`${provider}/`) ? parsed.model.slice(provider.length + 1) : parsed.model;
+        declaredModel = services.modelRuntime.getModels(provider).find(item => item.id === id);
+        // Pi's general CLI supports fuzzy names and fabricated custom IDs.
+        // A product account must select an exact model from its own catalog.
+        if (!declaredModel) throw ownershipError("ACCOUNT_MODEL_NOT_FOUND");
+      }
       const resolved = sdk.resolveCliModel({ cliProvider: parsed.provider, cliModel: parsed.model,
         cliThinking: parsed.thinking, modelRuntime: services.modelRuntime });
       if (resolved.error || !resolved.model) throw ownershipError("TUI_MODEL_NOT_FOUND");
       model = resolved.model; thinkingLevel = resolved.thinkingLevel;
+      if (productAccount && (model.provider !== declaredModel.provider || model.id !== declaredModel.id)) throw ownershipError("ACCOUNT_MODEL_MISMATCH");
       if (resolved.warning) diagnostics.push({ type: "warning", message: resolved.warning });
     } else if (scope.scopedModels.length && !sessionManager.buildSessionContext().messages.length) {
       const selected = scope.scopedModels.find(({ model }) => model.provider === settingsManager.getDefaultProvider()
@@ -99,6 +115,11 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model,
       thinkingLevel: parsed.thinking ?? thinkingLevel, scopedModels: scope.scopedModels.length ? scope.scopedModels : undefined,
       tools: [...parsed.tools, ...(mode === "tui" ? ["mcp__*"] : mcpNames)], excludeTools: parsed.excludeTools });
+    if (productAccount) {
+      if (!model || created.modelFallbackMessage || created.session.model?.provider !== model.provider || created.session.model?.id !== model.id)
+        throw ownershipError("ACCOUNT_MODEL_FALLBACK_DENIED");
+      sessionManager.appendCustomEntry("omp-account-binding", { version: 1, accountId: productAccount.account.accountId, providerId: productAccount.account.providerId });
+    }
     if (!sessionStartEvent && name) sessionManager.appendSessionInfo(name);
     return { ...created, services, diagnostics };
   };
@@ -113,6 +134,10 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     if (error.code !== "SESSION_CWD_INVALID" || prepared.sessionManager || !confirmSessionCwd) throw error;
     if (await confirmSessionCwd({ file: prepared.target.file, cwd }) !== true) return { cancelled: true };
     runtime = await initialize(cwd);
+  }
+  if (productAccount) {
+    const dispose = runtime.dispose.bind(runtime);
+    runtime.dispose = async () => { await dispose(); await productAccount.release(); };
   }
   if (mode === "rpc") return { cancelled: false, runtime };
   let stdinContent = "";
