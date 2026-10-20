@@ -27,7 +27,7 @@ test("formal CLI and unmodified Pi OAuth complete local PKCE, callbacks, stored 
   await installAccountOAuthTransport(f, service);
   const originalAuth = await fs.readFile(path.join(f.config, "auth.json"));
   const start = args => {
-    const child = spawn(process.execPath, [f.cli, ...args], { cwd: f.project, env: { ...f.env, OPENROUTER_API_KEY: "ambient-wrong-identity" }, stdio: ["pipe", "pipe", "pipe"] });
+    const child = spawn(process.execPath, [f.cli, ...args], { cwd: f.project, env: { ...f.cliEnv, OPENROUTER_API_KEY: "ambient-wrong-identity" }, stdio: ["pipe", "pipe", "pipe"] });
     child.out = ""; child.err = "";
     child.stdout.on("data", chunk => { child.out += chunk; }); child.stderr.on("data", chunk => { child.err += chunk; });
     child.closed = once(child, "close").then(([code, signal]) => { children.delete(child); exits.push({ args, code, signal, out: child.out, err: child.err }); return { code, signal }; });

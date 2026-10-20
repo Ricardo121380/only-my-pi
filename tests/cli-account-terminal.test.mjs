@@ -42,7 +42,7 @@ for (const authType of ["api_key", "oauth"]) test(`actual PTY independently sets
   const descriptor = path.join(root, "provider.json");
   await fs.writeFile(descriptor, JSON.stringify({ baseUrl: `${service.origin}/v1`, api: "openai-completions", models: [{ id: "controlled-model", name: "Controlled", contextWindow: 32000, maxTokens: 128 }] }));
   const originalAuth = await fs.readFile(path.join(f.config, "auth.json"));
-  const shell = pty.spawn("/bin/sh", ["-i"], { cwd: f.project, env: { ...f.env, PS1: "OMP_SHELL> " }, cols: 120, rows: 38 });
+  const shell = pty.spawn("/bin/sh", ["-i"], { cwd: f.project, env: { ...f.cliEnv, PS1: "OMP_SHELL> " }, cols: 120, rows: 38 });
   let output = "", exited, shellIdentity;
   shell.onData(chunk => { output += chunk; }); shell.onExit(event => { exited = event; });
   const commands = [];
@@ -82,11 +82,11 @@ for (const authType of ["api_key", "oauth"]) test(`actual PTY independently sets
   const cancelOffset = output.length, cancelMark = command(["account", "login", accountId]);
   await until(() => output.slice(cancelOffset), text => authType === "api_key" ? text.includes("API Key (hidden") : text.includes("Open in your browser:"), "authentication interaction");
   shell.write("\x03"); await completed(cancelMark, 1);
-  assert.equal(JSON.parse((await execFile(process.execPath, [f.cli, "account", "status", accountId], { cwd: f.project, env: f.env })).stdout).status, "missing");
+  assert.equal(JSON.parse((await execFile(process.execPath, [f.cli, "account", "status", accountId], { cwd: f.project, env: f.cliEnv })).stdout).status, "missing");
   assert.equal(service.exchanges.length, 0);
   const loginOffset = output.length, loginMark = command(["account", "login", accountId]);
   await until(() => output.slice(loginOffset), text => authType === "api_key" ? text.includes("API Key (hidden") : text.includes("Open in your browser:"), "retry authentication");
-  await assert.rejects(execFile(process.execPath, [f.cli, "account", "rename", accountId, "Cannot race login"], { cwd: f.project, env: f.env }), error => /ACCOUNT_BUSY/.test(error.stderr));
+  await assert.rejects(execFile(process.execPath, [f.cli, "account", "rename", accountId, "Cannot race login"], { cwd: f.project, env: f.cliEnv }), error => /ACCOUNT_BUSY/.test(error.stderr));
   if (authType === "api_key") shell.write(`${key}\r`);
   else {
     const url = /Open in your browser: (https:\/\/[^\s]+)/.exec(output.slice(loginOffset))[1];
@@ -115,7 +115,7 @@ for (const authType of ["api_key", "oauth"]) test(`actual PTY independently sets
   await until(() => output.slice(logoutOffset), text => /OpenRouter|openrouter/.test(text), "native logout selector");
   shell.write("\r");
   await until(() => output.slice(logoutOffset), text => text.includes("ACCOUNT_AUTH_REQUIRES_ACCOUNT_COMMAND"), "native logout cannot bypass account coordination");
-  const status = JSON.parse((await execFile(process.execPath, [f.cli, "account", "status", accountId], { cwd: f.project, env: f.env })).stdout);
+  const status = JSON.parse((await execFile(process.execPath, [f.cli, "account", "status", accountId], { cwd: f.project, env: f.cliEnv })).stdout);
   assert.equal(status.status, "stored");
   const nativeLoginOffset = output.length;
   shell.write("/login openrouter\r");
@@ -126,7 +126,7 @@ for (const authType of ["api_key", "oauth"]) test(`actual PTY independently sets
   await until(() => output.slice(tuiOffset), text => text.includes("Approve plan and allow coding for this session"), "coding approval");
   assert.equal(service.calls.length, 1);
   await assert.rejects(fs.access(path.join(f.project, "proof.txt")), { code: "ENOENT" });
-  await assert.rejects(execFile(process.execPath, [f.cli, "account", "logout", accountId], { cwd: f.project, env: f.env }), error => /ACCOUNT_BUSY/.test(error.stderr));
+  await assert.rejects(execFile(process.execPath, [f.cli, "account", "logout", accountId], { cwd: f.project, env: f.cliEnv }), error => /ACCOUNT_BUSY/.test(error.stderr));
   shell.write("\r");
   await until(() => output.slice(tuiOffset), text => text.includes("controlled coding completed"), "approved real file write");
   assert.equal(await fs.readFile(path.join(f.project, "proof.txt"), "utf8"), "controlled product account\n");

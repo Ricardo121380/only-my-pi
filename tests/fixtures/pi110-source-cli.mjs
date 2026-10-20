@@ -101,5 +101,9 @@ export async function createPi110SourceCli(root, { baseUrl, installedExtensions 
   ] } } }));
   await fs.writeFile(path.join(project, "README.md"), "temporary CLI project\n");
   const env = { PATH: process.env.PATH, HOME: home, TERM: "xterm-256color", LANG: "en_US.UTF-8", PI_CODING_AGENT_DIR: config, PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1" };
-  return { home, config, project, stack, omp, env, cli: path.join(omp, "bin/omp.mjs"), sdk: path.join(stack, "pi/dist/index.js"), bindings, piVersion, nodeRuntime };
+  // Only copied CLI entrypoints use this environment. Their sources are outside
+  // the checkout coverage include pattern; an explicit empty value prevents
+  // Node from automatically profiling them. Checkout Host workers keep env.
+  const cliEnv = { ...env, NODE_V8_COVERAGE: "" };
+  return { home, config, project, stack, omp, env, cliEnv, cli: path.join(omp, "bin/omp.mjs"), sdk: path.join(stack, "pi/dist/index.js"), bindings, piVersion, nodeRuntime };
 }

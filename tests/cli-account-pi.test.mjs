@@ -34,7 +34,7 @@ test("formal CLI sets up API key accounts from an empty product catalog and real
   f = await createPi110SourceCli(root, { baseUrl });
   const originalAuth = await fs.readFile(path.join(f.config, "auth.json"));
   const run = async (args, input = "", expected = 0) => {
-    const child = spawn(process.execPath, [f.cli, ...args], { cwd: f.project, env: { ...f.env, OPENAI_API_KEY: "ambient-must-not-be-used" }, stdio: ["pipe", "pipe", "pipe"] });
+    const child = spawn(process.execPath, [f.cli, ...args], { cwd: f.project, env: { ...f.cliEnv, OPENAI_API_KEY: "ambient-must-not-be-used" }, stdio: ["pipe", "pipe", "pipe"] });
     let out = "", err = "";
     child.stdout.on("data", chunk => { out += chunk; }); child.stderr.on("data", chunk => { err += chunk; });
     const closed = once(child, "close"); child.stdin.end(input);
@@ -99,7 +99,7 @@ test("formal API key login distinguishes a deadline from user cancellation and r
     await fs.rm(root, { recursive: true });
   });
   const start = args => {
-    const child = spawn(process.execPath, [f.cli, ...args], { cwd: f.project, env: f.env, stdio: ["pipe", "pipe", "pipe"] });
+    const child = spawn(process.execPath, [f.cli, ...args], { cwd: f.project, env: f.cliEnv, stdio: ["pipe", "pipe", "pipe"] });
     const record = { pid: child.pid, args, stdout: "", stderr: "", exit: null }; commands.push(record);
     child.stdout.on("data", bytes => { record.stdout += bytes; }); child.stderr.on("data", bytes => { record.stderr += bytes; });
     child.closed = once(child, "close").then(([code, signal]) => { record.exit = { code, signal }; children.delete(child); return record; });

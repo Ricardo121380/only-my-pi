@@ -41,7 +41,7 @@ for (const authType of ["api_key", "oauth"]) test(`formal ${authType} CLI crash 
     await fs.rm(root, { recursive: true });
   });
   const start = (args, input, keepStdin = false) => {
-    const child = spawn(process.execPath, [f.cli, ...args], { cwd: f.project, env: f.env, stdio: ["pipe", "pipe", "pipe"] });
+    const child = spawn(process.execPath, [f.cli, ...args], { cwd: f.project, env: f.cliEnv, stdio: ["pipe", "pipe", "pipe"] });
     const record = { pid: child.pid, args, stdout: "", stderr: "", exit: null }; commands.push(record); child.record = record;
     child.stdout.on("data", bytes => { record.stdout += bytes; }); child.stderr.on("data", bytes => { record.stderr += bytes; });
     child.closed = once(child, "close").then(([code, signal]) => { record.exit = { code, signal }; children.delete(child); return record; });
