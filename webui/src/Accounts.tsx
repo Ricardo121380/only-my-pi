@@ -56,11 +56,11 @@ export function Accounts({ onChanged }: { onChanged?: () => void }) {
     finally { pending.current = false; setBusy(false); }
   }
   return <section className="account-settings" aria-label="账号管理" aria-busy={busy || loading}>
-    <h3>账号与模型</h3><p className="metric-fine">GUI 账号独立存储。CLI 仅只读引用，不会复制或修改其默认凭据。</p>
+    <h3>账号与模型</h3><p className="metric-fine">产品账号由 CLI 与图形端共用。原 CLI 默认配置保持原归属，仅作为只读引用。</p>
     {error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
     {loading ? <p role="status">正在读取账号…</p> : <>
       <p className="metric-fine">{directory?.cliReference.name}</p>
-      {!directory?.accounts.length && <p>还没有 GUI 账号。添加后配置凭据，再选择账号和模型。</p>}
+      {!directory?.accounts.length && <p>还没有产品账号。添加后配置凭据，再选择账号和模型。</p>}
       <div className="account-list">{directory?.accounts.map((item) => <button type="button" className="softbtn" aria-pressed={selected === item.accountId} disabled={busy} key={item.accountId} onClick={() => select(item)}>{item.name} · {item.providerId}</button>)}</div>
     </>}
     <button type="button" className="linkbtn" disabled={busy || loading} onClick={() => void reload()}>刷新账号</button>

@@ -81,18 +81,20 @@ test("runtime paths are independent, private and reject credential symlinks", as
 test("shared use blocks account changes until every user releases; changing blocks new use", async (t) => {
   const { catalog } = await fixture(t);
   const a = await catalog.create(input);
-  const one = catalog.beginUse(a.accountId), two = catalog.beginUse(a.accountId);
+  const one = await catalog.beginUse(a.accountId), two = await catalog.beginUse(a.accountId);
   await assert.rejects(catalog.change(a.accountId, async () => {}), { code: "ACCOUNT_BUSY" });
-  one(); one();
+  await one(); await one();
   await assert.rejects(catalog.change(a.accountId, async () => {}), { code: "ACCOUNT_BUSY" });
-  two();
-  let finish;
+  await two();
+  let finish, ready;
   const barrier = new Promise((resolve) => { finish = resolve; });
-  const changing = catalog.change(a.accountId, async () => barrier);
-  assert.throws(() => catalog.beginUse(a.accountId), { code: "ACCOUNT_BUSY" });
+  const entered = new Promise(resolve => { ready = resolve; });
+  const changing = catalog.change(a.accountId, async () => { ready(); return barrier; });
+  await entered;
+  await assert.rejects(catalog.beginUse(a.accountId), { code: "ACCOUNT_BUSY" });
   finish(); await changing;
   await assert.rejects(catalog.change(a.accountId, async () => { throw new Error("fixture"); }));
-  catalog.beginUse(a.accountId)();
+  await (await catalog.beginUse(a.accountId))();
 });
 test("static provider and lifecycle operations reject commands and occupied accounts", async (t) => {
   const { catalog } = await fixture(t), account = await catalog.create(input);
@@ -101,10 +103,10 @@ test("static provider and lifecycle operations reject commands and occupied acco
   await catalog.configure(account.accountId, config);
   const paths = await catalog.runtimePaths(account.accountId);
   assert.deepEqual(JSON.parse(await fs.readFile(paths.modelsPath, "utf8")), { providers: { anthropic: config } });
-  const release = catalog.beginUse(account.accountId);
+  const release = await catalog.beginUse(account.accountId);
   await assert.rejects(catalog.remove(account.accountId), { code: "ACCOUNT_BUSY" });
   await assert.rejects(catalog.rename(account.accountId, "New"), { code: "ACCOUNT_BUSY" });
-  release();
+  await release();
   assert.equal((await catalog.rename(account.accountId, "New")).name, "New");
   await catalog.remove(account.accountId);
   assert.deepEqual(await catalog.list(), []);

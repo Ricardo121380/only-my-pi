@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { createMcpHost, until, providerReply } from "./fixtures/mcp-host.mjs";
+import { createMcpHost, until, providerReply, untilPiInitialized, slowPiInitialization } from "./fixtures/mcp-host.mjs";
 import { createHttpMcpServer } from "./fixtures/mcp-http-server.mjs";
 import { acquireConfigLock } from "../packages/config-runtime/lock.mjs";
 
@@ -16,13 +16,15 @@ async function configureRemote(f, service) {
 }
 const respond = ({ body, res }) => providerReply(res, body.messages.at(-1).role === "tool" ? null : "mcp__remote__echo", { value: "approved input" });
 
-test("public Host and real Pi use an authenticated Streamable HTTP MCP target only after explicit tool approval", { timeout: 45000 }, async (t) => {
+for (const startupDelay of [0, 26000]) test(`public Host and real Pi use an authenticated Streamable HTTP MCP target only after explicit tool approval${startupDelay ? " with bounded slow initialization" : ""}`, { timeout: 45000 }, async (t) => {
   const service = await createHttpMcpServer(); t.after(() => service.close());
   const f = await createMcpHost({ respond, installedExtensions: true }); t.after(() => f.close());
   const state = await configureRemote(f, service);
   assert.equal(service.received.length, 0, "saving credentials and enabling never connects");
   assert.ok(!JSON.stringify(state).includes(service.token));
+  if (startupDelay) await slowPiInitialization(f.sdk, startupDelay);
   const started = await f.start();
+  await untilPiInitialized(() => f.task(started.taskId));
   const waiting = await until(() => f.task(started.taskId), (task) => task.approvals.length || task.status === "failed", "HTTP approval", 20000);
   assert.ok(waiting.approvals.length, JSON.stringify(waiting));
   assert.equal(service.received.filter((entry) => entry.rpc === "tools/call").length, 0);

@@ -124,11 +124,11 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
   };
   const accountModels = async (accountId) => {
     if (accountId === CLI_ACCOUNT_ID) return modelList();
-    const release = accounts.beginUse(accountId);
+    const release = await accounts.beginUse(accountId);
     try {
       await accounts.get(accountId);
       return await (modelsProvider ? modelsProvider(accountId) : listModels({ stack, configRoot, accountId, env, signal: modelAbort.signal }));
-    } finally { release(); }
+    } finally { await release(); }
   };
   const tasks = new HostTasks({ configRoot, stack, catalog, accounts, workerFactory, models: accountModels, allowControlled, env });
   try { await tasks.load(); } catch (error) { await inputs.close(); await lock.release(); throw error; }

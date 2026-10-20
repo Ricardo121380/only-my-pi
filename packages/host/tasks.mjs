@@ -74,9 +74,12 @@ export class HostTasks extends EventEmitter {
     if (!project.available) throw hostError("PROJECT_UNAVAILABLE", 409);
     const resume = command.resumeSessionKey ? await this.catalog.resume(command.resumeSessionKey, project.projectId) : null;
     if (resume && [...this.tasks.values()].some((task) => task.sessionId === resume.sessionId && (!terminal(task.status) || task.worker))) throw hostError("SESSION_IN_USE", 409);
-    const release = this.accounts?.beginUse(command.accountId);
+    const release = await this.accounts?.beginUse(command.accountId);
     const capabilityReleases = [];
-    const releaseAccounts = () => { release?.(); for (const releaseCapability of capabilityReleases) releaseCapability(); };
+    const releaseAccounts = async () => { await release?.(); for (const releaseCapability of capabilityReleases) await releaseCapability(); };
+    releaseAccounts.addProcess = async (pid) => {
+      for (const reservation of [release, ...capabilityReleases]) await reservation?.addProcess(pid, { group: true });
+    };
     let transferred = false;
     try {
     if (this.accounts && command.accountId !== CLI_ACCOUNT_ID) {
@@ -88,7 +91,7 @@ export class HostTasks extends EventEmitter {
     if (command.thinkingLevel !== undefined && !supportsThinking(model, command.thinkingLevel)) throw hostError("THINKING_LEVEL_UNAVAILABLE", 409);
     const classifierSnapshot = await new ModelCallStore(this.configRoot).config(project.path);
     const capabilityAccounts = new Set([classifierSnapshot.classifier?.accountId, classifierSnapshot.image?.accountId].filter(id => id && id !== command.accountId));
-    for (const accountId of capabilityAccounts) { const releaseCapability = this.accounts?.beginUse(accountId); if (releaseCapability) capabilityReleases.push(releaseCapability); }
+    for (const accountId of capabilityAccounts) { const releaseCapability = await this.accounts?.beginUse(accountId); if (releaseCapability) capabilityReleases.push(releaseCapability); }
     const mcpSnapshot = await new McpCatalog(this.configRoot).snapshot(project.path);
     if (this.requests.has(command.requestId)) return existing(this.requests.get(command.requestId));
     if (this.closing) throw hostError("HOST_STOPPING", 409);
@@ -108,7 +111,7 @@ export class HostTasks extends EventEmitter {
       try { inputRecord = await beforeRun(task); if (!inputRecord || inputRecord.taskId !== task.taskId || inputRecord.state !== "dispatching") throw hostError("INPUT_STATE_INVALID"); }
       catch (error) {
         task.status = "failed"; task.error = "INPUT_ADMISSION_FAILED";
-        this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId);
+        await this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId);
         await this.persist(); this.changed(task); throw error;
       }
     }
@@ -116,7 +119,7 @@ export class HostTasks extends EventEmitter {
     const running = this.run(task, project, resume, inputRecord, beforePrompt).catch(async () => { task.status = "failed"; task.error = "TASK_INTERNAL_FAILURE"; this.changed(task); await this.persist().catch(() => {}); }).finally(() => this.running.delete(task.taskId));
     this.running.set(task.taskId, running);
     return this.public(task);
-    } finally { if (!transferred) releaseAccounts(); }
+    } finally { if (!transferred) await releaseAccounts(); }
   }
   async recordInputFeedback(taskId, inputId, feedback) {
     if (!feedback) return;
@@ -134,8 +137,8 @@ export class HostTasks extends EventEmitter {
     let worker;
     try {
       worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, taskId: task.taskId, accountId: task.accountId, controlled: task.mode === "controlled", mcpSnapshot: task.mcpSnapshot, classifierSnapshot: task.classifierSnapshot, sessionRoot, resumeFile: resume?.file, env: this.env,
-        onIdentity: async (identity) => { task.worker = identity; await this.persist(); } });
-    } catch (error) { this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId); throw error; }
+        onIdentity: async (identity) => { await this.accountReleases.get(task.taskId)?.addProcess(identity.pid); task.worker = identity; await this.persist(); } });
+    } catch (error) { await this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId); throw error; }
     this.workers.set(task.taskId, worker);
     let settledResolve, failed = false, aborted = false, stopping = false;
     const settled = new Promise((resolve) => { settledResolve = resolve; });
@@ -254,7 +257,7 @@ export class HostTasks extends EventEmitter {
       try { await worker.stop(); task.worker = null; terminationConfirmed = true; }
       catch { finalStatus = "failed"; task.error = "RPC_TERMINATION_UNCONFIRMED"; }
       if (terminationConfirmed) {
-        this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId);
+        await this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId);
         try { await lease?.release(); this.leases.delete(task.taskId); } catch { finalStatus = "failed"; task.error = "SESSION_RELEASE_FAILED"; }
         try { await this.projectLeases.get(task.taskId)?.release(); this.projectLeases.delete(task.taskId); } catch { finalStatus = "failed"; task.error = "PROJECT_RELEASE_FAILED"; }
         this.workers.delete(task.taskId);
@@ -305,7 +308,7 @@ export class HostTasks extends EventEmitter {
     for (const [id] of this.workers) {
       const task = this.tasks.get(id); task.worker = null;
       if (task.error === "RPC_TERMINATION_UNCONFIRMED") task.error = "RPC_TERMINATION_RECOVERED";
-      this.accountReleases.get(id)?.(); this.accountReleases.delete(id);
+      await this.accountReleases.get(id)?.(); this.accountReleases.delete(id);
       await this.leases.get(id)?.release(); this.leases.delete(id);
       await this.projectLeases.get(id)?.release(); this.projectLeases.delete(id);
       this.workers.delete(id);

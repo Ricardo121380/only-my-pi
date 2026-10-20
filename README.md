@@ -29,6 +29,8 @@ You do not need to choose a Workflow, Swarm, Goal, or Ultra to do everyday work.
 
 The current branch contains **unreleased** direct-Agent hardening: physical multiline Bash is rejected; revocation cancels in-flight managed writing; and a clone-verified patch is not complete until a separately approved gate passes in the real worktree. A patch may be applied while its verification is pending, failed, or cancelled. `/omp runs` and `/omp runs show <id>` expose a redacted, read-only record; they do not resume a writer or restore coding permission. A cancelled Git apply can leave an unknown application outcome, which requires manual inspection before retry. These statements do not describe the published `v0.4.0-preview.2` binaries.
 
+The development CLI also supports independent product-account setup: `omp account add`, `configure`, `login`, `list`, and `status`, followed by `omp --account ACCOUNT_ID --model PROVIDER/MODEL`. API Key and Pi-supported OAuth use the same product accounts as the GUI, without starting the WebUI Host. Credentials remain in Pi's account-specific storage; login does not grant coding permission. See the [CLI account guide](docs/cli-accounts.md) and [CLIENT-01A acceptance scope](docs/compatibility/2026-10-20-cli-product-accounts.md). This is unreleased development behavior.
+
 ## Quick start
 
 <a id="platform-and-runtime"></a>

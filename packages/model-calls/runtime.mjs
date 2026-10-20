@@ -3,6 +3,7 @@ import { ModelCallStore } from "./store.mjs";
 import { classifierRuntime } from "./models.mjs";
 import { hostError } from "../host/contracts.mjs";
 import { ImageArtifacts, validateImage } from "./artifacts.mjs";
+import { AccountCatalog } from "../host/accounts.mjs";
 
 const fail = code => hostError(code, 409);
 const boundedProbability = value => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
@@ -31,13 +32,24 @@ export function createClassificationControl(pi, { sdkFile, configRoot }) {
   const store = new ModelCallStore(configRoot);
   const artifacts = new ImageArtifacts(configRoot);
   let snapshot, taskId, ended = true, approved = new Set(), approvalPending = new Map(), starting;
-  const finish = async () => { if (!ended && taskId) { ended = true; approved.clear(); await store.end(taskId); } };
+  let accountReleases = [];
+  const finish = async () => {
+    if (!ended && taskId) { ended = true; approved.clear(); await store.end(taskId); }
+    for (const release of accountReleases) await release();
+    accountReleases = [];
+  };
   const start = async ctx => {
     await finish();
     snapshot = process.env.OMP_HOST_CLASSIFIER_SNAPSHOT ? JSON.parse(process.env.OMP_HOST_CLASSIFIER_SNAPSHOT) : await store.config(ctx.cwd);
     taskId = process.env.OMP_HOST_INPUT_TASK_ID ?? `cli_${randomUUID()}`;
     if (snapshot.projectPath !== ctx.cwd) throw fail("CLASSIFIER_PROJECT_MISMATCH");
-    if (snapshot.classifier || snapshot.image) { await store.begin(taskId, ctx.cwd, snapshot); ended = false; }
+    if (snapshot.classifier || snapshot.image) {
+      try {
+        for (const accountId of new Set([snapshot.classifier?.accountId, snapshot.image?.accountId].filter(Boolean)))
+          accountReleases.push(await new AccountCatalog(configRoot).beginUse(accountId));
+        await store.begin(taskId, ctx.cwd, snapshot); ended = false;
+      } catch (error) { await finish(); throw error; }
+    }
   };
   // sendCustomMessage(triggerTurn), used by durable WebUI input, bypasses
   // before_agent_start. Both that path and prompt emit the public agent_start.

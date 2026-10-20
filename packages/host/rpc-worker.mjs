@@ -101,6 +101,7 @@ export class RpcWorker extends EventEmitter {
     this.identity = { pid: child.pid, start: await processIdentity(child.pid) };
     if (!this.identity.start) throw hostError("RPC_WORKER_EXITED");
     await this.onIdentity(this.identity);
+    if (this.accountId !== undefined) child.send({ type: "begin" }, error => { if (error) this.emit("fault", { code: "RPC_SPAWN_FAILED" }); });
     this.state = await this.command("get_state");
     if (this.mcpEnabled && !this.mcpInitialized?.clean) throw hostError(this.mcpInitialized?.code ?? "MCP_START_UNCONFIRMED", 409);
     if (this.accountId && this.taskId && !this.inputReady) {

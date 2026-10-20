@@ -39,7 +39,7 @@ it("shows directory failure and retries without guessing a default account", asy
   render(<Accounts />);
   await screen.findByRole("alert");
   fireEvent.click(screen.getByRole("button", { name: "刷新账号" }));
-  await screen.findByText(/还没有 GUI 账号/);
+  await screen.findByText(/还没有产品账号/);
   expect(screen.queryByLabelText("API Key")).toBeNull();
 });
 

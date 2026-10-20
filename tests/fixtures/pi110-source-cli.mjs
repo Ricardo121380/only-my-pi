@@ -51,7 +51,7 @@ export async function createPi110SourceCli(root, { baseUrl, installedExtensions 
   await fs.cp(piRoot, path.join(stack, "pi"), { recursive: true });
   await fs.symlink(path.join(repo, "node_modules"), path.join(stack, "node_modules"));
   await fs.symlink(path.join(repo, "node_modules"), path.join(omp, "node_modules"));
-  for (const name of ["bin", "packages", "extensions", "bundles", "schemas", "templates", "scripts", "package.json"]) {
+  for (const name of ["bin", "packages", "extensions", "bundles", "schemas", "templates", "scripts", "package.json", "package-lock.json"]) {
     if (await fs.stat(path.join(repo, name)).catch(() => null)) await fs.cp(path.join(repo, name), path.join(omp, name), { recursive: true });
   }
   const bindings = [];

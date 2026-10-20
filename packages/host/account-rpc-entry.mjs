@@ -12,9 +12,13 @@ import { disableOmpCacheWarming } from "../direct-agent/cache-warming-policy.mjs
 import { mcpToolNames } from "../mcp/catalog.mjs";
 import { hostProjectAuthority } from "./project-authority.mjs";
 import { applyOmpRequestPolicy } from "../direct-agent/request-policy.mjs";
+import { awaitAuthStart } from "./auth-process.mjs";
+import { openProductAccount } from "./account-runtime.mjs";
 
 // Host-owned arguments contain identities and audited paths, never credentials.
 try {
+  // The Host records this worker in every account reservation before begin.
+  await awaitAuthStart();
   const [stackRoot, configRoot, accountId, modelId, sessionRoot, mode, resumeFile, ...extensions] = process.argv.slice(2);
   if (!["readonly", "controlled"].includes(mode)) throw new Error();
   const controlled = mode === "controlled";
@@ -44,7 +48,8 @@ try {
   // Audited permission extensions still use theme helpers during RPC session_start.
   sdk.initTheme(undefined, false);
   const paths = accountId === CLI_ACCOUNT_ID ? { authPath: path.join(configRoot, "auth.json"), modelsPath: path.join(configRoot, "models.json"), modelsStorePath: path.join(configRoot, "only-my-pi/host/cli-models-store.json") } : await catalog.runtimePaths(accountId);
-  const modelRuntime = await sdk.ModelRuntime.create({ ...paths, allowModelNetwork: false, refreshOnCreate: false });
+  const productAccount = accountId === CLI_ACCOUNT_ID ? undefined : await openProductAccount({ sdk, configRoot, accountId });
+  const modelRuntime = productAccount?.runtime ?? await sdk.ModelRuntime.create({ ...paths, allowModelNetwork: false, refreshOnCreate: false });
   if (!await hasAccountCredential(modelRuntime, accountId, account)) throw new Error();
   const createRuntime = async ({ cwd, sessionManager, sessionStartEvent }) => {
     const services = await sdk.createAgentSessionServices({
@@ -89,6 +94,7 @@ try {
     send({ type: "omp_input_ready", protocol: INPUT_PROTOCOL, taskId });
   }
   await sdk.runRpcMode(runtime);
+  await productAccount?.release();
 } catch {
   process.stdout.write(JSON.stringify({ type: "extension_error", code: "ACCOUNT_RPC_START_FAILED" }) + "\n");
   process.exitCode = 1;

@@ -18,6 +18,7 @@ export async function writePiEvidence(name, { sdk, ...observations }) {
   const copiedRoot = path.resolve(path.dirname(sdk), "../../only-my-pi/package");
   const sourceRoot = await fs.stat(copiedRoot).then(() => copiedRoot, () => repo);
   const files = ["packages/direct-agent/launcher.mjs", "packages/direct-agent/tui-runtime.mjs", "packages/direct-agent/session-entry.mjs", "packages/direct-agent/request-policy.mjs", "packages/direct-agent/codemode.mjs", "packages/mcp/native.mjs", "packages/host/rpc-worker.mjs", "packages/host/account-rpc-entry.mjs", "packages/host/pi-input-bridge.mjs"];
+  if (observations.scope?.startsWith("CLIENT-01A")) files.push("package.json", "package-lock.json", "bin/omp.mjs", "packages/host/accounts.mjs", "packages/host/account-activity.mjs", "packages/host/account-auth.mjs", "packages/host/account-auth-worker.mjs", "packages/host/account-cli.mjs", "packages/host/account-oauth.mjs", "packages/host/account-oauth-worker.mjs", "packages/host/account-runtime.mjs", "packages/host/auth-process.mjs", "packages/host/tasks.mjs", "packages/host/server.mjs");
   const sources = Object.fromEntries(await Promise.all(files.map(async file => [file, await hash(path.join(sourceRoot, file))])));
   await fs.mkdir(output, { recursive: true });
   await fs.writeFile(path.join(output, `${randomUUID()}.json`), JSON.stringify({ scope: "PI130-01_SOURCE_PROCESS_LOOPBACK_ONLY",

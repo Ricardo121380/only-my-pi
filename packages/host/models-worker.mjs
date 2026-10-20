@@ -7,6 +7,7 @@ import { CLI_ACCOUNT_ID } from "./contracts.mjs";
 import { hasAccountCredential } from "./account-credential.mjs";
 import { classifierChoice, registerClassifiers, imageChoice, registerImages } from "../model-calls/models.mjs";
 const [stackRoot, configRoot, accountId, modelType = "llm"] = process.argv.slice(2);
+let release;
 try {
   if (![stackRoot, configRoot].every((p) => typeof p === "string" && path.isAbsolute(p))) throw new Error("invalid runtime paths");
   const sdk = pathToFileURL(path.join(stackRoot, "pi/dist/index.js"));
@@ -17,6 +18,7 @@ try {
   const aiManifest = JSON.parse(await fs.readFile(aiPackage, "utf8"));
   const { getSupportedThinkingLevels } = await import(new URL(aiManifest.exports["./compat"].import, pathToFileURL(aiPackage)).href);
   const catalog = new AccountCatalog(configRoot);
+  if (accountId && accountId !== CLI_ACCOUNT_ID) release = await catalog.beginUse(accountId);
   const account = accountId === undefined || accountId === CLI_ACCOUNT_ID ? null : await catalog.get(accountId);
   const paths = account ? await catalog.runtimePaths(account.accountId) : { authPath: path.join(configRoot, "auth.json"), modelsPath: path.join(configRoot, "models.json"),
     modelsStorePath: path.join(configRoot, "only-my-pi/host/cli-models-store.json") };
@@ -38,3 +40,4 @@ try {
     thinkingLevels: m.reasoning ? getSupportedThinkingLevels(m) : [], contextWindow: m.contextWindow }));
   process.stdout.write(JSON.stringify({ models }) + "\n");
 } catch { process.stdout.write(JSON.stringify({ code: "MODEL_CATALOG_UNAVAILABLE" }) + "\n"); process.exitCode = 1; }
+finally { await release?.(); }

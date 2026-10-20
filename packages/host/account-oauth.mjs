@@ -18,9 +18,9 @@ export class AccountOAuth {
     Object.assign(this, { stack, configRoot, accounts, env, timeoutMs });
     this.children = new Set(); this.closing = false;
   }
-  async spawn(accountId) {
+  async spawn(accountId, reservation) {
     if (this.closing) throw hostError("HOST_STOPPING", 503);
-    const child = await spawnAuthProcess(this.configRoot, this.stack.nodePath, [fileURLToPath(new URL("./account-oauth-worker.mjs", import.meta.url)), this.stack.root, this.configRoot, accountId], { env: accountWorkerEnvironment(this.env), stdio: ["ignore", "ignore", "ignore", "ipc"] });
+    const child = await spawnAuthProcess(this.configRoot, this.stack.nodePath, [fileURLToPath(new URL("./account-oauth-worker.mjs", import.meta.url)), this.stack.root, this.configRoot, accountId], { env: accountWorkerEnvironment(this.env), stdio: ["ignore", "ignore", "ignore", "ipc"] }, reservation);
     if (this.closing) {
       await new Promise((resolve) => { child.once("close", resolve); child.kill("SIGKILL"); });
       throw hostError("HOST_STOPPING", 503);
@@ -56,14 +56,15 @@ export class AccountOAuth {
     this.flow = flow;
     let readyResolve, readyReject;
     const ready = new Promise((resolve, reject) => { readyResolve = resolve; readyReject = reject; });
-    const operation = this.accounts.change(accountId, async (account) => {
+    let finalStatus = "failed";
+    const operation = this.accounts.change(accountId, async (account, reservation) => {
       if (account.authType !== "oauth") throw hostError("ACCOUNT_AUTH_TYPE_MISMATCH", 409);
       if (flow.status === "cancelling") throw hostError("ACCOUNT_AUTH_CANCELLED", 409);
-      const child = await this.spawn(accountId); this.child = child;
+      const child = await this.spawn(accountId, reservation); this.child = child;
       readyResolve();
       await new Promise((resolve) => {
-        let result = "failed", bytes = 0;
-        const timer = setTimeout(() => { flow.status = "timed_out"; flow.prompt = null; flow.event = null; child.kill("SIGKILL"); }, this.timeoutMs);
+        let result = "failed", bytes = 0, timedOut = false;
+        const timer = setTimeout(() => { timedOut = true; flow.status = "cancelling"; flow.prompt = null; flow.event = null; child.kill("SIGKILL"); }, this.timeoutMs);
         child.on("message", (message) => {
           if (terminal(flow.status) || flow.status === "cancelling") return;
           try {
@@ -88,16 +89,15 @@ export class AccountOAuth {
         });
         child.on("close", (code) => {
           clearTimeout(timer); flow.prompt = null; flow.event = null;
-          if (flow.status === "cancelling") flow.status = "cancelled";
-          else if (flow.status !== "timed_out") flow.status = code === 0 ? result : "failed";
+          finalStatus = timedOut ? "timed_out" : flow.status === "cancelling" ? "cancelled" : code === 0 ? result : "failed";
           resolve();
         });
         if (this.closing || flow.status === "cancelling") child.kill("SIGKILL");
         else child.send({ type: "begin" }, (error) => { if (error) child.kill("SIGKILL"); });
       });
     });
-    this.running = operation;
-    operation.catch((error) => { flow.status = flow.status === "cancelling" ? "cancelled" : "failed"; flow.prompt = null; flow.event = null; readyReject(error); }).finally(() => { if (this.running === operation) { this.running = null; this.child = null; } });
+    const running = operation.then(() => { flow.status = finalStatus; }).catch((error) => { flow.status = flow.status === "cancelling" ? "cancelled" : "failed"; flow.prompt = null; flow.event = null; readyReject(error); }).finally(() => { if (this.running === running) { this.running = null; this.child = null; } });
+    this.running = running;
     // Await account validation without waiting for the external login interaction.
     await ready;
     return this.snapshot(flow.flowId);

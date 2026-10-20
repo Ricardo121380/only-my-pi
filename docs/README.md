@@ -6,7 +6,13 @@ For source folders, local evidence boundaries, and Git synchronization, see the
 [repository maintenance guide](maintenance/README.md) and the
 [2026-10-19 repository audit](maintenance/2026-10-19-repository-audit.md).
 
-## Pi 1.3.0 private candidate — 2026-10-19
+## CLI product accounts — 2026-10-20
+
+The development CLI independently creates and configures product accounts, accepts hidden API Key input or Pi-supported OAuth, and explicitly selects an account for real Pi execution. The GUI reads the same accounts and status. Cross-process use and authentication reservations cover both clients. See the [CLI account guide](cli-accounts.md) and the [ten-criterion CLIENT-01A evidence map](compatibility/2026-10-20-cli-product-accounts.md). Only the account foundation and account OAuth portions of GCLIENT-01 belong to #78; #79–#83 and the material blockers remain separate.
+
+Current source development and validation use Node 24.19.0 and exact Pi 1.3.0. This does not change the daily installation or publish a new product version.
+
+## Historical Pi 1.3.0 private candidate — 2026-10-19
 
 [Same-candidate delivery and acceptance](compatibility/2026-10-18-pi-1.3.0-private-candidate-acceptance.md) records `pi130-v1`, private source `dd996352`, the exact production lock/materials and actual candidate CLI/PTY/Ego. GP130-02 PASS; GP130-03 PASS. #77: CLOSED / completed，已独立回读. The four required installed checks run successfully on the packaged Node24; Node22 and Linux have explicit applicable scopes.
 
@@ -42,8 +48,8 @@ desktop; support session viewing and continuation across clients with one active
 executor per session; let the CLI explicitly use product accounts without
 changing their ownership or silently switching identities; sequence independent
 features by their actual dependencies. These are requirements, not completed
-runtime acceptance. The CLI must independently support account login and tool
-setup. Product settings are shared defaults with project overrides; original Pi
+runtime acceptance. Account setup and login now have the bounded #78 evidence above;
+MCP authentication and shared tool setup remain subsequent work. Product settings are shared defaults with project overrides; original Pi
 and external settings keep their ownership and require explicit import. Initial
 cross-client continuation is guaranteed only for verified matching runtime
 combinations; unverified combinations may show readable history and require

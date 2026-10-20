@@ -68,8 +68,9 @@ test("account reservation spans model lookup, cancellation and confirmed worker 
   t.after(() => fs.rm(root, { recursive: true }));
   const accounts = new AccountCatalog(root);
   const account = await accounts.create({ providerId: "fixture", name: "A", authType: "api_key" });
-  let resolveModels, started, stopped;
+  let resolveModels, reachedModels, started, stopped;
   const modelGate = new Promise((resolve) => { resolveModels = resolve; });
+  const modelLookup = new Promise(resolve => { reachedModels = resolve; });
   const startGate = new Promise((resolve) => { started = resolve; });
   const stopGate = new Promise((resolve) => { stopped = resolve; });
   class Worker extends EventEmitter {
@@ -78,10 +79,11 @@ test("account reservation spans model lookup, cancellation and confirmed worker 
     async cancel() {}
     async stop() { await stopGate; }
   }
-  const tasks = new HostTasks({ configRoot: root, accounts, stack: {}, catalog: { sessionRoot: root, project: () => ({ projectId: "project", available: true, path: root }), scan: async () => {} }, models: () => modelGate, workerFactory: () => new Worker() });
+  const tasks = new HostTasks({ configRoot: root, accounts, stack: {}, catalog: { sessionRoot: root, project: () => ({ projectId: "project", available: true, path: root }), scan: async () => {} }, models: () => { reachedModels(); return modelGate; }, workerFactory: () => new Worker() });
   await tasks.load();
   t.after(async () => { started(); stopped(); await tasks.stop(); });
   const pending = tasks.start({ accountId: account.accountId, projectId: "project", requestId: "reserved", model: "fixture/model", prompt: "inspect" });
+  await modelLookup;
   await assert.rejects(accounts.remove(account.accountId), { code: "ACCOUNT_BUSY" });
   resolveModels([{ id: "fixture/model" }]);
   const task = await pending;

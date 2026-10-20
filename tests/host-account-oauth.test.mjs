@@ -63,3 +63,24 @@ test("OAuth cancellation and timeout wait for child exit and reject late answers
   assert.equal(oauth.children.size, 0);
   await accounts.remove(account.accountId);
 });
+
+test("OAuth publishes a terminal result only after the account change reservation has finished", { timeout: 10000 }, async t => {
+  const { oauth, account, accounts } = await fixture(t);
+  let finish;
+  const gate = new Promise(resolve => { finish = resolve; });
+  const change = accounts.change.bind(accounts);
+  accounts.change = (id, operation) => change(id, async (...args) => { await operation(...args); await gate; });
+  const flow = await oauth.start(account.accountId);
+  let heldStatus;
+  try {
+    const prompt = await until(oauth, flow.flowId, "awaiting_input");
+    oauth.answer(flow.flowId, prompt.prompt.promptId, "accept");
+    for (let i = 0; i < 200 && oauth.children.size; i++) await new Promise(resolve => setTimeout(resolve, 10));
+    assert.equal(oauth.children.size, 0);
+    heldStatus = oauth.snapshot(flow.flowId).status;
+    await assert.rejects(accounts.rename(account.accountId, "Too early"), { code: "ACCOUNT_BUSY" });
+  } finally { finish(); await oauth.running; }
+  assert.notEqual(heldStatus, "stored", "the account transaction was still held");
+  assert.equal(oauth.snapshot(flow.flowId).status, "stored");
+  await accounts.rename(account.accountId, "Released");
+});
