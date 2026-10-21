@@ -1,6 +1,6 @@
 # Only my pi 完整开发蓝图与当前迭代入口
 
-**2026-10-22 CLIENT-01C / #79 当前更新：** 已在功能分支补齐独立 `omp mcp` 配置/导入、安全凭据输入与 Pi 原生 OAuth；真实 CLI/PTY、Pi、受控 stdio/HTTP/codemode 及 CLI/Host 进程互操作已验证；冻结提交 `79837f9` 的 M12 C1–C10、WebUI 40 项及既有 Linux CLI 140 项通过。见 [CLI MCP 指南](../cli-mcp.md)及 [#79 验收记录](../compatibility/2026-10-21-cli-authenticated-mcp.md)。实际 Ego Lite 页面通道无响应，GUI B 阻断；独立 Standards PASS，Spec 无新增源码阻断但整票 PARTIAL；公开同步及本票远程 CI 尚未执行，#79 未验收。当前 Node 24.19.0 / Pi 1.3.0 不变；#80–#83、材料阻断、日常安装与发行保持各自范围。
+**2026-10-22 CLIENT-01C / #79 当前更新：** 独立 `omp mcp` 配置、token 与原生 OAuth，以及真实 CLI/Pi/Ego 双向互操作已留证；两端身份、引用、配置冲突、审批与撤权均核对。实际并发暴露账本争锁，已取得真实双进程 RED 并局部修复。完整回归中的 PTY 夹具清理失败另行保留并最小修复；最终新冻结完整门禁及 Standards/Spec 待收口，公开 PR/CI/合并/关闭尚未执行。见 [CLI MCP 指南](../cli-mcp.md)及 [#79 验收记录](../compatibility/2026-10-21-cli-authenticated-mcp.md)。Node 24.19.0 / Pi 1.3.0 不变；#80–#83、材料阻断、日常安装与发行保持各自范围。
 
 **2026-10-20 CLIENT-01A / #78 当前更新：** 独立 CLI 产品账号基础与账号 OAuth 已实现；正式 CLI/PTY、真实 Pi / 本地受控服务、Ego Lite 双向互操作、最终隔离完整覆盖和既有 Linux CLI 回归均通过。独立 Standards PASS，Spec 无新增源码或证据阻断；公开合并、必需 CI 与工单最终状态以 [#78 验收记录](../compatibility/2026-10-20-cli-product-accounts.md)及其关联 PR/工单的独立回读为准。当前源码固定 Node 24.19.0 / Pi 1.3.0；#78 只覆盖 GCLIENT-01 的账号基础与账号 OAuth，两段之外的 MCP 认证、共享设置和会话发现/交接仍属 #79–#83。#21/#23 保持阻断，日常安装及产品发行未推进。
 
