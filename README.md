@@ -31,7 +31,7 @@ The current branch contains **unreleased** direct-Agent hardening: physical mult
 
 The development CLI also supports independent product-account setup: `omp account add`, `configure`, `login`, `list`, and `status`, followed by `omp --account ACCOUNT_ID --model PROVIDER/MODEL`. API Key and Pi-supported OAuth use the same product accounts as the GUI, without starting the WebUI Host. Credentials remain in Pi's account-specific storage; login does not grant coding permission. See the [CLI account guide](docs/cli-accounts.md) and [CLIENT-01A acceptance scope](docs/compatibility/2026-10-20-cli-product-accounts.md). This is unreleased development behavior.
 
-The unreleased CLI MCP entry is `omp mcp`: configure/import connections, enter hidden HTTP credentials or complete native Pi OAuth, and explicitly enable tools without a WebUI Host. Real Pi calls retain per-call approval and shared GUI configuration. See the [CLI MCP guide](docs/cli-mcp.md) and [CLIENT-01C evidence and outstanding gates](docs/compatibility/2026-10-21-cli-authenticated-mcp.md); actual Ego GUI interoperation is recorded, while final verification and public acceptance remain pending.
+The unreleased CLI MCP entry is `omp mcp`: configure/import connections, enter hidden HTTP credentials or complete native Pi OAuth, and explicitly enable tools without a WebUI Host. Real Pi calls retain per-call approval and shared GUI configuration. See the [CLI MCP guide](docs/cli-mcp.md) and [CLIENT-01C evidence and outstanding gates](docs/compatibility/2026-10-21-cli-authenticated-mcp.md); local complete gates and independent source reviews pass at `80062c5`; historical Ego interoperation is recorded, while the post-fix same-source GUI check and public acceptance remain pending.
 
 ## Quick start
 
