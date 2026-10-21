@@ -168,7 +168,9 @@ export class RpcWorker extends EventEmitter {
           // final group/acknowledgement checks before confirming shutdown.
           return;
         }
-        try { process.kill(-pid, signal); } catch (e) { if (e.code !== "ESRCH") throw e; }
+        // Darwin can return EPERM when the verified group becomes zombie-only.
+        // It still must pass the remaining exit waits and group/receipt checks.
+        try { process.kill(-pid, signal); } catch (e) { if (e.code !== "ESRCH" && e.code !== "EPERM") throw e; }
       };
       await signalGroup("SIGTERM");
       await waitForWorkerExit(this, 500);
