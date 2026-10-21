@@ -3,6 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { atomicWriteJson, readJsonObject, withConfigLock } from "../config-runtime/index.mjs";
 import { isMcpOAuthActive, isMcpOAuthBlocked } from "./contracts.mjs";
 import { processIdentity } from "../host/ownership.mjs";
+import { withMcpMetadataLock } from "./metadata-lock.mjs";
 
 export const MCP_PROTOCOL = 1;
 export const MCP_LIMITS = Object.freeze({ inputBytes: 16384, outputBytes: 65536, serverFileBytes: 65536, storageBytes: 8388608, calls: 32, timeoutMs: 10000, tools: 32, resources: 32, discoveries: 32, discoveryStreamMs: 60000, concurrency: 1 });
@@ -206,23 +207,14 @@ export class McpCatalog {
     return (await readJsonObject(this.configRoot, path.join(this.configRoot, "only-my-pi/mcp/oauth-status.json"), { allowMissing: true }))?.flows ?? {};
   }
   async updateOAuthFlows(update) {
-    // Retry only the short metadata transaction, never an OAuth request or a
-    // live flow. Independent CLI/Host processes share this same status ledger.
-    for (let attempt = 0; ; attempt++) {
-      try {
-        return await withConfigLock(this.configRoot, { lockDirectory: path.join(this.configRoot, "only-my-pi/locks/mcp-oauth-status.lock"), staleAfterMs: 1 }, async () => {
-          const flows = await this.oauthFlows(); await update(flows);
-          // Active admissions, including unknown legacy owners, cannot be
-          // discarded to make room for newer terminal status records.
-          const entries = Object.entries(flows).sort((a, b) => Number(isMcpOAuthActive(b[1].status)) - Number(isMcpOAuthActive(a[1].status))
-            || b[1].updatedAt.localeCompare(a[1].updatedAt)).slice(0, 32);
-          await atomicWriteJson(this.configRoot, path.join(this.configRoot, "only-my-pi/mcp/oauth-status.json"), { version: 1, flows: Object.fromEntries(entries) });
-        });
-      } catch (error) {
-        if (!["LOCK_HELD", "LOCK_RECLAIMING"].includes(error.code) || attempt >= 99) throw error;
-        await new Promise(resolve => setTimeout(resolve, 20));
-      }
-    }
+    return withMcpMetadataLock(this.configRoot, { lockDirectory: path.join(this.configRoot, "only-my-pi/locks/mcp-oauth-status.lock"), staleAfterMs: 1 }, async () => {
+      const flows = await this.oauthFlows(); await update(flows);
+      // Active admissions, including unknown legacy owners, cannot be
+      // discarded to make room for newer terminal status records.
+      const entries = Object.entries(flows).sort((a, b) => Number(isMcpOAuthActive(b[1].status)) - Number(isMcpOAuthActive(a[1].status))
+        || b[1].updatedAt.localeCompare(a[1].updatedAt)).slice(0, 32);
+      await atomicWriteJson(this.configRoot, path.join(this.configRoot, "only-my-pi/mcp/oauth-status.json"), { version: 1, flows: Object.fromEntries(entries) });
+    });
   }
   async recoverOAuthOwners(flows) {
     for (const flow of Object.values(flows)) {

@@ -1,6 +1,7 @@
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { atomicWriteJson, readJsonObject, withConfigLock } from "../config-runtime/index.mjs";
+import { atomicWriteJson, readJsonObject } from "../config-runtime/index.mjs";
+import { withMcpMetadataLock } from "./metadata-lock.mjs";
 import { processIdentity, groupAlive } from "../host/ownership.mjs";
 import { mcpError, MCP_LIMITS } from "./catalog.mjs";
 
@@ -28,7 +29,7 @@ export class McpRuns {
   }
   async begin({ taskId, projectPath, revision }) {
     const run = { runId: randomUUID(), taskId, projectPath, revision, ownerPid: process.pid, ownerIdentity: await processIdentity(), processes: [], calls: [], startedAt: new Date().toISOString(), status: "running" };
-    await withConfigLock(this.root, this.lockOptions(), async () => {
+    await withMcpMetadataLock(this.root, this.lockOptions(), async () => {
       const state = await this.read();
       if (state.runs.length >= 100) throw mcpError("MCP_RUN_CAPACITY", 409);
       for (const prior of state.runs) {
@@ -40,7 +41,7 @@ export class McpRuns {
     return run;
   }
   async save(run) {
-    await withConfigLock(this.root, this.lockOptions(), async () => {
+    await withMcpMetadataLock(this.root, this.lockOptions(), async () => {
       const state = await this.read(), index = state.runs.findIndex((entry) => entry.runId === run.runId);
       if (index === -1) throw mcpError("MCP_RUN_NOT_FOUND", 409);
       state.runs[index] = structuredClone(run); await this.write(state);
