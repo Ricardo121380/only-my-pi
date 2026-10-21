@@ -11,7 +11,9 @@ import { acquireOwnership } from "../packages/host/ownership.mjs";
 
 test("resume locks history before worker startup and refuses active or CLI-owned sessions", async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-resume-lock-")));
-  t.after(() => fs.rm(root, { recursive: true }));
+  let tasks;
+  // Settled tasks can still have a scheduled checkpoint writing to this root.
+  t.after(async () => { await tasks?.stop(); await fs.rm(root, { recursive: true }); });
   const sessionRoot = path.join(root, "sessions"), project = path.join(root, "project");
   await fs.mkdir(sessionRoot); await fs.mkdir(project);
   const file = path.join(sessionRoot, "fixture.jsonl");
@@ -32,10 +34,10 @@ test("resume locks history before worker startup and refuses active or CLI-owned
     async stop() {}
     async cancel() { this.emit("event", { type: "agent_settled" }); }
   }
-  const tasks = new HostTasks({ configRoot: root, stack: {}, accounts, catalog,
+  tasks = new HostTasks({ configRoot: root, stack: {}, accounts, catalog,
     models: async () => [{ id: "fixture/model" }], workerFactory: (options) => { assert.equal(options.resumeFile, file); worker = new Worker(); return worker; },
   });
-  await tasks.load(); t.after(() => tasks.stop());
+  await tasks.load();
   const input = { projectId: p.projectId, requestId: "resume", resumeSessionKey: s.sessionKey, accountId: account.accountId, model: "fixture/model", prompt: "continue" };
   const first = await tasks.start(input); await ready;
   await assert.rejects(tasks.start({ ...input, requestId: "overlap" }), { code: "SESSION_IN_USE" });
