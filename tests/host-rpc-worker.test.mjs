@@ -53,13 +53,17 @@ test("worker stop confirms exit after a real Darwin EPERM signal race", { timeou
   try { await worker.stop(); aliveAtStop = groupAlive(pid); }
   catch (error) { failure = error; }
   finally {
-    if (!intercepted) kill(-pid, "SIGKILL");
+    if (!worker.closed) {
+      try { kill(-pid, "SIGKILL"); }
+      catch (error) { if (error.code !== "ESRCH" && !(error.code === "EPERM" && status?.startsWith("Z"))) throw error; }
+    }
     await worker.exited;
   }
   t.diagnostic(JSON.stringify({ status, signalError, failure: failure?.code ?? null, closed: worker.closed, aliveAtStop, groupAlive: groupAlive(pid) }));
+  assert.ifError(failure);
   assert.equal(intercepted, true); assert.ok(status.startsWith("Z"));
   assert.equal(signalError, "EPERM", "the real OS signal supplies the errno");
-  assert.ifError(failure); assert.equal(worker.closed, true); assert.equal(aliveAtStop, false);
+  assert.equal(worker.closed, true); assert.equal(aliveAtStop, false);
 });
 test("worker stop cannot confirm a live group after EPERM signals", { timeout: 10000 }, async (t) => {
   const worker = await fixture(t, false, true, true);
