@@ -1,7 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import readline from "node:readline";
-import { Writable } from "node:stream";
+import { secretInput } from "../control-service/secret-input.mjs";
 import { AccountCatalog } from "./accounts.mjs";
 import { accountAuth } from "./account-auth.mjs";
 import { AccountOAuth } from "./account-oauth.mjs";
@@ -21,45 +20,6 @@ omp --account ACCOUNT --model PROVIDER/MODEL [task]
 API keys and OAuth answers use hidden terminal input or --stdin, never arguments.
 Product accounts remain separate from cli-readonly (the original Pi configuration).
 Login does not grant coding or tool permissions.`;
-
-function secretInput(input, output, controller, fromStdin) {
-  if (!fromStdin && !input.isTTY) throw hostError("ACCOUNT_SECRET_TTY_OR_STDIN_REQUIRED");
-  const silent = new Writable({ write(_chunk, _encoding, callback) { callback(); } });
-  const lines = readline.createInterface({ input, output: silent, terminal: Boolean(input.isTTY), historySize: 0 });
-  lines.on("SIGINT", () => controller.abort());
-  const queue = [];
-  let waiting, ended = false, invalid = false;
-  lines.on("line", value => {
-    if (Buffer.byteLength(value) > 16384 || queue.length >= 32) { invalid = true; controller.abort(); return; }
-    if (waiting) waiting(value); else queue.push(value);
-  });
-  lines.on("close", () => { ended = true; waiting?.(undefined); });
-  return {
-    async read(label, promptSignal) {
-      if (!fromStdin) output.write(`${label} (hidden; Ctrl+C cancels): `);
-      let abort, expire;
-      try {
-        if (controller.signal.aborted) throw hostError("ACCOUNT_AUTH_CANCELLED", 409);
-        if (promptSignal?.aborted) throw hostError("ACCOUNT_AUTH_FLOW_EXPIRED", 409);
-        const value = queue.length ? queue.shift() : ended ? undefined : await new Promise((resolve, reject) => {
-          waiting = resolve;
-          abort = () => reject(hostError(invalid ? "ACCOUNT_INPUT_INVALID" : "ACCOUNT_AUTH_CANCELLED", 409));
-          expire = () => reject(hostError("ACCOUNT_AUTH_FLOW_EXPIRED", 409));
-          controller.signal.addEventListener("abort", abort, { once: true });
-          promptSignal?.addEventListener("abort", expire, { once: true });
-        });
-        if (typeof value !== "string" || !value) throw hostError("ACCOUNT_INPUT_INVALID");
-        return value;
-      } finally {
-        waiting = undefined;
-        if (abort) controller.signal.removeEventListener("abort", abort);
-        if (expire) promptSignal?.removeEventListener("abort", expire);
-        if (!fromStdin) output.write("\n");
-      }
-    },
-    close() { lines.close(); silent.end(); },
-  };
-}
 
 export async function runAccountCli({ argv, configRoot, resolveStack, env = process.env, stdin = process.stdin, stderr = process.stderr }) {
   const catalog = new AccountCatalog(configRoot), [command, ...args] = argv;
@@ -110,7 +70,7 @@ export async function runAccountCli({ argv, configRoot, resolveStack, env = proc
   process.on("SIGINT", cancel); process.on("SIGTERM", cancel);
   let input, oauth, timer;
   try {
-    input = secretInput(stdin, stderr, controller, fromStdin);
+    input = secretInput(stdin, stderr, controller, fromStdin, (code, status) => hostError(`ACCOUNT_${code}`, status));
     if (account.authType === "api_key") {
       let timedOut = false;
       timer = setTimeout(() => { if (!controller.signal.aborted) { timedOut = true; cancel(); } }, timeoutMs);

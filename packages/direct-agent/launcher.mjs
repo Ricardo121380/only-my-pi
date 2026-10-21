@@ -72,7 +72,7 @@ const SAFE_VALUE_FLAGS = new Set([
   "--export",
 ]);
 
-const CONTROL_COMMANDS = new Set([...OMP_CONTROL_COMMANDS, "classifier", "image", "account"]);
+const CONTROL_COMMANDS = new Set([...OMP_CONTROL_COMMANDS, "classifier", "image", "account", "mcp"]);
 
 export const OMP_AGENT_USAGE = `only-my-pi - guarded terminal coding Agent
 
@@ -88,6 +88,7 @@ Daily Agent:
   omp -p "review this repo"   Run a read-only non-interactive task
   omp --model <provider/id>   Select a model without the startup picker
   omp account help           Set up or log in to a product account without a Host
+  omp mcp help               Configure and authenticate MCP without a Host
   omp --account <id> --model <provider/id>  Explicitly use a product account
   omp --tui-mode regular      Use the scrollback terminal (default: fullscreen)
   omp web                     Open the local read-only workbench

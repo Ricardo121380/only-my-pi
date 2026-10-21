@@ -31,6 +31,8 @@ The current branch contains **unreleased** direct-Agent hardening: physical mult
 
 The development CLI also supports independent product-account setup: `omp account add`, `configure`, `login`, `list`, and `status`, followed by `omp --account ACCOUNT_ID --model PROVIDER/MODEL`. API Key and Pi-supported OAuth use the same product accounts as the GUI, without starting the WebUI Host. Credentials remain in Pi's account-specific storage; login does not grant coding permission. See the [CLI account guide](docs/cli-accounts.md) and [CLIENT-01A acceptance scope](docs/compatibility/2026-10-20-cli-product-accounts.md). This is unreleased development behavior.
 
+The unreleased CLI MCP entry is `omp mcp`: configure/import connections, enter hidden HTTP credentials or complete native Pi OAuth, and explicitly enable tools without a WebUI Host. Real Pi calls retain per-call approval and shared GUI configuration. See the [CLI MCP guide](docs/cli-mcp.md) and [CLIENT-01C evidence and outstanding gates](docs/compatibility/2026-10-21-cli-authenticated-mcp.md); actual GUI acceptance is still pending.
+
 ## Quick start
 
 <a id="platform-and-runtime"></a>
@@ -564,7 +566,7 @@ A source edit does not replace the installed managed stack. Use disposable proje
 
 **Approval controls the agent workflow; it does not isolate the whole process.** Pi extensions and packages run with the invoking user's OS authority. Project Trust, tool restrictions, and Git clones are not complete sandboxes. Bash sandboxing is surface-specific; inspect its actual active/degraded state. Untrusted code or extensions require an outer boundary that covers the relevant files, credentials, and network access.
 
-Coding approval does not authorize project-external writes, secret access, destructive Git operations, deployment, or publication. OMP does not silently stage, commit, or push. The direct product does not enable MCP, memory, sync, or experimental overlays, and has no silent permission bypass or background updater.
+Coding approval does not authorize project-external writes, secret access, destructive Git operations, deployment, or publication. OMP does not silently stage, commit, or push. The published terminal Preview does not enable MCP, memory, sync, or experimental overlays, and has no silent permission bypass or background updater. Unreleased MCP development behavior and its acceptance limits are documented above.
 
 Keep credentials in Pi's authentication mechanism or your secret manager. Report suspected vulnerabilities through [private security reporting](https://github.com/Ricardo121380/only-my-pi/security/advisories/new), never by publicly disclosing sensitive material. See the [security policy](SECURITY.md) and [threat model](docs/threat-model.md).
 

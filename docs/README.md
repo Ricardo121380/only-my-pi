@@ -10,6 +10,8 @@ For source folders, local evidence boundaries, and Git synchronization, see the
 
 The development CLI independently creates and configures product accounts, accepts hidden API Key input or Pi-supported OAuth, and explicitly selects an account for real Pi execution. The GUI reads the same accounts and status. Cross-process use and authentication reservations cover both clients. See the [CLI account guide](cli-accounts.md) and the [ten-criterion CLIENT-01A evidence map](compatibility/2026-10-20-cli-product-accounts.md). Only the account foundation and account OAuth portions of GCLIENT-01 belong to #78; #79–#83 and the material blockers remain separate.
 
+The current CLIENT-01C / #79 implementation adds independent `omp mcp` configuration, safe credential input and native Pi OAuth. It reuses the GUI catalog, revisions and credential references, with real CLI/PTY/Pi and local MCP receivers. See the [CLI MCP guide](cli-mcp.md) and [five-criterion evidence map](compatibility/2026-10-21-cli-authenticated-mcp.md). Actual Ego Lite GUI acceptance and final gates remain outstanding; #79 is not yet accepted.
+
 Current source development and validation use Node 24.19.0 and exact Pi 1.3.0. This does not change the daily installation or publish a new product version.
 
 ## Historical Pi 1.3.0 private candidate — 2026-10-19
@@ -49,7 +51,7 @@ executor per session; let the CLI explicitly use product accounts without
 changing their ownership or silently switching identities; sequence independent
 features by their actual dependencies. These are requirements, not completed
 runtime acceptance. Account setup and login now have the bounded #78 evidence above;
-MCP authentication and shared tool setup remain subsequent work. Product settings are shared defaults with project overrides; original Pi
+MCP authentication is being implemented in #79; the remaining shared tool setup belongs to #80/#81. Product settings are shared defaults with project overrides; original Pi
 and external settings keep their ownership and require explicit import. Initial
 cross-client continuation is guaranteed only for verified matching runtime
 combinations; unverified combinations may show readable history and require

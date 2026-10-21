@@ -357,7 +357,11 @@ export function installOmpMcp(pi, { configRoot, controller }) {
     if (event.parentToolCallId && (typeof event.parentToolCallId !== "string" || event.parentToolCallId.length > 256)) return { block: true, reason: "MCP_CALL_ID_INVALID" };
     parents.set(event.toolCallId, event.parentToolCallId ?? null);
   });
-  pi.on("agent_end", async () => { grants.clear(); if (tui) await stop(); });
+  pi.on("agent_end", () => grants.clear());
+  // Pi may continue a queued input after a low-level agent_end without another
+  // before_agent_start. Keep the same snapshot/budget until the public logical
+  // run settles; Pi defers new prompts while agent_settled handlers clean up.
+  pi.on("agent_settled", async () => { if (tui) await stop(); });
   pi.on("session_shutdown", stop);
   const receive = async (message) => {
     if (message?.type === "mcp_discover" && typeof message.id === "string") {

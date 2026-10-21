@@ -31,6 +31,8 @@ Pi 提供终端界面、模型、会话和基础工具；OMP 在此之上增加�
 
 开发版 CLI 也提供独立产品账号设置：`omp account add`、`configure`、`login`、`list`、`status`，随后用 `omp --account ACCOUNT_ID --model PROVIDER/MODEL` 显式调用。API Key 与 Pi 支持的 OAuth 共用图形端的产品账号，无需启动 WebUI Host；凭据仍由 Pi 保存在各账号私有目录，登录不授予编程权限。见 [CLI 账号指南](docs/cli-accounts.md)及 [CLIENT-01A 验收范围](docs/compatibility/2026-10-20-cli-product-accounts.md)。这些命令尚未产品发行。
 
+尚未发布的 CLI MCP 入口为 `omp mcp`：无需 WebUI Host 即可设置/导入连接、隐藏输入 HTTP 凭据或完成 Pi 原生 OAuth，再显式启用工具。真实 Pi 调用保留逐次授权，并共用图形端配置。见 [CLI MCP 指南](docs/cli-mcp.md)和 [CLIENT-01C 证据及待完成门禁](docs/compatibility/2026-10-21-cli-authenticated-mcp.md)；实际 GUI 验收仍待完成。
+
 ## 快速开始
 
 <a id="platform-and-runtime"></a>
@@ -563,7 +565,7 @@ npm run verify:m12
 
 **审批控制 Agent 的工作流程，不隔离整个进程。** Pi 扩展和包以当前用户的操作系统权限运行；Project Trust、工具限制和 Git 克隆都不是完整沙箱。Bash 沙箱只覆盖特定执行入口，需检查实际 active / degraded 状态。不可信代码或扩展需要覆盖相关文件、凭据与网络访问的外层隔离。
 
-编程授权不包含项目外写入、秘密读取、破坏性 Git 操作、部署或发布；OMP 不会静默暂存、提交或推送。当前直接产品不启用 MCP、memory、sync 或实验覆盖层，也不提供静默越权或后台更新。
+编程授权不包含项目外写入、秘密读取、破坏性 Git 操作、部署或发布；OMP 不会静默暂存、提交或推送。已发布终端预览版不启用 MCP、memory、sync 或实验覆盖层，也不提供静默越权或后台更新。尚未发布的 MCP 开发行为及验收边界见上文。
 
 凭据应留在 Pi 的认证机制或你的密钥管理器中。疑似漏洞请通过[私密安全报告](https://github.com/Ricardo121380/only-my-pi/security/advisories/new)提交，不要公开披露敏感内容。另见[安全策略](SECURITY.md)和[威胁模型](docs/threat-model.md)。
 
