@@ -4,7 +4,9 @@ import { McpRuns } from "../../packages/mcp/runs.mjs";
 import { withConfigLock } from "../../packages/config-runtime/index.mjs";
 
 const [root, role, action] = process.argv.slice(2), messages = [], waiters = [];
+let stopping = false;
 process.on("message", message => {
+  if (message.type === "stop") stopping = true;
   const waiter = waiters.shift(); if (waiter) waiter(message); else messages.push(message);
 });
 const next = () => messages.length ? Promise.resolve(messages.shift()) : new Promise(resolve => waiters.push(resolve));
@@ -13,6 +15,7 @@ let run = role === "holder" || action === "save" ? await runs.begin({ taskId: ro
 process.send({ type: "ready", run });
 try {
   const start = await next();
+  assert.notEqual(start.type, "stop");
   if (role === "holder") {
     await withConfigLock(root, runs.lockOptions(), async () => {
       const state = await runs.read(), own = state.runs.find(entry => entry.runId === run.runId);
@@ -38,7 +41,7 @@ try {
     process.send({ type: "done", run, writes, observed });
   }
 } catch (error) {
-  process.send({ type: "failed", code: error.code, message: error.message });
+  if (!stopping) process.send({ type: "failed", code: error.code, message: error.message });
 }
-assert.equal((await next()).type, "stop");
+if (!stopping) assert.equal((await next()).type, "stop");
 process.disconnect();
