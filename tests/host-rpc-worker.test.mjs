@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
+import { writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import childProcess, { spawn } from "node:child_process";
@@ -26,6 +27,60 @@ test("RPC worker correlates JSONL responses, denies raw commands and confirms pr
   const worker = await fixture(t); assert.equal((await worker.start()).sessionId, "fixture-session");
   const pid = worker.identity.pid; await assert.rejects(worker.command("bash"), { code: "RPC_COMMAND_DENIED" });
   await worker.cancel(); assert.equal(groupAlive(pid), false);
+});
+test("worker stop confirms exit after a real Darwin EPERM signal race", { timeout: 10000, skip: process.platform !== "darwin" }, async (t) => {
+  const worker = await fixture(t, false, false, true);
+  const release = path.join(worker.cwd, "release-worker");
+  await fs.appendFile(worker.stack.piCliPath, `\nconst { existsSync } = await import("node:fs"); setInterval(() => { if (existsSync(${JSON.stringify(release)})) process.exit(0); }, 5);\n`);
+  await worker.start();
+  const pid = worker.identity.pid, kill = process.kill;
+  let status, signalError, intercepted = false, failure, aliveAtStop;
+  t.mock.method(process, "kill", (target, signal) => {
+    if (target === -pid && signal !== 0 && !intercepted) {
+      intercepted = true;
+      // Identity was checked while the real worker was alive. Hold this
+      // parent's event loop until the exiting worker is an unreaped zombie.
+      writeFileSync(release, "exit");
+      const deadline = Date.now() + 2000;
+      do {
+        try { status = childProcess.execFileSync("/bin/ps", ["-p", String(pid), "-o", "stat="], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); }
+        catch { status = "ABSENT"; }
+      } while (!status.startsWith("Z") && status !== "ABSENT" && Date.now() < deadline);
+    }
+    try { return kill(target, signal); }
+    catch (error) { if (target === -pid && signal !== 0) signalError = error.code; throw error; }
+  });
+  try { await worker.stop(); aliveAtStop = groupAlive(pid); }
+  catch (error) { failure = error; }
+  finally {
+    if (!worker.closed) {
+      try { kill(-pid, "SIGKILL"); }
+      catch (error) { if (error.code !== "ESRCH" && !(error.code === "EPERM" && status?.startsWith("Z"))) throw error; }
+    }
+    await worker.exited;
+  }
+  t.diagnostic(JSON.stringify({ status, signalError, failure: failure?.code ?? null, closed: worker.closed, aliveAtStop, groupAlive: groupAlive(pid) }));
+  assert.ifError(failure);
+  assert.equal(intercepted, true); assert.ok(status.startsWith("Z"));
+  assert.equal(signalError, "EPERM", "the real OS signal supplies the errno");
+  assert.equal(worker.closed, true); assert.equal(aliveAtStop, false);
+});
+test("worker stop cannot confirm a live group after EPERM signals", { timeout: 10000 }, async (t) => {
+  const worker = await fixture(t, false, true, true);
+  await worker.start();
+  const pid = worker.identity.pid, kill = process.kill, signals = [];
+  t.mock.method(process, "kill", (target, signal) => {
+    if (target === -pid && signal !== 0) {
+      signals.push(signal);
+      throw Object.assign(new Error("owned fixture signal denied"), { code: "EPERM" });
+    }
+    return kill(target, signal);
+  });
+  try {
+    await assert.rejects(worker.stop(), { code: "RPC_TERMINATION_UNCONFIRMED" });
+    assert.equal(Boolean(worker.closed), false); assert.equal(groupAlive(pid), true);
+    assert.deepEqual(signals, ["SIGTERM", "SIGKILL"]);
+  } finally { kill(-pid, "SIGKILL"); await worker.exited; }
 });
 test("worker stop accepts a group that exits during the real identity probe", { timeout: 10000 }, async (t) => {
   const worker = await fixture(t, false, false, true);
