@@ -86,7 +86,7 @@ export async function runMcpCli({ argv, configRoot, resolveStack, stdin = proces
     let flow, cancellation, cancelled = false;
     const cancel = () => {
       cancelled = true;
-      if (flow) { cancellation ??= oauth.action({ type: "oauthCancel", flowId: flow.flowId }, canonical); cancellation.catch(() => {}); }
+      cancellation ??= oauth.stop(); cancellation.catch(() => {});
     };
     process.on("SIGINT", cancel); process.on("SIGTERM", cancel);
     try {
@@ -96,8 +96,16 @@ export async function runMcpCli({ argv, configRoot, resolveStack, stdin = proces
       if (cancelled) cancel();
       else if (flow.status === "waiting") stderr.write(`Open in your browser: ${await oauth.open(flow.flowId)}\nCtrl+C cancels this login.\n`);
       return await oauth.wait(flow.flowId, canonical);
+    } catch (error) {
+      if (cancelled && flow) return await oauth.wait(flow.flowId, canonical);
+      if (cancelled && error.code === "MCP_OAUTH_STOPPING") return { status: "cancelled", code: "MCP_OAUTH_CANCELLED" };
+      throw error;
     } finally {
-      await cancellation; await oauth.stop(); process.off("SIGINT", cancel); process.off("SIGTERM", cancel);
+      try { await cancellation; }
+      finally {
+        try { await oauth.stop(); }
+        finally { process.off("SIGINT", cancel); process.off("SIGTERM", cancel); }
+      }
     }
   }
   if (args[0] === "credential") {

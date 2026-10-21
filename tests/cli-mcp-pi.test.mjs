@@ -37,24 +37,31 @@ for (const auth of ["token", "oauth"]) test(`independent CLI/PTY and real Pi dis
     let confirmed = false;
     try {
       let failedFixture;
-      if (terminal && !tuiExit) {
-        // Failed assertions can leave a modal approval open. Preserve the
-        // original run/transcript before fixture-only termination; never call
-        // this a successful product cancellation or clean lifecycle receipt.
-        const prior = await new McpRuns(f.config).status(f.project);
-        failedFixture = { transcript: output, runs: prior, requests, received: service.received };
-        terminal.write("\x1b"); terminal.write("\x04");
-        try { await until(() => tuiExit && !groupAlive(terminal.pid), Boolean, "failed fixture normal exit", 2000); }
-        catch {
-          if (await processIdentity(terminal.pid) === terminalIdentity) process.kill(-terminal.pid, "SIGKILL");
-          for (const run of prior.runs) for (const entry of run.processes) {
-            if (entry.pid && await processIdentity(entry.pid) === entry.identity) process.kill(-entry.pid, "SIGKILL");
+      try {
+        if (terminal && !tuiExit) {
+          // Failed assertions can leave a modal approval open. Preserve the
+          // original run/transcript before fixture-only termination; never call
+          // this a successful product cancellation or clean lifecycle receipt.
+          const prior = await new McpRuns(f.config).status(f.project);
+          failedFixture = { transcript: output, runs: prior, requests, received: service.received };
+          terminal.write("\x1b"); terminal.write("\x04");
+          try { await until(() => tuiExit && !groupAlive(terminal.pid), Boolean, "failed fixture normal exit", 2000); }
+          catch {
+            if (await processIdentity(terminal.pid) === terminalIdentity) process.kill(-terminal.pid, "SIGKILL");
+            for (const run of prior.runs) for (const entry of run.processes) {
+              if (entry.pid && await processIdentity(entry.pid) === entry.identity) process.kill(-entry.pid, "SIGKILL");
+            }
           }
         }
+        if (terminal) await until(() => tuiExit && !groupAlive(terminal.pid), Boolean, "real Pi PTY confirmed cleanup");
+      } finally {
+        const outcomes = await Promise.allSettled(children.map(record => {
+          if (!record.exit) record.child.kill("SIGTERM");
+          return until(() => record.exit, Boolean, "CLI authentication confirmed cleanup");
+        }));
+        const failures = outcomes.filter(outcome => outcome.status === "rejected");
+        if (failures.length) throw new AggregateError(failures.map(outcome => outcome.reason), "CLI authentication cleanup failed");
       }
-      if (terminal) await until(() => tuiExit && !groupAlive(terminal.pid), Boolean, "real Pi PTY confirmed cleanup");
-      for (const record of children) if (!record.exit) record.child.kill("SIGTERM");
-      for (const record of children) await until(() => record.exit, Boolean, "CLI authentication confirmed cleanup");
       if (failedFixture) await writePiEvidence(t.name, { sdk: f.sdk, scope: "CLIENT-01C_FAILED_FIXTURE_BEFORE_CLEANUP", ...failedFixture });
       const runs = f ? await new McpRuns(f.config).status(f.project) : { runs: [] };
       if (f) await writePiEvidence(t.name, { sdk: f.sdk, scope: "CLIENT-01C_STANDALONE_PI_PTY_LOCAL_ONLY", auth,

@@ -14,9 +14,9 @@ import { writePiEvidence } from "./fixtures/pi-runtime-evidence.mjs";
 import { groupAlive } from "../packages/host/ownership.mjs";
 
 const execFile = promisify(execFileCallback);
-async function fixture(t) {
+async function fixture(t, serviceOptions) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-cli-mcp-oauth-")));
-  const service = await createOAuthMcpServer();
+  const service = await createOAuthMcpServer(serviceOptions);
   const children = [];
   let f;
   t.after(async () => {
@@ -59,6 +59,34 @@ async function authorize(url) {
   const callback = authorization.headers.get("location"); assert.equal((await fetch(callback)).status, 200);
   return callback;
 }
+
+for (const heldPath of ["/.well-known/oauth-protected-resource/mcp", "/register"]) test(`CLI PTY cancellation aborts native OAuth at ${heldPath} before readiness`, { timeout: 30000 }, async t => {
+  let reached = false, closed = false, release;
+  const gate = new Promise(resolve => { release = resolve; }), paths = [];
+  const f = await fixture(t, { beforeRequest: async ({ path, response }) => {
+    paths.push(path); f.service.received.push({ type: "initialization_request", path });
+    if (path !== heldPath) return;
+    response.once("close", () => { closed = true; }); reached = true; await gate;
+  } });
+  const login = f.terminal(["login", "remote", "--revision", "1"]);
+  try {
+    await until(() => reached, Boolean, "native initialization request held");
+    const receivedBeforeCancel = paths.length;
+    assert.equal(login.stderr.includes("Open in your browser:"), false);
+    login.child.write("\x03");
+    await until(() => closed, Boolean, "cancel aborts the physical request before the service is released", 2000);
+    await until(() => login.exit, Boolean, "initialization cancellation terminal result");
+    assert.equal(login.exit.code, 1); assert.equal(groupAlive(login.child.pid), false);
+    assert.match(login.stderr, /"status":\s*"cancelled"/u);
+    assert.equal(paths.length, receivedBeforeCancel, "no later discovery or registration request follows cancellation");
+    const state = await f.run(["list"]);
+    assert.equal(state.authentication.remote.state, "not_connected");
+    assert.equal(state.authentication.remote.flow.status, "cancelled");
+    assert.equal(f.service.received.filter(entry => ["registration", "token", "mcp"].includes(entry.type)).length, 0);
+    await writePiEvidence(t.name, { sdk: f.sdk, scope: "CLIENT-01C_OAUTH_INITIALIZATION_CANCEL", heldPath, paths, received: f.service.received,
+      exit: login.exit, groupGone: !groupAlive(login.child.pid), state });
+  } finally { release(); }
+});
 
 test("standalone CLI performs native MCP OAuth and exits after publishing the same private target-bound identity", { timeout: 45000 }, async t => {
   const f = await fixture(t), record = f.login(), callback = await authorize(await authorizationUrl(record));

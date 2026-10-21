@@ -90,7 +90,9 @@ export class McpOAuth {
     let publication;
     try {
       await this.save(flow, "starting");
+      flow.abort.signal.throwIfAborted();
       const native = await loadNativeMcp(this.sdkFile, "./oauth"), binding = flow.binding;
+      flow.abort.signal.throwIfAborted();
       let privateState;
       if (flow.data.kind === "refresh") {
         const snapshot = await this.catalog.snapshot(binding.projectPath), server = snapshot.servers.find((entry) => entry.name === binding.name);
@@ -171,6 +173,11 @@ export class McpOAuth {
   }
   async stop() {
     this.closing = true;
+    // Stop this process's physical work immediately, including initialization
+    // before start() can return a flow. Pending admissions observe closing too.
+    for (const flow of this.flows.values()) if (active(flow.data.status)) {
+      flow.abort.abort(); void this.closeCallback(flow).catch(() => {});
+    }
     await Promise.allSettled([...this.admissions]);
     await Promise.all([...this.flows.values()].filter((flow) => active(flow.data.status)).map((flow) => this.action({ type: "oauthCancel", flowId: flow.data.flowId }, flow.data.projectPath)));
     await Promise.allSettled([...this.flows.values()].map((flow) => flow.done));

@@ -31,14 +31,22 @@ test("a separate Host creates an OAuth connection used by real CLI Pi and revoca
   t.after(async () => {
     let confirmed = false;
     try {
-      if (terminal && !exited && await processIdentity(terminal.pid) === terminalIdentity) {
-        terminal.write("\x1b"); terminal.write("\x04");
-        try { await until(() => exited, Boolean, "failed interop TUI normal exit", 2000); }
-        catch { if (await processIdentity(terminal.pid) === terminalIdentity) process.kill(-terminal.pid, "SIGKILL"); }
+      try {
+        if (terminal && !exited && await processIdentity(terminal.pid) === terminalIdentity) {
+          terminal.write("\x1b"); terminal.write("\x04");
+          try { await until(() => exited, Boolean, "failed interop TUI normal exit", 2000); }
+          catch { if (await processIdentity(terminal.pid) === terminalIdentity) process.kill(-terminal.pid, "SIGKILL"); }
+        }
+        if (terminal) await until(() => exited && !groupAlive(terminal.pid), Boolean, "interop TUI confirmed exit");
+      } finally {
+        if (host && !host.exit) host.child.send("stop");
+        const outcomes = await Promise.allSettled(children.map(record => {
+          if (!record.exit && record !== host) record.child.kill("SIGTERM");
+          return until(() => record.exit, Boolean, "interop child exit");
+        }));
+        const failures = outcomes.filter(outcome => outcome.status === "rejected");
+        if (failures.length) throw new AggregateError(failures.map(outcome => outcome.reason), "interop child cleanup failed");
       }
-      if (terminal) await until(() => exited && !groupAlive(terminal.pid), Boolean, "interop TUI confirmed exit");
-      if (host && !host.exit) host.child.send("stop");
-      for (const record of children) { if (!record.exit && record !== host) record.child.kill("SIGTERM"); await until(() => record.exit, Boolean, "interop child exit"); }
       if (f) await writePiEvidence(t.name, { sdk: f.sdk, scope: "CLIENT-01C_HOST_API_CLI_REAL_PROCESS_INTEROP_NOT_BROWSER", requests, received: service.received,
         finalState, runs: await new McpRuns(f.config).status(f.project), terminal: { pid: terminal?.pid, exit: exited, groupGone: !terminal || !groupAlive(terminal.pid) },
         children: children.map(({ child, ...record }) => ({ ...record, pid: child.pid })), transcript: output });
