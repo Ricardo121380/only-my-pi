@@ -31,7 +31,7 @@ Pi 提供终端界面、模型、会话和基础工具；OMP 在此之上增加�
 
 开发版 CLI 也提供独立产品账号设置：`omp account add`、`configure`、`login`、`list`、`status`，随后用 `omp --account ACCOUNT_ID --model PROVIDER/MODEL` 显式调用。API Key 与 Pi 支持的 OAuth 共用图形端的产品账号，无需启动 WebUI Host；凭据仍由 Pi 保存在各账号私有目录，登录不授予编程权限。见 [CLI 账号指南](docs/cli-accounts.md)及 [CLIENT-01A 验收范围](docs/compatibility/2026-10-20-cli-product-accounts.md)。这些命令尚未产品发行。
 
-尚未发布的 CLI MCP 入口为 `omp mcp`：无需 WebUI Host 即可设置/导入连接、隐藏输入 HTTP 凭据或完成 Pi 原生 OAuth，再显式启用工具。真实 Pi 调用保留逐次授权，并共用图形端配置。见 [CLI MCP 指南](docs/cli-mcp.md)和 [CLIENT-01C 证据及待完成门禁](docs/compatibility/2026-10-21-cli-authenticated-mcp.md)；`80062c5` 的本地完整门禁、独立源码评审及实际同源 Ego 互操作已通过，公开 PR/CI 验收仍未执行。
+尚未发布的 CLI MCP 入口为 `omp mcp`：无需 WebUI Host 即可设置/导入连接、隐藏输入 HTTP 凭据或完成 Pi 原生 OAuth，再显式启用工具。真实 Pi 调用保留逐次授权，并共用图形端配置。见 [CLI MCP 指南](docs/cli-mcp.md)和 [CLIENT-01C 证据及待完成门禁](docs/compatibility/2026-10-21-cli-authenticated-mcp.md)；`80062c5` 的本地完整门禁、独立源码评审及实际同源 Ego 互操作已通过。公开 PR/CI、合并与工单状态由 [#79](https://github.com/Ricardo121380/only-my-pi/issues/79) 及其关联 PR 单独记录。
 
 ## 快速开始
 
