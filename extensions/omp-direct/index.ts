@@ -87,6 +87,8 @@ export default async function ompDirect(pi: ExtensionAPI): Promise<void> {
     acquireProject: async (ctx: any) => { if (!ownsSession?.(ctx)) await ownership.acquire("project", ctx.cwd); },
     verifyProject: async (ctx: any) => ownsSession?.(ctx) ? verifyHostProject?.(ctx) : ownership.verifyProject(ctx.cwd),
   });
+  const { installProductSettings } = await import("../../packages/product-settings/runtime.mjs");
+  pi.events.on("only-my-pi:product-task:v1", (snapshot: any) => installProductSettings(pi, { configRoot, snapshot, controller }));
   const mcp = installOmpMcp(pi, { configRoot, controller });
   await installOmpCodemode(pi, { controller });
   const shellOperations: BashOperations = { exec: (command, cwd, options) => ownedShell.exec(command, cwd, {

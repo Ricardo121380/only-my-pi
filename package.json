@@ -86,6 +86,7 @@
     "packages/direct-agent/",
     "packages/host/",
     "packages/mcp/",
+    "packages/product-settings/",
     "packages/model-calls/",
     "webui/dist/",
     "packages/daily-config/",
@@ -200,7 +201,8 @@
     "node-pty": "1.1.0",
     "semver": "7.8.5",
     "ssri": "13.0.1",
-    "ws": "8.21.3"
+    "ws": "8.21.3",
+    "yaml": "2.9.0"
   },
   "bundleDependencies": [
     "ajv",
@@ -208,7 +210,8 @@
     "node-pty",
     "semver",
     "ssri",
-    "ws"
+    "ws",
+    "yaml"
   ],
   "bundledDependencies": [
     "ajv",
@@ -216,7 +219,8 @@
     "node-pty",
     "semver",
     "ssri",
-    "ws"
+    "ws",
+    "yaml"
   ],
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"

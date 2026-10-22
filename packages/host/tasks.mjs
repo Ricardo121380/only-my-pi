@@ -10,7 +10,7 @@ import { emptyUsage, recordUsage } from "./usage.mjs";
 import { INPUT_CARRIER } from "./input-protocol.mjs";
 import { supportsThinking } from "./models.mjs";
 import { ModelCallStore } from "../model-calls/store.mjs";
-import { McpCatalog } from "../mcp/catalog.mjs";
+import { taskSettingsSnapshot } from "../product-settings/catalog.mjs";
 
 const duration = (value) => typeof value === "number" && Number.isFinite(value) && value >= 0 ? { durationMs: value } : {};
 
@@ -42,6 +42,7 @@ export class HostTasks extends EventEmitter {
   }
   summary(task) { return { taskId: task.taskId, requestId: task.requestId, projectId: task.projectId, accountId: task.accountId ?? null, model: task.model, prompt: task.prompt.slice(0, 200), status: task.status,
     ...(task.mcpSnapshot ? { mcp: { protocol: 1, revision: task.mcpSnapshot.revision, enabled: task.mcpSnapshot.servers.some((server) => server.enabled) } } : {}),
+    resourceRevision: task.resourceRevision ?? 0, settingsSnapshot: task.settingsSnapshot ?? null, settingsLoaded: task.settingsLoaded ?? null,
     ...(task.codemode ? { codemode: task.codemode } : {}), toolCalls: task.toolCalls ?? [],
     thinkingLevel: task.thinkingLevel ?? null, requestedThinkingLevel: task.requestedThinkingLevel ?? null, usage: task.usage ?? null,
     mode: task.mode ?? "readonly", access: task.access ?? "inspect", approvals: task.approvals ?? [], orchestration: task.orchestration ?? null, sessionId: task.sessionId, settlement: task.settlement ?? null, inputFeedback: task.inputFeedback ?? null, ...(task.inputId ? { inputId: task.inputId, originDraftInputId: task.originDraftInputId, originDraftSessionId: task.originDraftSessionId } : {}), createdAt: task.createdAt, updatedAt: task.updatedAt, error: task.error ?? null, tool: task.tool ?? null }; }
@@ -89,16 +90,16 @@ export class HostTasks extends EventEmitter {
     const model = (await this.models(command.accountId)).find((m) => m.id === command.model);
     if (!model) throw hostError("MODEL_UNAVAILABLE", 409);
     if (command.thinkingLevel !== undefined && !supportsThinking(model, command.thinkingLevel)) throw hostError("THINKING_LEVEL_UNAVAILABLE", 409);
-    const classifierSnapshot = await new ModelCallStore(this.configRoot).config(project.path);
+    const { settingsSnapshot, classifierSnapshot, mcpSnapshot, resourceRevision } = await taskSettingsSnapshot(this.configRoot, project.path, this.stack.ompPackageRoot);
+    if (inputRecord && inputRecord.binding.resourceRevision !== resourceRevision) throw hostError("INPUT_BINDING_CHANGED", 409);
     const capabilityAccounts = new Set([classifierSnapshot.classifier?.accountId, classifierSnapshot.image?.accountId].filter(id => id && id !== command.accountId));
     for (const accountId of capabilityAccounts) { const releaseCapability = await this.accounts?.beginUse(accountId); if (releaseCapability) capabilityReleases.push(releaseCapability); }
-    const mcpSnapshot = await new McpCatalog(this.configRoot).snapshot(project.path);
     if (this.requests.has(command.requestId)) return existing(this.requests.get(command.requestId));
     if (this.closing) throw hostError("HOST_STOPPING", 409);
     if ([...this.tasks.values()].filter((t) => !terminal(t.status)).length >= 4) throw hostError("TASK_CAPACITY_REACHED", 429);
     const task = { taskId: randomUUID(), requestId: command.requestId, requestDigest, projectId: project.projectId, model: command.model, ...(this.accounts ? { accountId: command.accountId } : {}),
       requestedThinkingLevel: command.thinkingLevel ?? null, thinkingLevel: null, usage: emptyUsage(),
-      mode, mcpSnapshot, classifierSnapshot, access: "inspect", approvals: [], resourceRevision: inputRecord?.binding.resourceRevision ?? 0, ...(submission ?? {}), prompt: command.prompt, status: "starting", sessionId: resume?.sessionId ?? null, resumeSessionKey: command.resumeSessionKey ?? null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      mode, mcpSnapshot, classifierSnapshot, settingsSnapshot, access: "inspect", approvals: [], resourceRevision, ...(submission ?? {}), prompt: command.prompt, status: "starting", sessionId: resume?.sessionId ?? null, resumeSessionKey: command.resumeSessionKey ?? null, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     this.requests.set(command.requestId, task.taskId); this.tasks.set(task.taskId, task);
     try { await this.persist(); }
     catch {
@@ -136,7 +137,7 @@ export class HostTasks extends EventEmitter {
     const sessionRoot = path.join(this.catalog.sessionRoot, `omp-${project.projectId}`);
     let worker;
     try {
-      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, taskId: task.taskId, accountId: task.accountId, controlled: task.mode === "controlled", mcpSnapshot: task.mcpSnapshot, classifierSnapshot: task.classifierSnapshot, sessionRoot, resumeFile: resume?.file, env: this.env,
+      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, taskId: task.taskId, accountId: task.accountId, controlled: task.mode === "controlled", mcpSnapshot: task.mcpSnapshot, classifierSnapshot: task.classifierSnapshot, settingsSnapshot: task.settingsSnapshot, sessionRoot, resumeFile: resume?.file, env: this.env,
         onIdentity: async (identity) => { await this.accountReleases.get(task.taskId)?.addProcess(identity.pid); task.worker = identity; await this.persist(); } });
     } catch (error) { await this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId); throw error; }
     this.workers.set(task.taskId, worker);
@@ -202,6 +203,7 @@ export class HostTasks extends EventEmitter {
         if (current.sessionId !== resume.sessionId || current.file !== resume.file) throw hostError("SESSION_IDENTITY_CHANGED", 409);
       }
       const state = await worker.start();
+      if (worker.settingsLoaded) task.settingsLoaded = worker.settingsLoaded;
       if (worker.codemodeEnabled) task.codemode = { enabled: true, classifier: Boolean(task.classifierSnapshot?.classifier), image: Boolean(task.classifierSnapshot?.image) };
       if (resume && state.sessionId !== resume.sessionId) throw hostError("SESSION_IDENTITY_CHANGED", 409);
       task.worker = worker.identity; task.sessionId = state.sessionId;
@@ -228,7 +230,7 @@ export class HostTasks extends EventEmitter {
         await this.recordInputFeedback(task.taskId, inputRecord.inputId, response.feedback);
         this.emit("inputAccepted", { taskId: task.taskId, inputId: inputRecord.inputId });
       } else {
-        const response = await worker.command("prompt", { message: task.mode === "controlled" ? task.prompt : `只读分析请求。不要修改项目文件。\n\n${task.prompt}` });
+        const response = await worker.command("prompt", { message: task.mode === "controlled" || /^\/skill:[a-z][a-z0-9-]{0,63}(?: |$)/u.test(task.prompt) ? task.prompt : `只读分析请求。不要修改项目文件。\n\n${task.prompt}` });
         if (response?.disposition !== undefined) {
           await this.recordInputFeedback(task.taskId, null, { source: "pi-prompt", disposition: response.disposition });
           if (response.disposition === "handled") settledResolve();

@@ -8,6 +8,8 @@ import { prepareTuiInput } from "./initial-input.mjs";
 import { disableOmpCacheWarming } from "./cache-warming-policy.mjs";
 import { McpCatalog, mcpToolNames } from "../mcp/catalog.mjs";
 import { applyOmpRequestPolicy } from "./request-policy.mjs";
+import { taskSettingsSnapshot, ProductSettings, settingsError } from "../product-settings/catalog.mjs";
+import { productLoaderOptions, confirmProductLoad, refreshDirectSettings } from "../product-settings/runtime.mjs";
 import { openProductAccount } from "../host/account-runtime.mjs";
 
 // Controlled CLI bootstrap using only Pi's public SDK. All modes share the
@@ -69,21 +71,28 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     const settingsManager = applyOmpRequestPolicy(sdk.SettingsManager.create(effectiveCwd, agentDir, { projectTrusted }));
     if (parsed.useTheme !== undefined) settingsManager.applyOverrides({ theme: parsed.useTheme });
     sdk.initTheme(settingsManager.getTheme(), false);
-    const mcpSnapshot = await new McpCatalog(configRoot).snapshot(await fs.realpath(effectiveCwd));
+    // Generic SDK/bootstrap callers may supply only their own test or child
+    // extension. Product settings belong to the audited OMP direct loadout.
+    const productSettingsEnabled = parsed.extensions.some(entry => entry.endsWith("/extensions/omp-direct/index.ts"));
+    const initialSettings = productSettingsEnabled ? await taskSettingsSnapshot(configRoot, await fs.realpath(effectiveCwd)) : null;
+    let settingsSnapshot = initialSettings?.settingsSnapshot;
+    let mcpSnapshot = initialSettings?.mcpSnapshot ?? await new McpCatalog(configRoot).snapshot(await fs.realpath(effectiveCwd));
+    const productEvents = sdk.createEventBus();
     const mcpNames = mcpToolNames(mcpSnapshot);
     const services = await sdk.createAgentSessionServices({ cwd: effectiveCwd, agentDir, settingsManager,
       modelRuntime, modelRuntimeSignal: AbortSignal.timeout(15_000), extensionFlagValues: parsed.unknownFlags,
-      resourceLoaderOptions: { noExtensions: true, additionalExtensionPaths: parsed.extensions,
+      resourceLoaderOptions: { eventBus: productEvents, ...(settingsSnapshot ? productLoaderOptions({ sdk, configRoot, snapshot: settingsSnapshot, getSnapshot: () => settingsSnapshot }) : {}), noExtensions: true, additionalExtensionPaths: parsed.extensions,
         extensionFactories: [(pi) => pi.events.emit("only-my-pi:direct-session-owner:v1", {
           ownsSession: (ctx) => !admissions.closing && ctx.mode === (mode === "print" ? parsed.mode === "json" ? "json" : "print" : mode) && ctx.sessionManager === sessionManager,
-        }), (pi) => pi.events.emit("only-my-pi:mcp-task:v1", { snapshot: mcpSnapshot }),
+        }), (pi) => { if (settingsSnapshot) pi.events.emit("only-my-pi:product-task:v1", settingsSnapshot); }, (pi) => pi.events.emit("only-my-pi:mcp-task:v1", { snapshot: mcpSnapshot, taskPinned: true }),
         ...(mode === "print" ? [(pi) => {
           pi.on("session_before_switch", () => ({ cancel: true }));
           pi.on("session_before_fork", () => ({ cancel: true }));
         }] : []),
-        ...(mode === "tui" ? [createResumeUiExtension({ sdk, getRuntime: () => runtime })] : []), disableOmpCacheWarming] } });
-    if (services.diagnostics.some((entry) => entry.type === "error") || services.resourceLoader.getExtensions().errors.length)
-      throw ownershipError("TUI_EXTENSION_LOAD_FAILED");
+        ...(mode === "tui" ? [createResumeUiExtension({ sdk, getRuntime: () => runtime })] : []), disableOmpCacheWarming] } }).catch(async () => { const error = settingsError("RESOURCE_LOAD_FAILED", 409); if (settingsSnapshot) await new ProductSettings(configRoot).recordLoad(settingsSnapshot, error); throw error; });
+    if (services.diagnostics.some((entry) => entry.type === "error") || services.resourceLoader.getExtensions().errors.length) {
+      const error = settingsError("RESOURCE_LOAD_FAILED", 409); if (settingsSnapshot) await new ProductSettings(configRoot).recordLoad(settingsSnapshot, error); throw error;
+    }
     const diagnostics = [...parsed.diagnostics, ...services.diagnostics];
     const patterns = parsed.models ?? settingsManager.getEnabledModels();
     const scope = patterns?.length ? await sdk.resolveModelScopeWithDiagnostics(patterns, services.modelRuntime,
@@ -115,6 +124,8 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model,
       thinkingLevel: parsed.thinking ?? thinkingLevel, scopedModels: scope.scopedModels.length ? scope.scopedModels : undefined,
       tools: [...parsed.tools, ...(mode === "tui" ? ["mcp__*"] : mcpNames)], excludeTools: parsed.excludeTools });
+    if (settingsSnapshot) await confirmProductLoad({ services, session: created.session, configRoot, snapshot: settingsSnapshot });
+    if (mode === "tui" && settingsSnapshot) refreshDirectSettings({ session: created.session, services, configRoot, getSnapshot: () => settingsSnapshot, setSnapshot: value => { settingsSnapshot = value.settingsSnapshot; mcpSnapshot = value.mcpSnapshot; }, publish: value => productEvents.emit("only-my-pi:mcp-task:v1", { snapshot: value.mcpSnapshot, taskPinned: true }) });
     if (productAccount) {
       if (!model || created.modelFallbackMessage || created.session.model?.provider !== model.provider || created.session.model?.id !== model.id)
         throw ownershipError("ACCOUNT_MODEL_FALLBACK_DENIED");

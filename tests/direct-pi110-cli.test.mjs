@@ -70,6 +70,6 @@ test("public OMP print, ephemeral print, RPC and account child suppress a forced
     assert.equal(requests.length, 1, `${name}: Provider must receive only one user request`);
     assert.equal(requests[0].key, "Bearer fixture-cli"); assert.equal(requests[0].body.model, "one");
     const tools = ["find", "grep", "ls", "read"];
-    assert.deepEqual(requests[0].body.tools.map((tool) => tool.function.name).sort(), name === "account child" ? tools : ["codemode", ...tools]);
+    assert.deepEqual(requests[0].body.tools.map((tool) => tool.function.name).sort(), name === "account child" ? tools : ["codemode", "context_snapshot", ...tools]);
   });
 });

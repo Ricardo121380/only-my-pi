@@ -7,6 +7,7 @@ import { StringDecoder } from "node:string_decoder";
 import { atomicWriteJson, ensureConfigDirectory, readJsonObject } from "../config-runtime/index.mjs";
 import { acquireOwnership, processIdentity, groupAlive } from "./ownership.mjs";
 import { ProjectCatalog } from "./catalog.mjs";
+import { ProductSettings, taskSettingsSnapshot } from "../product-settings/catalog.mjs";
 import { HostTasks } from "./tasks.mjs";
 import { HostInputStore } from "./input-store.mjs";
 import { HostInputController } from "./input-controller.mjs";
@@ -132,8 +133,9 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
   };
   const tasks = new HostTasks({ configRoot, stack, catalog, accounts, workerFactory, models: accountModels, allowControlled, env });
   try { await tasks.load(); } catch (error) { await inputs.close(); await lock.release(); throw error; }
-  const inputController = new HostInputController({ store: inputs, tasks, catalog });
-  const snapshot = () => ({ protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, seq, indexing: scanRunning, capabilities: { controlled: allowControlled, inputs: { protocol: INPUT_PROTOCOL, materials: false, resourceRevision: 0 } },
+  const resourceRevision = async projectId => (await taskSettingsSnapshot(configRoot, catalog.project(projectId).path, stack.ompPackageRoot)).resourceRevision;
+  const inputController = new HostInputController({ store: inputs, tasks, catalog, resourceRevision });
+  const snapshot = () => ({ protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, seq, indexing: scanRunning, capabilities: { controlled: allowControlled, inputs: { protocol: INPUT_PROTOCOL, materials: false, resourceRevision: null } },
     runtime: { stackId: stack.stackId, sourceCommit: stack.distribution?.sourceCommit ?? null }, projects: catalog.listProjects(), tasks: tasks.snapshot(), diagnostics: catalog.diagnostics });
   const send = (client, value) => {
     if (client.readyState !== 1) return;
@@ -235,6 +237,18 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           const project = catalog.project(input.projectId);
           const config = await store.save(project.path, input.revision, input[kind], accountId => listModels({ stack, configRoot, accountId, modelType: kind, env, signal: modelAbort.signal }), kind);
           return response(res, 200, config);
+        }
+        if (url.pathname === "/api/settings") {
+          if (req.method !== "POST" || !safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
+          if (req.headers["x-omp-settings-protocol"] !== "1") throw hostError("SETTINGS_PROTOCOL_MISMATCH", 409);
+          const input = await authorizedBody(req, 256 * 1024);
+          const project = input?.projectId ? catalog.project(input.projectId) : null;
+          const result = await new ProductSettings(configRoot).action(input, project?.path);
+          if (input.type !== "previewImport" && project) {
+            try { result.resourceRevision = await resourceRevision(project.projectId); result.pending = result.lastLoaded?.resourceRevision !== result.resourceRevision; }
+            catch (error) { result.loadError = error.code ?? "RESOURCE_LOAD_FAILED"; }
+          }
+          return response(res, 200, result);
         }
         if (url.pathname === "/api/mcp") {
           if (req.method !== "POST") throw hostError("METHOD_DENIED", 405);

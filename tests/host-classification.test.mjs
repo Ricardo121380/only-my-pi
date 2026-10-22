@@ -214,7 +214,8 @@ for (const failure of ["429", "timeout", "output-limit", "cancel"]) test(`native
 test("WebUI saved-draft submission initializes the same classifier binding through native custom-message delivery", { timeout: 35000 }, async t => {
   const f = await createClassificationHost(); t.after(() => f.close()); await f.configure(); await f.select();
   const target = { projectId: f.projectId, sessionKey: null };
-  const input = { inputId: "classification-web-draft", delivery: "prompt", text: "classify via saved draft", materialSnapshotIds: [], binding: { accountId: "cli-readonly", modelId: "fixture/one", thinking: "off", mode: "readonly", resourceRevision: 0 } };
+  const currentSettings = await f.api("/api/settings", { type: "list", projectId: f.projectId });
+  const input = { inputId: "classification-web-draft", delivery: "prompt", text: "classify via saved draft", materialSnapshotIds: [], binding: { accountId: "cli-readonly", modelId: "fixture/one", thinking: "off", mode: "readonly", resourceRevision: currentSettings.resourceRevision } };
   const draft = await f.api("/api/input-command", { type: "saveDraft", target, input, expectedRevision: 0 });
   const submitted = { type: "submitPrompt", target, requestId: "classification-web-submit", input, expectedRevision: draft.revision, expectedInputRevision: draft.draft.revision };
   const task = await f.api("/api/input-command", submitted);

@@ -27,9 +27,9 @@ async function selectedPath(project, value, scopes) {
 // its native MCP client owns protocol semantics. OMP owns admission and state.
 export function installOmpMcp(pi, { configRoot, controller }) {
   const catalog = new McpCatalog(configRoot), store = new McpRuns(configRoot), connections = new Map(), processes = new Set(), grants = new Set(), parents = new Map();
-  let snapshot, run, McpClient, NativeHttpTransport, busy = false, revoked = false, closing = false, monitor, saved = Promise.resolve(), tui = false, cleanupConfirmed = true, generation = 0, discoveryAttempts = 0, helpersInstalled = false;
+  let snapshot, pendingSnapshot, run, McpClient, NativeHttpTransport, busy = false, revoked = false, closing = false, monitor, saved = Promise.resolve(), tui = false, cleanupConfirmed = true, generation = 0, discoveryAttempts = 0, helpersInstalled = false;
   const helpers = MCP_HELPERS, loaded = new Set();
-  pi.events.on("only-my-pi:mcp-task:v1", (payload) => { snapshot = payload.snapshot; });
+  pi.events.on("only-my-pi:mcp-task:v1", (payload) => { snapshot = payload.snapshot; if (payload.taskPinned) pendingSnapshot = payload.snapshot; });
   const save = () => { const copy = structuredClone(run); saved = saved.catch(() => {}).then(() => store.save(copy)); return saved; };
   const tools = () => closing || revoked ? [] : [...connections.values()].flatMap((entry) => entry.names).concat(connections.size ? helpers : []);
   controller.mcpDeclared = (name) => loaded.has(name) || ![...connections.values()].some((entry) => entry.server.tools.some((policy) => mcpToolName(entry.server.name, policy.name) === name && (policy.exposure ?? "direct") !== "direct"));
@@ -312,7 +312,7 @@ export function installOmpMcp(pi, { configRoot, controller }) {
     const projectPath = await fs.realpath(ctx.cwd);
     if (tui) {
       if (!cleanupConfirmed) throw mcpError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
-      snapshot = await catalog.snapshot(projectPath); connections.clear(); processes.clear(); parents.clear(); run = undefined;
+      snapshot = pendingSnapshot ?? await catalog.snapshot(projectPath); pendingSnapshot = undefined; connections.clear(); processes.clear(); parents.clear(); run = undefined;
       revoked = false; closing = false; generation++; discoveryAttempts = 0; loaded.clear();
     } else snapshot ??= await catalog.snapshot(projectPath);
     if (snapshot.projectPath !== projectPath) throw mcpError("MCP_PROJECT_BINDING_CHANGED");

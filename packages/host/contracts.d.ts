@@ -31,6 +31,9 @@ export interface OAuthFlow { flowId: string; accountId: string; status: "startin
 export interface AccountDirectory { protocol: 1; authentication: "api_key"; cliReference: { accountId: "cli-readonly"; name: string; readOnly: true }; accounts: GuiAccount[] }
 export interface Message { id: string; role: "user" | "assistant" | "toolResult"; text: string; toolName?: string; isError?: boolean; outputAvailable?: boolean; truncated?: boolean; durationMs?: number; stopReason?: string | null }
 export interface HostTask {
+  resourceRevision?: number;
+  settingsSnapshot?: { revision: number; resourceRevision: number; resources: { id: string; enabled: boolean; parameters: Record<string, unknown> }[] } | null;
+  settingsLoaded?: { revision: number; resourceRevision: number; tools: string[]; skills: string[] } | null;
   codemode?: { enabled: true; classifier: boolean; image: boolean };
   toolCalls?: { toolCallId: string; parentToolCallId: string | null; name: string; status: "running" | "completed" | "failed" | "cancelled" | "unknown"; startedAt: string; completedAt?: string; durationMs?: number; result?: string; error?: string }[];
   mcp?: { protocol: 1; revision: number; enabled: boolean };
@@ -51,7 +54,7 @@ export interface HostTask {
 export type TaskSummary = Omit<HostTask, "messages" | "partial">;
 export interface Session { sessionKey: string; sessionId: string; projectId: string; timestamp: string; name: string; readOnly: true }
 export interface HostSnapshot { protocol: number; version: string; epoch: string; seq: number; indexing: boolean;
-  capabilities?: { controlled: boolean; inputs?: { protocol: 1; materials: false; resourceRevision: number } };
+  capabilities?: { controlled: boolean; inputs?: { protocol: 1; materials: false; resourceRevision: number | null } };
   runtime: { stackId: string; sourceCommit: string | null }; projects: Project[]; tasks: TaskSummary[]; diagnostics: { code: string; sessionKey?: string }[] }
 export type HostEvent = ({ type: "snapshot" } & HostSnapshot)
   | { type: "task"; epoch: string; seq: number; data: HostTask }
