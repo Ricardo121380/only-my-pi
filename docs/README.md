@@ -51,7 +51,12 @@ executor per session; let the CLI explicitly use product accounts without
 changing their ownership or silently switching identities; sequence independent
 features by their actual dependencies. These are requirements, not completed
 runtime acceptance. Account setup and login now have the bounded #78 evidence above;
-MCP authentication is completed in #79. The current implementation and acceptance entry is #80 for shared tool/skill defaults, overrides and actual task loading; #81 retains the classification/image binding scope. Product settings are shared defaults with project overrides; original Pi
+MCP authentication is completed in #79. Shared tool/skill defaults, overrides and
+actual next-task loading have passed local #80 C/P and Ego Lite acceptance; see
+the [settings guide](shared-product-settings.md) and [source-bound receipt](compatibility/2026-10-22-shared-product-settings.md).
+The public issue remains OPEN pending authorized remote synchronization. #81 is
+the subsequent classification/image binding slice, subject to refreshed dependencies.
+Product settings are shared defaults with project overrides; original Pi
 and external settings keep their ownership and require explicit import. Initial
 cross-client continuation is guaranteed only for verified matching runtime
 combinations; unverified combinations may show readable history and require
