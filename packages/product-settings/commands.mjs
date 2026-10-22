@@ -32,8 +32,8 @@ export async function runSettingsCli({ argv, configRoot }) {
   }
   const result = await new ProductSettings(configRoot).action(input, projectPath);
   if (projectPath && type !== "preview") {
-    try { result.resourceRevision = (await taskSettingsSnapshot(configRoot, projectPath)).resourceRevision; result.pending = result.lastLoaded?.resourceRevision !== result.resourceRevision; }
-    catch (error) { result.loadError = error.code ?? "RESOURCE_LOAD_FAILED"; }
+    try { result.resourceRevision = (await taskSettingsSnapshot(configRoot, projectPath)).resourceRevision; result.pending = Boolean(result.lastFailure) || result.lastLoaded?.resourceRevision !== result.resourceRevision; }
+    catch (error) { result.loadError = error.code ?? "RESOURCE_LOAD_FAILED"; result.pending = true; }
   }
   return result;
 }

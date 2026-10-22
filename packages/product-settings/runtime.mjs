@@ -22,6 +22,21 @@ export function installProductSettings(pi, { configRoot, snapshot, controller })
   pi.events.emit("only-my-pi:owned-product:v1", { admits: name => name === "context_snapshot" && selected(name)?.enabled === true });
   // First-party context diagnostics consume the same immutable parameters.
   pi.events.emit("only-my-pi:product-settings:v1", snapshot);
+  // Pi expands /skill directly before queuing, without a read tool call. An
+  // input-handler exception is advisory in Pi, so return handled on failure.
+  pi.on("input", async (event, ctx) => {
+    const name = /^\/skill:([^\s]+)/u.exec(event.text)?.[1];
+    if (!name) return;
+    const skill = snapshot.resources.find(r => r.kind === "skill" && r.name === name);
+    if (!skill) return;
+    try {
+      if (!skill.enabled || !await store.current(skill)) throw settingsError("RESOURCE_DISABLED_OR_REVOKED", 409);
+      await store.verify({ resources: [skill] });
+    } catch (error) {
+      ctx.ui.notify(error.code ?? "RESOURCE_LOAD_FAILED", "error");
+      return { action: "handled" };
+    }
+  });
   pi.on("tool_call", async event => {
     const resource = selected(event.toolName);
     if (resource && (!resource.enabled || !await store.current(resource))) return { block: true, reason: "RESOURCE_DISABLED_OR_REVOKED" };

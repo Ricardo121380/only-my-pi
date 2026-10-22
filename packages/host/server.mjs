@@ -245,8 +245,8 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           const project = input?.projectId ? catalog.project(input.projectId) : null;
           const result = await new ProductSettings(configRoot).action(input, project?.path);
           if (input.type !== "previewImport" && project) {
-            try { result.resourceRevision = await resourceRevision(project.projectId); result.pending = result.lastLoaded?.resourceRevision !== result.resourceRevision; }
-            catch (error) { result.loadError = error.code ?? "RESOURCE_LOAD_FAILED"; }
+            try { result.resourceRevision = await resourceRevision(project.projectId); result.pending = Boolean(result.lastFailure) || result.lastLoaded?.resourceRevision !== result.resourceRevision; }
+            catch (error) { result.loadError = error.code ?? "RESOURCE_LOAD_FAILED"; result.pending = true; }
           }
           return response(res, 200, result);
         }

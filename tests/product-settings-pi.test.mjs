@@ -76,12 +76,45 @@ test("CLI and public Host share requested settings; each real Pi loads the decla
   assert.equal((await waitTask(f, broken.taskId)).status, "failed");
   const rejectedLoad = await settings(f, { type: "list" });
   assert.equal(rejectedLoad.lastFailure.code, "RESOURCE_LOAD_FAILED"); assert.equal(rejectedLoad.lastLoaded.revision, 4);
+  assert.equal(rejectedLoad.pending, true, "a failed reload of the same version is not a loaded current version");
   assert.equal(f.requests.length, 6); await fs.writeFile(extensionFile, originalExtension);
   await fs.writeFile(path.join(f.config, "only-my-pi/product-settings/skills", loaded.resources.find(r => r.kind === "skill").contentDigest, "SKILL.md"), "changed source");
   await f.request("/api/command", { type: "startTask", requestId: randomUUID(), projectId: f.projectId, accountId: "cli-readonly", model: "fixture/one", prompt: "must not send" }, 409);
   const failure = await settings(f, { type: "list" });
   assert.equal(failure.lastLoaded.revision, 4); assert.equal(failure.lastFailure.code, "RESOURCE_IDENTITY_CHANGED");
+  assert.equal(failure.pending, true);
   assert.equal(f.requests.length, 6, "failed loading never sent a model request");
+});
+
+test("an active real TUI refuses native skill expansion after disable and re-enable", { timeout: 90000 }, async t => {
+  let held = false, release;
+  const gate = new Promise(resolve => { release = resolve; });
+  const f = await createMcpHost({ installedExtensions: true, respond: async ({ res }) => { held = true; await gate; providerReply(res, null, {}); } });
+  const skill = path.join(f.root, "SKILL.md");
+  await fs.writeFile(skill, "---\nname: revoked-skill\ndescription: Revocation fixture\ncompatibility: pi-1.3.0\n---\nREVOKED_SKILL_MUST_NOT_EXPAND\n");
+  const preview = await run(f, ["settings", "preview", skill]); assert.equal(preview.code, 0, preview.stderr);
+  const imported = await run(f, ["settings", "import", skill, "--revision", "0", "--digest", JSON.parse(preview.stdout).digest]); assert.equal(imported.code, 0, imported.stderr);
+  await settings(f, { type: "set", revision: 1, id: "skill:revoked-skill", enabled: true });
+  const terminal = pty.spawn(process.execPath, [f.cli, "--model", "fixture/one"], { cwd: f.project, env: f.cliEnv, cols: 140, rows: 42 });
+  let transcript = "", exited;
+  terminal.onData(data => { transcript += data; }); terminal.onExit(value => { exited = value; });
+  t.after(async () => {
+    release();
+    if (!exited) { terminal.write("\x1b"); terminal.write("/exit\r"); try { await until(() => exited && !groupAlive(terminal.pid), Boolean, "revocation TUI exit", 3000); } catch { terminal.kill("SIGKILL"); await until(() => exited && !groupAlive(terminal.pid), Boolean, "revocation fixture cleanup", 5000); } }
+    if (process.env.OMP_SETTINGS_EVIDENCE_ROOT) await fs.writeFile(path.join(process.env.OMP_SETTINGS_EVIDENCE_ROOT, `skill-revocation-${Date.now()}.json`), JSON.stringify({ transcript, requests: f.requests.map(r => r.body), exited }));
+    await f.close();
+  });
+  await until(() => transcript, text => text.includes("[Extensions]") && text.includes("OMP · Inspect"), "revocation TUI ready", 30000);
+  terminal.write("hold active run\r"); await until(() => held, Boolean, "active model request held", 30000);
+  await settings(f, { type: "set", revision: 2, id: "skill:revoked-skill", enabled: false });
+  await settings(f, { type: "set", revision: 3, id: "skill:revoked-skill", enabled: true });
+  terminal.write("/skill:revoked-skill\r");
+  await until(() => transcript, text => text.includes("RESOURCE_DISABLED_OR_REVOKED"), "native skill rejected before expansion", 7500);
+  release(); await until(() => transcript, text => text.includes("MCP fixture completed"), "original task completed");
+  assert.equal(f.requests.length, 1);
+  assert.equal(JSON.stringify(f.requests.map(r => r.body)).includes("REVOKED_SKILL_MUST_NOT_EXPAND"), false);
+  terminal.write("/exit\r"); await until(() => exited && !groupAlive(terminal.pid), Boolean, "revocation TUI clean exit", 10000);
+  assert.equal(exited.exitCode, 0);
 });
 
 test("real Pi freezes the active loadout and pauses old revision FIFO until explicitly rebound and resubmitted", { timeout: 120000 }, async t => {

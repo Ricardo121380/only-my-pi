@@ -77,6 +77,7 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     const initialSettings = productSettingsEnabled ? await taskSettingsSnapshot(configRoot, await fs.realpath(effectiveCwd)) : null;
     let settingsSnapshot = initialSettings?.settingsSnapshot;
     let mcpSnapshot = initialSettings?.mcpSnapshot ?? await new McpCatalog(configRoot).snapshot(await fs.realpath(effectiveCwd));
+    let classifierSnapshot = initialSettings?.classifierSnapshot;
     const productEvents = sdk.createEventBus();
     const mcpNames = mcpToolNames(mcpSnapshot);
     const services = await sdk.createAgentSessionServices({ cwd: effectiveCwd, agentDir, settingsManager,
@@ -85,6 +86,7 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
         extensionFactories: [(pi) => pi.events.emit("only-my-pi:direct-session-owner:v1", {
           ownsSession: (ctx) => !admissions.closing && ctx.mode === (mode === "print" ? parsed.mode === "json" ? "json" : "print" : mode) && ctx.sessionManager === sessionManager,
         }), (pi) => { if (settingsSnapshot) pi.events.emit("only-my-pi:product-task:v1", settingsSnapshot); }, (pi) => pi.events.emit("only-my-pi:mcp-task:v1", { snapshot: mcpSnapshot, taskPinned: true }),
+        (pi) => { if (classifierSnapshot) pi.events.emit("only-my-pi:model-task:v1", { snapshot: classifierSnapshot }); },
         ...(mode === "print" ? [(pi) => {
           pi.on("session_before_switch", () => ({ cancel: true }));
           pi.on("session_before_fork", () => ({ cancel: true }));
@@ -125,7 +127,7 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
       thinkingLevel: parsed.thinking ?? thinkingLevel, scopedModels: scope.scopedModels.length ? scope.scopedModels : undefined,
       tools: [...parsed.tools, ...(mode === "tui" ? ["mcp__*"] : mcpNames)], excludeTools: parsed.excludeTools });
     if (settingsSnapshot) await confirmProductLoad({ services, session: created.session, configRoot, snapshot: settingsSnapshot });
-    if (mode === "tui" && settingsSnapshot) refreshDirectSettings({ session: created.session, services, configRoot, getSnapshot: () => settingsSnapshot, setSnapshot: value => { settingsSnapshot = value.settingsSnapshot; mcpSnapshot = value.mcpSnapshot; }, publish: value => productEvents.emit("only-my-pi:mcp-task:v1", { snapshot: value.mcpSnapshot, taskPinned: true }) });
+    if (mode === "tui" && settingsSnapshot) refreshDirectSettings({ session: created.session, services, configRoot, getSnapshot: () => settingsSnapshot, setSnapshot: value => { settingsSnapshot = value.settingsSnapshot; mcpSnapshot = value.mcpSnapshot; classifierSnapshot = value.classifierSnapshot; }, publish: value => { productEvents.emit("only-my-pi:mcp-task:v1", { snapshot: value.mcpSnapshot, taskPinned: true }); productEvents.emit("only-my-pi:model-task:v1", { snapshot: value.classifierSnapshot }); } });
     if (productAccount) {
       if (!model || created.modelFallbackMessage || created.session.model?.provider !== model.provider || created.session.model?.id !== model.id)
         throw ownershipError("ACCOUNT_MODEL_FALLBACK_DENIED");

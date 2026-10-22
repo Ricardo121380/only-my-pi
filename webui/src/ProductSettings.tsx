@@ -35,7 +35,7 @@ export function ProductSettings({ projectId, projectName, onClose, onUseSkill }:
     {error && <p role="alert">{error === "SETTINGS_REVISION_CONFLICT" ? "配置版本已变化，未覆盖。请求输入已保留；请比较当前值，再明确采用当前版本保存。" : error}</p>}
     {notice && <p role="status">{notice}</p>}
     {!state ? <p role="status">正在读取共享设置…</p> : <>
-      <p>请求版本 <strong>{state.revision}</strong> · {state.pending ? "待下一任务加载" : "最近任务已加载此版本"}</p>
+      <p>请求版本 <strong>{state.revision}</strong> · {state.lastFailure || state.loadError ? "加载失败，保留最近有效版本" : state.pending ? "待下一任务加载" : "最近任务已加载此版本"}</p>
       <p>实际加载：{state.lastLoaded ? `版本 ${state.lastLoaded.revision} · 任务 ${state.lastLoaded.taskId}` : "尚无真实 Pi 加载回执"}</p>
       {(state.lastFailure || state.loadError) && <p role="alert">加载失败：{state.lastFailure?.code ?? state.loadError}。保留最近有效配置，失败请求未标为已加载。</p>}
       <ul className="mcp-servers">{state.resources.map(resource => <li key={resource.id}>

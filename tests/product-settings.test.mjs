@@ -61,3 +61,14 @@ test("two real CLI processes enforce CAS and failed requests preserve the last v
   assert.equal(await fs.readFile(file, "utf8"), text);
   assert.deepEqual(await f.read(), winner);
 });
+
+test("public import rejects YAML names that coerce to valid strings", async t => {
+  const f = await fixture(t), file = path.join(f.root, "SKILL.md");
+  for (const name of ["[example]", "true", "{ example: value }"]) {
+    await fs.writeFile(file, `---\nname: ${name}\ndescription: Invalid name type\ncompatibility: pi-1.3.0\n---\nExample.\n`);
+    const result = await f.run(["preview", file]);
+    assert.notEqual(result.code, 0, result.stdout);
+    assert.match(result.stderr, /SKILL_DECLARATION_INVALID/);
+  }
+  assert.equal((await f.read()).revision, 0);
+});

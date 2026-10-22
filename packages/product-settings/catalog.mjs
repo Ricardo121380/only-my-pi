@@ -33,7 +33,7 @@ export class ProductSettings {
     if (state.version !== 1 || !Number.isSafeInteger(state.revision) || state.revision < 0 || ![state.defaults, state.projects, state.skills, state.revoked].every(object)
       || Object.keys(state.skills).length > 64 || Object.keys(state.projects).length > 1000) throw settingsError("SETTINGS_STATE_INVALID", 409);
     for (const [id, skill] of Object.entries(state.skills)) {
-      if (!object(skill) || !/^[a-z][a-z0-9-]{0,63}$/u.test(skill.name ?? "") || id !== `skill:${skill.name}` || skill.id !== id || skill.kind !== "skill"
+      if (!object(skill) || typeof skill.name !== "string" || !/^[a-z][a-z0-9-]{0,63}$/u.test(skill.name) || id !== `skill:${skill.name}` || skill.id !== id || skill.kind !== "skill"
         || skill.piVersion !== PRODUCT_PI_VERSION || !/^[a-f0-9]{64}$/u.test(skill.contentDigest ?? "") || skill.version !== skill.contentDigest
         || typeof skill.description !== "string" || !skill.description || skill.description.length > 1024 || typeof skill.origin !== "string" || !skill.origin || skill.origin.length > 1024
         || skill.enabled !== false || skill.schema !== null || !object(skill.parameters) || Object.keys(skill.parameters).length || !Array.isArray(skill.toolNames) || skill.toolNames.length
@@ -66,7 +66,7 @@ export class ProductSettings {
   async status(projectPath) {
     const snapshot = await this.snapshot(projectPath);
     const receipt = await readJsonObject(this.root, path.join(this.root, "only-my-pi/product-settings/loads", `${this.key(projectPath)}.json`)).catch(error => { if (error.code === "ENOENT") return { lastLoaded: null, lastFailure: null }; throw error; });
-    return { ...snapshot, ...receipt, pending: !receipt.lastLoaded || receipt.lastLoaded.revision !== snapshot.revision };
+    return { ...snapshot, ...receipt, pending: Boolean(receipt.lastFailure) || !receipt.lastLoaded || receipt.lastLoaded.revision !== snapshot.revision };
   }
   async lock(update) {
     let lock;
@@ -92,7 +92,7 @@ export class ProductSettings {
       || typeof source.content !== "string" || Buffer.byteLength(source.content) > 131072 || source.content.includes("\0")) throw settingsError("RESOURCE_SOURCE_UNKNOWN");
     const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(source.content);
     let metadata; try { metadata = match ? parseYaml(match[1]) : null; } catch { throw settingsError("SKILL_DECLARATION_INVALID"); }
-    if (!object(metadata) || !/^[a-z][a-z0-9-]{0,63}$/u.test(metadata.name ?? "") || typeof metadata.description !== "string" || !metadata.description || metadata.description.length > 1024) throw settingsError("SKILL_DECLARATION_INVALID");
+    if (!object(metadata) || typeof metadata.name !== "string" || !/^[a-z][a-z0-9-]{0,63}$/u.test(metadata.name) || typeof metadata.description !== "string" || !metadata.description || metadata.description.length > 1024) throw settingsError("SKILL_DECLARATION_INVALID");
     if (metadata.compatibility !== `pi-${PRODUCT_PI_VERSION}`) throw settingsError("RESOURCE_INCOMPATIBLE");
     if (metadata.schema !== undefined || metadata.parameters !== undefined) throw settingsError("RESOURCE_SCHEMA_UNAVAILABLE");
     const state = await this.read(), id = `skill:${metadata.name}`, contentDigest = digest(source.content);
