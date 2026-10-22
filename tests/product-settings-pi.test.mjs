@@ -206,3 +206,36 @@ test("the next task in the same real CLI TUI reloads settings only after logical
   terminal.write("/exit\r"); await until(() => exited && !groupAlive(terminal.pid), Boolean, "TUI normal exit", 10000);
   assert.equal(exited.exitCode, 0); assert.equal(exited.signal, 0);
 });
+
+test("public Host skill invocation separates enablement from native first-use consent", { timeout: 90000 }, async t => {
+  const f = await createMcpHost({ installedExtensions: true, verifyNode: true, respond: ({ body, res }) => {
+    const lastUser = body.messages.findLastIndex(m => m.role === "user"), tools = body.messages.slice(lastUser + 1).filter(m => m.role === "tool");
+    providerReply(res, tools.length ? null : "context_snapshot", {});
+  } });
+  t.after(async () => {
+    if (process.env.OMP_SETTINGS_EVIDENCE_ROOT) await fs.writeFile(path.join(process.env.OMP_SETTINGS_EVIDENCE_ROOT, `host-skill-consent-${Date.now()}.json`), JSON.stringify({ test: t.name, node: process.version, requests: f.requests.map(r => r.body), tasks: f.host.tasks.snapshot() }));
+    await f.close();
+  });
+  const skill = path.join(f.root, "SKILL.md"), content = "---\nname: host-consent\ndescription: Explicit Host consent diagnostic\ncompatibility: pi-1.3.0\n---\nHOST_SKILL_APPROVAL_MARKER: measure context.\n";
+  await fs.writeFile(skill, content);
+  const preview = await run(f, ["settings", "preview", skill]); assert.equal(preview.code, 0, preview.stderr);
+  const imported = await run(f, ["settings", "import", skill, "--revision", "0", "--digest", JSON.parse(preview.stdout).digest]); assert.equal(imported.code, 0, imported.stderr);
+  await settings(f, { type: "set", id: "skill:host-consent", revision: 1, enabled: true });
+  assert.equal(f.requests.length, 0);
+  for (const decision of ["Deny", "Allow once"]) {
+    const started = await f.start({ prompt: "/skill:host-consent" });
+    const pending = await until(() => f.task(started.taskId), task => task.approvals.some(a => a.title.startsWith('Skill "host-consent" — first use')), "native skill first-use consent", 30000);
+    assert.equal(f.requests.length, 0, "enablement and pending consent do not dispatch");
+    await f.request("/api/command", { type: "answerApproval", taskId: started.taskId, approvalId: pending.approvals[0].approvalId, value: decision });
+    const done = await waitTask(f, started.taskId); assert.equal(done.status, "succeeded", JSON.stringify(done));
+    assert.equal(f.host.tasks.workers.size, 0); assert.equal(f.host.tasks.leases.size, 0);
+    if (decision === "Deny") { assert.equal(f.requests.length, 0); assert.equal(done.inputFeedback[0].disposition, "handled"); }
+    else {
+      assert.equal(f.requests.length, 2);
+      assert.ok(JSON.stringify(f.requests[0].body.messages).includes("HOST_SKILL_APPROVAL_MARKER"));
+      assert.match(done.messages.find(m => m.toolName === "context_snapshot").text, /^ctx:/);
+      assert.deepEqual(done.settingsLoaded.skills, ["host-consent"]);
+    }
+  }
+  assert.equal(await fs.readFile(skill, "utf8"), content);
+});
