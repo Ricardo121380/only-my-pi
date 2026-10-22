@@ -1,6 +1,6 @@
 # Only my pi 完整开发蓝图与当前迭代入口
 
-**2026-10-22 CLIENT-02A / #80：** 当前开发入口为两端共享产品工具/技能设置；独立分支完成 CLI、GUI、任务快照与真实 Pi 装配，C/P 逐段验收已通过，B、Linux 及独立双轴复核仍在收敛。具体状态以 [#80 验收记录](../compatibility/2026-10-22-shared-product-settings.md)为准，不能将局部 PASS 当作六条 AC 已完成。#78/#79 已 CLOSED / completed、PR #89 已合并；下方带日期的验收与失败保持原身份。
+**2026-10-22 CLIENT-02A / #80：** 当前开发入口为两端共享产品工具/技能设置；独立分支完成 CLI、GUI、任务快照与真实 Pi 装配，最终功能源码 `d8c719f` 的 C/P 13 项通过，既有 Linux CLI 143 项及最终保存边界 4 项通过，独立 Standards 问题已关闭、Spec 源码限定复核通过；B 因原 Ego 任务空间丢失、重建许可待答复而 BLOCKED，整票仍 PARTIAL。具体状态以 [#80 验收记录](../compatibility/2026-10-22-shared-product-settings.md)为准，不能将局部 PASS 当作六条 AC 已完成。#78/#79 已 CLOSED / completed、PR #89 已合并；下方带日期的验收与失败保持原身份。
 
 **2026-10-22 CLIENT-01C / #79 当前更新：** 独立 `omp mcp` 的设置、token 与原生 OAuth、真实 CLI/Pi 及 GUI 双向互操作已完成本地验收。冻结 `80062c5` 取得 C1–C10 PASS、CLI/Pi/OAuth 9 PASS、既有 Linux CLI 与元数据锁 144 PASS、WebUI 40 PASS、独立 Standards/源码 Spec PASS；同一源码归档的实际 Ego B 25 项检查 PASS，19 次正确模型请求，token/OAuth/stdio 各 2 次独立业务接收，8 条运行停止、两端退出及进程组均核对。五条 AC 的本地结果不冒充公开收口；公开 PR/CI、合并与工单状态以 #79 及关联 PR 的独立回读为准。历史 B、争锁 RED、原 C10 自然超时、主动取消与初始化取消 RED 均保留原身份。见 [CLI MCP 指南](../cli-mcp.md)及 [#79 验收记录](../compatibility/2026-10-21-cli-authenticated-mcp.md)。Node 24.19.0 / Pi 1.3.0 不变；#80–#83、材料阻断、日常安装与发行保持各自范围。
 
