@@ -153,7 +153,17 @@ export class RpcWorker extends EventEmitter {
       if (!this.child) return;
       if (this.controlled && this.child.connected && !this.closed) {
         this.shutdownId = randomUUID();
-        await waitBounded(new Promise((resolve) => this.child.send({ type: "prepare_shutdown", id: this.shutdownId }, () => resolve())), 500);
+        const child = this.child;
+        let prepared;
+        try {
+          // A send callback confirms queueing, not delivery. Order stdin EOF
+          // after the child's revocation acknowledgement on the other channel.
+          await waitBounded(new Promise((resolve) => {
+            prepared = (message) => { if (message?.type === "shutdown_prepared" && message.id === this.shutdownId) resolve(); };
+            child.on("message", prepared);
+            child.send({ type: "prepare_shutdown", id: this.shutdownId }, (error) => { if (error) resolve(); });
+          }), 500).catch(() => {});
+        } finally { child.off("message", prepared); }
       }
       // Failed MCP receipts retain ownership, but cannot suppress coding
       // revocation, stdin closure or identity-checked OS termination.
