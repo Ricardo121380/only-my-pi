@@ -54,8 +54,10 @@ runtime acceptance. Account setup and login now have the bounded #78 evidence ab
 MCP authentication is completed in #79. Shared tool/skill defaults, overrides and
 actual next-task loading have passed local #80 C/P and Ego Lite acceptance; see
 the [settings guide](shared-product-settings.md) and [source-bound receipt](compatibility/2026-10-22-shared-product-settings.md).
-The public issue remains OPEN pending authorized remote synchronization. #81 is
-the subsequent classification/image binding slice, subject to refreshed dependencies.
+The public issue remains OPEN while [PR #90](https://github.com/Ricardo121380/only-my-pi/pull/90)
+completes protected checks. Its first CI failure and test-only fixture corrections
+are preserved in the evidence record. #81 is the subsequent classification/image
+binding slice, after #80 closeout and refreshed dependencies.
 Product settings are shared defaults with project overrides; original Pi
 and external settings keep their ownership and require explicit import. Initial
 cross-client continuation is guaranteed only for verified matching runtime

@@ -1,5 +1,7 @@
 # CLIENT-02A / #80：共享产品设置验收记录
 
+**2026-10-23 公开工程收口进行中：** 已按本轮授权推送独立分支并创建 [PR #90](https://github.com/Ricardo121380/only-my-pi/pull/90)。首次必需 CI 在旧测试夹具的诊断资源装配和精确工具清单处失败；已保留 RED，并以仅测试提交 `e142b8bcce14605ef3ddc1e54c05d70d40c73da0` 修正，产品运行源码不变。当前 #80 仍 OPEN、未合并，保护条件未放宽。下方 2026-10-22 的本地验收、未同步及授权状态保留为当时快照；本次增量见文末。
+
 2026-10-22（Asia/Shanghai）。**#80 六条 AC 本地验收 PASS：C/P、实际 Ego Lite B 及受影响的既有 Linux CLI 回归均已完成。** 用户明确允许重建丢失的浏览器任务空间后，完成两端修改、回读、下一真实 Pi 任务加载，以及冲突、失败、冻结、旧队列与撤权的正负路径。GitHub #80 仍 OPEN，尚未推送或公开收口；本结论也不汇总整个 GCLIENT-02、安装、发行或真实外部 Provider。使用入口见[共享设置指南](../shared-product-settings.md)。
 
 ## 基线、源码与运行身份
@@ -97,10 +99,33 @@ B5 是**创建新任务之前的准入拒绝**，没有新建失败任务。原 
 
 本次三项脚本失败仍保留：`ego-resume-03.log` 误以为新增模型会自动选中，未发请求，随后在 GUI 明确选择；`ego-resume-09.log` 错等 dialog 而首次使用审批实际为内联卡片，未确认导致原有 `RPC_COMMAND_TIMEOUT` 且零新请求，随后读取实际控件并明确 Allow once；`ego-resume-14.log` 在最后操作已成功后引用过期快照 ref，成功结果由接收端和加载回执独立核对。没有增加超时、修改运行代码或盲目重投来得到 B PASS。这些失败不是成功脚本，也不改写为 PASS。
 
-## CI、同步与范围
+## CI、同步与范围（2026-10-22 本地验收冻结快照）
 
 开工 main run [39733201211](https://github.com/Ricardo121380/only-my-pi/actions/runs/39733201211) 后续结束为 **FAILURE**：Node 24.19.0 在 M8 D15 超时（1802030 ms），诊断包含 HTTP disconnect unknown 不重放；M11 Q10 skipped。原始失败日志保留为 `baseline-main-ci-failure.log`。它是 `e714c89` 的远程结果，既不是本票候选检查，也不因本地定向 PASS 改判。
 
 本地验证按配置/权限/生命周期/打包风险选择合同、实际进程及 Linux 回归，不额外触发远程 CI。候选 CI **NOT_RUN**：尚无推送、PR、合并或工单关闭授权。main 保护已刷新，strict=true，必需检查为 **Node 24.19.0**、**M11 Q10 macOS arm64 clean-home**；未来进入受保护合并必须完成实际必需检查，不放宽门禁。
 
 安装、日常切换、桌面、真实外部 Provider、付费调用和产品发行均 **NOT_RUN**。只有本轮代码、必要文档和测试增量进入本地提交；没有远程写入。本票无剩余本地 AC 缺口；待授权的远程同步、PR、必需检查、合并与工单关闭分别执行并回读后，才能公开收口。后续能力切片为 #81，开工前刷新真实前置；#50–#52/#56 的完整资源页面、#82/#83 仍各自验收，不因本票 PASS 汇总整个 GCLIENT-02。
+
+## 2026-10-23 公开工程收口增量
+
+首次推送的远端分支独立回读为 `fb8fefda92ecb9a29515050421901e0aad330a41`。PR #90 的检查实际 checkout 为 `077670e1b29f191c0f06ae6931a074ca86bcbed7`，树 `0dcbac6b2475b7a33f4e8f9bf2a9652df6dd3e31` 与该 tip 一致。七个原提交的全部历史新增内容、42 条路径及 63 个历史文件版本已作公开范围复核，没有夹带私有恢复分支、原始证据、凭据或个人绝对路径。既有功能 manifest、20 份证据摘要、两套 474 文件运行来源及 92 个前端产物的限定核验匹配；这不是重新执行全部 B。
+
+本轮 [CI 39803988904](https://github.com/Ricardo121380/only-my-pi/actions/runs/39803988904) 的首次 **FAILURE** 与历史 main D15 超时分别保留：本次第一个 release-gates-v1 的 `full-tests` 在 1731250 ms 后退出 1，**不是门禁超时**；后续 M8/M11 及 Q10 未放行。有界诊断只保留部分用例名、断言类型和 frame，不声称它枚举了全部失败。类型、lint、单元/合同/集成、e2e、pack 和 secret scan 等先行检查通过，不能抵消 full-tests 失败。
+
+先在 `fb8fefd` 最小复现三个用例，**0 PASS / 3 FAIL，退出 1**：direct print 的 `RESOURCE_LOAD_FAILED`、Host 首个请求轮询失败，以及 Pi 1.3 工具清单少了默认启用的 `context_snapshot`。两个正向夹具加载了 `omp-direct`，却未装配诊断扩展。另定位到 Full-stack RPC/TUI 的显式工具选择缺项，分别保留原 15 秒取消 RED 和 TUI `RESOURCE_LOAD_FAILED` RED。TUI 红探针在未出现就绪时被主动终止，不记为干净退出；其进程随后已核对不存在。修正只涉及五个测试／夹具，未改变产品代码、时限、请求计数、所有权、撤权或失败断言，也未将精确清单改成包含检查。
+
+| 本次定向检查（Node 24.19.0 / Pi 1.3.0） | 结果及源码边界 | 私有日志定位 |
+| --- | --- | --- |
+| HTTP MCP 与 descriptor-write 两文件，CI 并发 2 加 coverage | `fb8fefd`，**41 PASS / 0 FAIL / 0 CANCELLED，退出 0**，402403 ms；不能替代整个 D15，也不能抹掉历史 main 超时 | `80-d15-probe.log` |
+| `pi130-runtime`、`direct-session-admission`、`host-pi110-runtime` 三完整文件 | 五文件修正中的前三项，**42 PASS / 0 FAIL / 0 CANCELLED，退出 0**；其后只补另外两个夹具的工具选择，相关源码未变 | `80-ci-regression-red.log`、`80-ci-regression-green.log` |
+| Full-stack `direct-rpc-runtime` 完整文件 | 最终测试源码 `e142b8b`，**7 PASS，退出 0**；原 15 秒时限不变 | `80-full-stack-rpc-red.log`、`80-full-stack-rpc-green.log` |
+| 默认 RPC 与 Host 受控／账号 RPC 三文件 | `e142b8b`，**12 PASS / 0 FAIL / 2 原有 installed SKIP，退出 0**；没有把无设置快照的隔离 worker 改成完整产品路径 | `80-companion-rpc-regression.log` |
+| 真实 Full-stack TUI 启动与 `/quit` | `e142b8b` 的最终夹具，**PASS，退出 0 / signal 0**，通过标记存在、无加载失败、无残留进程；源码运行探针，不是安装晋升或发行 | `80-full-stack-tui-red.log`、`80-full-stack-tui-green.json` |
+| Linux 两个受影响 CLI 文件 | `e142b8b`，**32 PASS / 0 FAIL / 0 CANCELLED，退出 0**；1706 个源码文件在前后匹配字节／执行位／链接，Node 24.19.0 / Pi 1.3.0，`--network none` 并实际 `ENETUNREACH` | `80-ci-linux-regression.log`、`80-ci-linux-source-before.log`、`80-ci-linux-source-after.log` |
+
+Linux 使用既有专项 Colima profile 与缓存的 `node:24.19.0-bookworm` 镜像，镜像身份仍为 `sha256:4196d66a565c6f195728d9952f161f4adfe2ad753052a08b7ec7f1c5a6bda42b`。依赖和 test:prepare 均离线完成；容器和本轮启动的专项 VM 已停止，Docker 默认 context 前后均为 `default`。没有改动全局工具配置或切换日常安装。
+
+本次五文件测试修正及四份文档增量分别取得独立 **Standards PASS** 和 **Spec PASS**，无待修问题；范围限于该增量，不将其表述为重审原七个提交或重跑原始 B。主代理另核对受影响私有日志与结果。文档链接／包治理检查、lint、secret scan 及 `git diff --check` 通过。
+
+以上均为分范围验证，不拼为同一源码 Full。最终功能仍为 `d8c719f`，原补充测试身份 `0435290` 与文档 tip `fb8fefd` 保留；新测试提交为 `e142b8b`。#80 原六条本地 AC 的未变运行源码证据按范围复用。原独立 Standards／Spec 复核范围和主代理实际 B 验收的区别保持。受保护合并仍须当前候选实际取得 **Node 24.19.0**、**M11 Q10 macOS arm64 clean-home** 成功并再次核对 strict 规则；本记录不提前关闭工单或启动 #81 实施。
