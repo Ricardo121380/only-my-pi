@@ -94,7 +94,8 @@ for (const mode of ["probe", "direct", "json", "text", "relative", "id", "contin
   const args = mode === "probe" ? [entry, f.file, "fixture/fixture", "respond ok"] : [entry,
     fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")),
     "--offline", "--no-extensions", "--extension", flags, "--extension", fileURLToPath(new URL("../extensions/omp-direct/index.ts", import.meta.url)),
-    "--tools", "read,grep,find,ls", "--perm", "plan", ...(mode === "json" ? ["--mode", "json"] : mode === "text" ? ["--print", "--mode", "text"] : ["--print"]), ...selection, "--model", "fixture/fixture", "respond ok"];
+    "--extension", fileURLToPath(new URL("../extensions/context-doctor/index.ts", import.meta.url)),
+    "--tools", "read,grep,find,ls,context_snapshot", "--perm", "plan", ...(mode === "json" ? ["--mode", "json"] : mode === "text" ? ["--print", "--mode", "text"] : ["--print"]), ...selection, "--model", "fixture/fixture", "respond ok"];
   const launched = promisify(execFile)(process.execPath, args, {
     cwd: f.root, env: { PATH: process.env.PATH, HOME: f.root, PI_CODING_AGENT_DIR: f.config, PI_SKIP_VERSION_CHECK: "1", ONLY_MY_PI_DIRECT: "1", ONLY_MY_PI_HEADLESS: "1", ONLY_MY_PI_MODEL_EXPLICIT: "1" }, timeout: 15000,
   });
