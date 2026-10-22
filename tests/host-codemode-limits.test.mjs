@@ -48,12 +48,15 @@ test("the 17th parent script cannot renew the task execution budget", { timeout:
 
 test("actual CLI TUI uses the same native codemode and two independent approvals", { timeout: 45000 }, async (t) => {
   const code = 'text(await tools.read({path:"README.md"})); text(await tools.mcp__local__read_file({path:"README.md"}));';
-  const f = await createMcpHost({ installedExtensions: true, respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
+  const f = await createMcpHost({ installedExtensions: true, verifyNode: true, respond: ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "codemode", { code }) });
   await f.mcp({ type: "save", revision: 0, server: { ...f.server, enabled: true } });
   let output = "", exited;
   const term = pty.spawn(process.execPath, [f.cli, "--model", "fixture/one", "--no-session", "--tui-mode", "regular"], { cwd: f.project, env: f.env, cols: 120, rows: 36 });
   term.onData((data) => { output += data; }); term.onExit((event) => { exited = event; });
-  t.after(async () => { if (!exited) { term.kill("SIGTERM"); await until(() => exited, Boolean, "owned CLI exit"); } await f.close(); });
+  t.after(async () => {
+    try { if (!exited) { term.kill("SIGTERM"); await until(() => exited, Boolean, "owned CLI exit"); } }
+    finally { await f.close(); }
+  });
   await until(() => output, (value) => value.includes("Inspect") || exited, "TUI ready", 30000);
   assert.equal(exited, undefined, output); term.write("codemode CLI probe\r");
   await until(() => output, (value) => value.slice(value.indexOf("Codemode · read")).includes("本任务") || exited, "ordinary child UI options", 15000);

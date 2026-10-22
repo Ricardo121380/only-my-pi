@@ -31,7 +31,7 @@ export async function slowPiInitialization(sdk, delayMs = 8000) {
 export async function mcpReception(run) {
   return (await Promise.all(run.processes.map(async (process) => (await fs.readFile(path.join(process.runtimeDir, "received.jsonl"), "utf8")).trim().split("\n").filter(Boolean).map(JSON.parse)))).flat();
 }
-export async function createMcpHost({ respond = ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "mcp__local__read_file", { path: "README.md" }), assetsRoot, installedExtensions = false, root: suppliedRoot } = {}) {
+export async function createMcpHost({ respond = ({ body, res }) => providerReply(res, body.messages.some((message) => message.role === "tool") ? null : "mcp__local__read_file", { path: "README.md" }), assetsRoot, installedExtensions = false, verifyNode = false, root: suppliedRoot } = {}) {
   const root = suppliedRoot ?? await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-mcp-host-")));
   const requests = [], sockets = new Set();
   const provider = http.createServer(async (req, res) => { let text = ""; for await (const bytes of req) text += bytes; const request = { body: JSON.parse(text), res }; requests.push(request); await respond(request, requests); });
@@ -41,7 +41,7 @@ export async function createMcpHost({ respond = ({ body, res }) => providerReply
   const closeProvider = async () => { for (const socket of sockets) socket.destroy(); await new Promise((resolve) => provider.close(resolve)); };
   try {
     const providerOrigin = `http://127.0.0.1:${provider.address().port}`;
-    const f = await createPi110SourceCli(root, { baseUrl: `${providerOrigin}/v1`, installedExtensions });
+    const f = await createPi110SourceCli(root, { baseUrl: `${providerOrigin}/v1`, installedExtensions, verifyNode });
     if (!assetsRoot) { assetsRoot = path.join(root, "assets"); await fs.mkdir(assetsRoot); await fs.writeFile(path.join(assetsRoot, "index.html"), "<!doctype html><title>MCP fixture</title>"); }
     const stack = { root: f.stack, ompPackageRoot: f.omp, nodePath: path.join(f.stack, "node/bin/node"), piCliPath: path.join(f.stack, "pi/dist/bundle/cli.js"), stackId: `sha256:${"a".repeat(64)}` };
     const open = async () => { host = await startHost({ configRoot: f.config, stack, assetsRoot, allowControlled: true, env: { ...f.env, AMBIENT_SECRET: "must-not-reach-mcp" } }); return host; };

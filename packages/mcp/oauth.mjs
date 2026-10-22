@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { loadNativeMcp } from "./native.mjs";
 import { httpTarget, mcpError, MCP_LIMITS } from "./catalog.mjs";
 import { isMcpOAuthActive as active } from "./contracts.mjs";
+import { processIdentity } from "../host/ownership.mjs";
 
 const endpoint = (input, authorization = false) => {
   const url = new URL(String(input));
@@ -17,10 +18,8 @@ const callbackPage = ({ ok }) => `<!doctype html><html lang="zh-CN"><meta charse
 // Native Pi owns OAuth discovery, PKCE, parsing and the callback listener. OMP
 // owns explicit intent, bounded physical requests, exact binding and publication.
 export class McpOAuth {
-  constructor({ catalog, sdkFile, timeoutMs = 120000 }) { Object.assign(this, { catalog, sdkFile, timeoutMs }); this.flows = new Map(); }
-  async initialize() {
-    for (const flow of Object.values(await this.catalog.oauthFlows())) if (active(flow.status)) await this.catalog.saveOAuthFlow({ ...flow, status: "interrupted", code: "MCP_OAUTH_INTERRUPTED", updatedAt: new Date().toISOString() });
-  }
+  constructor({ catalog, sdkFile, timeoutMs = 120000 }) { Object.assign(this, { catalog, sdkFile, timeoutMs }); this.flows = new Map(); this.admissions = new Set(); }
+  async initialize() { await this.catalog.recoverOAuthFlows(); }
   public(flow) { return structuredClone(flow.visible ?? flow.data); }
   async snapshot(projectPath) {
     const snapshot = await this.catalog.snapshot(projectPath);
@@ -72,9 +71,15 @@ export class McpOAuth {
     if ([...this.flows.values()].some((flow) => active(flow.data.status) && flow.data.projectPath === projectPath && flow.data.name === name)) throw mcpError("MCP_OAUTH_BUSY", 409);
     if ([...this.flows.values()].filter((flow) => active(flow.data.status)).length >= 8) throw mcpError("MCP_OAUTH_LIMIT", 429);
     let readyResolve; const ready = new Promise((resolve) => { readyResolve = resolve; });
+    const ownerIdentity = await processIdentity();
+    if (!ownerIdentity) throw mcpError("MCP_OAUTH_OWNER_UNAVAILABLE", 409);
+    if (this.closing) throw mcpError("MCP_OAUTH_STOPPING", 503);
     const flow = { binding, abort: new AbortController(), ready: readyResolve,
-      data: { flowId, name, projectPath, targetDigest: binding.targetDigest, ref: binding.ref, kind, status: "starting", events: [], updatedAt: new Date().toISOString() } };
+      data: { flowId, name, projectPath, targetDigest: binding.targetDigest, ref: binding.ref, kind, ownerPid: process.pid, ownerIdentity, status: "starting", events: [], updatedAt: new Date().toISOString() } };
+    const admission = this.catalog.claimOAuthFlow(structuredClone(flow.data)); this.admissions.add(admission);
+    try { await admission; } finally { this.admissions.delete(admission); }
     this.flows.set(flowId, flow);
+    if (this.closing) flow.abort.abort();
     for (const [id, old] of this.flows) if (this.flows.size > 32 && !active(old.data.status)) this.flows.delete(id);
     flow.done = this.run(flow); flow.done.catch(() => {});
     await ready; return this.public(flow);
@@ -85,7 +90,9 @@ export class McpOAuth {
     let publication;
     try {
       await this.save(flow, "starting");
+      flow.abort.signal.throwIfAborted();
       const native = await loadNativeMcp(this.sdkFile, "./oauth"), binding = flow.binding;
+      flow.abort.signal.throwIfAborted();
       let privateState;
       if (flow.data.kind === "refresh") {
         const snapshot = await this.catalog.snapshot(binding.projectPath), server = snapshot.servers.find((entry) => entry.name === binding.name);
@@ -136,6 +143,9 @@ export class McpOAuth {
   own(flowId, projectPath) {
     const flow = this.flows.get(flowId); if (!flow || flow.data.projectPath !== projectPath) throw mcpError("MCP_OAUTH_FLOW_EXPIRED", 404); return flow;
   }
+  async wait(flowId, projectPath) {
+    const flow = this.own(flowId, projectPath); await flow.done; return this.public(flow);
+  }
   async open(flowId) {
     const flow = this.flows.get(flowId);
     if (!flow || flow.data.status !== "waiting" || flow.opened || !flow.authorizationUrl) throw mcpError("MCP_OAUTH_FLOW_EXPIRED", 409);
@@ -149,6 +159,13 @@ export class McpOAuth {
     const keys = Object.keys(input).filter((key) => key !== "projectId").sort().join();
     if (["oauthStart", "oauthRefresh"].includes(input.type) && keys === "name,revision,type") return this.start(input.name, projectPath, input.revision, input.type === "oauthRefresh" ? "refresh" : "login");
     if (keys !== "flowId,type" || !["oauthCancel", "oauthStatus"].includes(input.type)) throw mcpError("MCP_COMMAND_INVALID");
+    if (!this.flows.has(input.flowId)) {
+      const saved = Object.values(await this.catalog.oauthFlows()).find(flow => flow.flowId === input.flowId && flow.projectPath === projectPath);
+      if (saved && active(saved.status)) {
+        if (input.type === "oauthCancel") throw mcpError("MCP_OAUTH_OTHER_CLIENT_OWNS_FLOW", 409);
+        return structuredClone(saved);
+      }
+    }
     const flow = this.own(input.flowId, projectPath);
     if (input.type === "oauthCancel" && active(flow.data.status)) { await this.save(flow, "cancelling"); flow.abort.abort(); await this.closeCallback(flow); await flow.done; }
     else if (input.type === "oauthCancel") await flow.done;
@@ -156,6 +173,12 @@ export class McpOAuth {
   }
   async stop() {
     this.closing = true;
+    // Stop this process's physical work immediately, including initialization
+    // before start() can return a flow. Pending admissions observe closing too.
+    for (const flow of this.flows.values()) if (active(flow.data.status)) {
+      flow.abort.abort(); void this.closeCallback(flow).catch(() => {});
+    }
+    await Promise.allSettled([...this.admissions]);
     await Promise.all([...this.flows.values()].filter((flow) => active(flow.data.status)).map((flow) => this.action({ type: "oauthCancel", flowId: flow.data.flowId }, flow.data.projectPath)));
     await Promise.allSettled([...this.flows.values()].map((flow) => flow.done));
   }

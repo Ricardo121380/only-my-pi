@@ -1,7 +1,9 @@
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { atomicWriteJson, readJsonObject, withConfigLock } from "../config-runtime/index.mjs";
-import { isMcpOAuthBlocked } from "./contracts.mjs";
+import { isMcpOAuthActive, isMcpOAuthBlocked } from "./contracts.mjs";
+import { processIdentity } from "../host/ownership.mjs";
+import { withMcpMetadataLock } from "./metadata-lock.mjs";
 
 export const MCP_PROTOCOL = 1;
 export const MCP_LIMITS = Object.freeze({ inputBytes: 16384, outputBytes: 65536, serverFileBytes: 65536, storageBytes: 8388608, calls: 32, timeoutMs: 10000, tools: 32, resources: 32, discoveries: 32, discoveryStreamMs: 60000, concurrency: 1 });
@@ -204,11 +206,41 @@ export class McpCatalog {
   async oauthFlows() {
     return (await readJsonObject(this.configRoot, path.join(this.configRoot, "only-my-pi/mcp/oauth-status.json"), { allowMissing: true }))?.flows ?? {};
   }
-  async saveOAuthFlow(flow) {
-    await withConfigLock(this.configRoot, { lockDirectory: path.join(this.configRoot, "only-my-pi/locks/mcp-oauth-status.lock") }, async () => {
-      const flows = await this.oauthFlows(); flows[this.key(flow.projectPath, flow.name)] = flow;
-      const entries = Object.entries(flows).sort((a, b) => b[1].updatedAt.localeCompare(a[1].updatedAt)).slice(0, 32);
+  async updateOAuthFlows(update) {
+    return withMcpMetadataLock(this.configRoot, { lockDirectory: path.join(this.configRoot, "only-my-pi/locks/mcp-oauth-status.lock"), staleAfterMs: 1 }, async () => {
+      const flows = await this.oauthFlows(); await update(flows);
+      // Active admissions, including unknown legacy owners, cannot be
+      // discarded to make room for newer terminal status records.
+      const entries = Object.entries(flows).sort((a, b) => Number(isMcpOAuthActive(b[1].status)) - Number(isMcpOAuthActive(a[1].status))
+        || b[1].updatedAt.localeCompare(a[1].updatedAt)).slice(0, 32);
       await atomicWriteJson(this.configRoot, path.join(this.configRoot, "only-my-pi/mcp/oauth-status.json"), { version: 1, flows: Object.fromEntries(entries) });
+    });
+  }
+  async recoverOAuthOwners(flows) {
+    for (const flow of Object.values(flows)) {
+      if (!isMcpOAuthActive(flow.status) || !Number.isSafeInteger(flow.ownerPid) || flow.ownerPid < 1 || typeof flow.ownerIdentity !== "string") continue;
+      if (await processIdentity(flow.ownerPid) === flow.ownerIdentity) continue;
+      // This listener and its native OAuth requests live in the owner process;
+      // recovery cannot terminate, replace or cancel another live owner.
+      flow.status = "interrupted"; flow.code = "MCP_OAUTH_INTERRUPTED"; flow.updatedAt = new Date().toISOString();
+      flow.events = [...flow.events, { status: flow.status, at: flow.updatedAt }].slice(-16);
+    }
+  }
+  async recoverOAuthFlows() { await this.updateOAuthFlows(flows => this.recoverOAuthOwners(flows)); }
+  async claimOAuthFlow(flow) {
+    await this.updateOAuthFlows(async flows => {
+      await this.recoverOAuthOwners(flows);
+      const key = this.key(flow.projectPath, flow.name);
+      if (isMcpOAuthActive(flows[key]?.status)) throw mcpError("MCP_OAUTH_BUSY", 409);
+      if (Object.values(flows).filter(value => isMcpOAuthActive(value.status)).length >= 8) throw mcpError("MCP_OAUTH_LIMIT", 429);
+      flows[key] = flow;
+    });
+  }
+  async saveOAuthFlow(flow) {
+    await this.updateOAuthFlows(flows => {
+      const key = this.key(flow.projectPath, flow.name);
+      if (flows[key]?.flowId !== flow.flowId) throw mcpError("MCP_OAUTH_FLOW_EXPIRED", 409);
+      flows[key] = flow;
     });
   }
   async boundCredential(server, projectPath, state, ref = server.credentialRefs.MCP_TOKEN) {

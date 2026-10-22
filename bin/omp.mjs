@@ -598,9 +598,13 @@ export async function runOmpEntrypoint(options = {}) {
       }
       if (route.argv[0] === "mcp") {
         const { runMcpCli } = await import("../packages/mcp/commands.mjs");
-        const { resolveDirectConfigRoot } = await import("../packages/direct-agent/launcher.mjs");
-        const result = await runMcpCli({ argv: route.argv.slice(1), configRoot: resolveDirectConfigRoot({ env: options.env ?? process.env, homeDir: options.homedir ? options.homedir() : os.homedir() }) });
-        writeText(stdout, stringifyOmpJson(result)); return OMP_EXIT_CODES.SUCCESS;
+        const { resolveDirectConfigRoot, resolveControlledStack } = await import("../packages/direct-agent/launcher.mjs");
+        const homeDir = options.homedir ? options.homedir() : os.homedir();
+        const result = await runMcpCli({ argv: route.argv.slice(1), stdin: options.stdin ?? process.stdin, stderr,
+          resolveStack: () => resolveControlledStack({ packageRoot: options.rootDir ?? DEFAULT_ROOT, homeDir, stackRoot: options.stackRoot }),
+          configRoot: resolveDirectConfigRoot({ env: options.env ?? process.env, homeDir }) });
+        writeText(stdout, stringifyOmpJson(result));
+        return ["failed", "cancelled", "timed_out", "interrupted", "stored_sync_failed", "publication_unconfirmed"].includes(result.status) ? OMP_EXIT_CODES.FAILURE : OMP_EXIT_CODES.SUCCESS;
       }
       const runtime = await loadDistribution({ packageRoot: options.rootDir ?? DEFAULT_ROOT });
       if (runtime) {
