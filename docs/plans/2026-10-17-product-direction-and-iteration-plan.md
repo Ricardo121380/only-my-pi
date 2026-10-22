@@ -1,6 +1,6 @@
 # Only my pi 完整开发蓝图与当前迭代入口
 
-**2026-10-23 CLIENT-02A / #80 公开收口更新：** [PR #90](https://github.com/Ricardo121380/only-my-pi/pull/90) 已创建，首次必需 CI 的 full-tests 失败已保留。最小复现确认旧夹具缺少默认诊断扩展／工具和精确清单陈旧；仅测试提交 `e142b8b` 修正五个夹具，功能源码仍是 `d8c719f`。相关三文件 42 PASS、Full-stack RPC 7 PASS、真实 Full-stack TUI 干净退出、既有 Linux CLI 两文件 32 PASS；分范围复用原六条本地 AC，不拼成 Full。必需保护检查尚未通过，#80 OPEN／未合并，#81 实施等待本票正常合并收口。详见下方同一验收记录；后续带日期的冻结结果保留原含义。
+**2026-10-23 CLIENT-02A / #80 公开收口更新：** [PR #90](https://github.com/Ricardo121380/only-my-pi/pull/90) 已创建，两次必需 CI 的 full-tests 失败保留。仅测试提交 `e142b8b` 修正五个旧夹具；其后 `3b4f2ea` 的本地未修改 Full 复现原 20 秒取消，根因仍 UNKNOWN，带 overlay 的诊断通过不计作修复。独立 RED 确认 Host→Pi 的准备 IPC／stdin EOF 排序竞态，运行修复 `289fbac` 保留原 500ms 准备预算、最终 clean 和进程组退出证明；受影响 Host 28 PASS、MCP 6 PASS、账号 4 PASS／2 原有 SKIP、既有 Linux CLI 和 extension 36 PASS，独立 Standards／Spec scoped PASS。原功能 `d8c719f`、补充测试 `0435290`、原文档 tip `fb8fefd` 及原六条 AC 证据保持原身份，分范围复用，不拼为 Full。当前候选实际 B 和必需保护检查单列于验收记录，#80 OPEN／未合并，#81 实施等待本票正常合并收口。后续带日期的冻结结果保留原含义。
 
 **2026-10-22 CLIENT-02A / #80：** 两端共享产品工具/技能设置的六条 AC 已本地验收 PASS：功能源码 `d8c719f`、补充测试提交 `0435290` 的 C/P 14 项，实际 Ego Lite B 八组/22 次回环模型请求，既有 Linux CLI 143 项及最终保存边界 4 项通过。独立 Standards 问题已关闭，Spec 源码限定复核 PASS；独立 B 证据复核范围及主代理完整操作/核对分别列明。原 Ego 空间丢失的历史 PARTIAL 保留；取得用户重建许可后完成新空间验收和退出。具体证据见 [#80 验收记录](../compatibility/2026-10-22-shared-product-settings.md)。#80 公开仍 OPEN，待授权远程同步，未提前汇总整个 GCLIENT-02；后续 #81 开工前刷新真实前置。#78/#79 已 CLOSED / completed、PR #89 已合并；下方带日期的验收与失败保持原身份。
 

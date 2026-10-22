@@ -1,6 +1,6 @@
 # CLIENT-02A / #80：共享产品设置验收记录
 
-**2026-10-23 公开工程收口进行中：** 已按本轮授权推送独立分支并创建 [PR #90](https://github.com/Ricardo121380/only-my-pi/pull/90)。首次必需 CI 在旧测试夹具的诊断资源装配和精确工具清单处失败；已保留 RED，并以仅测试提交 `e142b8bcce14605ef3ddc1e54c05d70d40c73da0` 修正，产品运行源码不变。当前 #80 仍 OPEN、未合并，保护条件未放宽。下方 2026-10-22 的本地验收、未同步及授权状态保留为当时快照；本次增量见文末。
+**2026-10-23 公开工程收口进行中：** [PR #90](https://github.com/Ricardo121380/only-my-pi/pull/90) 的两次必需 CI 失败均保留。首次旧夹具装配和精确工具清单修正为仅测试提交 `e142b8b`；第二次 Host 撤权用例 20 秒超时的根因仍 **UNKNOWN**。随后独立复现 Host→Pi 关闭准备 IPC 与 stdin EOF 的排序竞态，最小运行修复为 `289fbac5414c69be7bb813d2ed486c16b5460417`，没有增加原 500ms 准备预算或替代最终 clean/进程组退出证明。原功能源码 `d8c719f`、原补充测试 `0435290`、原文档 tip `fb8fefd` 的身份保留；新候选的实际 B、CI 和合并结果单列于文末，不回填为原候选 Full。#80 仍 OPEN、未合并，保护条件未放宽。下方带日期的本地验收及授权状态保留为当时快照。
 
 2026-10-22（Asia/Shanghai）。**#80 六条 AC 本地验收 PASS：C/P、实际 Ego Lite B 及受影响的既有 Linux CLI 回归均已完成。** 用户明确允许重建丢失的浏览器任务空间后，完成两端修改、回读、下一真实 Pi 任务加载，以及冲突、失败、冻结、旧队列与撤权的正负路径。GitHub #80 仍 OPEN，尚未推送或公开收口；本结论也不汇总整个 GCLIENT-02、安装、发行或真实外部 Provider。使用入口见[共享设置指南](../shared-product-settings.md)。
 
@@ -128,4 +128,31 @@ Linux 使用既有专项 Colima profile 与缓存的 `node:24.19.0-bookworm` 镜
 
 本次五文件测试修正及四份文档增量分别取得独立 **Standards PASS** 和 **Spec PASS**，无待修问题；范围限于该增量，不将其表述为重审原七个提交或重跑原始 B。主代理另核对受影响私有日志与结果。文档链接／包治理检查、lint、secret scan 及 `git diff --check` 通过。
 
-以上均为分范围验证，不拼为同一源码 Full。最终功能仍为 `d8c719f`，原补充测试身份 `0435290` 与文档 tip `fb8fefd` 保留；新测试提交为 `e142b8b`。#80 原六条本地 AC 的未变运行源码证据按范围复用。原独立 Standards／Spec 复核范围和主代理实际 B 验收的区别保持。受保护合并仍须当前候选实际取得 **Node 24.19.0**、**M11 Q10 macOS arm64 clean-home** 成功并再次核对 strict 规则；本记录不提前关闭工单或启动 #81 实施。
+以上为第一轮测试修正的分范围验证，不拼为同一源码 Full。原功能 `d8c719f`、原补充测试 `0435290` 与文档 tip `fb8fefd` 保留原身份，新测试提交为 `e142b8b`。后续运行修复及其证据如下；原独立 Standards／Spec 复核范围和主代理实际 B 验收的区别保持。
+
+### 第二次 CI RED、诊断边界与关闭顺序修复
+
+[CI 39814144459](https://github.com/Ricardo121380/only-my-pi/actions/runs/39814144459) 在文档 tip `3b4f2eaec1d7ad19db051cfe3b5edddf064917d2` 的合并检查源码 `301acfde8cb65d82ebd4c7615d33cfb3a47913d4` 上 **FAILURE**；两者树均为 `0e9a880e64f4fbbdd38e7813d4c3d9d7044f7f57`。`full-tests` 在 1390628ms 退出 1，有界诊断包含 `public Host coding revoke is scoped to one project and worker lifetime`、`20000ms`，Q10 skipped。CI 未保留子进程原始输出，不推断它枚举全部失败。[并行的额外检查 39814144460](https://github.com/Ricardo121380/only-my-pi/actions/runs/39814144460) 八个任务成功，包含平台构建和隔离 Homebrew／CLI 检查；这不替代必需检查，也未发行或切换日常安装。
+
+在未改动的 `3b4f2ea` 上，以相同 Node 24.19.0、npm 11.17.0、默认 discovery 及并发 2 的 `npm test` 保留本地 RED：**1794 tests、1785 PASS、0 FAIL、1 CANCELLED、8 SKIP，退出 1**，1255830ms。取消为同一用例自己的 20 秒超时，运行器总超时和输出上限均未触发。当前 full-tests 没有 coverage；此前 HTTP 定向 coverage 探针不代表这里的执行组合。原 main D15 超时、第一次夹具失败及本次 20 秒取消分别保留。
+
+阶段观测和外部被动观测各取得 **1786 PASS / 8 SKIP**，但都带明确诊断 overlay／`--import`，是基线诊断，不能作为未修改官方门禁或修复后 Full。20 次有界定向采样没有再现 RED，结论为 **NO_RED_WITHIN_BOUND_INCONCLUSIVE**。被动观测首次脚本语法错误发生在测试执行前，未计为产品失败或成功。以上原件保留，原 20 秒超时根因仍 UNKNOWN；不以这些通过结果声称已修复。
+
+独立的可重复 RED 通过已复制的真实 Pi 1.3.0 SDK，将实际 `prepare_shutdown` IPC message 的交付延后 50ms。没有伪造准备 ACK、最终 clean 回执或模型结果：旧源码确实出现 `prepare_queued → stdin_eof`，公开终态 `failed / RPC_TERMINATION_UNCONFIRMED`，独立模型接收数 1，**0 PASS / 1 FAIL**。这是两条进程通道的关闭排序缺陷；它与前述 20 秒取消的关系为 **NOT_PROVEN**。
+
+`289fbac` 只修改父端关闭等待、子端准备 ACK 和两份相关测试。子端同步撤权之后发送同 nonce 的 `shutdown_prepared`；父端在原有 500ms 内等实际准备 ACK，再关闭 stdin。准备 ACK 不等于最终 clean；执行探针、MCP 终止、进程身份／进程组退出和 ownership 保留条件继续生效。丢失、错误 nonce 或超过准备预算仍进入既有有界清理，不能凭准备 ACK 释放所有权。
+
+| `289fbac` 受影响检查，Node 24.19.0 / Pi 1.3.0 | 结果 | 私有回执定位 |
+| --- | --- | --- |
+| 独立排序竞态及 Host extension／worker／Pi runtime 四文件 | **28 PASS，退出 0**；真实顺序为 `prepare_queued → prepare_delivered → stdin_eof`，公开 succeeded、恰好 1 请求，worker、session/project lease、账号保留均为 0；原 20 秒撤权、慢初始化和丢失最终 clean 负例保留 | `80-controlled-shutdown-order-red.log`、`80-controlled-shutdown-order-red-receipt.json`、`80-controlled-shutdown-order-green.log` |
+| 受影响的实际 MCP 写入、撤权、取消和丢失 stop 回执 | **6 PASS，退出 0**；未改变未知、单写和 ownership 保留断言 | `80-shutdown-fix-mcp-controlled.log` |
+| 账号 controlled RPC | **4 PASS / 2 原有 installed SKIP，退出 0** | `80-shutdown-fix-account-controlled.log` |
+| 类型、lint、secret scan、diff | **PASS，退出 0**；文档链接／包治理 13 PASS、pack 检查通过 | `80-shutdown-fix-checks.json`、`80-shutdown-closeout-checks.json` |
+| Linux 两个既有 CLI 文件及 controlled extension 单测 | **36 PASS / 0 FAIL / 0 CANCELLED / 0 SKIP，退出 0**；1707 个跟踪文件在容器测试前后匹配，`--network none` 实际拒绝，Node／Pi 精确身份一致 | `80-shutdown-linux-regression.log`、`80-shutdown-linux-source-before.log`、`80-shutdown-linux-source-after.log` |
+| 实际 Ego Lite GUI → 真实 Pi、本地接收与停机后正式 CLI 回读 | **补充 B PASS**；GUI 保存 `shutdown-289`，真实工具返回同标签，界面回读实际加载版本 1；正常任务 succeeded，另一已接收请求由 GUI 取消后 durable cancelled；四类保留均为 0，晚到释放后仍恰好 3 次独立接收；Host 停止后正式 CLI 读回同设置 | `80-ego-shutdown-receipt.json`、`browser-shutdown-v3-behavior.json`、`80-ego-cli-after-host-stop.json`、两张 `80-ego-*-289.png` |
+
+Linux 继续复用上述专项 profile、镜像和离线缓存，新容器及本轮启动的 VM 均已停止，默认 Docker context 不变。运行修复的四文件取得独立 **Standards scoped PASS** 与 **Spec scoped PASS**，未发现新增源码问题。审查覆盖关闭协议、同 nonce、同步撤权、最终 clean／进程组及保留条件，不覆盖整个 #80 或当前候选 B／CI。准备 ACK 丢失、超时和错 nonce 尚未逐例故障注入；源码路径已审查，既有丢失最终 clean 的负例继续通过。
+
+补充 B 使用本次同一 Ego TaskSpace `5`，保留给后续 #81，尚未 finish。最终环境的 474 份运行文件在运行前、停机后核对字节和执行位，使用真实锁定扩展和精确 Pi 1.3.0；复用未变 WebUI 源码的 92 份既有构建产物。两张截图由主代理查看。此前另一独立环境的两个正常任务／4 次接收另存；其私有服务把结构化输入转为对象字符串，未实现预期挂起，**不计作取消验收**。首套零任务环境的一次性配对和 stdin 控制问题、各次定位器／等待脚本失败都保留，未计作产品成功；同一 Ego 空间继续使用，未另换浏览器。最终正常与取消任务、独立接收、持久终态、停机后正式 CLI 以及退出共同支持上述补充 B，不以 DOM／API 单独替代。
+
+原始绿色日志本身未内嵌提交号。`80-shutdown-fix-receipt.json` 明确区分主代理对“先测试精确补丁、后提交且期间代码未改”的绑定记录与独立重跑；四份 Git blob、日志摘要及 Linux 在执行前冻结的 manifest 一并保留。新源码完整门禁、受保护合并和工单关闭仍须分别取得当前候选证据，不能拼接为 Full；#81 实施继续等待 #80 完成。
