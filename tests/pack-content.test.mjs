@@ -31,7 +31,7 @@ test("pack allowlist rejects receipts, fixtures, tests, traversal, and unlisted 
 });
 
 test("pack allowlist accepts only the exact bundled runtime dependency roots", () => {
-  const result = validatePackEntries([...manifest.required, "node_modules/ajv/dist/ajv.js", "node_modules/yaml/dist/index.js", "node_modules/minipass/dist/commonjs/index.js", "node_modules/node-pty/prebuilds/darwin-arm64/pty.node", "node_modules/node-addon-api/napi.h"], manifest);
+  const result = validatePackEntries([...manifest.required, "node_modules/ajv/dist/ajv.js", "node_modules/yaml/util.js", "node_modules/minipass/dist/commonjs/index.js", "node_modules/node-pty/prebuilds/darwin-arm64/pty.node", "node_modules/node-addon-api/napi.h"], manifest);
   assert.equal(result.ok, true, JSON.stringify(result.errors));
 });
 
