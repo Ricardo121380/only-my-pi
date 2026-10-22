@@ -9,9 +9,14 @@ import { DirectSessionOwnership } from "../packages/direct-agent/ownership.mjs";
 import { createHash } from "node:crypto";
 import { createMcpHost, providerReply } from "./fixtures/mcp-host.mjs";
 import { codingRequest } from "./fixtures/mcp-write-host.mjs";
-import { createWriteHost, codingApproved, approveWrite, releaseWrite, terminal } from "./fixtures/mcp-write-host.mjs";
+import { createWriteHost as createIsolatedWriteHost, codingApproved, approveWrite, releaseWrite, terminal } from "./fixtures/mcp-write-host.mjs";
+import { createSourceFixtureRoot } from "./fixtures/source-fixture-root.mjs";
 import { until, untilPiInitialized, slowPiInitialization, mcpReception } from "./fixtures/mcp-host.mjs";
 import { byteEvidence, errorEvidence, fileEvidence, observation, mcpDenialEvidence, processEvidence, saveRegressionEvidence } from "./fixtures/regression-evidence.mjs";
+// Normal Host teardown confirms worker/MCP exit before removing this pathname.
+// Recreate all data and sources; retain Pi's source-checked compilation cache.
+// Independent TUI and intentional orphan journeys keep unique installations.
+const createWriteHost = async (options) => createIsolatedWriteHost({ ...options, root: await createSourceFixtureRoot("omp-mcp-write-host-") });
 const dispatched = async (f) => {
   const run = (await f.mcp({ type: "status" })).runs.at(-1);
   if (run.processes.some((entry) => !entry.runtimeDir)) return [];
@@ -236,7 +241,7 @@ for (const cancelDuringRelease of [false, true]) test(`real terminal and Agent/M
 });
 
 async function tuiDescriptorWrite(t, { slowSelector = false } = {}) {
-  const f = await createWriteHost();
+  const f = await createIsolatedWriteHost();
   const original = byteEvidence(await fs.readFile(path.join(f.project, "README.md")));
   const selectorTrace = path.join(f.root, "selector-events.jsonl");
   if (slowSelector) {
@@ -359,7 +364,7 @@ test("MCP approval cannot repair a lost real Host project owner token", { timeou
 });
 
 test("crashed coding owner keeps real MCP residual effects UNKNOWN and project ownership blocked", { timeout: 30000 }, async (t) => {
-  const f = await createWriteHost({ mode: "orphan" });
+  const f = await createIsolatedWriteHost({ mode: "orphan" });
   const { groupAlive, processIdentity } = await import("../packages/host/ownership.mjs");
   let run;
   t.after(async () => {

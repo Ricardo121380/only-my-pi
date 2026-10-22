@@ -170,3 +170,13 @@ Linux 继续复用上述专项 profile、镜像和离线缓存，新容器及本
 该五文件增量的独立 Standards scoped PASS；Spec 首轮指出 `approval-visible` 可能在实际没有审批时提前输出，已将标记移至原审批断言之后。修正后实际 stdio 与诊断测试 **9 PASS / exit 0**，独立复核确认该 finding 关闭、scoped PASS；该次关闭复核直接核对当前代码和日志，没有重新建立完整五文件 diff。完整增量沿用前轮独立审查范围，由主代理复核最终 diff；不将诊断审查扩称为产品或全部 CI 验收。
 
 [额外平台检查 39839344855](https://github.com/Ricardo121380/only-my-pi/actions/runs/39839344855) 为 **7 SUCCESS / 1 FAILURE**。macOS 隔离安装任务先通过本候选安装、离线身份／版本、原始 Pi、fresh npx 与卸载，随后安装既有公开 `only-my-pi@0.4.0-preview.1` 时在原 120000ms 子进程边界失败，`code=1 killed=true signal=null`，stdout/stderr 为空。底层原因 UNKNOWN；升级、重装、迁移及后续 Full/Thin 检查未完成。脚本和 workflow 未被 #80 改动，此旧包装组合的 Pi 0.84.3 也不是开发 Pi 1.3.0 证据。保留失败日志及七份部分产物，不将该任务记为 PASS，不改变安装时限或重跑相同候选；本地未执行安装切换或发行。
+
+### 第四次 CI RED 与 write 夹具准备成本
+
+诊断源码 `cc332a9dedd1dc93ea855863b93f1f70876a45f0` 的 [必需 CI 39859262706](https://github.com/Ricardo121380/only-my-pi/actions/runs/39859262706) 为 **FAILURE**。合并检查源码 `b567d3af5dc4cb3c0d810d750884136013d7ead4` 与分支树均为 `99fd45d6eeafcec10d8b1419da407052b2096b42`。release、Subagents 两组 full-tests 分别 **PASS / 1432534ms**、**PASS / 1401363ms**；D15 再次在 **1802031ms** 被原总门禁 SIGTERM，Q10 skipped。新诊断明确 stdio 断言于 26431ms 完成，cleanup 于 26674ms 完成；M8 停在 global-coverage。首个文件标签为 `host-mcp-write.test.mjs`，没有该文件的子用例超时或 cleanup 标记，不能区分执行较慢、after／文件退出未完成或总门禁取消顺序；根因仍 **UNKNOWN**。私有原始日志、摘要和精确源码绑定保留在 `80-pr90-ci-fourth-red-receipt.json`，不与历史 RED 或本地 PASS 相互覆盖。[该源码的附加平台 CI 39859262564](https://github.com/Ricardo121380/only-my-pi/actions/runs/39859262564) **8/8 SUCCESS**；此前旧版安装失败仍按历史保留，不改判其根因。
+
+原始本地 D15 的 write 文件 24 个用例打印耗时合计 451619ms；这不是全套 wall time 或 CI 归因。一次本地配对诊断使用新建、删除后重建同路径、另一个全新路径的真实 Pi stdio 旅程，初始化区间分别约 5849ms、1552ms、5526ms。它只支持调查安装路径的重复准备成本，没有独立测量编译阶段，也不支持将差值乘以夹具数量作为可回收 CI 时间。原件为 `80-stdio-setup-cost-receipt.json`，不是正式 D15 或功能验收。
+
+本次测试增量仅在 write 文件的 20 个正常 Host 场景复用已有 `createSourceFixtureRoot`：必须等正常 stop 确认后完整删除上一个根目录，才重建同一路径。所有源码、配置、账号、项目、会话和 ownership 重新创建，已占用或失败保留目录不复用；两次独立 TUI、故意制造孤儿进程的场景及丢失 stop 回执 guard 继续使用独立路径。未改变 24 个用例、原时限、并发、覆盖率阈值、接收数、UNKNOWN 或清理断言，没有产品运行代码变化。
+
+该文件在 Node 24.19.0 / Pi 1.3.0 / macOS arm64 下带 coverage 定向 **24 PASS / 0 FAIL / 0 CANCELLED，退出 0**；使用 `packages/**` include，不能冒称完整 global coverage。独立 **Standards scoped PASS**、**Spec scoped PASS**；它们核验上述唯一源码增量，不证明 CI 根因或 D15 完成。私有结果为 `80-write-path-reuse-receipt.json`。冻结候选的原始 D15 及必需 CI 仍须完成；#80 保持 OPEN，#81 尚未实施。
