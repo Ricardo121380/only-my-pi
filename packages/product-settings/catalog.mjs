@@ -101,20 +101,23 @@ export class ProductSettings {
   }
   async action(input, projectPath) {
     if (!object(input) || Object.keys(input).some(key => !["type", "projectId", "revision", "id", "enabled", "parameters", "source", "digest"].includes(key))) throw settingsError("SETTINGS_COMMAND_INVALID");
+    if (Object.hasOwn(input, "projectId") && (typeof input.projectId !== "string" || !input.projectId)) throw settingsError("SETTINGS_PROJECT_REQUIRED");
     if (input.type === "list") return this.status(projectPath);
     if (input.type === "previewImport") return this.preview(input.source, projectPath);
     if (!Number.isSafeInteger(input.revision) || input.revision < 0) throw settingsError("SETTINGS_REVISION_INVALID");
     await this.lock(async () => {
       const state = await this.read(); if (state.revision !== input.revision) throw settingsError("SETTINGS_REVISION_CONFLICT", 409);
-      const key = this.key(projectPath), scoped = projectPath ? state.projects[key] ??= {} : state.defaults;
+      const key = this.key(projectPath);
+      if (state.revision === Number.MAX_SAFE_INTEGER || projectPath && !Object.hasOwn(state.projects, key) && Object.keys(state.projects).length >= 1000) throw settingsError("SETTINGS_CAPACITY", 409);
+      const scoped = projectPath ? state.projects[key] ??= {} : state.defaults;
+      let importCopy;
       if (input.type === "import") {
         if (Object.keys(state.skills).length >= 64) throw settingsError("SETTINGS_CAPACITY", 409);
         const preview = await this.preview(input.source, projectPath);
         if (preview.digest !== input.digest) throw settingsError("SETTINGS_IMPORT_CHANGED", 409);
         if (state.skills[preview.resource.id]) throw settingsError("RESOURCE_NAME_CONFLICT", 409);
         state.skills[preview.resource.id] = preview.resource;
-        const file = this.skillPath(preview.resource);
-        await atomicWriteText(this.root, file, input.source.content, { exclusive: true });
+        importCopy = { file: this.skillPath(preview.resource), content: input.source.content };
         scoped[preview.resource.id] = { enabled: false, parameters: {} };
       } else {
         const resource = this.effective(state, projectPath).find(item => item.id === input.id);
@@ -130,7 +133,10 @@ export class ProductSettings {
         const next = this.effective(state, projectPath).find(item => item.id === input.id);
         if (resource.enabled && !next.enabled) { const revokeKey = `${key}:${input.id}`; state.revoked[revokeKey] = (state.revoked[revokeKey] ?? 0) + 1; }
       }
-      state.revision++; await atomicWriteJson(this.root, this.file, state);
+      state.revision++;
+      if (Buffer.byteLength(JSON.stringify(state, null, 2) + "\n") > 1048576 || Object.values(state.revoked).some(value => !Number.isSafeInteger(value))) throw settingsError("SETTINGS_CAPACITY", 409);
+      if (importCopy) await atomicWriteText(this.root, importCopy.file, importCopy.content, { exclusive: true });
+      await atomicWriteJson(this.root, this.file, state);
     });
     return this.status(projectPath);
   }

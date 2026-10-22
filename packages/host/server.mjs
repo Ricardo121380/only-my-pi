@@ -242,6 +242,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           if (req.method !== "POST" || !safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
           if (req.headers["x-omp-settings-protocol"] !== "1") throw hostError("SETTINGS_PROTOCOL_MISMATCH", 409);
           const input = await authorizedBody(req, 256 * 1024);
+          if (Object.hasOwn(input ?? {}, "projectId") && (typeof input.projectId !== "string" || !input.projectId)) throw hostError("SETTINGS_PROJECT_REQUIRED");
           const project = input?.projectId ? catalog.project(input.projectId) : null;
           const result = await new ProductSettings(configRoot).action(input, project?.path);
           if (input.type !== "previewImport" && project) {

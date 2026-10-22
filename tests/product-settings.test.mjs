@@ -72,3 +72,14 @@ test("public import rejects YAML names that coerce to valid strings", async t =>
   }
   assert.equal((await f.read()).revision, 0);
 });
+
+test("public CLI rejects project capacity before replacing the last readable configuration", async t => {
+  const f = await fixture(t), file = path.join(f.config, "only-my-pi/product-settings/config.json");
+  const state = { version: 1, revision: 0, defaults: {}, projects: Object.fromEntries(Array.from({ length: 1000 }, (_, i) => [`project-${i}`, {}])), skills: {}, revoked: {} };
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  const bytes = JSON.stringify(state); await fs.writeFile(file, bytes, { mode: 0o600 });
+  const result = await f.run(["set", "context-doctor", "--project", f.project, "--revision", "0", "--parameters", '{"label":"extra"}']);
+  assert.notEqual(result.code, 0); assert.match(result.stderr, /SETTINGS_CAPACITY/);
+  assert.equal(await fs.readFile(file, "utf8"), bytes);
+  assert.equal((await f.read()).revision, 0);
+});

@@ -19,6 +19,15 @@ const settings = async (f, input, expected = 200) => {
 };
 const waitTask = (f, id) => until(() => f.task(id), t => ["succeeded", "failed", "cancelled"].includes(t.status), "real Pi task settled", 30000);
 
+test("public Host refuses malformed project scope without changing product defaults", async t => {
+  const f = await createMcpHost(); t.after(() => f.close());
+  for (const projectId of [false, 0, "", null]) {
+    const response = await fetch(f.host.origin + "/api/settings", { method: "POST", headers: { Origin: f.host.origin, Cookie: f.cookie, "content-type": "application/json", "x-omp-settings-protocol": "1" }, body: JSON.stringify({ type: "set", projectId, revision: 0, id: "context-doctor", parameters: { label: "must-not-save" } }) });
+    assert.equal(response.status, 400); assert.equal((await response.json()).code, "SETTINGS_PROJECT_REQUIRED");
+    assert.equal((await run(f, ["settings", "list"])).stdout.includes('"revision": 0'), true);
+  }
+});
+
 test("CLI and public Host share requested settings; each real Pi loads the declared parameters and imported skill", { timeout: 120000 }, async t => {
   const f = await createMcpHost({ installedExtensions: true, verifyNode: true, respond: ({ body, res }) => {
     const lastUser = body.messages.findLastIndex(m => m.role === "user");
