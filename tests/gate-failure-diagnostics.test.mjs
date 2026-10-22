@@ -105,3 +105,20 @@ test("controlled timeout", { timeout: 10 }, () => delay(100));
   assert.doesNotMatch(result.diagnostic, /PRIVATE_ASSERTION/u);
   assert.ok(!result.diagnostic.includes(root));
 });
+
+test("D15 retains fixed phases when its real child is terminated at the gate deadline", { timeout: 10000 }, async () => {
+  const result = await receipt.runCheck({ id: "D15", command: process.execPath,
+    args: ["-e", `
+process.stderr.write("M8_CHECK_START agents\\nM8_CHECK_PASS agents 12ms\\nM8_CHECK_START global-coverage\\n");
+process.stderr.write("OMP_STDIO_READ_PHASE setup-start 0ms\\nOMP_STDIO_READ_PHASE cleanup-start 100ms\\n");
+process.stderr.write("M8_CHECK_START PRIVATE_PHASE\\nOMP_STDIO_READ_PHASE PRIVATE_PHASE 101ms\\nOMP_STDIO_READ_PHASE cleanup-pass 102ms PRIVATE_PAYLOAD\\n");
+setInterval(() => {}, 1000);
+`], timeoutMs: 1000, env: {} });
+  assert.equal(result.status, "FAIL");
+  assert.equal(result.timedOut, true);
+  assert.equal(result.signal, "SIGTERM");
+  assert.match(result.diagnostic, /m8=global-coverage;lastM8Pass=agents@12ms/u);
+  assert.match(result.diagnostic, /stdio=setup-start@0ms;stdioCleanup=cleanup-start@100ms/u);
+  assert.doesNotMatch(result.diagnostic, /PRIVATE_PHASE|PRIVATE_PAYLOAD|cleanup-pass/u);
+  assert.ok(result.diagnostic.length <= 1200);
+});

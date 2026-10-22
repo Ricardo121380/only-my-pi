@@ -156,3 +156,17 @@ Linux 继续复用上述专项 profile、镜像和离线缓存，新容器及本
 补充 B 使用本次同一 Ego TaskSpace `5`，保留给后续 #81，尚未 finish。最终环境的 474 份运行文件在运行前、停机后核对字节和执行位，使用真实锁定扩展和精确 Pi 1.3.0；复用未变 WebUI 源码的 92 份既有构建产物。两张截图由主代理查看。此前另一独立环境的两个正常任务／4 次接收另存；其私有服务把结构化输入转为对象字符串，未实现预期挂起，**不计作取消验收**。首套零任务环境的一次性配对和 stdin 控制问题、各次定位器／等待脚本失败都保留，未计作产品成功；同一 Ego 空间继续使用，未另换浏览器。最终正常与取消任务、独立接收、持久终态、停机后正式 CLI 以及退出共同支持上述补充 B，不以 DOM／API 单独替代。
 
 原始绿色日志本身未内嵌提交号。`80-shutdown-fix-receipt.json` 明确区分主代理对“先测试精确补丁、后提交且期间代码未改”的绑定记录与独立重跑；四份 Git blob、日志摘要及 Linux 在执行前冻结的 manifest 一并保留。新源码完整门禁、受保护合并和工单关闭仍须分别取得当前候选证据，不能拼接为 Full；#81 实施继续等待 #80 完成。
+
+### 第三次 CI RED 与原始 D15 复核
+
+[必需 CI 39839344877](https://github.com/Ricardo121380/only-my-pi/actions/runs/39839344877) 检查文档 tip `9c0b33bfdb63a3678d66a0a054b68586583bd39a` 的合并源码 `4ba54d69b4a2bd112c0e5a3f4e1c25dc37e73e38`，树均为 `06ae7df81939e4a27d1edbebc02d57468ce10440`。两轮 `full-tests` 分别 **PASS / 1480730ms**、**PASS / 1571502ms**；M8 D1–D12 PASS，D13/D14 NOT_RUN_BY_POLICY，D15 **FAIL / 1802031ms**，`exitCode=null signal=SIGTERM timedOut=true outputLimitExceeded=false`，Q10 skipped。首个有界失败名是 stdio 只读审批用例，后续多个文件在总门禁终止后取消；没有内部阶段证据，不能据此认定 stdio 是整个 D15 的停滞位置，或将前述排序修复表述为这次超时的修复。
+
+在干净的同一 `9c0b33b` 上，以原 `runCheck(D15)`、Node 24.19.0、原命令／环境／并发／覆盖率及 1800000ms 上限运行一次，私下保留原始输出，**PASS / 1773694ms / exit 0**。global coverage 为 **1796 tests / 1788 PASS / 0 FAIL / 0 CANCELLED / 8 SKIP**，1698448ms；两个专项 coverage 及其余五项检查均通过。测试前后 HEAD 和工作树一致。这是一次原始本地 D15，不是全 M8、远端 CI 或 Q10；距上限仅剩 26306ms，不能抵消远端 RED。stdio 只读用例在其中 PASS / 18210ms，不能证明 CI 同阶段的行为。
+
+私有回执为 `80-local-d15-result.json`、`80-local-d15-stdout.log`、`80-local-d15-stderr.log`。外部只读观察器未改变测试，但其两个版本分别因错误的持久文件路径、进程命令行解析失败而未取得目标阶段记录；失败脚本及说明保留，**不作为阶段或验收证据**。现有日志没有独立计量夹具复制／哈希耗时，不把重复复制操作推断为已证根因。
+
+该失败暴露了确定的诊断缺口：M8 已输出固定 START/PASS 标记，但有界错误投影全部忽略；stdio 用例也没有内部阶段标记。后续诊断增量仅增加固定白名单阶段和数字耗时，保留既有 1200 字上限及不写入正式 report 的边界，不输出请求、响应、凭据或路径。真实小子进程被总门禁终止的测试先得到 **RED / tests=UNPARSEABLE**，再得到阶段保留及非法文本过滤的 GREEN；与实际 stdio、门禁及报告测试合计 **29 PASS**。所有产品代码、原测试 timeout、并发、覆盖率阈值、请求数和断言保持不变。此增量补足定位信息，**不是已证明的超时修复**；远端新候选仍须完成必需检查。
+
+该五文件增量的独立 Standards scoped PASS；Spec 首轮指出 `approval-visible` 可能在实际没有审批时提前输出，已将标记移至原审批断言之后。修正后实际 stdio 与诊断测试 **9 PASS / exit 0**，独立复核确认该 finding 关闭、scoped PASS；该次关闭复核直接核对当前代码和日志，没有重新建立完整五文件 diff。完整增量沿用前轮独立审查范围，由主代理复核最终 diff；不将诊断审查扩称为产品或全部 CI 验收。
+
+[额外平台检查 39839344855](https://github.com/Ricardo121380/only-my-pi/actions/runs/39839344855) 为 **7 SUCCESS / 1 FAILURE**。macOS 隔离安装任务先通过本候选安装、离线身份／版本、原始 Pi、fresh npx 与卸载，随后安装既有公开 `only-my-pi@0.4.0-preview.1` 时在原 120000ms 子进程边界失败，`code=1 killed=true signal=null`，stdout/stderr 为空。底层原因 UNKNOWN；升级、重装、迁移及后续 Full/Thin 检查未完成。脚本和 workflow 未被 #80 改动，此旧包装组合的 Pi 0.84.3 也不是开发 Pi 1.3.0 证据。保留失败日志及七份部分产物，不将该任务记为 PASS，不改变安装时限或重跑相同候选；本地未执行安装切换或发行。
