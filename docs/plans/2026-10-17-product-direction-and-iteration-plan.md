@@ -1,6 +1,6 @@
 # Only my pi 完整开发蓝图与当前迭代入口
 
-**2026-10-22 CLIENT-01C / #79 当前更新：** 独立 `omp mcp` 配置、token 与原生 OAuth 已实现。修复后的 `80062c5` 取得 C1–C10 PASS、真实 CLI/Pi/OAuth 9 PASS、既有 Linux CLI 与元数据锁 144 PASS、WebUI 40 PASS，以及独立 Standards/源码 Spec PASS。历史实际 Ego 双向互操作保留 `e67ae35` 身份；后续取消修复改变产品代码，同源 GUI B 仍待补验，整票 PARTIAL。账本争锁 RED、原 C10 自然超时、主动取消与初始化取消 RED 均保留；公开 PR/CI/合并/关闭未执行。见 [CLI MCP 指南](../cli-mcp.md)及 [#79 验收记录](../compatibility/2026-10-21-cli-authenticated-mcp.md)。Node 24.19.0 / Pi 1.3.0 不变；#80–#83、材料阻断、日常安装与发行保持各自范围。
+**2026-10-22 CLIENT-01C / #79 当前更新：** 独立 `omp mcp` 的设置、token 与原生 OAuth、真实 CLI/Pi 及 GUI 双向互操作已完成本地验收。冻结 `80062c5` 取得 C1–C10 PASS、CLI/Pi/OAuth 9 PASS、既有 Linux CLI 与元数据锁 144 PASS、WebUI 40 PASS、独立 Standards/源码 Spec PASS；同一源码归档的实际 Ego B 25 项检查 PASS，19 次正确模型请求，token/OAuth/stdio 各 2 次独立业务接收，8 条运行停止、两端退出及进程组均核对。五条 AC 的本地结果不冒充公开收口：PR/CI/合并/关闭未执行。历史 B、争锁 RED、原 C10 自然超时、主动取消与初始化取消 RED 均保留原身份。见 [CLI MCP 指南](../cli-mcp.md)及 [#79 验收记录](../compatibility/2026-10-21-cli-authenticated-mcp.md)。Node 24.19.0 / Pi 1.3.0 不变；#80–#83、材料阻断、日常安装与发行保持各自范围。
 
 **2026-10-20 CLIENT-01A / #78 当前更新：** 独立 CLI 产品账号基础与账号 OAuth 已实现；正式 CLI/PTY、真实 Pi / 本地受控服务、Ego Lite 双向互操作、最终隔离完整覆盖和既有 Linux CLI 回归均通过。独立 Standards PASS，Spec 无新增源码或证据阻断；公开合并、必需 CI 与工单最终状态以 [#78 验收记录](../compatibility/2026-10-20-cli-product-accounts.md)及其关联 PR/工单的独立回读为准。当前源码固定 Node 24.19.0 / Pi 1.3.0；#78 只覆盖 GCLIENT-01 的账号基础与账号 OAuth，两段之外的 MCP 认证、共享设置和会话发现/交接仍属 #79–#83。#21/#23 保持阻断，日常安装及产品发行未推进。
 
