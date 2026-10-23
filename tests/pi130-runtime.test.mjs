@@ -19,7 +19,7 @@ test("Pi 1.3 CLI admits controlled codemode and disables ambient MCP discovery",
     piCliPath: path.join(root, "pi/dist/bundle/cli.js"), ompPackageRoot: path.join(root, "omp") };
   const invocation = buildDirectPiInvocation({ argv: ["--mode", "rpc"], stack, extensionPaths: ["/verified/omp-direct.ts"] });
   assert.ok(invocation.argv.includes("--no-mcp"));
-  assert.equal(invocation.argv[invocation.argv.indexOf("--tools") + 1], "read,grep,find,ls,codemode");
+  assert.equal(invocation.argv[invocation.argv.indexOf("--tools") + 1], "read,grep,find,ls,codemode,context_snapshot");
 });
 
 async function sourceCli(t, respond) {

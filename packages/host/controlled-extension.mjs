@@ -43,7 +43,9 @@ export function createControlledExtension({ transport = process } = {}) {
     };
     const receive = (message) => {
       if (!closed && message?.type === "prepare_shutdown" && typeof message.id === "string") {
-        shutdownId = message.id; revoke(); return;
+        shutdownId = message.id; revoke();
+        transport.send({ type: "shutdown_prepared", id: shutdownId }, () => {});
+        return;
       }
       if (closed || message?.type !== "revoke" || typeof message.id !== "string") return;
       revoke(); publish(); transport.send({ type: "revoked", id: message.id });

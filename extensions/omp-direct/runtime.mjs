@@ -257,12 +257,12 @@ export class DirectSessionController {
   }
 
   activeToolCeiling() {
-    return [...(this.hasCodingAccess() ? CODING_TOOL_NAMES : INSPECTION_TOOL_NAMES), ...(this.mcpTools?.() ?? []), ...(this.codemodeTools?.() ?? [])];
+    return [...(this.hasCodingAccess() ? CODING_TOOL_NAMES : INSPECTION_TOOL_NAMES), ...(this.mcpTools?.() ?? []), ...(this.codemodeTools?.() ?? []), ...(this.productTools?.() ?? [])];
   }
 
   applyToolCeiling() {
     const configured = new Set(this.pi.getAllTools().map((tool) => tool.name));
-    const active = this.activeToolCeiling().filter((name) => configured.has(name) && this.mcpDeclared?.(name) !== false);
+    const active = this.activeToolCeiling().filter((name) => configured.has(name) && this.mcpDeclared?.(name) !== false && this.productAdmitted?.(name) !== false);
     if (this.headless && this.hostInteraction?.allows(this.context) !== true) {
       const index = active.indexOf("request_coding_access");
       if (index !== -1) active.splice(index, 1);
@@ -652,6 +652,7 @@ export class DirectSessionController {
 
   blockToolCall(event) {
     this.enforcePermissionBoundary(this.context);
+    if (this.productAdmitted?.(event.toolName) === false) return { block: true, reason: "RESOURCE_DISABLED_OR_REVOKED" };
     if ((MUTATION_TOOL_NAMES.has(event.toolName) || CODING_AUTHORITY_TOOL_NAMES.has(event.toolName)) && this.mcpWriteActive) return { block: true, reason: "MCP_WRITE_IN_PROGRESS" };
     if (CODING_AUTHORITY_TOOL_NAMES.has(event.toolName) && !this.hasCodingAccess()) {
       return { block: true, reason: "OMP_CODING_ACCESS_REQUIRED: managed writing is disabled until request_coding_access is approved." };

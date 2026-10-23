@@ -36,6 +36,22 @@ test("private writer authority is bound to a live grant, project and session", a
   assert.equal(payload.isHostAuthorized(context), false);
 });
 
+test("controlled shutdown preparation confirms revoked authority before the final cleanup receipt", async () => {
+  const transport = new EventEmitter(), handlers = new Map(), sent = [];
+  let coding = true;
+  transport.send = (message, callback) => { sent.push({ message, coding }); callback?.(); };
+  const controller = { context: {}, hasCodingAccess: () => coding,
+    accessCommand(command) { assert.equal(command, "revoke"); coding = false; } };
+  createControlledExtension({ transport })({
+    events: { emit(_name, value) { value.register(controller); } },
+    on(name, handler) { handlers.set(name, handler); },
+  });
+  transport.emit("message", { type: "prepare_shutdown", id: "received-before-eof" });
+  assert.deepEqual(sent, [{ message: { type: "shutdown_prepared", id: "received-before-eof" }, coding: false }]);
+  await handlers.get("session_shutdown")();
+  assert.deepEqual(sent.at(-1), { message: { type: "shutdown_confirmed", id: "received-before-eof", clean: true }, coding: false });
+});
+
 test("controlled shutdown requires all registered execution probes to confirm cleanup", async () => {
   for (const active of [0, 1]) {
     const transport = new EventEmitter(), handlers = new Map(), sent = [];

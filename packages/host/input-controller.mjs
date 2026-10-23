@@ -25,7 +25,7 @@ export class HostInputController extends EventEmitter {
   /** @type {Set<Promise<void>>} */ #settling = new Set();
   #closing = false;
   #failed = false;
-  /** @param {{ store: import('./input-store.mjs').HostInputStore; tasks: import('./tasks.mjs').HostTasks; catalog: import('./catalog.mjs').ProjectCatalog; resourceRevision?: (projectId: string) => number }} options */
+  /** @param {{ store: import('./input-store.mjs').HostInputStore; tasks: import('./tasks.mjs').HostTasks; catalog: import('./catalog.mjs').ProjectCatalog; resourceRevision?: (projectId: string) => number | Promise<number> }} options */
   constructor({ store, tasks, catalog, resourceRevision = () => 0 }) {
     super(); this.store = store; this.tasks = tasks; this.catalog = catalog; this.resourceRevision = resourceRevision;
     this.onChange = (/** @type {Task} */ task) => {
@@ -92,9 +92,10 @@ export class HostInputController extends EventEmitter {
   /** @param {Content} input @param {Task} [task] @param {string} [projectId] */
   async #binding(input, task, projectId = task?.projectId ?? "") {
     if (input.materialSnapshotIds.length) throw inputError("INPUT_MATERIALS_UNAVAILABLE");
-    if (input.binding.resourceRevision !== this.resourceRevision(projectId)) throw inputError("INPUT_BINDING_CHANGED");
+    if (input.binding.resourceRevision !== await this.resourceRevision(projectId)) throw inputError("INPUT_BINDING_CHANGED");
     if (task && (input.binding.accountId !== task.accountId || input.binding.modelId !== task.model || input.binding.thinking !== task.thinkingLevel || input.binding.mode !== (task.mode ?? "readonly") || input.binding.resourceRevision !== (task.resourceRevision ?? 0))) throw inputError("INPUT_BINDING_CHANGED");
     const model = (await this.tasks.models(input.binding.accountId)).find((/** @type {{id: string; thinkingLevels?: string[]}} */ model) => model.id === input.binding.modelId);
+    if (input.binding.resourceRevision !== await this.resourceRevision(projectId)) throw inputError("INPUT_BINDING_CHANGED");
     if (!model || !supportsThinking(model, input.binding.thinking)) throw inputError("INPUT_BINDING_CHANGED");
   }
   /** @param {Scope} scope @param {Content} input @returns {Promise<Queue|null>} */

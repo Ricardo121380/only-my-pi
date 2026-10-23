@@ -51,7 +51,16 @@ executor per session; let the CLI explicitly use product accounts without
 changing their ownership or silently switching identities; sequence independent
 features by their actual dependencies. These are requirements, not completed
 runtime acceptance. Account setup and login now have the bounded #78 evidence above;
-MCP authentication is being implemented in #79; the remaining shared tool setup belongs to #80/#81. Product settings are shared defaults with project overrides; original Pi
+MCP authentication is completed in #79. Shared tool/skill defaults, overrides and
+actual next-task loading have passed local #80 C/P and Ego Lite acceptance; see
+the [settings guide](shared-product-settings.md) and [source-bound receipt](compatibility/2026-10-22-shared-product-settings.md).
+The public issue remains OPEN while [PR #90](https://github.com/Ricardo121380/only-my-pi/pull/90)
+completes protected checks. Both required CI failures, test-only fixture corrections,
+and the independently reproduced shutdown ordering race are preserved in the evidence
+record. Runtime fix `289fbac` retains the original shutdown budget and final cleanup
+proofs; the earlier 20-second timeout root cause remains UNKNOWN. #81 is the subsequent classification/image
+binding slice, after #80 closeout and refreshed dependencies.
+Product settings are shared defaults with project overrides; original Pi
 and external settings keep their ownership and require explicit import. Initial
 cross-client continuation is guaranteed only for verified matching runtime
 combinations; unverified combinations may show readable history and require
@@ -153,3 +162,5 @@ The original governance and package foundations are recorded in
 `decisions/ADR-0003-package-topology.md`.
 Their historical milestone language is qualified by the current blueprint and
 ADR-0020; applicable ownership and evidence rules remain in force.
+
+The development `omp settings` entry and GUI product tools/skills dialog share the same versioned settings. See the [shared settings guide](shared-product-settings.md) and [six-criterion #80 evidence](compatibility/2026-10-22-shared-product-settings.md) for current validation and limits.

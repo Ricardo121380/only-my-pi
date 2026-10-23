@@ -571,3 +571,5 @@ Coding approval does not authorize project-external writes, secret access, destr
 Keep credentials in Pi's authentication mechanism or your secret manager. Report suspected vulnerabilities through [private security reporting](https://github.com/Ricardo121380/only-my-pi/security/advisories/new), never by publicly disclosing sensitive material. See the [security policy](SECURITY.md) and [threat model](docs/threat-model.md).
 
 First-party code is [MIT licensed](LICENSE). Third-party components retain their own licenses; consult the [third-party notices](THIRD_PARTY_NOTICES.md) and the released SBOM.
+
+The unreleased shared settings entry is `omp settings`; the GUI uses **Product tools and skills**. See the [shared settings guide](docs/shared-product-settings.md) and [CLIENT-02A evidence](docs/compatibility/2026-10-22-shared-product-settings.md) for defaults, project overrides, explicit skill import and actual Pi loading.

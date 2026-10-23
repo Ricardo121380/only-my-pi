@@ -72,7 +72,7 @@ const SAFE_VALUE_FLAGS = new Set([
   "--export",
 ]);
 
-const CONTROL_COMMANDS = new Set([...OMP_CONTROL_COMMANDS, "classifier", "image", "account", "mcp"]);
+const CONTROL_COMMANDS = new Set([...OMP_CONTROL_COMMANDS, "classifier", "image", "account", "mcp", "settings"]);
 
 export const OMP_AGENT_USAGE = `only-my-pi - guarded terminal coding Agent
 
@@ -88,6 +88,7 @@ Daily Agent:
   omp -p "review this repo"   Run a read-only non-interactive task
   omp --model <provider/id>   Select a model without the startup picker
   omp account help           Set up or log in to a product account without a Host
+  omp settings help          Shared product tool and skill defaults
   omp mcp help               Configure and authenticate MCP without a Host
   omp --account <id> --model <provider/id>  Explicitly use a product account
   omp --tui-mode regular      Use the scrollback terminal (default: fullscreen)
@@ -417,7 +418,7 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames 
     ...(nativeTools ? ["--no-mcp"] : []),
     ...extensionPaths.flatMap((entry) => ["--extension", entry]),
     "--tools",
-    [inspected.headless ? HEADLESS_TOOLS : INTERACTIVE_TOOLS, ...(nativeTools ? ["codemode"] : []), ...mcpNames].join(","),
+    [inspected.headless ? HEADLESS_TOOLS : INTERACTIVE_TOOLS, ...(nativeTools ? ["codemode", "context_snapshot"] : []), ...mcpNames].join(","),
     "--perm",
     inspected.headless ? "plan" : "build",
     ...forwarded,

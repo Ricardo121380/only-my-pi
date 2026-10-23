@@ -4,8 +4,8 @@ import { inputError } from "./input-contracts.mjs";
 
 /** The public Pi SDK owns the safe steering point. This bridge never aborts a
  * tool, rewrites model text with an ID, or falls back to a new prompt.
- * @param {{ session: import('@earendil-works/pi-coding-agent').AgentSession; taskId: string; accountId: string; modelId: string; mode: 'readonly'|'controlled'; send: (frame: object) => void }} options */
-export function createPiInputBridge({ session, taskId, accountId, modelId, mode, send }) {
+ * @param {{ session: import('@earendil-works/pi-coding-agent').AgentSession; taskId: string; accountId: string; modelId: string; mode: 'readonly'|'controlled'; resourceRevision?: number; send: (frame: object) => void }} options */
+export function createPiInputBridge({ session, taskId, accountId, modelId, mode, resourceRevision = 0, send }) {
   /** @type {Map<string, import('./contracts.d.ts').InputRecordV1>} */ const accepted = new Map();
   /** @type {Map<string, string>} */ const announced = new Map();
   let ended = false, started = false;
@@ -34,7 +34,7 @@ export function createPiInputBridge({ session, taskId, accountId, modelId, mode,
   /** @param {unknown} value @returns {import('./contracts.d.ts').InputDeliveryV1} */
   function deliver(value) {
     const record = structuredClone(validateDeliveryRecord(value));
-    if (record.taskId !== taskId || record.sessionId !== session.sessionManager.getSessionId() || record.binding.accountId !== accountId || record.binding.modelId !== modelId || record.binding.mode !== mode || record.binding.thinking !== session.thinkingLevel || record.binding.resourceRevision !== 0 || record.materialSnapshotIds.length) throw inputError("INPUT_BINDING_CHANGED");
+    if (record.taskId !== taskId || record.sessionId !== session.sessionManager.getSessionId() || record.binding.accountId !== accountId || record.binding.modelId !== modelId || record.binding.mode !== mode || record.binding.thinking !== session.thinkingLevel || record.binding.resourceRevision !== resourceRevision || record.materialSnapshotIds.length) throw inputError("INPUT_BINDING_CHANGED");
     const receipt = findInputReceipt(session.sessionManager.getBranch(), record);
     if (receipt) return { status: "consumed", receipt, feedback: feedback(record) };
     const prior = accepted.get(record.inputId);

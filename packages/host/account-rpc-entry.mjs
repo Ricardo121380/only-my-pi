@@ -13,6 +13,8 @@ import { mcpToolNames } from "../mcp/catalog.mjs";
 import { hostProjectAuthority } from "./project-authority.mjs";
 import { applyOmpRequestPolicy } from "../direct-agent/request-policy.mjs";
 import { awaitAuthStart } from "./auth-process.mjs";
+import { ProductSettings, settingsError } from "../product-settings/catalog.mjs";
+import { productLoaderOptions, confirmProductLoad, filterSettingsTools, settingsToolNames } from "../product-settings/runtime.mjs";
 import { openProductAccount } from "./account-runtime.mjs";
 
 // Host-owned arguments contain identities and audited paths, never credentials.
@@ -22,6 +24,7 @@ try {
   const [stackRoot, configRoot, accountId, modelId, sessionRoot, mode, resumeFile, ...extensions] = process.argv.slice(2);
   if (!["readonly", "controlled"].includes(mode)) throw new Error();
   const controlled = mode === "controlled";
+  const settingsSnapshot = process.env.OMP_PRODUCT_SETTINGS_SNAPSHOT ? JSON.parse(process.env.OMP_PRODUCT_SETTINGS_SNAPSHOT) : null;
   const mcpSnapshot = process.env.OMP_HOST_MCP_SNAPSHOT ? JSON.parse(process.env.OMP_HOST_MCP_SNAPSHOT) : null;
   const mcpNames = mcpToolNames(mcpSnapshot);
   if (controlled && !process.send) throw new Error();
@@ -52,22 +55,28 @@ try {
   const modelRuntime = productAccount?.runtime ?? await sdk.ModelRuntime.create({ ...paths, allowModelNetwork: false, refreshOnCreate: false });
   if (!await hasAccountCredential(modelRuntime, accountId, account)) throw new Error();
   const createRuntime = async ({ cwd, sessionManager, sessionStartEvent }) => {
+    if (settingsSnapshot) await new ProductSettings(configRoot).verify(settingsSnapshot, path.resolve(extensions.find(p => p.endsWith("extensions/omp-direct/index.ts")), "../../.."));
     const services = await sdk.createAgentSessionServices({
       cwd, agentDir: configRoot, modelRuntime,
       settingsManager: applyOmpRequestPolicy(sdk.SettingsManager.create(cwd, configRoot, { projectTrusted: false })),
       extensionFlagValues: new Map([["perm", controlled ? "build" : "plan"]]),
-      resourceLoaderOptions: { noExtensions: true, additionalExtensionPaths: extensions, extensionFactories: [
+      resourceLoaderOptions: { ...(settingsSnapshot ? productLoaderOptions({ sdk, configRoot, snapshot: settingsSnapshot }) : {}), noExtensions: true, additionalExtensionPaths: extensions, extensionFactories: [
         (pi) => pi.events.emit("only-my-pi:host-session-owner:v1", { ownsSession: (ctx) => ctx.mode === "rpc" && ctx.sessionManager.getSessionId() === sessionManager.getSessionId(), verifyProject: hostProjectAuthority({ configRoot, taskId: process.env.OMP_HOST_INPUT_TASK_ID, sessionManager }) }),
+        (pi) => { if (settingsSnapshot) pi.events.emit("only-my-pi:product-task:v1", settingsSnapshot); },
         (pi) => { if (mcpSnapshot) pi.events.emit("only-my-pi:mcp-task:v1", { snapshot: mcpSnapshot }); },
         ...(controlled ? [createControlledExtension()] : []),
         disableOmpCacheWarming,
       ] },
-    });
-    if (services.diagnostics.some((d) => d.type === "error") || services.resourceLoader.getExtensions().errors.length) throw new Error();
+    }).catch(async () => { const error = settingsError("RESOURCE_LOAD_FAILED", 409); if (settingsSnapshot) await new ProductSettings(configRoot).recordLoad(settingsSnapshot, error, process.env.OMP_HOST_INPUT_TASK_ID); throw error; });
+    if (services.diagnostics.some((d) => d.type === "error") || services.resourceLoader.getExtensions().errors.length) { const error = settingsError("RESOURCE_LOAD_FAILED", 409); if (settingsSnapshot) await new ProductSettings(configRoot).recordLoad(settingsSnapshot, error, process.env.OMP_HOST_INPUT_TASK_ID); throw error; }
     const model = modelRuntime.getAvailableSnapshot().find((m) => `${m.provider}/${m.id}` === modelId);
     if (!model) throw new Error();
-    const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model, tools: [...(controlled ? ["read", "grep", "find", "ls", "edit", "write", "bash", "request_coding_access", "delegate_readonly_agent", "delegate_managed_writer"] : ["read", "grep", "find", "ls"]), ...mcpNames, "codemode"] });
+    const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model, tools: [...(controlled ? ["read", "grep", "find", "ls", "edit", "write", "bash", "request_coding_access", "delegate_readonly_agent", "delegate_managed_writer"] : ["read", "grep", "find", "ls"]), ...mcpNames, "codemode", ...(settingsSnapshot ? settingsToolNames(settingsSnapshot).filter(n => n === "context_snapshot") : [])].filter(name => !settingsSnapshot || filterSettingsTools([name], settingsSnapshot).length) });
     if (created.modelFallbackMessage || `${created.session.model?.provider}/${created.session.model?.id}` !== modelId) throw new Error();
+    if (settingsSnapshot) {
+      const data = await confirmProductLoad({ services, session: created.session, configRoot, snapshot: settingsSnapshot, taskId: process.env.OMP_HOST_INPUT_TASK_ID });
+      if (process.connected) process.send({ type: "product_settings_loaded", data }, () => {});
+    }
     sessionManager.appendCustomEntry("omp-account-binding", { version: 1, accountId: account.accountId, providerId: account.providerId });
     return { ...created, services, diagnostics: services.diagnostics };
   };
@@ -79,7 +88,7 @@ try {
   if (taskId !== undefined) {
     if (!process.send || !/^[a-zA-Z0-9_-]{1,128}$/u.test(taskId)) throw new Error();
     const send = (frame) => { if (process.connected) process.send(frame, () => {}); };
-    const bridge = createPiInputBridge({ session: runtime.session, taskId, accountId, modelId, mode, send });
+    const bridge = createPiInputBridge({ session: runtime.session, taskId, accountId, modelId, mode, resourceRevision: settingsSnapshot?.resourceRevision ?? 0, send });
     process.on("message", (frame) => {
       if (frame?.type !== "omp_input_command") return;
       try {

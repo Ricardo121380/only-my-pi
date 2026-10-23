@@ -40,7 +40,7 @@ async function fixture(t, { memory = false, occupied = false, lifecycleError = f
   const child = spawn(runtime.node, [path.join(runtime.packageRoot, "packages/direct-agent/rpc-entry.mjs"),
     runtime.sdk, "--mode", "rpc", "--offline",
     "--no-extensions", ...[...extensions, extension].flatMap(entry => ["--extension", entry]),
-    "--tools", "read,grep,find,ls", "--perm", "plan", "--session-dir", sessions,
+    "--tools", fullStack ? "read,grep,find,ls,context_snapshot" : "read,grep,find,ls", "--perm", "plan", "--session-dir", sessions,
     ...(occupied ? ["--session", target] : ["--session-id", "initial"]),
     ...(memory ? ["--no-session"] : []), "--model", "fixture/one", "--thinking", "high"],
   { cwd: root, stdio: ["pipe", "pipe", "pipe", "ipc"],

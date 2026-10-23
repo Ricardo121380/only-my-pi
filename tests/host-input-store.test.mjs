@@ -271,7 +271,7 @@ test("Host restart owns storage lifecycle and never launches a worker for recove
   const options = { configRoot: f.configRoot, assetsRoot, stack: { stackId: "sha256:" + "a".repeat(64) }, modelsProvider: async () => [], workerFactory: () => { launches++; throw new Error("unexpected execution"); } };
   const host = await startHost(options); t.after(() => host.stop());
   assert.equal((await host.inputs.readQueue(scope)).items[0].state, "paused"); assert.equal(launches, 0);
-  assert.deepEqual(host.snapshot().capabilities.inputs, { protocol: 1, materials: false, resourceRevision: 0 });
+  assert.deepEqual(host.snapshot().capabilities.inputs, { protocol: 1, materials: false, resourceRevision: null });
   const oldEpoch = host.epoch; await host.stop(); const next = await startHost(options); t.after(() => next.stop());
   assert.notEqual(next.epoch, oldEpoch); assert.equal(launches, 0); await next.stop();
 });

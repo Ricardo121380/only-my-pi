@@ -596,6 +596,13 @@ export async function runOmpEntrypoint(options = {}) {
         else writeText(stdout, stringifyOmpJson(result));
         return OMP_EXIT_CODES.SUCCESS;
       }
+      if (route.argv[0] === "settings") {
+        const { runSettingsCli } = await import("../packages/product-settings/commands.mjs");
+        const { resolveDirectConfigRoot } = await import("../packages/direct-agent/launcher.mjs");
+        const homeDir = options.homedir ? options.homedir() : os.homedir();
+        const result = await runSettingsCli({ argv: route.argv.slice(1), configRoot: resolveDirectConfigRoot({ env: options.env ?? process.env, homeDir }) });
+        writeText(stdout, stringifyOmpJson(result)); return OMP_EXIT_CODES.SUCCESS;
+      }
       if (route.argv[0] === "mcp") {
         const { runMcpCli } = await import("../packages/mcp/commands.mjs");
         const { resolveDirectConfigRoot, resolveControlledStack } = await import("../packages/direct-agent/launcher.mjs");

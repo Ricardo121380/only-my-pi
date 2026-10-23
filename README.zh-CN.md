@@ -570,3 +570,5 @@ npm run verify:m12
 凭据应留在 Pi 的认证机制或你的密钥管理器中。疑似漏洞请通过[私密安全报告](https://github.com/Ricardo121380/only-my-pi/security/advisories/new)提交，不要公开披露敏感内容。另见[安全策略](SECURITY.md)和[威胁模型](docs/threat-model.md)。
 
 第一方代码采用 [MIT 许可证](LICENSE)。第三方组件遵循各自许可证，参见[第三方声明](THIRD_PARTY_NOTICES.md)和发布包中的 SBOM。
+
+尚未发布的共享设置入口为 `omp settings`；GUI 在左侧“产品工具与技能”操作同一版本。默认/项目覆盖/重置、显式技能导入和真实 Pi 加载见[共享设置指南](docs/shared-product-settings.md)及 [CLIENT-02A 验收记录](docs/compatibility/2026-10-22-shared-product-settings.md)。

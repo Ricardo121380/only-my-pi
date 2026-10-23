@@ -54,6 +54,15 @@ const TEST_GATE_IDS = new Set([
   "Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9", "Q10", "Q12",
   "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10",
 ]);
+const M8_CHECK_IDS = new Set([
+  "lint", "typecheck", "schema", "pack", "agents", "global-coverage",
+  "session-composer-coverage", "omp-control-coverage",
+]);
+const STDIO_READ_PHASES = new Set([
+  "setup-start", "setup-pass", "configured", "task-started", "pi-initialized",
+  "approval-visible", "approval-answered", "task-completed", "assertions-pass",
+  "cleanup-start", "cleanup-pass",
+]);
 
 function sanitizedTestLabel(value) {
   return String(value)
@@ -71,11 +80,14 @@ export function boundedTestFailureDiagnostic(stdout, stderr) {
     .split(/\r?\n/u);
   const failures = [];
   const codes = [];
+  const syscalls = [];
+  const errnos = [];
   const frames = [];
   const operators = [];
   const kinds = [];
   const timeouts = [];
   const coverage = [];
+  let m8Started, m8Passed, stdioPhase, stdioCleanup;
   const tapReporter = lines.some(line => /^\s*(?:TAP version 13$|not ok \d+ - )/u.test(line));
   let diagnosticIndent;
   const remember = (target, value, maximum) => {
@@ -83,6 +95,19 @@ export function boundedTestFailureDiagnostic(stdout, stderr) {
     if (sanitized && !target.includes(sanitized) && target.length < maximum) target.push(sanitized);
   };
   for (const line of lines) {
+    // Retain only fixed harness phases and elapsed numbers, never child payloads.
+    const m8 = /^M8_CHECK_(START|PASS) ([a-z-]+)(?: (\d{1,9})ms)?$/u.exec(line);
+    if (m8 && M8_CHECK_IDS.has(m8[2])) {
+      const value = `${m8[2]}${m8[3] === undefined ? "" : `@${m8[3]}ms`}`;
+      if (m8[1] === "START") m8Started = value;
+      else m8Passed = value;
+    }
+    const stdio = /^(?:# )?OMP_STDIO_READ_PHASE ([a-z-]+) (\d{1,9})ms$/u.exec(line);
+    if (stdio && STDIO_READ_PHASES.has(stdio[1])) {
+      const value = `${stdio[1]}@${stdio[2]}ms`;
+      if (stdio[1].startsWith("cleanup-")) stdioCleanup = value;
+      else stdioPhase = value;
+    }
     const yamlStart = /^(\s*)---$/u.exec(line);
     if (yamlStart) diagnosticIndent = yamlStart[1];
     if (/^\s*\.\.\.$/u.test(line)) diagnosticIndent = undefined;
@@ -99,6 +124,10 @@ export function boundedTestFailureDiagnostic(stdout, stderr) {
     const rootField = tapReporter ? diagnosticIndent !== undefined && line.startsWith(diagnosticIndent) && !/^\s/u.test(line.slice(diagnosticIndent.length)) : /^ {4}\S/u.test(line);
     const code = rootField && /^\s*code:\s*['"]?([A-Z][A-Z0-9_-]{1,127})['"]?,?\s*$/u.exec(line);
     if (code?.[1]) remember(codes, code[1], 16);
+    const syscall = rootField && /^\s*syscall:\s*['"]?(spawn|kill|copyfile|open|read|write|lstat|stat|realpath|readlink|symlink|rename|mkdir|rmdir|unlink|scandir|listen|connect)(?: [^'"]*)?['"]?,?\s*$/u.exec(line);
+    if (syscall?.[1]) remember(syscalls, syscall[1], 4);
+    const errno = rootField && /^\s*errno:\s*(-?\d{1,6}),?\s*$/u.exec(line);
+    if (errno?.[1]) remember(errnos, errno[1], 4);
     const kind = rootField && /^\s*failureType:\s*['"]?(testCodeFailure|testTimeoutFailure|cancelledByParent|subtestsFailed|hookFailed)['"]?,?\s*$/u.exec(line);
     if (kind?.[1]) remember(kinds, kind[1], 5);
     const timeout = /\btest timed out after (\d{1,9})ms\b/u.exec(line);
@@ -115,6 +144,12 @@ export function boundedTestFailureDiagnostic(stdout, stderr) {
   const parts = [
     // Reserve space for the cause even when many long test labels fail.
     failures.length > 0 ? `tests=${failures.join(" | ").slice(0, 500)}` : "tests=UNPARSEABLE",
+    ...(m8Started ? [`m8=${m8Started}`] : []),
+    ...(m8Passed ? [`lastM8Pass=${m8Passed}`] : []),
+    ...(stdioPhase ? [`stdio=${stdioPhase}`] : []),
+    ...(stdioCleanup ? [`stdioCleanup=${stdioCleanup}`] : []),
+    ...(syscalls.length > 0 ? [`syscalls=${syscalls.join(",")}`] : []),
+    ...(errnos.length > 0 ? [`errnos=${errnos.join(",")}`] : []),
     ...(codes.length > 0 ? [`codes=${codes.join(",")}`] : []),
     ...(kinds.length > 0 ? [`kinds=${kinds.join(",")}`] : []),
     ...(timeouts.length > 0 ? [`timeouts=${timeouts.join(",")}`] : []),

@@ -32,6 +32,8 @@ export function createClassificationControl(pi, { sdkFile, configRoot }) {
   const store = new ModelCallStore(configRoot);
   const artifacts = new ImageArtifacts(configRoot);
   let snapshot, taskId, ended = true, approved = new Set(), approvalPending = new Map(), starting;
+  let admittedSnapshot;
+  pi.events.on("only-my-pi:model-task:v1", payload => { admittedSnapshot = payload.snapshot; });
   let accountReleases = [];
   const finish = async () => {
     if (!ended && taskId) { ended = true; approved.clear(); await store.end(taskId); }
@@ -40,7 +42,7 @@ export function createClassificationControl(pi, { sdkFile, configRoot }) {
   };
   const start = async ctx => {
     await finish();
-    snapshot = process.env.OMP_HOST_CLASSIFIER_SNAPSHOT ? JSON.parse(process.env.OMP_HOST_CLASSIFIER_SNAPSHOT) : await store.config(ctx.cwd);
+    snapshot = admittedSnapshot ?? (process.env.OMP_HOST_CLASSIFIER_SNAPSHOT ? JSON.parse(process.env.OMP_HOST_CLASSIFIER_SNAPSHOT) : await store.config(ctx.cwd));
     taskId = process.env.OMP_HOST_INPUT_TASK_ID ?? `cli_${randomUUID()}`;
     if (snapshot.projectPath !== ctx.cwd) throw fail("CLASSIFIER_PROJECT_MISMATCH");
     if (snapshot.classifier || snapshot.image) {

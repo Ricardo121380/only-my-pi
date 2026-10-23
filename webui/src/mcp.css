@@ -12,3 +12,5 @@
 .mcp-panel h3 { margin:20px 0 8px; font-size:16px; }.mcp-panel h3 small { color:var(--muted); font-size:13px; font-weight:400; }
 .mcp-servers { list-style:none; margin:0; padding:0; }.mcp-servers > li { padding:12px 0; border-bottom:1px solid var(--line); }.mcp-panel .between { flex-wrap:wrap; gap:8px; }
 .mcp-panel p { margin:8px 0; }.mcp-panel [role="alert"] { color:var(--warning); }.mcp-panel [role="status"] { color:var(--accent); }
+
+.product-settings pre { white-space:pre-wrap; overflow-wrap:anywhere; max-width:100%; }
