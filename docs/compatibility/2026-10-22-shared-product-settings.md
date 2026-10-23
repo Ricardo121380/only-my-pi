@@ -202,3 +202,11 @@ OAuth 夹具存在独立可复现缺陷：真实子进程启动错误使 `child.
 原 Actions run 经 artifacts 和 annotations 独立核对，没有可恢复的完整失败栈／syscall。验证脚本补充固定白名单 syscall 和有界整数 errno，仅保留错误根字段，丢弃 syscall 参数、路径及 assertion payload；1200 字上限和 report 不存 raw output 的边界不变。原生文件错误和隐私／原门禁回归 **10 PASS**，相邻 M8／receipt **12 PASS**。原生 metadata 测试最初使用 TAP 而失败：Node 24 TAP formatter 本身不透传该原生属性；改为与 CI 一致的 spec reporter 后验证，不声称能恢复 TAP 已丢字段，原失败原件保留。
 
 以上为分范围定向证据，不能拼成 Full。私有日志为 `80-oauth-cleanup-red.log`、`80-oauth-login-launch-red.log`、`80-oauth-lifecycle-green.log`、`80-classifier-presend-assumption-red.log`、`80-classifier-deadline-green.log`、`80-native-error-diagnostic-spec-green.log` 和 `80-final-lifecycle-gate-companions.log`。类型、lint、diff 通过；完整候选的必需 CI、正常合并及工单关闭仍须取得真实结果。#81 尚未实施。
+
+### 第六次必需结果与 C10 定向覆盖缺口
+
+候选 `9b73108fc4c70ca176480de13c8cd38be907d6ed`（tree `f0483d59b70bcab113d43eb370b2bc22c3a85d58`，CI 模拟合并 `8b6441396d7efa61ef368bb8d944721d3757340d`）的 [必需 CI 39898776387](https://github.com/Ricardo121380/only-my-pi/actions/runs/39898776387) 为 **FAILURE**：release full-tests **PASS / 1274168ms**、Subagents full-tests **PASS / 1536751ms**、M8 D15 **PASS / 1593772ms**、M9 U8 **PASS / 1233757ms**，public-baseline、M11 确定性门禁及 C1–C9 也通过。C10 **FAIL / 1622053ms / exit 1**，`timedOut=false outputLimitExceeded=false`；有界诊断为 `coverage=branch:79.67<80`，没有列出业务用例失败。Q10 **skipped**。本候选的通过不覆盖任何历史失败或证明其根因修复。[附加平台 39898776407](https://github.com/Ricardo121380/only-my-pi/actions/runs/39898776407) **8/8 SUCCESS**，仍与必需检查、日常安装和发行分列。
+
+立即停止远端重跑，仅执行 C10 的既有定向子检查：相同三个运行文件、五个测试文件及原 90% lines / 80% branches / 90% functions 门槛，约 3 秒复现 **38 PASS / 0 FAIL，但 coverage 79.67% / exit 1**。缺少的是本票在 direct controller 新增的产品工具准入和调用前撤权分支；这不是产品运行缺陷证明。只在既有 `m12-direct-agent-error-paths.test.mjs` 增加一项公开 controller 边界回归：已准入 `context_snapshot` 可见且可调用、保持无写权限；撤权后从实际 active tools 移除并拒绝已声明调用，既有只读工具继续可用。定向 **39 PASS / exit 0**，lines **94.84%**、branches **80.88%**、functions **92.00%**。没有更改运行代码、原用例、覆盖 include、门槛、时限或 CI 工作流。
+
+原 RED 和 GREEN 分别保留为 `80-c10-focused-coverage-red.log`、`80-c10-focused-coverage-green.log`；远端 decoded log 与身份回执为 `80-pr90-ci-sixth-job-decoded.log`、`80-ci-sixth-coverage-red-receipt.json`。该定向通过不冒称重新执行完整 C10 或必需 CI；#80 仍未合并／关闭，#81 尚未实施。
