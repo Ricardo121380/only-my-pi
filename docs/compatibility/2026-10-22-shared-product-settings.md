@@ -190,3 +190,15 @@ Linux 继续复用上述专项 profile、镜像和离线缓存，新容器及本
 已确认的测试缺口是只轮询接收数，不检查任务终态：真实 Pi 已拒绝错误模型、零请求账本的情况下仍等满接收窗口，最后只报笼统超时。先以已有真实 Pi wrong-model 场景复现 **1 FAIL / exit 1**，再在同一等待入口加入终态检查；未接收且任务已结束时立即抛 `CLASSIFIER_ENDED_BEFORE_RECEIVE`，保留任务／请求状态和安全错误码，不附带响应体、凭据或路径。两次只读查询后再次核对接收数，避免查询期间已接收却误报。
 
 受影响的 wrong-model、429、timeout、output-limit、cancel 五项带 coverage **5 PASS / 0 FAIL / 0 CANCELLED / exit 0**。分类调用的原 1000ms 预算、用例时限、全部独立接收数及不退款／未知断言保持；未增加用例或修改产品运行代码。主代理分别完成 **Standards scoped PASS** 与 **Spec scoped PASS**，这是本次测试增量的静态复核，不冒称独立子代理或全量评审。私有 RED／最终定向日志分别为 `80-classifier-fail-fast-red.log`、`80-classifier-fail-fast-final-green.log`。本增量只修正失败等待和诊断；偶发未接收及远端 OAuth `EINVAL` 仍为 **UNKNOWN**。本轮未再执行 Full、推送或触发 CI；#80 未合并／关闭，#81 尚未实施。
+
+### 继续收口：异常清理与确定性的分类故障边界
+
+`6740ab3` 之后的本次增量限于测试、验证脚本和记录；`bin/`、`packages/`、`extensions/`、`bundles/`、`webui/` 相对运行修复 `289fbac` 无差异。原功能、实际 C/P/B 和 Linux 回归继续按上述源码范围复用，不重标为本次重跑。
+
+OAuth 夹具存在独立可复现缺陷：真实子进程启动错误使 `child.closed` rejected，原清理再次等待该拒绝并跳过服务关闭／目录清理。真实缺失 cwd 的 RED 被外层原 10 秒截止终止；修正后实际观察物理 close 再传播原启动错误，对所有子进程完成清理，服务／证据／目录各步骤均尝试执行。仍有未关闭子进程时保留目录，清理错误不吞掉。登录提示等待同时检查启动错误和提前退出，避免再等满提示窗口。account add、login 启动失败及原完整正式 CLI／原生 Pi OAuth 旅程 **3 PASS / exit 0**；保留原 90 秒正常旅程、PKCE、双账号、环境凭据不兜底及撤权／超时／取消断言。这证明夹具异常路径修复，**不证明原 CI 的 EINVAL 根因**。新增回归最初继承 Node test-child 环境而得到 V8 协议输出，原日志保留；嵌套独立 runner 明确移除该内部上下文后验证。
+
+分类原负例隐含发送前工作须在 1000ms 内完成。对真实 Pi 分类入口施加同一 1200ms 准备延迟后，旧墙钟用例稳定 RED：接收 0、请求 `not_sent`、预占 1，未进入它要验证的已发超时。该确定性 RED 不改判历史 f4a 失败根因。现在分别覆盖：新增**真实墙钟**发送前截止，接收 0、保留请求和占额，重启不重放；原 429／timeout／output-limit／cancel 四个已发负例明确标注**受控模型时钟**。只在隔离的复制 worker 内控制匹配 1000ms 的两个模型 deadline，仍调用真实 Pi、真实 dispatch、真实 HTTP 和原账本；保留同一 1200ms 准备延迟、1000ms 参数、原 35 秒用例截止及全部单次接收／未知／不退款断言。timeout 由独立服务确认接收后才推进至 1000ms，核验两层 deadline 均在该时刻到期；重启保持相同请求 ID、unknown 和占额，接收仍为 1。**5 PASS / exit 0**。受控时钟不作为真实墙钟已发延迟或原 CI 复现证据；真实发送前墙钟分支另列，不能互相代替。
+
+原 Actions run 经 artifacts 和 annotations 独立核对，没有可恢复的完整失败栈／syscall。验证脚本补充固定白名单 syscall 和有界整数 errno，仅保留错误根字段，丢弃 syscall 参数、路径及 assertion payload；1200 字上限和 report 不存 raw output 的边界不变。原生文件错误和隐私／原门禁回归 **10 PASS**，相邻 M8／receipt **12 PASS**。原生 metadata 测试最初使用 TAP 而失败：Node 24 TAP formatter 本身不透传该原生属性；改为与 CI 一致的 spec reporter 后验证，不声称能恢复 TAP 已丢字段，原失败原件保留。
+
+以上为分范围定向证据，不能拼成 Full。私有日志为 `80-oauth-cleanup-red.log`、`80-oauth-login-launch-red.log`、`80-oauth-lifecycle-green.log`、`80-classifier-presend-assumption-red.log`、`80-classifier-deadline-green.log`、`80-native-error-diagnostic-spec-green.log` 和 `80-final-lifecycle-gate-companions.log`。类型、lint、diff 通过；完整候选的必需 CI、正常合并及工单关闭仍须取得真实结果。#81 尚未实施。

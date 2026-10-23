@@ -18,6 +18,39 @@ const CASES = [
   { id: "C10", run: runM12Verification, selected: (args) => args.includes("scripts/m12-deterministic-acceptance.mjs") },
 ];
 
+test("a native filesystem error retains its bounded syscall and errno from the CI spec reporter", async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-native-diagnostic-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const fixture = path.join(root, "native.mjs");
+  await fs.writeFile(fixture, `import test from "node:test"; import fs from "node:fs/promises";
+test("native filesystem failure", () => fs.copyFile(${JSON.stringify(path.join(root, "private-missing-source"))}, ${JSON.stringify(path.join(root, "private-destination"))}));`);
+  const result = await receipt.runCheck({ id: "D15", command: process.execPath,
+    args: ["--test", "--test-reporter=spec", fixture], timeoutMs: 10000, env: {} });
+  assert.equal(result.status, "FAIL"); assert.equal(result.exitCode, 1);
+  assert.match(result.diagnostic, /codes=ENOENT/u);
+  assert.match(result.diagnostic, /syscalls=copyfile/u);
+  assert.match(result.diagnostic, /errnos=-\d+/u);
+  assert.doesNotMatch(result.diagnostic, /private-missing-source|private-destination/u);
+  assert.ok(!result.diagnostic.includes(root)); assert.ok(result.diagnostic.length <= 1200);
+});
+
+test("native error metadata excludes syscall arguments and assertion payload fields", () => {
+  const diagnostic = receipt.boundedTestFailureDiagnostic(`TAP version 13
+not ok 1 - native failure
+  ---
+  code: 'EINVAL'
+  syscall: 'spawn /private/diagnostic/PRIVATE_PAYLOAD'
+  errno: -22
+  actual:
+    syscall: 'kill'
+    errno: -999
+  ...`, "");
+  assert.match(diagnostic, /syscalls=spawn;errnos=-22/u);
+  assert.doesNotMatch(diagnostic, /PRIVATE_PAYLOAD|private|kill|999/u);
+  const rejected = receipt.boundedTestFailureDiagnostic("not ok 1 - bad metadata\n  syscall: 'PRIVATE_PAYLOAD'\n  errno: 1234567", "");
+  assert.doesNotMatch(rejected, /syscalls=|errnos=|PRIVATE_PAYLOAD/u);
+});
+
 for (const entry of CASES) test(`${entry.id} preserves bounded actual child failure diagnostics outside its report`, async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-gate-diagnostic-"));
   t.after(() => fs.rm(root, { recursive: true, force: true }));

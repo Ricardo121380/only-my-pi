@@ -80,6 +80,8 @@ export function boundedTestFailureDiagnostic(stdout, stderr) {
     .split(/\r?\n/u);
   const failures = [];
   const codes = [];
+  const syscalls = [];
+  const errnos = [];
   const frames = [];
   const operators = [];
   const kinds = [];
@@ -122,6 +124,10 @@ export function boundedTestFailureDiagnostic(stdout, stderr) {
     const rootField = tapReporter ? diagnosticIndent !== undefined && line.startsWith(diagnosticIndent) && !/^\s/u.test(line.slice(diagnosticIndent.length)) : /^ {4}\S/u.test(line);
     const code = rootField && /^\s*code:\s*['"]?([A-Z][A-Z0-9_-]{1,127})['"]?,?\s*$/u.exec(line);
     if (code?.[1]) remember(codes, code[1], 16);
+    const syscall = rootField && /^\s*syscall:\s*['"]?(spawn|kill|copyfile|open|read|write|lstat|stat|realpath|readlink|symlink|rename|mkdir|rmdir|unlink|scandir|listen|connect)(?: [^'"]*)?['"]?,?\s*$/u.exec(line);
+    if (syscall?.[1]) remember(syscalls, syscall[1], 4);
+    const errno = rootField && /^\s*errno:\s*(-?\d{1,6}),?\s*$/u.exec(line);
+    if (errno?.[1]) remember(errnos, errno[1], 4);
     const kind = rootField && /^\s*failureType:\s*['"]?(testCodeFailure|testTimeoutFailure|cancelledByParent|subtestsFailed|hookFailed)['"]?,?\s*$/u.exec(line);
     if (kind?.[1]) remember(kinds, kind[1], 5);
     const timeout = /\btest timed out after (\d{1,9})ms\b/u.exec(line);
@@ -142,6 +148,8 @@ export function boundedTestFailureDiagnostic(stdout, stderr) {
     ...(m8Passed ? [`lastM8Pass=${m8Passed}`] : []),
     ...(stdioPhase ? [`stdio=${stdioPhase}`] : []),
     ...(stdioCleanup ? [`stdioCleanup=${stdioCleanup}`] : []),
+    ...(syscalls.length > 0 ? [`syscalls=${syscalls.join(",")}`] : []),
+    ...(errnos.length > 0 ? [`errnos=${errnos.join(",")}`] : []),
     ...(codes.length > 0 ? [`codes=${codes.join(",")}`] : []),
     ...(kinds.length > 0 ? [`kinds=${kinds.join(",")}`] : []),
     ...(timeouts.length > 0 ? [`timeouts=${timeouts.join(",")}`] : []),
