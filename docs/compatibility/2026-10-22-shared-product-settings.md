@@ -180,3 +180,13 @@ Linux 继续复用上述专项 profile、镜像和离线缓存，新容器及本
 本次测试增量仅在 write 文件的 20 个正常 Host 场景复用已有 `createSourceFixtureRoot`：必须等正常 stop 确认后完整删除上一个根目录，才重建同一路径。所有源码、配置、账号、项目、会话和 ownership 重新创建，已占用或失败保留目录不复用；两次独立 TUI、故意制造孤儿进程的场景及丢失 stop 回执 guard 继续使用独立路径。未改变 24 个用例、原时限、并发、覆盖率阈值、接收数、UNKNOWN 或清理断言，没有产品运行代码变化。
 
 该文件在 Node 24.19.0 / Pi 1.3.0 / macOS arm64 下带 coverage 定向 **24 PASS / 0 FAIL / 0 CANCELLED，退出 0**；使用 `packages/**` include，不能冒称完整 global coverage。独立 **Standards scoped PASS**、**Spec scoped PASS**；它们核验上述唯一源码增量，不证明 CI 根因或 D15 完成。私有结果为 `80-write-path-reuse-receipt.json`。冻结候选的原始 D15 及必需 CI 仍须完成；#80 保持 OPEN，#81 尚未实施。
+
+### 第五次结果与分类等待的失败即停修正
+
+测试准备源码 `f4a288fcd4546f6b20d27db4f762a44904ad1043` 的 [必需 CI 39871557035](https://github.com/Ricardo121380/only-my-pi/actions/runs/39871557035) 为 **FAILURE**：第一组 full-tests **PASS / 1240126ms**，Subagents 组 full-tests **FAIL / 1306489ms / exit 1**，诊断为正式 CLI／原生 Pi OAuth 用例 `EINVAL`，非总超时或输出超限；后续 D15 未执行，Q10 skipped。该错误原因尚未确定，不能与历史 D15 超时或本地分类失败合并归因。[附加平台 39871556872](https://github.com/Ricardo121380/only-my-pi/actions/runs/39871556872) **8/8 SUCCESS**，不替代必需检查。
+
+同一干净源码的原始本地 D15 在 **1654717ms / exit 1** 结束，`timedOut=false outputLimitExceeded=false`。唯一失败为分类超时负例的 `Timed out: provider received`，不是 D15 总时限。原始日志与 `80-write-reuse-d15-result.json` 保留；测试完成后源码仍干净。一轮单项 coverage 诊断未复现：接收 1 次、请求为 unknown、原占额与未知费用保留。该通过不能覆盖原 RED 或证明根因已修复，未继续重复采样。
+
+已确认的测试缺口是只轮询接收数，不检查任务终态：真实 Pi 已拒绝错误模型、零请求账本的情况下仍等满接收窗口，最后只报笼统超时。先以已有真实 Pi wrong-model 场景复现 **1 FAIL / exit 1**，再在同一等待入口加入终态检查；未接收且任务已结束时立即抛 `CLASSIFIER_ENDED_BEFORE_RECEIVE`，保留任务／请求状态和安全错误码，不附带响应体、凭据或路径。两次只读查询后再次核对接收数，避免查询期间已接收却误报。
+
+受影响的 wrong-model、429、timeout、output-limit、cancel 五项带 coverage **5 PASS / 0 FAIL / 0 CANCELLED / exit 0**。分类调用的原 1000ms 预算、用例时限、全部独立接收数及不退款／未知断言保持；未增加用例或修改产品运行代码。主代理分别完成 **Standards scoped PASS** 与 **Spec scoped PASS**，这是本次测试增量的静态复核，不冒称独立子代理或全量评审。私有 RED／最终定向日志分别为 `80-classifier-fail-fast-red.log`、`80-classifier-fail-fast-final-green.log`。本增量只修正失败等待和诊断；偶发未接收及远端 OAuth `EINVAL` 仍为 **UNKNOWN**。本轮未再执行 Full、推送或触发 CI；#80 未合并／关闭，#81 尚未实施。

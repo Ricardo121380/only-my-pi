@@ -3,7 +3,21 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { createMcpHost, providerReply } from "./mcp-host.mjs";
+import { createMcpHost, providerReply, until } from "./mcp-host.mjs";
+
+export const untilClassificationReceived = (f, taskId) => until(async () => {
+  if (f.received.length) { assert.equal(f.received.length, 1); return true; }
+  const task = await f.task(taskId);
+  if (["succeeded", "failed", "cancelled", "interrupted"].includes(task.status)) {
+    const request = (await f.calls()).tasks.find(item => item.taskId === taskId)?.requests.at(-1);
+    // Reception can finish while the two read-only status requests are pending.
+    if (!f.received.length) throw Object.assign(new Error("Classification task ended before provider reception"), {
+        code: "CLASSIFIER_ENDED_BEFORE_RECEIVE", taskStatus: task.status, taskError: task.error ?? null,
+        requestStatus: request?.status ?? null, requestError: request?.error ?? null,
+      });
+  }
+  return f.received.length === 1;
+}, Boolean, "provider received");
 
 export const classificationContext = { state: { text: "A helpful example" }, questions: { sentiment: { type: "choice", instructions: "Choose the sentiment", criteria: { positive: "helpful", negative: "unhelpful" } } } };
 export const classificationCode = `const model = await models.getModelOfType("classifier", "fixtureclass", "sentiment"); text(await models.classify(model, ${JSON.stringify(classificationContext)}));`;

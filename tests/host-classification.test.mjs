@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { createClassificationHost } from "./fixtures/classification-host.mjs";
+import { createClassificationHost, untilClassificationReceived } from "./fixtures/classification-host.mjs";
 import { until } from "./fixtures/mcp-host.mjs";
 const terminal = task => ["succeeded", "failed", "cancelled", "interrupted"].includes(task.status);
 
@@ -119,6 +119,9 @@ for (const denial of ["rejected", "revoked", "missing-credential", "input-limit"
   assert.equal(f.received.length, 0);
   assert.equal(final.toolCalls.find(call => call.name === "codemode").status, "failed", JSON.stringify(final));
   assert.equal((await f.calls()).tasks.at(-1).requests.length, 0);
+  if (denial === "wrong-model") await assert.rejects(untilClassificationReceived(f, taskId), {
+    code: "CLASSIFIER_ENDED_BEFORE_RECEIVE", taskStatus: final.status, requestStatus: null,
+  });
 });
 
 test("concurrent classifier calls reserve atomically and share limits across parent scripts", { timeout: 35000 }, async t => {
@@ -203,7 +206,7 @@ for (const failure of ["429", "timeout", "output-limit", "cancel"]) test(`native
   const f = await createClassificationHost({ response: ({ res }) => { if (failure === "429") { res.writeHead(429); res.end("rate limited"); } else if (failure === "output-limit") res.end("x".repeat(512)); } });
   t.after(() => f.close()); await f.configure(); await f.select({ ...classificationBudget, timeoutMs: 1000, ...(failure === "output-limit" ? { maxOutputBytes: 64 } : {}) });
   const { taskId } = await f.start(); await authorize(f, taskId);
-  await until(() => f.received.length, n => n === 1, "provider received");
+  await untilClassificationReceived(f, taskId);
   if (failure === "cancel") await f.request("/api/command", { type: "cancelTask", taskId }, 202);
   await done(f, taskId);
   const request = (await f.calls()).tasks.at(-1).requests[0];
