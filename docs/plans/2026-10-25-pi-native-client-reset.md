@@ -2,6 +2,8 @@
 
 方向确认于 2026-10-25。进度核对于 2026-11-03。
 
+**Pi 版本。** 上游于 2026-11-02 发布 [Pi 1.5.0](https://github.com/earendil-works/pi/releases/tag/v1.5.0)。本项目的 WebUI 开发源码和本次验证锁定 Pi 1.3.0。1.5.0 在本项目上的适配与同候选验收仍待完成，见 [#93](https://github.com/Ricardo121380/only-my-pi/issues/93)。
+
 目标是基于原生 Pi 的个人桌面 Agent 客户端。首先在 macOS Apple Silicon 上交付可用的中文 WebUI。用户应能选项目与模型、开始会话、看见流式回复及工具结果、停止任务，刷新或重启后查看同一历史，并明确选择是否继续。现有 Linux CLI 继续维护。[设计决定](../decisions/ADR-0022-pi-native-web-first.md) · [运行 WebUI 开发版](../minimal-webui.md)
 
 ## 交付顺序
