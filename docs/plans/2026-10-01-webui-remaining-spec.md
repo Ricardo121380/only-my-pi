@@ -1,5 +1,7 @@
 # [Spec] Only my pi 双客户端与完整 WebUI：Pi 接入、共享能力、G2-00、U2–U6
 
+> 历史规格。本文保留当时的需求、批次与验收记录。2026-10-25 起，新开发按[原生 Pi 与 WebUI 路线](2026-10-25-pi-native-client-reset.md)安排。
+
 **2026-10-19 #77 同候选验收更新：** Pi 1.3.0 / `pi130-v1` 私有候选已形成；GP130-02 PASS，GP130-03 PASS。被测私有源码 `dd996352` 明确包含本轮增量及 19 个开工既有 WebUI 文件，当前分支保留其原归属；四项必需 installed 已从候选实际通过，CLI/PTY、Ego Lite 与独立本地受控服务证据完整，双 Node 与 Linux 分列。#77 CLOSED / completed，已独立回读，见[同候选验收报告](../compatibility/2026-10-18-pi-1.3.0-private-candidate-acceptance.md)。#76 已 CLOSED / completed；#21/#23 材料阻断保持，Full、真实 Provider、日常安装和新增客户端门槛未推进。下方有日期的规划与发布记录保留其历史含义。
 
 **2026-10-18 正式规格修订：** [蓝图](2026-10-17-product-direction-and-iteration-plan.md)Q1–Q12 已全部确认，设计质询结束。本次 `to-spec` 沿用总规格 #19，新增 US-129–US-143、GP130-01–03 和 GCLIENT-01–07，按已确认的共享配置决定修订 US-057/061；其他原需求编号和历史证据保留。产品目标、独立设置、共享配置、配套版本和首批平台范围写入下文，长期决定见 [ADR-0020](../decisions/ADR-0020-pi-native-clients-and-shared-sessions.md)、[ADR-0021](../decisions/ADR-0021-shared-product-configuration.md)。

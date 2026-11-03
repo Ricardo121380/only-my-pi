@@ -1,6 +1,8 @@
 # Glacier 本机工作台
 
-**2026-10-20 当前说明：** Only my pi 的 CLI/TUI 与桌面都是正式客户端，图形端先完成 WebUI。当前开发固定 Pi 1.3.0 / Node 24.19.0；已有阶段验收、剩余功能和双端接续计划见[开发蓝图](plans/2026-10-17-product-direction-and-iteration-plan.md)。产品账号可在 CLI 独立设置和登录，操作见 [CLI 账号指南](cli-accounts.md)，本地受控服务与实际 Ego 范围见 [#78 验收](compatibility/2026-10-20-cli-product-accounts.md)。本轮未切换日常安装；`omp web` 使用实际安装的兼容运行栈，不会因开发依赖或本文更新而自动升级。
+本页是既有 Glacier 工作台的使用记录。当前原生 Pi 界面的分支、启动命令和会话旅程见[WebUI 开发版](minimal-webui.md)。
+
+**2026-10-20 历史说明。** Only my pi 的 CLI/TUI 与桌面都是正式客户端，图形端先完成 WebUI。当前开发固定 Pi 1.3.0 / Node 24.19.0；已有阶段验收、剩余功能和双端接续计划见[开发蓝图](plans/2026-10-17-product-direction-and-iteration-plan.md)。产品账号可在 CLI 独立设置和登录，操作见 [CLI 账号指南](cli-accounts.md)，本地受控服务与实际 Ego 范围见 [#78 验收](compatibility/2026-10-20-cli-product-accounts.md)。本轮未切换日常安装；`omp web` 使用实际安装的兼容运行栈，不会因开发依赖或本文更新而自动升级。
 
 **历史使用基线（M2，2026-09-26）：** 当时日常 OMP 安装源码 `9130d02` 的 Full 栈，使用 Pi 0.85.1 / Node 24.19.0，并验证了 **CPAR Grok 4.5 / cpar-grok-build / low** 的小型修改与受管 writer。该记录不证明当前安装或服务可用。下列操作说明保留 M2 已交付使用方式；后续连续输入、MCP、分类与生图的范围另见蓝图所链接的验收记录，完整 WebUI 尚未交付。[M2 完成验收与限制](plans/2026-09-26-omp-webui-phase2-closeout.md)
 

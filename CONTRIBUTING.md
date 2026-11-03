@@ -7,10 +7,10 @@ change is strongly recommended. Acceptance is not guaranteed.
 
 ## Before submitting
 
-- Keep changes within the [current development blueprint](docs/plans/2026-10-17-product-direction-and-iteration-plan.md) and originating Issue, preserving explicit authorization and ownership boundaries.
+- Keep changes within the [current development roadmap](docs/plans/2026-10-25-pi-native-client-reset.md) and originating Issue, preserving explicit authorization and ownership boundaries.
 - Use exact versions and preserve external/user ownership for third-party
   packages.
-- Add focused tests and run the relevant manifest-backed gates.
+- Add focused tests and run the affected [CI lanes](docs/ci.md). Historical acceptance and publication retain their versioned gates.
 - Do not commit secrets, credentials, cookies, sessions, raw prompts/model
   output, private source, package caches, release bundles or copied third-party
   implementation code.
@@ -18,16 +18,26 @@ change is strongly recommended. Acceptance is not guaranteed.
   protected-evidence checks to make a test pass.
 - Discuss dependency additions and license implications in the Issue or PR.
 
-Start with:
+For documentation and CI contracts, start with the dependency-free lane:
+
+```bash
+node scripts/ci-run.mjs docs
+```
+
+For runtime changes, prepare the locked dependencies and select the affected lanes:
 
 ```bash
 npm ci --ignore-scripts --no-audit --no-fund
 npm run test:prepare
-npm test
-npm run lint
-npm run typecheck
-npm run verify:m11:run
+node scripts/ci-run.mjs static
+node scripts/ci-run.mjs web
+node scripts/ci-run.mjs cli
 ```
+
+The WebUI and CLI lanes partition the Node regressions, with the existing focused
+coverage thresholds retained. Shared runtime and unknown paths select both lanes.
+See [CI scope, installation checks and failure history](docs/ci.md) before running
+a full acceptance or installation exercise.
 
 `test:prepare` prepares the pinned PTY binding and installs the committed
 platform-specific external-package lock without lifecycle scripts. Real

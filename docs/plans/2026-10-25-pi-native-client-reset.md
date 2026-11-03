@@ -1,0 +1,38 @@
+# Only my pi 开发路线
+
+方向确认于 2026-10-25。进度核对于 2026-11-03。
+
+**Pi 版本。** 上游于 2026-11-02 发布 [Pi 1.5.0](https://github.com/earendil-works/pi/releases/tag/v1.5.0)。本项目的 WebUI 开发源码和本次验证锁定 Pi 1.3.0。1.5.0 在本项目上的适配与同候选验收仍待完成，见 [#93](https://github.com/Ricardo121380/only-my-pi/issues/93)。
+
+目标是基于原生 Pi 的个人桌面 Agent 客户端。首先在 macOS Apple Silicon 上交付可用的中文 WebUI。用户应能选项目与模型、开始会话、看见流式回复及工具结果、停止任务，刷新或重启后查看同一历史，并明确选择是否继续。现有 Linux CLI 继续维护。[设计决定](../decisions/ADR-0022-pi-native-web-first.md) · [运行 WebUI 开发版](../minimal-webui.md)
+
+## 交付顺序
+
+| 阶段 | 用户应得到什么 | 截至 2026-11-03 |
+| --- | --- | --- |
+| 1 · 原生 Pi 基础 | 一个执行者使用实际 Pi 完成请求、工具调用、取消、退出和历史恢复。基础会话只加载需要的资源。 | 开发源码提供显式 `--minimal`，保留只读起步、审批和会话占用。开发依赖锁定 Pi 1.3.0。 |
+| 2 · WebUI | 从项目进入会话，看到流式事件，在刷新、断线或重启后安全地找回历史。 | 开发分支已有项目与会话侧栏、输入与停止、工具回执、详情及持久启动入口。核心旅程有受控验收和一次指定模型的隔离实测。长时间日用仍待验证。 |
+| 3 · 按需模块 | 一次增加一个实际选定的功能。关闭后，基础旅程仍可用，后台资源能回收。 | 待选择优先级。材料转换、搜索、生图、人工终端和工作流分别评估。 |
+| 4 · CLI 联动 | 匹配版本的 CLI → WebUI → CLI 能查看同一原生历史，在上一个执行者停止后显式接续。 | 保留最终目标。完整跨进程交接、账号身份与授权重建仍待验收。 |
+| 5 · Electron | 安装后能独立启动，窗口和应用退出语义明确，更新失败后可恢复、数据保留。 | 核心 WebUI 稳定后进入。尚无这条新路线的桌面安装包。 |
+
+模块按需持续加入。进入桌面阶段取决于选定核心体验的稳定程度，旧清单的条目数量不决定何时打包。执行权限沿用当前产品策略。基础权限体验若需要调整，另行决定。
+
+## 哪些结果已经见到
+
+- 10 月 28–30 日的开发候选使用实际 Pi、回环模型服务和 Ego Lite 验证读取、审批、停止、刷新和 Host 重启后的历史恢复。WebUI 采用 A＋D 会话布局。快捷卡片只填入草稿，工具输出和详情来自真实任务。
+- 11 月 3 日的首次真实连接返回 HTTP 401。随后使用独立测试凭据，在同一指定 DS 模型和合成项目上，完成读取、审批后编辑、独立测试、流式停止、刷新与重启续接。五个任务中四个成功，一个按用户操作取消。这个结果限于当时的开发源码和该模型。通用 Provider、长时日用、Full 安装和 Electron 仍待验证。
+- 源码同步有独立的公开提交和本地检查记录。已发布的终端预览版有自己的版本与安装说明。[开发源码与检查](../minimal-webui.md) · [终端预览版](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2)
+
+## 如何读旧工单
+
+| 已有工作 | 在当前路线中的用途 |
+| --- | --- |
+| [#78 产品账号](https://github.com/Ricardo121380/only-my-pi/issues/78)、[#79 认证 MCP](https://github.com/Ricardo121380/only-my-pi/issues/79) | 已合入公开主线的 CLI 能力。 |
+| [#80 / PR #90](https://github.com/Ricardo121380/only-my-pi/pull/90)、[#92 集成](https://github.com/Ricardo121380/only-my-pi/issues/92) | 原共享设置与整合工作。保留其失败记录，只按新核心的具体需求选用。 |
+| [#91 输入](https://github.com/Ricardo121380/only-my-pi/issues/91)、[#39 历史元数据](https://github.com/Ricardo121380/only-my-pi/issues/39)、[#41 搜索](https://github.com/Ricardo121380/only-my-pi/issues/41) | 输入确认和历史身份可按行为复用。全文索引单独决定。 |
+| [#84 材料](https://github.com/Ricardo121380/only-my-pi/issues/84)、[#81 模型绑定](https://github.com/Ricardo121380/only-my-pi/issues/81) | 按需模块。材料格式与分类、生图有各自的验收条件。 |
+| [#82 会话发现](https://github.com/Ricardo121380/only-my-pi/issues/82)、[#83 交接](https://github.com/Ricardo121380/only-my-pi/issues/83)、[#94 桌面安装](https://github.com/Ricardo121380/only-my-pi/issues/94)、[#95 更新恢复](https://github.com/Ricardo121380/only-my-pi/issues/95) | 最终跨端与桌面目标。旧票仍反映创建时的依赖。 |
+| [#93 后继 Pi](https://github.com/Ricardo121380/only-my-pi/issues/93) | 在固定的后继版本上验证公开接口与实际行为。当前开发依赖继续使用已核验的精确版本。 |
+
+历史方案、失败和原始验收条件保留在原路径。处理旧功能时从对应 Issue 找到需求和消费者。只有替代路径已经通过、没有运行或打包消费者、并且有恢复点时，才移除旧实现。[10 月 17 日蓝图](2026-10-17-product-direction-and-iteration-plan.md) · [原 WebUI 规格](2026-10-01-webui-remaining-spec.md) · [Task 与验收映射](2026-09-26-webui-optimization-tasks.md)

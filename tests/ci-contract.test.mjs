@@ -24,58 +24,38 @@ test("all current CI and distribution lanes use the pinned Node 24", () => {
   }
 });
 
-test("CI executes the same manifest-backed verify runner without credentials", () => {
-  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "ci.yml"), "utf8");
-  assert.match(workflow, /push:\n\s+branches:\n\s+- main/u);
-  assert.doesNotMatch(workflow, /branches:\n\s+- "\*\*"/u);
-  assert.match(workflow, /npm ci --ignore-scripts/);
-  assert.match(workflow, /NPM_CONFIG_IGNORE_SCRIPTS: "true"/u);
-  assert.equal((workflow.match(/npm run test:prepare/gu) ?? []).length, 2);
-  assert.ok(workflow.indexOf("npm run test:prepare") < workflow.indexOf("npm run verify -- --run"));
-  const prepare = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).scripts["test:prepare"];
-  assert.equal(prepare, "node scripts/prepare-test-pty.mjs && node scripts/prepare-test-extensions.mjs");
-  assert.match(workflow, /node-version: \["24\.19\.0"\]/u);
-  assert.doesNotMatch(workflow, /node-version:.*24\.x/u);
-  assert.match(workflow, /npm run verify -- --run/);
-  assert.match(workflow, /npm run verify:m8:run/u);
-  assert.match(workflow, /npm run verify:m9:run/u);
-  assert.match(workflow, /npm run verify:public-baseline:run/u);
-  assert.doesNotMatch(workflow, /npm run verify:m10:run/u, "retired private-history promotion cannot authorize public CI");
-  assert.match(workflow, /npm run verify:m11:run/u);
-  assert.match(workflow, /npm run verify:m12:run/u);
-  assert.match(workflow, /cancel-in-progress: true/u);
-  assert.match(workflow, /runs-on: macos-14/u);
-  assert.match(workflow.split("  m11-q10:")[0], /runs-on: macos-14/u, "the full native suite requires the admitted Seatbelt MCP platform");
-  assert.doesNotMatch(workflow, /runs-on: macos-14-xlarge/u);
+test("development CI routes docs, WebUI, CLI and installation without repeating historical full gates", () => {
+  const workflow = fs.readFileSync(path.join(root, ".github/workflows/ci.yml"), "utf8");
+  assert.match(workflow, /codex\/dev\/pi-native-web/u);
+  assert.match(workflow, /node scripts\/ci-plan\.mjs/u);
+  for (const lane of ["docs", "static", "web", "cli", "packaging"])
+    assert.match(workflow, new RegExp(`node scripts/ci-run\\.mjs ${lane} `, "u"));
+  assert.doesNotMatch(workflow, /npm test|npm run verify(?::subagents|:m8|:m9|:m11|:m12)?(?: --|:run)/u);
   assert.match(workflow, /npm run verify:m11:q10:ci/u);
-  assert.match(workflow, /receipt:check/);
-  assert.match(
-    workflow,
-    /2026-08-17-post-merge-maintenance\.json --source-commit bff3e3be376bb2ee614a441685e7cab14324727a/u,
-  );
-  assert.doesNotMatch(
-    workflow,
-    /2026-08-17-post-merge-maintenance\.json --expect-parent/u,
-    "historical receipts cannot require the current feature HEAD to be their receipt-only commit",
-  );
-  assert.match(workflow, /persist-credentials: false/);
-  assert.match(workflow, /fetch-depth: 0/u, "history-bound promotion gates require the complete commit graph");
-  assert.match(workflow, /actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7\.0\.1/);
-  assert.match(workflow, /actions\/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7\.0\.0/);
-  assert.doesNotMatch(workflow, /actions\/(?:checkout|setup-node)@v4/u);
+  assert.match(workflow, /name: M11 Q10 macOS arm64 clean-home\n\s+shell: bash/u, "Q10 failure must propagate through tee with bash pipefail");
+  assert.match(workflow, /name: CI required/u);
+  assert.match(workflow, /if: always\(\)\n    needs: \[scope, docs, static, web, cli, packaging\]/u);
+  assert.match(workflow, /requiredFailures\(plan, results\)/u);
+  assert.match(workflow, /actions\/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f/u);
+  assert.match(workflow, /cancel-in-progress: true/u);
+  assert.match(workflow, /npm ci --ignore-scripts/u);
+  assert.match(workflow, /NPM_CONFIG_IGNORE_SCRIPTS: "true"/u);
+  for (const lane of ["web", "cli", "packaging"]) {
+    const job = workflow.split(`  ${lane}:\n`)[1].split(/\n  [a-z]+:\n/u)[0];
+    assert.match(job, /runs-on: macos-14/u);
+    assert.match(job, /npm run test:prepare/u);
+  }
+  const docs = workflow.split("  docs:\n")[1].split("\n  static:")[0];
+  assert.doesNotMatch(docs, /npm ci|test:prepare/u);
+  assert.match(workflow, /node-version: "24\.19\.0"/u);
+  assert.match(workflow, /persist-credentials: false/u);
+  assert.match(workflow, /fetch-depth: 0/u);
   assert.match(workflow, /permissions:\n\s+contents: read/u);
   assert.doesNotMatch(workflow, /NPM_TOKEN|OPENAI_API_KEY|DEEPSEEK_API_KEY|secrets\./u);
-  const v1Runner = workflow.indexOf("npm run verify -- --run");
-  const receiptCleanup = workflow.indexOf("Remove ephemeral CI receipt before source-clean gates");
-  const v2Runner = workflow.indexOf("npm run verify:subagents:run");
-  const m8Runner = workflow.indexOf("npm run verify:m8:run");
-  const m9Runner = workflow.indexOf("npm run verify:m9:run");
-  const publicBaselineRunner = workflow.indexOf("npm run verify:public-baseline:run");
-  const m11Runner = workflow.indexOf("npm run verify:m11:run");
-  const m12Runner = workflow.indexOf("npm run verify:m12:run");
-  assert.ok(v1Runner >= 0 && receiptCleanup > v1Runner && v2Runner > receiptCleanup && m8Runner > v2Runner && m9Runner > m8Runner && publicBaselineRunner > m9Runner && m11Runner > publicBaselineRunner && m12Runner > m11Runner);
-  assert.equal((workflow.match(/uses: actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1/gu) ?? []).length, 2);
-  assert.equal((workflow.match(/uses: actions\/setup-node@820762786026740c76f36085b0efc47a31fe5020/gu) ?? []).length, 2);
+  const coverage = fs.readFileSync(path.join(root, ".github/workflows/coverage.yml"), "utf8");
+  assert.match(coverage, /workflow_dispatch:/u);
+  assert.doesNotMatch(coverage, /pull_request:|push:/u);
+  assert.match(coverage, /node scripts\/ci-run\.mjs coverage/u);
 });
 
 test("current Preview RC workflow is exact-source, attest-only and cannot publish", () => {

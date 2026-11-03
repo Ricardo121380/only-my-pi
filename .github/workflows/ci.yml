@@ -1,128 +1,237 @@
-name: only-my-pi release gates
+name: only-my-pi development CI
 
 on:
   push:
     branches:
       - main
+      - codex/dev/pi-native-web
   pull_request:
     branches:
       - main
+      - codex/dev/pi-native-web
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  CI: "1"
+  NO_COLOR: "1"
+  PI_TELEMETRY: "0"
+  NPM_CONFIG_IGNORE_SCRIPTS: "true"
+  NPM_CONFIG_AUDIT: "false"
+  NPM_CONFIG_FUND: "false"
+  NPM_CONFIG_UPDATE_NOTIFIER: "false"
+
 jobs:
-  release-gates:
-    name: Node ${{ matrix.node-version }}
-    # The full native suite includes Seatbelt-isolated stdio MCP, currently macOS-only.
-    # Linux distribution/sandbox acceptance remains in linux-candidate.yml.
-    runs-on: macos-14
-    # Five sequential full-suite gates each allow 30 minutes, plus preparation
-    # and focused checks. Individual gate/test limits remain independently enforced.
-    timeout-minutes: 180
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ["24.19.0"]
-    env:
-      CI: "1"
-      NO_COLOR: "1"
-      PI_TELEMETRY: "0"
-      NPM_CONFIG_IGNORE_SCRIPTS: "true"
-      NPM_CONFIG_AUDIT: "false"
-      NPM_CONFIG_FUND: "false"
-      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+  scope:
+    name: Changed paths
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      web: ${{ steps.plan.outputs.web }}
+      cli: ${{ steps.plan.outputs.cli }}
+      packaging: ${{ steps.plan.outputs.packaging }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Public-baseline checks verify the preserved source/evidence chain.
           fetch-depth: 0
           persist-credentials: false
-
-      - name: Set up Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
+          node-version: "24.19.0"
+      - id: plan
+        run: node scripts/ci-plan.mjs
 
-      - name: Install dependencies without lifecycle scripts
-        run: npm ci --ignore-scripts --no-audit --no-fund
-
-      - name: Prepare pinned native and extension test dependencies
-        run: npm run test:prepare
-
-      - name: Verify native distribution identity and migration boundaries
-        run: npm run test:distribution
-
-      - name: Validate the merged Harness MVP receipt
-        if: hashFiles('verification/receipts/2026-08-16-harness-mvp.json') != ''
-        run: npm run receipt:check -- --receipt verification/receipts/2026-08-16-harness-mvp.json --source-commit 6941761b3948d96a77596e1302d3205efb5169f1 --manifest verification/manifests/release-gates-v1-2026-08.json
-
-      - name: Validate the post-merge maintenance receipt when present
-        if: hashFiles('verification/receipts/2026-08-17-post-merge-maintenance.json') != ''
-        run: npm run receipt:check -- --receipt verification/receipts/2026-08-17-post-merge-maintenance.json --source-commit bff3e3be376bb2ee614a441685e7cab14324727a --manifest verification/manifests/release-gates-v1-2026-08.json
-
-      - name: Execute the versioned release-gates-v1 manifest
-        run: npm run verify -- --run --output verification/receipts/ci-${{ matrix.node-version }}.json
-
-      - name: Remove ephemeral CI receipt before source-clean gates
+  docs:
+    name: Documentation
+    needs: scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+      - name: Run docs checks with bounded diagnostics
+        run: node scripts/ci-run.mjs docs "$RUNNER_TEMP/ci-reports/docs.json"
+      - name: Preserve scoped results, including failures and unfinished checks
         if: always()
-        run: rm -f verification/receipts/ci-${{ matrix.node-version }}.json
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ci-docs-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ci-reports/docs.json
+          retention-days: 14
+          if-no-files-found: warn
 
-      - name: Execute the Subagents v2 Preview deterministic gates
-        run: npm run verify:subagents:run
-
-      - name: Execute the M8 Daily Harness deterministic gates
-        run: npm run verify:m8:run
-
-      - name: Execute the M9 upstream compatibility deterministic gates
-        run: npm run verify:m9:run
-
-      - name: Verify the sanitized public-baseline authority
-        run: npm run verify:public-baseline:run
-
-      - name: Execute the M11 Public Preview deterministic gates
-        run: npm run verify:m11:run
-
-      - name: Execute the current direct coding Agent C1-C10 gates
-        run: npm run verify:m12:run
-
-  m11-q10:
-    name: M11 Q10 macOS arm64 clean-home
-    needs: release-gates
+  static:
+    name: Shared static checks
+    needs: scope
+    if: needs.scope.outputs.web == 'true' || needs.scope.outputs.cli == 'true' || needs.scope.outputs.packaging == 'true'
     runs-on: macos-14
-    timeout-minutes: 45
-    env:
-      CI: "1"
-      NO_COLOR: "1"
-      PI_TELEMETRY: "0"
-      NPM_CONFIG_IGNORE_SCRIPTS: "true"
-      NPM_CONFIG_AUDIT: "false"
-      NPM_CONFIG_FUND: "false"
-      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+    timeout-minutes: 15
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
-
-      - name: Set up Node 24.19.0
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24.19.0"
           cache: npm
-
-      - name: Install dependencies without lifecycle scripts
+          cache-dependency-path: |
+            package-lock.json
+            contracts/release/external/package-lock.json
+      - name: Install pinned dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Run static checks with bounded diagnostics
+        run: node scripts/ci-run.mjs static "$RUNNER_TEMP/ci-reports/static.json"
+      - name: Preserve scoped results, including failures and unfinished checks
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ci-static-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ci-reports/static.json
+          retention-days: 14
+          if-no-files-found: warn
 
-      - name: Prepare pinned native and extension test dependencies
+  web:
+    name: WebUI and native sessions
+    needs: scope
+    if: needs.scope.outputs.web == 'true'
+    runs-on: macos-14
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            contracts/release/external/package-lock.json
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Prepare pinned PTY and extension fixtures
         run: npm run test:prepare
+      - name: Run web checks with bounded diagnostics
+        run: node scripts/ci-run.mjs web "$RUNNER_TEMP/ci-reports/web.json"
+      - name: Preserve scoped results, including failures and unfinished checks
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ci-web-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ci-reports/web.json
+          retention-days: 14
+          if-no-files-found: warn
 
-      - name: Build and run Q10 without retaining RC assets
-        run: npm run verify:m11:q10:ci
+  cli:
+    name: CLI and legacy integrations
+    needs: scope
+    if: needs.scope.outputs.cli == 'true'
+    runs-on: macos-14
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            contracts/release/external/package-lock.json
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Prepare pinned PTY and extension fixtures
+        run: npm run test:prepare
+      - name: Run cli checks with bounded diagnostics
+        run: node scripts/ci-run.mjs cli "$RUNNER_TEMP/ci-reports/cli.json"
+      - name: Preserve scoped results, including failures and unfinished checks
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ci-cli-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ci-reports/cli.json
+          retention-days: 14
+          if-no-files-found: warn
+
+  packaging:
+    name: Installation and historical evidence
+    needs: scope
+    if: needs.scope.outputs.packaging == 'true'
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            contracts/release/external/package-lock.json
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Prepare pinned PTY and extension fixtures
+        run: npm run test:prepare
+      - name: Run packaging checks with bounded diagnostics
+        run: node scripts/ci-run.mjs packaging "$RUNNER_TEMP/ci-reports/packaging.json"
+      - name: M11 Q10 macOS arm64 clean-home
+        shell: bash
+        run: npm run verify:m11:q10:ci 2>&1 | tee "$RUNNER_TEMP/ci-reports/q10.log"
+      - name: Preserve scoped results, including failures and unfinished checks
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ci-packaging-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ci-reports/*
+          retention-days: 14
+          if-no-files-found: warn
+
+  required:
+    name: CI required
+    if: always()
+    needs: [scope, docs, static, web, cli, packaging]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+      - name: Require every selected lane to succeed
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { requiredFailures } from './scripts/ci-plan.mjs';
+          const results = JSON.parse(process.env.RESULTS);
+          const outputs = results.scope.outputs;
+          if (results.scope.result !== 'success' ||
+              ['web', 'cli', 'packaging'].some(key => !['true', 'false'].includes(outputs[key]))) {
+            throw new Error('CI scope did not complete with valid outputs');
+          }
+          const plan = Object.fromEntries(Object.entries(outputs).map(([key, value]) => [key, value === 'true']));
+          const failed = requiredFailures(plan, results);
+          if (failed.length) throw new Error(`Selected checks failed, were cancelled, or did not run: ${failed.join(', ')}`);
+          console.log('All selected CI lanes passed; unselected lanes were skipped.');
+          NODE
