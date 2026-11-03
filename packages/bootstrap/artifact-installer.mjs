@@ -160,7 +160,9 @@ export function createArtifactProcessRunner({ spawnImpl = spawn, timeoutMs = DEF
       child.stdout?.on("data", (chunk) => boundedAppend(stdout, chunk, maxOutputBytes));
       child.stderr?.on("data", (chunk) => boundedAppend(stderr, chunk, maxOutputBytes));
       child.once("error", (cause) => finishError(cause));
-      child.once("exit", (exitCode, signal) => {
+      // exit can precede the final stdout/stderr data. Archive validation must
+      // wait until the child's stdio streams have closed before reading them.
+      child.once("close", (exitCode, signal) => {
         if (settled) return;
         settled = true;
         clearTimeout(timer);

@@ -158,6 +158,21 @@ Provider, browser, daily-install and public-release qualification remain separat
   verifies the complete entrypoint routes literal `web` to the Agent. The legacy
   main-branch contract and production launcher remain unchanged.
 
-These first-run failures and their scoped artifacts remain available alongside
-subsequent candidates. A corrected CI adapter or focused local pass does not
-retroactively qualify an earlier whole run.
+- PR candidate `03c51899620092d7766e76836abb6b603b3967f4`,
+  [run 41588408565](https://github.com/Ricardo121380/only-my-pi/actions/runs/41588408565),
+  recorded 240 passing CLI checks, one failure and nine not run. The failure was
+  the pre-settings-publication crash/recovery assertion in
+  `tests/upstream-migration-filesystem-platform.test.mjs:312`; the original
+  diagnostic retained `ERR_ASSERTION` but not the unexpected error code. The
+  exact CI cause remains **UNKNOWN**. A Node 24.19.0 deterministic regression
+  subsequently proved the artifact process runner could return before final
+  stdout/stderr delivery: it listened to `exit`, while output completes at
+  `close`. The runner now waits for `close`, preserving its output bounds and
+  timeout. The crash test requires the exact injected error and lets unexpected
+  errors retain their reporter code; a controlled diagnostic test verifies that
+  private messages and paths remain excluded. These changes fix the demonstrated
+  output race without retrospectively assigning it as the earlier CI's cause.
+
+These failures and their scoped artifacts remain available alongside subsequent
+candidates. A corrected CI adapter or focused local pass does not retroactively
+qualify an earlier whole run.
