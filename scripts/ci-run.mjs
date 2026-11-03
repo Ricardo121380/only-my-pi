@@ -51,10 +51,17 @@ export function checksForLane(lane, files = nodeTestFiles()) {
   throw new Error(`Unknown CI lane: ${lane}`);
 }
 
-export async function runLane(lane, { checks = checksForLane(lane), execute = runCheck, output } = {}) {
+function inspectSource() {
+  return {
+    commit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim(),
+    clean: execFileSync("git", ["status", "--porcelain=v1"], { cwd: root, encoding: "utf8" }).trim() === "",
+  };
+}
+
+export async function runLane(lane, { checks = checksForLane(lane), execute = runCheck, output, sourceState = inspectSource } = {}) {
+  const source = sourceState();
   const report = { kind: "only-my-pi-development-ci", lane,
-    sourceCommit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim(),
-    sourceClean: execFileSync("git", ["status", "--porcelain=v1"], { cwd: root, encoding: "utf8" }).trim() === "",
+    sourceCommit: source.commit, sourceClean: source.clean,
     nodeVersion: process.version, platform: process.platform, arch: process.arch,
     startedAt: new Date().toISOString(), status: "RUNNING", rawOutputStored: false,
     results: checks.map(check => ({ id: check.label ?? check.id, status: "NOT_RUN" })) };
@@ -74,13 +81,16 @@ export async function runLane(lane, { checks = checksForLane(lane), execute = ru
     report.results[index] = { id, status: "RUNNING", startedAt: new Date().toISOString() };
     save();
     process.stdout.write(`START ${id} ${report.results[index].startedAt}\n`);
-    const result = await execute({ ...check,
+    let result = await execute({ ...check,
       // Reuse the existing bounded, redacted test diagnostics and process-group
       // timeout handling. Keep fresh-tarball's evidence extraction contract.
       id: ["test-e2e", "D12"].includes(check.id) ? check.id : "full-tests",
       timeoutMs: Math.max(1, Math.min(check.timeoutMs ?? 1_800_000, deadline - Date.now())), maxOutputBytes: 4 * 1024 * 1024,
       env: { CI: "1", NO_COLOR: "1", PI_TELEMETRY: "0" },
     }, { cwd: root });
+    if (check.id === "test-e2e" && result.evidence?.sourceCommit !== report.sourceCommit) {
+      result = { ...result, passed: false, status: "FAIL", expectationPassed: false, diagnostic: "FRESH_SOURCE_COMMIT_MISMATCH" };
+    }
     report.results[index] = { ...report.results[index], ...result, id, completedAt: new Date().toISOString() };
     if (!result.passed) failed = true;
     save();
@@ -95,6 +105,15 @@ export async function runLane(lane, { checks = checksForLane(lane), execute = ru
   const serialEnd = firstTest < 0 ? checks.length : firstTest;
   while (!failed && next < serialEnd) await runOne(next++);
   await Promise.all([worker(), worker()]);
+  const after = sourceState();
+  report.sourceCommitAfter = after.commit;
+  report.sourceCleanAfter = after.clean;
+  if (source.commit !== after.commit || (source.clean && !after.clean)
+      || (process.env.GITHUB_ACTIONS === "true" && !source.clean)) {
+    failed = true;
+    report.sourceFailure = "SOURCE_CHANGED_OR_DIRTY";
+    process.stderr.write(`${report.sourceFailure}\n`);
+  }
   report.status = failed ? "FAIL" : "PASS";
   report.completedAt = new Date().toISOString();
   save();

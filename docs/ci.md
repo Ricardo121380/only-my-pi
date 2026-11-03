@@ -11,12 +11,13 @@ Node remains pinned to **24.19.0**, and Pi remains pinned by the existing locks.
 | Change | Required work |
 | --- | --- |
 | Root documentation and Markdown/images under `docs/` | Documentation contracts, local links, source syntax/conflict checks. No dependency installation or native suite. |
-| `webui/**` | Documentation, shared static checks, UI tests/builds and core Web/session regressions. The native branch also builds the minimal entry. |
+| WebUI source/assets and HTML entries, native minimal services or dev-Web launcher | Documentation, shared static checks, UI tests/builds and core Web/session regressions. The native branch also builds the minimal entry. |
 | A Node regression test | Its owning Web/Host or CLI lane, plus documentation and shared static checks. |
 | Shared runtime, dependency locks, executable resources, CI tooling or an unknown path | Documentation, shared static checks, Web/Host, CLI and installation checks. |
 
 Runtime Markdown under `skills/`, `prompts/`, `agents/` and `modes/` is executable
 input and selects runtime checks. Renames are examined as deletion plus addition.
+Web build configuration and unclassified infrastructure also select all lanes.
 A new branch or manual run selects every lane. A failed diff computation fails the
 scope job. The stable required check, **CI required**, accepts only success from
 every selected lane and an explicit skip from every unselected lane. Failure,
@@ -38,6 +39,8 @@ regressions run with the CLI compatibility lane. Remaining Node tests also enter
 that lane. The minimal service and dev-Web launcher select the Web lane; shared
 runtime changes select both.
 New unclassified tests enter that remainder rather than disappearing.
+Vitest owns `webui/src/**/*.test.ts` and `.test.tsx`; Node test files under
+`webui/` enter the Web lane and remain in the complete inventory.
 [`tests/ci-plan.test.mjs`](../tests/ci-plan.test.mjs) checks that the three lanes
 cover the inventory exactly once, including files exercised by focused coverage.
 
@@ -100,6 +103,9 @@ job log; `always()` uploads the available scoped JSON reports for 14 days,
 including partial reports on interruption. Reports contain source identity,
 timings, exit/signal/timeout state, output hashes and bounded diagnostics. Raw
 assertion values and model output are not stored in these reports.
+The minimal fresh-tarball receipt must name the checkout's source commit.
+CI rejects a dirty checkout or a source commit/tree that changes during a lane;
+local runs record their source cleanliness without treating dirty work as CI evidence.
 
 ## Preserved failures
 
@@ -143,6 +149,14 @@ Provider, browser, daily-install and public-release qualification remain separat
   its kind/title and limiting the answer to one per synthetic shell task. It
   retains the original deadlines and process-cleanup assertions. This does not
   certify sandbox availability on the CI host.
+
+- Development run [41587021085](https://github.com/Ricardo121380/only-my-pi/actions/runs/41587021085)
+  reached a stale assertion in `tests/host-lifecycle.test.mjs`: it expected the
+  routing layer to discard `--` from an ordinary task. The native launcher now
+  deliberately retains that separator so task text such as `--minimal` cannot
+  become an option. The development test now checks the retained separator and
+  verifies the complete entrypoint routes literal `web` to the Agent. The legacy
+  main-branch contract and production launcher remain unchanged.
 
 These first-run failures and their scoped artifacts remain available alongside
 subsequent candidates. A corrected CI adapter or focused local pass does not
