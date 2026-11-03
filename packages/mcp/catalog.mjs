@@ -2,7 +2,7 @@ import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { atomicWriteJson, readJsonObject, withConfigLock } from "../config-runtime/index.mjs";
 import { isMcpOAuthActive, isMcpOAuthBlocked } from "./contracts.mjs";
-import { processIdentity } from "../host/ownership.mjs";
+import { processIdentity } from "../process-runtime/ownership.mjs";
 import { withMcpMetadataLock } from "./metadata-lock.mjs";
 
 export const MCP_PROTOCOL = 1;

@@ -8,9 +8,8 @@ import { resolveBoundPackageRoot } from "../bootstrap/runtime-package-binding.mj
 import { APP_ROOT, loadDistribution, resolveDistributionPackage } from "../distribution/runtime.mjs";
 import { loadIntrinsicDistribution } from "../distribution/intrinsic.mjs";
 import { OMP_CONTROL_COMMANDS } from "../control-service/cli-parser.mjs";
-import { McpCatalog, mcpToolNames } from "../mcp/catalog.mjs";
 import { usesNativePiTools } from "../upstream-compatibility/native-pi.mjs";
-import { accountWorkerEnvironment } from "../host/models.mjs";
+import { accountWorkerEnvironment } from "../process-runtime/account-environment.mjs";
 
 const STACK_DIRECTORY = /^[a-f0-9]{64}$/u;
 const UUID = /^[a-f0-9-]{36}$/u;
@@ -46,6 +45,7 @@ const DIRECT_FIRST_PARTY_EXTENSIONS = Object.freeze([
 ]);
 
 const SAFE_BOOLEAN_FLAGS = new Set([
+  "--minimal",
   "--print", "-p",
   "--continue", "-c",
   "--resume", "-r",
@@ -86,6 +86,7 @@ Daily Agent:
   omp -c                      Continue the latest session
   omp -r                      Choose a session to resume
   omp -p "review this repo"   Run a read-only non-interactive task
+  omp --minimal --mode rpc    Run the native session without optional modules
   omp --model <provider/id>   Select a model without the startup picker
   omp account help           Set up or log in to a product account without a Host
   omp settings help          Shared product tool and skill defaults
@@ -158,7 +159,7 @@ export function classifyOmpInvocation(argv = []) {
     return Object.freeze({ kind: "agent-help", argv: [], compatibilityAlias: false });
   }
   if (argv[0] === "--") {
-    return Object.freeze({ kind: "agent", argv: argv.slice(1), compatibilityAlias: false });
+    return Object.freeze({ kind: "agent", argv: [...argv], compatibilityAlias: false });
   }
   if (argv[0] === "web") return Object.freeze({ kind: "web", argv: argv.slice(1), compatibilityAlias: false });
   if (typeof argv[0] === "string" && CONTROL_COMMANDS.has(argv[0])) {
@@ -327,6 +328,7 @@ export async function resolveDirectExtensionSet({
   stack,
   configRoot,
   headless = false,
+  minimal = false,
   resolvePackage = resolveBoundPackageRoot,
 } = {}) {
   if (!stack || typeof stack.ompPackageRoot !== "string" || !path.isAbsolute(stack.ompPackageRoot)) {
@@ -338,6 +340,7 @@ export async function resolveDirectExtensionSet({
   const resolved = [];
   const identities = [];
   for (const expected of DIRECT_EXTERNAL_EXTENSIONS) {
+    if (minimal && expected.packageId !== "permission-modes") continue;
     if (stack.distribution && headless && expected.packageId === "subagents") continue;
     const pkg = stack.distribution && resolvePackage === resolveBoundPackageRoot
       ? await resolveDistributionPackage(stack, expected.packageId)
@@ -362,7 +365,7 @@ export async function resolveDirectExtensionSet({
       identities.push(`${expected.packageId}:${entry}`);
     }
   }
-  for (const entry of DIRECT_FIRST_PARTY_EXTENSIONS) {
+  for (const entry of minimal ? ["extensions/omp-direct/index.ts"] : DIRECT_FIRST_PARTY_EXTENSIONS) {
     resolved.push(await resolveExtensionEntry(stack.ompPackageRoot, entry, `only-my-pi:${entry}`));
     identities.push(`only-my-pi:${entry}`);
   }
@@ -385,6 +388,9 @@ function nativeToolsForStack(stack) {
 export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames = [], env = process.env, randomUUIDImpl = randomUUID, interactive = true, runtimeOwner = "direct" } = {}) {
   if (!["direct", "host"].includes(runtimeOwner)) fail("OMP_CONTROLLED_STACK_INVALID", "unknown runtime owner");
   const inspected = inspectDirectAgentArguments(argv ?? [], { interactive });
+  const minimal = hasFlag(argv ?? [], "--minimal");
+  if (minimal && (runtimeOwner !== "direct" || hasFlag(argv ?? [], "--export", "--version", "-v")))
+    fail("OMP_AGENT_OPTION_INVALID", "Minimal sessions require a direct execution entry");
   if (!stack || typeof stack.nodePath !== "string" || typeof stack.piCliPath !== "string" || !/^sha256:[a-f0-9]{64}$/u.test(stack.stackId ?? "")) {
     fail("OMP_CONTROLLED_STACK_INVALID", "direct Agent launch requires a verified controlled stack");
   }
@@ -404,6 +410,7 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames 
   for (let i = 0; i < (argv ?? []).length; i++) {
     const token = argv[i];
     if (token === "--") separator = true;
+    if (!separator && token === "--minimal") continue;
     if (!separator && token === "--account") {
       if (forwarded.includes("--account") || argv.slice(i + 2, argv.indexOf("--") < 0 ? undefined : argv.indexOf("--")).includes("--account")) fail("OMP_AGENT_OPTION_INVALID", "Duplicate account selection");
       i++; continue;
@@ -418,7 +425,8 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames 
     ...(nativeTools ? ["--no-mcp"] : []),
     ...extensionPaths.flatMap((entry) => ["--extension", entry]),
     "--tools",
-    [inspected.headless ? HEADLESS_TOOLS : INTERACTIVE_TOOLS, ...(nativeTools ? ["codemode", "context_snapshot"] : []), ...mcpNames].join(","),
+    [inspected.headless ? HEADLESS_TOOLS : minimal ? "read,grep,find,ls,edit,write,bash,request_coding_access" : INTERACTIVE_TOOLS,
+      ...(nativeTools && !minimal ? ["codemode", "context_snapshot"] : []), ...(minimal ? [] : mcpNames)].join(","),
     "--perm",
     inspected.headless ? "plan" : "build",
     ...forwarded,
@@ -431,6 +439,7 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames 
   const entry = utility || runtimeOwner === "host" ? undefined : mode === "rpc" ? "rpc-entry.mjs"
     : !inspected.headless && [undefined, "text"].includes(mode) ? "tui-entry.mjs"
     : inspected.headless && [undefined, "text", "json"].includes(mode) ? "session-entry.mjs" : undefined;
+  if (minimal && !entry) fail("OMP_AGENT_OPTION_INVALID", "Minimal sessions require TUI, print or RPC mode");
   if (entry) {
     const beforeSeparator = (argv ?? []).slice(0, (argv ?? []).includes("--") ? argv.indexOf("--") : undefined);
     if (["--mode", "--session"].some((flag) => beforeSeparator.filter((token) => token === flag).length > 1))
@@ -450,6 +459,7 @@ export function buildDirectPiInvocation({ argv, stack, extensionPaths, mcpNames 
       OMP_CODING_AGENT_SESSION_DIR: env.PI_CODING_AGENT_SESSION_DIR ?? "",
       ONLY_MY_PI_DISTRIBUTION_VERSION: stack.distribution.version } : {}),
     ONLY_MY_PI_DIRECT: "1",
+    ONLY_MY_PI_MINIMAL: minimal ? "1" : "0",
     OMP_MCP_SDK_FILE: path.resolve(path.dirname(stack.piCliPath), "../index.js"),
     ONLY_MY_PI_HEADLESS: inspected.headless ? "1" : "0",
     ONLY_MY_PI_MODEL_EXPLICIT: inspected.explicitModel ? "1" : "0",
@@ -473,9 +483,13 @@ export async function launchDirectAgent({ argv = [], packageRoot, homeDir, stack
     await requireSystemDependencies({ env });
   }
   const configRoot = resolveDirectConfigRoot({ env, homeDir });
-  const directExtensions = await resolveDirectExtensionSet({ stack, configRoot, headless: inspected.headless });
-  const mcp = await new McpCatalog(configRoot).snapshot(await fs.realpath(process.cwd()));
-  const mcpNames = mcpToolNames(mcp);
+  const minimal = hasFlag(argv, "--minimal");
+  const directExtensions = await resolveDirectExtensionSet({ stack, configRoot, headless: inspected.headless, minimal });
+  let mcpNames = [];
+  if (!minimal) {
+    const { McpCatalog, mcpToolNames } = await import("../mcp/catalog.mjs");
+    mcpNames = mcpToolNames(await new McpCatalog(configRoot).snapshot(await fs.realpath(process.cwd())));
+  }
   const invocation = buildDirectPiInvocation({ argv, stack, extensionPaths: directExtensions.extensions, mcpNames, env, randomUUIDImpl, interactive });
   if (invocation.argv[1] !== stack.piCliPath) {
     await resolveContainedRegularFile(stack.ompPackageRoot, path.relative(stack.ompPackageRoot, invocation.argv[1]), "session admission entry");

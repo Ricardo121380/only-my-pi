@@ -88,6 +88,7 @@ export class ProjectCatalog {
     const messages = entries.slice(offset, offset + Math.min(50, limit)).map((entry) => {
       const m = entry.message, cap = m.role === "toolResult" ? 240 : 65536;
       return { id: entry.id, role: m.role, text: textContent(m.content, cap), toolName: typeof m.toolName === "string" ? m.toolName : undefined,
+        ...(m.role === "toolResult" ? { isError: m.isError === true } : {}),
         timestamp: entry.timestamp, outputAvailable: m.role === "toolResult", truncated: textContent(m.content, cap + 1).length > cap };
     });
     const projection = manager.buildSessionProjection();

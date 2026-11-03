@@ -2,10 +2,10 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { findPackageJSON } from "node:module";
 import fs from "node:fs/promises";
-import { AccountCatalog } from "./accounts.mjs";
+import { AccountCatalog } from "./catalog.mjs";
 import { CLI_ACCOUNT_ID } from "./contracts.mjs";
-import { hasAccountCredential } from "./account-credential.mjs";
-import { classifierChoice, registerClassifiers, imageChoice, registerImages } from "../model-calls/models.mjs";
+import { hasAccountCredential } from "./credential.mjs";
+import { classifierChoice, registerClassifiers, imageChoice, registerImages } from "./model-registry.mjs";
 const [stackRoot, configRoot, accountId, modelType = "llm"] = process.argv.slice(2);
 let release;
 try {

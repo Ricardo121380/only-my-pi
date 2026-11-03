@@ -20,14 +20,6 @@ export const ATOMIC_WRITE_PHASES = Object.freeze([
   "AFTER_DIRECTORY_SYNC",
 ]);
 
-export const ATOMIC_DIRECTORY_PHASES = Object.freeze([
-  "AFTER_TEMP_DIRECTORY_CREATED",
-  "AFTER_DIRECTORY_PREPARED",
-  "BEFORE_DIRECTORY_RENAME",
-  "AFTER_DIRECTORY_RENAME",
-  "AFTER_DIRECTORY_SYNC",
-]);
-
 const ATOMIC_DIRECTORY_TEMPORARY = /^\.only-my-pi-dir-[1-9][0-9]*-[a-f0-9]{32}\.tmp$/u;
 
 export class AtomicDirectoryPublicationError extends Error {

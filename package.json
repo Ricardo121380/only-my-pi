@@ -81,6 +81,8 @@
     "scripts/subagents-guarded-writer-evidence.mjs",
     "scripts/subagents-guarded-writer-reconcile.mjs",
     "packages/config-runtime/",
+    "packages/process-runtime/",
+    "packages/accounts/",
     "packages/bootstrap/",
     "packages/control-service/",
     "packages/direct-agent/",
@@ -131,6 +133,11 @@
     "safe": "node scripts/safe-mode.mjs",
     "schema:check": "node scripts/schema-check.mjs",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.safety.json && tsc -p tsconfig.host.json && tsc -p webui/tsconfig.json",
+    "test:native-session": "node --test tests/direct-minimal-runtime.test.mjs",
+    "build:web:minimal": "vite build --config webui/vite.config.ts --mode minimal",
+    "demo:web:minimal": "npm run build:web:minimal && node tests/fixtures/minimal-web.mjs",
+    "dev:web": "node scripts/dev-web.mjs",
+    "dev:web:demo": "node scripts/dev-web.mjs --demo",
     "test:host": "node --test tests/host-*.test.mjs",
     "build:web": "vite build --config webui/vite.config.ts",
     "test:web": "vitest run --config webui/vite.config.ts",
@@ -205,15 +212,6 @@
     "yaml": "2.9.0"
   },
   "bundleDependencies": [
-    "ajv",
-    "ajv-formats",
-    "node-pty",
-    "semver",
-    "ssri",
-    "ws",
-    "yaml"
-  ],
-  "bundledDependencies": [
     "ajv",
     "ajv-formats",
     "node-pty",

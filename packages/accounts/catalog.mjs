@@ -3,8 +3,8 @@ import fs from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import Ajv from "ajv";
 import { atomicWriteJson, readJsonObject, ensureConfigDirectory, withConfigLock, assertSafeContainedPath } from "../config-runtime/index.mjs";
-import { hostError, CLI_ACCOUNT_ID } from "./contracts.mjs";
-import { reserveAccount } from "./account-activity.mjs";
+import { accountError, CLI_ACCOUNT_ID } from "./contracts.mjs";
+import { reserveAccount } from "./activity.mjs";
 
 const fields = {
   providerId: { type: "string", pattern: "^[a-zA-Z0-9_-]{1,128}$" },
@@ -46,7 +46,7 @@ export class AccountCatalog {
     return release;
   }
   async change(accountId, operation) {
-    if (accountId === CLI_ACCOUNT_ID) throw hostError("ACCOUNT_READ_ONLY", 403);
+    if (accountId === CLI_ACCOUNT_ID) throw accountError("ACCOUNT_READ_ONLY", 403);
     const release = await reserveAccount(this.configRoot, accountId, "change");
     try { return await operation(await this.get(accountId), release); }
     finally { await release(); }
@@ -54,16 +54,16 @@ export class AccountCatalog {
   async list() {
     let value;
     try { value = await readJsonObject(this.configRoot, this.file, { allowMissing: true }); }
-    catch { throw hostError("ACCOUNT_STORE_UNREADABLE", 500); }
+    catch { throw accountError("ACCOUNT_STORE_UNREADABLE", 500); }
     if (value === null) return [];
     if (!validateStore(value) || new Set(value.accounts.map((a) => a.accountId)).size !== value.accounts.length) {
-      throw hostError("ACCOUNT_STORE_INVALID", 500);
+      throw accountError("ACCOUNT_STORE_INVALID", 500);
     }
     return value.accounts;
   }
   async get(accountId) {
     const account = (await this.list()).find((item) => item.accountId === accountId);
-    if (!account) throw hostError("ACCOUNT_NOT_FOUND", 404);
+    if (!account) throw accountError("ACCOUNT_NOT_FOUND", 404);
     return account;
   }
   // Internal runtime input, never an HTTP response or a client-supplied path.
@@ -75,37 +75,37 @@ export class AccountCatalog {
     return paths;
   }
   async create(input) {
-    if (!validateInput(input) || !input.name.trim()) throw hostError("ACCOUNT_INPUT_INVALID");
+    if (!validateInput(input) || !input.name.trim()) throw accountError("ACCOUNT_INPUT_INVALID");
     const account = { accountId: randomUUID(), providerId: input.providerId, name: input.name.trim(), authType: input.authType };
     await ensureConfigDirectory(this.configRoot, this.directory);
     return withConfigLock(this.configRoot, { lockDirectory: path.join(this.configRoot, this.directory, "catalog.lock") }, async () => {
       const accounts = await this.list();
-      if (accounts.length >= 1000) throw hostError("ACCOUNT_LIMIT", 409);
+      if (accounts.length >= 1000) throw accountError("ACCOUNT_LIMIT", 409);
       await atomicWriteJson(this.configRoot, this.file, { version: 1, accounts: [...accounts, account] });
       return account;
     });
   }
   async configure(accountId, config) {
-    if (!validateProvider(config) || config.models.some(model => !["classifier", "image"].includes(model.type) && !model.maxTokens || model.type === "image" && !model.output?.includes("image"))) throw hostError("ACCOUNT_PROVIDER_INVALID");
+    if (!validateProvider(config) || config.models.some(model => !["classifier", "image"].includes(model.type) && !model.maxTokens || model.type === "image" && !model.output?.includes("image"))) throw accountError("ACCOUNT_PROVIDER_INVALID");
     let url;
-    try { url = new URL(config.baseUrl); } catch { throw hostError("ACCOUNT_PROVIDER_INVALID"); }
-    if (url.username || url.password || url.search || url.hash || (url.protocol !== "https:" && !(url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)))) throw hostError("ACCOUNT_PROVIDER_INVALID");
-    if (new Set(config.models.map((m) => m.id)).size !== config.models.length) throw hostError("ACCOUNT_PROVIDER_INVALID");
+    try { url = new URL(config.baseUrl); } catch { throw accountError("ACCOUNT_PROVIDER_INVALID"); }
+    if (url.username || url.password || url.search || url.hash || (url.protocol !== "https:" && !(url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)))) throw accountError("ACCOUNT_PROVIDER_INVALID");
+    if (new Set(config.models.map((m) => m.id)).size !== config.models.length) throw accountError("ACCOUNT_PROVIDER_INVALID");
     return this.change(accountId, async (account) => {
       const paths = await this.runtimePaths(accountId);
       const classifier = config.models.every(model => model.type === "classifier");
       const image = config.models.every(model => model.type === "image");
-      if (classifier !== ["typesafe-system-one", "openai-decisions", "cloudflare-workers-ai-system-one"].includes(config.api)) throw hostError("ACCOUNT_PROVIDER_INVALID");
-      if (image !== (config.api === "openrouter-images")) throw hostError("ACCOUNT_PROVIDER_INVALID");
+      if (classifier !== ["typesafe-system-one", "openai-decisions", "cloudflare-workers-ai-system-one"].includes(config.api)) throw accountError("ACCOUNT_PROVIDER_INVALID");
+      if (image !== (config.api === "openrouter-images")) throw accountError("ACCOUNT_PROVIDER_INVALID");
       await atomicWriteJson(this.configRoot, classifier || image ? path.join(path.dirname(paths.modelsPath), classifier ? "classifiers.json" : "images.json") : paths.modelsPath, { providers: { [account.providerId]: structuredClone(config) } });
       return { status: "configured" };
     });
   }
   async rename(accountId, name) {
-    if (!validateInput({ providerId: "valid", authType: "api_key", name }) || !name.trim()) throw hostError("ACCOUNT_INPUT_INVALID");
+    if (!validateInput({ providerId: "valid", authType: "api_key", name }) || !name.trim()) throw accountError("ACCOUNT_INPUT_INVALID");
     return this.change(accountId, async () => withConfigLock(this.configRoot, { lockDirectory: path.join(this.configRoot, this.directory, "catalog.lock") }, async () => {
       const accounts = await this.list(), account = accounts.find((a) => a.accountId === accountId);
-      if (!account) throw hostError("ACCOUNT_NOT_FOUND", 404);
+      if (!account) throw accountError("ACCOUNT_NOT_FOUND", 404);
       account.name = name.trim();
       await atomicWriteJson(this.configRoot, this.file, { version: 1, accounts }); return account;
     }));

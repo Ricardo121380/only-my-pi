@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { AccountAction, AccountDirectory, GuiAccount, StaticProvider } from "../../packages/host/contracts";
+import type { AccountAction, AccountDirectory, GuiAccount, StaticProvider } from "../../packages/accounts/contracts";
 import { accountApi, api, errorText } from "./api";
 import { OAuthLogin } from "./OAuthLogin";
 

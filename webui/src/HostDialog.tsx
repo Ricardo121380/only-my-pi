@@ -9,7 +9,10 @@ export function HostDialog({ open, title, onClose, children, className = "" }: {
     if (!dialog?.open) dialog?.showModal();
     return () => {
       dialog?.close();
-      const target = previous?.isConnected && previous.getClientRects().length ? previous : document.querySelector<HTMLElement>("main button");
+      const available = (node: HTMLElement | null) => !!node?.isConnected && !node.closest("[inert]") && !node.matches(":disabled") && node.getClientRects().length > 0;
+      // At a narrow breakpoint main may be inert behind an active sidebar or
+      // inspector. Restore to that visible panel instead of an inert button.
+      const target = available(previous) ? previous : [...document.querySelectorAll<HTMLElement>("main button, aside button")].find(available);
       target?.focus();
     };
   }, [open]);

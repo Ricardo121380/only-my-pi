@@ -1,3 +1,4 @@
+export const DIRECT_READ_ONLY_AGENTS: readonly string[];
 export type DirectWriterStage = "PREPARING" | "PATCH_CAPTURED" | "CLONE_VERIFIED" | "REVIEWED" | "APPLYING" | "APPLICATION_UNKNOWN" | "APPLIED_PENDING_VERIFICATION" | "VERIFYING" | "VERIFIED" | "BLOCKED";
 export type ApplicationStatus = "NOT_STARTED" | "UNKNOWN" | "APPLIED";
 export type VerificationStatus = "NOT_RUN" | "PENDING" | "RUNNING" | "PASS" | "FAIL" | "BLOCKED";

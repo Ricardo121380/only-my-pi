@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
+import { llmProvider } from "./fixtures/account-provider-contract.mjs";
 
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-accounts-"));
@@ -11,6 +12,17 @@ async function fixture(t) {
   return { root, catalog: new AccountCatalog(root) };
 }
 const input = { providerId: "anthropic", name: "Primary", authType: "api_key" };
+test("the typed explicit llm provider persists unchanged while invalid categories and missing budgets stay rejected", async t => {
+  const { catalog } = await fixture(t), account = await catalog.create(input);
+  assert.deepEqual(await catalog.configure(account.accountId, llmProvider), { status: "configured" });
+  const { modelsPath } = await catalog.runtimePaths(account.accountId);
+  const before = await fs.readFile(modelsPath);
+  assert.deepEqual(JSON.parse(before), { providers: { anthropic: llmProvider } });
+  for (const change of [{ type: "speech" }, { maxTokens: undefined }]) {
+    await assert.rejects(catalog.configure(account.accountId, { ...llmProvider, models: [{ ...llmProvider.models[0], ...change }] }), { code: "ACCOUNT_PROVIDER_INVALID" });
+    assert.deepEqual(await fs.readFile(modelsPath), before);
+  }
+});
 test("same provider gets separate persisted identities without changing CLI auth", async (t) => {
   const { root, catalog } = await fixture(t);
   await fs.writeFile(path.join(root, "auth.json"), "CLI sentinel");

@@ -1,7 +1,7 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { randomUUID } from "node:crypto";
-import { AccountCatalog } from "./accounts.mjs";
+import { AccountCatalog } from "./catalog.mjs";
 import { ensureConfigDirectory } from "../config-runtime/index.mjs";
 import { awaitAuthStart } from "./auth-process.mjs";
 

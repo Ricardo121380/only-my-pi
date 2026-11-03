@@ -7,7 +7,7 @@ import http from "node:http";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
 
 test("JSON print child uses its bound account, tool ceiling and prompt files, never CLI auth", { timeout: 20000 }, async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-account-child-")));
@@ -27,7 +27,7 @@ test("JSON print child uses its bound account, tool ceiling and prompt files, ne
   await fs.writeFile(path.join(root, "auth.json"), cli);
   const catalog = new AccountCatalog(root);
   const promptFile = path.join(root, "task.md"); await fs.writeFile(promptFile, "Task: child prompt fixture");
-  const moduleUrl = new URL("../packages/host/account-child.mjs", import.meta.url).href;
+  const moduleUrl = new URL("../packages/direct-agent/account-child.mjs", import.meta.url).href;
   const launch = (accountId, argv) => promisify(execFile)(process.execPath, ["--input-type=module", "-e", `import {runAccountChild} from ${JSON.stringify(moduleUrl)}; process.exitCode=await runAccountChild(${JSON.stringify({ stack: { root }, configRoot: root, accountId, argv, cwd: root })});`], { env: { PATH: process.env.PATH }, timeout: 10000, maxBuffer: 1024 * 1024 });
   for (const key of ["child-a", "child-b"]) {
     const account = await catalog.create({ providerId: "fixture", name: key, authType: "api_key" });

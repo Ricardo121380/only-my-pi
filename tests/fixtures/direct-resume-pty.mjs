@@ -7,7 +7,7 @@ import path from "node:path";
 import http from "node:http";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { acquireOwnership } from "../../packages/host/ownership.mjs";
+import { acquireOwnership } from "../../packages/process-runtime/ownership.mjs";
 
 const mode = process.argv[2];
 assert.ok(["select", "cancel", "occupied"].includes(mode));

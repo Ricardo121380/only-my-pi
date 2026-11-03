@@ -14,6 +14,9 @@ it("selects a classifier explicitly and saves quotas without granting a task per
   }));
   render(<ClassifierPanel projectId="p" projectName="Project" onClose={() => {}} />);
   await screen.findByLabelText("分类账号");
+  expect(screen.getAllByRole("spinbutton").map(input => [(input as HTMLInputElement).value, input.getAttribute("min"), input.getAttribute("max")])).toEqual([
+    ["4", "1", "32"], ["1", "1", "4"], ["8192", "1", "32768"], ["8192", "1", "65536"], ["32768", "1", "1048576"], ["32768", "1", "2097152"], ["10000", "1", "60000"],
+  ]);
   expect((screen.getByLabelText("分类账号") as HTMLSelectElement).value).toBe("");
   fireEvent.change(screen.getByLabelText("分类账号"), { target: { value: "class" } });
   await screen.findByRole("option", { name: "Sentiment · native/sentiment" });

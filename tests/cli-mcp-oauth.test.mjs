@@ -11,7 +11,7 @@ import { createPi110SourceCli } from "./fixtures/pi110-source-cli.mjs";
 import { createOAuthMcpServer } from "./fixtures/mcp-oauth-server.mjs";
 import { until } from "./fixtures/mcp-host.mjs";
 import { writePiEvidence } from "./fixtures/pi-runtime-evidence.mjs";
-import { groupAlive } from "../packages/host/ownership.mjs";
+import { groupAlive } from "../packages/process-runtime/ownership.mjs";
 
 const execFile = promisify(execFileCallback);
 async function fixture(t, serviceOptions) {

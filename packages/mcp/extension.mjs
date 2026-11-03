@@ -6,7 +6,7 @@ import Ajv from "ajv";
 import { McpCatalog, MCP_LIMITS, MCP_HELPERS, digest, mcpError, mcpToolName, mcpToolEnabled, resourceUri } from "./catalog.mjs";
 import { McpRuns } from "./runs.mjs";
 import { ControlledStdioTransport, containsSecret, launchIdentity } from "./process.mjs";
-import { processIdentity } from "../host/ownership.mjs";
+import { processIdentity } from "../process-runtime/ownership.mjs";
 import { loadNativeMcp } from "./native.mjs";
 import { openWriteTarget } from "./write-target.mjs";
 import { ControlledHttpTransport } from "./http.mjs";

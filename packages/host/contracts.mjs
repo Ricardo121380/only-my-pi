@@ -1,7 +1,6 @@
 import Ajv from "ajv";
 export const HOST_PROTOCOL = 2;
 export const HOST_VERSION = "phase2-v1";
-export const CLI_ACCOUNT_ID = "cli-readonly";
 const id = { type: "string", pattern: "^[a-zA-Z0-9_-]{1,128}$" };
 const size = { type: "integer", minimum: 2, maximum: 300 };
 const schema = { oneOf: [

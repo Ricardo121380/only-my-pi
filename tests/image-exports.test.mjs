@@ -6,7 +6,7 @@ import path from "node:path";
 import { randomUUID, createHash } from "node:crypto";
 import { ProjectCatalog } from "../packages/host/catalog.mjs";
 import { ImageExports } from "../packages/host/image-exports.mjs";
-import { acquireOwnership } from "../packages/host/ownership.mjs";
+import { acquireOwnership } from "../packages/process-runtime/ownership.mjs";
 import { imageBase64, imageDigest } from "./fixtures/image-host.mjs";
 
 async function fixture(t) {

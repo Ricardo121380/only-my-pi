@@ -60,7 +60,7 @@ async function fakeStack(t) {
 test("public invocation routing makes the Agent default and preserves management aliases", () => {
   assert.deepEqual(classifyOmpInvocation([]), { kind: "agent", argv: [], compatibilityAlias: false });
   assert.deepEqual(classifyOmpInvocation(["fix the test"]), { kind: "agent", argv: ["fix the test"], compatibilityAlias: false });
-  assert.deepEqual(classifyOmpInvocation(["--", "status"]), { kind: "agent", argv: ["status"], compatibilityAlias: false });
+  assert.deepEqual(classifyOmpInvocation(["--", "status"]), { kind: "agent", argv: ["--", "status"], compatibilityAlias: false });
   assert.deepEqual(classifyOmpInvocation(["status", "--json"]), { kind: "admin", argv: ["status", "--json"], compatibilityAlias: true });
   assert.deepEqual(classifyOmpInvocation(["admin", "doctor"]), { kind: "admin", argv: ["doctor"], compatibilityAlias: false });
   assert.deepEqual(classifyOmpInvocation(["admin"]), { kind: "admin", argv: ["help"], compatibilityAlias: false });

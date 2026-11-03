@@ -12,6 +12,24 @@ export function productLoaderOptions({ sdk, configRoot, snapshot, getSnapshot = 
     skillPaths: getSnapshot().resources.filter(r => r.kind === "skill" && r.enabled).map(r => store.skillPath(r)), includeDefaults: false }) };
 }
 
+// Assemble Pi services for the selected product loadout. The caller retains
+// trust, extension order, model/session creation and successful-load timing.
+export async function createProductSessionServices({ sdk, configRoot, snapshot, getSnapshot, taskId, ...options }) {
+  const failLoad = async () => {
+    const error = settingsError("RESOURCE_LOAD_FAILED", 409);
+    if (snapshot) await new ProductSettings(configRoot).recordLoad(snapshot, error, taskId);
+    throw error;
+  };
+  const services = await sdk.createAgentSessionServices({ ...options,
+    resourceLoaderOptions: {
+      ...(snapshot ? productLoaderOptions({ sdk, configRoot, snapshot, getSnapshot }) : {}),
+      ...options.resourceLoaderOptions,
+    },
+  }).catch(failLoad);
+  if (services.diagnostics.some(entry => entry.type === "error") || services.resourceLoader.getExtensions().errors.length) return failLoad();
+  return services;
+}
+
 export function installProductSettings(pi, { configRoot, snapshot, controller }) {
   const store = new ProductSettings(configRoot);
   const selected = name => snapshot.resources.find(resource => resource.toolNames.includes(name));

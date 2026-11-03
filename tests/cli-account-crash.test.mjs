@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { createPi110SourceCli } from "./fixtures/pi110-source-cli.mjs";
 import { createAccountOAuthService, installAccountOAuthTransport } from "./fixtures/account-oauth-service.mjs";
 import { writePiEvidence } from "./fixtures/pi-runtime-evidence.mjs";
-import { processIdentity, groupAlive } from "../packages/host/ownership.mjs";
+import { processIdentity, groupAlive } from "../packages/process-runtime/ownership.mjs";
 
 async function until(read, accept, label) {
   const deadline = Date.now() + 15000;

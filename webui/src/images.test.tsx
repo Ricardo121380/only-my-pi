@@ -30,6 +30,10 @@ it("selects image models independently and saves bounded image and storage quota
   }));
   render(<ClassifierPanel kind="image" projectId="p" projectName="Project" onClose={() => {}} />);
   await screen.findByLabelText("生图账号"); expect((screen.getByLabelText("生图账号") as HTMLSelectElement).value).toBe("");
+  expect(screen.getAllByRole("spinbutton").map(input => [(input as HTMLInputElement).value, input.getAttribute("min"), input.getAttribute("max")])).toEqual([
+    ["4", "1", "32"], ["1", "1", "4"], ["8192", "1", "32768"], ["2097152", "1", "16777216"], ["32768", "1", "1048576"], ["8388608", "1", "67108864"], ["10000", "1", "60000"],
+    ["1", "1", "4"], ["4", "1", "32"], ["1048576", "1", "10485760"], ["4194304", "1", "67108864"],
+  ]);
   fireEvent.change(screen.getByLabelText("生图账号"), { target: { value: "image" } }); await screen.findByRole("option", { name: "Draw · native/draw" });
   fireEvent.change(screen.getByLabelText("生图模型"), { target: { value: "native/draw" } }); fireEvent.click(screen.getByText("保存项目生图配置"));
   await waitFor(() => expect(writes).toHaveLength(1));

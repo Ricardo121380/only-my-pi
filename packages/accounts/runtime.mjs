@@ -1,6 +1,6 @@
-import { AccountCatalog } from "./accounts.mjs";
-import { hasAccountCredential } from "./account-credential.mjs";
-import { hostError } from "./contracts.mjs";
+import { AccountCatalog } from "./catalog.mjs";
+import { hasAccountCredential } from "./credential.mjs";
+import { accountError } from "./contracts.mjs";
 
 const safeMessage = message => message?.errorMessage ? { ...message, errorMessage: "ACCOUNT_MODEL_REQUEST_FAILED" } : message;
 function safeStream(stream) {
@@ -22,18 +22,18 @@ export async function openProductAccount({ sdk, configRoot, accountId }) {
   const release = await catalog.beginUse(accountId);
   const account = await catalog.get(accountId);
   const runtime = await sdk.ModelRuntime.create({ ...await catalog.runtimePaths(accountId), allowModelNetwork: false, refreshOnCreate: false });
-  if (!await hasAccountCredential(runtime, accountId, account)) throw hostError("ACCOUNT_CREDENTIAL_MISSING", 409);
+  if (!await hasAccountCredential(runtime, accountId, account)) throw accountError("ACCOUNT_CREDENTIAL_MISSING", 409);
   const getAuth = runtime.getAuth.bind(runtime);
   runtime.getAuth = async (providerOrModel, options = {}) => {
     const providerId = typeof providerOrModel === "string" ? providerOrModel : providerOrModel.provider;
-    if (providerId !== account.providerId) throw hostError("ACCOUNT_MODEL_MISMATCH", 409);
-    if (!await hasAccountCredential(runtime, accountId, account)) throw hostError("ACCOUNT_CREDENTIAL_MISSING", 409);
+    if (providerId !== account.providerId) throw accountError("ACCOUNT_MODEL_MISMATCH", 409);
+    if (!await hasAccountCredential(runtime, accountId, account)) throw accountError("ACCOUNT_CREDENTIAL_MISSING", 409);
     // No per-request key or environmental identity may override this store.
     const auth = await getAuth(providerOrModel, { signal: options.signal, env: {} });
-    if (!auth) throw hostError("ACCOUNT_CREDENTIAL_UNAVAILABLE", 409);
+    if (!auth) throw accountError("ACCOUNT_CREDENTIAL_UNAVAILABLE", 409);
     return auth;
   };
-  for (const method of ["login", "logout", "setRuntimeApiKey", "removeRuntimeApiKey"]) runtime[method] = async () => { throw hostError("ACCOUNT_AUTH_REQUIRES_ACCOUNT_COMMAND", 409); };
+  for (const method of ["login", "logout", "setRuntimeApiKey", "removeRuntimeApiKey"]) runtime[method] = async () => { throw accountError("ACCOUNT_AUTH_REQUIRES_ACCOUNT_COMMAND", 409); };
   const available = runtime.getAvailableSnapshot.bind(runtime);
   runtime.getAvailableSnapshot = () => available().filter(model => model.provider === account.providerId);
   const providers = runtime.getProviders.bind(runtime);

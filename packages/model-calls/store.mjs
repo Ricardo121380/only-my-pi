@@ -1,21 +1,20 @@
 import path from "node:path";
 import fs from "node:fs/promises";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import Ajv from "ajv";
 import { acquireConfigLock, atomicWriteJson, canonicalJson, readJsonObject } from "../config-runtime/index.mjs";
-import { processIdentity } from "../host/ownership.mjs";
-import { hostError } from "../host/contracts.mjs";
-import { digest } from "../mcp/catalog.mjs";
+import { processIdentity } from "../process-runtime/ownership.mjs";
+import { modelCallError } from "./contracts.mjs";
+import { MODEL_BUDGET_LIMITS, IMAGE_BUDGET_LIMITS } from "./budgets.mjs";
+export { MODEL_BUDGET, IMAGE_BUDGET } from "./budgets.mjs";
 
-export const MODEL_BUDGET = Object.freeze({ requests: 4, concurrency: 1, maxInputBytes: 8192, maxOutputBytes: 8192, inputBytes: 32768, outputBytes: 32768, timeoutMs: 10000 });
-const ceilings = { requests: 32, concurrency: 4, maxInputBytes: 32768, maxOutputBytes: 65536, inputBytes: 1048576, outputBytes: 2097152, timeoutMs: 60000 };
-export const IMAGE_BUDGET = Object.freeze({ ...MODEL_BUDGET, maxOutputBytes: 2097152, outputBytes: 8388608, maxImagesPerRequest: 1, images: 4, maxStorageBytes: 1048576, storageBytes: 4194304 });
-const imageCeilings = { ...ceilings, maxOutputBytes: 16777216, outputBytes: 67108864, maxImagesPerRequest: 4, images: 32, maxStorageBytes: 10485760, storageBytes: 67108864 };
+const digest = value => createHash("sha256").update(typeof value === "string" || Buffer.isBuffer(value) ? value : JSON.stringify(value)).digest("hex");
+
 const bindingValidator = limits => new Ajv({ strict: true }).compile({ type: "object", additionalProperties: false, required: ["accountId", "model", "budget"], properties: {
   accountId: { type: "string", pattern: "^[a-zA-Z0-9_-]{1,128}$" }, model: { type: "string", pattern: "^[^\\s/]+/.{1,256}$" }, budget: { type: "object", additionalProperties: false, required: Object.keys(limits), properties: Object.fromEntries(Object.entries(limits).map(([key, maximum]) => [key, { type: "integer", minimum: 1, maximum }])) },
 } });
-const validateBinding = bindingValidator(ceilings), validateImageBinding = bindingValidator(imageCeilings);
+const validateBinding = bindingValidator(MODEL_BUDGET_LIMITS), validateImageBinding = bindingValidator(IMAGE_BUDGET_LIMITS);
 const now = () => new Date().toISOString();
 const active = request => ["reserved", "dispatched", "unknown"].includes(request.status);
 const integer = value => Number.isSafeInteger(value) && value >= 0;
@@ -72,9 +71,9 @@ export class ModelCallStore {
   constructor(configRoot) { this.root = configRoot; this.file = path.join(configRoot, "only-my-pi/model-calls/state.json"); }
   async read() {
     const stat = await fs.lstat(this.file).catch(error => { if (error.code === "ENOENT") return null; throw error; });
-    if (stat && (!stat.isFile() || stat.size > 16777216)) throw hostError("MODEL_LEDGER_INVALID", 409);
-    const state = await readJsonObject(this.root, this.file).catch(error => { if (error.code === "ENOENT") return { version: 1, projects: [], tasks: [] }; throw hostError("MODEL_LEDGER_INVALID", 409); });
-    if (!validState(state)) throw hostError("MODEL_LEDGER_INVALID", 409);
+    if (stat && (!stat.isFile() || stat.size > 16777216)) throw modelCallError("MODEL_LEDGER_INVALID", 409);
+    const state = await readJsonObject(this.root, this.file).catch(error => { if (error.code === "ENOENT") return { version: 1, projects: [], tasks: [] }; throw modelCallError("MODEL_LEDGER_INVALID", 409); });
+    if (!validState(state)) throw modelCallError("MODEL_LEDGER_INVALID", 409);
     return state;
   }
   async change(fn, afterWrite) {
@@ -85,8 +84,8 @@ export class ModelCallStore {
     }
     try {
       const state = await this.read(), result = await fn(state);
-      if (!validState(state)) throw hostError("MODEL_LEDGER_INVALID", 409);
-      if (Buffer.byteLength(JSON.stringify(state)) > 16777216) throw hostError("MODEL_LEDGER_CAPACITY", 409);
+      if (!validState(state)) throw modelCallError("MODEL_LEDGER_INVALID", 409);
+      if (Buffer.byteLength(JSON.stringify(state)) > 16777216) throw modelCallError("MODEL_LEDGER_CAPACITY", 409);
       await atomicWriteJson(this.root, this.file, state);
       afterWrite?.();
       return structuredClone(result);
@@ -97,16 +96,16 @@ export class ModelCallStore {
   }
   async save(projectPath, revision, classifier, models, kind = "classifier") {
     const prefix = kind === "image" ? "IMAGE" : "CLASSIFIER";
-    if (!["classifier", "image"].includes(kind) || !Number.isSafeInteger(revision) || revision < 0 || classifier !== null && !(kind === "image" ? validateImageBinding : validateBinding)(classifier)) throw hostError(`${prefix}_CONFIG_INVALID`);
+    if (!["classifier", "image"].includes(kind) || !Number.isSafeInteger(revision) || revision < 0 || classifier !== null && !(kind === "image" ? validateImageBinding : validateBinding)(classifier)) throw modelCallError(`${prefix}_CONFIG_INVALID`);
     let choice;
     if (classifier) {
       choice = (await models(classifier.accountId)).find(model => model.id === classifier.model && model.supported);
-      if (!choice) throw hostError(`${prefix}_UNAVAILABLE`, 409);
+      if (!choice) throw modelCallError(`${prefix}_UNAVAILABLE`, 409);
     }
     return this.change(state => {
       if (kind === "image") state.version = 2; // Earlier readers must refuse new image data, not erase it.
       const prior = state.projects.find(item => item.projectPath === projectPath);
-      if ((prior?.revision ?? 0) !== revision) throw hostError(`${prefix}_REVISION_CONFLICT`, 409);
+      if ((prior?.revision ?? 0) !== revision) throw modelCallError(`${prefix}_REVISION_CONFLICT`, 409);
       const revocation = kind === "image" ? "imageRevocation" : "revocation";
       const config = { ...(prior ?? { projectPath, revocation: 0, classifier: null }), revision: revision + 1, [revocation]: (prior?.[revocation] ?? 0) + (classifier === null ? 1 : 0), [kind]: classifier ? { ...structuredClone(classifier), choice } : null };
       if (prior) state.projects[state.projects.indexOf(prior)] = config; else state.projects.push(config);
@@ -117,18 +116,18 @@ export class ModelCallStore {
     const ownerIdentity = await processIdentity();
     return this.change(state => {
       const existing = state.tasks.find(task => task.taskId === taskId);
-      if (existing) throw hostError("MODEL_TASK_ALREADY_RECORDED", 409);
-      if (state.tasks.length >= 1000) throw hostError("MODEL_LEDGER_CAPACITY", 409);
+      if (existing) throw modelCallError("MODEL_TASK_ALREADY_RECORDED", 409);
+      if (state.tasks.length >= 1000) throw modelCallError("MODEL_LEDGER_CAPACITY", 409);
       const task = { taskId, projectPath, sessionId: null, snapshot, ownerPid: process.pid, ownerIdentity, status: "active", permission: null, requests: [], createdAt: now() };
       state.tasks.push(task); return task;
     });
   }
   check(state, taskId, kind = "classifier") {
     const task = state.tasks.find(item => item.taskId === taskId);
-    if (!task || task.status !== "active") throw hostError("MODEL_TASK_INACTIVE", 409);
+    if (!task || task.status !== "active") throw modelCallError("MODEL_TASK_INACTIVE", 409);
     const config = state.projects.find(item => item.projectPath === task.projectPath);
     const revocation = kind === "image" ? "imageRevocation" : "revocation";
-    if (!task.snapshot[kind] || !config?.[kind] || (config[revocation] ?? 0) !== (task.snapshot[revocation] ?? 0)) throw hostError(kind === "image" ? "IMAGE_REVOKED" : "CLASSIFIER_REVOKED", 409);
+    if (!task.snapshot[kind] || !config?.[kind] || (config[revocation] ?? 0) !== (task.snapshot[revocation] ?? 0)) throw modelCallError(kind === "image" ? "IMAGE_REVOKED" : "CLASSIFIER_REVOKED", 409);
     return task;
   }
   async authorize(taskId, sessionId, kind = "classifier") {
@@ -137,13 +136,13 @@ export class ModelCallStore {
   async reserve(taskId, parentToolCallId, context, kind = "classifier") {
     return this.change(state => {
       const task = this.check(state, taskId, kind), binding = task.snapshot[kind];
-      if (!task[kind === "image" ? "imagePermission" : "permission"]?.unknownCostAccepted) throw hostError(kind === "image" ? "IMAGE_APPROVAL_REQUIRED" : "CLASSIFIER_APPROVAL_REQUIRED", 409);
+      if (!task[kind === "image" ? "imagePermission" : "permission"]?.unknownCostAccepted) throw modelCallError(kind === "image" ? "IMAGE_APPROVAL_REQUIRED" : "CLASSIFIER_APPROVAL_REQUIRED", 409);
       const budget = binding.budget, requests = task.requests.filter(request => request.kind === kind);
-      if (task.requests.some(request => request.status === "unknown")) throw hostError("MODEL_RESULT_RECONCILIATION_REQUIRED", 409);
-      if (Buffer.byteLength(JSON.stringify(context)) > budget.maxInputBytes) throw hostError("MODEL_INPUT_LIMIT", 409);
-      if (requests.length >= budget.requests || requests.filter(active).length >= budget.concurrency || (requests.length + 1) * budget.maxInputBytes > budget.inputBytes || (requests.length + 1) * budget.maxOutputBytes > budget.outputBytes) throw hostError("MODEL_BUDGET_EXHAUSTED", 409);
-      if (kind === "image" && ((requests.length + 1) * budget.maxImagesPerRequest > budget.images || (requests.length + 1) * budget.maxStorageBytes > budget.storageBytes)) throw hostError("MODEL_BUDGET_EXHAUSTED", 409);
-      if (kind === "image" && state.tasks.flatMap(task => task.requests).reduce((n, r) => n + (r.kind === "image" ? r.reservation.storageBytes : 0), 0) + budget.maxStorageBytes > 268435456) throw hostError("IMAGE_GLOBAL_STORAGE_LIMIT", 409);
+      if (task.requests.some(request => request.status === "unknown")) throw modelCallError("MODEL_RESULT_RECONCILIATION_REQUIRED", 409);
+      if (Buffer.byteLength(JSON.stringify(context)) > budget.maxInputBytes) throw modelCallError("MODEL_INPUT_LIMIT", 409);
+      if (requests.length >= budget.requests || requests.filter(active).length >= budget.concurrency || (requests.length + 1) * budget.maxInputBytes > budget.inputBytes || (requests.length + 1) * budget.maxOutputBytes > budget.outputBytes) throw modelCallError("MODEL_BUDGET_EXHAUSTED", 409);
+      if (kind === "image" && ((requests.length + 1) * budget.maxImagesPerRequest > budget.images || (requests.length + 1) * budget.maxStorageBytes > budget.storageBytes)) throw modelCallError("MODEL_BUDGET_EXHAUSTED", 409);
+      if (kind === "image" && state.tasks.flatMap(task => task.requests).reduce((n, r) => n + (r.kind === "image" ? r.reservation.storageBytes : 0), 0) + budget.maxStorageBytes > 268435456) throw modelCallError("IMAGE_GLOBAL_STORAGE_LIMIT", 409);
       const request = { requestId: randomUUID(), parentToolCallId, kind, status: "reserved", inputDigest: digest(context), accountId: binding.accountId, model: binding.model, definitionDigest: binding.choice.definitionDigest,
         reservation: { requests: 1, concurrency: 1, inputBytes: budget.maxInputBytes, outputBytes: budget.maxOutputBytes, money: null, ...(kind === "image" ? { images: budget.maxImagesPerRequest, storageBytes: budget.maxStorageBytes } : {}) }, priceSnapshot: { value: binding.choice.price, source: "Pi model catalog", at: now(), currency: "USD", hardLimit: false }, createdAt: now(), usage: { status: "unknown", tokens: null, estimatedCost: null, source: "provider receipt" } };
       task.requests.push(request); return request;
@@ -152,8 +151,8 @@ export class ModelCallStore {
   async update(taskId, requestId, change) {
     return this.change(state => {
       const task = state.tasks.find(item => item.taskId === taskId), request = task?.requests.find(item => item.requestId === requestId);
-      if (!request) throw hostError("MODEL_REQUEST_NOT_FOUND", 404);
-      if (!["reserved", "dispatched", "unknown"].includes(request.status)) throw hostError("MODEL_REQUEST_SETTLED", 409);
+      if (!request) throw modelCallError("MODEL_REQUEST_NOT_FOUND", 404);
+      if (!["reserved", "dispatched", "unknown"].includes(request.status)) throw modelCallError("MODEL_REQUEST_SETTLED", 409);
       if (change.status === "dispatched") this.check(state, taskId, request.kind);
       Object.assign(request, change, { updatedAt: now() }); return request;
     });
@@ -162,8 +161,8 @@ export class ModelCallStore {
     return this.change(state => {
       const task = state.tasks.find(item => item.taskId === taskId), request = task?.requests.find(item => item.requestId === requestId);
       this.check(state, taskId, request?.kind);
-      if (task.requests.some(item => item.status === "unknown")) throw hostError("MODEL_RESULT_RECONCILIATION_REQUIRED", 409);
-      if (!request || request.status !== "reserved") throw hostError("MODEL_RETRY_DENIED", 409);
+      if (task.requests.some(item => item.status === "unknown")) throw modelCallError("MODEL_RESULT_RECONCILIATION_REQUIRED", 409);
+      if (!request || request.status !== "reserved") throw modelCallError("MODEL_RETRY_DENIED", 409);
       Object.assign(request, metadata, { status: "dispatched", dispatchedAt: now() }); return request;
     }, send); // The marker is durable and the lock remains held until send begins.
   }

@@ -76,7 +76,7 @@ export async function createIntegratedHost({ candidateRoot, evidenceRoot, scenar
     await fs.writeFile(path.join(config, "models.json"), JSON.stringify({ providers: { fixture: { baseUrl, api: "openai-completions", models: [{ id: "one", name: "N14 controlled chat", input: ["text"], contextWindow: 32000, maxTokens: 128 }] } } }));
     remote = await createHttpMcpServer(); oauth = await createOAuthMcpServer();
     const { runWebCommand, hostEndpoint, hostControl } = await candidateImport("packages/host/cli.mjs");
-    const { processIdentity } = await candidateImport("packages/host/ownership.mjs");
+    const { processIdentity } = await candidateImport("packages/process-runtime/ownership.mjs");
     const web = argv => runWebCommand({ argv, packageRoot: omp, env, openBrowser: async () => {} });
     const open = async () => {
       assert.equal((await web(["start"])).status, "HOST_RUNNING");

@@ -12,8 +12,12 @@ test("real Pi TUI applies project selection, authorizes native classification an
   const f = await createClassificationHost();
   let output = "", exited, terminal;
   t.after(async () => {
-    if (process.env.OMP_CLASSIFIER_EVIDENCE_DIR) await fs.writeFile(path.join(process.env.OMP_CLASSIFIER_EVIDENCE_DIR, "tui-output.txt"), output.replace(/\x1b\[[0-9;?]*[A-Za-z]/gu, ""));
-    if (terminal && !exited) { terminal.kill("SIGTERM"); await until(() => exited, Boolean, "classification TUI exit"); } await f.close();
+    try {
+      if (process.env.OMP_CLASSIFIER_EVIDENCE_DIR) {
+        await fs.mkdir(process.env.OMP_CLASSIFIER_EVIDENCE_DIR, { recursive: true });
+        await fs.writeFile(path.join(process.env.OMP_CLASSIFIER_EVIDENCE_DIR, "tui-output.txt"), output.replace(/\x1b\[[0-9;?]*[A-Za-z]/gu, ""));
+      }
+    } finally { if (terminal && !exited) { terminal.kill("SIGTERM"); await until(() => exited, Boolean, "classification TUI exit"); } await f.close(); }
   });
   await f.configure();
   const file = path.join(f.root, "selection.json");

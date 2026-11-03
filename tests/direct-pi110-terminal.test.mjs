@@ -8,7 +8,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { createSourceFixtureRoot } from "./fixtures/source-fixture-root.mjs";
 import { createPi110SourceCli } from "./fixtures/pi110-source-cli.mjs";
 import { writePiEvidence } from "./fixtures/pi-runtime-evidence.mjs";
-import { processIdentity, groupAlive } from "../packages/host/ownership.mjs";
+import { processIdentity, groupAlive } from "../packages/process-runtime/ownership.mjs";
 
 import { processEvidence, saveRegressionEvidence } from "./fixtures/regression-evidence.mjs";
 const quote = (value) => "'" + value.replaceAll("'", "'\\''") + "'";

@@ -4,7 +4,7 @@ import os from "node:os";
 import { randomUUID, createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import pty from "node-pty";
-import { acquireOwnership, processIdentity } from "./ownership.mjs";
+import { acquireOwnership, processIdentity } from "../process-runtime/ownership.mjs";
 import { projectPath } from "./inspector.mjs";
 import { hostError } from "./contracts.mjs";
 import { atomicWriteJson, ensureConfigDirectory, readJsonObject } from "../config-runtime/index.mjs";

@@ -9,7 +9,7 @@ import { HostInputStore } from "../packages/host/input-store.mjs";
 import { HostInputController } from "../packages/host/input-controller.mjs";
 import { HostTasks } from "../packages/host/tasks.mjs";
 import { ProjectCatalog } from "../packages/host/catalog.mjs";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
 import { INPUT_CARRIER, findInputReceipt, validateInputCommand } from "../packages/host/input-protocol.mjs";
 import { createPiInputBridge } from "../packages/host/pi-input-bridge.mjs";
 import { inputDigest } from "../packages/host/input-contracts.mjs";

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { spawnAuthProcess, recoverAuthProcesses } from "../packages/host/auth-process.mjs";
+import { spawnAuthProcess, recoverAuthProcesses } from "../packages/accounts/auth-process.mjs";
 import { atomicWriteJson } from "../packages/config-runtime/index.mjs";
 
 test("authentication subprocess identity is durable before begin; recovery confirms its exit", async (t) => {

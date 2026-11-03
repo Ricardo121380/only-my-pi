@@ -4,8 +4,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
-import { accountAuth } from "../packages/host/account-auth.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
+import { accountAuth } from "../packages/accounts/authentication.mjs";
 
 test("public auth worker saves and removes only the selected account; responses contain no key", { timeout: 15000 }, async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-auth-worker-")));

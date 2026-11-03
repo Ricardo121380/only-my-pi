@@ -80,8 +80,26 @@ it("modal is outside hidden responsive ancestors and restores focus to a visible
   HTMLDialogElement.prototype.close = function () { this.open = false; };
   const { rerender, container } = render(<><main><button>导航</button></main><aside hidden><HostDialog open title="账号" onClose={() => {}}>账号内容</HostDialog></aside></>);
   const dialog = screen.getByRole("dialog", { name: "账号" });
+  vi.spyOn(screen.getByRole("button", { name: "导航" }), "getClientRects").mockReturnValue([{}] as unknown as DOMRectList);
   expect(dialog.parentElement).toBe(document.body);
   expect(container.querySelector("aside dialog")).toBeNull();
   rerender(<><main><button>导航</button></main><aside hidden><HostDialog open={false} title="账号" onClose={() => {}}>账号内容</HostDialog></aside></>);
   expect(document.activeElement).toBe(screen.getByRole("button", { name: "导航" }));
+});
+
+it.each([false, true])("closing a modal skips inert content, including an old trigger (%s), and focuses the active panel", previousTrigger => {
+  HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+  HTMLDialogElement.prototype.close = function () { this.open = false; };
+  function Fixture({ open, blocked = false }: { open: boolean; blocked?: boolean }) {
+    return <><main inert={blocked}><button>主区导航</button></main><aside><button>项目检查</button></aside><HostDialog open={open} title="设置" onClose={() => {}}>设置内容</HostDialog></>;
+  }
+  const { rerender } = render(<Fixture open={false} />);
+  const main = screen.getByRole("button", { name: "主区导航" }), target = screen.getByRole("button", { name: "项目检查" });
+  vi.spyOn(main, "getClientRects").mockReturnValue([{}] as unknown as DOMRectList);
+  vi.spyOn(target, "getClientRects").mockReturnValue([{}] as unknown as DOMRectList);
+  if (previousTrigger) main.focus();
+  rerender(<Fixture open />);
+  rerender(<Fixture open blocked />);
+  rerender(<Fixture open={false} blocked />);
+  expect(document.activeElement).toBe(target);
 });

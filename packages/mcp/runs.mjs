@@ -2,7 +2,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { atomicWriteJson, readJsonObject } from "../config-runtime/index.mjs";
 import { withMcpMetadataLock } from "./metadata-lock.mjs";
-import { processIdentity, groupAlive } from "../host/ownership.mjs";
+import { processIdentity, groupAlive } from "../process-runtime/ownership.mjs";
 import { mcpError, MCP_LIMITS } from "./catalog.mjs";
 
 export class McpRuns {

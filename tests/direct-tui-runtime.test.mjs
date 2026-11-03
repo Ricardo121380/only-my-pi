@@ -6,7 +6,7 @@ import test from "node:test";
 import * as sdk from "@earendil-works/pi-coding-agent";
 import { createDirectTuiRuntime } from "../packages/direct-agent/tui-runtime.mjs";
 import { SessionAdmissions } from "../packages/direct-agent/session-admission.mjs";
-import { acquireOwnership } from "../packages/host/ownership.mjs";
+import { acquireOwnership } from "../packages/process-runtime/ownership.mjs";
 
 async function fixture(t) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-tui-start-")));
@@ -44,6 +44,7 @@ test("candidate TUI bootstrap preserves model, thinking, name, messages and rese
   assert.equal(result.options.initialMessage, "task one");
   assert.deepEqual(result.options.initialMessages, []);
   assert.deepEqual(result.runtime.session.getActiveToolNames(), ["read", "ls"]);
+  await assert.rejects(fs.stat(path.join(f.configRoot, "only-my-pi/product-settings")), { code: "ENOENT" });
   const id = result.runtime.session.sessionId;
   await assert.rejects(acquireOwnership(f.configRoot, "session", id), { code: "OWNERSHIP_HELD" });
   await result.runtime.dispose();

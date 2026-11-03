@@ -1,5 +1,4 @@
 export const DIRECT_AGENT_VERSION = "0.3.0-preview.1";
-export const DIRECT_AGENT_TAG = `v${DIRECT_AGENT_VERSION}`;
 export const LEGACY_HARNESS_VERSION = "0.2.0-preview.1";
 
 export const DIRECT_AGENT_CAPABILITY_CEILING = Object.freeze({

@@ -4,10 +4,10 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { EventEmitter } from "node:events";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
 import { ProjectCatalog } from "../packages/host/catalog.mjs";
 import { HostTasks } from "../packages/host/tasks.mjs";
-import { acquireOwnership } from "../packages/host/ownership.mjs";
+import { acquireOwnership } from "../packages/process-runtime/ownership.mjs";
 
 test("resume locks history before worker startup and refuses active or CLI-owned sessions", async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-resume-lock-")));

@@ -1,8 +1,8 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { AccountCatalog } from "./accounts.mjs";
+import { AccountCatalog } from "./catalog.mjs";
 import { awaitAuthStart } from "./auth-process.mjs";
-import { registerClassifiers, registerImages } from "../model-calls/models.mjs";
+import { registerClassifiers, registerImages } from "./model-registry.mjs";
 
 let finished = false;
 process.on("disconnect", () => { if (!finished) process.exit(1); });

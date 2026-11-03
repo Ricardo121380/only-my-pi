@@ -4,9 +4,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
-import { accountWorkerEnvironment, listModels } from "../packages/host/models.mjs";
-import { hasAccountCredential } from "../packages/host/account-credential.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
+import { accountWorkerEnvironment } from "../packages/process-runtime/account-environment.mjs";
+import { listModels } from "../packages/accounts/models.mjs";
+import { hasAccountCredential } from "../packages/accounts/credential.mjs";
 
 test("only explicit CLI literal config joins stored account identities", async () => {
   for (const source of ["environment", "models_json_command", "runtime", "fallback", "models_json_key"]) {

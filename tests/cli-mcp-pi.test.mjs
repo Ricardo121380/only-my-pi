@@ -12,7 +12,7 @@ import { createHttpMcpServer } from "./fixtures/mcp-http-server.mjs";
 import { createOAuthMcpServer } from "./fixtures/mcp-oauth-server.mjs";
 import { until, providerReply, mcpReception } from "./fixtures/mcp-host.mjs";
 import { McpRuns } from "../packages/mcp/runs.mjs";
-import { groupAlive, processIdentity } from "../packages/host/ownership.mjs";
+import { groupAlive, processIdentity } from "../packages/process-runtime/ownership.mjs";
 import { writePiEvidence } from "./fixtures/pi-runtime-evidence.mjs";
 const stdioReception = run => mcpReception({ ...run, processes: run.processes.filter(process => process.transport === "stdio") });
 

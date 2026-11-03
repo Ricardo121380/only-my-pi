@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { ModelCallStore } from "./store.mjs";
 import { classifierRuntime } from "./models.mjs";
-import { hostError } from "../host/contracts.mjs";
+import { modelCallError } from "./contracts.mjs";
 import { ImageArtifacts, validateImage } from "./artifacts.mjs";
-import { AccountCatalog } from "../host/accounts.mjs";
+import { AccountCatalog } from "../accounts/catalog.mjs";
 
-const fail = code => hostError(code, 409);
+const fail = code => modelCallError(code, 409);
 const boundedProbability = value => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
 function validateAnswers(answers, questions) {
   if (!answers || Object.keys(answers).sort().join() !== Object.keys(questions).sort().join()) throw fail("CLASSIFIER_RESULT_INVALID");

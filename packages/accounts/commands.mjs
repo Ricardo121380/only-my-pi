@@ -1,11 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { secretInput } from "../control-service/secret-input.mjs";
-import { AccountCatalog } from "./accounts.mjs";
-import { accountAuth } from "./account-auth.mjs";
-import { AccountOAuth } from "./account-oauth.mjs";
+import { AccountCatalog } from "./catalog.mjs";
+import { accountAuth } from "./authentication.mjs";
+import { AccountOAuth } from "./oauth.mjs";
 import { listModels } from "./models.mjs";
-import { CLI_ACCOUNT_ID, hostError } from "./contracts.mjs";
+import { CLI_ACCOUNT_ID, accountError } from "./contracts.mjs";
 
 export const ACCOUNT_USAGE = `omp account list
 omp account add --provider ID --name NAME --auth api_key|oauth
@@ -31,7 +31,7 @@ export async function runAccountCli({ argv, configRoot, resolveStack, env = proc
   if (command === "add") {
     const values = {};
     for (let i = 0; i < args.length; i += 2) {
-      if (!["--provider", "--name", "--auth"].includes(args[i]) || values[args[i]] !== undefined || typeof args[i + 1] !== "string") throw hostError("ACCOUNT_COMMAND_USAGE");
+      if (!["--provider", "--name", "--auth"].includes(args[i]) || values[args[i]] !== undefined || typeof args[i + 1] !== "string") throw accountError("ACCOUNT_COMMAND_USAGE");
       values[args[i]] = args[i + 1];
     }
     return catalog.create({ providerId: values["--provider"], name: values["--name"], authType: values["--auth"] });
@@ -41,9 +41,9 @@ export async function runAccountCli({ argv, configRoot, resolveStack, env = proc
   if (command === "remove" && args.length === 1) return catalog.remove(accountId);
   if (command === "configure" && args.length === 2 && path.isAbsolute(args[1])) {
     const stat = await fs.lstat(args[1]);
-    if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 65536) throw hostError("ACCOUNT_PROVIDER_INVALID");
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 65536) throw accountError("ACCOUNT_PROVIDER_INVALID");
     let config;
-    try { config = JSON.parse(await fs.readFile(args[1], "utf8")); } catch { throw hostError("ACCOUNT_PROVIDER_INVALID"); }
+    try { config = JSON.parse(await fs.readFile(args[1], "utf8")); } catch { throw accountError("ACCOUNT_PROVIDER_INVALID"); }
     return catalog.configure(accountId, config);
   }
   if (["status", "logout", "models"].includes(command) && args.length === 1) {
@@ -54,15 +54,15 @@ export async function runAccountCli({ argv, configRoot, resolveStack, env = proc
       return accountAuth({ stack, configRoot, accounts: catalog, accountId, input: { type: command }, env });
     } finally { await release?.(); }
   }
-  if (command !== "login" || !accountId) throw hostError("ACCOUNT_COMMAND_USAGE");
+  if (command !== "login" || !accountId) throw accountError("ACCOUNT_COMMAND_USAGE");
   let fromStdin = false, timeoutMs = 300000;
   const flags = new Set();
   for (let i = 1; i < args.length; i++) {
     const flag = args[i];
-    if (flags.has(flag) || !["--stdin", "--timeout-ms"].includes(flag)) throw hostError("ACCOUNT_COMMAND_USAGE");
+    if (flags.has(flag) || !["--stdin", "--timeout-ms"].includes(flag)) throw accountError("ACCOUNT_COMMAND_USAGE");
     flags.add(flag);
     if (flag === "--stdin") fromStdin = true;
-    else { timeoutMs = Number(args[++i]); if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 300000) throw hostError("ACCOUNT_COMMAND_USAGE"); }
+    else { timeoutMs = Number(args[++i]); if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 300000) throw accountError("ACCOUNT_COMMAND_USAGE"); }
   }
   const account = await catalog.get(accountId), stack = await resolveStack();
   const controller = new AbortController();
@@ -70,7 +70,7 @@ export async function runAccountCli({ argv, configRoot, resolveStack, env = proc
   process.on("SIGINT", cancel); process.on("SIGTERM", cancel);
   let input, oauth, timer;
   try {
-    input = secretInput(stdin, stderr, controller, fromStdin, (code, status) => hostError(`ACCOUNT_${code}`, status));
+    input = secretInput(stdin, stderr, controller, fromStdin, (code, status) => accountError(`ACCOUNT_${code}`, status));
     if (account.authType === "api_key") {
       let timedOut = false;
       timer = setTimeout(() => { if (!controller.signal.aborted) { timedOut = true; cancel(); } }, timeoutMs);

@@ -8,7 +8,6 @@ import { promisify } from "node:util";
 const execFile = promisify(nodeExecFile);
 const MAX_STATUS_BYTES = 256 * 1024;
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
-const HASH = /^sha256:[a-f0-9]{64}$/u;
 
 export const DESTRUCTIVE_GIT_CODES = Object.freeze({
   RESET: "DESTRUCTIVE_GIT_RESET",
@@ -300,8 +299,4 @@ export function createWorkspacePolicy({ baseline = null, scope = [] } = {}) {
     inspectCommand: (command, options = {}) => inspectMutationCommand(command, options),
     classify: (current) => classifyWorkspaceChanges(baseline, current),
   });
-}
-
-export function isWorkspaceDigest(value) {
-  return typeof value === "string" && HASH.test(value);
 }

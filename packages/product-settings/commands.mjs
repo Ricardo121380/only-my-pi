@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ProductSettings, settingsError, taskSettingsSnapshot } from "./catalog.mjs";
+import { runSettingsAction, settingsError } from "./catalog.mjs";
 
 export const SETTINGS_USAGE = `omp settings list [--project /absolute/project]
 omp settings set RESOURCE --revision N [--enabled true|false] [--parameters '{"label":"ctx"}'] [--project /absolute/project]
@@ -30,10 +30,5 @@ export async function runSettingsCli({ argv, configRoot }) {
     if (flags["--enabled"] !== undefined) { if (!["true", "false"].includes(flags["--enabled"])) throw settingsError("SETTINGS_VALUE_INVALID"); input.enabled = flags["--enabled"] === "true"; }
     if (flags["--parameters"] !== undefined) { try { input.parameters = JSON.parse(flags["--parameters"]); } catch { throw settingsError("RESOURCE_PARAMETERS_INVALID"); } }
   }
-  const result = await new ProductSettings(configRoot).action(input, projectPath);
-  if (projectPath && type !== "preview") {
-    try { result.resourceRevision = (await taskSettingsSnapshot(configRoot, projectPath)).resourceRevision; result.pending = Boolean(result.lastFailure) || result.lastLoaded?.resourceRevision !== result.resourceRevision; }
-    catch (error) { result.loadError = error.code ?? "RESOURCE_LOAD_FAILED"; result.pending = true; }
-  }
-  return result;
+  return runSettingsAction({ configRoot, input, projectPath });
 }

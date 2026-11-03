@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { startHost } from "../packages/host/server.mjs";
 import { RpcWorker } from "../packages/host/rpc-worker.mjs";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
 import { writePiEvidence } from "./fixtures/pi-runtime-evidence.mjs";
 
 function finish(res, content = "fixture done") {

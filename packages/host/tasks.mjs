@@ -3,20 +3,19 @@ import { randomUUID, createHash } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { atomicWriteJson, readJsonObject } from "../config-runtime/index.mjs";
 import { RpcWorker } from "./rpc-worker.mjs";
-import { acquireOwnership, groupAlive } from "./ownership.mjs";
-import { hostError, terminal, textContent, CLI_ACCOUNT_ID } from "./contracts.mjs";
+import { acquireOwnership, groupAlive } from "../process-runtime/ownership.mjs";
+import { hostError, terminal, textContent } from "./contracts.mjs";
+import { CLI_ACCOUNT_ID } from "../accounts/contracts.mjs";
 import { projectPath } from "./inspector.mjs";
 import { emptyUsage, recordUsage } from "./usage.mjs";
 import { INPUT_CARRIER } from "./input-protocol.mjs";
-import { supportsThinking } from "./models.mjs";
-import { ModelCallStore } from "../model-calls/store.mjs";
-import { taskSettingsSnapshot } from "../product-settings/catalog.mjs";
+import { supportsThinking } from "../accounts/models.mjs";
 
 const duration = (value) => typeof value === "number" && Number.isFinite(value) && value >= 0 ? { durationMs: value } : {};
 
 export class HostTasks extends EventEmitter {
-  constructor({ configRoot, stack, catalog, models, accounts, allowControlled = false, workerFactory = (options) => new RpcWorker(options), env = process.env }) {
-    super(); Object.assign(this, { configRoot, stack, catalog, models, accounts, allowControlled, workerFactory, env });
+  constructor({ configRoot, stack, catalog, models, accounts, allowControlled = false, minimal = false, workerFactory = (options) => new RpcWorker(options), env = process.env }) {
+    super(); Object.assign(this, { configRoot, stack, catalog, models, accounts, allowControlled, minimal, workerFactory, env });
     this.models = models;
     this.tasks = new Map(); this.workers = new Map(); this.requests = new Map(); this.saving = Promise.resolve(); this.closing = false;
     this.running = new Map();
@@ -90,9 +89,9 @@ export class HostTasks extends EventEmitter {
     const model = (await this.models(command.accountId)).find((m) => m.id === command.model);
     if (!model) throw hostError("MODEL_UNAVAILABLE", 409);
     if (command.thinkingLevel !== undefined && !supportsThinking(model, command.thinkingLevel)) throw hostError("THINKING_LEVEL_UNAVAILABLE", 409);
-    const { settingsSnapshot, classifierSnapshot, mcpSnapshot, resourceRevision } = await taskSettingsSnapshot(this.configRoot, project.path, this.stack.ompPackageRoot);
+    const { settingsSnapshot, classifierSnapshot, mcpSnapshot, resourceRevision } = this.minimal ? { resourceRevision: 0, settingsSnapshot: null, classifierSnapshot: null, mcpSnapshot: null } : await (await import("../product-settings/catalog.mjs")).taskSettingsSnapshot(this.configRoot, project.path, this.stack.ompPackageRoot);
     if (inputRecord && inputRecord.binding.resourceRevision !== resourceRevision) throw hostError("INPUT_BINDING_CHANGED", 409);
-    const capabilityAccounts = new Set([classifierSnapshot.classifier?.accountId, classifierSnapshot.image?.accountId].filter(id => id && id !== command.accountId));
+    const capabilityAccounts = new Set([classifierSnapshot?.classifier?.accountId, classifierSnapshot?.image?.accountId].filter(id => id && id !== command.accountId));
     for (const accountId of capabilityAccounts) { const releaseCapability = await this.accounts?.beginUse(accountId); if (releaseCapability) capabilityReleases.push(releaseCapability); }
     if (this.requests.has(command.requestId)) return existing(this.requests.get(command.requestId));
     if (this.closing) throw hostError("HOST_STOPPING", 409);
@@ -137,7 +136,7 @@ export class HostTasks extends EventEmitter {
     const sessionRoot = path.join(this.catalog.sessionRoot, `omp-${project.projectId}`);
     let worker;
     try {
-      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, taskId: task.taskId, accountId: task.accountId, controlled: task.mode === "controlled", mcpSnapshot: task.mcpSnapshot, classifierSnapshot: task.classifierSnapshot, settingsSnapshot: task.settingsSnapshot, sessionRoot, resumeFile: resume?.file, env: this.env,
+      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, taskId: task.taskId, accountId: task.accountId, controlled: task.mode === "controlled", minimal: this.minimal, mcpSnapshot: task.mcpSnapshot, classifierSnapshot: task.classifierSnapshot, settingsSnapshot: task.settingsSnapshot, sessionRoot, resumeFile: resume?.file, env: this.env,
         onIdentity: async (identity) => { await this.accountReleases.get(task.taskId)?.addProcess(identity.pid); task.worker = identity; await this.persist(); } });
     } catch (error) { await this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId); throw error; }
     this.workers.set(task.taskId, worker);
@@ -169,6 +168,9 @@ export class HostTasks extends EventEmitter {
           task.toolCalls.push({ toolCallId: event.toolCallId.slice(0, 256), parentToolCallId: typeof event.parentToolCallId === "string" ? event.parentToolCallId.slice(0, 256) : null, name: String(event.toolName).slice(0, 128), status: "running", startedAt: new Date().toISOString() });
           task.toolCalls = task.toolCalls.slice(-128);
         }
+      } else if (event?.type === "tool_execution_update") {
+        const call = task.toolCalls?.find(item => item.toolCallId === event.toolCallId && item.status === "running");
+        if (call) call.output = textContent(event.partialResult?.content).slice(-16384);
       } else if (event?.type === "tool_execution_end") {
         const call = task.toolCalls?.find((item) => item.toolCallId === event.toolCallId);
         if (call) Object.assign(call, { status: event.result?.details?.status === "unknown" ? "unknown" : event.result?.details?.code === "CODEMODE_CANCELLED" ? "cancelled" : event.isError ? "failed" : "completed", completedAt: new Date().toISOString(), result: textContent(event.result?.content).slice(0, 16384), ...duration(event.durationMs) });
@@ -182,6 +184,8 @@ export class HostTasks extends EventEmitter {
         if (typeof event.aborted === "boolean") { task.settlement = { aborted: event.aborted }; aborted ||= event.aborted; }
         settledResolve();
       }
+      const liveTool = task.toolCalls?.findLast(call => call.status === "running");
+      task.tool = liveTool ? { name: liveTool.name, status: "running", ...(liveTool.output ? { output: liveTool.output } : {}) } : null;
       task.messages = task.messages.slice(-200);
       task.updatedAt = new Date().toISOString(); this.changed(task);
     });
@@ -241,6 +245,7 @@ export class HostTasks extends EventEmitter {
       await worker.stop();
       let status = task.status === "cancelling" || aborted ? "cancelled" : failed ? "failed" : "succeeded";
       if (status === "succeeded" && (task.classifierSnapshot?.classifier || task.classifierSnapshot?.image)) {
+        const { ModelCallStore } = await import("../model-calls/store.mjs");
         const ledger = await new ModelCallStore(this.configRoot).status(project.path);
         const requests = ledger.tasks.find(item => item.taskId === task.taskId)?.requests ?? [];
         if (requests.some(request => request.status === "unknown")) {
@@ -270,8 +275,8 @@ export class HostTasks extends EventEmitter {
       task.status = finalStatus;
       task.approvals = []; task.access = "inspect";
       for (const call of task.toolCalls ?? []) if (call.status === "running") call.status = task.status === "cancelled" ? "cancelled" : "unknown";
-      task.updatedAt = new Date().toISOString(); this.changed(task); await this.persist();
       await this.catalog.scan().catch(() => {});
+      task.updatedAt = new Date().toISOString(); this.changed(task); await this.persist();
     }
   }
   async cancel(id) {

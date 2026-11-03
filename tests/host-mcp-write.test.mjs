@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 import pty from "node-pty";
-import { processIdentity, groupAlive } from "../packages/host/ownership.mjs";
+import { processIdentity, groupAlive } from "../packages/process-runtime/ownership.mjs";
 import { DirectSessionOwnership } from "../packages/direct-agent/ownership.mjs";
 import { createHash } from "node:crypto";
 import { createMcpHost, providerReply } from "./fixtures/mcp-host.mjs";
@@ -365,7 +365,7 @@ test("MCP approval cannot repair a lost real Host project owner token", { timeou
 
 test("crashed coding owner keeps real MCP residual effects UNKNOWN and project ownership blocked", { timeout: 30000 }, async (t) => {
   const f = await createIsolatedWriteHost({ mode: "orphan" });
-  const { groupAlive, processIdentity } = await import("../packages/host/ownership.mjs");
+  const { groupAlive, processIdentity } = await import("../packages/process-runtime/ownership.mjs");
   let run;
   t.after(async () => {
     if (run) { for (const entry of run.processes) if (groupAlive(entry.pid) && await processIdentity(entry.pid) === entry.identity) process.kill(-entry.pid, "SIGKILL"); await until(() => run.processes.every((entry) => !groupAlive(entry.pid)), Boolean, "owned orphan cleanup"); }

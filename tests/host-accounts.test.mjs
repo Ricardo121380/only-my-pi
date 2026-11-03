@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
 import { fauxProvider, fauxAssistantMessage } from "@earendil-works/pi-ai";
 
 test("public ModelRuntime isolates same-provider stored accounts, serialized refresh and sync failure", async (t) => {

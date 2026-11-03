@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { processIdentity } from "../../packages/host/ownership.mjs";
+import { processIdentity } from "../../packages/process-runtime/ownership.mjs";
 
 export const errorEvidence = error => ({ code: error?.code ?? null, message: String(error?.message ?? error) });
 export async function observation(read) {

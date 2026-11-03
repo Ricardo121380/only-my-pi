@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import { constants } from "node:fs";
 import path from "node:path";
-import { ownershipError } from "../host/ownership.mjs";
+import { ownershipError } from "../process-runtime/ownership.mjs";
 import { resolveLocalPath } from "./session-selection.mjs";
 import { openValidatedSession } from "./session-history.mjs";
 import { readSessionCwd } from "./session-admission.mjs";

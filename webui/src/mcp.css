@@ -14,3 +14,5 @@
 .mcp-panel p { margin:8px 0; }.mcp-panel [role="alert"] { color:var(--warning); }.mcp-panel [role="status"] { color:var(--accent); }
 
 .product-settings pre { white-space:pre-wrap; overflow-wrap:anywhere; max-width:100%; }
+.task-input-queue { flex-shrink:0; }
+.task-input-queue[open] { max-height:35dvh; overflow-y:auto; overscroll-behavior:contain; }

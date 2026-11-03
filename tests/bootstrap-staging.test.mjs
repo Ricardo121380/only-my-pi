@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { pathToFileURL } from "node:url";
 
 import Ajv2020 from "ajv/dist/2020.js";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
 
 import {
   GENERATION_SCHEMA_ID,
@@ -502,8 +503,37 @@ test("promoted daily generation closes the direct Agent runtime import graph", a
     "resources/packages/direct-agent/managed-clone.mjs",
     "resources/packages/direct-agent/orchestration.mjs",
     "resources/packages/direct-agent/workspace.mjs",
+    "resources/packages/process-runtime/ownership.mjs",
+    "resources/packages/process-runtime/account-environment.mjs",
+    "resources/packages/accounts/catalog.mjs",
+    "resources/packages/accounts/commands.mjs",
+    "resources/packages/accounts/auth-worker.mjs",
+    "resources/packages/accounts/oauth-worker.mjs",
+    "resources/packages/accounts/models-worker.mjs",
+    "resources/packages/accounts/model-registry.mjs",
+    "resources/packages/control-service/secret-input.mjs",
     "resources/packages/daily-config/index.mjs",
   ]) await fs.access(path.join(root, relative));
+
+  const { DirectSessionOwnership } = await import(pathToFileURL(path.join(root, "resources/packages/direct-agent/ownership.mjs")));
+  const { acquireOwnership } = await import(pathToFileURL(path.join(root, "resources/packages/process-runtime/ownership.mjs")));
+  const { accountWorkerEnvironment } = await import(pathToFileURL(path.join(root, "resources/packages/process-runtime/account-environment.mjs")));
+  assert.deepEqual(accountWorkerEnvironment({ PATH: "/usr/bin", NODE_OPTIONS: "--import unwanted" }), { PATH: "/usr/bin" });
+  const direct = new DirectSessionOwnership(configRoot);
+  await direct.acquire("session", "generation-session");
+  try {
+    await assert.rejects(acquireOwnership(configRoot, "session", "generation-session"), { code: "OWNERSHIP_HELD" });
+  } finally { await direct.close(); }
+
+  // The resource-only generation can enforce the same durable account lease.
+  // Catalog/worker execution with bundled npm dependencies is covered by pack-content.
+  const { reserveAccount } = await import(pathToFileURL(path.join(root, "resources/packages/accounts/activity.mjs")));
+  const accounts = new AccountCatalog(configRoot);
+  const account = await accounts.create({ providerId: "openai", name: "Staged", authType: "api_key" });
+  const reservation = await reserveAccount(configRoot, account.accountId, "use");
+  try { await assert.rejects(accounts.remove(account.accountId), { code: "ACCOUNT_BUSY", status: 409 }); }
+  finally { await reservation(); }
+  await accounts.remove(account.accountId);
 
   const runtimeModule = await import(`${pathToFileURL(path.join(root, "resources/extensions/omp-direct/runtime.mjs"))}?m12=${Date.now()}`);
   assert.equal(typeof runtimeModule.createDirectSessionController, "function");

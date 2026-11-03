@@ -7,7 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import http from "node:http";
-import { acquireOwnership } from "../../packages/host/ownership.mjs";
+import { acquireOwnership } from "../../packages/process-runtime/ownership.mjs";
 import { prepareDirectTestRuntime } from "./direct-test-runtime.mjs";
 
 assert.ok(process.stdin.isTTY && process.stdout.isTTY);

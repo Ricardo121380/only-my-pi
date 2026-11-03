@@ -15,7 +15,9 @@ async function fixture(t) {
   return { store, root };
 }
 test("image data requires its versioned reader and corrupt source metadata is rejected without resetting the ledger", async t => {
-  const f = await fixture(t), request = await f.store.reserve("task", "parent", { input: [{ type: "text", text: "draw" }] }, "image");
+  const f = await fixture(t), context = { input: [{ type: "text", text: "draw" }] };
+  const request = await f.store.reserve("task", "parent", context, "image");
+  assert.equal(request.inputDigest, digest(context), "existing ledger digests retain their original byte and JSON semantics");
   const state = JSON.parse(await fs.readFile(f.store.file, "utf8")); assert.equal(state.version, 2);
   const old = { ...state, version: 1 }; await fs.writeFile(f.store.file, JSON.stringify(old));
   await assert.rejects(f.store.status("/synthetic/project"), error => error.code === "MODEL_LEDGER_INVALID");

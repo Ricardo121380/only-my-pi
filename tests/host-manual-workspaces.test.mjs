@@ -6,7 +6,7 @@ import test from "node:test";
 import { ManualWorkspaces } from "../packages/host/manual-workspaces.mjs";
 import { ProjectCatalog } from "../packages/host/catalog.mjs";
 import { readFile } from "../packages/host/inspector.mjs";
-import { acquireOwnership } from "../packages/host/ownership.mjs";
+import { acquireOwnership } from "../packages/process-runtime/ownership.mjs";
 
 test("manual saves require ownership and exact content version; unsafe paths never write", async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-manual-save-")));

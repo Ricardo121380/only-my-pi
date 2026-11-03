@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { loadDistribution } from "../packages/distribution/runtime.mjs";
-import { runAccountChild } from "../packages/host/account-child.mjs";
+import { runAccountChild } from "../packages/direct-agent/account-child.mjs";
 
 try {
   const stack = await loadDistribution();

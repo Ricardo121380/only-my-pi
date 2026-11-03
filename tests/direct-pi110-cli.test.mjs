@@ -41,7 +41,7 @@ test("public OMP print, ephemeral print, RPC and account child suppress a forced
   const f = await createPi110SourceCli(root, { baseUrl: `http://127.0.0.1:${provider.address().port}/v1`, forceWarming: true,
     installedExtensions: process.env.OMP_PI110_INSTALLED_EXTENSIONS === "1" });
   const childEntry = path.join(root, "account-child-entry.mjs");
-  await fs.writeFile(childEntry, `import { runAccountChild } from ${JSON.stringify(path.join(f.omp, "packages/host/account-child.mjs"))};
+  await fs.writeFile(childEntry, `import { runAccountChild } from ${JSON.stringify(path.join(f.omp, "packages/direct-agent/account-child.mjs"))};
     await runAccountChild({ stack: { root: ${JSON.stringify(f.stack)} }, configRoot: ${JSON.stringify(f.config)}, accountId: "cli-readonly", argv: process.argv.slice(2) });`);
   const trigger = path.join(f.config, "npm/node_modules", f.bindings.find((b) => b.id === "permission-modes").name, "src/index.ts");
   const cases = [

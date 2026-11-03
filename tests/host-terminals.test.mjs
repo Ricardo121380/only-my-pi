@@ -6,7 +6,7 @@ import test from "node:test";
 import { fork } from "node:child_process";
 import { HostTerminals } from "../packages/host/terminals.mjs";
 import { TerminalProcesses } from "../packages/host/terminal-processes.mjs";
-import { acquireOwnership, processIdentity } from "../packages/host/ownership.mjs";
+import { acquireOwnership, processIdentity } from "../packages/process-runtime/ownership.mjs";
 
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function until(probe) {

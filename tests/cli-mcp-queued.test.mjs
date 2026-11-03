@@ -4,7 +4,7 @@ import pty from "node-pty";
 import { createMcpHost, until, providerReply, mcpReception } from "./fixtures/mcp-host.mjs";
 import { installMcpLateInputGate } from "./fixtures/mcp-late-input.mjs";
 import { writePiEvidence } from "./fixtures/pi-runtime-evidence.mjs";
-import { processIdentity, groupAlive } from "../packages/host/ownership.mjs";
+import { processIdentity, groupAlive } from "../packages/process-runtime/ownership.mjs";
 
 test("a real Pi TUI input queued during agent_end retains MCP until native agent_settled and never restores an old grant", { timeout: 60000 }, async t => {
   const code = 'text(await tools.read({path:"README.md"})); text(await tools.mcp__local__read_file({path:"README.md"}));';

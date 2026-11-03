@@ -5,9 +5,9 @@ import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { accountWorkerEnvironment } from "./models.mjs";
+import { accountWorkerEnvironment } from "../process-runtime/account-environment.mjs";
 import { buildDirectPiInvocation, resolveDirectExtensionSet } from "../direct-agent/launcher.mjs";
-import { processIdentity, groupAlive } from "./ownership.mjs";
+import { processIdentity, groupAlive } from "../process-runtime/ownership.mjs";
 import { hostError } from "./contracts.mjs";
 import { ApprovalBridge } from "./approval-bridge.mjs";
 import { projectControlState } from "./control-state.mjs";
@@ -31,22 +31,22 @@ function waitForWorkerExit(worker, ms, required = false) {
 }
 
 export class RpcWorker extends EventEmitter {
-  constructor({ stack, configRoot, cwd, model, sessionRoot, resumeFile, accountId, taskId, controlled = false, mcpSnapshot, classifierSnapshot, settingsSnapshot, env = process.env, onIdentity = async () => {}, spawnImpl = spawn, extensionResolver = resolveDirectExtensionSet }) {
-    super(); Object.assign(this, { stack, configRoot, cwd, model, sessionRoot, accountId, taskId, controlled, env, onIdentity, spawnImpl, extensionResolver }); this.pending = new Map(); this.inputPending = new Map(); this.inputRecords = new Map(); this.child = null; this.stopping = null;
+  constructor({ stack, configRoot, cwd, model, sessionRoot, resumeFile, accountId, taskId, controlled = false, minimal = false, mcpSnapshot, classifierSnapshot, settingsSnapshot, env = process.env, onIdentity = async () => {}, spawnImpl = spawn, extensionResolver = resolveDirectExtensionSet }) {
+    super(); Object.assign(this, { stack, configRoot, cwd, model, sessionRoot, accountId, taskId, controlled, minimal, env, onIdentity, spawnImpl, extensionResolver }); this.pending = new Map(); this.inputPending = new Map(); this.inputRecords = new Map(); this.child = null; this.stopping = null;
     this.approvals = new ApprovalBridge({ send: (frame) => { if (this.child && !this.closed && !this.child.stdin.destroyed) this.child.stdin.write(JSON.stringify(frame) + "\n"); }, publish: (approvals) => this.emit("approvals", approvals) });
     this.resumeFile = resumeFile;
     this.settingsSnapshot = settingsSnapshot; this.classifierSnapshot = classifierSnapshot; this.mcpSnapshot = mcpSnapshot; this.mcpEnabled = mcpSnapshot?.servers.some((server) => server.enabled) === true;
-    this.codemodeEnabled = accountId !== undefined;
+    this.codemodeEnabled = !minimal && accountId !== undefined;
   }
   async start() {
-    if (this.controlled && !this.accountId) throw hostError("ACCOUNT_BINDING_REQUIRED");
+    if ((this.controlled || this.minimal) && !this.accountId) throw hostError("ACCOUNT_BINDING_REQUIRED");
     this.codemodeEnabled &&= typeof this.stack.root === "string" && await fs.readFile(path.join(this.stack.root, "pi/package.json"), "utf8").then((raw) => usesNativePiTools(JSON.parse(raw).version), () => false);
-    const set = await this.extensionResolver({ stack: this.stack, configRoot: this.configRoot, headless: !this.controlled });
+    const set = await this.extensionResolver({ stack: this.stack, configRoot: this.configRoot, headless: !this.controlled, minimal: this.minimal });
     const invocation = buildDirectPiInvocation({ stack: this.stack, extensionPaths: set.extensions, runtimeOwner: "host",
       argv: ["--mode", "rpc", "--model", this.model, "--session-dir", this.sessionRoot], env: { ...(this.accountId === undefined ? this.env : accountWorkerEnvironment(this.env)), PI_CODING_AGENT_DIR: this.configRoot } });
     if (this.stopRequested) throw hostError("RPC_CANCELLED_BEFORE_START");
     const argv = this.accountId === undefined ? invocation.argv.slice(1) : [fileURLToPath(new URL("./account-rpc-entry.mjs", import.meta.url)), this.stack.root, this.configRoot, this.accountId, this.model, this.sessionRoot, this.controlled ? "controlled" : "readonly", this.resumeFile ?? "", ...set.extensions];
-    const childEnv = { ...invocation.env }; delete childEnv.OMP_HOST_INPUT_TASK_ID;
+    const childEnv = { ...invocation.env, ONLY_MY_PI_MINIMAL: this.minimal ? "1" : "0" }; delete childEnv.OMP_HOST_INPUT_TASK_ID;
     delete childEnv.OMP_PRODUCT_SETTINGS_SNAPSHOT;
     if (this.accountId && this.settingsSnapshot && set.extensions.some(entry => entry.endsWith("/extensions/omp-direct/index.ts"))) childEnv.OMP_PRODUCT_SETTINGS_SNAPSHOT = JSON.stringify(this.settingsSnapshot);
     delete childEnv.OMP_HOST_MCP_SNAPSHOT; delete childEnv.OMP_HOST_CLASSIFIER_SNAPSHOT;

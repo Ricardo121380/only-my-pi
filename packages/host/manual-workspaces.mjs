@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import { constants } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { acquireOwnership } from "./ownership.mjs";
+import { acquireOwnership } from "../process-runtime/ownership.mjs";
 import { decodeText, fileVersion, projectPath } from "./inspector.mjs";
 import { hostError } from "./contracts.mjs";
 

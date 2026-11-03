@@ -1,3 +1,4 @@
+export declare function modelCallError(code: string, status?: number): Error & { code: string; status: number };
 export interface ModelBudget { requests: number; concurrency: number; maxInputBytes: number; maxOutputBytes: number; inputBytes: number; outputBytes: number; timeoutMs: number }
 export interface ImageBudget extends ModelBudget { maxImagesPerRequest: number; images: number; maxStorageBytes: number; storageBytes: number }
 export interface ClassifierChoice { id: string; name: string; supported: boolean; unavailableReason?: string; price: object | null }

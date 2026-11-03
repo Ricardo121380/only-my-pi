@@ -1,5 +1,4 @@
 import { loadGovernance } from "../../scripts/package-doctor.mjs";
-import { inspectReleaseGates } from "../../scripts/release-gates.mjs";
 
 export const OMP_USAGE = `only-my-pi control CLI
 
@@ -321,6 +320,7 @@ export class ControlService {
           reason: "CLI has no parent Pi session context; use /omp context inside Pi",
         };
       case "verify": {
+        const { inspectReleaseGates } = await import("../../scripts/release-gates.mjs");
         const inspection = inspectReleaseGates([]);
         return { ok: true, status: "VERIFY_INSPECTOR", mutation: false, executable: false, ...inspection };
       }

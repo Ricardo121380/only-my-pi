@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import pty from "node-pty";
-import { groupAlive } from "../packages/host/ownership.mjs";
+import { groupAlive } from "../packages/process-runtime/ownership.mjs";
 import { randomUUID } from "node:crypto";
 import { createMcpHost, providerReply, until, untilPiInitialized } from "./fixtures/mcp-host.mjs";
 
@@ -85,6 +85,8 @@ test("CLI and public Host share requested settings; each real Pi loads the decla
   assert.equal((await waitTask(f, broken.taskId)).status, "failed");
   const rejectedLoad = await settings(f, { type: "list" });
   assert.equal(rejectedLoad.lastFailure.code, "RESOURCE_LOAD_FAILED"); assert.equal(rejectedLoad.lastLoaded.revision, 4);
+  assert.equal(rejectedLoad.lastFailure.taskId, broken.taskId);
+  assert.deepEqual(rejectedLoad.lastLoaded, loaded.lastLoaded);
   assert.equal(rejectedLoad.pending, true, "a failed reload of the same version is not a loaded current version");
   assert.equal(f.requests.length, 6); await fs.writeFile(extensionFile, originalExtension);
   await fs.writeFile(path.join(f.config, "only-my-pi/product-settings/skills", loaded.resources.find(r => r.kind === "skill").contentDigest, "SKILL.md"), "changed source");

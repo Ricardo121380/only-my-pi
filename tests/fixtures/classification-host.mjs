@@ -45,7 +45,7 @@ export async function createClassificationHost({ code = classificationCode, scri
   const account = (await request("/api/accounts", { name: "分类账号 A", providerId: "fixtureclass", authType: "api_key" }, 201)).account;
   const action = action => request("/api/account-action", { accountId: account.accountId, action });
   const receipt = async () => {
-    const files = ["packages/model-calls/commands.mjs", "packages/model-calls/models.mjs", "packages/model-calls/runtime.mjs", "packages/model-calls/store.mjs", "packages/direct-agent/codemode.mjs", "packages/host/rpc-worker.mjs", "bin/omp.mjs"];
+    const files = ["packages/model-calls/contracts.mjs", "packages/model-calls/budgets.mjs", "packages/accounts/model-registry.mjs", "packages/model-calls/commands.mjs", "packages/model-calls/models.mjs", "packages/model-calls/runtime.mjs", "packages/model-calls/store.mjs", "packages/direct-agent/codemode.mjs", "packages/host/rpc-worker.mjs", "bin/omp.mjs", "packages/control-service/production.mjs"];
     const sources = Object.fromEntries(await Promise.all(files.map(async file => [file, createHash("sha256").update(await fs.readFile(path.join(f.omp, file))).digest("hex")])));
     const pi = JSON.parse(await fs.readFile(path.join(f.stack.root, "pi/package.json"), "utf8"));
     const ledger = await fs.readFile(path.join(f.config, "only-my-pi/model-calls/state.json"), "utf8").then(JSON.parse).catch(() => null);
@@ -61,9 +61,14 @@ export async function createClassificationHost({ code = classificationCode, scri
     calls: () => request(`/api/model-calls?projectId=${f.projectId}`),
     close: async (options) => {
       try {
-        if (process.env.OMP_CLASSIFIER_EVIDENCE_DIR) await fs.writeFile(path.join(process.env.OMP_CLASSIFIER_EVIDENCE_DIR, `${path.basename(f.root)}.json`), JSON.stringify(await receipt(), null, 2));
-        await f.close(options);
-      } finally { for (const socket of sockets) socket.destroy(); await new Promise(resolve => service.close(resolve)); }
+        if (process.env.OMP_CLASSIFIER_EVIDENCE_DIR) {
+          await fs.mkdir(process.env.OMP_CLASSIFIER_EVIDENCE_DIR, { recursive: true });
+          await fs.writeFile(path.join(process.env.OMP_CLASSIFIER_EVIDENCE_DIR, `${path.basename(f.root)}.json`), JSON.stringify(await receipt(), null, 2));
+        }
+      } finally {
+        try { await f.close(options); }
+        finally { for (const socket of sockets) socket.destroy(); await new Promise(resolve => service.close(resolve)); }
+      }
     },
   };
 }

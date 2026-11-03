@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import { canonicalJson } from "../config-runtime/index.mjs";
-import { hostError } from "../host/contracts.mjs";
+import { modelCallError } from "./contracts.mjs";
 import { ModelCallStore } from "./store.mjs";
 import { ImageArtifacts } from "./artifacts.mjs";
 
@@ -13,13 +13,13 @@ export class SessionImages {
   }
   match(requests, artifact, projectPath) {
     const expected = requests.find(request => request.requestId === artifact.requestId)?.storage?.artifacts?.[artifact.index];
-    if (artifact.projectPath !== projectPath || !expected || canonicalJson(artifact) !== canonicalJson(expected)) throw hostError("IMAGE_SOURCE_UNAVAILABLE", 409);
+    if (artifact.projectPath !== projectPath || !expected || canonicalJson(artifact) !== canonicalJson(expected)) throw modelCallError("IMAGE_SOURCE_UNAVAILABLE", 409);
     return expected;
   }
   async read({ projectId, sessionKey, entryId, requestId, index }) {
     const { project, branch, requests } = await this.references(projectId, sessionKey);
     const reference = branch.entries.find(entry => entry.entryId === entryId), artifact = reference?.artifacts.find(a => a.requestId === requestId && a.index === index);
-    if (!artifact) throw hostError("IMAGE_REFERENCE_NOT_FOUND", 404);
+    if (!artifact) throw modelCallError("IMAGE_REFERENCE_NOT_FOUND", 404);
     this.match(requests, artifact, project.path);
     return this.store.read(project.path, requestId, index, artifact);
   }

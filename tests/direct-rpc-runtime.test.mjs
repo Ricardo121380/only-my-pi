@@ -5,7 +5,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 import test from "node:test";
-import { acquireOwnership } from "../packages/host/ownership.mjs";
+import { acquireOwnership } from "../packages/process-runtime/ownership.mjs";
 import { createRpcRuntimeView } from "../packages/direct-agent/rpc-runtime-view.mjs";
 import { prepareDirectTestRuntime } from "./fixtures/direct-test-runtime.mjs";
 

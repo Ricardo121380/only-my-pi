@@ -26,4 +26,4 @@ function dependencyNotices() {
     this.emitFile({ type: "asset", fileName: "THIRD_PARTY_NOTICES.txt", source: records.map((record) => `${record.name}@${record.version} (${record.license})\n\n${record.notice}`).join("\n\n--------------------\n\n") });
   } };
 }
-export default defineConfig({ root: "webui", plugins: [dependencyNotices()], build: { outDir: "dist", emptyOutDir: true, target: "es2022" }, test: { environment: "jsdom", include: ["src/**/*.test.ts", "src/**/*.test.tsx"] } });
+export default defineConfig(({ mode }) => ({ root: "webui", plugins: [dependencyNotices()], build: { outDir: "dist", emptyOutDir: true, target: "es2022", rollupOptions: { input: mode === "minimal" ? { minimal: path.resolve("webui/minimal.html") } : { main: path.resolve("webui/index.html"), minimal: path.resolve("webui/minimal.html") } } }, test: { environment: "jsdom", include: ["src/**/*.test.ts", "src/**/*.test.tsx"] } }));

@@ -4,9 +4,9 @@ import { createHash } from "node:crypto";
 import { inflateSync } from "node:zlib";
 import { atomicPublishDirectory } from "../config-runtime/atomic-file.mjs";
 import { atomicWriteJson, assertSafeContainedPath, ensureConfigDirectory, readJsonObject, canonicalJson } from "../config-runtime/index.mjs";
-import { hostError } from "../host/contracts.mjs";
+import { modelCallError } from "./contracts.mjs";
 
-const fail = code => hostError(code, 409);
+const fail = code => modelCallError(code, 409);
 const hash = bytes => createHash("sha256").update(bytes).digest("hex");
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const crcTable = Array.from({ length: 256 }, (_, n) => { for (let i = 0; i < 8; i++) n = n & 1 ? 0xedb88320 ^ n >>> 1 : n >>> 1; return n >>> 0; });

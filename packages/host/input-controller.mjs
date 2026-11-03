@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { inputDigest, inputError } from "./input-contracts.mjs";
 import { validateInputCommand, validateReceipt } from "./input-protocol.mjs";
 import { terminal } from "./contracts.mjs";
-import { supportsThinking } from "./models.mjs";
+import { supportsThinking } from "../accounts/models.mjs";
 
 /** @typedef {import('./contracts.d.ts').InputScopeV1} Scope */
 /** @typedef {import('./contracts.d.ts').InputRecordV1} RecordV1 */

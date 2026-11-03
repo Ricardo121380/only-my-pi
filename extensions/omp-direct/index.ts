@@ -64,9 +64,7 @@ export default async function ompDirect(pi: ExtensionAPI): Promise<void> {
   if (process.env.ONLY_MY_PI_DIRECT !== "1") return;
   // Native clients belong to the controlled direct runtime. A Harness-only
   // generation loads this entrypoint with the direct session disabled.
-  const { installOmpCodemode } = await import("../../packages/direct-agent/codemode.mjs");
-  const { installOmpMcp } = await import("../../packages/mcp/extension.mjs");
-  const { mcpCommand, prepareMcpCommand } = await import("../../packages/mcp/commands.mjs");
+  const minimal = process.env.ONLY_MY_PI_MINIMAL === "1";
   // Also covers the native CLI's ephemeral --no-session path and legacy RPC.
   disableOmpCacheWarming(pi);
   const configRoot = process.env.PI_CODING_AGENT_DIR ?? path.join(os.homedir(), ".pi", "agent");
@@ -87,10 +85,15 @@ export default async function ompDirect(pi: ExtensionAPI): Promise<void> {
     acquireProject: async (ctx: any) => { if (!ownsSession?.(ctx)) await ownership.acquire("project", ctx.cwd); },
     verifyProject: async (ctx: any) => ownsSession?.(ctx) ? verifyHostProject?.(ctx) : ownership.verifyProject(ctx.cwd),
   });
-  const { installProductSettings } = await import("../../packages/product-settings/runtime.mjs");
-  pi.events.on("only-my-pi:product-task:v1", (snapshot: any) => installProductSettings(pi, { configRoot, snapshot, controller }));
-  const mcp = installOmpMcp(pi, { configRoot, controller });
-  await installOmpCodemode(pi, { controller });
+  let mcp: { clean(): boolean } | undefined;
+  if (!minimal) {
+    const { installProductSettings } = await import("../../packages/product-settings/runtime.mjs");
+    const { installOmpMcp } = await import("../../packages/mcp/extension.mjs");
+    const { installOmpCodemode } = await import("../../packages/direct-agent/codemode.mjs");
+    pi.events.on("only-my-pi:product-task:v1", (snapshot: any) => installProductSettings(pi, { configRoot, snapshot, controller }));
+    mcp = installOmpMcp(pi, { configRoot, controller });
+    await installOmpCodemode(pi, { controller });
+  }
   const shellOperations: BashOperations = { exec: (command, cwd, options) => ownedShell.exec(command, cwd, {
     ...options, signal: AbortSignal.any([options.signal, controller.grantAbort?.signal].filter((signal): signal is AbortSignal => !!signal)),
   }) };
@@ -106,7 +109,7 @@ export default async function ompDirect(pi: ExtensionAPI): Promise<void> {
     if (!["bind", "allows", "invalidate"].every((key) => typeof payload.capability[key] === "function")) return;
     controller.hostInteraction = payload.capability;
     payload.register(controller);
-    payload.registerExecutionProbe?.(() => ({ active: mcp.clean() ? 0 : 1, unconfirmed: !mcp.clean() }));
+    payload.registerExecutionProbe?.(() => ({ active: !mcp || mcp.clean() ? 0 : 1, unconfirmed: mcp ? !mcp.clean() : false }));
   });
 
   pi.events.on(DIRECT_RUNTIME_EVENT, (payload: any) => {
@@ -127,7 +130,7 @@ export default async function ompDirect(pi: ExtensionAPI): Promise<void> {
     },
   });
 
-  pi.registerTool({
+  if (!minimal) pi.registerTool({
     name: "delegate_readonly_agent",
     label: "Delegate read-only analysis",
     description: "Run one bounded read-only OMP specialist through pi-subagents. Researcher/source-verifier require separate interactive public-Web approval; other roles cannot use Web.",
@@ -140,7 +143,7 @@ export default async function ompDirect(pi: ExtensionAPI): Promise<void> {
     },
   });
 
-  pi.registerTool({
+  if (!minimal) pi.registerTool({
     name: "delegate_managed_writer",
     label: "Delegate approved managed writer",
     description: "Use the single approved managed-clone writer for a complex coding plan. OMP reviews and verifies its patch before applying it.",
@@ -165,14 +168,15 @@ export default async function ompDirect(pi: ExtensionAPI): Promise<void> {
     description: "Show or revoke this process's project coding access",
     handler: async (args, ctx) => controller.accessCommand(args, ctx),
   });
-  pi.registerCommand("agents", {
+  if (!minimal) pi.registerCommand("agents", {
     description: "Show automatic OMP child-agent activity",
     handler: async (_args, ctx) => controller.agentsCommand(ctx),
   });
-  pi.registerCommand("mcp", {
+  if (!minimal) pi.registerCommand("mcp", {
     description: "OMP MCP: list, status, preview /absolute/raw.json, apply /absolute/action.json",
     handler: async (args, ctx) => {
       try {
+        const { mcpCommand, prepareMcpCommand } = await import("../../packages/mcp/commands.mjs");
         const input = await prepareMcpCommand(args);
         if (!["list", "status", "previewImport"].includes(input.type)
           && !await ctx.ui.confirm("保存 MCP 配置", `操作 ${input.type}；仅影响后续任务，默认不取得工具授权。确认将此操作保存到当前项目？`)) return;
@@ -206,7 +210,7 @@ export default async function ompDirect(pi: ExtensionAPI): Promise<void> {
   pi.on("session_shutdown", async (_event, ctx) => {
     controller.hostInteraction?.invalidate(); controller.shutdown(ctx);
     ownershipReady = false;
-    if (!mcp.clean()) throw new Error("MCP_PROCESS_RECONCILIATION_REQUIRED");
+    if (mcp && !mcp.clean()) throw new Error("MCP_PROCESS_RECONCILIATION_REQUIRED");
     await ownership.close();
   });
   pi.on("input", () => ownershipReady ? undefined : { action: "handled" as const });

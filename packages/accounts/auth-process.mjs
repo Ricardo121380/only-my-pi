@@ -3,8 +3,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { atomicWriteJson, ensureConfigDirectory, readJsonObject } from "../config-runtime/index.mjs";
-import { processIdentity } from "./ownership.mjs";
-import { hostError } from "./contracts.mjs";
+import { processIdentity } from "../process-runtime/ownership.mjs";
+import { accountError } from "./contracts.mjs";
 
 // The child cannot enter Pi until its identity has been durably recorded.
 // A crashed Host's successor reconciles these records before exposing account mutations.
@@ -17,12 +17,12 @@ export async function spawnAuthProcess(configRoot, executable, args, options, re
   const exited = new Promise((resolve) => child.once("close", () => { closed = true; resolve(); }));
   try {
     const identity = await processIdentity(child.pid);
-    if (!identity || closed) throw hostError("ACCOUNT_AUTH_FAILED", 503);
+    if (!identity || closed) throw accountError("ACCOUNT_AUTH_FAILED", 503);
     const parent = { pid: process.pid, identity: await processIdentity() };
-    if (!parent.identity) throw hostError("ACCOUNT_AUTH_FAILED", 503);
+    if (!parent.identity) throw accountError("ACCOUNT_AUTH_FAILED", 503);
     await atomicWriteJson(configRoot, file, { pid: child.pid, identity, parent });
     await reservation?.addProcess(child.pid);
-    if (closed) throw hostError("ACCOUNT_AUTH_FAILED", 503);
+    if (closed) throw accountError("ACCOUNT_AUTH_FAILED", 503);
     // Retaining an exited marker after an I/O failure is safe: recovery verifies PID identity.
     void exited.then(() => fs.unlink(file).catch(() => {}));
     return child;
@@ -32,7 +32,7 @@ export async function spawnAuthProcess(configRoot, executable, args, options, re
 export async function recoverAuthProcesses(configRoot) {
   const directory = await ensureConfigDirectory(configRoot, "only-my-pi/host/auth-processes");
   for (const name of await fs.readdir(directory)) {
-    if (!/^[0-9a-f-]+\.json$/.test(name)) throw hostError("AUTH_PROCESS_RECONCILIATION_REQUIRED", 409);
+    if (!/^[0-9a-f-]+\.json$/.test(name)) throw accountError("AUTH_PROCESS_RECONCILIATION_REQUIRED", 409);
     const file = path.join(directory, name);
     const owner = await readJsonObject(configRoot, file).catch((error) => {
       if (error.code === "ENOENT") return null;
@@ -40,23 +40,23 @@ export async function recoverAuthProcesses(configRoot) {
     });
     // A child's close handler may have removed the marker after readdir.
     if (owner === null) continue;
-    if (!Number.isSafeInteger(owner?.pid) || owner.pid < 1 || typeof owner.identity !== "string") throw hostError("AUTH_PROCESS_RECONCILIATION_REQUIRED", 409);
+    if (!Number.isSafeInteger(owner?.pid) || owner.pid < 1 || typeof owner.identity !== "string") throw accountError("AUTH_PROCESS_RECONCILIATION_REQUIRED", 409);
     if (owner.parent) {
-      if (!Number.isSafeInteger(owner.parent.pid) || typeof owner.parent.identity !== "string") throw hostError("AUTH_PROCESS_RECONCILIATION_REQUIRED", 409);
+      if (!Number.isSafeInteger(owner.parent.pid) || typeof owner.parent.identity !== "string") throw accountError("AUTH_PROCESS_RECONCILIATION_REQUIRED", 409);
       const parentIdentity = await processIdentity(owner.parent.pid);
       // A separate, live CLI owns its authentication lifecycle. Host startup
       // must neither kill its worker nor remove its recovery marker.
       if (parentIdentity === owner.parent.identity) continue;
-      if (parentIdentity !== null) throw hostError("AUTH_PROCESS_RECONCILIATION_REQUIRED", 409);
+      if (parentIdentity !== null) throw accountError("AUTH_PROCESS_RECONCILIATION_REQUIRED", 409);
     }
     const identity = await processIdentity(owner.pid);
     if (identity === owner.identity) {
       try { process.kill(owner.pid, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
       for (let i = 0; i < 40 && await processIdentity(owner.pid) === owner.identity; i++) await new Promise((resolve) => setTimeout(resolve, 25));
-      if (await processIdentity(owner.pid) === owner.identity) throw hostError("AUTH_PROCESS_RECONCILIATION_REQUIRED", 409);
+      if (await processIdentity(owner.pid) === owner.identity) throw accountError("AUTH_PROCESS_RECONCILIATION_REQUIRED", 409);
     } else if (identity !== null) {
       // Do not kill a reused PID or assume an unknown owner's state.
-      throw hostError("AUTH_PROCESS_RECONCILIATION_REQUIRED", 409);
+      throw accountError("AUTH_PROCESS_RECONCILIATION_REQUIRED", 409);
     }
     await fs.unlink(file).catch((error) => { if (error.code !== "ENOENT") throw error; });
   }

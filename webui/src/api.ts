@@ -1,14 +1,15 @@
-import type { AccountAction, AccountInput, HostCommand, HostEvent, HostSnapshot } from "../../packages/host/contracts";
+import type { HostCommand, HostEvent, HostSnapshot } from "../../packages/host/contracts";
+import type { AccountAction, AccountInput } from "../../packages/accounts/contracts";
 export async function accountApi<T>(input: AccountInput | { accountId: string; action: AccountAction }): Promise<T> {
   const response = await fetch("accountId" in input ? "/api/account-action" : "/api/accounts", { credentials: "same-origin", cache: "no-store", method: "POST", headers: { "content-type": "application/json", "x-omp-account-protocol": "1" }, body: JSON.stringify(input) });
   const data = await response.json();
-  if (!response.ok) throw new Error(data.code ?? "HOST_REQUEST_FAILED");
+  if (!response.ok) throw Object.assign(new Error(data.code ?? "HOST_REQUEST_FAILED"), { status: response.status });
   return data;
 }
 export async function api<T>(url: string, command?: HostCommand, signal?: AbortSignal): Promise<T> {
   const response = await fetch(url, { signal, credentials: "same-origin", cache: "no-store", ...(command ? { method: "POST", headers: { "content-type": "application/json", "x-omp-host-protocol": "2" }, body: JSON.stringify(command) } : {}) });
   const data = await response.json();
-  if (!response.ok) throw new Error(data.code ?? "HOST_REQUEST_FAILED");
+  if (!response.ok) throw Object.assign(new Error(data.code ?? "HOST_REQUEST_FAILED"), { status: response.status });
   return data;
 }
 export const query = (route: string, values: Record<string, string | number>) => `/api/${route}?${new URLSearchParams(Object.entries(values).map(([key, value]) => [key, String(value)]))}`;
@@ -49,7 +50,7 @@ export const errorText = (error: unknown) => {
     REQUEST_ID_CONFLICT: "此请求编号已绑定其他内容或账号，请新建任务。",
   };
   if (accountMessages[code]) return accountMessages[code];
-  const messages: Record<string, string> = { AUTH_REQUIRED: "连接授权已失效，请在终端重新运行 omp web。", PAIR_EXPIRED: "配对链接已过期或已使用，请重新运行 omp web。", FILE_PREVIEW_LIMIT: "文件超过 512KB，暂不提供预览。", FILE_SYMLINK_DENIED: "为保护项目边界，不预览符号链接。", BINARY_PREVIEW_UNAVAILABLE: "二进制文件不支持文本预览。", MODEL_UNAVAILABLE: "所选模型不可用，请刷新模型列表。", REQUEST_CONFLICT: "请求内容已改变，请新建分析。" };
+  const messages: Record<string, string> = { AUTH_REQUIRED: "连接授权已失效，请使用终端中的新配对链接重新连接。", PAIR_EXPIRED: "配对链接已过期或已使用，请从终端获取新配对链接。", FILE_PREVIEW_LIMIT: "文件超过 512KB，暂不提供预览。", FILE_SYMLINK_DENIED: "为保护项目边界，不预览符号链接。", BINARY_PREVIEW_UNAVAILABLE: "二进制文件不支持文本预览。", MODEL_UNAVAILABLE: "所选模型不可用，请刷新模型列表。", REQUEST_CONFLICT: "请求内容已改变，请新建分析。" };
   return messages[code] ?? `操作未完成（${code}），可刷新重试；原输入已保留。`;
 };
 export function applyEvent(snapshot: HostSnapshot | null, event: HostEvent): HostSnapshot | null {

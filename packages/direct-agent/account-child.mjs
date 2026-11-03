@@ -1,12 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { AccountCatalog } from "./accounts.mjs";
-import { CLI_ACCOUNT_ID } from "./contracts.mjs";
-import { hasAccountCredential } from "./account-credential.mjs";
-import { disableOmpCacheWarming } from "../direct-agent/cache-warming-policy.mjs";
-import { applyOmpRequestPolicy } from "../direct-agent/request-policy.mjs";
-import { openProductAccount } from "./account-runtime.mjs";
+import { AccountCatalog } from "../accounts/catalog.mjs";
+import { CLI_ACCOUNT_ID } from "../accounts/contracts.mjs";
+import { hasAccountCredential } from "../accounts/credential.mjs";
+import { disableOmpCacheWarming } from "./cache-warming-policy.mjs";
+import { applyOmpRequestPolicy } from "./request-policy.mjs";
+import { openProductAccount } from "../accounts/runtime.mjs";
 
 // Implements only the bounded JSON-print CLI contract emitted by pi-subagents.
 // Unknown CLI modes fail closed instead of falling back to the ordinary Pi CLI.

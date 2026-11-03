@@ -1,5 +1,16 @@
 // @ts-check
 
+export const DIRECT_READ_ONLY_AGENTS = Object.freeze([
+  "omp-explorer",
+  "omp-reviewer",
+  "omp-scout",
+  "omp-security-reviewer",
+  "omp-test-analyst",
+  "omp-verifier",
+  "omp-researcher",
+  "omp-source-verifier",
+]);
+
 const stages = new Set(["PREPARING", "PATCH_CAPTURED", "CLONE_VERIFIED", "REVIEWED", "APPLYING", "APPLICATION_UNKNOWN", "APPLIED_PENDING_VERIFICATION", "VERIFYING", "VERIFIED", "BLOCKED"]);
 const applications = new Set(["NOT_STARTED", "UNKNOWN", "APPLIED"]);
 const verifications = new Set(["NOT_RUN", "PENDING", "RUNNING", "PASS", "FAIL", "BLOCKED"]);

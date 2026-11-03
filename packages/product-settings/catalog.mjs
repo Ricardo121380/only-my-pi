@@ -163,6 +163,22 @@ export class ProductSettings {
   }
 }
 
+// Preserve successful actions even when project resource verification fails.
+// Defaults and import previews do not attempt to load a project snapshot.
+export async function runSettingsAction({ configRoot, input, projectPath, packageRoot }) {
+  const result = await new ProductSettings(configRoot).action(input, projectPath);
+  if (projectPath && input.type !== "previewImport") {
+    try {
+      result.resourceRevision = (await taskSettingsSnapshot(configRoot, projectPath, packageRoot)).resourceRevision;
+      result.pending = Boolean(result.lastFailure) || result.lastLoaded?.resourceRevision !== result.resourceRevision;
+    } catch (error) {
+      result.loadError = error.code ?? "RESOURCE_LOAD_FAILED";
+      result.pending = true;
+    }
+  }
+  return result;
+}
+
 // A coherent, immutable task loadout. Re-read monotonic versions across the
 // three authorities, so interleaved writers never produce a mixed snapshot.
 export async function taskSettingsSnapshot(configRoot, projectPath, packageRoot = moduleRoot) {

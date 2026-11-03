@@ -3,7 +3,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { groupAlive, processIdentity } from "./ownership.mjs";
+import { groupAlive, processIdentity } from "../process-runtime/ownership.mjs";
 import { hostError } from "./contracts.mjs";
 
 export async function publishImageExport({ record, bytes, save, beforePublish }) {

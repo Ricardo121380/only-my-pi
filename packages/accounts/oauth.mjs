@@ -1,8 +1,8 @@
 import { spawnAuthProcess } from "./auth-process.mjs";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
-import { accountWorkerEnvironment } from "./models.mjs";
-import { hostError } from "./contracts.mjs";
+import { accountWorkerEnvironment } from "../process-runtime/account-environment.mjs";
+import { accountError } from "./contracts.mjs";
 
 const terminal = (status) => ["stored", "stored_sync_failed", "failed", "cancelled", "timed_out"].includes(status);
 const safeUrl = (input) => {
@@ -19,11 +19,11 @@ export class AccountOAuth {
     this.children = new Set(); this.closing = false;
   }
   async spawn(accountId, reservation) {
-    if (this.closing) throw hostError("HOST_STOPPING", 503);
-    const child = await spawnAuthProcess(this.configRoot, this.stack.nodePath, [fileURLToPath(new URL("./account-oauth-worker.mjs", import.meta.url)), this.stack.root, this.configRoot, accountId], { env: accountWorkerEnvironment(this.env), stdio: ["ignore", "ignore", "ignore", "ipc"] }, reservation);
+    if (this.closing) throw accountError("HOST_STOPPING", 503);
+    const child = await spawnAuthProcess(this.configRoot, this.stack.nodePath, [fileURLToPath(new URL("./oauth-worker.mjs", import.meta.url)), this.stack.root, this.configRoot, accountId], { env: accountWorkerEnvironment(this.env), stdio: ["ignore", "ignore", "ignore", "ipc"] }, reservation);
     if (this.closing) {
       await new Promise((resolve) => { child.once("close", resolve); child.kill("SIGKILL"); });
-      throw hostError("HOST_STOPPING", 503);
+      throw accountError("HOST_STOPPING", 503);
     }
     this.children.add(child); child.on("error", () => {});
     child.once("close", () => this.children.delete(child));
@@ -40,26 +40,26 @@ export class AccountOAuth {
         if (!message.providers.every((p) => /^[a-zA-Z0-9_-]{1,128}$/.test(p.providerId) && typeof p.name === "string" && p.name.length <= 256)) return;
         providers = message.providers.map(({ providerId, name }) => ({ providerId, name }));
       });
-      child.on("close", (code) => { clearTimeout(timer); this.discovery = null; if (code === 0 && providers) resolve(providers); else reject(hostError("ACCOUNT_PROVIDER_DISCOVERY_FAILED", 503)); });
+      child.on("close", (code) => { clearTimeout(timer); this.discovery = null; if (code === 0 && providers) resolve(providers); else reject(accountError("ACCOUNT_PROVIDER_DISCOVERY_FAILED", 503)); });
       child.send({ type: "begin" }, (error) => { if (error) child.kill("SIGKILL"); });
     });
     return this.discovery;
   }
   snapshot(flowId) {
-    if (!this.flow || this.flow.flowId !== flowId) throw hostError("ACCOUNT_AUTH_FLOW_EXPIRED", 404);
+    if (!this.flow || this.flow.flowId !== flowId) throw accountError("ACCOUNT_AUTH_FLOW_EXPIRED", 404);
     return structuredClone(this.flow);
   }
   async start(accountId) {
-    if (this.closing) throw hostError("HOST_STOPPING", 503);
-    if (this.running) throw hostError("ACCOUNT_AUTH_BUSY", 409);
+    if (this.closing) throw accountError("HOST_STOPPING", 503);
+    if (this.running) throw accountError("ACCOUNT_AUTH_BUSY", 409);
     const flow = { flowId: randomUUID(), accountId, status: "starting", prompt: null, event: null };
     this.flow = flow;
     let readyResolve, readyReject;
     const ready = new Promise((resolve, reject) => { readyResolve = resolve; readyReject = reject; });
     let finalStatus = "failed";
     const operation = this.accounts.change(accountId, async (account, reservation) => {
-      if (account.authType !== "oauth") throw hostError("ACCOUNT_AUTH_TYPE_MISMATCH", 409);
-      if (flow.status === "cancelling") throw hostError("ACCOUNT_AUTH_CANCELLED", 409);
+      if (account.authType !== "oauth") throw accountError("ACCOUNT_AUTH_TYPE_MISMATCH", 409);
+      if (flow.status === "cancelling") throw accountError("ACCOUNT_AUTH_CANCELLED", 409);
       const child = await this.spawn(accountId, reservation); this.child = child;
       readyResolve();
       await new Promise((resolve) => {
@@ -104,8 +104,8 @@ export class AccountOAuth {
   }
   answer(flowId, promptId, value) {
     const flow = this.flow;
-    if (!flow || flow.flowId !== flowId || flow.status !== "awaiting_input" || flow.prompt?.promptId !== promptId || !this.child?.connected) throw hostError("ACCOUNT_AUTH_FLOW_EXPIRED", 409);
-    if (typeof value !== "string" || !value || value.length > 16384 || (flow.prompt.type === "select" && !flow.prompt.options.some((o) => o.id === value))) throw hostError("ACCOUNT_INPUT_INVALID");
+    if (!flow || flow.flowId !== flowId || flow.status !== "awaiting_input" || flow.prompt?.promptId !== promptId || !this.child?.connected) throw accountError("ACCOUNT_AUTH_FLOW_EXPIRED", 409);
+    if (typeof value !== "string" || !value || value.length > 16384 || (flow.prompt.type === "select" && !flow.prompt.options.some((o) => o.id === value))) throw accountError("ACCOUNT_INPUT_INVALID");
     const child = this.child;
     child.send({ type: "answer", promptId, value }, (error) => { if (error) child.kill("SIGKILL"); });
     flow.prompt = null; flow.status = "waiting";

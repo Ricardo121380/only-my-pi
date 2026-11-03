@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { HostDialog } from "./HostDialog";
+import { settingsApi } from "./settingsApi";
 import "./mcp.css";
 
 type Resource = { id: string; kind: string; origin: string; version: string; name?: string; enabled: boolean; required?: boolean; source: string; parameters: Record<string, string>; schema: unknown };
@@ -7,10 +8,6 @@ type Loaded = { revision: number; taskId: string; resources: Resource[] };
 type Settings = { revision: number; resourceRevision?: number; resources: Resource[]; pending: boolean; lastLoaded: Loaded | null; lastFailure: { code: string; revision: number } | null; loadError?: string };
 type Source = { kind: string; origin: string; content: string };
 type Preview = { revision: number; digest: string; source: { origin: string; contentDigest: string }; differences: { id: string; before: Resource | null; after: Resource }[] };
-export async function settingsApi<T>(input: object, projectId?: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch("/api/settings", { method: "POST", signal, credentials: "same-origin", cache: "no-store", headers: { "content-type": "application/json", "x-omp-settings-protocol": "1" }, body: JSON.stringify({ ...input, ...(projectId ? { projectId } : {}) }) });
-  const value = await response.json(); if (!response.ok) throw new Error(value.code ?? "SETTINGS_REQUEST_FAILED"); return value;
-}
 export function ProductSettings({ projectId, projectName, onClose, onUseSkill }: { projectId?: string; projectName?: string; onClose: () => void; onUseSkill?: (name: string) => void }) {
   const [scope, setScope] = useState(projectId ? "project" : "default"), [state, setState] = useState<Settings | null>(null);
   const [draft, setDraft] = useState<{ id: string; label: string; revision: number } | null>(null);

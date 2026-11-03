@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { ownershipError } from "../host/ownership.mjs";
+import { ownershipError } from "../process-runtime/ownership.mjs";
 import { resolveLocalPath } from "./session-selection.mjs";
 
 // Pi's CLI file processor is not a public export. Keep attachment assembly here

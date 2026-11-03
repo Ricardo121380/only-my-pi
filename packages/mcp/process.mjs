@@ -4,7 +4,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { StringDecoder } from "node:string_decoder";
 import { setTimeout as delay } from "node:timers/promises";
-import { processIdentity, groupAlive } from "../host/ownership.mjs";
+import { processIdentity, groupAlive } from "../process-runtime/ownership.mjs";
 import { digest, mcpError, MCP_LIMITS } from "./catalog.mjs";
 
 // The owner chooses this root before any script temporarily isolates its own

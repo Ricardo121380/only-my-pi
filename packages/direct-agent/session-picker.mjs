@@ -1,6 +1,6 @@
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
-import { ownershipError } from "../host/ownership.mjs";
+import { ownershipError } from "../process-runtime/ownership.mjs";
 
 // Use the public Pi component, but replace its public deletion callback before
 // input starts. Discovery must never mutate a history that has not been admitted.

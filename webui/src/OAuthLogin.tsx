@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { OAuthFlow } from "../../packages/host/contracts";
+import type { OAuthFlow } from "../../packages/accounts/contracts";
 import { accountApi, api, errorText, query } from "./api";
 
 const done = (status?: string) => ["stored", "stored_sync_failed", "failed", "cancelled", "timed_out"].includes(status ?? "");
