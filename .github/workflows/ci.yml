@@ -136,7 +136,7 @@ jobs:
           if-no-files-found: warn
 
   cli:
-    name: Legacy CLI regression
+    name: CLI and legacy integrations
     needs: scope
     if: needs.scope.outputs.cli == 'true'
     runs-on: macos-14

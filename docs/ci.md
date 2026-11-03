@@ -11,7 +11,7 @@ Node remains pinned to **24.19.0**, and Pi remains pinned by the existing locks.
 | Change | Required work |
 | --- | --- |
 | Root documentation and Markdown/images under `docs/` | Documentation contracts, local links, source syntax/conflict checks. No dependency installation or native suite. |
-| `webui/**` | Documentation, shared static checks, UI tests/builds and Web/Host regressions. The native branch also builds the minimal entry. |
+| `webui/**` | Documentation, shared static checks, UI tests/builds and core Web/session regressions. The native branch also builds the minimal entry. |
 | A Node regression test | Its owning Web/Host or CLI lane, plus documentation and shared static checks. |
 | Shared runtime, dependency locks, executable resources, CI tooling or an unknown path | Documentation, shared static checks, Web/Host, CLI and installation checks. |
 
@@ -31,8 +31,12 @@ administrator enforcement while using `CI required` as the aggregate gate.
 
 [`scripts/ci-plan.mjs`](../scripts/ci-plan.mjs) discovers tracked Node test files,
 including package and extension tests outside `tests/`. Documentation contracts
-run in the docs lane. Host, minimal native-session, persistent dev-Web and browser
-identity tests run in the Web lane. Remaining Node tests run in the CLI lane.
+run in the docs lane. Core Host accounts, authorization, lifecycle and history, minimal native-session,
+persistent dev-Web and browser identity tests run in the Web lane. Historical
+MCP, images, classification, codemode, manual-terminal and full input-module
+regressions run with the CLI compatibility lane. Remaining Node tests also enter
+that lane. The minimal service and dev-Web launcher select the Web lane; shared
+runtime changes select both.
 New unclassified tests enter that remainder rather than disappearing.
 [`tests/ci-plan.test.mjs`](../tests/ci-plan.test.mjs) checks that the three lanes
 cover the inventory exactly once, including files exercised by focused coverage.
@@ -108,8 +112,9 @@ does not establish their root causes or change them to passes.
 | Old main, `e714c89a68c03e3fa42031aa5c1d0590f5cc60ab`, [run 39733201211](https://github.com/Ricardo121380/only-my-pi/actions/runs/39733201211) | M8 D15 failed after 1,802,030 ms; timeout/SIGTERM. Its summary named the HTTP disconnect restart/non-replay scenario. | This is a separate historical failure, not proof that the same test or defect caused both runs. |
 | #80 / PR #90, `737b2abb75f9cdbda56ecf6166da8d52f582b657`, [run 39915720380](https://github.com/Ricardo121380/only-my-pi/actions/runs/39915720380) | `full-tests` failed on the Host coding-revoke lifecycle scenario with a 20,000 ms test deadline; Q10 skipped. | The original stopped batch remains open. Its deadline and assertions are preserved. This CI change does not close #80 or merge PR #90. |
 
-The HTTP scenarios remain in `tests/host-mcp-http.test.mjs`; the revoke scenario
-remains in `tests/host-pi110-runtime.test.mjs`. Both belong to the Web/Host lane.
+The HTTP scenarios remain in `tests/host-mcp-http.test.mjs` in the CLI/legacy
+integration lane; the revoke scenario remains in `tests/host-pi110-runtime.test.mjs`
+in the core Web/session lane. Shared changes continue to require both.
 Controlled local or CI results apply to their exact source and environment;
 Provider, browser, daily-install and public-release qualification remain separate.
 
@@ -131,10 +136,13 @@ Provider, browser, daily-install and public-release qualification remain separat
 
 - The same development-branch run also failed the persistent dev-Web test while
   waiting for `shell.pid` after approval (`tests/dev-web.test.mjs:81`). The local
-  controlled run had passed; the CI-specific cause remains unknown. The test now
-  supplies bounded task/access/tool state on that failure, retaining its original
-  waiting and cancellation assertions. This is an open runtime failure until a
-  fixed candidate and applicable checks establish otherwise.
+  controlled run had passed. A diagnostic follow-up,
+  [41585994874](https://github.com/Ricardo121380/only-my-pi/actions/runs/41585994874),
+  confirmed the task was running with coding access and another approval pending.
+  The test now answers the expected bash prompt with **Allow once**, after checking
+  its kind/title and limiting the answer to one per synthetic shell task. It
+  retains the original deadlines and process-cleanup assertions. This does not
+  certify sandbox availability on the CI host.
 
 These first-run failures and their scoped artifacts remain available alongside
 subsequent candidates. A corrected CI adapter or focused local pass does not

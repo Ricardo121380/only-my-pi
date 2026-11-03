@@ -23,7 +23,7 @@ export function isNodeTest(file) {
 
 export function testLane(file) {
   if (DOC_TESTS.has(file)) return "docs";
-  if (/^tests\/(?:host-.+|direct-minimal-runtime|dev-web|browser-probe-identity)\.test\.mjs$/u.test(file)) return "web";
+  if (/^tests\/(?:direct-minimal-runtime|dev-web|browser-probe-identity|host-(?:account(?:s|-.+)|auth-process|catalog|session-scan|lifecycle|server|sdk-probe|pi110-runtime|ownership|rpc-worker|task-binding|task-resume|task-metrics|usage|approval-bridge|control-state|controlled-.+|minimal-web|tool-stream))\.test\.mjs$/u.test(file)) return "web";
   return "cli";
 }
 
@@ -37,7 +37,7 @@ export function classifyChanges(files) {
   const plan = { docs: true, web: false, cli: false, packaging: false };
   for (const file of files) {
     if (ROOT_DOC.test(file) || /^docs\/.*\.(?:md|png|svg|jpe?g|webp)$/u.test(file)) continue;
-    if (file.startsWith("webui/")) { plan.web = true; continue; }
+    if (file.startsWith("webui/") || ["scripts/dev-web.mjs", "packages/direct-agent/minimal-services.mjs"].includes(file)) { plan.web = true; continue; }
     if (isNodeTest(file) && !file.startsWith("tests/ci-")) {
       plan[testLane(file)] = true;
       continue;
