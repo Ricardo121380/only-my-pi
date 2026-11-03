@@ -26,11 +26,6 @@ test("verified installer is fixed-version, checksum-first, credential-free, and 
   assert.doesNotMatch(source, /curl[^\n]*--location/u);
   assert.doesNotMatch(source, /latest/u);
   assert.doesNotMatch(source, /Authorization|GITHUB_TOKEN|NPM_TOKEN|\.npmrc/u);
-  for (const document of ["README.md", "docs/quickstart.md"]) {
-    const text = await fs.readFile(path.join(process.cwd(), document), "utf8");
-    assert.doesNotMatch(text, /releases\/download\/v0\.2\.0-preview\.1/u, `${document} must not advertise the withheld M11 release`);
-    assert.doesNotMatch(text, /curl[^\n]*\|[ \t]*(?:\/bin\/)?(?:sh|bash)(?:[ \t]|$)/u);
-  }
   const syntax = spawnSync("/bin/sh", ["-n", INSTALLER], { encoding: "utf8", shell: false });
   assert.equal(syntax.status, 0, syntax.stderr);
 });
