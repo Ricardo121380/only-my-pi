@@ -1,5 +1,7 @@
 # Only my pi 完整开发蓝图与当前迭代入口
 
+> 历史规格。本文保留当时的需求、批次与验收记录。2026-10-25 起，新开发按[原生 Pi 与 WebUI 路线](2026-10-25-pi-native-client-reset.md)安排。
+
 **2026-10-23 CLIENT-02A / #80 公开收口更新：** [PR #90](https://github.com/Ricardo121380/only-my-pi/pull/90) 已创建，两次必需 CI 的 full-tests 失败保留。仅测试提交 `e142b8b` 修正五个旧夹具；其后 `3b4f2ea` 的本地未修改 Full 复现原 20 秒取消，根因仍 UNKNOWN，带 overlay 的诊断通过不计作修复。独立 RED 确认 Host→Pi 的准备 IPC／stdin EOF 排序竞态，运行修复 `289fbac` 保留原 500ms 准备预算、最终 clean 和进程组退出证明；受影响 Host 28 PASS、MCP 6 PASS、账号 4 PASS／2 原有 SKIP、既有 Linux CLI 和 extension 36 PASS，独立 Standards／Spec scoped PASS。原功能 `d8c719f`、补充测试 `0435290`、原文档 tip `fb8fefd` 及原六条 AC 证据保持原身份，分范围复用，不拼为 Full。当前候选实际 B 和必需保护检查单列于验收记录，#80 OPEN／未合并，#81 实施等待本票正常合并收口。后续带日期的冻结结果保留原含义。
 
 **2026-10-22 CLIENT-02A / #80：** 两端共享产品工具/技能设置的六条 AC 已本地验收 PASS：功能源码 `d8c719f`、补充测试提交 `0435290` 的 C/P 14 项，实际 Ego Lite B 八组/22 次回环模型请求，既有 Linux CLI 143 项及最终保存边界 4 项通过。独立 Standards 问题已关闭，Spec 源码限定复核 PASS；独立 B 证据复核范围及主代理完整操作/核对分别列明。原 Ego 空间丢失的历史 PARTIAL 保留；取得用户重建许可后完成新空间验收和退出。具体证据见 [#80 验收记录](../compatibility/2026-10-22-shared-product-settings.md)。#80 公开仍 OPEN，待授权远程同步，未提前汇总整个 GCLIENT-02；后续 #81 开工前刷新真实前置。#78/#79 已 CLOSED / completed、PR #89 已合并；下方带日期的验收与失败保持原身份。
@@ -93,7 +95,7 @@ Pi 1.3.0 官方 [SDK](https://github.com/earendil-works/pi/blob/v1.3.0/packages/
 | 直接 Pi 运行 | CLI 进入 Pi TUI/SDK；GUI 账号入口直接创建 Pi SDK 会话 | 继续共用 Pi 核心与已选扩展，CLI 无 WebUI 服务前置；新版本从两端实际入口验证 |
 | 历史查看/接续 | CLI 默认历史可被 GUI 扫描和接续；自定义会话目录不自动纳入。见 [CLI 会话选择](../../packages/direct-agent/session-selection.mjs)、[GUI 目录](../../packages/host/catalog.mjs) | 明确项目/会话身份、可发现目录、双向接续及兼容拒绝；不为互通全盘扫描 |
 | 账号互通 | GUI 有独立账号目录；CLI 缺少对其正式选择入口。历史中的账号绑定已有写入，未发现对应 CLI 恢复路径 | CLI 独立新增/登录、列出/选择产品账号，接续核对原绑定；旧历史无绑定时显式选择，已有绑定不可用时阻止自动续接。任务完全停止后可由用户显式切换，新任务追加绑定，旧调用归属保留 |
-| 跨端协调 | 会话/项目锁已有共享接点；[账号使用协调](../../packages/host/accounts.mjs)当前以单 Host 实例内存计数为主 | 将新增 CLI 使用纳入账号变更与活动使用协调；正反向接续、并发竞争、退出/崩溃、撤权均由实际进程验证 |
+| 跨端协调 | 会话/项目锁已有共享接点；[账号使用协调](https://github.com/Ricardo121380/only-my-pi/blob/97351089e24e0586632942c50240e0212ae994fb/packages/host/accounts.mjs)当前以单 Host 实例内存计数为主 | 将新增 CLI 使用纳入账号变更与活动使用协调；正反向接续、并发竞争、退出/崩溃、撤权均由实际进程验证 |
 | MCP/codemode | 两端已有共同配置与 Pi 扩展接入；CLI 有 `omp mcp` / `/mcp`，GUI 另有 OAuth/凭据交互 | CLI 独立提供必要配置及认证入口，复用既有流程；不把“核心支持”当作“每端已可操作” |
 | 产品配置 | 旧 U5 约定 GUI 默认加项目覆盖、保留 CLI 原配置；MCP 已单独约定跨入口配置 | Q9 将 Only my pi 管理的工具/技能和分类/生图绑定统一为两端共享产品配置；原 Pi/外部配置归属保留。这是目标变更，尚未完成统一配置的运行验收 |
 | 产品完整度 | GUI 附件/分区/全文检索/完整计量/并行预览等仍有缺口；桌面尚无入口 | 按下表完整交付，不以材料探针、类型或占位按钮计为用户能力 |

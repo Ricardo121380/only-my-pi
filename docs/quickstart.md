@@ -6,16 +6,9 @@ tool host.
 
 ## Current availability
 
-As checked on 2026-10-17, the published terminal Preview is
-[v0.4.0-preview.2](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2).
-Use the installation and daily-use instructions in the [English README](../README.md)
-or [Chinese README](../README.zh-CN.md). The [WebUI guide](webui.md) describes
-the local graphical entry; it requires its own compatible runtime.
+The published terminal Preview is [v0.4.0-preview.2](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2). Its installation instructions are in the [English README](../README.md) and [中文 README](../README.zh-CN.md).
 
-The [development blueprint](plans/2026-10-17-product-direction-and-iteration-plan.md)
-covers the CLI/desktop target, WebUI delivery, and Pi upgrades. Published
-Preview, development dependencies, candidate runtime, and daily installation
-are separate identities.
+To try the native Pi WebUI, follow the [development branch instructions](minimal-webui.md). The [current roadmap](plans/2026-10-25-pi-native-client-reset.md) distinguishes development source, published packages and future Electron work.
 
 ## Historical M12/M13 guide
 

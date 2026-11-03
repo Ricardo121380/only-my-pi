@@ -19,7 +19,7 @@
 | [useConversation.ts](../evidence/2026-10-18-local-development-history.md#local-b13224862d606451)、[App.tsx](../../webui/src/App.tsx) | 分离导航与会话状态；停止历史和已完成任务默认继续准确session；独立新建回到项目的新会话草稿；导航generation阻止迟到POST抢页面；历史配置取该会话最新已知task，不取第一条旧摘要 |
 | [useInputDraft.ts](../evidence/2026-10-18-local-development-history.md#local-f423e05274e70cdc)、[DraftNotice.tsx](../evidence/2026-10-18-local-development-history.md#local-33912591b4556b6c) | 项目/会话隔离完整正文，Host双revision CAS与自动保存，保存中输入不被擦除；多窗口冲突保留双方并要求显式选择；稳定inputId/requestId，POST ACK不直接清草稿，结果不明不自动重放 |
 | [Composer.tsx](../../webui/src/Composer.tsx)、[api.ts](../../webui/src/api.ts)、[useHost.ts](../../webui/src/useHost.ts) | 受控正文和配置、32768字符限制、IME保护与发送快捷键；账号/模型消失仍显示并禁发，不选列表第一项；能力协商后调用输入协议1，输入脏通知不混入Host seq；重连先读权威草稿 |
-| [models.mjs](../../packages/host/models.mjs)、[tasks.mjs](../../packages/host/tasks.mjs)、[input-controller.mjs](../../packages/host/input-controller.mjs) | 共享思考能力校验：明确的空thinkingLevels只允许off，未报告能力仍拒绝；修复普通模型无法提交off的前后端不一致，不放宽权限/准入 |
+| [models.mjs](https://github.com/Ricardo121380/only-my-pi/blob/97351089e24e0586632942c50240e0212ae994fb/packages/host/models.mjs)、[tasks.mjs](../../packages/host/tasks.mjs)、[input-controller.mjs](../../packages/host/input-controller.mjs) | 共享思考能力校验：明确的空thinkingLevels只允许off，未报告能力仍拒绝；修复普通模型无法提交off的前后端不一致，不放宽权限/准入 |
 | [host-ui.css](../../webui/src/host-ui.css)、[ProjectHome.tsx](../../webui/src/ProjectHome.tsx) | 清除与默认续接冲突的旧文案；输入控件桌面最小40px、窄屏44px且分两行，右侧默认收起；保留Glacier材质和配色，不以外观修改代替接口接入 |
 
 配置仍由用户明确选择；已知历史账号/模型/思考强度可恢复显示，但不恢复写入grant。资源版本变化时提交**原保存快照**，Host明确拒绝过期绑定；用户核对并重选配置后保存新版本，不能在发送时偷偷换resourceRevision。该0→1变化有定向测试；当前生产能力仍报0，不声称已发生真实线上配置漂移。

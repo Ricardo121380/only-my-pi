@@ -2,6 +2,10 @@
 
 本文件所在目录是源码 Git 仓库。父目录中的分析报告、artifacts 和 archives 是材料或证据，按当前任务需要读取。
 
+## 当前开发方向
+
+实施功能或调整排期前，读取[当前开发路线](docs/plans/2026-10-25-pi-native-client-reset.md)。按目标选择终端主线或原生 WebUI 开发分支。旧批次用于查找原需求、消费者和验收记录。
+
 ## Agent skills
 
 ### Issue tracker

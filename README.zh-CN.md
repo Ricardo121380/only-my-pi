@@ -2,13 +2,15 @@
 
 [English](README.md) | **简体中文**
 
-**先理解代码，再授权修改。**
+Only my pi（OMP）是基于 [Pi](https://github.com/earendil-works/pi) 的个人编程 Agent。终端预览版已发布。当前开发重点是本机 WebUI，让你能选项目、看工具执行，并在重启后继续同一个原生 Pi 会话。
 
-**开发最终目标：Only my pi 同时交付直接基于最新稳定版 Pi 内核的 CLI/TUI 和桌面 Agent 客户端。** 两者都是正式产品入口；先完成全部已选 WebUI 范围，再通过 Electron 交付桌面应用。两端以共享会话查看和显式账号下的接续为开发目标；Pi 提供 Agent 运行能力，各端只保留必要的产品接入。已确认决定、核实基线、完整路线和下一轮入口见[开发蓝图](docs/plans/2026-10-17-product-direction-and-iteration-plan.md)。下方安装说明对应已发布的终端预览版。
+| 从哪里开始 | 能获得什么 |
+| --- | --- |
+| [运行 WebUI 开发版](docs/minimal-webui.md) | 从 `codex/dev/pi-native-web` 分支启动本地演示，试用可持久保存的会话历史。使用 Node 24.19.0 和锁定的 Pi 1.3.0。 |
+| [安装终端预览版](#快速开始) | Homebrew、npm 和可校验的 CLI 安装包。最新 [GitHub Release](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2) 是 `v0.4.0-preview.2`。 |
+| [查看当前开发路线](docs/plans/2026-10-25-pi-native-client-reset.md) | 先打通原生 Pi 会话和可用的 WebUI，再按实际需要加入模块。核心体验稳定后进入 Electron。CLI 可独立迭代，最终验证两端会话接续。 |
 
-only-my-pi（OMP）是基于 [Pi](https://github.com/earendil-works/pi) 的终端 AI 编程助手，通过 Homebrew 或 npm 安装。进入项目运行 `omp`，即可阅读代码、分析问题，并在明确授权后进行项目内修改。
-
-Pi 提供终端界面、模型、会话和基础工具；OMP 在此之上增加编程审批、有预算的子代理协作，以及可验证的安装与回滚。
+终端默认从只读 Inspect 开始，修改项目前需要明确审批。下文说明终端预览版的使用方式，并标明后续仅在开发源码中提供的 CLI 能力。
 
 > **已发布预览版：[v0.4.0-preview.2](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2)**<br>
 > 支持 **macOS 14+、原生 Apple Silicon（arm64）** 和 **Linux glibc x64/arm64**。模型账户与费用由你自行配置和承担。
@@ -272,6 +274,9 @@ omp admin doctor --json
 
 ## 高级安装：Full/Thin、离线与回滚
 
+<details>
+<summary>展开终端归档包安装、校验与回滚指南</summary>
+
 Homebrew/npm 是主要入口。Full/Thin 用作手动安装、离线与恢复备用方案；两者使用同一核心身份。Full 包含 Node 24.19.0，可在下载并验证后完全离线安装；Thin 在安装时仅获取固定的 Node 24.19.0。两者均要求预装 Git；Linux 还需要 bubblewrap、socat、ripgrep 和可用的强沙箱。离线安装不代表模型可以离线访问。
 
 按平台选择 `darwin-arm64`、`linux-x64` 或 `linux-arm64`。以下示例使用 `darwin-arm64`，Linux 用户替换文件名中的平台部分。从对应 GitHub Release 下载目标压缩包，先核验来源证明。以下示例为 Full（将文件名的 full 替换为 thin 可验证 Thin）：
@@ -522,6 +527,8 @@ env PATH="$omp_payload/node/bin:$PATH" \
 
 </details>
 
+</details>
+
 <a id="development-and-validation"></a>
 
 ## 开发与贡献
@@ -532,6 +539,7 @@ env PATH="$omp_payload/node/bin:$PATH" \
 git clone https://github.com/Ricardo121380/only-my-pi.git
 cd only-my-pi
 npm ci --ignore-scripts --no-audit --no-fund
+npm run test:prepare
 
 npm run lint
 npm run typecheck
