@@ -2,13 +2,15 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-**Inspect first. Code with approval.**
+Only my pi (OMP) is a personal coding agent built on [Pi](https://github.com/earendil-works/pi). The terminal Preview is available today. Development is focused on a local WebUI where you can work in a project, follow tool calls and continue a native Pi session after a restart.
 
-**Development goal:** Only my pi delivers both a CLI/TUI and a desktop Agent client, directly built on the latest stable Pi core. The complete selected WebUI scope comes before the Electron application. Both clients are first-class product interfaces, with shared session viewing and explicit-account continuation as a development goal. Pi supplies the Agent runtime, with only the application integration each interface needs. See the [development blueprint](docs/plans/2026-10-17-product-direction-and-iteration-plan.md) for confirmed decisions, verified status, remaining work, and the next iteration. The installation guide below describes the published terminal Preview.
+| Where to start | What you will find |
+| --- | --- |
+| [Run the WebUI from source](docs/minimal-webui.md) | The `codex/dev/pi-native-web` development branch, a local demo and persistent session history. Use Node 24.19.0 and the pinned Pi 1.3.0. |
+| [Install the terminal Preview](#quick-start) | Homebrew, npm and verified archives for the published CLI. The [latest GitHub release](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2) is `v0.4.0-preview.2`. |
+| [Follow the development roadmap](docs/plans/2026-10-25-pi-native-client-reset.md) | Native Pi sessions first, then a usable WebUI. Modules follow user priorities. Electron packaging follows a stable core experience. CLI development can proceed independently, with cross-client handoff as a later goal. |
 
-only-my-pi (OMP) is a terminal coding agent built on [Pi](https://github.com/earendil-works/pi), distributed through Homebrew and npm. Run `omp` in a project to inspect code, investigate problems, and make project-local changes after explicit approval.
-
-Pi provides the terminal UI, models, sessions, and core tools. OMP adds coding approvals, budgeted subagent collaboration, and verifiable installation and rollback.
+The terminal starts in read-only Inspect and asks for approval before modifying a project. The guide below covers the terminal Preview and identifies subsequent development-only CLI behavior.
 
 > **Published Preview: [v0.4.0-preview.2](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2)**<br>
 > Supports **macOS 14+ Apple Silicon (arm64)** and **Linux glibc x64/arm64**. Bring your own model access and provider account.
@@ -272,6 +274,9 @@ For a [non-sensitive bug report](https://github.com/Ricardo121380/only-my-pi/iss
 
 ## Advanced installation: Full/Thin, offline and rollback
 
+<details>
+<summary>Show the terminal archive installation, verification and rollback guide</summary>
+
 Homebrew/npm are the primary entry points. Full/Thin are manual, offline and recovery fallbacks sharing the same core identity. Full includes Node 24.19.0 and installs offline after download and verification. Thin retrieves only pinned Node 24.19.0 during installation. Both require preinstalled Git; Linux also requires bubblewrap, socat, ripgrep and a working strong sandbox. Offline installation does not provide offline model inference.
 
 Choose `darwin-arm64`, `linux-x64` or `linux-arm64` for your platform. The example below uses `darwin-arm64`; replace that filename segment for Linux. Download the desired archive from the GitHub Release and verify its provenance first. This example uses Full (replace full with thin in the filename to verify Thin):
@@ -519,6 +524,8 @@ With OMP already installed, use `omp admin stack install --bundle "$omp_bundle" 
 </details>
 
 
+
+</details>
 
 </details>
 

@@ -1,9 +1,16 @@
 # Changelog
 
-All notable changes to `only-my-pi` are recorded here. This project is in an
-early, local-first Agent phase; entries describe the governed repository
-artifacts and their verification boundary, not a promise of a published npm
-release.
+## Current development
+
+The native Pi session and local WebUI are available as [development source](docs/minimal-webui.md). The [roadmap](docs/plans/2026-10-25-pi-native-client-reset.md) tracks the WebUI, user-selected modules, CLI handoff and later Electron work.
+
+## 0.4.0-preview.2 · Published terminal Preview
+
+This is the latest published CLI preview as of 2026-11-03. For its assets, installation channels and earlier releases, see the [release notes](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2) and [release history](https://github.com/Ricardo121380/only-my-pi/releases).
+
+## Earlier development records
+
+The following entries retain the scope and publication status recorded at the time.
 
 ## 0.3.0-preview.1 — local direct-Agent candidate
 

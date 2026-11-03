@@ -4,13 +4,11 @@
 
 ## 既有任务的过渡规则
 
-配置完成时，既有 WebUI 任务尚未迁移为 GitHub Issues。处理既有任务前读取：
+排期以[当前开发路线](../plans/2026-10-25-pi-native-client-reset.md)为准。已发布任务的状态和依赖从对应 GitHub Issue 回读。需要处理旧实现时，沿用原 Task ID，按范围核对以下资料。
 
-- [完整优化计划](../plans/2026-09-26-webui-optimization-plan.md)：范围、已确认决策及批次顺序。
-- [Task 看板](../plans/2026-09-26-webui-optimization-tasks.md)：既有任务编号、状态、依赖和当前具体下一步。
-- [验收矩阵](../plans/2026-09-26-webui-optimization-acceptance.md)：必需门禁和证据层次；再读取目标任务链接的实际进展与验收记录。
-
-沿用 `S0-??`、`U?-??`、`G2-00-??` 等已有编号。开发计划、ADR 和验收证据继续保存在仓库；GitHub Issue 关联这些文件，而不是另造一套决策或证据。
+- [原优化计划](../plans/2026-09-26-webui-optimization-plan.md)记录当时的范围与顺序。
+- [原 Task 看板](../plans/2026-09-26-webui-optimization-tasks.md)保存编号、Issue 映射和历史批次。
+- [验收矩阵](../plans/2026-09-26-webui-optimization-acceptance.md)保留原候选的完成条件与证据层次。
 
 迁移必须是明确请求的工作：逐项检查已有 Issue，建立 Task ID → Issue 的映射，保留既有依赖和验收状态。已迁移任务以对应 Issue 跟踪工作状态，看板保留映射及批次汇总；尚未迁移任务仍按原看板定位。已验收条目保留为历史证据，不重新生成未完成任务。记录冲突时核对相应源码、日期、范围和原始证据后再修正。
 
