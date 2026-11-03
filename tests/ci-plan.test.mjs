@@ -12,7 +12,8 @@ test("documentation routing is explicit; runtime Markdown and unknown paths sele
     { docs: true, web: false, cli: false, packaging: false });
   for (const file of ["skills/demo/SKILL.md", "prompts/code.md", "agents/generated/a.md", "modes/prompts/a.md",
     "new-runtime/module.mjs", "packages/host/tasks.mjs", "package-lock.json", "docs/evidence/result.json",
-    ".github/workflows/ci.yml", "scripts/ci-plan.mjs", "tests/ci-plan.test.mjs"]) {
+    ".github/workflows/ci.yml", "scripts/ci-plan.mjs", "tests/ci-plan.test.mjs",
+    "webui/vite.config.ts", "webui/future-build-tool.mjs", "webui/src/unknown.config"]) {
     assert.deepEqual(classifyChanges([file]), { docs: true, web: true, cli: true, packaging: true }, file);
   }
   assert.deepEqual(classifyChanges(["webui/src/MinimalApp.tsx"]), { docs: true, web: true, cli: false, packaging: false });
@@ -39,6 +40,11 @@ test("every discovered Node test is assigned exactly once, including focused cov
     assert.equal(testLane(file), "cli", "optional legacy modules remain covered separately from the native Web core");
   for (const file of ["test/new.js", "test-new.mjs", "tests/new.test.js", "tests/new_test.mjs", "test.mjs"]) assert.ok(isNodeTest(file));
   assert.equal(isNodeTest("webui/src/App.test.tsx"), false);
+  assert.equal(isNodeTest("webui/src/App.test.ts"), false);
+  for (const file of ["webui/src/future.test.mjs", "webui/src/future.test.js", "webui/tools/build.test.mjs"]) {
+    assert.equal(isNodeTest(file), true);
+    assert.equal(testLane(file), "web");
+  }
   assert.equal(isNodeTest("tests/fixtures/host.mjs"), false);
 });
 
@@ -102,12 +108,30 @@ test("minimal and daily smoke keep their distinct evidence contracts and origina
     ["D12", ["run", "test:e2e:daily"], 300000],
   ]);
   const seen = [];
+  const sourceCommit = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
   const result = await runLane("smoke-contract", { checks, execute: async check => {
     seen.push([check.id, check.timeoutMs]);
-    return { passed: true, status: "PASS", durationMs: 1 };
+    return { passed: true, status: "PASS", durationMs: 1, evidence: { sourceCommit } };
   } });
   assert.equal(result.status, "PASS");
   assert.deepEqual(seen, [["test-e2e", 300000], ["D12", 300000]]);
   assert.equal(checksForLane("docs")[0].timeoutMs, 120000);
   assert.equal(checksForLane("static").find(check => check.id === "schema:check").timeoutMs, 60000);
+});
+
+test("successful smoke from another commit and a changed source tree cannot qualify CI", async () => {
+  const commit = "a".repeat(40), otherCommit = "b".repeat(40);
+  const mismatch = await runLane("source-binding", {
+    checks: [{ id: "test-e2e", command: "npm", args: ["run", "test:e2e"] }],
+    sourceState: () => ({ commit, clean: true }),
+    execute: async () => ({ passed: true, status: "PASS", durationMs: 1, evidence: { sourceCommit: otherCommit } }),
+  });
+  assert.equal(mismatch.status, "FAIL");
+  assert.equal(mismatch.results[0].diagnostic, "FRESH_SOURCE_COMMIT_MISMATCH");
+  for (const after of [{ commit: otherCommit, clean: true }, { commit, clean: false }]) {
+    let read = 0;
+    const changed = await runLane("source-binding", { checks: [], sourceState: () => read++ ? after : { commit, clean: true } });
+    assert.equal(changed.status, "FAIL");
+    assert.equal(changed.sourceFailure, "SOURCE_CHANGED_OR_DIRTY");
+  }
 });

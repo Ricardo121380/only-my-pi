@@ -11,8 +11,14 @@ import { runOmpEntrypoint } from "../bin/omp.mjs";
 
 test("web routing is explicit and double dash preserves the ordinary task text", async () => {
   assert.equal(classifyOmpInvocation(["web", "status"]).kind, "web");
-  assert.deepEqual(classifyOmpInvocation(["--", "web"]).argv, ["web"]);
+  assert.deepEqual(classifyOmpInvocation(["--", "web"]).argv, ["--", "web"]);
   assert.equal(classifyOmpInvocation(["--", "web"]).kind, "agent");
+  let agentHandled = false;
+  assert.equal(await runOmpEntrypoint({ argv: ["--", "web"], agentLauncher: async ({ argv }) => {
+    agentHandled = true;
+    assert.deepEqual(argv, ["--", "web"], "the argument separator must reach the native launcher");
+  }, webCommand: async () => assert.fail("literal web task must not enter Host control") }), 0);
+  assert.equal(agentHandled, true);
   let handled = false;
   assert.equal(await runOmpEntrypoint({ argv: ["web", "status"], stdout: { write() {} }, webCommand: async ({ argv }) => { handled = true; assert.deepEqual(argv, ["status"]); return { ok: true, status: "HOST_NOT_RUNNING" }; } }), 0);
   assert.equal(handled, true);
