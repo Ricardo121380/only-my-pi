@@ -88,7 +88,8 @@ locked Node/npm assets; it does not make model requests or publish a release.
 
 Each Node file has its own start/end record and bounded failure diagnostic. Test
 files run with the existing concurrency of two; individual test deadlines and
-assertions remain intact. A lane retains the former 30-minute execution budget.
+assertions remain intact. Existing command timeouts are read from the original
+manifests (including the distinct 5-minute minimal and daily smoke budgets). A lane retains the former 30-minute execution budget.
 After a failure it stops scheduling more work, records unfinished checks as
 `NOT_RUN`, and fails. Preparation failures also fail the job. GitHub retains the
 job log; `always()` uploads the available scoped JSON reports for 14 days,
@@ -111,3 +112,30 @@ The HTTP scenarios remain in `tests/host-mcp-http.test.mjs`; the revoke scenario
 remains in `tests/host-pi110-runtime.test.mjs`. Both belong to the Web/Host lane.
 Controlled local or CI results apply to their exact source and environment;
 Provider, browser, daily-install and public-release qualification remain separate.
+
+### CI migration diagnostics, 2026-11-03
+
+- The first scoped PR run, [41584930855](https://github.com/Ricardo121380/only-my-pi/actions/runs/41584930855),
+  recorded daily smoke exiting with code 0 but failing the executor's evidence
+  expectation. The new adapter had incorrectly reused the minimal `test-e2e`
+  identity, whose receipt requires `bootstrap.doctor=PASS`; daily smoke correctly
+  reports `CONTROLLED_STACK_REQUIRED`. The adapter now preserves daily's original
+  **D12** identity and budget. A regression covers both mappings. Q10's log pipe
+  explicitly uses Bash with pipefail so a failed command cannot be hidden by tee.
+- The first development-branch run, [41585117199](https://github.com/Ricardo121380/only-my-pi/actions/runs/41585117199),
+  recorded direct-agent branch coverage **79.49% < 80%**. Its old focused suite
+  lacked minimal-launcher option/extension assertions. The development branch
+  adds checks for TUI/print/RPC admission, optional-tool exclusion, explicit
+  extension ownership and unsupported utility/Host combinations. The original
+  coverage threshold remains unchanged; the focused local check then passed.
+
+- The same development-branch run also failed the persistent dev-Web test while
+  waiting for `shell.pid` after approval (`tests/dev-web.test.mjs:81`). The local
+  controlled run had passed; the CI-specific cause remains unknown. The test now
+  supplies bounded task/access/tool state on that failure, retaining its original
+  waiting and cancellation assertions. This is an open runtime failure until a
+  fixed candidate and applicable checks establish otherwise.
+
+These first-run failures and their scoped artifacts remain available alongside
+subsequent candidates. A corrected CI adapter or focused local pass does not
+retroactively qualify an earlier whole run.

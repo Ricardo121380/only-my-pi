@@ -193,6 +193,7 @@ jobs:
       - name: Run packaging checks with bounded diagnostics
         run: node scripts/ci-run.mjs packaging "$RUNNER_TEMP/ci-reports/packaging.json"
       - name: M11 Q10 macOS arm64 clean-home
+        shell: bash
         run: npm run verify:m11:q10:ci 2>&1 | tee "$RUNNER_TEMP/ci-reports/q10.log"
       - name: Preserve scoped results, including failures and unfinished checks
         if: always()

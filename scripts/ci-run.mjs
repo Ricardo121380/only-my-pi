@@ -10,7 +10,14 @@ import { runCheck, formatGateProgress } from "./verification-receipt.mjs";
 
 const focusedCoverage = M12_DETERMINISTIC_CHECKS.filter(check => check.id.endsWith("-coverage") && check.id !== "global-coverage");
 const coveredFiles = new Set(focusedCoverage.flatMap(check => check.args.filter(arg => arg.endsWith(".test.mjs"))));
-const npm = (script) => ({ id: script, command: "npm", args: ["run", script] });
+const historicalNpmChecks = ["release-gates-v1", "release-gates-v2", "daily-harness-gates-v1"]
+  .flatMap(name => JSON.parse(fs.readFileSync(path.join(root, "verification", `${name}.json`), "utf8")).gates)
+  .filter(check => check.command === "npm");
+const npm = (script) => {
+  const budgets = historicalNpmChecks.filter(check => JSON.stringify(check.args) === JSON.stringify(["run", script]))
+    .map(check => check.timeoutMs);
+  return { id: script, command: "npm", args: ["run", script], ...(budgets.length ? { timeoutMs: Math.min(...budgets) } : {}) };
+};
 const node = (id, args) => ({ id, command: process.execPath, args });
 
 export function checksForLane(lane, files = nodeTestFiles()) {
@@ -37,7 +44,7 @@ export function checksForLane(lane, files = nodeTestFiles()) {
     return [
       ...receipts, npm("verify:public-baseline"),
       { ...npm("test:e2e"), id: "test-e2e" },
-      { ...npm("test:e2e:daily"), id: "test-e2e", label: "test-e2e-daily" },
+      { ...npm("test:e2e:daily"), id: "D12", label: "test-e2e-daily" },
     ];
   }
   throw new Error(`Unknown CI lane: ${lane}`);
@@ -69,8 +76,8 @@ export async function runLane(lane, { checks = checksForLane(lane), execute = ru
     const result = await execute({ ...check,
       // Reuse the existing bounded, redacted test diagnostics and process-group
       // timeout handling. Keep fresh-tarball's evidence extraction contract.
-      id: check.id === "test-e2e" ? "test-e2e" : "full-tests",
-      timeoutMs: Math.max(1, deadline - Date.now()), maxOutputBytes: 4 * 1024 * 1024,
+      id: ["test-e2e", "D12"].includes(check.id) ? check.id : "full-tests",
+      timeoutMs: Math.max(1, Math.min(check.timeoutMs ?? 1_800_000, deadline - Date.now())), maxOutputBytes: 4 * 1024 * 1024,
       env: { CI: "1", NO_COLOR: "1", PI_TELEMETRY: "0" },
     }, { cwd: root });
     report.results[index] = { ...report.results[index], ...result, id, completedAt: new Date().toISOString() };

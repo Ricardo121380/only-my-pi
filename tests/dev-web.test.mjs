@@ -78,7 +78,16 @@ test("source development survives fresh-process restart; native history resumes 
   await assert.rejects(fs.access(path.join(second.project, "shell.pid")), { code: "ENOENT" });
   await b.command({ type: "answerApproval", taskId: shell.taskId, approvalId: approval.approvals[0].approvalId, value: approval.approvals[0].options[0] });
   const readPid = name => fs.readFile(path.join(second.project, name), "utf8").then(Number).catch(error => { if (error.code === "ENOENT") return null; throw error; });
-  const shellPid = await until(() => readPid("shell.pid"), pid => pid > 0, "shell running");
+  const shellPid = await until(() => readPid("shell.pid"), pid => pid > 0, "shell running").catch(async error => {
+    // Surface bounded state in CI's existing error-code diagnostics, without
+    // retaining task prompts, tool output or pairing credentials.
+    const task = await b.task(shell.taskId);
+    const status = ["starting", "running", "cancelling", "succeeded", "failed", "cancelled"].includes(task.status) ? task.status : "unknown";
+    const access = ["inspect", "planning", "coding"].includes(task.access) ? task.access : "unknown";
+    const toolFailed = task.toolCalls?.some(call => call.status === "failed");
+    error.code = `DEV_SHELL_${status}_${access}_${toolFailed ? "tool_failed" : "no_tool_failure"}_${task.approvals?.length ? "approval_pending" : "no_approval"}`.toUpperCase();
+    throw error;
+  });
   const childPid = await until(() => readPid("child.pid"), pid => pid > 0, "sleep running");
   const ledger = JSON.parse(await fs.readFile(path.join(second.configRoot, "only-my-pi/host/tasks.json"), "utf8"));
   const workerPid = ledger.tasks.find(task => task.taskId === shell.taskId).worker.pid;

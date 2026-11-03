@@ -211,6 +211,34 @@ test("RPC and implicit piped print select admitted entries while utility command
   assert.equal(host.env.ONLY_MY_PI_HEADLESS, "1");
 });
 
+test("minimal execution keeps admission while excluding optional tools in TUI, print and RPC", async (t) => {
+  const value = await fakeStack(t);
+  await fs.writeFile(path.join(value.root, "pi/package.json"), JSON.stringify({ name: "@earendil-works/pi-coding-agent", version: "1.3.0" }));
+  const stack = await resolveControlledStack({ stackRoot: value.root, homeDir: value.home });
+  for (const [argv, entry, headless] of [
+    [["--minimal", "review"], "tui-entry.mjs", false],
+    [["--minimal", "--print", "review"], "session-entry.mjs", true],
+    [["--minimal", "--mode", "rpc"], "rpc-entry.mjs", true],
+  ]) {
+    const invocation = buildDirectPiInvocation({ argv, stack, extensionPaths: EXTENSIONS, mcpNames: ["optional_mcp"], env: {} });
+    assert.equal(invocation.argv[1], path.join(stack.ompPackageRoot, "packages/direct-agent", entry));
+    assert.equal(invocation.argv.includes("--minimal"), false);
+    assert.equal(invocation.argv.includes("--no-mcp"), true);
+    assert.equal(invocation.env.ONLY_MY_PI_MINIMAL, "1");
+    assert.equal(invocation.headless, headless);
+    const tools = invocation.argv[invocation.argv.indexOf("--tools") + 1];
+    assert.equal(tools, headless ? "read,grep,find,ls" : "read,grep,find,ls,edit,write,bash,request_coding_access");
+    assert.equal(invocation.argv[invocation.argv.indexOf("--perm") + 1], headless ? "plan" : "build");
+  }
+  for (const argv of [["--minimal", "--version"], ["--minimal", "--export", "/history/session.jsonl"]]) {
+    assert.throws(() => buildDirectPiInvocation({ argv, stack, extensionPaths: EXTENSIONS }), { code: "OMP_AGENT_OPTION_INVALID" });
+  }
+  assert.throws(() => buildDirectPiInvocation({ argv: ["--minimal"], stack, extensionPaths: EXTENSIONS, runtimeOwner: "host" }), { code: "OMP_AGENT_OPTION_INVALID" });
+  const literal = buildDirectPiInvocation({ argv: ["--", "--minimal"], stack, extensionPaths: EXTENSIONS });
+  assert.equal(literal.env.ONLY_MY_PI_MINIMAL, "0");
+  assert.deepEqual(literal.argv.slice(-2), ["--", "--minimal"]);
+});
+
 test("direct extension resolution disables ambient discovery and admits only audited owners", async (t) => {
   const value = await fakeStack(t);
   const stack = await resolveControlledStack({ stackRoot: value.root, homeDir: value.home });
@@ -252,6 +280,13 @@ test("direct extension resolution disables ambient discovery and admits only aud
   });
   assert.equal(resolved.planModeOwner, "only-my-pi");
   assert.equal(resolved.extensions.length, 12);
+  const minimalPackages = [];
+  const minimal = await resolveDirectExtensionSet({ stack, configRoot, minimal: true,
+    resolvePackage: async ({ packageId }) => { minimalPackages.push(packageId); return packages.get(packageId); },
+  });
+  assert.deepEqual(minimalPackages, ["permission-modes"]);
+  assert.deepEqual(minimal.identities, ["permission-modes:src/index.ts", "only-my-pi:extensions/omp-direct/index.ts"]);
+  assert.equal(minimal.extensions.length, 2);
   const nativeHeadless = await resolveDirectExtensionSet({
     stack: { ...stack, distribution: {}, channel: "npm" }, configRoot, headless: true,
     resolvePackage: async ({ packageId }) => {
