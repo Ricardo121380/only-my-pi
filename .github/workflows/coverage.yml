@@ -1,0 +1,41 @@
+name: Historical global coverage
+
+# Explicit acceptance exercise, not a second full suite on every PR.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  coverage:
+    name: Global coverage 85/69/85
+    runs-on: macos-14
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            contracts/release/external/package-lock.json
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run test:prepare
+      - run: node scripts/ci-run.mjs coverage "$RUNNER_TEMP/ci-reports/coverage.json"
+      - name: Preserve bounded coverage result
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: global-coverage-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ci-reports/coverage.json
+          retention-days: 14
+          if-no-files-found: warn

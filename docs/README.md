@@ -8,6 +8,7 @@
 | Understand the current goals or choose work | [Native Pi → WebUI → selected modules → Electron](plans/2026-10-25-pi-native-client-reset.md) · [ADR-0022](decisions/ADR-0022-pi-native-web-first.md) |
 | Install the published terminal Preview | [Installation guide](quickstart.md) · [GitHub releases](https://github.com/Ricardo121380/only-my-pi/releases) |
 | Find source, contracts or tests | [Repository layout and synchronization](maintenance/README.md) · [Domain glossary](../CONTEXT.md) |
+| Choose checks or inspect CI failures | [Development CI and historical acceptance](ci.md) |
 | Check an issue or a proposed integration | [GitHub Issues](https://github.com/Ricardo121380/only-my-pi/issues) · [Pull requests](https://github.com/Ricardo121380/only-my-pi/pulls) |
 
 ### Public main and development source

@@ -45,3 +45,11 @@ test("Codex Goal and Labs modules are not Pi package resources", () => {
   assert.ok(resources.every((resource) => !resource.startsWith("./packages/deepseek-conformance")));
   assert.ok(resources.every((resource) => !resource.startsWith("./packages/workspace-checkpoint")));
 });
+
+test("public installation docs withhold the retired release and avoid pipe-to-shell", () => {
+  for (const document of ["README.md", "docs/quickstart.md"]) {
+    const text = fs.readFileSync(path.join(ROOT, document), "utf8");
+    assert.doesNotMatch(text, /releases\/download\/v0\.2\.0-preview\.1/u, `${document} must not advertise the withheld M11 release`);
+    assert.doesNotMatch(text, /curl[^\n]*\|[ \t]*(?:\/bin\/)?(?:sh|bash)(?:[ \t]|$)/u);
+  }
+});
