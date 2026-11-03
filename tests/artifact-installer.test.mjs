@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { EventEmitter } from "node:events";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -130,6 +131,27 @@ test("artifact plan rejects symlinks before hashing", async (t) => {
   const installer = new ArtifactInstaller({ temporaryRoot: paths.temporaryRoot, npmCache: paths.npmCache, cliRoot: paths.cliRoot, cliBin: paths.cliBin });
   await assert.rejects(installer.plan({ artifact: link, profile: "daily", configRoot: paths.configRoot }), {
     code: "ARTIFACT_SYMLINK_REJECTED",
+  });
+});
+
+test("artifact process retains output delivered after exit until stdio closes", async (t) => {
+  const child = new EventEmitter();
+  child.stdout = new EventEmitter();
+  child.stderr = new EventEmitter();
+  t.after(() => child.emit("close", 0, null));
+  let settled = false;
+  const pending = createArtifactProcessRunner({ spawnImpl: () => child })("tar", ["-tzf", "fixture.tgz"], {
+    cwd: process.cwd(), env: {}, label: "archive listing fixture",
+  }).then(result => { settled = true; return result; });
+  child.emit("exit", 0, null);
+  await new Promise(setImmediate);
+  assert.equal(settled, false, "process exit alone does not finish reading its output");
+  child.stdout.emit("data", Buffer.from("package/\n"));
+  child.stderr.emit("data", Buffer.from("fixture diagnostic\n"));
+  child.emit("close", 0, null);
+  assert.deepEqual(await pending, {
+    exitCode: 0, signal: null, stdout: "package/\n", stderr: "fixture diagnostic\n",
+    stdoutTruncated: false, stderrTruncated: false,
   });
 });
 

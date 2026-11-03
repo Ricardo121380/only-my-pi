@@ -95,6 +95,30 @@ test("controlled gate regression /private/fixture/test", () => assert.equal(1, 2
   assert.ok(observed.filter(({ gate }) => gate.id !== entry.id).every(({ diagnostic }) => diagnostic === undefined));
 });
 
+test("unexpected migration errors retain their code without exposing error messages", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-migration-diagnostic-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const fixture = path.join(root, "failure.test.mjs");
+  await fs.writeFile(fixture, `
+import assert from "node:assert/strict";
+import test from "node:test";
+test("migration crash regression", async () => {
+  const crash = Object.assign(new Error("simulated crash"), { code: "SIMULATED_CRASH" });
+  const unexpected = Object.assign(new Error("PRIVATE_DIAGNOSTIC_PAYLOAD /private/fixture/output"), { code: "MIGRATION_ARCHIVE_INVALID" });
+  await assert.rejects(Promise.reject(unexpected), error => {
+    if (error !== crash) throw error;
+    return true;
+  });
+});
+`);
+  const result = await receipt.runCheck({ id: "full-tests", command: process.execPath,
+    args: ["--test", "--test-reporter=tap", fixture], timeoutMs: 10000, env: {} });
+  assert.equal(result.status, "FAIL");
+  assert.match(result.diagnostic, /codes=MIGRATION_ARCHIVE_INVALID/u);
+  assert.doesNotMatch(result.diagnostic, /SIMULATED_CRASH|PRIVATE_DIAGNOSTIC_PAYLOAD|\/private\/fixture/u);
+  assert.ok(!result.diagnostic.includes(root));
+});
+
 test("D15 identifies an actual coverage threshold failure without copying child output", async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-gate-coverage-")));
   t.after(() => fs.rm(root, { recursive: true, force: true }));

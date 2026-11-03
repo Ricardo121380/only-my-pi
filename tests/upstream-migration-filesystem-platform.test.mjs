@@ -309,7 +309,12 @@ test("crash before settings publication preserves a concurrent unrelated setting
     transactionIdFactory: () => transactionId,
     onBoundary: async (phase) => { if (phase === "EXTERNAL_NEW_RENAMED") throw crash; },
   });
-  await assert.rejects(first.apply({ plan: value.plan, inspected: value.inspected, bundle: value.bundlePath }), { code: "SIMULATED_CRASH" });
+  await assert.rejects(first.apply({ plan: value.plan, inspected: value.inspected, bundle: value.bundlePath }), error => {
+    // Preserve an unexpected migration error as root reporter metadata rather
+    // than hiding its code inside an assertion's actual/expected values.
+    if (error !== crash) throw error;
+    return true;
+  });
   const current = await loadSettings(value.configRoot);
   await fs.writeFile(path.join(value.configRoot, "settings.json"), `${JSON.stringify({ ...current.settings, unrelatedUserSetting: "preserve-me" }, null, 2)}\n`);
   const recovered = await createCrossRootTransactionEngine({ configRoot: value.configRoot, platform: value.platform }).recoverPending();
