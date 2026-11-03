@@ -78,7 +78,26 @@ test("source development survives fresh-process restart; native history resumes 
   await assert.rejects(fs.access(path.join(second.project, "shell.pid")), { code: "ENOENT" });
   await b.command({ type: "answerApproval", taskId: shell.taskId, approvalId: approval.approvals[0].approvalId, value: approval.approvals[0].options[0] });
   const readPid = name => fs.readFile(path.join(second.project, name), "utf8").then(Number).catch(error => { if (error.code === "ENOENT") return null; throw error; });
-  const shellPid = await until(() => readPid("shell.pid"), pid => pid > 0, "shell running").catch(async error => {
+  const approvedShellTasks = new Set();
+  const shellReady = (taskId, previousPid = null) => until(async () => {
+    const task = await b.task(taskId);
+    if (task.approvals?.length) {
+      // The CI host may require a separate tool approval (e.g. unavailable
+      // sandbox). Answer only this fixture's one bash request, never a session
+      // or permanent grant; cancellation/descendant assertions stay unchanged.
+      assert.equal(task.access, "coding");
+      assert.equal(task.approvals.length, 1);
+      assert.equal(approvedShellTasks.has(taskId), false);
+      const approval = task.approvals[0];
+      assert.equal(approval.kind, "select");
+      assert.match(approval.title, /^Allow bash\?/u);
+      assert.ok(approval.options.includes("Allow once"));
+      approvedShellTasks.add(taskId);
+      await b.command({ type: "answerApproval", taskId, approvalId: approval.approvalId, value: "Allow once" });
+    }
+    return readPid("shell.pid");
+  }, pid => pid > 0 && pid !== previousPid, "shell running");
+  const shellPid = await shellReady(shell.taskId).catch(async error => {
     // Surface bounded state in CI's existing error-code diagnostics, without
     // retaining task prompts, tool output or pairing credentials.
     const task = await b.task(shell.taskId);
@@ -104,7 +123,7 @@ test("source development survives fresh-process restart; native history resumes 
   const shutdownTask = await start(b, "request shell", { mode: "controlled", resumeSessionKey: session.sessionKey });
   const shutdownApproval = await until(() => b.task(shutdownTask.taskId), task => task.approvals?.length, "shutdown approval");
   await b.command({ type: "answerApproval", taskId: shutdownTask.taskId, approvalId: shutdownApproval.approvals[0].approvalId, value: shutdownApproval.approvals[0].options[0] });
-  const shutdownShell = await until(() => readPid("shell.pid"), pid => pid > 0 && pid !== shellPid, "shutdown shell running");
+  const shutdownShell = await shellReady(shutdownTask.taskId, shellPid);
   const shutdownChild = await until(() => readPid("child.pid"), pid => pid > 0 && pid !== childPid, "shutdown child running");
   await second.stop("SIGTERM"); assert.equal(await second.exited, 0);
   assert.equal(await processIdentity(shutdownShell), null); assert.equal(await processIdentity(shutdownChild), null);

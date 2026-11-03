@@ -16,6 +16,7 @@ test("documentation routing is explicit; runtime Markdown and unknown paths sele
     assert.deepEqual(classifyChanges([file]), { docs: true, web: true, cli: true, packaging: true }, file);
   }
   assert.deepEqual(classifyChanges(["webui/src/MinimalApp.tsx"]), { docs: true, web: true, cli: false, packaging: false });
+  assert.deepEqual(classifyChanges(["packages/direct-agent/minimal-services.mjs", "scripts/dev-web.mjs"]), { docs: true, web: true, cli: false, packaging: false });
   assert.deepEqual(classifyChanges(["tests/omp-cli.test.mjs"]), { docs: true, web: false, cli: true, packaging: false });
   assert.equal(classifyChanges(["tests/host-pi110-runtime.test.mjs"]).web, true);
 });
@@ -34,6 +35,8 @@ test("every discovered Node test is assigned exactly once, including focused cov
     assert.ok(selected.includes(file), file);
   assert.equal(testLane("tests/new-future-module.test.mjs"), "cli");
   assert.equal(testLane("tests/direct-minimal-runtime.test.mjs"), "web");
+  for (const file of ["tests/host-mcp-http.test.mjs", "tests/host-images.test.mjs", "tests/host-terminals.test.mjs"])
+    assert.equal(testLane(file), "cli", "optional legacy modules remain covered separately from the native Web core");
   for (const file of ["test/new.js", "test-new.mjs", "tests/new.test.js", "tests/new_test.mjs", "test.mjs"]) assert.ok(isNodeTest(file));
   assert.equal(isNodeTest("webui/src/App.test.tsx"), false);
   assert.equal(isNodeTest("tests/fixtures/host.mjs"), false);

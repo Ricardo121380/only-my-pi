@@ -42,7 +42,8 @@ export function checksForLane(lane, files = nodeTestFiles()) {
       .map(([file, sha]) => node(file, ["scripts/release-receipt-check.mjs", "--receipt", `verification/receipts/${file}`,
         "--source-commit", sha, "--manifest", "verification/manifests/release-gates-v1-2026-08.json"]));
     return [
-      ...receipts, npm("verify:public-baseline"),
+      ...receipts, node("public-baseline-authority", ["--input-type=module", "--eval",
+        'const { inspectPublicBaseline } = await import("./scripts/public-baseline-gates.mjs"); const { record } = await inspectPublicBaseline(); if (record.state !== "PUBLIC_BASELINE_VERIFIED") throw new Error("PUBLIC_BASELINE_PENDING"); console.log(record.state);']),
       { ...npm("test:e2e"), id: "test-e2e" },
       { ...npm("test:e2e:daily"), id: "D12", label: "test-e2e-daily" },
     ];
