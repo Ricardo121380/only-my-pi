@@ -32,6 +32,7 @@ test("development CI routes docs, WebUI, CLI and installation without repeating 
     assert.match(workflow, new RegExp(`node scripts/ci-run\\.mjs ${lane} `, "u"));
   assert.doesNotMatch(workflow, /npm test|npm run verify(?::subagents|:m8|:m9|:m11|:m12)?(?: --|:run)/u);
   assert.match(workflow, /npm run verify:m11:q10:ci/u);
+  assert.match(workflow, /name: M11 Q10 macOS arm64 clean-home\n\s+shell: bash/u, "Q10 failure must propagate through tee with bash pipefail");
   assert.match(workflow, /name: CI required/u);
   assert.match(workflow, /if: always\(\)\n    needs: \[scope, docs, static, web, cli, packaging\]/u);
   assert.match(workflow, /requiredFailures\(plan, results\)/u);

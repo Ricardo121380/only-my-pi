@@ -91,3 +91,20 @@ test("failure reports preserve diagnostics and unfinished checks without raw out
   assert.equal(report.rawOutputStored, false);
   assert.deepEqual(JSON.parse(fs.readFileSync(output, "utf8")), report);
 });
+
+test("minimal and daily smoke keep their distinct evidence contracts and original timeouts", async () => {
+  const checks = checksForLane("packaging").filter(check => ["test-e2e", "D12"].includes(check.id));
+  assert.deepEqual(checks.map(check => [check.id, check.args, check.timeoutMs]), [
+    ["test-e2e", ["run", "test:e2e"], 300000],
+    ["D12", ["run", "test:e2e:daily"], 300000],
+  ]);
+  const seen = [];
+  const result = await runLane("smoke-contract", { checks, execute: async check => {
+    seen.push([check.id, check.timeoutMs]);
+    return { passed: true, status: "PASS", durationMs: 1 };
+  } });
+  assert.equal(result.status, "PASS");
+  assert.deepEqual(seen, [["test-e2e", 300000], ["D12", 300000]]);
+  assert.equal(checksForLane("docs")[0].timeoutMs, 120000);
+  assert.equal(checksForLane("static").find(check => check.id === "schema:check").timeoutMs, 60000);
+});
