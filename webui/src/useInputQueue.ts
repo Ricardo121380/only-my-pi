@@ -3,7 +3,7 @@ import type { HostTask, QueueShardV1 } from "../../packages/host/contracts";
 import { confirmsQueueCommand, inputApi, InputRequestError, type QueueAction, type QueueCommand } from "./inputApi";
 
 export const INPUT_RECONCILE_MS = 15000;
-export function useInputQueue(task: HostTask, inputRevision = 0, connected = true) {
+export function useInputQueue(task: Pick<HostTask, "projectId" | "taskId" | "sessionId">, inputRevision = 0, connected = true) {
   const key = JSON.stringify([task.projectId, task.taskId, task.sessionId]);
   const active = useRef(key); active.current = key;
   const available = useRef(connected); available.current = connected;
@@ -13,10 +13,11 @@ export function useInputQueue(task: HostTask, inputRevision = 0, connected = tru
   const reading = useRef<{ key: string; again: boolean; controller: AbortController; promise: Promise<QueueShardV1 | undefined> } | null>(null);
   const [queue, setQueue] = useState<QueueShardV1 | null>(null), [busy, setBusy] = useState(false), [uncertain, setUncertain] = useState(false), [commandError, setError] = useState(""), [readError, setReadError] = useState("");
   const [confirmed, setConfirmed] = useState<{ command: QueueCommand; queue: QueueShardV1 } | null>(null);
+  const [synchronized, setSynchronized] = useState(false);
   const accept = useCallback((value: QueueShardV1) => {
     if (active.current !== key || value.scope.projectId !== task.projectId || value.scope.sessionId !== task.sessionId) return false;
     if (current.current && value.revision < current.current.revision) return false;
-    current.current = value; setQueue(value); setReadError(""); return true;
+    current.current = value; setQueue(value); setReadError(""); setSynchronized(true); return true;
   }, [key, task.projectId, task.sessionId]);
   const refresh = useCallback((): Promise<QueueShardV1 | undefined> => {
     if (!task.sessionId || !available.current || active.current !== key || pending.current?.busy) return Promise.resolve(undefined);
@@ -33,7 +34,7 @@ export function useInputQueue(task: HostTask, inputRevision = 0, connected = tru
           pending.current = null; setUncertain(false); setError(""); setConfirmed({ command: owner.command, queue: value.queue });
         }
         return value.queue;
-      } catch (cause) { if (!read.controller.signal.aborted && active.current === key && version === generation.current) setReadError(cause instanceof Error ? cause.message : "INPUT_REQUEST_FAILED"); }
+      } catch (cause) { if (!read.controller.signal.aborted && active.current === key && version === generation.current) { setSynchronized(false); setReadError(cause instanceof Error ? cause.message : "INPUT_REQUEST_FAILED"); } }
       finally {
         if (reading.current === read) { reading.current = null; if (read.again && !read.controller.signal.aborted) void refresh(); }
       }
@@ -42,7 +43,7 @@ export function useInputQueue(task: HostTask, inputRevision = 0, connected = tru
   }, [key, task.projectId, task.taskId, task.sessionId, accept]);
   useEffect(() => {
     active.current = key; generation.current++; current.current = null; pending.current = null;
-    setQueue(null); setBusy(false); setUncertain(false); setConfirmed(null); setError(""); setReadError("");
+    setQueue(null); setBusy(false); setUncertain(false); setConfirmed(null); setError(""); setReadError(""); setSynchronized(false);
     return () => { generation.current++; if (active.current === key) active.current = ""; };
   }, [key]);
   useEffect(() => {
@@ -57,7 +58,7 @@ export function useInputQueue(task: HostTask, inputRevision = 0, connected = tru
     const owner = { command: { ...structuredClone(action), target: { projectId: task.projectId, taskId: task.taskId } } as QueueCommand, key, busy: true };
     pending.current = owner; generation.current++;
     if (reading.current?.key === key) { reading.current.controller.abort(); reading.current = null; }
-    setBusy(true); setError("");
+    setBusy(true); setError(""); setSynchronized(false);
     try {
       const value = await inputApi(owner.command);
       if (active.current !== key || pending.current !== owner) return;
@@ -74,5 +75,5 @@ export function useInputQueue(task: HostTask, inputRevision = 0, connected = tru
       if (active.current === key) { setBusy(false); void refresh(); }
     }
   }
-  return { queue, busy, uncertain, error: commandError || readError, setError, confirmed, act, refresh };
+  return { queue, busy, uncertain, synchronized, error: commandError || readError, setError, confirmed, act, refresh };
 }

@@ -40,7 +40,7 @@ export function useAccountModels(connected: boolean, onError: (message: string) 
     return () => { modelRequest.current++; };
   }, [connected, revision, loadModels]);
 
-  function selectAccount(id: string) { setAccountId(id); setModels([]); setSelectedModel(""); }
+  function selectAccount(id: string) { if (id === accountId) return; setAccountId(id); setModels([]); setSelectedModel(""); }
   function selectModel(id: string) { setSelectedModel(id); setThinkingLevel(null); }
   return { accounts, accountId, models, selectedModel, thinkingLevel, setThinkingLevel,
     selectAccount, selectModel, loadModels, refreshAccounts: () => setRevision(n => n + 1) };

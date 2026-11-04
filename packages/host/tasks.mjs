@@ -6,7 +6,7 @@ import { RpcWorker } from "./rpc-worker.mjs";
 import { acquireOwnership, groupAlive } from "../process-runtime/ownership.mjs";
 import { hostError, terminal, textContent } from "./contracts.mjs";
 import { CLI_ACCOUNT_ID } from "../accounts/contracts.mjs";
-import { projectPath } from "./inspector.mjs";
+import { projectPath, toolFilePath } from "./inspector.mjs";
 import { emptyUsage, recordUsage } from "./usage.mjs";
 import { INPUT_CARRIER } from "./input-protocol.mjs";
 import { supportsThinking } from "../accounts/models.mjs";
@@ -165,7 +165,8 @@ export class HostTasks extends EventEmitter {
         task.tool = { name: String(event.toolName).slice(0, 128), status: "running" };
         task.toolCalls ??= [];
         if (typeof event.toolCallId === "string" && !task.toolCalls.some((call) => call.toolCallId === event.toolCallId)) {
-          task.toolCalls.push({ toolCallId: event.toolCallId.slice(0, 256), parentToolCallId: typeof event.parentToolCallId === "string" ? event.parentToolCallId.slice(0, 256) : null, name: String(event.toolName).slice(0, 128), status: "running", startedAt: new Date().toISOString() });
+          const filePath = toolFilePath(project, event.toolName, event.args);
+          task.toolCalls.push({ toolCallId: event.toolCallId.slice(0, 256), parentToolCallId: typeof event.parentToolCallId === "string" ? event.parentToolCallId.slice(0, 256) : null, name: String(event.toolName).slice(0, 128), ...(filePath ? { filePath } : {}), status: "running", startedAt: new Date().toISOString() });
           task.toolCalls = task.toolCalls.slice(-128);
         }
       } else if (event?.type === "tool_execution_update") {
@@ -177,7 +178,7 @@ export class HostTasks extends EventEmitter {
         // Stdout tool results can arrive after the independent IPC revoke ACK.
         // Only the ordered control channel may project a later fresh grant.
         if (!task.inputRevoked && event.toolName === "request_coding_access" && event.result?.details?.status === "CODING_ACCESS_GRANTED" && !event.isError) task.access = "coding";
-        task.messages.push({ id: randomUUID(), role: "toolResult", toolName: String(event.toolName).slice(0, 128), text: textContent(event.result?.content), isError: event.isError === true, ...duration(event.durationMs) });
+        task.messages.push({ id: randomUUID(), role: "toolResult", toolName: String(event.toolName).slice(0, 128), ...(call ? { toolCallId: call.toolCallId, ...(call.name === event.toolName && call.filePath ? { filePath: call.filePath } : {}) } : {}), text: textContent(event.result?.content), isError: event.isError === true, ...duration(event.durationMs) });
         task.tool = null;
       } else if (event?.type === "extension_error") { failed = true; task.error = "EXTENSION_FAILED"; settledResolve(); }
       else if (event?.type === "agent_settled") {

@@ -13,6 +13,14 @@ export function decodeText(bytes) {
   catch { throw hostError("FILE_ENCODING_UNSUPPORTED", 415); }
 }
 const excluded = (name) => [".git", "node_modules", ".ssh", ".npmrc", "auth.json"].includes(name) || name === ".env" || name.startsWith(".env.") || /\.(pem|key)$/iu.test(name);
+// A tool's declared target is metadata, not proof of a write or permission to
+// read it. File previews still pass projectPath, including its symlink checks.
+export function toolFilePath(project, name, args) {
+  if (!["read", "edit", "write"].includes(name) || typeof args?.path !== "string" || args.path.length > 4096 || /[\\\0\r\n]/u.test(args.path)) return undefined;
+  const relative = path.relative(project.path, path.resolve(project.path, args.path));
+  if (!relative || path.isAbsolute(relative) || relative.split(path.sep).some(part => part === ".." || excluded(part))) return undefined;
+  return relative.split(path.sep).join("/");
+}
 export async function projectPath(project, relative = "") {
   if (typeof relative !== "string" || relative.length > 4096 || path.isAbsolute(relative) || /[\\\0\r\n]/u.test(relative) || relative.split("/").some((p) => p === ".." || excluded(p))) throw hostError("FILE_PATH_DENIED", 403);
   const root = await fs.realpath(project.path);
@@ -46,15 +54,20 @@ export async function readFile(project, relative) {
 export async function gitDiff(project) {
   const cwd = await projectPath(project);
   const options = { cwd, env: { PATH: "/usr/bin:/bin", HOME: "/var/empty", GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null", GIT_TERMINAL_PROMPT: "0", LC_ALL: "C" }, timeout: 5000, maxBuffer: 1024 * 1024 };
-  const common = ["--no-pager", "--no-optional-locks", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null", "-c", "core.attributesFile=/dev/null"];
+  const common = ["--no-pager", "--no-optional-locks", "--literal-pathspecs", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null", "-c", "core.attributesFile=/dev/null"];
   let keys = "";
   try { keys = (await exec("/usr/bin/git", [...common, "config", "--local", "--name-only", "--null", "--get-regexp", "^filter\\."], options)).stdout; }
   catch (error) { if (error.code !== 1) return { text: "", available: false, code: "GIT_DIFF_UNAVAILABLE" }; }
   const overrides = keys.split("\0").filter((key) => /^filter\..+\.(clean|smudge|process|required)$/iu.test(key) && !/[\r\n]/u.test(key)).flatMap((key) => ["-c", `${key}=${key.endsWith(".required") ? "false" : ""}`]);
   try {
+    const readDiff = async cached => {
+      const args = [...common, ...overrides, "diff", ...(cached ? ["--cached"] : []), "--no-ext-diff", "--no-textconv"];
+      const names = (await exec("/usr/bin/git", [...args, "--name-only", "-z", "--"], options)).stdout.split("\0");
+      const files = names.filter(name => name && !/[\\\r\n]/u.test(name) && !name.split("/").some(excluded));
+      return files.length ? exec("/usr/bin/git", [...args, "--", ...files], options) : { stdout: "" };
+    };
     const [unstaged, staged] = await Promise.all([
-      exec("/usr/bin/git", [...common, ...overrides, "diff", "--no-ext-diff", "--no-textconv", "--"], options),
-      exec("/usr/bin/git", [...common, ...overrides, "diff", "--cached", "--no-ext-diff", "--no-textconv", "--"], options),
+      readDiff(false), readDiff(true),
     ]);
     return { available: true, text: `${staged.stdout}${unstaged.stdout}`.slice(0, 1024 * 1024), truncated: staged.stdout.length + unstaged.stdout.length > 1024 * 1024 };
   } catch { return { available: false, text: "", code: "GIT_DIFF_UNAVAILABLE_OR_TOO_LARGE" }; }
