@@ -50,14 +50,30 @@ B2 默认使用 `.omp-dev-b2-demo/`；`npm run dev:web:b2` 使用独立的
 一次性配对和 Pi JSONL 历史。指定相同、兼容的 `--data-dir` 可以在两种前端之间
 切换；先停止占用该目录的启动器。Host 重启后必须重新配对，项目和历史仍保留。
 
-工作区保留计划、改动、文件和终端标签。当前基础 Host 提供工具状态及输出，
-对应标签呈现实际回执；尚未接入独立计划产物、文件浏览器、差异应用、自由终端、
-插话和队列。账号由 Host 提供，不会从原型的模拟账号自动选择。
+工作区保留计划、改动、文件和终端标签。文件标签浏览实际目录和 UTF-8 普通文件，
+工具目标可跳转到当前磁盘内容。改动标签显示暂存和未暂存 Git diff，不包含未跟踪
+及排除文件；终端标签呈现实际 bash 回执。独立计划产物、差异应用和自由终端仍待接入。
+
+使用真实模型时，在“设置”中添加 API Key 产品账号，填写服务地址、API 协议和模型列表，
+保存凭据后明确选择测试模型。连接测试只发一次最多 512 输出 Token 的短请求，可能计费，
+不执行工具、不创建会话、不自动重试。CLI 配置保留只读引用，账号不会自动切换。
+本轮应用实测仅使用获准的 Commandcode DeepSeek 模型；基础会话未加载应用子代理。
+
+运行中可在原输入框准备文字，再明确选择“即时补充”或“留待下一任务”。前者在 Pi
+可接收的位置生效；后者在前驱成功并结算后开启同一会话的新任务，旧授权不继承。
+队列显示已保存、已接收、已消费、暂停与未知；未投递项可编辑或移除。停止、失败或
+未知会暂停后续执行，核对后需明确恢复。查看历史和核对输入都不会重发原请求。
+持久草稿与统一首条提交仍按 #91 单独补齐，不把本轮接入视为整票完成。
+
+390 像素小屏一次显示对话或工作区；用面板关闭按钮返回对话，组件状态保留。
+账号、文件、输入、固定版本真实模型旅程与已知边界见
+[2026-11-04 验收记录](evidence/2026-11-04-b2-accounts-workspace-input.md)。
 
 ```sh
 npm run test:web:b2
 npm run build:web:b2
 node --test tests/b2-native-web.test.mjs
+node --test --test-concurrency=1 tests/host-account-probe.test.mjs tests/host-workspace.test.mjs tests/host-minimal-input.test.mjs
 ```
 
 B2 tests use its own React installation. The root `test:web` retains the existing
