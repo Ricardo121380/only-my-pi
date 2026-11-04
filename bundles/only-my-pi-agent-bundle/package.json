@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "pi": {
+    "extensions": [],
     "subagents": {
       "agents": [
         "./agents"
