@@ -12,7 +12,8 @@ cd only-my-pi-web
 node --version   # v24.19.0
 npm ci --ignore-scripts --no-audit --no-fund
 npm ci --prefix contracts/release/external --ignore-scripts --omit=peer --legacy-peer-deps --no-audit --no-fund
-npm run dev:web:demo
+npm ci --prefix prototypes --ignore-scripts --no-audit --no-fund
+npm run dev:web:b2:demo
 ```
 
 1. Open the one-time pairing link printed in the terminal and add the printed demo project. The Host listens on loopback. In the UI select **CLI 配置（只读引用）** and **本地受控演示**.
@@ -20,14 +21,13 @@ npm run dev:web:demo
 3. Send `stop stream`, then stop the task in the UI. Refresh and open the conversation to see its saved Pi history. Continuing requires an explicit selection and a new message.
 4. Type `stop` in the terminal to shut down. Start the same command again and pair to see the project and history. Type `pair` if you need a fresh link. Keep pairing links private.
 
-演示默认监听 `127.0.0.1:4317`，数据保存在此检出的 `.omp-dev-demo/`。前端变更会重新构建，看到 `Frontend ready` 后刷新。修改宿主代码需要重启。可用 `npm run dev:web:demo -- --port 4318` 指定其他端口。没有模型服务的独立开发入口是 `npm run dev:web`，它使用 `.omp-dev/` 中自己的配置。两个入口均不导入日常凭据。只读模式下可查看项目，受控编程仍须明确审批。启动器将开发目录绑定到当前检出和依赖锁，更换检出时保留旧目录并选择新的数据目录。
+B2 演示默认监听 `127.0.0.1:4317`，数据保存在此检出的 `.omp-dev-b2-demo/`。前端变更会重新构建，看到 `Frontend ready` 后刷新。修改宿主代码需要重启。可用 `npm run dev:web:b2:demo -- --port 4318` 指定其他端口。真实模型配置入口是 `npm run dev:web:b2`，它使用 `.omp-dev-b2/` 中自己的配置。保留的最小布局入口是 `dev:web:demo` / `dev:web`，分别使用 `.omp-dev-demo/` / `.omp-dev/`。这些入口不自动导入日常凭据。只读模式下可查看项目，受控编程仍须明确审批。启动器将开发目录绑定到当前检出和依赖锁，更换检出时保留旧目录并选择新的数据目录。
 
 ## B2 frontend with the native Pi Host
 
 The B2 integration combines the native development branch with the selected
-[B2 design](../prototypes/DESIGN.md). In a checkout containing `prototypes/src/native/`,
-install its separate, locked frontend dependencies after the root and external
-dependencies above:
+[B2 design](../prototypes/DESIGN.md). Its live entry is the selected development baseline. If the prototype
+dependencies were not installed in the steps above, install them before starting:
 
 ```sh
 npm ci --prefix prototypes --ignore-scripts --no-audit --no-fund
