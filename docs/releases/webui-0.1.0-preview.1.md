@@ -48,6 +48,9 @@ Pi/DeepSeek 的源码核心旅程已完成真实服务验收；本预览另对�
 持久草稿、完整输入与队列的异常恢复、多窗口、真实 IME 和多日连续使用仍待完整验收。
 这次先发布 WebUI；CLI 联动、Full/Thin 日常安装晋升、Electron 和其他平台后续独立推进。
 
+审批和工具限制约束 Agent 的工作流程，扩展进程仍以当前系统用户的权限运行。
+请在信任的项目中使用；需要文件、凭据或网络隔离时，应另外提供相应的系统隔离环境。
+
 ## 许可与记录
 
 项目使用 MIT 许可。Node 的完整许可位于 `node/LICENSE`；原生依赖的许可随各自包保存。
@@ -56,3 +59,4 @@ SBOM 的 `licenseDeclared` 来自实际锁定包的声明，`licenseConcluded=NO
 
 旧 GitHub Releases 退役后，原标签、历史源码和验收记录仍保留。旧终端版本的 npm/Homebrew
 条目不属于这次 WebUI 发布渠道；依赖旧 Release 附件的历史候选工作流需在重新开展 CLI 工作时调整。
+依赖这些附件下载地址的旧 Homebrew/Full/Thin 安装入口随之退役；已安装的 CLI 和 npm 注册表条目保持原状。
