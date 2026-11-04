@@ -32,6 +32,16 @@ const validateStore = ajv.compile({
   },
 });
 
+function assertProviderConfiguration(config) {
+  if (!validateProvider(config) || config.models.some(model => !["classifier", "image"].includes(model.type) && !model.maxTokens || model.type === "image" && !model.output?.includes("image"))) throw accountError("ACCOUNT_PROVIDER_INVALID");
+  let url;
+  try { url = new URL(config.baseUrl); } catch { throw accountError("ACCOUNT_PROVIDER_INVALID"); }
+  if (url.username || url.password || url.search || url.hash || (url.protocol !== "https:" && !(url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)))) throw accountError("ACCOUNT_PROVIDER_INVALID");
+  if (new Set(config.models.map(model => model.id)).size !== config.models.length) throw accountError("ACCOUNT_PROVIDER_INVALID");
+  if (config.models.every(model => model.type === "classifier") !== ["typesafe-system-one", "openai-decisions", "cloudflare-workers-ai-system-one"].includes(config.api)) throw accountError("ACCOUNT_PROVIDER_INVALID");
+  if (config.models.every(model => model.type === "image") !== (config.api === "openrouter-images")) throw accountError("ACCOUNT_PROVIDER_INVALID");
+}
+
 // Metadata only. Pi owns credentials; this catalog must never accept secrets.
 export class AccountCatalog {
   constructor(configRoot) {
@@ -86,20 +96,28 @@ export class AccountCatalog {
     });
   }
   async configure(accountId, config) {
-    if (!validateProvider(config) || config.models.some(model => !["classifier", "image"].includes(model.type) && !model.maxTokens || model.type === "image" && !model.output?.includes("image"))) throw accountError("ACCOUNT_PROVIDER_INVALID");
-    let url;
-    try { url = new URL(config.baseUrl); } catch { throw accountError("ACCOUNT_PROVIDER_INVALID"); }
-    if (url.username || url.password || url.search || url.hash || (url.protocol !== "https:" && !(url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)))) throw accountError("ACCOUNT_PROVIDER_INVALID");
-    if (new Set(config.models.map((m) => m.id)).size !== config.models.length) throw accountError("ACCOUNT_PROVIDER_INVALID");
+    assertProviderConfiguration(config);
     return this.change(accountId, async (account) => {
       const paths = await this.runtimePaths(accountId);
       const classifier = config.models.every(model => model.type === "classifier");
       const image = config.models.every(model => model.type === "image");
-      if (classifier !== ["typesafe-system-one", "openai-decisions", "cloudflare-workers-ai-system-one"].includes(config.api)) throw accountError("ACCOUNT_PROVIDER_INVALID");
-      if (image !== (config.api === "openrouter-images")) throw accountError("ACCOUNT_PROVIDER_INVALID");
       await atomicWriteJson(this.configRoot, classifier || image ? path.join(path.dirname(paths.modelsPath), classifier ? "classifiers.json" : "images.json") : paths.modelsPath, { providers: { [account.providerId]: structuredClone(config) } });
       return { status: "configured" };
     });
+  }
+  async configuration(accountId) {
+    if (accountId === CLI_ACCOUNT_ID) throw accountError("ACCOUNT_READ_ONLY", 403);
+    const release = await this.beginUse(accountId);
+    try {
+      const account = await this.get(accountId), paths = await this.runtimePaths(accountId);
+      const value = await readJsonObject(this.configRoot, paths.modelsPath, { allowMissing: true });
+      if (value === null) return { config: null };
+      const config = value.providers?.[account.providerId];
+      // Only the static, secret-free schema can cross the browser boundary.
+      if (Object.keys(value).join() !== "providers" || Object.keys(value.providers ?? {}).join() !== account.providerId) throw accountError("ACCOUNT_PROVIDER_INVALID");
+      assertProviderConfiguration(config);
+      return { config };
+    } finally { await release(); }
   }
   async rename(accountId, name) {
     if (!validateInput({ providerId: "valid", authType: "api_key", name }) || !name.trim()) throw accountError("ACCOUNT_INPUT_INVALID");

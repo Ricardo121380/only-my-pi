@@ -1,7 +1,7 @@
 import type { HostCommand, HostEvent, HostSnapshot } from "../../packages/host/contracts";
 import type { AccountAction, AccountInput } from "../../packages/accounts/contracts";
-export async function accountApi<T>(input: AccountInput | { accountId: string; action: AccountAction }): Promise<T> {
-  const response = await fetch("accountId" in input ? "/api/account-action" : "/api/accounts", { credentials: "same-origin", cache: "no-store", method: "POST", headers: { "content-type": "application/json", "x-omp-account-protocol": "1" }, body: JSON.stringify(input) });
+export async function accountApi<T>(input: AccountInput | { accountId: string; action: AccountAction }, signal?: AbortSignal): Promise<T> {
+  const response = await fetch("accountId" in input ? "/api/account-action" : "/api/accounts", { signal, credentials: "same-origin", cache: "no-store", method: "POST", headers: { "content-type": "application/json", "x-omp-account-protocol": "1" }, body: JSON.stringify(input) });
   const data = await response.json();
   if (!response.ok) throw Object.assign(new Error(data.code ?? "HOST_REQUEST_FAILED"), { status: response.status });
   return data;
@@ -44,6 +44,13 @@ export const errorText = (error: unknown) => {
     ACCOUNT_BINDING_REQUIRED: "请先明确选择账号，再选择模型。",
     ACCOUNT_AUTH_FAILED: "认证未完成。请检查凭据和网络，再查询认证状态；不会自动换用其他账号。",
     ACCOUNT_AUTH_CANCELLED: "认证已取消，可重新查询状态。",
+    ACCOUNT_AUTH_UNAVAILABLE: "此基础 Host 当前提供 API Key 账号设置；OAuth 登录请使用原认证入口。",
+    ACCOUNT_PROBE_FAILED: "连接测试未完成，结果未确认。请检查服务状态，再明确发起测试；不会自动重试。",
+    ACCOUNT_PROBE_CANCELLED: "连接测试已取消；未自动重试。",
+    ACCOUNT_MODEL_MISMATCH: "此模型不属于所选账号，请重新选择。",
+    ACCOUNT_CREDENTIAL_MISSING: "此账号尚未保存有效类型的凭据，请先保存 API Key。",
+    ACCOUNT_PROVIDER_UNSUPPORTED: "此基础设置仅支持聊天模型，请检查所选协议和模型类型。",
+    MODEL_REQUEST_FAILED: "模型请求失败。请在账号与模型设置中检查凭据或测试连接；不会自动换用其他账号。",
     ACCOUNT_PROVIDER_INVALID: "Provider 配置无效：请检查地址、协议和模型参数。",
     ACCOUNT_INPUT_INVALID: "账号输入无效，请检查 Provider ID 和名称。",
     PROTOCOL_MISMATCH: "页面与 Host 版本不兼容，请刷新页面；不要重复提交旧请求。",

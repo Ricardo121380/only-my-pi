@@ -10,6 +10,9 @@ export interface StaticProvider {
     { type?: "llm"; maxTokens: number } | { type: "classifier" | "image"; maxTokens?: number }
   ))[];
 }
-export type AccountAction = { type: "status" | "logout" | "remove" | "oauthStart" } | { type: "apiKey"; key: string } | { type: "rename"; name: string } | { type: "configure"; config: StaticProvider } | { type: "oauthAnswer"; flowId: string; promptId: string; value: string } | { type: "oauthCancel"; flowId: string };
+export type AccountProbeResult = { status: "connected"; model: string }
+  | { status: "rejected"; reason: "authentication" | "rate_limited" | "unavailable"; model: string }
+  | { status: "unknown"; reason: "timeout" | "incomplete"; model: string };
+export type AccountAction = { type: "configuration" | "status" | "logout" | "remove" | "oauthStart" } | { type: "probe"; model: string; thinkingLevel?: ThinkingLevel } | { type: "apiKey"; key: string } | { type: "rename"; name: string } | { type: "configure"; config: StaticProvider } | { type: "oauthAnswer"; flowId: string; promptId: string; value: string } | { type: "oauthCancel"; flowId: string };
 export interface OAuthFlow { flowId: string; accountId: string; status: "starting" | "waiting" | "awaiting_input" | "cancelling" | "stored" | "stored_sync_failed" | "failed" | "cancelled" | "timed_out"; prompt: { promptId: string; type: "text" | "secret" | "manual_code" | "select"; options?: { id: string; label: string }[] } | null; event: { type: "auth_url" | "device_code"; url: string; userCode?: string } | null }
 export interface AccountDirectory { protocol: 1; authentication: "api_key"; cliReference: { accountId: "cli-readonly"; name: string; readOnly: true }; accounts: GuiAccount[] }

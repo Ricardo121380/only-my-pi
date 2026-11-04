@@ -47,7 +47,7 @@ export interface HostTask {
 export type TaskSummary = Omit<HostTask, "messages" | "partial">;
 export interface Session { sessionKey: string; sessionId: string; projectId: string; timestamp: string; name: string; readOnly: true }
 export interface HostSnapshot { protocol: number; version: string; epoch: string; seq: number; indexing: boolean;
-  capabilities?: { minimal?: boolean; controlled: boolean; inputs?: { protocol: 1; materials: false; resourceRevision: number | null } };
+  capabilities?: { minimal?: boolean; controlled: boolean; accounts?: { protocol: 1; apiKey: true; probe: true }; inputs?: { protocol: 1; materials: false; resourceRevision: number | null } };
   runtime: { stackId: string; sourceCommit: string | null }; projects: Project[]; tasks: TaskSummary[]; diagnostics: { code: string; sessionKey?: string }[] }
 export type HostEvent = ({ type: "snapshot" } & HostSnapshot)
   | { type: "task"; epoch: string; seq: number; data: HostTask }

@@ -13,6 +13,7 @@ import { HostInputController } from "./input-controller.mjs";
 import { INPUT_PROTOCOL } from "./input-protocol.mjs";
 import { AccountCatalog } from "../accounts/catalog.mjs";
 import { accountAuth } from "../accounts/authentication.mjs";
+import { probeAccount } from "../accounts/probe.mjs";
 import { AccountOAuth } from "../accounts/oauth.mjs";
 import { recoverAuthProcesses } from "../accounts/auth-process.mjs";
 import { listModels } from "../accounts/models.mjs";
@@ -149,7 +150,7 @@ export async function startHost({ configRoot, stack, assetsRoot, port = 0, onSto
   try { await tasks.load(); } catch (error) { await inputs.close(); await lock.release(); throw error; }
   const resourceRevision = async projectId => minimal ? 0 : (await taskSettingsSnapshot(configRoot, catalog.project(projectId).path, stack.ompPackageRoot)).resourceRevision;
   const inputController = new HostInputController({ store: inputs, tasks, catalog, resourceRevision });
-  const snapshot = () => ({ protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, seq, indexing: scanRunning, capabilities: { minimal, controlled: allowControlled, inputs: { protocol: INPUT_PROTOCOL, materials: false, resourceRevision: null } },
+  const snapshot = () => ({ protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, seq, indexing: scanRunning, capabilities: { minimal, controlled: allowControlled, accounts: { protocol: 1, apiKey: true, probe: true }, inputs: { protocol: INPUT_PROTOCOL, materials: false, resourceRevision: null } },
     runtime: { stackId: stack.stackId, sourceCommit: stack.distribution?.sourceCommit ?? null }, projects: catalog.listProjects(), tasks: tasks.snapshot(), diagnostics: catalog.diagnostics });
   const send = (client, value) => {
     if (client.readyState !== 1) return;
@@ -235,7 +236,7 @@ export async function startHost({ configRoot, stack, assetsRoot, port = 0, onSto
       if (url.pathname.startsWith("/api/")) {
         if (stopping) throw hostError("HOST_STOPPING", 503);
         if (!authenticated(req)) throw hostError("AUTH_REQUIRED", 401);
-        if (minimal && !["/api/state", "/api/accounts", "/api/models", "/api/sessions", "/api/history", "/api/tool-output", "/api/task", "/api/command", "/api/logout"].includes(url.pathname)) throw hostError("NOT_FOUND", 404);
+        if (minimal && !["/api/state", "/api/accounts", "/api/account-action", "/api/models", "/api/sessions", "/api/history", "/api/tool-output", "/api/task", "/api/command", "/api/logout"].includes(url.pathname)) throw hostError("NOT_FOUND", 404);
         if (url.pathname === "/api/mcp-oauth/open") {
           if (req.method !== "GET" || req.headers["sec-fetch-site"] === "cross-site" || [...url.searchParams.keys()].join() !== "flowId") throw hostError("HOST_ORIGIN_DENIED", 403);
           const location = await mcpOAuth.open(url.searchParams.get("flowId"));
@@ -291,6 +292,7 @@ export async function startHost({ configRoot, stack, assetsRoot, port = 0, onSto
           if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
           if (req.headers["x-omp-account-protocol"] !== "1") throw hostError("ACCOUNT_PROTOCOL_MISMATCH", 409);
           const input = await authorizedBody(req);
+          if (minimal && input?.authType === "oauth") throw hostError("ACCOUNT_AUTH_UNAVAILABLE", 409);
           if (input?.authType === "oauth" && !(await oauth.providers()).some((p) => p.providerId === input.providerId)) throw hostError("ACCOUNT_PROVIDER_UNSUPPORTED", 400);
           if (!authenticated(req)) throw hostError("AUTH_REQUIRED", 401);
           return response(res, 201, { protocol: 1, authentication: "not_connected", account: await accounts.create(input) });
@@ -302,6 +304,18 @@ export async function startHost({ configRoot, stack, assetsRoot, port = 0, onSto
           const input = await authorizedBody(req);
           if (!input || typeof input.accountId !== "string" || Object.keys(input).some((key) => !["accountId", "action"].includes(key)) || !input.action || typeof input.action !== "object") throw hostError("ACCOUNT_INPUT_INVALID");
           const { accountId, action } = input;
+          if (minimal && !["configuration", "probe", "configure", "rename", "remove", "status", "apiKey", "logout"].includes(action.type)) throw hostError("ACCOUNT_AUTH_UNAVAILABLE", 409);
+          if (action.type === "configuration" && Object.keys(action).join() === "type") return response(res, 200, await accounts.configuration(accountId));
+          if (action.type === "probe") {
+            if (Object.keys(action).sort().join() !== (action.thinkingLevel === undefined ? "model,type" : "model,thinkingLevel,type")) throw hostError("ACCOUNT_INPUT_INVALID");
+            const controller = new AbortController(), cancel = () => controller.abort();
+            authAbort.signal.addEventListener("abort", cancel, { once: true }); res.once("close", cancel);
+            if (authAbort.signal.aborted || res.destroyed) cancel();
+            const operation = probeAccount({ stack, configRoot, accounts, accountId, model: action.model, thinkingLevel: action.thinkingLevel, env, signal: controller.signal });
+            authOperations.add(operation);
+            try { return response(res, 200, await operation); }
+            finally { authOperations.delete(operation); authAbort.signal.removeEventListener("abort", cancel); res.off("close", cancel); }
+          }
           if (action.type === "oauthStart" && Object.keys(action).join() === "type") return response(res, 202, await oauth.start(accountId));
           if (["oauthAnswer", "oauthCancel"].includes(action.type)) {
             const keys = Object.keys(action).sort().join();
@@ -309,7 +323,10 @@ export async function startHost({ configRoot, stack, assetsRoot, port = 0, onSto
             if (oauth.snapshot(action.flowId).accountId !== accountId) throw hostError("ACCOUNT_AUTH_FLOW_EXPIRED", 409);
             return response(res, 200, action.type === "oauthCancel" ? await oauth.cancel(action.flowId) : oauth.answer(action.flowId, action.promptId, action.value));
           }
-          if (action.type === "configure" && Object.keys(action).sort().join() === "config,type") return response(res, 200, await accounts.configure(accountId, action.config));
+          if (action.type === "configure" && Object.keys(action).sort().join() === "config,type") {
+            if (minimal && (!["openai-completions", "openai-responses", "anthropic-messages"].includes(action.config?.api) || Array.isArray(action.config?.models) && action.config.models.some(model => model?.type && model.type !== "llm"))) throw hostError("ACCOUNT_PROVIDER_UNSUPPORTED", 409);
+            return response(res, 200, await accounts.configure(accountId, action.config));
+          }
           if (action.type === "rename" && Object.keys(action).sort().join() === "name,type") return response(res, 200, await accounts.rename(accountId, action.name));
           if (action.type === "remove" && Object.keys(action).join() === "type") return response(res, 200, await accounts.remove(accountId));
           const operation = accountAuth({ stack, configRoot, accounts, accountId, input: action, env, signal: authAbort.signal });
