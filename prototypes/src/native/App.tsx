@@ -58,7 +58,7 @@ export default function NativeApp() {
         {sidebar}
         <Group orientation="horizontal" className={`native-panels ${workspace ? "workspace-open" : ""} min-w-0 flex-1 py-2 pr-2 max-md:pl-2`}>
           <Panel defaultSize={workspace ? "54" : "100"} minSize="32" className="min-w-0">
-            <main className="flex h-full flex-col overflow-hidden rounded-2xl bg-background shadow-[0_0_0_1px_var(--line)]" aria-label="B2 原生会话">
+            <main className="flex h-full flex-col overflow-hidden rounded-2xl bg-background shadow-[0_0_0_1px_var(--line)]" aria-label="WebUI 会话">
               <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line/70 px-4">
                 <Button size="icon" variant="ghost" className="size-8 md:hidden" aria-label="打开项目与会话" onClick={() => c.setNavigationOpen(true)}><PanelLeft className="size-4" /></Button>
                 <h1 className="min-w-0 truncate text-[14px] font-medium" title={c.title}>{c.title}</h1>
@@ -67,7 +67,7 @@ export default function NativeApp() {
               </header>
               <div className="space-y-2 px-5 pt-2">
                 {c.host.error && <Notice error><div className="flex items-start justify-between gap-2"><span>{c.host.error}</span><button aria-label="关闭错误提示" onClick={() => c.setError("")}><X className="size-4" /></button></div></Notice>}
-                {!supported && <Notice error>当前 Host 不支持原生基础会话，请从 B2 开发入口启动并重新配对。</Notice>}
+                {!supported && <Notice error>当前 Host 不支持原生基础会话，请启动匹配版本的 WebUI 并重新配对。</Notice>}
                 {!!c.snapshot?.diagnostics.length && <Notice>部分历史无法读取，原文件已保留。请检查会话文件。</Notice>}
                 {c.project && !c.project.available && <Notice>项目目录不可访问，仍可查看历史。</Notice>}
                 {c.pending && <Notice><p>{c.submissionNotice || "正在核对上次提交…"}</p><p className="mt-1 truncate">项目：{c.snapshot?.projects.find(p => p.projectId === c.pending!.projectId)?.name ?? c.pending.projectId}，模型：{c.pending.model}</p><pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap">{c.pending.prompt}</pre><div className="mt-2 flex gap-2"><Button size="sm" variant="outline" disabled={!c.connected || c.reconciling} onClick={() => void c.lookup()}>核对提交结果</Button><Button size="sm" variant="outline" disabled={!c.connected || c.reconciling || !!c.sending.current} onClick={() => void c.dispatch(c.pending!).catch(() => {})}>重试同一请求</Button></div></Notice>}

@@ -25,6 +25,10 @@ export async function startMinimalModel({ streamDelay = 700 } = {}) {
     if (child) {
       if (prompt.includes("child stop")) { chunk(res, { role: "assistant", content: "child is streaming until cancelled" }); return; }
       const lastTool = body.messages.findLast(message => message.role === "tool");
+      const calls = body.messages.flatMap(message => message.tool_calls ?? []).map(call => call.function?.name);
+      if (prompt.includes("search project") && !calls.includes("find")) { tool(res, "find", { pattern: "README.md", path: "." }); return; }
+      if (prompt.includes("search project") && !calls.includes("grep")) { tool(res, "grep", { pattern: "webui-archive", path: "." }); return; }
+      if (prompt.includes("search project") && !calls.includes("read")) { tool(res, "read", { path: "README.md" }); return; }
       if (!lastTool) tool(res, "read", { path: "README.md" });
       else if (lastTool.name === "structured_output" || body.messages.some(message => message.tool_calls?.some(call => call.function?.name === "structured_output"))) finish(res, "child finished");
       else tool(res, "structured_output", { value: { summary: "Read README.md with native Pi", entryPoints: ["README.md"], evidence: [lastTool.content], unknowns: [] } });
@@ -43,6 +47,7 @@ export async function startMinimalModel({ streamDelay = 700 } = {}) {
       timers.add(timer); return;
     }
     if (prompt.includes("read project")) { tool(res, "read", { path: "README.md" }); return; }
+    if (prompt.includes("delegate search")) { tool(res, "delegate_readonly_agent", { agent: "omp-explorer", task: "search project and report the actual README marker", label: "搜索项目" }); return; }
     if (prompt.includes("delegate read") || prompt.includes("delegate stop")) { tool(res, "delegate_readonly_agent", { agent: "omp-explorer", task: prompt.includes("delegate stop") ? "child stop" : "Read README.md and report the actual marker", label: "读取项目" }); return; }
     if (prompt.includes("request shell")) { tool(res, "request_coding_access", { taskSummary: "在隔离项目启动可停止的等待命令", complexity: "simple", scope: ["shell.pid", "child.pid"], riskFlags: [], verification: ["停止后核对 shell 与 sleep 子进程均退出"], orchestration: { useReadOnlyScouts: false, useManagedCloneWriter: false, useFreshReviewer: false } }); return; }
     if (prompt.includes("request write")) { tool(res, "request_coding_access", { taskSummary: "在当前临时项目写入 approved.txt", complexity: "simple", scope: ["approved.txt"], riskFlags: [], verification: ["读取文件确认内容"], orchestration: { useReadOnlyScouts: false, useManagedCloneWriter: false, useFreshReviewer: false } }); return; }

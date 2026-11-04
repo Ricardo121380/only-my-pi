@@ -41,6 +41,21 @@ async function client(app) {
   return { headers, get, command, task, settled };
 }
 
+test("portable WebUI uses prebuilt assets without creating a development build or importing user accounts", { timeout: 20000 }, async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-webui-prebuilt-")), assets = path.join(root, "assets"), dataDir = path.join(root, "data");
+  await fs.mkdir(assets);
+  for (const [name, text] of [["minimal.html", "<html>WEBUI_PREBUILT_PROOF</html>"], ["dependencies.json", "[]"], ["THIRD_PARTY_NOTICES.txt", "fixture notices"]]) await fs.writeFile(path.join(assets, name), text);
+  const { startDevWeb } = await import("../scripts/dev-web.mjs");
+  const app = await startDevWeb({ frontend: "b2", dataDir, port: 0, watch: false, prebuiltAssets: assets });
+  t.after(async () => { await app.stop(); await fs.rm(root, { recursive: true }); });
+  assert.match(await (await fetch(app.host.origin)).text(), /WEBUI_PREBUILT_PROOF/);
+  await assert.rejects(fs.access(path.join(dataDir, "assets")), { code: "ENOENT" });
+  const c = await client({ origin: app.host.origin, pairingUrl: app.host.pairingUrl });
+  assert.deepEqual((await c.get("/api/models?accountId=cli-readonly")).models, []);
+  assert.equal((await c.get("/api/state")).capabilities.minimal, true);
+  await app.stop(); assert.equal(app.host.tasks.workers.size, 0);
+});
+
 test("source development survives fresh-process restart; native history resumes and approved shell cancellation reaps descendants", { timeout: 60000 }, async t => {
   const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), "omp-dev-restart-"));
   const first = await launch(t, dataDir), a = await client(first);
