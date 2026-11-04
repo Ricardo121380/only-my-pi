@@ -42,7 +42,7 @@ test("development CI routes docs, WebUI, CLI and installation without repeating 
   assert.match(workflow, /NPM_CONFIG_IGNORE_SCRIPTS: "true"/u);
   for (const lane of ["web", "cli", "packaging"]) {
     const job = workflow.split(`  ${lane}:\n`)[1].split(/\n  [a-z]+:\n/u)[0];
-    assert.match(job, /runs-on: macos-14/u);
+    assert.match(job, /runs-on: macos-15/u);
     assert.match(job, /npm run test:prepare/u);
   }
   const docs = workflow.split("  docs:\n")[1].split("\n  static:")[0];

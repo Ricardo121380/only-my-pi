@@ -8,7 +8,7 @@ Only My Pi（OMP）是基于[原生 Pi](https://github.com/earendil-works/pi) �
 
 ## 启动 WebUI
 
-本预览版支持 **macOS 14+、原生 Apple Silicon（arm64）**，需要系统 Git。从 Release 下载 `only-my-pi-webui-0.1.0-preview.1-darwin-arm64.tar.gz` 和 `SHA256SUMS`，在下载目录执行：
+本预览版支持 **macOS 15+、原生 Apple Silicon（arm64）**，需要系统 Git。从 Release 下载 `only-my-pi-webui-0.1.0-preview.1-darwin-arm64.tar.gz` 和 `SHA256SUMS`，在下载目录执行：
 
 ```sh
 shasum -a 256 -c SHA256SUMS --ignore-missing

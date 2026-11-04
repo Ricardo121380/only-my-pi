@@ -25,7 +25,7 @@ concurrency:
 jobs:
   build:
     if: inputs.operation == 'build' && github.ref == 'refs/heads/codex/dev/pi-native-web'
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 35
     permissions:
       contents: read

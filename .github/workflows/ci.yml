@@ -75,7 +75,7 @@ jobs:
     name: Shared static checks
     needs: scope
     if: needs.scope.outputs.web == 'true' || needs.scope.outputs.cli == 'true' || needs.scope.outputs.packaging == 'true'
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -106,7 +106,7 @@ jobs:
     name: WebUI and native sessions
     needs: scope
     if: needs.scope.outputs.web == 'true'
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -139,7 +139,7 @@ jobs:
     name: CLI and legacy integrations
     needs: scope
     if: needs.scope.outputs.cli == 'true'
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -172,7 +172,7 @@ jobs:
     name: Installation and historical evidence
     needs: scope
     if: needs.scope.outputs.packaging == 'true'
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -9,10 +9,14 @@ date: 2026-11-04
 沿用现有设计，内部原型代号和兼容命令保留。这补充 [ADR-0022](ADR-0022-pi-native-web-first.md)
 的交付顺序：WebUI 预览及后续 Electron 不以完成 CLI 跨端联动为前置。
 
-本次选择 GitHub prerelease `webui-v0.1.0-preview.1`，只提供 macOS Apple Silicon 的便携归档，
+本次选择 GitHub prerelease `webui-v0.1.0-preview.1`，只提供 macOS 15+ Apple Silicon 的便携归档，
 内置固定 Node 24.19.0、Pi 1.5.0、依赖与预构建页面。复用现有原生 Host 和会话路径，
 使用独立配置与数据；应用主任务和只读子代理仅使用 DeepSeek。npm、Homebrew、旧 CLI
 Full/Thin、日常安装晋升和其他平台仍保留各自出口，不把新包映射成旧发行验证通过。
+
+当前 CI 和预览构建固定使用 `macos-15` arm64。GitHub 已于 2026-11-02
+[退役 macOS 14 runner](https://github.com/actions/runner-images/issues/13518)，原任务的排队取消记录保留；
+不沿用退役 runner，也不跳过必需检查。新归档按 macOS 15+ 明确支持范围，历史平台证据保持原身份。
 
 源码经过所选 CI 后，候选由 GitHub macOS runner 构建一次。候选携带源码/tree、运行文件
 摘要、实际依赖 SPDX 清单、原许可及 GitHub provenance/SBOM attestations。实际解压包

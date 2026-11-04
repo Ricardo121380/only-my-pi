@@ -8,7 +8,7 @@ Only My Pi is a personal coding agent built on [native Pi](https://github.com/ea
 
 ## Start the WebUI
 
-This preview supports **macOS 14+ on native Apple Silicon (arm64)** and requires system Git. Download `only-my-pi-webui-0.1.0-preview.1-darwin-arm64.tar.gz` and `SHA256SUMS` from the release. In the download directory:
+This preview supports **macOS 15+ on native Apple Silicon (arm64)** and requires system Git. Download `only-my-pi-webui-0.1.0-preview.1-darwin-arm64.tar.gz` and `SHA256SUMS` from the release. In the download directory:
 
 ```sh
 shasum -a 256 -c SHA256SUMS --ignore-missing

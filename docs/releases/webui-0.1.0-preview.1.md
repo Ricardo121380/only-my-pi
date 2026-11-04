@@ -6,7 +6,7 @@
 
 ## 下载与启动
 
-支持 macOS 14 或更新版本的 Apple Silicon；需要系统 Git。
+支持 macOS 15 或更新版本的 Apple Silicon；需要系统 Git。
 下载 `only-my-pi-webui-0.1.0-preview.1-darwin-arm64.tar.gz` 与 `SHA256SUMS`，在同一目录执行：
 
 ```sh
