@@ -59,16 +59,23 @@ export async function verifyWebPreviewArchive(candidate, output) {
     const first = await launch(), a = await client(first);
     assert.deepEqual((await a.get("/api/models?accountId=cli-readonly")).models, []);
     const accounts = new AccountCatalog(first.configRoot), account = await accounts.create({ providerId: "preview-fixture", name: "Local controlled DeepSeek protocol", authType: "api_key" });
-    await accounts.configure(account.accountId, { baseUrl: model.baseUrl, api: "openai-completions", models: [{ id: "deepseek-v4.1-flash", name: "DeepSeek local controlled", contextWindow: 32000, maxTokens: 1024 }] });
+    await accounts.configure(account.accountId, { baseUrl: model.baseUrl, api: "openai-completions", models: [{ id: "deepseek-v4.1-flash", name: "DeepSeek local controlled", contextWindow: 32000, maxTokens: 1024 }, { id: "another-model", name: "Non-DeepSeek fixture", contextWindow: 32000, maxTokens: 1024 }] });
     const credential = "preview-local-fixture", paths = await accounts.runtimePaths(account.accountId);
     await fs.writeFile(paths.authPath, JSON.stringify({ "preview-fixture": { type: "api_key", key: credential } }));
     const selectedModel = "preview-fixture/deepseek-v4.1-flash";
     const selected = await a.command({ type: "addProject", path: project });
+    assert.deepEqual((await a.get(`/api/models?accountId=${account.accountId}`)).models.map(m => m.id), [selectedModel]);
+    const rejectedModel = await fetch(a.origin + "/api/command", { method: "POST", headers: a.headers, body: JSON.stringify({ type: "startTask", requestId: randomUUID(), projectId: selected.projectId, accountId: account.accountId, model: "preview-fixture/another-model", prompt: "read project" }) });
+    assert.equal(rejectedModel.ok, false); assert.equal(model.received.length, 0);
     const start = (c, prompt, more = {}) => c.command({ type: "startTask", requestId: randomUUID(), projectId: selected.projectId, accountId: account.accountId, model: selectedModel, prompt, ...more });
     const read = await a.settled((await start(a, "read project")).taskId); assert.equal(read.status, "succeeded"); assert.match(JSON.stringify(read.messages), new RegExp(marker));
     const session = await until(async () => (await a.get(`/api/sessions?projectId=${selected.projectId}`)).sessions.find(s => s.sessionId === read.sessionId), Boolean, "native history index");
     const searched = await a.settled((await start(a, "delegate search")).taskId); assert.equal(searched.status, "succeeded"); assert.match(JSON.stringify(searched.messages), new RegExp(marker));
-    const searchTools = model.received.filter(r => r.body.tools?.some(t => t.function?.name === "structured_output")).flatMap(r => r.body.messages.filter(m => m.role === "tool"));
+    const searchTools = model.received.filter(r => r.body.tools?.some(t => t.function?.name === "structured_output")).flatMap(r => {
+      const names = new Map(r.body.messages.flatMap(m => m.tool_calls ?? []).map(call => [call.id, call.function?.name]));
+      return r.body.messages.filter(m => m.role === "tool").map(m => ({ name: m.name ?? names.get(m.tool_call_id), content: m.content }));
+    });
+    await fs.writeFile(path.join(output, "search-observation.json"), JSON.stringify(searchTools.map(m => ({ name: m.name ?? null, marker: JSON.stringify(m.content).includes(marker), readme: JSON.stringify(m.content).includes("README.md") })), null, 2) + "\n");
     assert.ok(searchTools.some(m => m.name === "grep" && JSON.stringify(m.content).includes(marker))); assert.ok(searchTools.some(m => m.name === "find" && JSON.stringify(m.content).includes("README.md")));
     const delegated = await a.settled((await start(a, "delegate read")).taskId); assert.equal(delegated.status, "succeeded"); assert.equal(delegated.orchestration.children[0].status, "completed"); assert.match(JSON.stringify(delegated.messages), new RegExp(marker));
     const write = await start(a, "request write", { mode: "controlled" });
@@ -95,13 +102,13 @@ export async function verifyWebPreviewArchive(candidate, output) {
     await assert.rejects(fs.access(fallback), { code: "ENOENT" });
     assert.ok(model.received.every(r => r.body.model === "deepseek-v4.1-flash" && r.authorization === `Bearer ${credential}`));
     const result = { kind: "only-my-pi-webui-archive-acceptance-v1", status: "PASS", sourceCommit: receipt.sourceCommit, archiveSha256: receipt.sha256, version: receipt.version, platform: receipt.platform, node: check.node, pi: check.pi,
-      provider: "LOCAL_CONTROLLED", externalProvider: "NOT_RUN_IN_THIS_ARCHIVE_CHECK", tasks: { succeeded: 5, cancelled: 2 }, assertions: { noGitCheckout: true, bundledNodeAndPi: true, noInheritedAccounts: true, actualRead: true, actualGrepAndFind: true, actualReadonlyChild: true, approvalBeforeWrite: true, childProcessGroupStopped: true, streamStopped: true, restartHistoryRetained: true, explicitResumeNoPermissionInheritance: true, noReplay: true, noPathFallbackNode: true, stoppedWithoutWorkers: true } };
+      provider: "LOCAL_CONTROLLED", externalProvider: "NOT_RUN_IN_THIS_ARCHIVE_CHECK", driverSha256: (await hashFile(new URL(import.meta.url))).slice(7), tasks: { succeeded: 5, cancelled: 2 }, assertions: { noGitCheckout: true, bundledNodeAndPi: true, noInheritedAccounts: true, deepseekOnly: true, actualRead: true, actualGrepAndFind: true, actualReadonlyChild: true, approvalBeforeWrite: true, childProcessGroupStopped: true, streamStopped: true, restartHistoryRetained: true, explicitResumeNoPermissionInheritance: true, noReplay: true, noPathFallbackNode: true, stoppedWithoutWorkers: true } };
     await fs.writeFile(path.join(output, "acceptance.json"), JSON.stringify(result, null, 2) + "\n"); return result;
   } finally {
     for (const launch of launches) if (launch.exitCode === undefined) await launch.stop();
     await model.stop();
     const auth = path.join(dataDir, "config/only-my-pi/host/accounts");
-    for (const account of await fs.readdir(auth).catch(() => [])) await fs.rm(path.join(auth, account, "auth.json"), { force: true });
+    for (const account of await fs.readdir(auth, { withFileTypes: true }).catch(() => [])) if (account.isDirectory()) await fs.rm(path.join(auth, account.name, "auth.json"), { force: true });
   }
 }
 
