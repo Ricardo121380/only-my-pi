@@ -26,6 +26,7 @@ export const errorText = (error: unknown) => {
     TERMINAL_LIMIT: "最多同时运行 4 个终端，请先结束一个终端。",
     FILE_VERSION_CONFLICT: "磁盘内容已变化，未覆盖文件，草稿已保留。请先复制所需草稿，再重新读取并合并；不会强制覆盖。",
     FILE_ENCODING_UNSUPPORTED: "文件不是有效 UTF-8 文本，不能安全编辑。请使用支持原编码的本机编辑器。",
+    FILE_PATH_DENIED: "此路径不在项目可查看范围内，或属于排除文件。",
     MANUAL_MODE_REQUIRED: "手动模式已失效或由其他页面退出。草稿仍在，请重新进入手动模式再保存。",
     FILE_SAVE_UNSAFE: "此文件不是可安全替换的普通文件，可能存在硬链接；保存已拒绝。",
     FILE_SAVE_INVALID: "保存内容无效：仅支持不含 NUL 的 UTF-8 文本，最多 512KB。",

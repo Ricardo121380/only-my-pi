@@ -1,0 +1,7 @@
+@media (width < 48rem) {
+  /* Panel's class belongs to its inner view. Hide the sizing wrapper so the
+     open workspace receives the whole width while both views keep their state. */
+  .b2-native .native-panels.workspace-open > [data-panel]:first-child {
+    display: none !important;
+  }
+}

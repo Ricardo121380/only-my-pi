@@ -150,7 +150,7 @@ export async function startHost({ configRoot, stack, assetsRoot, port = 0, onSto
   try { await tasks.load(); } catch (error) { await inputs.close(); await lock.release(); throw error; }
   const resourceRevision = async projectId => minimal ? 0 : (await taskSettingsSnapshot(configRoot, catalog.project(projectId).path, stack.ompPackageRoot)).resourceRevision;
   const inputController = new HostInputController({ store: inputs, tasks, catalog, resourceRevision });
-  const snapshot = () => ({ protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, seq, indexing: scanRunning, capabilities: { minimal, controlled: allowControlled, accounts: { protocol: 1, apiKey: true, probe: true }, inputs: { protocol: INPUT_PROTOCOL, materials: false, resourceRevision: null } },
+  const snapshot = () => ({ protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, seq, indexing: scanRunning, capabilities: { minimal, controlled: allowControlled, inspector: { protocol: 1 }, accounts: { protocol: 1, apiKey: true, probe: true }, inputs: { protocol: INPUT_PROTOCOL, materials: false, resourceRevision: minimal ? 0 : null } },
     runtime: { stackId: stack.stackId, sourceCommit: stack.distribution?.sourceCommit ?? null }, projects: catalog.listProjects(), tasks: tasks.snapshot(), diagnostics: catalog.diagnostics });
   const send = (client, value) => {
     if (client.readyState !== 1) return;
@@ -236,7 +236,7 @@ export async function startHost({ configRoot, stack, assetsRoot, port = 0, onSto
       if (url.pathname.startsWith("/api/")) {
         if (stopping) throw hostError("HOST_STOPPING", 503);
         if (!authenticated(req)) throw hostError("AUTH_REQUIRED", 401);
-        if (minimal && !["/api/state", "/api/accounts", "/api/account-action", "/api/models", "/api/sessions", "/api/history", "/api/tool-output", "/api/task", "/api/command", "/api/logout"].includes(url.pathname)) throw hostError("NOT_FOUND", 404);
+        if (minimal && !["/api/state", "/api/accounts", "/api/account-action", "/api/input-command", "/api/models", "/api/sessions", "/api/history", "/api/tool-output", "/api/task", "/api/files", "/api/file", "/api/diff", "/api/command", "/api/logout"].includes(url.pathname)) throw hostError("NOT_FOUND", 404);
         if (url.pathname === "/api/mcp-oauth/open") {
           if (req.method !== "GET" || req.headers["sec-fetch-site"] === "cross-site" || [...url.searchParams.keys()].join() !== "flowId") throw hostError("HOST_ORIGIN_DENIED", 403);
           const location = await mcpOAuth.open(url.searchParams.get("flowId"));

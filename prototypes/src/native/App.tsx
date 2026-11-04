@@ -1,23 +1,25 @@
-import { useContext, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useContext, useEffect, useRef, useState, type CSSProperties } from "react";
 import { MotionConfig, motion } from "motion/react";
 import { Group, Panel, Separator } from "react-resizable-panels";
-import { BookOpen, Check, ChevronDown, FileCode2, FileDiff, FolderGit2, FolderOpen, Laptop, Loader2, Moon, PanelLeft, PanelRight, Plus, RefreshCw, Search, Settings2, SquareTerminal, Sun, X } from "lucide-react";
+import { BookOpen, Check, ChevronDown, FolderGit2, Laptop, Loader2, Moon, PanelLeft, PanelRight, Plus, RefreshCw, Search, Settings2, Sun, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNativeSession, isTaskActive, type NativeSession } from "../../../webui/src/useNativeSession";
 import { runLabels } from "../../../webui/src/MinimalPanels";
 import { errorText } from "../../../webui/src/api";
-import type { Message, Session } from "../../../packages/host/contracts";
+import type { Session } from "../../../packages/host/contracts";
 import { ModelFields, NativeComposer, NativeMessage } from "./Conversation";
 import { AccountSettings } from "./AccountSettings";
-import { Empty, fieldClass, NativeDialog, NativeTheme, Notice, Tip } from "./ui";
-
-type WorkTab = "plan" | "changes" | "files" | "terminal";
+import { Workspace, type FileRequest, type WorkTab } from "./Workspace";
+import "./layout.css";
+import { fieldClass, NativeDialog, NativeTheme, Notice, Tip } from "./ui";
 
 export default function NativeApp() {
   const c = useNativeSession();
   const [nav, setNav] = useState(() => window.innerWidth >= 1280), [workspace, setWorkspace] = useState(() => window.innerWidth >= 900);
   const [tab, setTab] = useState<WorkTab>("files"), [palette, setPalette] = useState(false), [confirmed, setConfirmed] = useState(false);
+  const [fileRequest, setFileRequest] = useState<FileRequest | null>(null);
+  const openFile = useCallback((path: string) => { setFileRequest({ projectId: c.projectId, path, nonce: crypto.randomUUID() }); setTab("files"); setWorkspace(true); }, [c.projectId]);
   const [search, setSearch] = useState(""), [readSize, setReadSize] = useState(16.5);
   const [systemDark, setSystemDark] = useState(() => window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false);
   const night = c.appearance.theme === "dark" || c.appearance.theme === "system" && systemDark, theme = `proto-b${night ? " night" : ""}`;
@@ -54,7 +56,7 @@ export default function NativeApp() {
     <div className={`${theme} b2-native flex h-full flex-col bg-canvas font-sans text-foreground`} style={{ "--read-size": `${readSize}px` } as CSSProperties}>
       <div className="flex min-h-0 flex-1">
         {sidebar}
-        <Group orientation="horizontal" className="min-w-0 flex-1 py-2 pr-2 max-md:pl-2">
+        <Group orientation="horizontal" className={`native-panels ${workspace ? "workspace-open" : ""} min-w-0 flex-1 py-2 pr-2 max-md:pl-2`}>
           <Panel defaultSize={workspace ? "54" : "100"} minSize="32" className="min-w-0">
             <main className="flex h-full flex-col overflow-hidden rounded-2xl bg-background shadow-[0_0_0_1px_var(--line)]" aria-label="B2 原生会话">
               <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line/70 px-4">
@@ -73,7 +75,7 @@ export default function NativeApp() {
               <section ref={c.scroller} className="min-h-0 flex-1 overflow-y-auto scrollbar-thin" aria-label="对话" onScroll={() => { const node = c.scroller.current; if (node) c.setFollow(node.scrollHeight - node.scrollTop - node.clientHeight < 80); }}>
                 <div className="mx-auto max-w-[660px] space-y-6 px-7 py-7">
                   {c.taskLoading || !!c.selectedKey && !c.historyReady ? <p role="status" className="text-[13px] text-muted-foreground">正在读取会话…</p> : !c.selectedKey && !c.visibleTask ? <Home session={c} /> : <>
-                    {c.messages.map(message => <NativeMessage key={`${c.selectedKey || c.taskId}:${message.id}`} message={message} sessionKey={c.selectedKey || undefined} />)}
+                    {c.messages.map(message => <NativeMessage key={`${c.selectedKey || c.taskId}:${message.id}`} message={message} sessionKey={c.selectedKey || undefined} onOpenFile={openFile} />)}
                     {c.visibleTask?.partial && <article className="native-prose font-read text-[length:var(--read-size,16.5px)] leading-[1.75] text-foreground/90" aria-label="正在回复"><NativeMessage message={{ id: "partial", role: "assistant", text: c.visibleTask.partial }} /></article>}
                     {c.visibleTask?.toolCalls?.filter(call => call.status === "running").map(call => <details open key={call.toolCallId} className="rounded-xl border border-line bg-muted/50 p-3 text-[13px]"><summary className="flex cursor-pointer items-center gap-2"><Loader2 className="size-3.5 animate-spin text-primary" />{call.name}<span className="ml-auto text-[12px] text-muted-foreground">运行中</span></summary>{call.output && <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap font-mono text-[12px]">{call.output}</pre>}</details>)}
                     {busy && !c.visibleTask?.partial && <p role="status" className="flex items-center gap-2 text-[13px] text-muted-foreground"><Loader2 className="size-3.5 animate-spin" />{c.visibleTask?.approvals?.length ? "等待你的决定" : c.visibleTask?.status === "cancelling" ? "正在停止，等待执行进程退出…" : "Pi 正在处理…"}</p>}
@@ -86,7 +88,7 @@ export default function NativeApp() {
               {supported && <NativeComposer key={`${c.projectId}:${c.composerVersion}`} session={c} confirmed={confirmed} onChoose={setConfirmed} />}
             </main>
           </Panel>
-          {workspace && <><Separator className="group mx-0.5 flex w-1.5 items-center justify-center" aria-label="调整工作区宽度"><span className="h-10 w-1 rounded-full bg-line transition-colors group-hover:bg-primary/50 group-data-[separator=active]:bg-primary" /></Separator><Panel defaultSize="46" minSize="30" className="min-w-0"><Workspace session={c} tab={tab} onTab={setTab} onClose={() => setWorkspace(false)} /></Panel></>}
+          {workspace && <><Separator className="group mx-0.5 flex w-1.5 items-center justify-center max-md:hidden" aria-label="调整工作区宽度"><span className="h-10 w-1 rounded-full bg-line transition-colors group-hover:bg-primary/50 group-data-[separator=active]:bg-primary" /></Separator><Panel defaultSize="46" minSize="30" className="min-w-0"><Workspace session={c} tab={tab} onTab={setTab} onClose={() => setWorkspace(false)} fileRequest={fileRequest} onOpenFile={openFile} /></Panel></>}
         </Group>
       </div>
       <footer className="flex h-7 shrink-0 items-center gap-4 overflow-hidden px-4 text-[11.5px] whitespace-nowrap text-muted-foreground" aria-label="状态栏">
@@ -130,21 +132,4 @@ function Home({ session: c }: { session: NativeSession }) {
     ["找出潜在问题", "只读检查，给出依据与验证建议", "请只读检查这个项目中的潜在问题，说明依据和验证建议，暂不修改文件。"],
     ["规划改动", "先把想法变成可讨论的实施步骤", "请先只读分析并给出实施计划，暂不修改文件。"],
   ].map(([title, body, prompt]) => <button key={title} disabled={!c.project} className="flex w-full items-start gap-3 rounded-xl border border-line px-4 py-3 text-left hover:bg-card disabled:opacity-50" onClick={() => c.suggest(prompt)}><BookOpen className="mt-0.5 size-4 shrink-0 text-primary" /><span><span className="block text-[13.5px] font-medium">{title}</span><span className="block text-[12.5px] text-muted-foreground">{body}</span></span></button>)}</div></div>;
-}
-
-function Workspace({ session: c, tab, onTab, onClose }: { session: NativeSession; tab: WorkTab; onTab: (tab: WorkTab) => void; onClose: () => void }) {
-  const [selected, setSelected] = useState("");
-  useEffect(() => { setSelected(""); }, [c.projectId, c.selectedKey, c.taskId, tab]);
-  const historyTools = c.messages.filter(message => message.role === "toolResult");
-  const entries = c.taskLoading || c.selectedKey && !c.historyReady ? [] : c.selectedKey ? historyTools.map(message => ({ id: message.id, name: message.toolName ?? "工具", status: message.isError ? "failed" : "completed", text: message.text, message }))
-    : (c.visibleTask?.toolCalls ?? []).map(call => ({ id: call.toolCallId, name: call.name, status: call.status, text: call.result ?? call.output ?? "", message: undefined as Message | undefined }));
-  const filtered = entries.filter(entry => tab === "terminal" ? entry.name === "bash" : tab === "changes" ? ["write", "edit"].includes(entry.name) : true);
-  const current = filtered.find(entry => entry.id === selected) ?? filtered[0];
-  const labels: Record<string, string> = { running: "运行中", completed: "已完成", failed: "失败", cancelled: "已取消", unknown: "结果未知" };
-  const tabs = [{ id: "plan", label: "计划", icon: BookOpen }, { id: "changes", label: "改动", icon: FileDiff }, { id: "files", label: "文件", icon: FolderOpen }, { id: "terminal", label: "终端", icon: SquareTerminal }] as const;
-  return <section className="@container flex h-full flex-col overflow-hidden rounded-2xl bg-card shadow-[0_0_0_1px_var(--line)]" aria-label="工作区"><header className="flex h-12 shrink-0 items-center gap-0.5 border-b border-line px-2" role="tablist" aria-label="工作区标签">{tabs.map(item => <button key={item.id} role="tab" aria-selected={tab === item.id} className={`relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] whitespace-nowrap ${tab === item.id ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`} onClick={() => onTab(item.id)}>{tab === item.id && <motion.span layoutId="native-b2-tab" className="absolute inset-0 rounded-lg bg-secondary" transition={{ type: "spring", bounce: 0.15, duration: 0.4 }} />}<item.icon className="relative size-3.5" /><span className="relative">{item.label}</span></button>)}<Tip label="收起工作区" kbd="⌘J"><Button size="icon" variant="ghost" className="ml-auto size-8" aria-label="收起工作区" onClick={onClose}><X className="size-4" /></Button></Tip></header>
-    <div className="min-h-0 flex-1 overflow-auto" role="tabpanel" aria-label={tabs.find(item => item.id === tab)?.label}>
-      {tab === "plan" ? <Empty title="会话计划">Pi 的分析和计划显示在左侧对话中。当前会话没有独立的计划产物。</Empty> : !filtered.length ? <Empty title={tab === "terminal" ? "命令输出" : tab === "changes" ? "写入工具回执" : "项目与工具回执"}>{!c.project ? "选择项目后，原生工具的执行结果会出现在这里。" : tab === "changes" ? "审批后实际执行的 edit、write 工具结果会显示在这里。" : "运行中的工具状态和历史输出会显示在这里。"}{c.project && <p className="mt-4 break-all font-mono text-[12px]">{c.project.path}</p>}</Empty> : <div className="flex h-full min-h-0 flex-col @min-[560px]:flex-row"><nav className="max-h-40 shrink-0 overflow-auto border-b border-line p-2 @min-[560px]:max-h-none @min-[560px]:w-40 @min-[560px]:border-r @min-[560px]:border-b-0" aria-label="工具回执列表">{filtered.map(entry => <button key={entry.id} className={`mb-1 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[12.5px] ${current?.id === entry.id ? "bg-accent text-accent-foreground" : "hover:bg-secondary"}`} onClick={() => setSelected(entry.id)}><FileCode2 className="size-3.5 shrink-0" /><span className="min-w-0 flex-1 truncate">{entry.name}</span><span className={`ml-auto shrink-0 whitespace-nowrap text-[11px] ${entry.status === "failed" || entry.status === "unknown" ? "text-destructive" : "text-muted-foreground"}`}>{labels[entry.status]}</span></button>)}</nav><div className="min-w-0 flex-1 overflow-auto p-4">{current && <><p className="mb-3 text-[12px] text-muted-foreground">{current.name}，{labels[current.status]}</p>{current.message ? <NativeMessage key={`${c.selectedKey}:${current.id}`} message={current.message} sessionKey={c.selectedKey || undefined} /> : <pre className="whitespace-pre-wrap break-words font-mono text-[12px] leading-relaxed">{current.text || "等待工具输出…"}</pre>}</>}</div></div>}
-    </div>
-  </section>;
 }

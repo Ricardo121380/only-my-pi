@@ -13,7 +13,7 @@ import { startHost } from "../packages/host/server.mjs";
 async function fixture(t) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-account-connection-")));
   const received = [], sockets = new Set();
-  const f = { root, received, mode: "success", host: null };
+  const f = { root, received, mode: "success", host: null, credential: "selected-probe-fixture-key" };
   const service = http.createServer(async (req, res) => {
     let raw = ""; for await (const bytes of req) raw += bytes;
     const record = { body: JSON.parse(raw), authorization: req.headers.authorization, closed: false }; received.push(record);
@@ -39,7 +39,7 @@ async function fixture(t) {
   ] };
   f.account = await f.catalog.create({ providerId: "probe-fixture", name: "Selected account", authType: "api_key" });
   await f.catalog.configure(f.account.accountId, f.config);
-  await accountAuth({ stack: f.stack, configRoot: root, accounts: f.catalog, accountId: f.account.accountId, input: { type: "apiKey", key: "selected-probe-fixture-key" } });
+  await accountAuth({ stack: f.stack, configRoot: root, accounts: f.catalog, accountId: f.account.accountId, input: { type: "apiKey", key: f.credential } });
   f.probe = more => probeAccount({ stack: f.stack, configRoot: root, accounts: f.catalog, accountId: f.account.accountId, model: "probe-fixture/one", ...more });
   t.after(async () => { await f.host?.stop(); for (const socket of sockets) socket.destroy(); await new Promise(resolve => service.close(resolve)); await fs.rm(root, { recursive: true, force: true }); });
   return f;
@@ -50,7 +50,7 @@ test("connection probe uses only the selected stored account and one bounded too
   assert.deepEqual((await f.catalog.configuration(f.account.accountId)).config, f.config);
   assert.deepEqual(await f.probe({ env: { OPENAI_API_KEY: "must-not-be-used" } }), { status: "connected", model: "probe-fixture/one" });
   assert.equal(f.received.length, 1);
-  assert.equal(f.received[0].authorization, "Bearer selected-probe-fixture-key");
+  assert.equal(f.received[0].authorization, `Bearer ${f.credential}`);
   assert.equal(f.received[0].body.max_tokens ?? f.received[0].body.max_completion_tokens, 512);
   assert.equal(f.received[0].body.tools?.length ?? 0, 0);
   await assert.rejects(f.probe({ model: "another-provider/one" }), { code: "ACCOUNT_MODEL_MISMATCH" });

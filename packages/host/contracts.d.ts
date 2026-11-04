@@ -22,13 +22,17 @@ export interface TaskUsage {
   tokens: { input: number; output: number; cacheRead: number; cacheWrite: number; totalTokens: number } | null;
   estimatedCost: number | null;
 }
-export interface Message { id: string; role: "user" | "assistant" | "toolResult"; text: string; toolName?: string; isError?: boolean; outputAvailable?: boolean; truncated?: boolean; durationMs?: number; stopReason?: string | null }
+export interface Message { id: string; role: "user" | "assistant" | "toolResult"; text: string; toolName?: string; toolCallId?: string; filePath?: string; isError?: boolean; outputAvailable?: boolean; truncated?: boolean; durationMs?: number; stopReason?: string | null }
+export interface FileEntry { name: string; path: string; directory: boolean }
+export interface FileListing { entries: FileEntry[]; truncated: boolean }
+export interface FilePreview { path: string; text: string; bytes: number; version: string }
+export interface GitDiff { available: boolean; text: string; truncated?: boolean; code?: string }
 export interface HostTask {
   resourceRevision?: number;
   settingsSnapshot?: { revision: number; resourceRevision: number; resources: { id: string; enabled: boolean; parameters: Record<string, unknown> }[] } | null;
   settingsLoaded?: { revision: number; resourceRevision: number; tools: string[]; skills: string[] } | null;
   codemode?: { enabled: true; classifier: boolean; image: boolean };
-  toolCalls?: { toolCallId: string; parentToolCallId: string | null; name: string; status: "running" | "completed" | "failed" | "cancelled" | "unknown"; startedAt: string; completedAt?: string; durationMs?: number; result?: string; output?: string; error?: string }[];
+  toolCalls?: { toolCallId: string; parentToolCallId: string | null; name: string; filePath?: string; status: "running" | "completed" | "failed" | "cancelled" | "unknown"; startedAt: string; completedAt?: string; durationMs?: number; result?: string; output?: string; error?: string }[];
   mcp?: { protocol: 1; revision: number; enabled: boolean };
   settlement?: { aborted: boolean } | null;
   inputFeedback?: { inputId: string | null; source: "pi-prompt" | "omp-custom-message"; disposition: "handled" | "queued" | "started" }[] | null;
@@ -47,7 +51,7 @@ export interface HostTask {
 export type TaskSummary = Omit<HostTask, "messages" | "partial">;
 export interface Session { sessionKey: string; sessionId: string; projectId: string; timestamp: string; name: string; readOnly: true }
 export interface HostSnapshot { protocol: number; version: string; epoch: string; seq: number; indexing: boolean;
-  capabilities?: { minimal?: boolean; controlled: boolean; accounts?: { protocol: 1; apiKey: true; probe: true }; inputs?: { protocol: 1; materials: false; resourceRevision: number | null } };
+  capabilities?: { minimal?: boolean; controlled: boolean; inspector?: { protocol: 1 }; accounts?: { protocol: 1; apiKey: true; probe: true }; inputs?: { protocol: 1; materials: false; resourceRevision: number | null } };
   runtime: { stackId: string; sourceCommit: string | null }; projects: Project[]; tasks: TaskSummary[]; diagnostics: { code: string; sessionKey?: string }[] }
 export type HostEvent = ({ type: "snapshot" } & HostSnapshot)
   | { type: "task"; epoch: string; seq: number; data: HostTask }

@@ -3,7 +3,8 @@ import type { InputCommandV1, InputCommandResultV1, InputContentV1, InputShardV1
 export type QueueCommand = Exclude<InputCommandV1, { type: "getInputs" | "saveDraft" | "clearDraft" | "submitPrompt" }>;
 export type QueueAction = { [T in QueueCommand["type"]]: Omit<Extract<QueueCommand, { type: T }>, "target"> }[QueueCommand["type"]];
 export class InputRequestError extends Error {
-  constructor(code: string, public readonly uncertain = false) { super(code); }
+  readonly uncertain: boolean;
+  constructor(code: string, uncertain = false) { super(code); this.uncertain = uncertain; }
 }
 const revision = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 0;
 function shard(value: InputShardV1, kind: "draft" | "queue", projectId: string) {

@@ -1,4 +1,4 @@
-import { memo, useContext, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { ArrowUp, AtSign, ChevronDown, FileCode2, Loader2, Lock, Slash, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -8,9 +8,10 @@ import { isTaskActive, type NativeSession } from "../../../webui/src/useNativeSe
 import type { HostTask, Message } from "../../../packages/host/contracts";
 import type { ThinkingLevel } from "../../../packages/accounts/contracts";
 import { fieldClass, NativeTheme, Notice, Tip } from "./ui";
+import { NativeInputs } from "./NativeInputs";
 
-export const NativeMessage = memo(function NativeMessage({ message, sessionKey }: { message: Message; sessionKey?: string }) {
-  if (message.role === "toolResult") return <div className="native-tool"><MessageView message={message} sessionKey={sessionKey} /></div>;
+export const NativeMessage = memo(function NativeMessage({ message, sessionKey, onOpenFile }: { message: Message; sessionKey?: string; onOpenFile?: (path: string) => void }) {
+  if (message.role === "toolResult") return <div className="native-tool"><MessageView message={message} sessionKey={sessionKey} />{message.filePath && onOpenFile && <button type="button" className="mt-1 break-all text-left font-mono text-[12px] text-primary underline" onClick={() => onOpenFile(message.filePath!)}>查看文件 {message.filePath}</button>}</div>;
   if (message.role === "user") return <div className="ml-auto max-w-[88%] whitespace-pre-wrap rounded-2xl bg-secondary px-4 py-3 text-[14.5px] leading-relaxed">{message.text}{message.truncated && <p className="text-[12px] text-muted-foreground">当前预览已截断</p>}</div>;
   return <article className="native-prose font-read text-[length:var(--read-size,16.5px)] leading-[1.75] text-foreground/90">
     <SafeMarkdown text={message.text} />{message.truncated && <p className="text-[12px] text-muted-foreground">当前预览已截断</p>}
@@ -37,8 +38,14 @@ export function NativeComposer({ session: c, confirmed, onChoose }: { session: N
   const [modelOpen, setModelOpen] = useState(false), [sending, setSending] = useState(false);
   const area = useRef<HTMLTextAreaElement>(null), composing = useRef(false), busy = useRef(false), revision = useRef(0);
   const submitted = useRef<{ text: string; revision: number } | null>(null), seenSuggestion = useRef("");
+  const inputTask = c.currentSummary;
+  const inputs = !!inputTask?.sessionId && c.snapshot?.capabilities?.inputs?.protocol === 1 && c.snapshot.capabilities.inputs.resourceRevision === 0;
+  const [inputGate, setInputGate] = useState<{ taskId: string; blocked: boolean } | null>(null);
+  const inputBlocked = inputs && (inputGate?.taskId !== inputTask?.taskId || inputGate?.blocked !== false);
+  const onInputBlocked = useCallback((blocked: boolean) => setInputGate({ taskId: inputTask?.taskId ?? "", blocked }), [inputTask?.taskId]);
+  const onInputAccepted = useCallback((accepted: string, version: number) => { if (!composing.current && revision.current === version) { revision.current++; setText(current => current === accepted ? "" : current); } }, []);
   const running = isTaskActive(c.visibleTask?.status), controlled = c.snapshot?.capabilities?.controlled === true;
-  const disabled = !c.connected || !!c.taskId || !c.project?.available || !!c.pending || !!c.selectedKey && !c.armed;
+  const disabled = !c.connected || !!c.taskId || !c.project?.available || !!c.pending || !!c.selectedKey && !c.armed || inputBlocked;
   const model = c.account.models.find(m => m.id === c.account.selectedModel);
   function applySuggestion() {
     if (!c.suggestion || composing.current || seenSuggestion.current === c.suggestion.id) return;
@@ -61,8 +68,8 @@ export function NativeComposer({ session: c, confirmed, onChoose }: { session: N
   }
   return <form className="relative shrink-0 px-5 pt-3 pb-4" onSubmit={e => { e.preventDefault(); void send(); }}>
     {c.selectedKey && <div className="mx-auto mb-3 flex max-w-[660px] items-center justify-between gap-3 rounded-xl bg-muted px-3 py-2 text-[12.5px]">
-      <span>{c.armed ? "下一条消息将继续此会话，旧授权不继承。" : "正在查看历史，尚未继续执行。"}</span>
-      <Button type="button" size="sm" variant="outline" className="shrink-0 rounded-full" disabled={c.armed || !c.connected || !c.historyReady || !!c.sessionRunning || !!c.pending || !c.project?.available} onClick={() => { c.setArmed(true); area.current?.focus(); }}>{c.armed ? "已选择继续" : "继续会话"}</Button>
+      <span>{c.sessionRunning ? "此会话仍有任务在执行，可切换到当前任务查看或停止。" : inputBlocked ? "请先核对下方输入状态或处理待投递队列。" : c.armed ? "下一条消息将继续此会话，旧授权不继承。" : "正在查看历史，尚未继续执行。"}</span>
+      {c.sessionRunning ? <Button type="button" size="sm" variant="outline" className="shrink-0 rounded-full" onClick={() => { if (c.selectedSession) c.openSession(c.selectedSession); }}>查看当前任务</Button> : <Button type="button" size="sm" variant="outline" className="shrink-0 rounded-full" disabled={c.armed || !c.connected || !c.historyReady || !!c.pending || !c.project?.available || inputBlocked} onClick={() => { c.setArmed(true); area.current?.focus(); }}>{c.armed ? "已选择继续" : "继续会话"}</Button>}
     </div>}
     {!!c.visibleTask?.approvals?.length && <div className="mx-auto mb-3 max-w-[660px]"><ApprovalDock key={c.visibleTask.taskId} task={c.visibleTask} connected={c.connected} /></div>}
     {c.visibleTask?.access === "coding" && <div className="mx-auto mb-2 flex max-w-[660px] items-center justify-between text-[12px] text-coding"><span>本次进程已获编程授权</span><Revoke task={c.visibleTask} connected={c.connected} /></div>}
@@ -96,6 +103,7 @@ export function NativeComposer({ session: c, confirmed, onChoose }: { session: N
         {!confirmed && model && <span>上次用的是 {model.name} <button type="button" className="text-primary underline" onClick={() => onChoose(true)}>使用</button></span>}
       </div>
     </div>
+    {inputs && inputTask && <NativeInputs key={inputTask.taskId} task={inputTask} inputRevision={c.host.inputRevision} connected={c.connected} text={text} textVersion={revision.current} isComposing={() => composing.current} onAccepted={onInputAccepted} onBlocked={onInputBlocked} />}
   </form>;
 }
 

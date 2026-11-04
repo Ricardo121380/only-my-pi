@@ -3,7 +3,7 @@ import type { HostTask, QueueShardV1 } from "../../packages/host/contracts";
 import { confirmsQueueCommand, inputApi, InputRequestError, type QueueAction, type QueueCommand } from "./inputApi";
 
 export const INPUT_RECONCILE_MS = 15000;
-export function useInputQueue(task: HostTask, inputRevision = 0, connected = true) {
+export function useInputQueue(task: Pick<HostTask, "projectId" | "taskId" | "sessionId">, inputRevision = 0, connected = true) {
   const key = JSON.stringify([task.projectId, task.taskId, task.sessionId]);
   const active = useRef(key); active.current = key;
   const available = useRef(connected); available.current = connected;

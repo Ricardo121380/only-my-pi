@@ -21,13 +21,16 @@ test("parallel tool output stays with its call while another tool finishes", asy
     workerFactory: () => worker = new Worker() });
   t.after(async () => { await tasks.stop(); await fs.rm(root, { recursive: true }); });
   await tasks.load(); const task = await tasks.start({ requestId: "r", projectId: "p", model: "fixture/one", prompt: "tools" }); await ready;
-  for (const [id, name] of [["a", "bash"], ["b", "read"]]) worker.emit("event", { type: "tool_execution_start", toolCallId: id, toolName: name });
+  for (const [id, name] of [["a", "bash"], ["b", "read"]]) worker.emit("event", { type: "tool_execution_start", toolCallId: id, toolName: name, args: { path: path.join(root, "file.txt"), content: "private-tool-arguments" } });
   worker.emit("event", { type: "tool_execution_update", toolCallId: "a", toolName: "bash", partialResult: { content: [{ type: "text", text: "shell partial" }] } });
   let state = tasks.public(tasks.tasks.get(task.taskId));
   assert.equal(state.toolCalls[0].output, "shell partial"); assert.equal(state.toolCalls[1].output, undefined);
+  assert.equal(state.toolCalls[0].filePath, undefined); assert.equal(state.toolCalls[1].filePath, "file.txt");
+  assert.ok(!JSON.stringify(state).includes("private-tool-arguments"));
   worker.emit("event", { type: "tool_execution_end", toolCallId: "b", toolName: "read", result: { content: [{ type: "text", text: "read done" }] } });
   worker.emit("event", { type: "tool_execution_update", toolCallId: "a", toolName: "bash", partialResult: { content: [{ type: "text", text: "shell next" }] } });
   state = tasks.public(tasks.tasks.get(task.taskId));
   assert.equal(state.tool.name, "bash"); assert.equal(state.tool.output, "shell next"); assert.equal(state.toolCalls[1].status, "completed");
+  assert.equal(state.messages.find(message => message.toolCallId === "b").filePath, "file.txt");
   worker.emit("event", { type: "agent_settled" }); await Promise.all([...tasks.running.values()]);
 });
