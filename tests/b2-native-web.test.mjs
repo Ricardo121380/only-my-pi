@@ -16,7 +16,7 @@ async function until(read, accept, label) {
   assert.fail(`Not reached: ${label}`);
 }
 
-test("B2 assets use the native Host; real Pi reads, approves writes and stops its stream", { timeout: 60000 }, async t => {
+test("WebUI assets use the native Host; real Pi reads, approves writes and stops its stream", { timeout: 60000 }, async t => {
   const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), "omp-b2-core-"));
   const app = await startDevWeb({ frontend: "b2", dataDir, demo: true, watch: false, port: 0 });
   t.after(() => app.stop());
@@ -25,7 +25,7 @@ test("B2 assets use the native Host; real Pi reads, approves writes and stops it
   assert.match(html, /<title>Only My Pi<\/title>/);
   const script = html.match(/src="([^"]+\.js)"/)[1];
   const bundle = await (await fetch(origin + script)).text();
-  assert.match(bundle, /B2 原生会话/);
+  assert.match(bundle, /WebUI 会话/);
   assert.doesNotMatch(bundle, /startMockRun|tickMockRun/);
   const dependencies = JSON.parse(await fs.readFile(path.join(dataDir, "assets/dependencies.json"), "utf8"));
   const supplement = dependencies.find(p => p.name === "react-remove-scroll-bar");
