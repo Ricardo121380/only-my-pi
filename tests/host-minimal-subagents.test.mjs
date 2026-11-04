@@ -26,7 +26,8 @@ test("B2 native read-only children keep the selected account/model, return proof
   const accounts = new AccountCatalog(app.configRoot), account = await accounts.create({ providerId: "fixture", name: "Bound parent and child", authType: "api_key" });
   const paths = await accounts.runtimePaths(account.accountId);
   await fs.writeFile(paths.modelsPath, await fs.readFile(path.join(app.configRoot, "models.json")));
-  await fs.writeFile(paths.authPath, JSON.stringify({ fixture: { type: "api_key", key: "bound-account-fixture" } }));
+  const credential = "bound-account-fixture";
+  await fs.writeFile(paths.authPath, JSON.stringify({ fixture: { type: "api_key", key: credential } }));
   const origin = app.host.origin;
   const paired = await fetch(origin + "/pair", { method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify({ token: new URL(app.host.pairingUrl).hash.slice(6) }) });
   const headers = { origin, cookie: paired.headers.get("set-cookie").split(";")[0], "content-type": "application/json", "x-omp-host-protocol": "2" };
@@ -43,7 +44,7 @@ test("B2 native read-only children keep the selected account/model, return proof
   assert.equal(completed.orchestration.children[0].accountId, account.accountId);
   assert.match(JSON.stringify(completed.messages), /minimal-web-evidence/);
   assert.match(JSON.stringify(completed.messages), /authoritative/);
-  assert.ok(app.provider.received.every(record => record.authorization === "Bearer bound-account-fixture" && record.body.model === "one"));
+  assert.ok(app.provider.received.every(record => record.authorization === `Bearer ${credential}` && record.body.model === "one"));
   const childRequests = app.provider.received.filter(record => record.body.tools?.some(tool => tool.function?.name === "structured_output"));
   assert.ok(childRequests.length >= 2);
   for (const { body } of childRequests) assert.deepEqual(body.tools.map(tool => tool.function.name).sort(), ["find", "grep", "ls", "read", "structured_output"]);
