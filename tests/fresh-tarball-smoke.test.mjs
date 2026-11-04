@@ -14,7 +14,7 @@ test("fresh tarball installs the exact locked Pi and rolls back its isolated fir
   const manifest = JSON.parse(await fs.readFile(path.join(rootDir, "package.json"), "utf8"));
   const evidence = await runFreshTarballSmoke({ rootDir, profileId: "minimal" });
   assert.equal(evidence.status, "PASS");
-  assert.equal(evidence.formatVersion, 2);
+  assert.equal(evidence.formatVersion, 3);
   assert.equal(evidence.sourceCommit, execFileSync("git", ["rev-parse", "HEAD"], { cwd: rootDir, encoding: "utf8" }).trim());
   assert.equal(evidence.piVersion, manifest.devDependencies["@earendil-works/pi-coding-agent"]);
   assert.equal(evidence.tarball.version, manifest.version);
