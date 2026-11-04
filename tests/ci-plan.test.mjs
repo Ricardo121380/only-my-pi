@@ -57,6 +57,14 @@ test("every discovered Node test is assigned exactly once, including focused cov
   assert.equal(isNodeTest("tests/fixtures/host.mjs"), false);
 });
 
+test("CI Vitest checks emit TAP failure names for the bounded diagnostic reader", () => {
+  const checks = checksForLane("web");
+  for (const id of ["test:web", "test:web:b2"]) {
+    const check = checks.find(value => value.id === id);
+    assert.deepEqual(check.args, ["run", id, "--", "--reporter=tap"]);
+  }
+});
+
 test("the required check rejects a failed, cancelled, missing or unexpectedly skipped lane", () => {
   const plan = classifyChanges(["webui/src/MinimalApp.tsx"]);
   const good = { docs: { result: "success" }, static: { result: "success" }, web: { result: "success" },
