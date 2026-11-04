@@ -55,6 +55,7 @@ async function sbom(app, version, sourceCommit, createdAt) {
   }));
   packages.push({ SPDXID: "SPDXRef-Node", name: "Node.js", versionInfo: "24.19.0", downloadLocation: "https://nodejs.org/dist/v24.19.0/node-v24.19.0-darwin-arm64.tar.gz", filesAnalyzed: false,
     licenseDeclared: "MIT", licenseConcluded: "NOASSERTION", copyrightText: "NOASSERTION", checksums: [{ algorithm: "SHA256", checksumValue: EMBEDDED_NODE_ARCHIVE_SHA256.slice(7) }], comment: "Full Node license and bundled dependency notices are in node/LICENSE." });
+  for (const tool of (await json(path.join(path.dirname(app), "tools/pi/vendor-tools/toolchain.json"))).tools) packages.push({ SPDXID: `SPDXRef-Tool-${tool.name}`, name: tool.name, versionInfo: tool.version, downloadLocation: tool.url, filesAnalyzed: false, licenseDeclared: tool.license, licenseConcluded: "NOASSERTION", copyrightText: "NOASSERTION", checksums: [{ algorithm: "SHA256", checksumValue: tool.sha256.slice(7) }], comment: "Binary and upstream license files are shipped under tools/pi/vendor-tools." });
   return { spdxVersion: "SPDX-2.3", dataLicense: "CC0-1.0", SPDXID: "SPDXRef-DOCUMENT", name: `only-my-pi-webui-${version}`, documentNamespace: `https://github.com/Ricardo121380/only-my-pi/webui-preview/${sourceCommit}`,
     creationInfo: { created: createdAt, creators: ["Tool: only-my-pi-webui-preview"] }, documentDescribes: packages.map(pkg => pkg.SPDXID), packages,
     relationships: packages.map(pkg => ({ spdxElementId: "SPDXRef-DOCUMENT", relationshipType: "DESCRIBES", relatedSpdxElement: pkg.SPDXID })),
@@ -69,18 +70,21 @@ export async function buildWebPreview({ output, version = "0.1.0-preview.1" } = 
   await fs.mkdir(output, { recursive: false });
   const rootName = "only-my-pi-webui", payload = path.join(output, rootName), app = path.join(payload, "app"), home = path.join(output, "build-home");
   await fs.mkdir(app, { recursive: true }); await fs.mkdir(home);
+  for (const name of [".npmrc", ".global-npmrc"]) await fs.writeFile(path.join(home, name), "", { flag: "wx" });
   const sourceTar = path.join(output, "source.tar"); git("archive", "--format=tar", `--output=${sourceTar}`, sourceCommit);
   await run("/usr/bin/tar", ["-xf", sourceTar, "-C", app], {});
   const nodeArchive = path.join(output, "node.tar.gz");
   await downloadVerified({ url: "https://nodejs.org/dist/v24.19.0/node-v24.19.0-darwin-arm64.tar.gz", destination: nodeArchive, expectedSha256: EMBEDDED_NODE_ARCHIVE_SHA256, maxBytes: 64 * 1024 * 1024 });
   await run("/usr/bin/tar", ["-xzf", nodeArchive, "-C", payload], {}); await fs.rename(path.join(payload, "node-v24.19.0-darwin-arm64"), path.join(payload, "node"));
   const node = path.join(payload, "node/bin/node"), npm = path.join(payload, "node/lib/node_modules/npm/bin/npm-cli.js");
-  const env = { PATH: `${path.dirname(node)}:/usr/bin:/bin:/usr/sbin:/sbin`, HOME: home, TMPDIR: process.env.TMPDIR ?? "/tmp", LANG: "en_US.UTF-8", CI: "1", PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1", NPM_CONFIG_USERCONFIG: "/dev/null", NPM_CONFIG_GLOBALCONFIG: "/dev/null", NPM_CONFIG_CACHE: path.join(output, "npm-cache"), NPM_CONFIG_IGNORE_SCRIPTS: "true", NPM_CONFIG_AUDIT: "false", NPM_CONFIG_FUND: "false" };
+  const env = { PATH: `${path.dirname(node)}:/usr/bin:/bin:/usr/sbin:/sbin`, HOME: home, TMPDIR: process.env.TMPDIR ?? "/tmp", LANG: "en_US.UTF-8", CI: "1", PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1", NPM_CONFIG_USERCONFIG: path.join(home, ".npmrc"), NPM_CONFIG_GLOBALCONFIG: path.join(home, ".global-npmrc"), NPM_CONFIG_CACHE: path.join(output, "npm-cache"), NPM_CONFIG_IGNORE_SCRIPTS: "true", NPM_CONFIG_AUDIT: "false", NPM_CONFIG_FUND: "false" };
   for (const [directory, extra] of [[app, []], [path.join(app, "contracts/release/external"), ["--omit=peer", "--legacy-peer-deps"]], [path.join(app, "prototypes"), []]]) await run(node, [npm, "ci", "--ignore-scripts", "--no-audit", "--no-fund", ...extra], { cwd: directory, env });
   await run(node, [npm, "run", "build:web:b2"], { cwd: app, env });
   await fs.rename(path.join(app, "prototypes/dist-host"), path.join(app, "webui-preview-assets"));
   await fs.rm(path.join(app, "prototypes/node_modules"), { recursive: true });
   await prepareBundledPty(app); await verifyBundledRuntime({ packageRoot: app, node, env });
+  const toolWork = path.join(output, "tool-work"); await fs.mkdir(toolWork);
+  await run(node, ["--input-type=module", "-e", "import { stageToolchain } from './packages/distribution/toolchain-builder.mjs'; await stageToolchain(JSON.parse(process.argv[1]));", JSON.stringify({ rootDir: app, runtimeRoot: path.join(payload, "tools"), work: toolWork })], { cwd: app, env });
   const createdAt = new Date(git("show", "-s", "--format=%cI", sourceCommit)).toISOString();
   const components = await sbom(app, version, sourceCommit, createdAt);
   await save(path.join(payload, "sbom.spdx.json"), components);
@@ -88,7 +92,7 @@ export async function buildWebPreview({ output, version = "0.1.0-preview.1" } = 
   await fs.writeFile(path.join(payload, "start.command"), '#!/bin/sh\nset -eu\nROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\nexec "$ROOT/node/bin/node" "$ROOT/app/scripts/webui-preview.mjs" "$@"\n', { flag: "wx", mode: 0o755 });
   await fs.copyFile(path.join(app, "docs/releases/webui-0.1.0-preview.1.md"), path.join(payload, "README.md"));
   const files = await filesIn(payload);
-  const startupFiles = Object.keys(files).filter(name => name === "node/bin/node" || name === "start.command" || name.startsWith("app/webui-preview-assets/") || /^app\/(?:packages|extensions|scripts)\//u.test(name) || ["app/.node-version", "app/package.json", "app/package-lock.json", "app/contracts/release/external/package-lock.json", "app/node_modules/@earendil-works/pi-coding-agent/package.json"].includes(name));
+  const startupFiles = Object.keys(files).filter(name => name === "node/bin/node" || name === "start.command" || name.startsWith("tools/") || name.startsWith("app/webui-preview-assets/") || /^app\/(?:packages|extensions|scripts)\//u.test(name) || ["app/.node-version", "app/package.json", "app/package-lock.json", "app/contracts/release/external/package-lock.json", "app/node_modules/@earendil-works/pi-coding-agent/package.json"].includes(name));
   const manifest = { kind: "only-my-pi-webui-preview-v1", version, tag: `webui-v${version}`, platform: "darwin-arm64", sourceCommit, sourceTree, createdAt, node: "24.19.0", pi: "1.5.0", modelPolicy: "deepseek-only", subagents: "readonly-omp-explorer", lifecycleScriptsExecuted: false, startupFiles, files };
   await save(path.join(payload, "preview-manifest.json"), manifest);
   await run(node, [path.join(app, "scripts/webui-preview.mjs"), "--check"], { cwd: app, env });

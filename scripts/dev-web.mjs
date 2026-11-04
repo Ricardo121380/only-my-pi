@@ -114,14 +114,14 @@ export async function startDevWeb({ frontend = "minimal", dataDir = path.join(so
     } else {
       const frontendRoot = path.join(sourceRoot, frontend === "b2" ? "prototypes" : "webui");
       const output = await build({ configFile: path.join(frontendRoot, "vite.config.ts"), root: frontendRoot, mode: frontend === "b2" ? "host" : "minimal",
-      // Mounted worktrees may not deliver native filesystem events reliably.
-      build: { outDir: assetsRoot, emptyOutDir: true, watch: watch ? { chokidar: { usePolling: true, interval: 500 } } : null, rollupOptions: { input: { minimal: path.join(frontendRoot, "minimal.html") } } } });
+        // Mounted worktrees may not deliver native filesystem events reliably.
+        build: { outDir: assetsRoot, emptyOutDir: true, watch: watch ? { chokidar: { usePolling: true, interval: 500 } } : null, rollupOptions: { input: { minimal: path.join(frontendRoot, "minimal.html") } } } });
       if (watch) {
-      watcher = output;
-      await new Promise((resolve, reject) => watcher.on("event", event => {
-        if (event.code === "ERROR") reject(event.error);
-        if (event.code === "END") { onBuild(); resolve(); }
-      }));
+        watcher = output;
+        await new Promise((resolve, reject) => watcher.on("event", event => {
+          if (event.code === "ERROR") reject(event.error);
+          if (event.code === "END") { onBuild(); resolve(); }
+        }));
       } else onBuild();
     }
     const env = { PATH: process.env.PATH, HOME: home, TERM: "xterm-256color", LANG: "en_US.UTF-8", PI_CODING_AGENT_DIR: configRoot, PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1" };

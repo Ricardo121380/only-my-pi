@@ -41,6 +41,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     else if (args.includes("--help")) console.log("./start.command [--data-dir /absolute/path] [--port 4317]\n在浏览器打开启动后显示的配对链接；输入 pair 生成新链接，stop 或 Ctrl+C 停止。\n账号在 WebUI 设置中添加，仅使用 DeepSeek。数据目录保留在本机。使用 --check 校验全部文件。");
     else {
       options.dataDir ??= path.join(os.homedir(), "Library/Application Support/OnlyMyPi/WebUI Preview", manifest.version);
+      process.env.PATH = `${path.join(payloadRoot, "node/bin")}:${path.join(payloadRoot, "tools/pi/vendor-tools/bin")}:${process.env.PATH ?? "/usr/bin:/bin"}`;
       let input, closing;
       const closeInput = () => { input?.close(); process.stdin.pause(); };
       const ready = startDevWeb({ ...options, frontend: "b2", watch: false, prebuiltAssets: path.join(appRoot, "webui-preview-assets"), onStopped: result => { console.log(JSON.stringify(result)); closeInput(); } });

@@ -67,6 +67,9 @@ export async function verifyWebPreviewArchive(candidate, output) {
     const start = (c, prompt, more = {}) => c.command({ type: "startTask", requestId: randomUUID(), projectId: selected.projectId, accountId: account.accountId, model: selectedModel, prompt, ...more });
     const read = await a.settled((await start(a, "read project")).taskId); assert.equal(read.status, "succeeded"); assert.match(JSON.stringify(read.messages), new RegExp(marker));
     const session = await until(async () => (await a.get(`/api/sessions?projectId=${selected.projectId}`)).sessions.find(s => s.sessionId === read.sessionId), Boolean, "native history index");
+    const searched = await a.settled((await start(a, "delegate search")).taskId); assert.equal(searched.status, "succeeded"); assert.match(JSON.stringify(searched.messages), new RegExp(marker));
+    const searchTools = model.received.filter(r => r.body.tools?.some(t => t.function?.name === "structured_output")).flatMap(r => r.body.messages.filter(m => m.role === "tool"));
+    assert.ok(searchTools.some(m => m.name === "grep" && JSON.stringify(m.content).includes(marker))); assert.ok(searchTools.some(m => m.name === "find" && JSON.stringify(m.content).includes("README.md")));
     const delegated = await a.settled((await start(a, "delegate read")).taskId); assert.equal(delegated.status, "succeeded"); assert.equal(delegated.orchestration.children[0].status, "completed"); assert.match(JSON.stringify(delegated.messages), new RegExp(marker));
     const write = await start(a, "request write", { mode: "controlled" });
     const approval = await until(() => a.task(write.taskId), t => t.approvals?.length, "coding approval");
@@ -84,15 +87,15 @@ export async function verifyWebPreviewArchive(candidate, output) {
     const second = await launch(Number(new URL(first.origin).port));
     assert.equal((await fetch(second.origin + "/api/state", { headers: a.headers })).status, 401);
     const b = await client(second); await until(() => b.get("/api/state"), state => !state.indexing, "restart indexing");
-    assert.equal((await b.get("/api/state")).tasks.length, 5);
+    assert.equal((await b.get("/api/state")).tasks.length, 6);
     assert.deepEqual(await b.get(`/api/history?sessionKey=${session.sessionKey}`), before);
     const resumed = await b.settled((await start(b, "continue", { resumeSessionKey: session.sessionKey })).taskId);
     assert.equal(resumed.status, "succeeded"); assert.equal(resumed.sessionId, read.sessionId); assert.equal(resumed.access, "inspect");
-    assert.equal((await b.get("/api/state")).tasks.length, 6); await second.stop();
+    assert.equal((await b.get("/api/state")).tasks.length, 7); await second.stop();
     await assert.rejects(fs.access(fallback), { code: "ENOENT" });
     assert.ok(model.received.every(r => r.body.model === "deepseek-v4.1-flash" && r.authorization === `Bearer ${credential}`));
     const result = { kind: "only-my-pi-webui-archive-acceptance-v1", status: "PASS", sourceCommit: receipt.sourceCommit, archiveSha256: receipt.sha256, version: receipt.version, platform: receipt.platform, node: check.node, pi: check.pi,
-      provider: "LOCAL_CONTROLLED", externalProvider: "NOT_RUN_IN_THIS_ARCHIVE_CHECK", tasks: { succeeded: 4, cancelled: 2 }, assertions: { noGitCheckout: true, bundledNodeAndPi: true, noInheritedAccounts: true, actualRead: true, actualReadonlyChild: true, approvalBeforeWrite: true, childProcessGroupStopped: true, streamStopped: true, restartHistoryRetained: true, explicitResumeNoPermissionInheritance: true, noReplay: true, noPathFallbackNode: true, stoppedWithoutWorkers: true } };
+      provider: "LOCAL_CONTROLLED", externalProvider: "NOT_RUN_IN_THIS_ARCHIVE_CHECK", tasks: { succeeded: 5, cancelled: 2 }, assertions: { noGitCheckout: true, bundledNodeAndPi: true, noInheritedAccounts: true, actualRead: true, actualGrepAndFind: true, actualReadonlyChild: true, approvalBeforeWrite: true, childProcessGroupStopped: true, streamStopped: true, restartHistoryRetained: true, explicitResumeNoPermissionInheritance: true, noReplay: true, noPathFallbackNode: true, stoppedWithoutWorkers: true } };
     await fs.writeFile(path.join(output, "acceptance.json"), JSON.stringify(result, null, 2) + "\n"); return result;
   } finally {
     for (const launch of launches) if (launch.exitCode === undefined) await launch.stop();
