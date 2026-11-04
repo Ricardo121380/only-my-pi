@@ -2,7 +2,9 @@
 
 方向确认于 2026-10-25。进度核对于 2026-11-04。
 
-**Pi 版本。** 上游于 2026-11-02 发布 [Pi 1.5.0](https://github.com/earendil-works/pi/releases/tag/v1.5.0)。开发源码现已锁定并适配该版本；B2 在同一干净源码上完成真实 DeepSeek 主执行与只读子代理验收。应用内主执行和子代理均限定 DeepSeek。[源码与实机证据](../evidence/2026-11-04-pi150-b2-deepseek.md)；[#93](https://github.com/Ricardo121380/only-my-pi/issues/93) 的候选安装、日常晋升与更广兼容性仍按阶段验收。
+**Pi 版本。** 上游于 2026-11-02 发布 [Pi 1.5.0](https://github.com/earendil-works/pi/releases/tag/v1.5.0)。开发源码现已锁定并适配该版本；WebUI 在同一干净源码上完成真实 DeepSeek 主执行与只读子代理验收。应用内主执行和子代理均限定 DeepSeek。[源码与实机证据](../evidence/2026-11-04-pi150-b2-deepseek.md)；[#93](https://github.com/Ricardo121380/only-my-pi/issues/93) 的候选安装、日常晋升与更广兼容性仍按阶段验收。
+
+**本次预览。** 先准备独立的 WebUI 0.1.0-preview.1 macOS Apple Silicon 归档；对外统一称 WebUI，CLI 联动后置，不作为预览或 Electron 的前置。旧 GitHub Releases 备份后退役，原标签和历史保留。[预览交付决定](../decisions/ADR-0023-webui-preview-distribution.md) · [启动与范围](../releases/webui-0.1.0-preview.1.md)
 
 目标是基于原生 Pi 的个人桌面 Agent 客户端。首先在 macOS Apple Silicon 上交付可用的中文 WebUI。用户应能选项目与模型、开始会话、看见流式回复及工具结果、停止任务，刷新或重启后查看同一历史，并明确选择是否继续。现有 Linux CLI 继续维护。[设计决定](../decisions/ADR-0022-pi-native-web-first.md) · [运行 WebUI 开发版](../minimal-webui.md)
 
@@ -10,21 +12,21 @@
 
 | 阶段 | 用户应得到什么 | 截至 2026-11-04 |
 | --- | --- | --- |
-| 1 · 原生 Pi 基础 | 一个执行者使用实际 Pi 完成请求、工具调用、取消、退出和历史恢复。基础会话只加载需要的资源。 | 开发依赖锁定 Pi 1.5.0，保留只读起步、审批和会话占用。普通 minimal 不加载子代理；B2 按需启动只读子代理。 |
-| 2 · WebUI | 从项目进入会话，看到流式事件，在刷新、断线或重启后安全地找回历史。 | B2 保留现有设计与交互。Pi 1.5 同源的五个 DeepSeek 任务为三次成功、两次主动取消，覆盖真实子代理、审批后编辑、主/子停止及重启续接；80 项长输出刷新后保留。多日使用仍待验收。 |
+| 1 · 原生 Pi 基础 | 一个执行者使用实际 Pi 完成请求、工具调用、取消、退出和历史恢复。基础会话只加载需要的资源。 | 开发依赖锁定 Pi 1.5.0，保留只读起步、审批和会话占用。普通 minimal 不加载子代理；WebUI 按需启动只读子代理。 |
+| 2 · WebUI | 从项目进入会话，看到流式事件，在刷新、断线或重启后安全地找回历史。 | 保留现有设计与交互。Pi 1.5 同源的五个 DeepSeek 任务为三次成功、两次主动取消，覆盖真实子代理、审批后编辑、主/子停止及重启续接；80 项长输出刷新后保留。先交付预览，多日使用仍待验收。 |
 | 3 · 按需模块 | 一次增加一个实际选定的功能。关闭后，基础旅程仍可用，后台资源能回收。 | 待选择优先级。材料转换、搜索、生图、人工终端和工作流分别评估。 |
-| 4 · CLI 联动 | 匹配版本的 CLI → WebUI → CLI 能查看同一原生历史，在上一个执行者停止后显式接续。 | 保留最终目标。完整跨进程交接、账号身份与授权重建仍待验收。 |
-| 5 · Electron | 安装后能独立启动，窗口和应用退出语义明确，更新失败后可恢复、数据保留。 | 核心 WebUI 稳定后进入。尚无这条新路线的桌面安装包。 |
+| 4 · Electron | 安装后能独立启动，窗口和应用退出语义明确，更新失败后可恢复、数据保留。 | 核心 WebUI 稳定后进入，不等待 CLI 联动。尚无这条新路线的桌面安装包。 |
+| 后置 · CLI 联动 | 匹配版本的 CLI → WebUI → CLI 能查看同一原生历史，在上一个执行者停止后显式接续。 | 保留最终目标，作为后续独立工作。完整跨进程交接、账号身份与授权重建仍待验收。 |
 
 模块按需持续加入。进入桌面阶段取决于选定核心体验的稳定程度，旧清单的条目数量不决定何时打包。执行权限沿用当前产品策略。基础权限体验若需要调整，另行决定。
 
 ## 当前 WebUI 开发顺序
 
-B2「静室·编码」是后续 WebUI 的界面与交互基线，见[设计规范](https://github.com/Ricardo121380/only-my-pi/blob/codex/dev/pi-native-web/prototypes/DESIGN.md)。
+WebUI 沿用已选定的「静室·编码」界面与交互，见[设计规范](https://github.com/Ricardo121380/only-my-pi/blob/codex/dev/pi-native-web/prototypes/DESIGN.md)。B2 仅保留为原型与代码内部代号。
 比较原型保留；实时入口使用原生 Pi/Host，入口为 `npm run dev:web:b2:demo`，
 使用真实模型时为 `npm run dev:web:b2`。两者使用独立开发数据目录。
 
-1. B2 基线已通过 PR #97 纳入 `codex/dev/pi-native-web`。账号与工作区增量继续按
+1. WebUI 基线已通过 PR #97 纳入 `codex/dev/pi-native-web`。账号与工作区增量继续按
    独立提交、所选 CI 通过后集成，保留旧 CLI 与失败记录。
 2. 真实账号设置、显式连接验证和核心 DeepSeek 旅程已通过本轮验证。应用模型仅
    使用 DeepSeek；外部 Codex 测试代理与应用模型分别处理。
