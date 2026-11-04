@@ -1,0 +1,133 @@
+name: WebUI preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        options: [build, publish]
+        default: build
+        description: Build a candidate, or publish the already accepted bytes
+      candidate_run:
+        type: string
+        description: Successful build run ID (publish only)
+      archive_sha256:
+        type: string
+        description: SHA-256 of the exact locally accepted archive (publish only)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: webui-preview-${{ inputs.operation }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: inputs.operation == 'build' && github.ref == 'refs/heads/codex/dev/pi-native-web'
+    runs-on: macos-14
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+          cache: npm
+      - name: Install build tools without dependency lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build one portable WebUI candidate
+        run: node scripts/build-webui-preview.mjs "$RUNNER_TEMP/webui-candidate"
+      - name: Verify the extracted candidate with actual Pi and a controlled local model
+        run: |
+          node scripts/verify-webui-preview.mjs "$RUNNER_TEMP/webui-candidate" "$RUNNER_TEMP/webui-acceptance"
+          cp "$RUNNER_TEMP/webui-acceptance/acceptance.json" "$RUNNER_TEMP/webui-candidate/acceptance.json"
+          cd "$RUNNER_TEMP/webui-candidate"
+          shasum -a 256 acceptance.json >> SHA256SUMS
+      - name: Attest the exact candidate and evidence
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: |
+            ${{ runner.temp }}/webui-candidate/*.tar.gz
+            ${{ runner.temp }}/webui-candidate/build-receipt.json
+            ${{ runner.temp }}/webui-candidate/acceptance.json
+            ${{ runner.temp }}/webui-candidate/preview-manifest.json
+            ${{ runner.temp }}/webui-candidate/sbom.spdx.json
+            ${{ runner.temp }}/webui-candidate/SHA256SUMS
+            ${{ runner.temp }}/webui-candidate/README.md
+      - name: Attest the bundled dependency inventory
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: ${{ runner.temp }}/webui-candidate/*.tar.gz
+          sbom-path: ${{ runner.temp }}/webui-candidate/sbom.spdx.json
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: webui-preview-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            ${{ runner.temp }}/webui-candidate/*.tar.gz
+            ${{ runner.temp }}/webui-candidate/build-receipt.json
+            ${{ runner.temp }}/webui-candidate/acceptance.json
+            ${{ runner.temp }}/webui-candidate/preview-manifest.json
+            ${{ runner.temp }}/webui-candidate/sbom.spdx.json
+            ${{ runner.temp }}/webui-candidate/SHA256SUMS
+            ${{ runner.temp }}/webui-candidate/README.md
+
+  publish:
+    if: inputs.operation == 'publish' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: public-preview
+    permissions:
+      contents: write
+      actions: read
+      attestations: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: Ricardo121380/only-my-pi
+      CANDIDATE_RUN: ${{ inputs.candidate_run }}
+      ARCHIVE_SHA256: ${{ inputs.archive_sha256 }}
+    steps:
+      - id: identity
+        name: Require a successful source-bound candidate and normal source CI
+        run: |
+          [[ "$CANDIDATE_RUN" =~ ^[0-9]+$ ]]
+          [[ "$ARCHIVE_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          gh api "repos/$GH_REPO/actions/runs/$CANDIDATE_RUN" > "$RUNNER_TEMP/candidate-run.json"
+          jq -e '.conclusion == "success" and .event == "workflow_dispatch" and .head_branch == "codex/dev/pi-native-web" and .path == ".github/workflows/webui-preview.yml"' "$RUNNER_TEMP/candidate-run.json"
+          SOURCE=$(jq -r '.head_sha' "$RUNNER_TEMP/candidate-run.json")
+          [[ "$SOURCE" =~ ^[a-f0-9]{40}$ ]]
+          gh api "repos/$GH_REPO/commits/$SOURCE/check-runs" > "$RUNNER_TEMP/checks.json"
+          jq -e 'any(.check_runs[]; .name == "CI required" and .conclusion == "success")' "$RUNNER_TEMP/checks.json"
+          echo "source=$SOURCE" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: webui-preview-${{ steps.identity.outputs.source }}
+          run-id: ${{ inputs.candidate_run }}
+          github-token: ${{ github.token }}
+          path: candidate
+      - name: Verify checksums, same archive acceptance and source attestations
+        env:
+          SOURCE: ${{ steps.identity.outputs.source }}
+        run: |
+          cd candidate
+          sha256sum -c SHA256SUMS
+          jq -e --arg source "$SOURCE" --arg sha "$ARCHIVE_SHA256" '.kind == "only-my-pi-webui-build-v1" and .sourceCommit == $source and .sha256 == $sha and .version == "0.1.0-preview.1" and .platform == "darwin-arm64" and .runtimeVerified == true' build-receipt.json
+          jq -e --arg source "$SOURCE" --arg sha "$ARCHIVE_SHA256" '.status == "PASS" and .sourceCommit == $source and .archiveSha256 == $sha and .provider == "LOCAL_CONTROLLED" and all(.assertions[]; . == true)' acceptance.json
+          for file in *.tar.gz build-receipt.json acceptance.json preview-manifest.json sbom.spdx.json SHA256SUMS README.md; do
+            gh attestation verify "$file" --repo "$GH_REPO" --source-digest "$SOURCE" --signer-digest "$SOURCE" --source-ref refs/heads/codex/dev/pi-native-web --signer-workflow "$GH_REPO/.github/workflows/webui-preview.yml" --deny-self-hosted-runners
+          done
+      - name: Publish these verified bytes as a GitHub prerelease
+        env:
+          SOURCE: ${{ steps.identity.outputs.source }}
+        run: |
+          cd candidate
+          gh release create webui-v0.1.0-preview.1 *.tar.gz build-receipt.json acceptance.json preview-manifest.json sbom.spdx.json SHA256SUMS README.md --repo "$GH_REPO" --target "$SOURCE" --prerelease --title "Only My Pi · WebUI 0.1.0-preview.1" --notes-file README.md

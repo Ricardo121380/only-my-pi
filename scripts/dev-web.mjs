@@ -15,13 +15,14 @@ const digest = bytes => createHash("sha256").update(bytes).digest("hex");
 const json = async file => JSON.parse(await fs.readFile(file, "utf8"));
 const writeJson = (file, value) => fs.writeFile(file, JSON.stringify(value, null, 2) + "\n", { mode: 0o600 });
 
-// Source development only. Normal omp/Full entrypoints still require their
-// verified distribution. No installed user configuration is imported here.
-export async function startDevWeb({ frontend = "minimal", dataDir = path.join(sourceRoot, frontend === "b2" ? ".omp-dev-b2" : ".omp-dev"), port = 4317, demo = false, watch = true, onBuild = () => {}, onStopped = () => {} } = {}) {
+// The portable WebUI preview reuses this isolated Host with verified prebuilt
+// assets. Normal omp/Full entrypoints retain their own distribution contract.
+export async function startDevWeb({ frontend = "minimal", dataDir = path.join(sourceRoot, frontend === "b2" ? ".omp-dev-b2" : ".omp-dev"), port = 4317, demo = false, watch = true, prebuiltAssets = null, onBuild = () => {}, onStopped = () => {} } = {}) {
   const readonlySubagents = frontend === "b2", deepseekOnly = !demo;
   if (!path.isAbsolute(dataDir)) throw new Error("--data-dir must be absolute");
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error("Invalid --port");
   if (!["minimal", "b2"].includes(frontend)) throw new Error("Unknown frontend");
+  if (prebuiltAssets !== null && (!path.isAbsolute(prebuiltAssets) || watch)) throw new Error("Prebuilt assets require an absolute directory and watch=false");
   const requiredNode = (await fs.readFile(path.join(sourceRoot, ".node-version"), "utf8")).trim();
   if (process.version !== `v${requiredNode}`) throw new Error(`Use Node ${requiredNode}; current ${process.version}`);
   const piRoot = await fs.realpath(path.dirname(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")))));
@@ -52,7 +53,7 @@ export async function startDevWeb({ frontend = "minimal", dataDir = path.join(so
   })();
   try {
     const configRoot = path.join(dataDir, "config"), runtimeRoot = path.join(dataDir, "runtime");
-    const home = path.join(dataDir, "home"), assetsRoot = path.join(dataDir, "assets"), project = path.join(dataDir, "project");
+    const home = path.join(dataDir, "home"), assetsRoot = prebuiltAssets ?? path.join(dataDir, "assets"), project = path.join(dataDir, "project");
     if (!existing) {
       for (const dir of [configRoot, runtimeRoot, home, project]) await fs.mkdir(dir, { mode: 0o700 });
       await fs.symlink(piRoot, path.join(runtimeRoot, "pi"));
@@ -105,17 +106,24 @@ export async function startDevWeb({ frontend = "minimal", dataDir = path.join(so
         { id: "one", name: "本地受控演示", input: ["text"], contextWindow: 32000, maxTokens: 128, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } },
       ] } } });
     }
-    const frontendRoot = path.join(sourceRoot, frontend === "b2" ? "prototypes" : "webui");
-    const output = await build({ configFile: path.join(frontendRoot, "vite.config.ts"), root: frontendRoot, mode: frontend === "b2" ? "host" : "minimal",
+    if (prebuiltAssets !== null) {
+      for (const name of ["minimal.html", "dependencies.json", "THIRD_PARTY_NOTICES.txt"]) {
+        if (!(await fs.stat(path.join(assetsRoot, name))).isFile()) throw new Error(`Missing prebuilt asset: ${name}`);
+      }
+      onBuild();
+    } else {
+      const frontendRoot = path.join(sourceRoot, frontend === "b2" ? "prototypes" : "webui");
+      const output = await build({ configFile: path.join(frontendRoot, "vite.config.ts"), root: frontendRoot, mode: frontend === "b2" ? "host" : "minimal",
       // Mounted worktrees may not deliver native filesystem events reliably.
       build: { outDir: assetsRoot, emptyOutDir: true, watch: watch ? { chokidar: { usePolling: true, interval: 500 } } : null, rollupOptions: { input: { minimal: path.join(frontendRoot, "minimal.html") } } } });
-    if (watch) {
+      if (watch) {
       watcher = output;
       await new Promise((resolve, reject) => watcher.on("event", event => {
         if (event.code === "ERROR") reject(event.error);
         if (event.code === "END") { onBuild(); resolve(); }
       }));
-    } else onBuild();
+      } else onBuild();
+    }
     const env = { PATH: process.env.PATH, HOME: home, TERM: "xterm-256color", LANG: "en_US.UTF-8", PI_CODING_AGENT_DIR: configRoot, PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1" };
     host = await startHost({ configRoot, stack, assetsRoot, port, onStopRequested: stop, minimal: true, allowControlled: true, deepseekOnly, readonlySubagents, env });
     return { host, dataDir, configRoot, project, provider, stop };
