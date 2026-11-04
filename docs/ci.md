@@ -10,8 +10,8 @@ Node remains pinned to **24.19.0**, and Pi remains pinned by the existing locks.
 
 | Change | Required work |
 | --- | --- |
-| Root documentation and Markdown/images under `docs/` | Documentation contracts, local links, source syntax/conflict checks. No dependency installation or native suite. |
-| WebUI source/assets and HTML entries, native minimal services or dev-Web launcher | Documentation, shared static checks, UI tests/builds and core Web/session regressions. The native branch also builds the minimal entry. |
+| Root documentation, Markdown/images under `docs/`, prototype README and design specification | Documentation contracts, local links, source syntax/conflict checks. No dependency installation or native suite. |
+| WebUI or B2 prototype source/assets and HTML entries, native minimal services or dev-Web launcher | Documentation, shared static checks, UI tests/builds and core Web/session regressions. Available minimal and B2 Host entries are built separately. |
 | A Node regression test | Its owning Web/Host or CLI lane, plus documentation and shared static checks. |
 | Shared runtime, dependency locks, executable resources, CI tooling or an unknown path | Documentation, shared static checks, Web/Host, CLI and installation checks. |
 
@@ -39,16 +39,20 @@ regressions run with the CLI compatibility lane. Remaining Node tests also enter
 that lane. The minimal service and dev-Web launcher select the Web lane; shared
 runtime changes select both.
 New unclassified tests enter that remainder rather than disappearing.
-Vitest owns `webui/src/**/*.test.ts` and `.test.tsx`; Node test files under
-`webui/` enter the Web lane and remain in the complete inventory.
+Vitest owns `webui/src/**/*.test.ts` and `.test.tsx`, plus the corresponding B2
+tests under `prototypes/src/`. Their separate configs use each frontend's React
+installation. Node test files under either frontend enter the Web lane and
+remain in the complete inventory.
 [`tests/ci-plan.test.mjs`](../tests/ci-plan.test.mjs) checks that the three lanes
 cover the inventory exactly once, including files exercised by focused coverage.
 
 [`scripts/ci-run.mjs`](../scripts/ci-run.mjs) retains these distinct checks:
 
 - Shared static: type checking, schemas, package contents and secret scan.
-- Web: Vitest UI tests, the available minimal build, the full Web build, and
-  actual Pi/Host regressions using local controlled models.
+- Web: the existing and B2 Vitest suites, available minimal and B2 Host builds,
+  the full Web build, and actual Pi/Host regressions using local controlled
+  models. The B2 native regression verifies the built entry and notices,
+  streaming read, explicit write approval and stream cleanup.
 - CLI: all remaining Node tests, package/profile/mode/topology doctors, generated
   agent resources, and the original focused coverage thresholds: session composer
   **90/80/90**, omp-control **85/70/85**, direct agent **90/80/90**
@@ -81,6 +85,7 @@ node scripts/ci-run.mjs docs
 
 # Runtime: use the pinned Node, then the affected lanes.
 npm ci --ignore-scripts --no-audit --no-fund
+npm ci --prefix prototypes --ignore-scripts --no-audit --no-fund # when the B2 manifest is present
 npm run test:prepare
 node scripts/ci-run.mjs static
 node scripts/ci-run.mjs web

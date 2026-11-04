@@ -17,9 +17,10 @@ const writeJson = (file, value) => fs.writeFile(file, JSON.stringify(value, null
 
 // Source development only. Normal omp/Full entrypoints still require their
 // verified distribution. No installed user configuration is imported here.
-export async function startDevWeb({ dataDir = path.join(sourceRoot, ".omp-dev"), port = 4317, demo = false, watch = true, onBuild = () => {}, onStopped = () => {} } = {}) {
+export async function startDevWeb({ frontend = "minimal", dataDir = path.join(sourceRoot, frontend === "b2" ? ".omp-dev-b2" : ".omp-dev"), port = 4317, demo = false, watch = true, onBuild = () => {}, onStopped = () => {} } = {}) {
   if (!path.isAbsolute(dataDir)) throw new Error("--data-dir must be absolute");
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error("Invalid --port");
+  if (!["minimal", "b2"].includes(frontend)) throw new Error("Unknown frontend");
   const requiredNode = (await fs.readFile(path.join(sourceRoot, ".node-version"), "utf8")).trim();
   if (process.version !== `v${requiredNode}`) throw new Error(`Use Node ${requiredNode}; current ${process.version}`);
   const piRoot = await fs.realpath(path.dirname(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")))));
@@ -85,9 +86,10 @@ export async function startDevWeb({ dataDir = path.join(sourceRoot, ".omp-dev"),
         { id: "one", name: "本地受控演示", input: ["text"], contextWindow: 32000, maxTokens: 128, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } },
       ] } } });
     }
-    const output = await build({ configFile: path.join(sourceRoot, "webui/vite.config.ts"), root: path.join(sourceRoot, "webui"), mode: "minimal",
+    const frontendRoot = path.join(sourceRoot, frontend === "b2" ? "prototypes" : "webui");
+    const output = await build({ configFile: path.join(frontendRoot, "vite.config.ts"), root: frontendRoot, mode: frontend === "b2" ? "host" : "minimal",
       // Mounted worktrees may not deliver native filesystem events reliably.
-      build: { outDir: assetsRoot, emptyOutDir: true, watch: watch ? { chokidar: { usePolling: true, interval: 500 } } : null, rollupOptions: { input: { minimal: path.join(sourceRoot, "webui/minimal.html") } } } });
+      build: { outDir: assetsRoot, emptyOutDir: true, watch: watch ? { chokidar: { usePolling: true, interval: 500 } } : null, rollupOptions: { input: { minimal: path.join(frontendRoot, "minimal.html") } } } });
     if (watch) {
       watcher = output;
       await new Promise((resolve, reject) => watcher.on("event", event => {
@@ -105,16 +107,17 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   try {
     const args = process.argv.slice(2), options = {};
     if (args.includes("--help")) {
-      console.log("npm run dev:web [-- --data-dir /absolute/path --port 4317 --no-watch]\nUse dev:web:demo for a persistent isolated loopback demo.\nFrontend changes rebuild automatically; refresh the page. Restart this command after Host changes.\nCommands: pair (fresh link), stop (graceful shutdown; data retained). Ctrl+C also stops.");
+      console.log("npm run dev:web [-- --b2 --data-dir /absolute/path --port 4317 --no-watch]\nUse dev:web:b2 for the B2 interface; add :demo for an isolated loopback model.\nFrontend changes rebuild automatically; refresh the page. Restart this command after Host changes.\nCommands: pair (fresh link), stop (graceful shutdown; data retained). Ctrl+C also stops.");
     } else {
       for (let i = 0; i < args.length; i++) {
         if (args[i] === "--demo") options.demo = true;
+        else if (args[i] === "--b2") options.frontend = "b2";
         else if (args[i] === "--no-watch") options.watch = false;
         else if (args[i] === "--data-dir" && args[i + 1]) options.dataDir = args[++i];
         else if (args[i] === "--port" && /^\d+$/.test(args[i + 1] ?? "")) options.port = Number(args[++i]);
         else throw new Error(`Unknown or incomplete option: ${args[i]}`);
       }
-      options.dataDir ??= path.join(sourceRoot, options.demo ? ".omp-dev-demo" : ".omp-dev");
+      options.dataDir ??= path.join(sourceRoot, options.frontend === "b2" ? options.demo ? ".omp-dev-b2-demo" : ".omp-dev-b2" : options.demo ? ".omp-dev-demo" : ".omp-dev");
       let input, closing;
       const closeInput = () => { input?.close(); process.stdin.pause(); };
       const ready = startDevWeb({ ...options, onBuild: () => console.log("Frontend ready — refresh the page."), onStopped: result => { console.log(JSON.stringify(result)); closeInput(); } });

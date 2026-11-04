@@ -1,0 +1,17 @@
+/* B2's paper/ink tokens and proportions also style the shared safe renderer. */
+.b2-native .native-prose { overflow-wrap: anywhere; }
+.b2-native .native-prose p { margin: 0 0 .8em; }
+.b2-native .native-prose :is(h1,h2,h3) { font-weight: 600; margin: 1em 0 .5em; }
+.b2-native .native-prose :is(ul,ol) { padding-left: 1.4em; margin: .6em 0; }
+.b2-native .native-prose ul { list-style: disc; }
+.b2-native .native-prose ol { list-style: decimal; }
+.b2-native .native-prose a { color: var(--primary); text-decoration: underline; }
+.b2-native .native-prose :is(code,pre) { font-family: "JetBrains Mono Variable", monospace; font-size: 12.5px; }
+.b2-native .native-prose pre { padding: 12px; overflow: auto; border-radius: 14px; background: var(--muted); }
+.b2-native .native-tool { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.b2-native .native-tool .tool-toggle { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 10px 12px; font-size: 13px; background: var(--muted); }
+.b2-native .native-tool .tool-toggle svg { width: 14px; height: 14px; }
+.b2-native .native-tool .grow { flex: 1; }
+.b2-native .native-tool [data-state="failed"] .tool-toggle { color: var(--destructive); }
+.b2-native .native-tool pre { padding: 12px; max-height: 28rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.65 "JetBrains Mono Variable", monospace; }
+.b2-native .native-tool :is(.muted,p,button:not(.tool-toggle)) { margin: 4px 12px 10px; font-size: 12px; color: var(--muted-foreground); }

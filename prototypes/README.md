@@ -1,5 +1,12 @@
 # Only-My-Pi 界面原型
 
+默认的 `index.html` 用于下述五个方向的模拟比较。选定的 B2 另有
+`minimal.html` 实时入口，使用 `src/native/` 接入原生 Pi/Host；在仓库根目录
+运行 `npm run dev:web:b2:demo`。依赖安装、真实工具、审批和历史恢复的步骤见
+[B2 开发说明](../docs/minimal-webui.md#b2-frontend-with-the-native-pi-host)。
+实时入口的基础流程与这里的完整产品演示分开，当前不启用模拟子代理、克隆、
+检查结果、文件应用、账号配置或队列。
+
 五个可交互的方向，共用同一个模拟会话（给侧栏加“会话归档”），便于横向比较。顶部切换条或 `Alt+1…5` 切换，地址栏 `#a`、`#b`、`#b2`、`#c`、`#d` 可直接定位。
 
 | 方向 | 参考 | 布局 | 标志性元素 |
@@ -57,4 +64,6 @@ npm run dev
 
 React 19、Vite、Tailwind CSS v4、shadcn/ui（new-york，Radix UI）、Lucide React、Motion、react-resizable-panels v4、dnd-kit、Zustand、TanStack Query、Recharts。Magic UI 的 Border Beam、Animated Shiny Text、Number Ticker 与 Aceternity UI 的 Text Generate Effect 以源码形式放在 `src/components/magic`。
 
-数据全部来自 `src/data/mock.ts`，`src/data/queries.ts` 用 TanStack Query 模拟本机 Host 的延迟。
+默认比较入口的数据来自 `src/data/mock.ts`，`src/data/queries.ts` 用 TanStack Query
+模拟本机 Host 的延迟。`src/native/` 实时入口使用 Host HTTP/WS 和 Pi 历史，
+不导入模拟运行器或原型状态。
