@@ -1,0 +1,268 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/instrument-sans";
+@import "@fontsource-variable/inter-tight";
+@import "@fontsource-variable/source-serif-4";
+@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/onest";
+@import "@fontsource-variable/jetbrains-mono";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-ui);
+  --font-heading: var(--font-ui);
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+  --font-read: var(--font-reading);
+  --color-inspect: var(--inspect);
+  --color-planning: var(--planning);
+  --color-coding: var(--coding);
+  --color-canvas: var(--canvas);
+  --color-line: var(--line);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+}
+
+/* Shared fallback; every prototype root overrides the full set. */
+:root {
+  --font-ui: "Instrument Sans Variable", system-ui, sans-serif;
+  --font-reading: var(--font-ui);
+  --canvas: #f6f7f9;
+  --background: #ffffff;
+  --foreground: #16181d;
+  --card: #ffffff;
+  --card-foreground: #16181d;
+  --popover: #ffffff;
+  --popover-foreground: #16181d;
+  --primary: #2e55e6;
+  --primary-foreground: #ffffff;
+  --secondary: #eef0f4;
+  --secondary-foreground: #16181d;
+  --muted: #f1f3f6;
+  --muted-foreground: #626a78;
+  --accent: #eef2ff;
+  --accent-foreground: #1d3bb8;
+  --destructive: #c8372d;
+  --destructive-foreground: #ffffff;
+  --coding-foreground: #ffffff;
+  --border: #e3e6ec;
+  --line: #e3e6ec;
+  --input: #dfe3ea;
+  --ring: #2e55e6;
+  --radius: 0.625rem;
+  --inspect: #64748b;
+  --planning: #b26a00;
+  --coding: #0e8a5a;
+}
+
+/* A · 工作台: cool graphite workbench, cobalt signal. */
+.proto-a {
+  --font-ui: "Instrument Sans Variable", system-ui, sans-serif;
+  --font-reading: var(--font-ui);
+  --canvas: #f3f4f7;
+  --background: #fbfbfc;
+  --foreground: #16181d;
+  --card: #ffffff;
+  --card-foreground: #16181d;
+  --popover: #ffffff;
+  --popover-foreground: #16181d;
+  --primary: #2e55e6;
+  --primary-foreground: #ffffff;
+  --secondary: #eceef3;
+  --secondary-foreground: #16181d;
+  --muted: #f0f2f5;
+  --muted-foreground: #5f6776;
+  --accent: #e9eefe;
+  --accent-foreground: #1d3bb8;
+  --border: #e2e5eb;
+  --line: #e2e5eb;
+  --input: #dadfe7;
+  --ring: #2e55e6;
+  --radius: 0.5rem;
+  --inspect: #5b6b82;
+  --planning: #b26a00;
+  --coding: #0e8a5a;
+}
+
+/* B · 静室: sage-grey paper, ink-blue, serif reading column. */
+.proto-b {
+  --font-ui: "Inter Tight Variable", system-ui, sans-serif;
+  --font-reading: "Source Serif 4 Variable", Georgia, serif;
+  --canvas: #e9ece6;
+  --background: #f4f5f1;
+  --foreground: #1e221d;
+  --card: #fbfcf9;
+  --card-foreground: #1e221d;
+  --popover: #fbfcf9;
+  --popover-foreground: #1e221d;
+  --primary: #2c4a7c;
+  --primary-foreground: #f7f9fc;
+  --secondary: #e6e9e2;
+  --secondary-foreground: #1e221d;
+  --muted: #eceee8;
+  --muted-foreground: #5e655c;
+  --accent: #e3e9f2;
+  --accent-foreground: #2c4a7c;
+  --border: #d9ddd4;
+  --line: #d9ddd4;
+  --input: #d3d8ce;
+  --ring: #2c4a7c;
+  --radius: 0.875rem;
+  --inspect: #6b7568;
+  --planning: #7a5306;
+  --coding: #276a48;
+}
+
+/* B night: the same paper-and-ink voice after dark. Warm-neutral greys, not blue-black. */
+.proto-b.night {
+  --canvas: #15171a;
+  --background: #1b1e21;
+  --foreground: #e3e6df;
+  --card: #202428;
+  --card-foreground: #e3e6df;
+  --popover: #23272b;
+  --popover-foreground: #e3e6df;
+  --primary: #9cb6e3;
+  --primary-foreground: #121a28;
+  --secondary: #272c30;
+  --secondary-foreground: #e3e6df;
+  --muted: #23282c;
+  --muted-foreground: #99a095;
+  --accent: #222d3c;
+  --accent-foreground: #b3c8ec;
+  --destructive: #e8857a;
+  --destructive-foreground: #2a0d09;
+  --coding-foreground: #0d2117;
+  --border: #30363b;
+  --line: #30363b;
+  --input: #363d42;
+  --ring: #9cb6e3;
+  --inspect: #8f988b;
+  --planning: #d8a64a;
+  --coding: #6cc596;
+  color-scheme: dark;
+}
+
+/* C · 原生: glacier night, dense IDE. Accent echoes OMP's glacier theme. */
+.proto-c {
+  --font-ui: "Manrope Variable", system-ui, sans-serif;
+  --font-reading: var(--font-ui);
+  --canvas: #0d1117;
+  --background: #10141b;
+  --foreground: #d5dce6;
+  --card: #161b24;
+  --card-foreground: #d5dce6;
+  --popover: #1a202b;
+  --popover-foreground: #d5dce6;
+  --primary: #8bd3f7;
+  --primary-foreground: #0b1620;
+  --secondary: #1d2430;
+  --secondary-foreground: #d5dce6;
+  --muted: #1a202a;
+  --muted-foreground: #7d8899;
+  --accent: #1c2a36;
+  --accent-foreground: #b9e4fb;
+  --destructive: #f2786d;
+  --border: #252d3a;
+  --line: #252d3a;
+  --input: #2a3342;
+  --ring: #8bd3f7;
+  --radius: 0.5rem;
+  --inspect: #8a98ad;
+  --planning: #f2b45c;
+  --coding: #57d6a1;
+  color-scheme: dark;
+}
+
+/* D · 指挥台: white mission control, black pills, ocean blue. */
+.proto-d {
+  --font-ui: "Onest Variable", system-ui, sans-serif;
+  --font-reading: var(--font-ui);
+  --canvas: #f2f3f5;
+  --background: #ffffff;
+  --foreground: #0e1116;
+  --card: #ffffff;
+  --card-foreground: #0e1116;
+  --popover: #ffffff;
+  --popover-foreground: #0e1116;
+  --primary: #0e1116;
+  --primary-foreground: #ffffff;
+  --secondary: #f2f3f5;
+  --secondary-foreground: #0e1116;
+  --muted: #f4f5f7;
+  --muted-foreground: #646a75;
+  --accent: #eaf0ff;
+  --accent-foreground: #3552e0;
+  --border: #e6e8ec;
+  --line: #e6e8ec;
+  --input: #e1e4e9;
+  --ring: #4d6bfe;
+  --radius: 1rem;
+  --inspect: #6b7280;
+  --planning: #c27803;
+  --coding: #0f9960;
+  --ocean: #4d6bfe;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html, body, #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-ui);
+    font-feature-settings: "ss01", "cv11";
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Magic UI · Border Beam */
+@keyframes border-beam {
+  100% { offset-distance: 100%; }
+}
+/* Magic UI · Animated Shiny Text */
+@keyframes shiny-text {
+  0%, 90%, 100% { background-position: calc(-100% - var(--shiny-width)) 0; }
+  30%, 60% { background-position: calc(100% + var(--shiny-width)) 0; }
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent) transparent;
+}
