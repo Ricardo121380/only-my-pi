@@ -16,6 +16,7 @@ export const query = (route: string, values: Record<string, string | number>) =>
 export const errorText = (error: unknown) => {
   const code = error instanceof Error ? error.message : "HOST_REQUEST_FAILED";
   const accountMessages: Record<string, string> = {
+    DEEPSEEK_MODEL_REQUIRED: "当前只允许使用 DeepSeek 模型，请选择 DeepSeek 后重试。",
     MODEL_RESULT_RECONCILIATION_REQUIRED: "分类请求结果未知，额度仍被占用，消息队列已暂停。请按请求编号核对服务端结果；不会自动重试或返还额度。",
     THINKING_LEVEL_UNAVAILABLE: "当前模型不支持所选思考强度，请刷新模型列表后重选。",
     THINKING_LEVEL_MISMATCH: "运行时实际思考强度与选择不一致，任务已停止，未发送提示词。请刷新模型列表后重选。",

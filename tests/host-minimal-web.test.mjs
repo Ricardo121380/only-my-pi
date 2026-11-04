@@ -65,7 +65,8 @@ test("minimal Web Host uses real native Pi without optional modules; read/resume
   const written = await settled(allowedTask); assert.equal(written.status, "succeeded", written.error);
   assert.equal(await fs.readFile(path.join(f.f.project, "approved.txt"), "utf8"), "approved local write\n");
   assert.equal(written.access, "inspect", "termination clears the grant");
-  const writtenSession = (await get(`/api/sessions?projectId=${p.projectId}`)).sessions.find(s => s.sessionId === written.sessionId);
+  // The task endpoint publishes termination before the asynchronous catalog scan.
+  const writtenSession = await until(async () => (await get(`/api/sessions?projectId=${p.projectId}`)).sessions.find(s => s.sessionId === written.sessionId), Boolean);
   const resumedWrite = await settled(await start("deny write", { mode: "controlled", resumeSessionKey: writtenSession.sessionKey }));
   assert.equal(resumedWrite.status, "succeeded", resumedWrite.error);
   assert.equal(received.at(-2).body.tools.some(tool => tool.function.name === "write"), false, "resuming does not advertise a previously granted write tool");

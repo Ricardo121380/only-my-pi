@@ -39,7 +39,7 @@ export interface HostTask {
   inputId?: string; originDraftInputId?: string; originDraftSessionId?: string | null;
   orchestration?: { maximumConcurrency: number | null; maximumChildren: number | null; totalChildren: number | null; writerUsed: boolean;
     budget: { scope: "process-child-delegations"; mainAgentIncluded: false; status: string; limits: Record<string, number | null>; used: Record<string, number | null> };
-    children: { label: string; agent: string | null; status: string; toolCount: number | null; tokens: number | null }[] } | null;
+    children: { label: string; agent: string | null; status: string; toolCount: number | null; tokens: number | null; model?: string; accountId?: string }[] } | null;
   mode?: "readonly" | "controlled"; access?: "inspect" | "coding";
   approvals?: { approvalId: string; kind: "select" | "confirm"; title: string; message: string; options?: string[]; expiresAt: string }[];
   accountId?: string | null;

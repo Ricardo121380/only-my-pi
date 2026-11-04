@@ -24,11 +24,12 @@ export function createControlledExtension({ transport = process } = {}) {
       },
     });
     if (!controller) throw new Error("HOST_CONTROLLER_UNAVAILABLE");
-    let previous;
+    let previous, orchestrator;
     const publish = () => {
       if (closed || transport.connected === false) return;
-      managedRuntimeSeen ||= !!controller.orchestrator;
-      const state = projectControlState({ access: controller.hasCodingAccess() ? "coding" : "inspect", orchestration: controller.orchestrator?.snapshot?.() });
+      orchestrator = controller.orchestrator ?? orchestrator;
+      managedRuntimeSeen ||= !!orchestrator;
+      const state = projectControlState({ access: controller.hasCodingAccess() ? "coding" : "inspect", orchestration: orchestrator?.snapshot?.() });
       const encoded = JSON.stringify(state);
       if (encoded !== previous) { previous = encoded; transport.send({ type: "control_state", state }, () => {}); }
     };

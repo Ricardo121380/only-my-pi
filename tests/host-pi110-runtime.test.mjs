@@ -58,7 +58,7 @@ async function fixture(t, respond, settingsOverrides = {}, { initializationDelay
   provider.on("connection", (socket) => { connections.add(socket); socket.on("close", () => connections.delete(socket)); });
   await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
   const piRoot = path.dirname(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent"))));
-  assert.equal(JSON.parse(await fs.readFile(path.join(piRoot, "package.json"), "utf8")).version, "1.3.0");
+  assert.equal(JSON.parse(await fs.readFile(path.join(piRoot, "package.json"), "utf8")).version, "1.5.0");
   await fs.symlink(piRoot, path.join(root, "pi"));
   const baseUrl = `http://127.0.0.1:${provider.address().port}/v1`;
   const extension = path.join(root, "provider.mjs");

@@ -18,6 +18,7 @@ const writeJson = (file, value) => fs.writeFile(file, JSON.stringify(value, null
 // Source development only. Normal omp/Full entrypoints still require their
 // verified distribution. No installed user configuration is imported here.
 export async function startDevWeb({ frontend = "minimal", dataDir = path.join(sourceRoot, frontend === "b2" ? ".omp-dev-b2" : ".omp-dev"), port = 4317, demo = false, watch = true, onBuild = () => {}, onStopped = () => {} } = {}) {
+  const readonlySubagents = frontend === "b2", deepseekOnly = !demo;
   if (!path.isAbsolute(dataDir)) throw new Error("--data-dir must be absolute");
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error("Invalid --port");
   if (!["minimal", "b2"].includes(frontend)) throw new Error("Unknown frontend");
@@ -28,7 +29,7 @@ export async function startDevWeb({ frontend = "minimal", dataDir = path.join(so
   const rootPackage = await json(path.join(sourceRoot, "package.json"));
   if (pi.version !== rootPackage.devDependencies[pi.name]) throw new Error("Installed Pi differs from the pinned source dependency");
   const externalRoot = path.join(sourceRoot, "contracts/release", process.platform === "linux" ? "linux-external" : "external");
-  const identity = { version: 1, sourceRoot: await fs.realpath(sourceRoot), demo, node: process.version, pi: pi.version,
+  const identity = { version: 1, sourceRoot: await fs.realpath(sourceRoot), demo, readonlySubagents, deepseekOnly, node: process.version, pi: pi.version,
     sourceLock: digest(await fs.readFile(path.join(sourceRoot, "package-lock.json"))),
     externalLock: digest(await fs.readFile(path.join(externalRoot, "package-lock.json"))) };
   await fs.mkdir(dataDir, { recursive: true, mode: 0o700 });
@@ -68,7 +69,25 @@ export async function startDevWeb({ frontend = "minimal", dataDir = path.join(so
       }
       const binding = { id: "permission-modes", name, resolvedVersion: permission.version, binding: "external", owner: "user", resourceFilter: [],
         physicalRootDigest: `sha256:${await hashResourcePath({ artifactRoot: path.join(configRoot, "npm"), relativePath: `node_modules/${name}`, allowContainedSymlinks: true })}` };
-      await writeJson(path.join(configRoot, "settings.json"), { enableAnalytics: false, lastChangelogVersion: pi.version, onlyMyPi: { packageBindings: [binding] } });
+      const bindings = [binding];
+      if (readonlySubagents) {
+        const name = "pi-subagents", childRoot = path.join(configRoot, "npm/node_modules", name);
+        const childPackage = await json(path.join(externalRoot, "node_modules", name, "package.json"));
+        if (childPackage.version !== "0.57.0" || childPackage.version !== externalLock.packages[`node_modules/${name}`].version) throw new Error("Subagent extension differs from the audited lock");
+        await fs.cp(path.join(externalRoot, "node_modules", name), childRoot, { recursive: true });
+        bindings.push({ id: "subagents", name, resolvedVersion: childPackage.version, binding: "external", owner: "user", resourceFilter: [],
+          physicalRootDigest: `sha256:${await hashResourcePath({ artifactRoot: path.join(configRoot, "npm"), relativePath: `node_modules/${name}`, allowContainedSymlinks: true })}` });
+        await fs.mkdir(path.join(configRoot, "permission-mode"), { mode: 0o700 });
+        await writeJson(path.join(configRoot, "permission-mode/permission-mode.json"), {
+          modes: { plan: { permission: { tool: { "*": "ask", delegate_readonly_agent: "allow" } } } },
+        });
+        // Resolve peer APIs from the selected development Pi, never an older
+        // peer copied with a historical external-extension installation.
+        const peers = path.join(configRoot, "npm/node_modules/@earendil-works");
+        await fs.mkdir(peers, { recursive: true });
+        for (const name of ["pi-coding-agent", "pi-agent-core", "pi-ai", "pi-tui"]) await fs.symlink(await fs.realpath(path.join(sourceRoot, "node_modules/@earendil-works", name)), path.join(peers, name));
+      }
+      await writeJson(path.join(configRoot, "settings.json"), { enableAnalytics: false, lastChangelogVersion: pi.version, onlyMyPi: { packageBindings: bindings } });
       if (demo) {
         await writeJson(path.join(configRoot, "auth.json"), { fixture: { type: "api_key", key: "local-demo-only" } });
         await fs.writeFile(path.join(project, "README.md"), "# 本地开发验收项目\n\n原生 Pi read 工具读取的文件：minimal-web-evidence。\n");
@@ -78,7 +97,7 @@ export async function startDevWeb({ frontend = "minimal", dataDir = path.join(so
     if (await fs.realpath(path.join(runtimeRoot, "pi")) !== piRoot) throw new Error("Development Pi path changed; choose a new --data-dir");
     const stack = { root: runtimeRoot, ompPackageRoot: sourceRoot, nodePath: process.execPath,
       piCliPath: path.join(piRoot, "dist/bundle/cli.js"), stackId: `sha256:${digest(JSON.stringify(identity))}` };
-    await resolveDirectExtensionSet({ stack, configRoot, minimal: true });
+    await resolveDirectExtensionSet({ stack, configRoot, minimal: true, readonlySubagents });
     if (demo) {
       const { startMinimalModel } = await import("../tests/fixtures/minimal-model.mjs");
       provider = await startMinimalModel({ streamDelay: 1200 });
@@ -98,7 +117,7 @@ export async function startDevWeb({ frontend = "minimal", dataDir = path.join(so
       }));
     } else onBuild();
     const env = { PATH: process.env.PATH, HOME: home, TERM: "xterm-256color", LANG: "en_US.UTF-8", PI_CODING_AGENT_DIR: configRoot, PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1" };
-    host = await startHost({ configRoot, stack, assetsRoot, port, onStopRequested: stop, minimal: true, allowControlled: true, env });
+    host = await startHost({ configRoot, stack, assetsRoot, port, onStopRequested: stop, minimal: true, allowControlled: true, deepseekOnly, readonlySubagents, env });
     return { host, dataDir, configRoot, project, provider, stop };
   } catch (error) { await stop(); throw error; }
 }

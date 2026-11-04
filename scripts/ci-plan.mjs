@@ -24,7 +24,7 @@ export function isNodeTest(file) {
 export function testLane(file) {
   if (DOC_TESTS.has(file)) return "docs";
   if (file.startsWith("webui/") || file.startsWith("prototypes/")) return "web";
-  if (/^tests\/(?:direct-minimal-runtime|dev-web|b2-native-web|browser-probe-identity|host-(?:account(?:s|-.+)|auth-process|catalog|session-scan|lifecycle|server|sdk-probe|pi110-runtime|ownership|rpc-worker|task-binding|task-resume|task-metrics|usage|approval-bridge|control-state|controlled-.+|input-.+|minimal-(?:web|input)|workspace|tool-stream))\.test\.mjs$/u.test(file)) return "web";
+  if (/^tests\/(?:direct-minimal-runtime|dev-web|b2-native-web|browser-probe-identity|host-(?:account(?:s|-.+)|auth-process|catalog|session-scan|lifecycle|server|sdk-probe|pi110-runtime|ownership|rpc-worker|task-binding|task-resume|task-metrics|usage|approval-bridge|control-state|controlled-.+|input-.+|minimal-(?:web|input|subagents|model-policy)|workspace|tool-stream))\.test\.mjs$/u.test(file)) return "web";
   return "cli";
 }
 

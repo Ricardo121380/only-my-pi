@@ -47,7 +47,7 @@ export async function createPi110SourceCli(root, { baseUrl, installedExtensions 
   }
   const piRoot = path.dirname(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent"))));
   const piVersion = JSON.parse(await fs.readFile(path.join(piRoot, "package.json"), "utf8")).version;
-  assert.equal(piVersion, "1.3.0");
+  assert.equal(piVersion, "1.5.0");
   await fs.cp(piRoot, path.join(stack, "pi"), { recursive: true });
   await fs.symlink(path.join(repo, "node_modules"), path.join(stack, "node_modules"));
   await fs.symlink(path.join(repo, "node_modules"), path.join(omp, "node_modules"));

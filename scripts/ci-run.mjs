@@ -16,7 +16,9 @@ const historicalNpmChecks = ["release-gates-v1", "release-gates-v2", "daily-harn
 const npm = (script) => {
   const budgets = historicalNpmChecks.filter(check => JSON.stringify(check.args) === JSON.stringify(["run", script]))
     .map(check => check.timeoutMs);
-  return { id: script, command: "npm", args: ["run", script], ...(budgets.length ? { timeoutMs: Math.min(...budgets) } : {}) };
+  // Use the same named TAP diagnostics as Node checks; raw UI assertions stay private.
+  const reporter = ["test:web", "test:web:b2"].includes(script) ? ["--", "--reporter=tap"] : [];
+  return { id: script, command: "npm", args: ["run", script, ...reporter], ...(budgets.length ? { timeoutMs: Math.min(...budgets) } : {}) };
 };
 const node = (id, args) => ({ id, command: process.execPath, args });
 

@@ -10,12 +10,13 @@ import { projectPath, toolFilePath } from "./inspector.mjs";
 import { emptyUsage, recordUsage } from "./usage.mjs";
 import { INPUT_CARRIER } from "./input-protocol.mjs";
 import { supportsThinking } from "../accounts/models.mjs";
+import { requireDeepSeekModel } from "../direct-agent/model-policy.mjs";
 
 const duration = (value) => typeof value === "number" && Number.isFinite(value) && value >= 0 ? { durationMs: value } : {};
 
 export class HostTasks extends EventEmitter {
-  constructor({ configRoot, stack, catalog, models, accounts, allowControlled = false, minimal = false, workerFactory = (options) => new RpcWorker(options), env = process.env }) {
-    super(); Object.assign(this, { configRoot, stack, catalog, models, accounts, allowControlled, minimal, workerFactory, env });
+  constructor({ configRoot, stack, catalog, models, accounts, allowControlled = false, minimal = false, deepseekOnly = false, readonlySubagents = false, workerFactory = (options) => new RpcWorker(options), env = process.env }) {
+    super(); Object.assign(this, { configRoot, stack, catalog, models, accounts, allowControlled, minimal, deepseekOnly, readonlySubagents, workerFactory, env });
     this.models = models;
     this.tasks = new Map(); this.workers = new Map(); this.requests = new Map(); this.saving = Promise.resolve(); this.closing = false;
     this.running = new Map();
@@ -59,6 +60,7 @@ export class HostTasks extends EventEmitter {
   }
   /** @param {any} command @param {{inputRecord?: import('./contracts.d.ts').InputRecordV1; beforeRun?: (task: any) => Promise<import('./contracts.d.ts').InputRecordV1 | undefined>; submission?: {inputId:string; originDraftInputId:string; originDraftSessionId:string|null}; beforePrompt?: (task: any) => Promise<import('./contracts.d.ts').InputRecordV1>}} [options] */
   async start(command, { inputRecord, beforeRun, submission, beforePrompt } = {}) {
+    if (this.deepseekOnly) requireDeepSeekModel(command.model);
     const mode = command.mode ?? "readonly";
     if (!["readonly", "controlled"].includes(mode) || (mode === "controlled" && !this.allowControlled)) throw hostError("CONTROLLED_MODE_UNAVAILABLE", 409);
     if (this.accounts && (typeof command.accountId !== "string" || !command.accountId)) throw hostError("ACCOUNT_BINDING_REQUIRED", 409);
@@ -136,7 +138,7 @@ export class HostTasks extends EventEmitter {
     const sessionRoot = path.join(this.catalog.sessionRoot, `omp-${project.projectId}`);
     let worker;
     try {
-      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, taskId: task.taskId, accountId: task.accountId, controlled: task.mode === "controlled", minimal: this.minimal, mcpSnapshot: task.mcpSnapshot, classifierSnapshot: task.classifierSnapshot, settingsSnapshot: task.settingsSnapshot, sessionRoot, resumeFile: resume?.file, env: this.env,
+      worker = this.workerFactory({ stack: this.stack, configRoot: this.configRoot, cwd: project.path, model: task.model, taskId: task.taskId, accountId: task.accountId, controlled: task.mode === "controlled", minimal: this.minimal, deepseekOnly: this.deepseekOnly, readonlySubagents: this.readonlySubagents, mcpSnapshot: task.mcpSnapshot, classifierSnapshot: task.classifierSnapshot, settingsSnapshot: task.settingsSnapshot, sessionRoot, resumeFile: resume?.file, env: this.env,
         onIdentity: async (identity) => { await this.accountReleases.get(task.taskId)?.addProcess(identity.pid); task.worker = identity; await this.persist(); } });
     } catch (error) { await this.accountReleases.get(task.taskId)?.(); this.accountReleases.delete(task.taskId); throw error; }
     this.workers.set(task.taskId, worker);
@@ -145,8 +147,8 @@ export class HostTasks extends EventEmitter {
     const deadline = setTimeout(() => { failed = true; task.error = "TASK_TIME_LIMIT"; settledResolve(); }, 15 * 60 * 1000);
     worker.on("approvals", (approvals) => { task.approvals = terminal(task.status) || task.status === "cancelling" ? [] : approvals; this.changed(task); });
     worker.on("control", (state) => {
-      if (terminal(task.status) || task.status === "cancelling") return;
-      task.access = state.access; task.orchestration = state.orchestration; this.changed(task);
+      if (terminal(task.status) || task.status === "cancelling" && !this.readonlySubagents) return;
+      task.access = task.status === "cancelling" ? "inspect" : state.access; task.orchestration = state.orchestration; this.changed(task);
     });
     worker.on("input", (receipt) => this.emit("input", { taskId: task.taskId, receipt }));
     worker.on("event", (event) => {
