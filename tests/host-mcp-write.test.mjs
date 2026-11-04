@@ -258,8 +258,9 @@ export class InteractiveMode extends RealMode {
     record({ stage: "before-selector", title });
     await new Promise(resolve => setTimeout(resolve, 2000));
     const result = super.showExtensionSelector(title, options, opts, blocked);
-    record({ stage: "selector-focused", focused: this.ui.focusedComponent === this.extensionSelector });
-    const component = this.extensionSelector, handleInput = component.handleInput.bind(component);
+    const component = this.extensionDialogs.at(-1).component;
+    record({ stage: "selector-focused", focused: this.ui.focusedComponent === component });
+    const handleInput = component.handleInput.bind(component);
     component.handleInput = data => { record({ stage: "selector-input", data }); return handleInput(data); };
     const answer = await result; record({ stage: "selector-answer", answer }); return answer;
   }
@@ -333,6 +334,7 @@ export class InteractiveMode extends RealMode {
       assert.ok(stages.find(stage => stage.stage === "journal-awaiting-approval").at < focused.at, "approval journal is readable before selector focus");
       assert.equal(events.find(event => event.stage === "selector-answer").answer, "仅本次");
     }
+    await until(() => output, value => value.includes("MCP fixture completed"), "TUI final reply");
     write("\x04"); await until(() => exited, Boolean, "TUI normal exit"); assert.equal(exited.exitCode, 0);
   } catch (error) {
     stages.push({ stage: "failure", at: Date.now(), error: errorEvidence(error) });
