@@ -55,7 +55,7 @@ jobs:
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
           subject-path: |
-            ${{ runner.temp }}/webui-candidate/*.tar.gz
+            ${{ runner.temp }}/webui-candidate/only-my-pi-webui-*.tar.gz
             ${{ runner.temp }}/webui-candidate/build-receipt.json
             ${{ runner.temp }}/webui-candidate/acceptance.json
             ${{ runner.temp }}/webui-candidate/preview-manifest.json
@@ -65,7 +65,7 @@ jobs:
       - name: Attest the bundled dependency inventory
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
-          subject-path: ${{ runner.temp }}/webui-candidate/*.tar.gz
+          subject-path: ${{ runner.temp }}/webui-candidate/only-my-pi-webui-*.tar.gz
           sbom-path: ${{ runner.temp }}/webui-candidate/sbom.spdx.json
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
@@ -73,7 +73,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           path: |
-            ${{ runner.temp }}/webui-candidate/*.tar.gz
+            ${{ runner.temp }}/webui-candidate/only-my-pi-webui-*.tar.gz
             ${{ runner.temp }}/webui-candidate/build-receipt.json
             ${{ runner.temp }}/webui-candidate/acceptance.json
             ${{ runner.temp }}/webui-candidate/preview-manifest.json
@@ -122,12 +122,25 @@ jobs:
           sha256sum -c SHA256SUMS
           jq -e --arg source "$SOURCE" --arg sha "$ARCHIVE_SHA256" '.kind == "only-my-pi-webui-build-v1" and .sourceCommit == $source and .sha256 == $sha and .version == "0.1.0-preview.1" and .platform == "darwin-arm64" and .runtimeVerified == true' build-receipt.json
           jq -e --arg source "$SOURCE" --arg sha "$ARCHIVE_SHA256" '.status == "PASS" and .sourceCommit == $source and .archiveSha256 == $sha and .provider == "LOCAL_CONTROLLED" and all(.assertions[]; . == true)' acceptance.json
-          for file in *.tar.gz build-receipt.json acceptance.json preview-manifest.json sbom.spdx.json SHA256SUMS README.md; do
+          for file in only-my-pi-webui-*.tar.gz build-receipt.json acceptance.json preview-manifest.json sbom.spdx.json SHA256SUMS README.md; do
             gh attestation verify "$file" --repo "$GH_REPO" --source-digest "$SOURCE" --signer-digest "$SOURCE" --source-ref refs/heads/codex/dev/pi-native-web --signer-workflow "$GH_REPO/.github/workflows/webui-preview.yml" --deny-self-hosted-runners
           done
       - name: Publish these verified bytes as a GitHub prerelease
         env:
           SOURCE: ${{ steps.identity.outputs.source }}
         run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          repo, source = os.environ['GH_REPO'], os.environ['SOURCE']
+          tag = 'webui-v0.1.0-preview.1'
+          ref = subprocess.run(['gh', 'api', f'repos/{repo}/git/ref/tags/{tag}'], text=True, capture_output=True)
+          if ref.returncode == 0:
+              value = json.loads(ref.stdout)['object']
+              assert value['type'] == 'commit' and value['sha'] == source, 'Existing preview tag differs from accepted source'
+          elif '(HTTP 404)' in ref.stderr:
+              subprocess.run(['gh', 'api', '--method', 'POST', f'repos/{repo}/git/refs', '--input', '-'], input=json.dumps({'ref': 'refs/tags/' + tag, 'sha': source}), text=True, check=True, stdout=subprocess.DEVNULL)
+          else:
+              raise RuntimeError('Cannot establish preview tag identity: ' + ref.stderr)
+          PY
           cd candidate
-          gh release create webui-v0.1.0-preview.1 *.tar.gz build-receipt.json acceptance.json preview-manifest.json sbom.spdx.json SHA256SUMS README.md --repo "$GH_REPO" --target "$SOURCE" --prerelease --title "Only My Pi · WebUI 0.1.0-preview.1" --notes-file README.md
+          gh release create webui-v0.1.0-preview.1 only-my-pi-webui-*.tar.gz build-receipt.json acceptance.json preview-manifest.json sbom.spdx.json SHA256SUMS README.md --repo "$GH_REPO" --verify-tag --prerelease --title "Only My Pi · WebUI 0.1.0-preview.1" --notes-file README.md
