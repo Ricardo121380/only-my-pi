@@ -124,6 +124,15 @@ test("unknown project trust never executes project resources or silently grants 
   assert.equal(new sdk.ProjectTrustStore(f.configRoot).get(f.root), null);
 });
 
+test("saved project distrust wins even when only AGENTS.md is present", async (t) => {
+  const f = await fixture(t);
+  await fs.writeFile(path.join(f.root, "AGENTS.md"), "Read this project only.\n");
+  new sdk.ProjectTrustStore(f.configRoot).set(f.root, false);
+  const { runtime } = await f.start(["--model", "fixture/one"]);
+  try { assert.equal(runtime.services.settingsManager.isProjectTrusted(), false); }
+  finally { await runtime.dispose(); }
+});
+
 test("candidate factory rebuilds services on resume and new without dropping tools or thinking", async (t) => {
   const f = await fixture(t);
   const { runtime } = await f.start(["--model", "fixture/one", "--thinking", "high"]);

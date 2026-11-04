@@ -49,7 +49,7 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     const decision = new sdk.ProjectTrustStore(configRoot).get(effectiveCwd);
     const globalSettings = sdk.SettingsManager.create(effectiveCwd, configRoot, { projectTrusted: false });
     const defaultTrust = globalSettings.getDefaultProjectTrust();
-    let projectTrusted = !requiresTrust || (decision ?? defaultTrust === "always");
+    let projectTrusted = decision ?? (!requiresTrust || defaultTrust === "always");
     if (requiresTrust && decision === null && defaultTrust === "ask") {
       if (!sessionTrust.has(effectiveCwd)) {
         // Never start a second terminal renderer during session replacement.

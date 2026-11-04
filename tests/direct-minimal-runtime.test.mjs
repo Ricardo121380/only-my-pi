@@ -205,7 +205,7 @@ test("minimal public CLI uses native Pi tools/history, preserves read-only polic
   const refused = await start(f);
   assert.notEqual((await refused.exited).code, 0);
   assert.equal(received.length, 7);
-  t.diagnostic("Pi 1.3.0; 7 loopback model requests; native read/stream/resume/abort/error; EOF and SIGTERM; no optional modules");
+  t.diagnostic(`Pi ${f.piVersion}; 7 loopback model requests; native read/stream/resume/abort/error; EOF and SIGTERM; no optional modules`);
 });
 
 test("minimal interactive SDK preserves explicit approval, revoke and no grant inheritance", { timeout: 30_000 }, async t => {

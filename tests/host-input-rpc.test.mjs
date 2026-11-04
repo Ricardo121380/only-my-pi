@@ -21,7 +21,7 @@ async function fixture(t, { startup = false, evidenceRoot = process.env.OMP_INPU
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-input-real-pi-"))), configRoot = path.join(root, "config"), cwd = path.join(root, "project"), sessionRoot = path.join(root, "sessions");
   await fs.mkdir(cwd); await fs.writeFile(path.join(cwd, "README.md"), "fixture tool finished\n"); await fs.mkdir(sessionRoot);
   await fs.symlink(path.dirname(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")))), path.join(root, "pi"));
-  const sdkManifest = await fs.readFile(path.join(root, "pi/package.json")); assert.equal(JSON.parse(sdkManifest).version, "1.3.0");
+  const sdkManifest = await fs.readFile(path.join(root, "pi/package.json")); assert.equal(JSON.parse(sdkManifest).version, "1.5.0");
   const accounts = new AccountCatalog(configRoot), account = await accounts.create({ providerId: "fixture", name: "local-only", authType: "api_key" }), paths = await accounts.runtimePaths(account.accountId);
   const f = { root, cwd, received: [], workers: [], toolWaiting: false, toolReleased: false, reject: false, startEvents: [] };
   const provider = http.createServer(async (req, res) => {

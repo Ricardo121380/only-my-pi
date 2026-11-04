@@ -264,10 +264,11 @@ function extractFreshEvidence(stdout) {
     return null;
   }
   const safe = value
-    // Preserve historical v1 receipts; current v2 smoke reads the installed
-    // runtime identity instead of repeating the old 0.84.1 label.
+    // Each generation keeps its exact Pi identity. New development smoke must
+    // not relabel or invalidate historical v1/v2 receipts.
     && ((value.formatVersion === 1 && value.piVersion === "0.84.1")
-      || (value.formatVersion === 2 && value.piVersion === "1.3.0"))
+      || (value.formatVersion === 2 && value.piVersion === "1.3.0")
+      || (value.formatVersion === 3 && value.piVersion === "1.5.0"))
     && value.status === "PASS"
     && FULL_SHA.test(value.sourceCommit ?? "")
     && typeof value.nodeVersion === "string"

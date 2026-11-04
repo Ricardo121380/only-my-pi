@@ -85,17 +85,17 @@ test("release receipt validates exact gate order, digest, e2e evidence, and priv
   assert.equal(result.status, "COMPLETE");
 });
 
-test("current smoke identity is versioned and cannot relabel historical Pi evidence", () => {
+for (const [format, pi] of [[2, "1.3.0"], [3, "1.5.0"]]) test(`smoke generation ${format} keeps exact Pi identity and historical evidence`, () => {
   const current = receipt();
   for (const value of [current.evidence.freshTarball, current.gates.find(gate => gate.id === "test-e2e").evidence]) {
-    value.formatVersion = 2;
-    value.piVersion = "1.3.0";
+    value.formatVersion = format;
+    value.piVersion = pi;
   }
-  current.evidence.compatibility.pi = "1.3.0";
+  current.evidence.compatibility.pi = pi;
   assert.equal(validateReleaseReceipt(current, manifest, { expectedSourceCommit: sourceCommit }).ok, true);
   current.evidence.compatibility.pi = "0.84.1";
   assert.throws(() => validateReleaseReceipt(current, manifest), /Pi compatibility evidence is invalid/);
-  for (const [formatVersion, piVersion] of [[1, "1.3.0"], [2, "0.84.1"], [2, "1.3.1"]]) {
+  for (const [formatVersion, piVersion] of [[1, "1.3.0"], [2, "0.84.1"], [2, "1.3.1"], [2, "1.5.0"], [3, "1.3.0"], [3, "1.5.1"]]) {
     const invalid = receipt();
     Object.assign(invalid.evidence.freshTarball, { formatVersion, piVersion });
     invalid.evidence.compatibility.pi = piVersion;

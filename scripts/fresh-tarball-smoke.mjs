@@ -308,7 +308,7 @@ export async function runFreshTarballSmoke({ rootDir = REPOSITORY_ROOT, profileI
     assertStatus(finalStatus, ["NOT_INSTALLED"], "post-rollback status");
 
     return Object.freeze({
-      formatVersion: 2,
+      formatVersion: 3,
       status: "PASS",
       sourceCommit,
       nodeVersion: process.version,

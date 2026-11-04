@@ -19,7 +19,7 @@ for (const kind of ["classification", "images"]) test(`${kind} browser probe rep
     ready = stdout.split("\n").filter(Boolean).map(line => { try { return JSON.parse(line); } catch { return null; } }).find(value => value?.ready);
     if (!ready) await new Promise(resolve => setTimeout(resolve, 20));
   }
-  assert.ok(ready, stderr); assert.equal(ready.pi, "1.3.0");
+  assert.ok(ready, stderr); assert.equal(ready.pi, "1.5.0");
   child.kill("SIGTERM"); await exit; assert.equal(closed.code, 0, stderr);
   const name = kind === "images" ? "browser-image-final-receipt.json" : "browser-final-receipt.json";
   const receipt = JSON.parse(await fs.readFile(path.join(output, name), "utf8"));
