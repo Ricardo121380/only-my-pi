@@ -329,6 +329,7 @@ export async function resolveDirectExtensionSet({
   configRoot,
   headless = false,
   minimal = false,
+  readonlySubagents = false,
   resolvePackage = resolveBoundPackageRoot,
 } = {}) {
   if (!stack || typeof stack.ompPackageRoot !== "string" || !path.isAbsolute(stack.ompPackageRoot)) {
@@ -340,8 +341,8 @@ export async function resolveDirectExtensionSet({
   const resolved = [];
   const identities = [];
   for (const expected of DIRECT_EXTERNAL_EXTENSIONS) {
-    if (minimal && expected.packageId !== "permission-modes") continue;
-    if (stack.distribution && headless && expected.packageId === "subagents") continue;
+    if (minimal && expected.packageId !== "permission-modes" && !(readonlySubagents && expected.packageId === "subagents")) continue;
+    if (stack.distribution && headless && expected.packageId === "subagents" && !readonlySubagents) continue;
     const pkg = stack.distribution && resolvePackage === resolveBoundPackageRoot
       ? await resolveDistributionPackage(stack, expected.packageId)
       : await resolvePackage({ configRoot, packageId: expected.packageId });

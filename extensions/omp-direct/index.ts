@@ -1,6 +1,7 @@
 import type { BashOperations, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { DirectSessionOwnership } from "../../packages/direct-agent/ownership.mjs";
 import { createOwnedBashOperations } from "../../packages/direct-agent/shell.mjs";
 import { disableOmpCacheWarming } from "../../packages/direct-agent/cache-warming-policy.mjs";
@@ -65,6 +66,7 @@ export default async function ompDirect(pi: ExtensionAPI): Promise<void> {
   // Native clients belong to the controlled direct runtime. A Harness-only
   // generation loads this entrypoint with the direct session disabled.
   const minimal = process.env.ONLY_MY_PI_MINIMAL === "1";
+  const readonlySubagents = minimal && process.env.ONLY_MY_PI_READONLY_SUBAGENTS === "1";
   // Also covers the native CLI's ephemeral --no-session path and legacy RPC.
   disableOmpCacheWarming(pi);
   const configRoot = process.env.PI_CODING_AGENT_DIR ?? path.join(os.homedir(), ".pi", "agent");
@@ -115,6 +117,12 @@ export default async function ompDirect(pi: ExtensionAPI): Promise<void> {
   pi.events.on(DIRECT_RUNTIME_EVENT, (payload: any) => {
     controller.attachOrchestrator(payload?.formatVersion === 1 && payload?.status === "READY" ? payload.orchestrator : null);
   });
+  if (readonlySubagents) {
+    const { installReadonlySubagents } = await import("../../packages/direct-agent/readonly-subagents.mjs");
+    installReadonlySubagents(pi, { controller, packageRoot: fileURLToPath(new URL("../../", import.meta.url)),
+      accountId: process.env.OMP_HOST_ACCOUNT_ID, modelId: process.env.OMP_HOST_ACCOUNT_MODEL,
+      deepseekOnly: process.env.ONLY_MY_PI_DEEPSEEK_ONLY === "1" });
+  }
 
   pi.registerTool({
     name: "request_coding_access",
@@ -130,16 +138,17 @@ export default async function ompDirect(pi: ExtensionAPI): Promise<void> {
     },
   });
 
-  if (!minimal) pi.registerTool({
+  if (!minimal || readonlySubagents) pi.registerTool({
     name: "delegate_readonly_agent",
     label: "Delegate read-only analysis",
     description: "Run one bounded read-only OMP specialist through pi-subagents. Researcher/source-verifier require separate interactive public-Web approval; other roles cannot use Web.",
     promptSnippet: "Delegate bounded independent read-only work to a visible OMP specialist",
     promptGuidelines: ["Use no more children than the task needs. Children cannot delegate and cannot modify the project.", "Call Web research delegation alone so its public internet confirmation is clear; coding access does not authorize Web."],
-    parameters: ReadOnlyDelegationParameters,
+    parameters: readonlySubagents ? { ...ReadOnlyDelegationParameters, properties: { ...ReadOnlyDelegationParameters.properties, agent: { type: "string", enum: ["omp-explorer"] } } } : ReadOnlyDelegationParameters,
     executionMode: "parallel",
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
-      return controller.delegateReadOnly(params, ctx, signal) as any;
+      const result = await controller.delegateReadOnly(params, ctx, signal);
+      return { ...result, ...(result.details.status === "DIRECT_CHILD_COMPLETED" ? {} : { isError: true }) } as any;
     },
   });
 

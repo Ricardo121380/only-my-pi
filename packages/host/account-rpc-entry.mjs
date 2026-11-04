@@ -14,6 +14,7 @@ import { applyOmpRequestPolicy } from "../direct-agent/request-policy.mjs";
 import { awaitAuthStart } from "../accounts/auth-process.mjs";
 import { createMinimalSessionServices } from "../direct-agent/minimal-services.mjs";
 import { openProductAccount } from "../accounts/runtime.mjs";
+import { requireDeepSeekModel } from "../direct-agent/model-policy.mjs";
 
 // Host-owned arguments contain identities and audited paths, never credentials.
 try {
@@ -23,6 +24,8 @@ try {
   if (!["readonly", "controlled"].includes(mode)) throw new Error();
   const controlled = mode === "controlled";
   const minimal = process.env.ONLY_MY_PI_MINIMAL === "1";
+  const readonlySubagents = minimal && process.env.ONLY_MY_PI_READONLY_SUBAGENTS === "1";
+  if (process.env.ONLY_MY_PI_DEEPSEEK_ONLY === "1") requireDeepSeekModel(modelId);
   const product = minimal ? null : { ...await import("../product-settings/catalog.mjs"), ...await import("../product-settings/runtime.mjs"), ...await import("../mcp/catalog.mjs") };
   const settingsSnapshot = process.env.OMP_PRODUCT_SETTINGS_SNAPSHOT ? JSON.parse(process.env.OMP_PRODUCT_SETTINGS_SNAPSHOT) : null;
   const mcpSnapshot = process.env.OMP_HOST_MCP_SNAPSHOT ? JSON.parse(process.env.OMP_HOST_MCP_SNAPSHOT) : null;
@@ -30,7 +33,7 @@ try {
   const mcpNames = minimal ? [] : product.mcpToolNames(mcpSnapshot);
   if (controlled && !process.send) throw new Error();
   if (![stackRoot, configRoot, sessionRoot, ...extensions].every((p) => typeof p === "string" && path.isAbsolute(p)) || !extensions.length) throw new Error();
-  if (controlled && !minimal) {
+  if (controlled && !minimal || readonlySubagents) {
     const direct = extensions.filter((p) => p.endsWith(`${path.sep}extensions${path.sep}omp-direct${path.sep}index.ts`));
     if (direct.length !== 1) throw new Error();
     const childEntry = path.resolve(path.dirname(direct[0]), "../../bin/omp-account-child.mjs");
@@ -39,6 +42,15 @@ try {
     // never temporarily swapped around concurrent child launches.
     process.env.OMP_HOST_ACCOUNT_CONFIG_ROOT = configRoot;
     process.env.OMP_HOST_ACCOUNT_ID = accountId;
+    if (readonlySubagents) {
+      process.env.OMP_HOST_ACCOUNT_STACK_ROOT = stackRoot;
+      process.env.OMP_HOST_ACCOUNT_MODEL = modelId;
+      process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS = path.resolve(path.dirname(direct[0]), "../../bundles/only-my-pi-agent-bundle/agents");
+      // Public pi-subagents v1 inherited ceiling. It is fixed for this owned
+      // worker, also narrowing every physical child created by the backend.
+      process.env.PI_SUBAGENT_CAPABILITY_CEILING_V1 = Buffer.from(JSON.stringify({ version: 1,
+        allowedTools: ["read", "grep", "find", "ls"], allowedAgents: ["omp-explorer"], denyExtensions: true, sources: ["only-my-pi-readonly"] })).toString("base64url");
+    }
     process.env.PI_SUBAGENT_PI_BINARY = childEntry;
     process.env.PATH = `${path.join(stackRoot, "node/bin")}${path.delimiter}${process.env.PATH ?? "/usr/bin:/bin"}`;
   }
@@ -65,14 +77,14 @@ try {
         (pi) => pi.events.emit("only-my-pi:host-session-owner:v1", { ownsSession: (ctx) => ctx.mode === "rpc" && ctx.sessionManager.getSessionId() === sessionManager.getSessionId(), verifyProject: hostProjectAuthority({ configRoot, taskId: process.env.OMP_HOST_INPUT_TASK_ID, sessionManager }) }),
         (pi) => { if (settingsSnapshot) pi.events.emit("only-my-pi:product-task:v1", settingsSnapshot); },
         (pi) => { if (mcpSnapshot) pi.events.emit("only-my-pi:mcp-task:v1", { snapshot: mcpSnapshot }); },
-        ...(controlled ? [createControlledExtension()] : []),
+        ...(controlled || readonlySubagents ? [createControlledExtension()] : []),
         disableOmpCacheWarming,
       ] },
     };
     const services = minimal ? await createMinimalSessionServices(sdk, options) : await product.createProductSessionServices({ ...options, sdk, configRoot, snapshot: settingsSnapshot, taskId: process.env.OMP_HOST_INPUT_TASK_ID });
     const model = modelRuntime.getAvailableSnapshot().find((m) => `${m.provider}/${m.id}` === modelId);
     if (!model) throw new Error();
-    const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model, tools: [...(controlled ? ["read", "grep", "find", "ls", "edit", "write", "bash", "request_coding_access", ...(!minimal ? ["delegate_readonly_agent", "delegate_managed_writer"] : [])] : ["read", "grep", "find", "ls"]), ...mcpNames, ...(!minimal ? ["codemode"] : []), ...(settingsSnapshot ? product.settingsToolNames(settingsSnapshot).filter(n => n === "context_snapshot") : [])].filter(name => !settingsSnapshot || product.filterSettingsTools([name], settingsSnapshot).length) });
+    const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model, tools: [...(controlled ? ["read", "grep", "find", "ls", "edit", "write", "bash", "request_coding_access", ...(!minimal ? ["delegate_readonly_agent", "delegate_managed_writer"] : [])] : ["read", "grep", "find", "ls"]), ...(readonlySubagents ? ["delegate_readonly_agent"] : []), ...mcpNames, ...(!minimal ? ["codemode"] : []), ...(settingsSnapshot ? product.settingsToolNames(settingsSnapshot).filter(n => n === "context_snapshot") : [])].filter(name => !settingsSnapshot || product.filterSettingsTools([name], settingsSnapshot).length) });
     if (created.modelFallbackMessage || `${created.session.model?.provider}/${created.session.model?.id}` !== modelId) throw new Error();
     if (settingsSnapshot) {
       const data = await product.confirmProductLoad({ services, session: created.session, configRoot, snapshot: settingsSnapshot, taskId: process.env.OMP_HOST_INPUT_TASK_ID });

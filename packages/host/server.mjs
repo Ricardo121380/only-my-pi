@@ -22,6 +22,7 @@ import { HOST_PROTOCOL, HOST_VERSION, hostError, validateCommand, terminal } fro
 import { CLI_ACCOUNT_ID } from "../accounts/contracts.mjs";
 import { projectRunRecord } from "../direct-agent/contracts.mjs";
 import { createRunRecordStore } from "../run-management/index.mjs";
+import { isDeepSeekModel, requireDeepSeekModel } from "../direct-agent/model-policy.mjs";
 
 const secret = () => randomBytes(32).toString("hex");
 const equal = (a, b) => typeof a === "string" && typeof b === "string" && timingSafeEqual(createHash("sha256").update(a).digest(), createHash("sha256").update(b).digest());
@@ -86,7 +87,7 @@ async function recoverWorkers(configRoot, previous) {
   }
 }
 
-export async function startHost({ configRoot, stack, assetsRoot, port = 0, onStopRequested, sessionRoot = path.join(configRoot, "sessions"), workerFactory, modelsProvider, allowControlled = false, minimal = false, env = process.env, now = Date.now }) {
+export async function startHost({ configRoot, stack, assetsRoot, port = 0, onStopRequested, sessionRoot = path.join(configRoot, "sessions"), workerFactory, modelsProvider, allowControlled = false, minimal = false, deepseekOnly = false, readonlySubagents = false, env = process.env, now = Date.now }) {
   if (![configRoot, sessionRoot, assetsRoot].every((p) => typeof p === "string" && path.isAbsolute(p))) throw hostError("HOST_PATH_INVALID");
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw hostError("HOST_PORT_INVALID");
   await fs.access(path.join(assetsRoot, minimal ? "minimal.html" : "index.html"));
@@ -133,9 +134,10 @@ export async function startHost({ configRoot, stack, assetsRoot, port = 0, onSto
   const oauth = new AccountOAuth({ stack, configRoot, accounts, env });
   let modelCache, modelTime = 0;
   const modelAbort = new AbortController();
+  const allowedModels = models => deepseekOnly ? models.filter(model => isDeepSeekModel(model.id)) : models;
   const authAbort = new AbortController(), authOperations = new Set();
   const modelList = () => {
-    if (!modelCache || Date.now() - modelTime > 10000) { modelTime = Date.now(); modelCache = Promise.resolve().then(() => modelsProvider ? modelsProvider() : listModels({ stack, configRoot, accountId: CLI_ACCOUNT_ID, env, signal: modelAbort.signal })).catch((error) => { modelCache = null; throw error; }); }
+    if (!modelCache || Date.now() - modelTime > 10000) { modelTime = Date.now(); modelCache = Promise.resolve().then(() => modelsProvider ? modelsProvider() : listModels({ stack, configRoot, accountId: CLI_ACCOUNT_ID, env, signal: modelAbort.signal })).then(allowedModels).catch((error) => { modelCache = null; throw error; }); }
     return modelCache;
   };
   const accountModels = async (accountId) => {
@@ -143,10 +145,10 @@ export async function startHost({ configRoot, stack, assetsRoot, port = 0, onSto
     const release = await accounts.beginUse(accountId);
     try {
       await accounts.get(accountId);
-      return await (modelsProvider ? modelsProvider(accountId) : listModels({ stack, configRoot, accountId, env, signal: modelAbort.signal }));
+      return allowedModels(await (modelsProvider ? modelsProvider(accountId) : listModels({ stack, configRoot, accountId, env, signal: modelAbort.signal })));
     } finally { await release(); }
   };
-  const tasks = new HostTasks({ configRoot, stack, catalog, accounts, workerFactory, models: accountModels, allowControlled, minimal, env });
+  const tasks = new HostTasks({ configRoot, stack, catalog, accounts, workerFactory, models: accountModels, allowControlled, minimal, deepseekOnly, readonlySubagents, env });
   try { await tasks.load(); } catch (error) { await inputs.close(); await lock.release(); throw error; }
   const resourceRevision = async projectId => minimal ? 0 : (await taskSettingsSnapshot(configRoot, catalog.project(projectId).path, stack.ompPackageRoot)).resourceRevision;
   const inputController = new HostInputController({ store: inputs, tasks, catalog, resourceRevision });
@@ -308,6 +310,7 @@ export async function startHost({ configRoot, stack, assetsRoot, port = 0, onSto
           if (action.type === "configuration" && Object.keys(action).join() === "type") return response(res, 200, await accounts.configuration(accountId));
           if (action.type === "probe") {
             if (Object.keys(action).sort().join() !== (action.thinkingLevel === undefined ? "model,type" : "model,thinkingLevel,type")) throw hostError("ACCOUNT_INPUT_INVALID");
+            if (deepseekOnly) requireDeepSeekModel(action.model);
             const controller = new AbortController(), cancel = () => controller.abort();
             authAbort.signal.addEventListener("abort", cancel, { once: true }); res.once("close", cancel);
             if (authAbort.signal.aborted || res.destroyed) cancel();

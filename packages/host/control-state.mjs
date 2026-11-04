@@ -19,6 +19,8 @@ export function projectControlState(value) {
       children: (Array.isArray(source.children) ? source.children : []).slice(0, 64).map((child) => ({
         label: typeof child?.label === "string" ? child.label.slice(0, 128) : "child",
         agent: token(child?.agent), status: token(child?.status) ?? "unknown",
+        ...(typeof child?.model === "string" && /^[^\s/]+\/.{1,256}$/u.test(child.model) ? { model: child.model } : {}),
+        ...(token(child?.accountId) ? { accountId: token(child.accountId) } : {}),
         toolCount: finite(child?.toolCount), tokens: finite(child?.tokens),
       })),
     },

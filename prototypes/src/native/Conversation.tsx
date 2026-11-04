@@ -9,6 +9,7 @@ import type { HostTask, Message } from "../../../packages/host/contracts";
 import type { ThinkingLevel } from "../../../packages/accounts/contracts";
 import { fieldClass, NativeTheme, Notice, Tip } from "./ui";
 import { NativeInputs } from "./NativeInputs";
+import { NativeAgents } from "./NativeAgents";
 
 export const NativeMessage = memo(function NativeMessage({ message, sessionKey, onOpenFile }: { message: Message; sessionKey?: string; onOpenFile?: (path: string) => void }) {
   if (message.role === "toolResult") return <div className="native-tool"><MessageView message={message} sessionKey={sessionKey} />{message.filePath && onOpenFile && <button type="button" className="mt-1 break-all text-left font-mono text-[12px] text-primary underline" onClick={() => onOpenFile(message.filePath!)}>查看文件 {message.filePath}</button>}</div>;
@@ -67,6 +68,7 @@ export function NativeComposer({ session: c, confirmed, onChoose }: { session: N
     finally { busy.current = false; setSending(false); }
   }
   return <form className="relative shrink-0 px-5 pt-3 pb-4" onSubmit={e => { e.preventDefault(); void send(); }}>
+    <NativeAgents task={c.visibleTask} />
     {c.selectedKey && <div className="mx-auto mb-3 flex max-w-[660px] items-center justify-between gap-3 rounded-xl bg-muted px-3 py-2 text-[12.5px]">
       <span>{c.sessionRunning ? "此会话仍有任务在执行，可切换到当前任务查看或停止。" : inputBlocked ? "请先核对下方输入状态或处理待投递队列。" : c.armed ? "下一条消息将继续此会话，旧授权不继承。" : "正在查看历史，尚未继续执行。"}</span>
       {c.sessionRunning ? <Button type="button" size="sm" variant="outline" className="shrink-0 rounded-full" onClick={() => { if (c.selectedSession) c.openSession(c.selectedSession); }}>查看当前任务</Button> : <Button type="button" size="sm" variant="outline" className="shrink-0 rounded-full" disabled={c.armed || !c.connected || !c.historyReady || !!c.pending || !c.project?.available || inputBlocked} onClick={() => { c.setArmed(true); area.current?.focus(); }}>{c.armed ? "已选择继续" : "继续会话"}</Button>}
