@@ -2,11 +2,11 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-Only my pi (OMP) is a personal coding agent built on [Pi](https://github.com/earendil-works/pi). The terminal Preview is available today. Development is focused on a local WebUI where you can work in a project, follow tool calls and continue a native Pi session after a restart.
+Only my pi (OMP) is a personal coding agent built on [Pi](https://github.com/earendil-works/pi). The terminal Preview is available today. Development uses the selected B2 WebUI with the native Pi/Host: work in a project, follow tools, inspect files and changes, and continue a session after a restart.
 
 | Where to start | What you will find |
 | --- | --- |
-| [Run the WebUI from source](docs/minimal-webui.md) | The `codex/dev/pi-native-web` development branch, a local demo and persistent session history. Use Node 24.19.0 and the pinned Pi 1.3.0. |
+| [Run the WebUI from source](docs/minimal-webui.md) | The B2 frontend on `codex/dev/pi-native-web`, a local demo, account setup, file inspection and native session inputs. Use Node 24.19.0 and the pinned Pi 1.3.0. |
 | [Install the terminal Preview](#quick-start) | Homebrew, npm and verified archives for the published CLI. The [latest GitHub release](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2) is `v0.4.0-preview.2`. |
 | [Follow the development roadmap](docs/plans/2026-10-25-pi-native-client-reset.md) | Native Pi sessions first, then a usable WebUI. Modules follow user priorities. Electron packaging follows a stable core experience. CLI development can proceed independently, with cross-client handoff as a later goal. |
 
