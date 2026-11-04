@@ -26,15 +26,15 @@ export function NativeInputs({ task, inputRevision, connected, text, textVersion
   task: TaskSummary; inputRevision: number; connected: boolean; text: string; textVersion: number;
   isComposing: () => boolean; onAccepted: (text: string, version: number) => void; onBlocked: (blocked: boolean) => void;
 }) {
-  const { queue, busy, uncertain, error, confirmed, act, refresh } = useInputQueue(task, inputRevision, connected);
+  const { queue, busy, uncertain, synchronized, error, confirmed, act, refresh } = useInputQueue(task, inputRevision, connected);
   const submitted = useRef<{ input: InputContentV1; version: number } | null>(null), editingVersion = useRef(0), delivering = useRef(false);
   const [review, setReview] = useState<{ input: InputContentV1; queueRevision: number; revision: number; version: number } | null>(null);
   const editing = useRef<{ input: InputContentV1; version: number } | null>(null);
-  const active = isTaskActive(task.status), locked = busy || uncertain || !connected;
+  const active = isTaskActive(task.status), locked = busy || uncertain || !connected || !synchronized;
   const deliveryBlocked = !!queue?.items.some(item => item.state === "unknown");
   const bound = !!task.accountId && !!task.thinkingLevel && task.resourceRevision !== undefined;
   const unprocessed = queue?.items.some(pending) ?? true;
-  useEffect(() => { onBlocked(!queue || busy || uncertain || !!error || unprocessed); }, [queue, busy, uncertain, error, unprocessed, onBlocked]);
+  useEffect(() => { onBlocked(!queue || busy || uncertain || !synchronized || unprocessed); }, [queue, busy, uncertain, synchronized, unprocessed, onBlocked]);
   useEffect(() => {
     if (!confirmed) return;
     const command = confirmed.command;

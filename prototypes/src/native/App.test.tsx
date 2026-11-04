@@ -212,3 +212,33 @@ it("a delayed stop response for one project does not block stopping another proj
     expect(posts).toEqual([{ type: "cancelTask", taskId: task.taskId }, { type: "cancelTask", taskId: second.taskId }]);
   } finally { await act(async () => resolveFirst(json({ ...task, status: "cancelled" }))); }
 });
+
+it("a rejected supplement preserves its error but fresh empty queue readback unlocks history resume", async () => {
+  const inputSnapshot: HostSnapshot = { ...snapshot, capabilities: { ...snapshot.capabilities!, inputs: { protocol: 1, materials: false, resourceRevision: 0 } } };
+  let rejected = 0;
+  let finishRead!: (value: Response) => void;
+  override = (url, init) => {
+    if (url.pathname !== "/api/input-command") return undefined;
+    const command = JSON.parse(String(init?.body));
+    if (command.type !== "getInputs") { rejected++; return Promise.resolve(json({ code: "INPUT_REVISION_CONFLICT" }, 409)); }
+    if (rejected) return new Promise(resolve => { finishRead = resolve; });
+    const scope = { projectId: "project", sessionId: "session" };
+    return Promise.resolve(json({ protocol: 1, admission: "ready", draft: { schemaVersion: 1, kind: "draft", scope, revision: 0, draft: null }, queue: { schemaVersion: 1, kind: "queue", scope, revision: 1, items: [] } }));
+  };
+  await mount();
+  act(() => Socket.all.at(-1)!.onmessage?.({ data: JSON.stringify({ type: "snapshot", ...inputSnapshot }) }));
+  await chooseModel(); fireEvent.change(screen.getByRole("textbox", { name: "回复 Pi" }), { target: { value: "read project" } }); fireEvent.click(screen.getByRole("button", { name: "发送" }));
+  await waitFor(() => expect(posts).toHaveLength(1)); emit({ resourceRevision: 0, thinkingLevel: "off" });
+  fireEvent.change(screen.getByRole("textbox", { name: "回复 Pi" }), { target: { value: "supplement" } });
+  await waitFor(() => expect((screen.getByRole("button", { name: "即时补充" }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(screen.getByRole("button", { name: "即时补充" }));
+  await screen.findByText("队列已被其他操作更新，编辑内容已保留。请先核对当前版本。");
+  emit({ status: "succeeded" });
+  await screen.findByText("原生历史正文");
+  expect((screen.getByRole("button", { name: "继续会话" }) as HTMLButtonElement).disabled).toBe(true);
+  const scope = { projectId: "project", sessionId: "session" };
+  await act(async () => finishRead(json({ protocol: 1, admission: "ready", draft: { schemaVersion: 1, kind: "draft", scope, revision: 0, draft: null }, queue: { schemaVersion: 1, kind: "queue", scope, revision: 1, items: [] } })));
+  await waitFor(() => expect((screen.getByRole("button", { name: "继续会话" }) as HTMLButtonElement).disabled).toBe(false));
+  screen.getByText("队列已被其他操作更新，编辑内容已保留。请先核对当前版本。");
+  expect(rejected).toBe(1); expect(posts).toHaveLength(1);
+});
