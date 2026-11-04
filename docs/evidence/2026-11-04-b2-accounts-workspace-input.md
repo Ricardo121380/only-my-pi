@@ -6,6 +6,8 @@
 
 功能提交为 [`c6c3f86d78b31edb8f43385aee208d96be16741d`](https://github.com/Ricardo121380/only-my-pi/commit/c6c3f86d78b31edb8f43385aee208d96be16741d)，tree 为 `0c523f1dee137ab95c6ec8c09913d68ed3cd1a2c`。账号提交为 `660db366e7a147db27c9ba31f124a0b9ea23e30e`。B2 基线已通过 [PR #97](https://github.com/Ricardo121380/only-my-pi/pull/97) 合入 `codex/dev/pi-native-web`。最终真实模型旅程期间，检出保持在干净的 `c6c3f86`；本文和使用指南是后续文档增量。
 
+合入前又追加 [`8a55991994be652bfdd15ff53288a3b203bffcad`](https://github.com/Ricardo121380/only-my-pi/commit/8a55991994be652bfdd15ff53288a3b203bffcad) 的确定失败恢复修复，见后文。该修复的受控验证与 `c6c3f86` 的真实 Provider 旅程分别记录。
+
 | 输入 | 身份 |
 | --- | --- |
 | Node | `24.19.0`，可执行文件 SHA-256 `27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1` |
@@ -57,8 +59,8 @@ Ego Lite 通过公开 B2 入口完成一次 steer、三条 queue、编辑第二�
 
 | 检查 | 结果 |
 | --- | --- |
-| B2 Vitest | 23 tests / 4 files |
-| 既有 WebUI Vitest | 99 tests / 17 files；其中共享输入 14 项另作针对性回归 |
+| B2 Vitest | 冻结时 23 tests；追加恢复回归后 24 tests / 4 files |
+| 既有 WebUI Vitest | 冻结时 99 tests / 17 files；追加修复后共享输入 14 项针对性回归通过 |
 | 账号探测 | 5 项；选定身份、401/429、配置保密、取消占用、公开 minimal API |
 | 工作区/catalog/tool stream | 9 项；分页前路径关联、参数隔离、文件边界、Git 不执行外部程序 |
 | minimal 公开输入 | 1 项；实际 Pi、steer、编辑/移除、FIFO、持久消费 |
@@ -77,6 +79,12 @@ npm run build:web:b2
 node --test --test-concurrency=1 tests/host-account-probe.test.mjs tests/host-workspace.test.mjs tests/host-tool-stream.test.mjs tests/host-catalog.test.mjs tests/host-minimal-input.test.mjs tests/host-input-rpc.test.mjs tests/host-server.test.mjs tests/host-minimal-web.test.mjs tests/ci-plan.test.mjs
 ```
 
+## 合入前追加：确定失败后的续接恢复
+
+独立只读复核定位到 P2：补充/排队返回确定的 409 后，旧 `commandError` 即使在权威回查确认无待处理输入后仍使 B2 的“继续会话”禁用。新增 App 集成测试先复现 `expected true to be false`。修复在 `useInputQueue` 单独记录队列是否得到有效确认；命令开始或回读失败使该状态失效，成功响应/回读重新确认。B2 依据确认状态、未知状态和待处理项决定阻塞，保留错误提示；回查尚未完成时也不能使用旧空队列绕过核对。
+
+`8a55991` 的 24 项 B2、14 项共享输入、四项 TypeScript 和 B2 构建通过。Ego Lite 在实际 Host/Pi 与本地服务上将一次补充的 expectedRevision 故意改为旧值 0，Host 实际返回 409。有效队列已回查、当前任务停止后，错误和草稿仍在，“继续会话”启用；总任务数仅增加本次受控停止流任务，没有失败输入的执行或重发。测试先前因移除最后一条消息后详情自动收起而等待可见文字超时，回读证实已移除后从故障注入处继续，没有重复提交原任务。原始 RED、浏览器观察与最终记录分别保留。本项未调用真实 Provider，未重新标记前述五个真实任务的源码范围。
+
 ## 保留的失败与边界
 
 | 观察 | 处理与归属 |
@@ -85,12 +93,13 @@ node --test --test-concurrency=1 tests/host-account-probe.test.mjs tests/host-wo
 | 把 Terra 请求送入 Commandcode 的 403 | 属于外部测试路由误用，不计为 DeepSeek 应用失败；后续 Codex CLI 路由认证也未成功，Terra Max 外部代理仍为 NOT_RUN，未以其他模型冒充 |
 | 429 响应含 authentication_error 文案 | 先按 HTTP 状态分类；受控 401/429 区分通过，保留初始失败 |
 | 再选当前账号使模型列表为空 | 同账号选择改为幂等；B2 回归和后续实际选择通过 |
+| 409 后有效空队列仍不能继续 | 错误记录与有效确认状态分开；等待回查期间仍阻塞，成功回查后恢复；24 项 B2 和实际 Host 故障注入通过 |
 | TS1294：输入异常类的参数属性 | 使用等价的字段赋值，保留严格编译配置；两种前端构建通过 |
 | 窗口缩到 390 像素后半屏挤压；首次修复仍留空白 | 首次隐藏的是 Panel 内层，后改为隐藏尺寸包装层；原图与首次修复 RED 保留；最终对话/工作区各 374 像素，桌面缩小与直接打开均通过 |
 | 密钥扫描命中字面量 Bearer fixture | 测试期望改为复用同一合成凭据变量；未增加扫描忽略项，最终零命中 |
 | 把 Host 的 JS 与独立 CLI 构建比较产生哈希断言失败 | 查明两个锁定 Vite 调用者；保留两组哈希，改为将 HTTP 字节与实际服务资产比较 |
 | 新测试的 200/202、重复文件按钮与 fieldset 禁用断言 | 修正测试对既有 HTTP/DOM 合同的表达；未放宽生产断言或提高超时 |
 
-本地原始记录位于本轮 `checks/`，包含 `b2-c6-source-manifest.json`、`b2-c6-host-asset-manifest.json`、`b2-c6-real-summary.json`、原生历史证明、测试日志和 RED 截图；凭据与原始服务认证内容未提交。
+本地原始记录位于本轮 `checks/`，包含 `b2-c6-source-manifest.json`、`b2-c6-host-asset-manifest.json`、`b2-c6-real-summary.json`、`b2-rejected-input-resume-red.log`、`b2-rejected-input-real-host.json`、原生历史证明、测试日志和 RED 截图；凭据与原始服务认证内容未提交。
 
 尚待完整验收：多日连续使用、系统真实 IME、完整 [#91](https://github.com/Ricardo121380/only-my-pi/issues/91) 持久草稿/统一提交及跨端准入、后继 Pi、CLI/WebUI 配套交接、日常安装晋升、Electron 与公开发行。旧 [#80 / PR #90](https://github.com/Ricardo121380/only-my-pi/pull/90) 的失败记录与 UNKNOWN 保持原归属。
