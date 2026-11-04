@@ -29,12 +29,20 @@ function tool(res, name, args) {
 }
 
 async function until(read, accept, label, attempts = 200) {
+  let lastValue;
   for (let i = 0; i < attempts; i++) {
-    const value = await read();
+    const value = lastValue = await read();
     if (accept(value)) return value;
     await delay(25);
   }
-  assert.fail(`Timed out: ${label}`);
+  try { assert.fail(`Timed out: ${label}`); }
+  catch (error) {
+    // Keep remote diagnostics bounded and credential-free, but retain the
+    // lifecycle phase instead of collapsing every wait into ERR_ASSERTION.
+    if (["starting", "running", "succeeded", "failed", "cancelled"].includes(lastValue?.status))
+      error.code = `HOST_WAIT_${lastValue.status.toUpperCase()}_TIMEOUT`;
+    throw error;
+  }
 }
 
 // Only the Provider and audited external-package boundary are fixtures. The
@@ -141,6 +149,9 @@ test("public Host fixes same-provider and CLI account identity, reads with real 
   for (const [accountId, key] of [[f.account.accountId, "fixture-a"], [second.accountId, "fixture-b"], ["cli-readonly", "fixture-cli"]]) {
     const before = f.received.length;
     const started = await f.start("read README.md", { accountId });
+    // The 202 ACK precedes worker initialization. Keep the completion poll's
+    // original 200 x 25ms budget, as in the coding lifecycle cases below.
+    await until(() => f.task(started.taskId), (task) => task.status !== "starting", "account worker initialized", 1200);
     const completed = await until(() => f.task(started.taskId), (task) => ["succeeded", "failed"].includes(task.status), "read completion");
     assert.equal(completed.status, "succeeded", JSON.stringify(completed));
     assert.equal(completed.accountId, accountId); assert.equal(completed.model, "fixture/one");
@@ -160,6 +171,7 @@ test("public Host fixes same-provider and CLI account identity, reads with real 
   // CLI discovery has a short catalog cache. An ACK may still be returned;
   // the actual worker must recheck credentials and fail before execution.
   const revoked = await f.start("must not borrow GUI credentials", { accountId: "cli-readonly" });
+  await until(() => f.task(revoked.taskId), (task) => task.status !== "starting", "revoked CLI worker initialized", 1200);
   await until(() => f.task(revoked.taskId), (task) => task.status === "failed", "revoked CLI worker failure");
   assert.equal(f.received.length, before, "wrong identity and revoked credentials must receive zero requests");
   const unpaired = await fetch(f.host.origin + "/api/command", { method: "POST", headers: { Origin: f.host.origin, "content-type": "application/json", "x-omp-host-protocol": "2" }, body: JSON.stringify({ type: "addProject", path: f.project }) });
