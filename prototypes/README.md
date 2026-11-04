@@ -1,11 +1,11 @@
 # Only-My-Pi 界面原型
 
-默认的 `index.html` 用于下述五个方向的模拟比较。选定的 B2 另有
-`minimal.html` 实时入口，使用 `src/native/` 接入原生 Pi/Host；在仓库根目录
+默认的 `index.html` 保留五个方向的模拟比较。选定的设计已成为 WebUI，
+`minimal.html` 实时入口通过 `src/native/` 接入原生 Pi/Host；在仓库根目录
 运行 `npm run dev:web:b2:demo`。依赖安装、真实工具、审批和历史恢复的步骤见
-[B2 开发说明](../docs/minimal-webui.md#b2-frontend-with-the-native-pi-host)。
-实时入口的基础流程与这里的完整产品演示分开，当前不启用模拟子代理、克隆、
-检查结果、文件应用、账号配置或队列。
+[WebUI 开发说明](../docs/minimal-webui.md#webui-frontend-with-the-native-pi-host)。
+实时入口使用真实账号、工具、只读子代理和输入回执；原型中的模拟写入子代理、
+受管克隆、检查结果和差异应用不代表已经接入产品。
 
 五个可交互的方向，共用同一个模拟会话（给侧栏加“会话归档”），便于横向比较。顶部切换条或 `Alt+1…5` 切换，地址栏 `#a`、`#b`、`#b2`、`#c`、`#d` 可直接定位。
 

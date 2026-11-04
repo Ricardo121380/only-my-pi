@@ -2,6 +2,48 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
+Only My Pi is a personal coding agent built on [native Pi](https://github.com/earendil-works/pi). The current preview is the local **WebUI**: select a project, work in a native Pi session, follow streaming replies and tool receipts, approve changes, and continue your history after a restart. Main tasks and read-only child agents use **DeepSeek**.
+
+[Download WebUI 0.1.0-preview.1](https://github.com/Ricardo121380/only-my-pi/releases/tag/webui-v0.1.0-preview.1) · [Release notes](docs/releases/webui-0.1.0-preview.1.md) · [Development roadmap](docs/plans/2026-10-25-pi-native-client-reset.md)
+
+## Start the WebUI
+
+This preview supports **macOS 15+ on native Apple Silicon (arm64)** and requires system Git. Download `only-my-pi-webui-0.1.0-preview.1-darwin-arm64.tar.gz` and `SHA256SUMS` from the release. In the download directory:
+
+```sh
+shasum -a 256 -c SHA256SUMS --ignore-missing
+tar -xzf only-my-pi-webui-0.1.0-preview.1-darwin-arm64.tar.gz
+cd only-my-pi-webui
+./start.command --check
+./start.command
+```
+
+Open the private pairing link printed in the terminal. Add your project, then configure a model-service account, API key and DeepSeek model in Settings. Model access and any provider charges are yours to supply. Node **24.19.0**, Pi **1.5.0**, the page and native search tools are bundled; startup needs no npm install or frontend build.
+
+The preview starts with its own empty configuration and keeps data in `~/Library/Application Support/OnlyMyPi/WebUI Preview/0.1.0-preview.1/`. It does not import an existing CLI account or grant. Keep the unpacked program in place; use `--data-dir /absolute/path` for a separate data directory. The UI Stop button cancels the task; type `stop` or press Ctrl+C in the terminal to shut down the Host. Restart, pair again, inspect history and explicitly continue a session.
+
+## Preview scope
+
+- Native Pi owns the session, tools and JSONL history. The existing paper-and-ink design and workspace interaction are retained.
+- Start read-only; project changes require explicit approval. Child agents have independent context and read/search tools only, and inherit the selected DeepSeek account and model.
+- The extracted archive is tested separately from [real-service source acceptance](docs/evidence/2026-11-04-pi150-b2-deepseek.md). Controlled local model checks do not qualify an external provider.
+- Persistent drafts, complete input/queue recovery, long-running use and additional platforms remain in progress. CLI work is deferred; CLI handoff, Full/Thin promotion and Electron are later milestones.
+
+Agent approvals and tool restrictions operate within the current operating-system user's permissions. Use trusted projects and provide separate system isolation if you need filesystem, credential or network separation. Read the [release boundaries and third-party notices](docs/releases/webui-0.1.0-preview.1.md).
+
+For source development, see the [WebUI guide](docs/minimal-webui.md) on `codex/dev/pi-native-web`.
+
+## Historical terminal documentation
+
+The old GitHub Releases and their download attachments have been retired. Their tags, source and evidence remain. Old Homebrew/Full/Thin download URLs depend on those attachments and are no longer current installation routes. Existing installed CLIs and npm registry entries are outside this WebUI release. The following text is preserved as historical documentation, including its original version claims and commands.
+
+<details>
+<summary>Archived terminal Preview documentation and historical development notes</summary>
+
+# only-my-pi
+
+**English** | [简体中文](README.zh-CN.md)
+
 Only my pi (OMP) is a personal coding agent built on [Pi](https://github.com/earendil-works/pi). The terminal Preview is available today. Development is focused on a local WebUI where you can work in a project, follow tool calls and continue a native Pi session after a restart.
 
 | Where to start | What you will find |
@@ -580,3 +622,5 @@ Keep credentials in Pi's authentication mechanism or your secret manager. Report
 First-party code is [MIT licensed](LICENSE). Third-party components retain their own licenses; consult the [third-party notices](THIRD_PARTY_NOTICES.md) and the released SBOM.
 
 The unreleased shared settings entry is `omp settings`; the GUI uses **Product tools and skills**. See the [shared settings guide](docs/shared-product-settings.md) and [CLIENT-02A evidence](docs/compatibility/2026-10-22-shared-product-settings.md) for defaults, project overrides, explicit skill import and actual Pi loading.
+
+</details>

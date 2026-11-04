@@ -2,6 +2,48 @@
 
 [English](README.md) | **简体中文**
 
+Only My Pi（OMP）是基于[原生 Pi](https://github.com/earendil-works/pi) 的个人编程 Agent。当前预览版以本机 **WebUI** 为入口：选择项目、开启原生 Pi 会话、查看流式回复和工具回执、审批修改，并在重启后继续历史。主任务和只读子代理均使用 **DeepSeek**。
+
+[下载 WebUI 0.1.0-preview.1](https://github.com/Ricardo121380/only-my-pi/releases/tag/webui-v0.1.0-preview.1) · [发行说明](docs/releases/webui-0.1.0-preview.1.md) · [开发路线](docs/plans/2026-10-25-pi-native-client-reset.md)
+
+## 启动 WebUI
+
+本预览版支持 **macOS 15+、原生 Apple Silicon（arm64）**，需要系统 Git。从 Release 下载 `only-my-pi-webui-0.1.0-preview.1-darwin-arm64.tar.gz` 和 `SHA256SUMS`，在下载目录执行：
+
+```sh
+shasum -a 256 -c SHA256SUMS --ignore-missing
+tar -xzf only-my-pi-webui-0.1.0-preview.1-darwin-arm64.tar.gz
+cd only-my-pi-webui
+./start.command --check
+./start.command
+```
+
+打开终端显示的私有配对链接，添加项目，再在“设置”中配置模型服务账号、API Key 和 DeepSeek 模型。模型账号及服务费用由用户准备。程序内置 Node **24.19.0**、Pi **1.5.0**、页面和原生搜索工具；启动不需要 npm 安装或前端编译。
+
+预览版从独立的空配置开始，数据保存在 `~/Library/Application Support/OnlyMyPi/WebUI Preview/0.1.0-preview.1/`，不导入既有 CLI 账号或授权。请固定解压后的程序位置；需要另一份独立数据时使用 `--data-dir /绝对路径`。界面里的“停止”取消当前任务；在终端输入 `stop` 或按 Ctrl+C 关闭 Host。重启后重新配对，先查看历史，再明确继续会话。
+
+## 可以体验与已知边界
+
+- Pi 管理真正的会话、工具和 JSONL 历史，保留现有纸墨设计和工作区交互。
+- 默认只读，修改项目需要明确审批。子代理有独立上下文，只能读取与搜索，继承本次选择的 DeepSeek 账号和模型。
+- 实际解压包与[源码的真实服务验收](docs/evidence/2026-11-04-pi150-b2-deepseek.md)分别留证；本地受控模型检查不代表外部 Provider 验收。
+- 持久草稿、完整输入与队列异常恢复、连续多日使用及其他平台仍待完善。CLI 延后，跨端接续、Full/Thin 晋升和 Electron 后续独立推进。
+
+审批与工具限制作用于当前系统用户的权限范围。请使用可信项目；如需文件、凭据或网络隔离，应另外提供系统隔离环境。详见[发行边界与第三方许可](docs/releases/webui-0.1.0-preview.1.md)。
+
+从源码开发请参阅 `codex/dev/pi-native-web` 的 [WebUI 指南](docs/minimal-webui.md)。
+
+## 历史终端文档
+
+旧 GitHub Releases 及其下载附件已退役，标签、源码和验收记录保留。依赖这些附件的旧 Homebrew/Full/Thin 地址不再作为当前安装入口；已安装的 CLI 和 npm 注册表条目不属于这次 WebUI 发布。下文原样保留历史文档，包括当时的版本声明和命令。
+
+<details>
+<summary>展开历史终端预览版文档与开发记录</summary>
+
+# only-my-pi
+
+[English](README.md) | **简体中文**
+
 Only my pi（OMP）是基于 [Pi](https://github.com/earendil-works/pi) 的个人编程 Agent。终端预览版已发布。当前开发重点是本机 WebUI，让你能选项目、看工具执行，并在重启后继续同一个原生 Pi 会话。
 
 | 从哪里开始 | 能获得什么 |
@@ -580,3 +622,5 @@ npm run verify:m12
 第一方代码采用 [MIT 许可证](LICENSE)。第三方组件遵循各自许可证，参见[第三方声明](THIRD_PARTY_NOTICES.md)和发布包中的 SBOM。
 
 尚未发布的共享设置入口为 `omp settings`；GUI 在左侧“产品工具与技能”操作同一版本。默认/项目覆盖/重置、显式技能导入和真实 Pi 加载见[共享设置指南](docs/shared-product-settings.md)及 [CLIENT-02A 验收记录](docs/compatibility/2026-10-22-shared-product-settings.md)。
+
+</details>
