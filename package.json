@@ -138,6 +138,9 @@
     "demo:web:minimal": "npm run build:web:minimal && node tests/fixtures/minimal-web.mjs",
     "dev:web": "node scripts/dev-web.mjs",
     "dev:web:demo": "node scripts/dev-web.mjs --demo",
+    "dev:web:b2": "node scripts/dev-web.mjs --b2",
+    "dev:web:b2:demo": "node scripts/dev-web.mjs --b2 --demo",
+    "build:web:b2": "npm --prefix prototypes run build:host",
     "test:host": "node --test tests/host-*.test.mjs",
     "build:web": "vite build --config webui/vite.config.ts",
     "test:web": "vitest run --config webui/vite.config.ts",
@@ -197,7 +200,8 @@
     "checkpoint": "node packages/workspace-checkpoint/cli.mjs",
     "test:prepare": "node scripts/prepare-test-pty.mjs && node scripts/prepare-test-extensions.mjs",
     "test": "node --test --test-concurrency=2",
-    "test:distribution": "node --test tests/distribution-*.test.mjs"
+    "test:distribution": "node --test tests/distribution-*.test.mjs",
+    "test:web:b2": "vitest run --config prototypes/vitest.config.ts"
   },
   "engines": {
     "node": ">=24.19.0 <25"

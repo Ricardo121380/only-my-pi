@@ -13,10 +13,14 @@ test("documentation routing is explicit; runtime Markdown and unknown paths sele
   for (const file of ["skills/demo/SKILL.md", "prompts/code.md", "agents/generated/a.md", "modes/prompts/a.md",
     "new-runtime/module.mjs", "packages/host/tasks.mjs", "package-lock.json", "docs/evidence/result.json",
     ".github/workflows/ci.yml", "scripts/ci-plan.mjs", "tests/ci-plan.test.mjs",
-    "webui/vite.config.ts", "webui/future-build-tool.mjs", "webui/src/unknown.config"]) {
+    "webui/vite.config.ts", "webui/future-build-tool.mjs", "webui/src/unknown.config",
+    "prototypes/vite.config.ts", "prototypes/package-lock.json", "prototypes/src/unknown.config"]) {
     assert.deepEqual(classifyChanges([file]), { docs: true, web: true, cli: true, packaging: true }, file);
   }
   assert.deepEqual(classifyChanges(["webui/src/MinimalApp.tsx"]), { docs: true, web: true, cli: false, packaging: false });
+  assert.deepEqual(classifyChanges(["prototypes/src/native/App.tsx", "prototypes/minimal.html"]), { docs: true, web: true, cli: false, packaging: false });
+  assert.deepEqual(classifyChanges(["prototypes/DESIGN.md"]), { docs: true, web: false, cli: false, packaging: false });
+  assert.equal(testLane("tests/b2-native-web.test.mjs"), "web");
   assert.deepEqual(classifyChanges(["packages/direct-agent/minimal-services.mjs", "scripts/dev-web.mjs"]), { docs: true, web: true, cli: false, packaging: false });
   assert.deepEqual(classifyChanges(["tests/omp-cli.test.mjs"]), { docs: true, web: false, cli: true, packaging: false });
   assert.equal(classifyChanges(["tests/host-pi110-runtime.test.mjs"]).web, true);
@@ -41,6 +45,9 @@ test("every discovered Node test is assigned exactly once, including focused cov
   for (const file of ["test/new.js", "test-new.mjs", "tests/new.test.js", "tests/new_test.mjs", "test.mjs"]) assert.ok(isNodeTest(file));
   assert.equal(isNodeTest("webui/src/App.test.tsx"), false);
   assert.equal(isNodeTest("webui/src/App.test.ts"), false);
+  assert.equal(isNodeTest("prototypes/src/native/App.test.tsx"), false);
+  assert.equal(isNodeTest("prototypes/src/native/future.test.mjs"), true);
+  assert.equal(testLane("prototypes/src/native/future.test.mjs"), "web");
   for (const file of ["webui/src/future.test.mjs", "webui/src/future.test.js", "webui/tools/build.test.mjs"]) {
     assert.equal(isNodeTest(file), true);
     assert.equal(testLane(file), "web");
