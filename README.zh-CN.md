@@ -2,11 +2,11 @@
 
 [English](README.md) | **简体中文**
 
-Only my pi（OMP）是基于 [Pi](https://github.com/earendil-works/pi) 的个人编程 Agent。终端预览版已发布。当前开发重点是本机 WebUI，让你能选项目、看工具执行，并在重启后继续同一个原生 Pi 会话。
+Only my pi（OMP）是基于 [Pi](https://github.com/earendil-works/pi) 的个人编程 Agent。终端预览版已发布。后续前端开发以 B2 为基线，连接原生 Pi/Host，让你能选项目、看工具执行、查看文件和改动，并在重启后继续同一个会话。
 
 | 从哪里开始 | 能获得什么 |
 | --- | --- |
-| [运行 WebUI 开发版](docs/minimal-webui.md) | 从 `codex/dev/pi-native-web` 分支启动本地演示，试用可持久保存的会话历史。使用 Node 24.19.0 和锁定的 Pi 1.3.0。 |
+| [运行 WebUI 开发版](docs/minimal-webui.md) | 从 `codex/dev/pi-native-web` 分支运行 B2，使用本地演示、账号设置、文件检查和原生会话输入。使用 Node 24.19.0 和锁定的 Pi 1.3.0。 |
 | [安装终端预览版](#快速开始) | Homebrew、npm 和可校验的 CLI 安装包。最新 [GitHub Release](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2) 是 `v0.4.0-preview.2`。 |
 | [查看当前开发路线](docs/plans/2026-10-25-pi-native-client-reset.md) | 先打通原生 Pi 会话和可用的 WebUI，再按实际需要加入模块。核心体验稳定后进入 Electron。CLI 可独立迭代，最终验证两端会话接续。 |
 
