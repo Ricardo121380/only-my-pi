@@ -4,7 +4,7 @@ The WebUI development source lives on `codex/dev/pi-native-web`. The terminal Pr
 
 ## Start a local demo on macOS Apple Silicon
 
-Use **Node 24.19.0**. The root lock supplies Pi **1.3.0**. The external lock supplies the permission extension used by the development Host. From a directory where you want a new checkout, run the following commands.
+Use **Node 24.19.0**. The root lock supplies Pi **1.5.0**, the stable release verified on 2026-11-04. The external lock supplies the permission and `pi-subagents` extensions used by the B2 development Host. From a directory where you want a new checkout, run the following commands.
 
 ```sh
 git clone --branch codex/dev/pi-native-web --single-branch https://github.com/Ricardo121380/only-my-pi.git only-my-pi-web
@@ -22,6 +22,11 @@ npm run dev:web:b2:demo
 4. Type `stop` in the terminal to shut down. Start the same command again and pair to see the project and history. Type `pair` if you need a fresh link. Keep pairing links private.
 
 B2 演示默认监听 `127.0.0.1:4317`，数据保存在此检出的 `.omp-dev-b2-demo/`。前端变更会重新构建，看到 `Frontend ready` 后刷新。修改宿主代码需要重启。可用 `npm run dev:web:b2:demo -- --port 4318` 指定其他端口。真实模型配置入口是 `npm run dev:web:b2`，它使用 `.omp-dev-b2/` 中自己的配置。保留的最小布局入口是 `dev:web:demo` / `dev:web`，分别使用 `.omp-dev-demo/` / `.omp-dev/`。这些入口不自动导入日常凭据。只读模式下可查看项目，受控编程仍须明确审批。启动器将开发目录绑定到当前检出和依赖锁，更换检出时保留旧目录并选择新的数据目录。
+
+已有 Pi 1.3 开发目录也保留原身份，不会自动改绑到新锁。升级验证时指定新的目录，
+例如 `npm run dev:web:b2 -- --data-dir "$PWD/.omp-dev-b2-pi150"`；演示可用
+`npm run dev:web:b2:demo -- --data-dir "$PWD/.omp-dev-b2-demo-pi150"`。旧配置与历史仍留在原处，
+这些命令不迁移旧安装或日常数据。
 
 ## B2 frontend with the native Pi Host
 
@@ -57,7 +62,16 @@ B2 默认使用 `.omp-dev-b2-demo/`；`npm run dev:web:b2` 使用独立的
 使用真实模型时，在“设置”中添加 API Key 产品账号，填写服务地址、API 协议和模型列表，
 保存凭据后明确选择测试模型。连接测试只发一次最多 512 输出 Token 的短请求，可能计费，
 不执行工具、不创建会话、不自动重试。CLI 配置保留只读引用，账号不会自动切换。
-本轮应用实测仅使用获准的 Commandcode DeepSeek 模型；基础会话未加载应用子代理。
+真实开发入口只列出并接受 DeepSeek 模型，实际模型 ID 必须匹配；主执行、连接探测和
+子代理入口都会检查。网关可使用 `commandcode/deepseek/deepseek-v4.1-flash` 这类 ID。
+账号或模型的显示名称不能绕过检查。演示使用本地确定响应，不调用外部模型。
+
+B2 按需提供 `delegate_readonly_agent`，由锁定的 `pi-subagents` 启动真正的
+`omp-explorer`。子代理继承本次所选产品账号、DeepSeek 模型和推理强度，使用独立上下文，
+仅可读取和搜索；没有 shell、写入或再次委派。每次执行最多 4 个子代理、并发 2 个、
+深度 1；每个子代理另有 120 秒和 8 轮限制。当前没有累计 Token、费用或返回结果字节的硬上限。
+运行状态卡显示模型、工具次数与报告用量；停止会取消执行进程组，无法证明结束时保留
+未知状态并阻止继续委派。保留的普通 minimal 入口不装配子代理。
 
 运行中可在原输入框准备文字，再明确选择“即时补充”或“留待下一任务”。前者在 Pi
 可接收的位置生效；后者在前驱成功并结算后开启同一会话的新任务，旧授权不继承。
@@ -67,12 +81,15 @@ B2 默认使用 `.omp-dev-b2-demo/`；`npm run dev:web:b2` 使用独立的
 
 390 像素小屏一次显示对话或工作区；用面板关闭按钮返回对话，组件状态保留。
 账号、文件、输入、固定版本真实模型旅程与已知边界见
-[2026-11-04 验收记录](evidence/2026-11-04-b2-accounts-workspace-input.md)。
+[账号与工作区验收](evidence/2026-11-04-b2-accounts-workspace-input.md)；Pi 1.5.0、真实
+DeepSeek 子代理、审批、停止及重启后的显式续接见
+[Pi 1.5 本轮验收](evidence/2026-11-04-pi150-b2-deepseek.md)。
 
 ```sh
 npm run test:web:b2
 npm run build:web:b2
 node --test tests/b2-native-web.test.mjs
+node --test --test-concurrency=1 tests/host-minimal-subagents.test.mjs tests/host-minimal-model-policy.test.mjs
 node --test --test-concurrency=1 tests/host-account-probe.test.mjs tests/host-workspace.test.mjs tests/host-minimal-input.test.mjs
 ```
 
