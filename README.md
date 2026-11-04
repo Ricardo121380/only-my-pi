@@ -6,7 +6,7 @@ Only my pi (OMP) is a personal coding agent built on [Pi](https://github.com/ear
 
 | Where to start | What you will find |
 | --- | --- |
-| [Run the WebUI from source](docs/minimal-webui.md) | The `codex/dev/pi-native-web` development branch with the selected B2 frontend, a local demo and persistent native session history. Use Node 24.19.0 and the pinned Pi 1.3.0. |
+| [Run the WebUI from source](docs/minimal-webui.md) | The `codex/dev/pi-native-web` development branch with the selected B2 frontend, persistent native session history and read-only child agents. Use Node 24.19.0 and pinned Pi 1.5.0; real application requests and children require DeepSeek. [Acceptance scope](docs/evidence/2026-11-04-pi150-b2-deepseek.md). |
 | [Install the terminal Preview](#quick-start) | Homebrew, npm and verified archives for the published CLI. The [latest GitHub release](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2) is `v0.4.0-preview.2`. |
 | [Follow the development roadmap](docs/plans/2026-10-25-pi-native-client-reset.md) | Native Pi sessions first, then a usable WebUI. Modules follow user priorities. Electron packaging follows a stable core experience. CLI development can proceed independently, with cross-client handoff as a later goal. |
 
