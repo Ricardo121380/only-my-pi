@@ -58,7 +58,7 @@ export class RpcWorker extends EventEmitter {
     child.on("message", (message) => {
       if (message?.type === "product_settings_loaded") this.settingsLoaded = message.data;
       if (message?.type === "mcp_initialized") this.mcpInitialized = message;
-      if ((this.controlled || this.readonlySubagents) && message?.type === "control_state" && !this.closed && !this.stopRequested) this.emit("control", projectControlState(message.state));
+      if ((this.controlled || this.readonlySubagents) && message?.type === "control_state" && !this.closed && (!this.stopRequested || this.readonlySubagents)) this.emit("control", projectControlState(this.stopRequested ? { ...message.state, access: "inspect" } : message.state));
       if ((this.controlled || this.readonlySubagents) && message?.type === "shutdown_confirmed" && message.id === this.shutdownId && message.clean === true) this.shutdownConfirmed = true;
       if (message?.type === "omp_input_ready" && message.protocol === INPUT_PROTOCOL && message.taskId === this.taskId) this.inputReady = true;
       if (message?.type === "omp_input_candidate" && message.protocol === INPUT_PROTOCOL && !this.closed) {

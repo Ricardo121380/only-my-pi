@@ -8,6 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 
 import {
   releaseGatesDigest,
@@ -543,6 +544,9 @@ export function validateReleaseReceipt(receipt, manifest, { expectedSourceCommit
   if (Date.parse(receipt.completedAt) < Date.parse(receipt.startedAt)) throw new Error("release receipt completedAt precedes startedAt");
   validateFreshEvidence(receipt.evidence?.freshTarball, receipt.sourceCommit);
   if (receipt.evidence?.compatibility?.pi !== receipt.evidence.freshTarball.piVersion) throw new Error("release receipt Pi compatibility evidence is invalid");
+  const smokeEvidence = receipt.gates.find(gate => gate.id === "test-e2e")?.evidence;
+  validateFreshEvidence(smokeEvidence, receipt.sourceCommit);
+  if (!isDeepStrictEqual(smokeEvidence, receipt.evidence.freshTarball)) throw new Error("release receipt fresh-tarball evidence copies mismatch");
   if (receipt.privacy?.rawOutputStored !== false || receipt.privacy?.hostPathsStored !== false || receipt.privacy?.credentialsRead !== false) {
     throw new Error("release receipt privacy boundary is invalid");
   }

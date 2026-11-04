@@ -21,7 +21,7 @@ test("documentation routing is explicit; runtime Markdown and unknown paths sele
   assert.deepEqual(classifyChanges(["prototypes/src/native/App.tsx", "prototypes/minimal.html"]), { docs: true, web: true, cli: false, packaging: false });
   assert.deepEqual(classifyChanges(["prototypes/DESIGN.md"]), { docs: true, web: false, cli: false, packaging: false });
   assert.equal(testLane("tests/b2-native-web.test.mjs"), "web");
-  for (const file of ["tests/host-workspace.test.mjs", "tests/host-minimal-input.test.mjs", "tests/host-input-rpc.test.mjs", "tests/host-account-probe.test.mjs"])
+  for (const file of ["tests/host-workspace.test.mjs", "tests/host-minimal-input.test.mjs", "tests/host-minimal-subagents.test.mjs", "tests/host-minimal-model-policy.test.mjs", "tests/host-input-rpc.test.mjs", "tests/host-account-probe.test.mjs"])
     assert.deepEqual(classifyChanges([file]), { docs: true, web: true, cli: false, packaging: false }, file);
   assert.deepEqual(classifyChanges(["packages/direct-agent/minimal-services.mjs", "scripts/dev-web.mjs"]), { docs: true, web: true, cli: false, packaging: false });
   assert.deepEqual(classifyChanges(["tests/omp-cli.test.mjs"]), { docs: true, web: false, cli: true, packaging: false });

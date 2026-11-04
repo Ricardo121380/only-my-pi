@@ -44,6 +44,7 @@ try {
     process.env.OMP_HOST_ACCOUNT_ID = accountId;
     if (readonlySubagents) {
       process.env.OMP_HOST_ACCOUNT_STACK_ROOT = stackRoot;
+      process.env.OMP_HOST_ACCOUNT_NODE_PATH = process.execPath;
       process.env.OMP_HOST_ACCOUNT_MODEL = modelId;
       process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS = path.resolve(path.dirname(direct[0]), "../../bundles/only-my-pi-agent-bundle/agents");
       // Public pi-subagents v1 inherited ceiling. It is fixed for this owned
@@ -52,7 +53,7 @@ try {
         allowedTools: ["read", "grep", "find", "ls"], allowedAgents: ["omp-explorer"], denyExtensions: true, sources: ["only-my-pi-readonly"] })).toString("base64url");
     }
     process.env.PI_SUBAGENT_PI_BINARY = childEntry;
-    process.env.PATH = `${path.join(stackRoot, "node/bin")}${path.delimiter}${process.env.PATH ?? "/usr/bin:/bin"}`;
+    process.env.PATH = `${path.dirname(process.execPath)}${path.delimiter}${path.join(stackRoot, "node/bin")}${path.delimiter}${process.env.PATH ?? "/usr/bin:/bin"}`;
   }
   const catalog = new AccountCatalog(configRoot);
   const account = accountId === CLI_ACCOUNT_ID ? { accountId, providerId: modelId.split("/")[0] } : await catalog.get(accountId);

@@ -147,8 +147,8 @@ export class HostTasks extends EventEmitter {
     const deadline = setTimeout(() => { failed = true; task.error = "TASK_TIME_LIMIT"; settledResolve(); }, 15 * 60 * 1000);
     worker.on("approvals", (approvals) => { task.approvals = terminal(task.status) || task.status === "cancelling" ? [] : approvals; this.changed(task); });
     worker.on("control", (state) => {
-      if (terminal(task.status) || task.status === "cancelling") return;
-      task.access = state.access; task.orchestration = state.orchestration; this.changed(task);
+      if (terminal(task.status) || task.status === "cancelling" && !this.readonlySubagents) return;
+      task.access = task.status === "cancelling" ? "inspect" : state.access; task.orchestration = state.orchestration; this.changed(task);
     });
     worker.on("input", (receipt) => this.emit("input", { taskId: task.taskId, receipt }));
     worker.on("event", (event) => {

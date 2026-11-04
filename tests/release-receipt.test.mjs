@@ -115,6 +115,13 @@ test("release receipt rejects missing gates, raw output, host paths, and source 
   assert.throws(() => validateReleaseReceipt(receipt(), manifest, { expectedSourceCommit: "b".repeat(40) }), /sourceCommit mismatch/);
 });
 
+test("a new Pi identity cannot contradict the smoke gate's preserved evidence", () => {
+  const value = receipt();
+  Object.assign(value.evidence.freshTarball, { formatVersion: 3, piVersion: "1.5.0" });
+  value.evidence.compatibility.pi = "1.5.0";
+  assert.throws(() => validateReleaseReceipt(value, manifest), /evidence copies mismatch/);
+});
+
 test("receipt checker parser is bounded to the receipts directory", () => {
   const parsed = parseReceiptCheckArgs(["--receipt", "verification/receipts/final.json", "--expect-parent"]);
   assert.equal(parsed.expectParent, true);

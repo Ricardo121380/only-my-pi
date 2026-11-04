@@ -14,9 +14,15 @@ async function until(read, accept, label) {
 }
 
 test("B2 native read-only children keep the selected account/model, return proof and stop with their parent", { timeout: 90000 }, async t => {
-  const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), "omp-b2-readonly-"));
-  const app = await startDevWeb({ frontend: "b2", dataDir, demo: true, watch: false, port: 0 });
-  t.after(async () => { await app.stop(); await fs.rm(dataDir, { recursive: true }); });
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-b2-readonly-")), dataDir = path.join(root, "data"), fakeBin = path.join(root, "fake-bin"), fallback = path.join(root, "fallback-node-used");
+  await fs.mkdir(fakeBin);
+  const quote = value => "'" + value.replaceAll("'", "'\\''") + "'";
+  await fs.writeFile(path.join(fakeBin, "node"), `#!/bin/sh\nprintf used > ${quote(fallback)}\nexec ${quote(process.execPath)} "$@"\n`, { mode: 0o755 });
+  const previousPath = process.env.PATH;
+  let app;
+  try { process.env.PATH = `${fakeBin}${path.delimiter}${previousPath}`; app = await startDevWeb({ frontend: "b2", dataDir, demo: true, watch: false, port: 0 }); }
+  finally { process.env.PATH = previousPath; }
+  t.after(async () => { await app.stop(); await fs.rm(root, { recursive: true }); });
   const accounts = new AccountCatalog(app.configRoot), account = await accounts.create({ providerId: "fixture", name: "Bound parent and child", authType: "api_key" });
   const paths = await accounts.runtimePaths(account.accountId);
   await fs.writeFile(paths.modelsPath, await fs.readFile(path.join(app.configRoot, "models.json")));
@@ -59,4 +65,7 @@ test("B2 native read-only children keep the selected account/model, return proof
   assert.equal(groupAlive(pid), false); assert.equal(app.host.tasks.workers.size, 0);
   assert.equal(app.provider.received.at(-1).closed, true);
   assert.equal(app.host.tasks.accountReleases.size, 0);
+  const states = cancelled.orchestration?.children ?? [];
+  assert.deepEqual({ childCount: states.length, childrenTerminal: states.every(child => child.status !== "running"), fallbackNodeUsed: await fs.access(fallback).then(() => true, () => false) },
+    { childCount: 1, childrenTerminal: true, fallbackNodeUsed: false });
 });
