@@ -7,7 +7,7 @@ import { syncBuiltinESMExports } from "node:module";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import test from "node:test";
-import { groupAlive } from "../packages/host/ownership.mjs";
+import { groupAlive } from "../packages/process-runtime/ownership.mjs";
 import { ControlledStdioTransport, launchIdentity } from "../packages/mcp/process.mjs";
 import { McpRuns } from "../packages/mcp/runs.mjs";
 

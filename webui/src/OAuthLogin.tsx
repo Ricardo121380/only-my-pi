@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import type { OAuthFlow } from "../../packages/host/contracts";
-import { accountApi, api, errorText, query } from "./api";
+import type { OAuthFlow } from "../../packages/accounts/contracts";
+import { accountApi, api, errorText, query } from "./shared/api";
 
 const done = (status?: string) => ["stored", "stored_sync_failed", "failed", "cancelled", "timed_out"].includes(status ?? "");
 const labels: Record<OAuthFlow["status"], string> = { starting: "正在启动认证", waiting: "等待 Provider 完成认证", awaiting_input: "请完成认证输入", cancelling: "正在取消", stored: "凭据已保存", stored_sync_failed: "凭据已保存，但模型同步失败", failed: "认证失败，请检查网络或重新登录", cancelled: "认证已取消", timed_out: "认证已超时，请重新登录" };

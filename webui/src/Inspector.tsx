@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { api, errorText, query } from "./api";
-import { Icon } from "./Icon";
+import { api, errorText, query } from "./shared/api";
+import { Icon } from "./shared/Icon";
 import { RunReceipts, type RunReceipt } from "./RunReceipts";
 import type { EditorProps } from "./EditorWorkspace";
 interface Entry { name: string; path: string; directory: boolean }

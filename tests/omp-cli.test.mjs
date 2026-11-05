@@ -260,7 +260,7 @@ test("status, doctor, live doctor, and safe route through their bounded services
   assert.deepEqual(harness.calls.map((entry) => entry.method), ["status", "doctor", "live", "safe"]);
 });
 
-test("production factory wires every runtime dependency without invoking runners", () => {
+test("production factory wires injected bootstrap dependencies without invoking runners", () => {
   const calls = [];
   const artifactProcessOptions = [];
   const npmRunner = async () => ({ exitCode: 0 });
@@ -346,6 +346,33 @@ test("production factory wires every runtime dependency without invoking runners
     { spawnImpl: fakeSpawn },
     { spawnImpl: fakeSpawn, maxOutputBytes: 8 * 1024 * 1024 },
   ]);
+});
+
+test("production factory injects auxiliary services, execution and run storage", () => {
+  const swarms = {}, ultras = {}, themes = {}, statusService = {}, exec = {}, recordStore = {};
+  const spawnImpl = () => { throw new Error("construction must not spawn"); };
+  const calls = [];
+  const service = createProductionControlService({ rootDir: repoRoot, configRoot, spawnImpl, dependencies: {
+    createSwarmControlService(options) { calls.push(["swarms", options]); return swarms; },
+    createUltraRunControlService(options) { calls.push(["ultras", options]); return ultras; },
+    createThemeControlService(options) { calls.push(["themes", options]); return themes; },
+    createStatusService() { calls.push(["status"]); return statusService; },
+    createNodeExecAdapter(options) { calls.push(["exec", options]); return exec; },
+    createRunRecordStore(options) { calls.push(["store", options]); return recordStore; },
+    ProjectGateService: class { constructor(options) { this.options = options; } },
+    RunManagementService: class { constructor(options) { this.options = options; } },
+  } });
+  assert.equal(service.swarms, swarms);
+  assert.equal(service.ultras, ultras);
+  assert.equal(service.themes, themes);
+  assert.equal(service.statusService, statusService);
+  assert.equal(service.projectGates.options.exec, exec);
+  assert.equal(service.runManagement.options.recordStore, recordStore);
+  assert.deepEqual(calls, [["swarms", { rootDir: repoRoot }], ["ultras", { rootDir: repoRoot }],
+    ["themes", { rootDir: repoRoot }], ["status"], ["exec", { spawnImpl }],
+    ["store", { managedRoot: path.join(configRoot, "only-my-pi") }]]);
+  assert.throws(() => createProductionControlService({ configRoot, dependencies: { createNodeExecAdapter: null } }), { code: "INVALID_CLI_DEPENDENCY" });
+  assert.throws(() => createProductionControlService({ configRoot, dependencies: { typo: () => {} } }), { code: "INVALID_CLI_DEPENDENCY" });
 });
 
 test("the production bootstrap plan is read-only and never invokes the injected Pi spawn", async (t) => {

@@ -22,9 +22,13 @@
 
 ## 当前 WebUI 开发顺序
 
-WebUI 沿用已选定的「静室·编码」界面与交互，见[设计规范](https://github.com/Ricardo121380/only-my-pi/blob/codex/dev/pi-native-web/prototypes/DESIGN.md)。B2 仅保留为原型与代码内部代号。
-比较原型保留；实时入口使用原生 Pi/Host，入口为 `npm run dev:web:b2:demo`，
-使用真实模型时为 `npm run dev:web:b2`。两者使用独立开发数据目录。
+2026-11-05 起，以已发布 WebUI 预览对应源码作为 `main` 的开发基线。默认入口为
+`npm run dev:web` / `npm run dev:web:demo`；旧 CLI 基线另存于
+`legacy/cli-before-webui-20261105`，CLI 延后。历史验收仍绑定原提交和候选。
+
+WebUI 沿用已选定的「静室·编码」界面与交互，见[设计规范](../../prototypes/DESIGN.md)。B2 仅保留为原型与代码内部代号。
+比较原型保留；实时入口使用原生 Pi/Host，入口为 `npm run dev:web:demo`，
+使用真实模型时为 `npm run dev:web`。两者使用独立开发数据目录。
 
 1. WebUI 基线已通过 PR #97 纳入 `codex/dev/pi-native-web`。账号与工作区增量继续按
    独立提交、所选 CI 通过后集成，保留旧 CLI 与失败记录。
@@ -48,7 +52,7 @@ WebUI 沿用已选定的「静室·编码」界面与交互，见[设计规范](
 
 - 10 月 28–30 日的开发候选使用实际 Pi、回环模型服务和 Ego Lite 验证读取、审批、停止、刷新和 Host 重启后的历史恢复。WebUI 采用 A＋D 会话布局。快捷卡片只填入草稿，工具输出和详情来自真实任务。
 - 11 月 3 日的首次真实连接返回 HTTP 401。随后使用独立测试凭据，在同一指定 DS 模型和合成项目上，完成读取、审批后编辑、独立测试、流式停止、刷新与重启续接。五个任务中四个成功，一个按用户操作取消。这个结果限于当时的开发源码和该模型。通用 Provider、长时日用、Full 安装和 Electron 仍待验证。
-- 11 月 4 日选定 B2 并接入原生 Host。真实 Pi 与本地回环模型通过读取、审批写入、拒绝、停止、刷新与新进程重启后续接；7 项 B2、99 项既有 UI、6 项原生/启动/许可测试通过。两项慢网络并发缺陷先复现后修复；这组受控结果不代替真实 Provider 或日用验收。[B2 源码与证据](https://github.com/Ricardo121380/only-my-pi/blob/codex/dev/pi-native-web/docs/evidence/2026-11-04-b2-native-host.md)
+- 11 月 4 日选定 B2 并接入原生 Host。真实 Pi 与本地回环模型通过读取、审批写入、拒绝、停止、刷新与新进程重启后续接；7 项 B2、99 项既有 UI、6 项原生/启动/许可测试通过。两项慢网络并发缺陷先复现后修复；这组受控结果不代替真实 Provider 或日用验收。[B2 源码与证据](../evidence/2026-11-04-b2-native-host.md)
 - 11 月 4 日后续增量提供账号管理、文件工作区和原生输入操作。冻结源码的 23 项 B2、99 项既有 UI 及针对性后端检查通过；同一干净源码上的 DeepSeek 五任务、独立项目测试、80 行长输出和新进程续接通过。受控队列另以原生历史与独立接收服务核对。合入前的确定失败恢复修复另通过 24 项 B2、14 项共享输入和实际 Host 故障注入，未计为外部模型验收。[本轮记录](../evidence/2026-11-04-b2-accounts-workspace-input.md)
 - 11 月 4 日 Pi 1.5.0 适配保留历史版本合同与既有 B2 设计。真实 DeepSeek 子代理返回 README 独立标记和权威终态回执；审批前无写入、批准后单文件修复与两项测试通过；主/子停止、刷新和 Host 重启后显式只读续接通过。[升级验收](../evidence/2026-11-04-pi150-b2-deepseek.md)
 - 源码同步有独立的公开提交和本地检查记录。已发布的终端预览版有自己的版本与安装说明。[开发源码与检查](../minimal-webui.md) · [终端预览版](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2)

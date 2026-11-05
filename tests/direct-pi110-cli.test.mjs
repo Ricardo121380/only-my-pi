@@ -41,7 +41,7 @@ test("public OMP print, ephemeral print, RPC and account child suppress a forced
   const f = await createPi110SourceCli(root, { baseUrl: `http://127.0.0.1:${provider.address().port}/v1`, forceWarming: true,
     installedExtensions: process.env.OMP_PI110_INSTALLED_EXTENSIONS === "1" });
   const childEntry = path.join(root, "account-child-entry.mjs");
-  await fs.writeFile(childEntry, `import { runAccountChild } from ${JSON.stringify(path.join(f.omp, "packages/host/account-child.mjs"))};
+  await fs.writeFile(childEntry, `import { runAccountChild } from ${JSON.stringify(path.join(f.omp, "packages/direct-agent/account-child.mjs"))};
     await runAccountChild({ stack: { root: ${JSON.stringify(f.stack)} }, configRoot: ${JSON.stringify(f.config)}, accountId: "cli-readonly", argv: process.argv.slice(2) });`);
   const trigger = path.join(f.config, "npm/node_modules", f.bindings.find((b) => b.id === "permission-modes").name, "src/index.ts");
   const cases = [
@@ -70,6 +70,6 @@ test("public OMP print, ephemeral print, RPC and account child suppress a forced
     assert.equal(requests.length, 1, `${name}: Provider must receive only one user request`);
     assert.equal(requests[0].key, "Bearer fixture-cli"); assert.equal(requests[0].body.model, "one");
     const tools = ["find", "grep", "ls", "read"];
-    assert.deepEqual(requests[0].body.tools.map((tool) => tool.function.name).sort(), name === "account child" ? tools : ["codemode", ...tools]);
+    assert.deepEqual(requests[0].body.tools.map((tool) => tool.function.name).sort(), name === "account child" ? tools : ["codemode", "context_snapshot", ...tools]);
   });
 });

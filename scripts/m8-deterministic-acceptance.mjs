@@ -91,10 +91,11 @@ export function runM8AcceptanceCheck(check, { spawnImpl = spawn, env = process.e
 export async function runM8DeterministicAcceptance(options = {}) {
   const passed = [];
   for (const check of CHECKS) {
+    const started = performance.now();
     process.stderr.write(`M8_CHECK_START ${check.id}\n`);
     const result = await runM8AcceptanceCheck(check, options);
     passed.push(result.id);
-    process.stderr.write(`M8_CHECK_PASS ${check.id}\n`);
+    process.stderr.write(`M8_CHECK_PASS ${check.id} ${Math.round(performance.now() - started)}ms\n`);
   }
   return Object.freeze({ ok: true, status: "M8_DETERMINISTIC_ACCEPTANCE_PASS", checks: Object.freeze(passed) });
 }

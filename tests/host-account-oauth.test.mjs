@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
-import { AccountOAuth } from "../packages/host/account-oauth.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
+import { AccountOAuth } from "../packages/accounts/oauth.mjs";
 
 async function fixture(t, timeoutMs = 2000) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-oauth-")));

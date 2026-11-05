@@ -3,9 +3,9 @@ import * as monaco from "monaco-editor/editor/editor.api";
 import "monaco-editor/features/register.all";
 import "monaco-editor/languages/definitions/register.all";
 import EditorWorker from "monaco-editor/editor/editor.worker?worker";
-import { api, errorText, query } from "./api";
-import { HostDialog } from "./HostDialog";
-import { Icon } from "./Icon";
+import { api, errorText, query } from "./shared/api";
+import { HostDialog } from "./shared/HostDialog";
+import { Icon } from "./shared/Icon";
 import "./editor.css";
 
 self.MonacoEnvironment = { getWorker: () => new EditorWorker() };

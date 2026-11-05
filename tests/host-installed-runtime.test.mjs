@@ -12,7 +12,7 @@ test("installed Host serves packaged UI and owns a real PTY through cleanup", { 
   const stack = await loadDistribution({ packageRoot });
   assert.ok(stack);
   const { startHost } = await import(pathToFileURL(path.join(packageRoot, "packages/host/server.mjs")));
-  const { acquireOwnership } = await import(pathToFileURL(path.join(packageRoot, "packages/host/ownership.mjs")));
+  const { acquireOwnership } = await import(pathToFileURL(path.join(packageRoot, "packages/process-runtime/ownership.mjs")));
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-installed-host-")));
   let host;
   t.after(async () => {

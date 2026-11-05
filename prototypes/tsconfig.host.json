@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.host.tsbuildinfo"
+  },
+  "include": ["src/native/main.tsx"]
+}

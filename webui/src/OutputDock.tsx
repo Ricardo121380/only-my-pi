@@ -1,5 +1,5 @@
 import type { Message } from "../../packages/host/contracts";
-import { Icon } from "./Icon";
+import { Icon } from "./shared/Icon";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 const TerminalPane = lazy(() => import("./TerminalPane"));
 export function OutputDock({ messages, onClose, projectId, terminalAvailable = false }: { messages: Message[]; onClose: () => void; projectId?: string; terminalAvailable?: boolean }) {

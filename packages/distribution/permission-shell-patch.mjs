@@ -10,8 +10,12 @@ function once(text, before, after) {
 export function patchPermissionShellIndex(text) {
   text = once(text, "  const localBash = createBashTool(root);", `  const localBash = createBashTool(root);
   let ownedBash: import("@earendil-works/pi-coding-agent").BashOperations | undefined;
+  let ownedProduct: ((name: string) => boolean) | undefined;
   let ownedMcp: ((name: string) => boolean) | undefined;
   let ownedCodemode: ((name: string, parent?: string) => boolean) | undefined;
+  pi.events.on("only-my-pi:owned-product:v1", (payload: any) => {
+    if (typeof payload?.admits === "function") ownedProduct = payload.admits;
+  });
   pi.events.on("only-my-pi:owned-mcp:v1", (payload: any) => {
     if (typeof payload?.admits === "function") ownedMcp = payload.admits;
   });
@@ -28,7 +32,7 @@ export function patchPermissionShellIndex(text) {
       const approved = approvedUnsandboxed.delete(id); // user granted an escape`);
   text = once(text, "sandbox.bashOps({ readOnly: plan.readOnly })", "sandbox.bashOps({ readOnly: plan.readOnly, operations: ownedBash })");
   text = once(text, '      if (action === "deny") return { block: true, reason: `Tool "${toolName}" blocked by ${m.label}` };',
-    '      if (action === "deny") return { block: true, reason: `Tool "${toolName}" blocked by ${m.label}` };\n      if (action === "ask" && (ownedMcp?.(toolName) || ownedCodemode?.(toolName, event.parentToolCallId))) return undefined; // OMP handlers own finite per-call approval.');
+    '      if (action === "deny") return { block: true, reason: `Tool "${toolName}" blocked by ${m.label}` };\n      if (action === "ask" && (ownedMcp?.(toolName) || ownedCodemode?.(toolName, event.parentToolCallId) || toolName === "context_snapshot" && ownedProduct?.(toolName))) return undefined; // OMP handlers own finite per-call approval.');
   return once(text, "      if (!ops) return localBash.execute(id, params, signal, onUpdate);",
     "      if (!ops) return (ownedBash ? createBashTool(root, { operations: ownedBash }) : localBash).execute(id, params, signal, onUpdate);");
 }

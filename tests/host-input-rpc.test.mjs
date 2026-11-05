@@ -11,17 +11,17 @@ import { RpcWorker } from "../packages/host/rpc-worker.mjs";
 import { HostTasks } from "../packages/host/tasks.mjs";
 import { HostInputStore } from "../packages/host/input-store.mjs";
 import { HostInputController } from "../packages/host/input-controller.mjs";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
 import { ProjectCatalog } from "../packages/host/catalog.mjs";
-import { groupAlive } from "../packages/host/ownership.mjs";
+import { groupAlive } from "../packages/process-runtime/ownership.mjs";
 import { INPUT_CARRIER } from "../packages/host/input-protocol.mjs";
 
 async function until(check) { for (let i = 0; i < 800; i++) { const found = await check(); if (found) return found; await new Promise((resolve) => setTimeout(resolve, 20)); } throw new Error("real Pi fixture timed out"); }
-async function fixture(t, { startup = false } = {}) {
+async function fixture(t, { startup = false, evidenceRoot = process.env.OMP_INPUT_EVIDENCE_ROOT } = {}) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-input-real-pi-"))), configRoot = path.join(root, "config"), cwd = path.join(root, "project"), sessionRoot = path.join(root, "sessions");
   await fs.mkdir(cwd); await fs.writeFile(path.join(cwd, "README.md"), "fixture tool finished\n"); await fs.mkdir(sessionRoot);
   await fs.symlink(path.dirname(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")))), path.join(root, "pi"));
-  const sdkManifest = await fs.readFile(path.join(root, "pi/package.json")); assert.equal(JSON.parse(sdkManifest).version, "1.3.0");
+  const sdkManifest = await fs.readFile(path.join(root, "pi/package.json")); assert.equal(JSON.parse(sdkManifest).version, "1.5.0");
   const accounts = new AccountCatalog(configRoot), account = await accounts.create({ providerId: "fixture", name: "local-only", authType: "api_key" }), paths = await accounts.runtimePaths(account.accountId);
   const f = { root, cwd, received: [], workers: [], toolWaiting: false, toolReleased: false, reject: false, startEvents: [] };
   const provider = http.createServer(async (req, res) => {
@@ -79,8 +79,15 @@ async function fixture(t, { startup = false } = {}) {
     controller.beginStop(); await tasks.stop(); await controller.close(); await store.close();
     for (const worker of f.workers) { assert.equal(groupAlive(worker.identity?.pid), false); assert.equal(worker.inputPending.size, 0); }
     assert.equal(tasks.leases.size, 0); assert.equal(tasks.accountReleases.size, 0);
-    if (process.env.OMP_INPUT_EVIDENCE_ROOT) await fs.writeFile(path.join(process.env.OMP_INPUT_EVIDENCE_ROOT, `pi-receipts-${process.pid}-${Date.now()}.json`), JSON.stringify({ case: t.name, sdk: { version: JSON.parse(sdkManifest).version, manifestSha256: createHash("sha256").update(sdkManifest).digest("hex") }, node: process.version, provider: "LOOPBACK_FIXTURE_ONLY", ...f.evidence, workers: f.workers.map((worker) => ({ pid: worker.identity?.pid, start: worker.identity?.start, groupAlive: groupAlive(worker.identity?.pid), pendingInputs: worker.inputPending.size })), sessionLeases: tasks.leases.size, accountReservations: tasks.accountReleases.size }, null, 2) + "\n", { flag: "wx", mode: 0o600 });
-    await new Promise((resolve) => { provider.closeAllConnections(); provider.close(resolve); }); await fs.rm(root, { recursive: true, force: true });
+    try {
+      if (evidenceRoot) {
+        await fs.mkdir(evidenceRoot, { recursive: true });
+        await fs.writeFile(path.join(evidenceRoot, `pi-receipts-${process.pid}-${Date.now()}.json`), JSON.stringify({ case: t.name, sdk: { version: JSON.parse(sdkManifest).version, manifestSha256: createHash("sha256").update(sdkManifest).digest("hex") }, node: process.version, provider: "LOOPBACK_FIXTURE_ONLY", ...f.evidence, workers: f.workers.map((worker) => ({ pid: worker.identity?.pid, start: worker.identity?.start, groupAlive: groupAlive(worker.identity?.pid), pendingInputs: worker.inputPending.size })), sessionLeases: tasks.leases.size, accountReservations: tasks.accountReleases.size }, null, 2) + "\n", { flag: "wx", mode: 0o600 });
+      }
+    } finally {
+      await new Promise((resolve) => { provider.closeAllConnections(); provider.close(resolve); });
+      await fs.rm(root, { recursive: true, force: true });
+    }
   });
   const first = await tasks.start({ type: "startTask", requestId: "first", projectId: project.projectId, accountId: account.accountId, model: "fixture/fixture", thinkingLevel: "low", prompt: "Read README.md" });
   await until(() => startup ? f.startEvents.length : f.toolWaiting); await catalog.scan();
@@ -241,4 +248,16 @@ test("actual Pi worker SIGKILL retains unknown steering and prevents FIFO replay
   assert.equal(f.received.length, 1); assert.equal(f.workers.length, 1);
   assert.equal(await f.catalog.inputReceipt(queue.items[1]), null);
   f.evidence = { kind: "ACTUAL_PI_WORKER_SIGKILL", status: f.task.status, queue, requests: f.received.length, autoReplay: false };
+});
+
+test("real Pi fixture still closes when evidence output fails", { timeout: 30000 }, async t => {
+  const evidenceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "omp-input-evidence-failure-"));
+  const blocked = path.join(evidenceRoot, "file"); await fs.writeFile(blocked, "owned test only");
+  let close;
+  t.after(async () => { await fs.rm(evidenceRoot, { recursive: true, force: true }); });
+  const f = await fixture({ name: t.name, after: fn => { close = fn; } }, { evidenceRoot: blocked });
+  try { await assert.rejects(close(), { code: "EEXIST" }); }
+  finally { if (f.workers.some(worker => groupAlive(worker.identity?.pid))) await f.tasks.stop(); }
+  await assert.rejects(fs.access(f.root), { code: "ENOENT" });
+  assert.ok(f.workers.every(worker => !groupAlive(worker.identity?.pid)));
 });

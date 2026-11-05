@@ -2,6 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import * as subagents from "../packages/subagents/index.mjs";
+import { createAgentFacade } from "../packages/subagents/agent-facade.mjs";
+
+test("the Agent-only entry retains unavailable-backend safety without exposing workflow scheduling", async () => {
+  const facade = createAgentFacade();
+  assert.equal(facade.apiVersion, subagents.ONLY_MY_PI_SUBAGENTS_API_VERSION);
+  assert.equal(facade.physicalRuntimeOwner, "pi-subagents");
+  assert.equal(Object.hasOwn(facade, "workflow"), false);
+  assert.throws(() => facade.agent.launch({}), { code: "SUBAGENTS_BACKEND_UNAVAILABLE" });
+  assert.throws(() => createAgentFacade({ backend: {} }), /must implement ensureReady/);
+  assert.deepEqual(await facade.agent.dispose(), { status: "DISPOSED", stoppedBackendRuns: false });
+});
 
 test("the unified facade exposes typed Agent and Workflow APIs without a raw workflow-script surface", async () => {
   for (const name of [

@@ -11,7 +11,7 @@ import { createPi110SourceCli } from "./fixtures/pi110-source-cli.mjs";
 import { createOAuthMcpServer } from "./fixtures/mcp-oauth-server.mjs";
 import { until, providerReply } from "./fixtures/mcp-host.mjs";
 import { McpRuns } from "../packages/mcp/runs.mjs";
-import { processIdentity, groupAlive } from "../packages/host/ownership.mjs";
+import { processIdentity, groupAlive } from "../packages/process-runtime/ownership.mjs";
 import { writePiEvidence } from "./fixtures/pi-runtime-evidence.mjs";
 
 // This proves the production GUI's authenticated Host API and another actual

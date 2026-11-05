@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { DirectSessionOwnership } from "../packages/direct-agent/ownership.mjs";
-import { acquireOwnership } from "../packages/host/ownership.mjs";
+import { acquireOwnership } from "../packages/process-runtime/ownership.mjs";
 
 test("TUI and Host share canonical project/session locks; uncertain cleanup retains them", async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-shared-owner-")));

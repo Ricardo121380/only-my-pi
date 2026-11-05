@@ -1,19 +1,20 @@
 import path from "node:path";
 import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
-import { AccountCatalog } from "./accounts.mjs";
-import { CLI_ACCOUNT_ID } from "./contracts.mjs";
+import { AccountCatalog } from "../accounts/catalog.mjs";
+import { CLI_ACCOUNT_ID } from "../accounts/contracts.mjs";
 import { createControlledExtension } from "./controlled-extension.mjs";
-import { hasAccountCredential } from "./account-credential.mjs";
+import { hasAccountCredential } from "../accounts/credential.mjs";
 import { createPiInputBridge } from "./pi-input-bridge.mjs";
 import { openValidatedSession } from "../direct-agent/session-history.mjs";
 import { INPUT_PROTOCOL } from "./input-protocol.mjs";
 import { disableOmpCacheWarming } from "../direct-agent/cache-warming-policy.mjs";
-import { mcpToolNames } from "../mcp/catalog.mjs";
 import { hostProjectAuthority } from "./project-authority.mjs";
 import { applyOmpRequestPolicy } from "../direct-agent/request-policy.mjs";
-import { awaitAuthStart } from "./auth-process.mjs";
-import { openProductAccount } from "./account-runtime.mjs";
+import { awaitAuthStart } from "../accounts/auth-process.mjs";
+import { createMinimalSessionServices } from "../direct-agent/minimal-services.mjs";
+import { openProductAccount } from "../accounts/runtime.mjs";
+import { requireDeepSeekModel } from "../direct-agent/model-policy.mjs";
 
 // Host-owned arguments contain identities and audited paths, never credentials.
 try {
@@ -22,11 +23,17 @@ try {
   const [stackRoot, configRoot, accountId, modelId, sessionRoot, mode, resumeFile, ...extensions] = process.argv.slice(2);
   if (!["readonly", "controlled"].includes(mode)) throw new Error();
   const controlled = mode === "controlled";
+  const minimal = process.env.ONLY_MY_PI_MINIMAL === "1";
+  const readonlySubagents = minimal && process.env.ONLY_MY_PI_READONLY_SUBAGENTS === "1";
+  if (process.env.ONLY_MY_PI_DEEPSEEK_ONLY === "1") requireDeepSeekModel(modelId);
+  const product = minimal ? null : { ...await import("../product-settings/catalog.mjs"), ...await import("../product-settings/runtime.mjs"), ...await import("../mcp/catalog.mjs") };
+  const settingsSnapshot = process.env.OMP_PRODUCT_SETTINGS_SNAPSHOT ? JSON.parse(process.env.OMP_PRODUCT_SETTINGS_SNAPSHOT) : null;
   const mcpSnapshot = process.env.OMP_HOST_MCP_SNAPSHOT ? JSON.parse(process.env.OMP_HOST_MCP_SNAPSHOT) : null;
-  const mcpNames = mcpToolNames(mcpSnapshot);
+  if (minimal && (settingsSnapshot || mcpSnapshot)) throw new Error();
+  const mcpNames = minimal ? [] : product.mcpToolNames(mcpSnapshot);
   if (controlled && !process.send) throw new Error();
   if (![stackRoot, configRoot, sessionRoot, ...extensions].every((p) => typeof p === "string" && path.isAbsolute(p)) || !extensions.length) throw new Error();
-  if (controlled) {
+  if (controlled && !minimal || readonlySubagents) {
     const direct = extensions.filter((p) => p.endsWith(`${path.sep}extensions${path.sep}omp-direct${path.sep}index.ts`));
     if (direct.length !== 1) throw new Error();
     const childEntry = path.resolve(path.dirname(direct[0]), "../../bin/omp-account-child.mjs");
@@ -35,8 +42,18 @@ try {
     // never temporarily swapped around concurrent child launches.
     process.env.OMP_HOST_ACCOUNT_CONFIG_ROOT = configRoot;
     process.env.OMP_HOST_ACCOUNT_ID = accountId;
+    if (readonlySubagents) {
+      process.env.OMP_HOST_ACCOUNT_STACK_ROOT = stackRoot;
+      process.env.OMP_HOST_ACCOUNT_NODE_PATH = process.execPath;
+      process.env.OMP_HOST_ACCOUNT_MODEL = modelId;
+      process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS = path.resolve(path.dirname(direct[0]), "../../bundles/only-my-pi-agent-bundle/agents");
+      // Public pi-subagents v1 inherited ceiling. It is fixed for this owned
+      // worker, also narrowing every physical child created by the backend.
+      process.env.PI_SUBAGENT_CAPABILITY_CEILING_V1 = Buffer.from(JSON.stringify({ version: 1,
+        allowedTools: ["read", "grep", "find", "ls"], allowedAgents: ["omp-explorer"], denyExtensions: true, sources: ["only-my-pi-readonly"] })).toString("base64url");
+    }
     process.env.PI_SUBAGENT_PI_BINARY = childEntry;
-    process.env.PATH = `${path.join(stackRoot, "node/bin")}${path.delimiter}${process.env.PATH ?? "/usr/bin:/bin"}`;
+    process.env.PATH = `${path.dirname(process.execPath)}${path.delimiter}${path.join(stackRoot, "node/bin")}${path.delimiter}${process.env.PATH ?? "/usr/bin:/bin"}`;
   }
   const catalog = new AccountCatalog(configRoot);
   const account = accountId === CLI_ACCOUNT_ID ? { accountId, providerId: modelId.split("/")[0] } : await catalog.get(accountId);
@@ -52,22 +69,28 @@ try {
   const modelRuntime = productAccount?.runtime ?? await sdk.ModelRuntime.create({ ...paths, allowModelNetwork: false, refreshOnCreate: false });
   if (!await hasAccountCredential(modelRuntime, accountId, account)) throw new Error();
   const createRuntime = async ({ cwd, sessionManager, sessionStartEvent }) => {
-    const services = await sdk.createAgentSessionServices({
+    if (settingsSnapshot) await new product.ProductSettings(configRoot).verify(settingsSnapshot, path.resolve(extensions.find(p => p.endsWith("extensions/omp-direct/index.ts")), "../../.."));
+    const options = {
       cwd, agentDir: configRoot, modelRuntime,
       settingsManager: applyOmpRequestPolicy(sdk.SettingsManager.create(cwd, configRoot, { projectTrusted: false })),
       extensionFlagValues: new Map([["perm", controlled ? "build" : "plan"]]),
       resourceLoaderOptions: { noExtensions: true, additionalExtensionPaths: extensions, extensionFactories: [
         (pi) => pi.events.emit("only-my-pi:host-session-owner:v1", { ownsSession: (ctx) => ctx.mode === "rpc" && ctx.sessionManager.getSessionId() === sessionManager.getSessionId(), verifyProject: hostProjectAuthority({ configRoot, taskId: process.env.OMP_HOST_INPUT_TASK_ID, sessionManager }) }),
+        (pi) => { if (settingsSnapshot) pi.events.emit("only-my-pi:product-task:v1", settingsSnapshot); },
         (pi) => { if (mcpSnapshot) pi.events.emit("only-my-pi:mcp-task:v1", { snapshot: mcpSnapshot }); },
-        ...(controlled ? [createControlledExtension()] : []),
+        ...(controlled || readonlySubagents ? [createControlledExtension()] : []),
         disableOmpCacheWarming,
       ] },
-    });
-    if (services.diagnostics.some((d) => d.type === "error") || services.resourceLoader.getExtensions().errors.length) throw new Error();
+    };
+    const services = minimal ? await createMinimalSessionServices(sdk, options) : await product.createProductSessionServices({ ...options, sdk, configRoot, snapshot: settingsSnapshot, taskId: process.env.OMP_HOST_INPUT_TASK_ID });
     const model = modelRuntime.getAvailableSnapshot().find((m) => `${m.provider}/${m.id}` === modelId);
     if (!model) throw new Error();
-    const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model, tools: [...(controlled ? ["read", "grep", "find", "ls", "edit", "write", "bash", "request_coding_access", "delegate_readonly_agent", "delegate_managed_writer"] : ["read", "grep", "find", "ls"]), ...mcpNames, "codemode"] });
+    const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model, tools: [...(controlled ? ["read", "grep", "find", "ls", "edit", "write", "bash", "request_coding_access", ...(!minimal ? ["delegate_readonly_agent", "delegate_managed_writer"] : [])] : ["read", "grep", "find", "ls"]), ...(readonlySubagents ? ["delegate_readonly_agent"] : []), ...mcpNames, ...(!minimal ? ["codemode"] : []), ...(settingsSnapshot ? product.settingsToolNames(settingsSnapshot).filter(n => n === "context_snapshot") : [])].filter(name => !settingsSnapshot || product.filterSettingsTools([name], settingsSnapshot).length) });
     if (created.modelFallbackMessage || `${created.session.model?.provider}/${created.session.model?.id}` !== modelId) throw new Error();
+    if (settingsSnapshot) {
+      const data = await product.confirmProductLoad({ services, session: created.session, configRoot, snapshot: settingsSnapshot, taskId: process.env.OMP_HOST_INPUT_TASK_ID });
+      if (process.connected) process.send({ type: "product_settings_loaded", data }, () => {});
+    }
     sessionManager.appendCustomEntry("omp-account-binding", { version: 1, accountId: account.accountId, providerId: account.providerId });
     return { ...created, services, diagnostics: services.diagnostics };
   };
@@ -79,7 +102,7 @@ try {
   if (taskId !== undefined) {
     if (!process.send || !/^[a-zA-Z0-9_-]{1,128}$/u.test(taskId)) throw new Error();
     const send = (frame) => { if (process.connected) process.send(frame, () => {}); };
-    const bridge = createPiInputBridge({ session: runtime.session, taskId, accountId, modelId, mode, send });
+    const bridge = createPiInputBridge({ session: runtime.session, taskId, accountId, modelId, mode, resourceRevision: settingsSnapshot?.resourceRevision ?? 0, send });
     process.on("message", (frame) => {
       if (frame?.type !== "omp_input_command") return;
       try {

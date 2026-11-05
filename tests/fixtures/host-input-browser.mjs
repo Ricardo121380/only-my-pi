@@ -11,9 +11,9 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createPi110SourceCli } from "./pi110-source-cli.mjs";
 import { startHost } from "../../packages/host/server.mjs";
-import { AccountCatalog } from "../../packages/host/accounts.mjs";
+import { AccountCatalog } from "../../packages/accounts/catalog.mjs";
 import { loadDistribution } from "../../packages/distribution/runtime.mjs";
-import { acquireOwnership, groupAlive } from "../../packages/host/ownership.mjs";
+import { acquireOwnership, groupAlive } from "../../packages/process-runtime/ownership.mjs";
 import { HostInputStore } from "../../packages/host/input-store.mjs";
 import { RpcWorker } from "../../packages/host/rpc-worker.mjs";
 import { resolveDirectExtensionSet } from "../../packages/direct-agent/launcher.mjs";
@@ -60,7 +60,8 @@ for (const id of [account.accountId, removed.accountId]) {
   await fs.writeFile(own.modelsPath, JSON.stringify(models), { mode: 0o600 });
 }
 await fs.writeFile(path.join(configRoot, "settings.json"), JSON.stringify({ ...(sourceCli ? JSON.parse(await fs.readFile(path.join(configRoot, "settings.json"), "utf8")) : {}), retry: { enabled: false }, compaction: { enabled: false } }), { mode: 0o600 });
-const assetsRoot = fileURLToPath(new URL("../../webui/dist", import.meta.url));
+const assetsRoot = process.env.OMP_INPUT_BROWSER_ASSETS_ROOT ?? fileURLToPath(new URL("../../webui/dist", import.meta.url));
+assert(path.isAbsolute(assetsRoot));
 const spawnedWorkers = [];
 const workerGroups = () => spawnedWorkers.map((worker) => {
   // A worker object can be allocated before a session lease rejects startup.

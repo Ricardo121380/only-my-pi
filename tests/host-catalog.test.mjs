@@ -70,6 +70,22 @@ test("history follows the active Pi branch, pages output lazily and never rewrit
   await fs.writeFile(file, bytes.replace('"id":"history"', '"id":"different"'));
   await assert.rejects(catalog.resume(s.sessionKey, p.projectId), { code: "SESSION_IDENTITY_CHANGED" });
 });
+test("tool failures keep their native error flag when reading history", async (t) => {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-tool-error-history-")));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const file = path.join(root, "history.jsonl");
+  const bytes = [
+    { type: "session", id: "errors", version: 3, cwd: root },
+    { type: "message", id: "ok", parentId: null, message: { role: "toolResult", toolName: "read", isError: false, content: [{ type: "text", text: "read result" }] } },
+    { type: "message", id: "failed", parentId: "ok", message: { role: "toolResult", toolName: "write", isError: true, content: [{ type: "text", text: "Tool write not found" }] } },
+  ].map(value => JSON.stringify(value)).join("\n") + "\n";
+  await fs.writeFile(file, bytes);
+  const catalog = new ProjectCatalog({ sessionRoot: root }); await catalog.scan();
+  const session = catalog.listSessions(catalog.listProjects()[0].projectId)[0];
+  const history = await catalog.history(session.sessionKey);
+  assert.deepEqual(history.messages.map(message => message.isError), [false, true]);
+  assert.equal(await fs.readFile(file, "utf8"), bytes);
+});
 test("Git diff disables repository external diff, text conversion and clean filters", async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-inspector-git-"))); t.after(() => fs.rm(root, { recursive: true, force: true }));
   const git = (...args) => execFileSync("/usr/bin/git", args, { cwd: root, env: { PATH: "/usr/bin:/bin", HOME: root }, stdio: "pipe" });

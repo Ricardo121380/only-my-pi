@@ -1,21 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import type { AccountDirectory } from "../../packages/host/contracts";
+import type { AccountDirectory } from "../../packages/accounts/contracts";
 import type { ClassifierChoice, ClassifierConfig, ModelBudget, ImageBudget, ModelLedger } from "../../packages/model-calls/contracts";
-import { api, query } from "./api";
-import { HostDialog } from "./HostDialog";
+import { MODEL_BUDGET, IMAGE_BUDGET, MODEL_BUDGET_LIMITS, IMAGE_BUDGET_LIMITS } from "../../packages/model-calls/budgets";
+import { api, query } from "./shared/api";
+import { HostDialog } from "./shared/HostDialog";
 import "./classification.css";
 
-const defaults: ModelBudget = { requests: 4, concurrency: 1, maxInputBytes: 8192, maxOutputBytes: 8192, inputBytes: 32768, outputBytes: 32768, timeoutMs: 10000 };
-const fields: [keyof ModelBudget, string, number][] = [["requests", "任务请求次数", 32], ["concurrency", "任务并发数", 4], ["maxInputBytes", "单次输入字节", 32768], ["maxOutputBytes", "单次输出字节", 65536], ["inputBytes", "任务输入字节", 1048576], ["outputBytes", "任务输出字节", 2097152], ["timeoutMs", "单次超时毫秒", 60000]];
-const imageDefaults: ImageBudget = { ...defaults, maxOutputBytes: 2097152, outputBytes: 8388608, maxImagesPerRequest: 1, images: 4, maxStorageBytes: 1048576, storageBytes: 4194304 };
-const imageFields: [keyof ImageBudget, string, number][] = [...fields.map(([key, label, max]): [keyof ImageBudget, string, number] => [key, label, key === "maxOutputBytes" ? 16777216 : key === "outputBytes" ? 67108864 : max]), ["maxImagesPerRequest", "单次返回图片上限", 4], ["images", "任务图片预占上限", 32], ["maxStorageBytes", "单次图片存储字节", 10485760], ["storageBytes", "任务存储预占字节", 67108864]];
+const fields: [keyof ModelBudget, string][] = [["requests", "任务请求次数"], ["concurrency", "任务并发数"], ["maxInputBytes", "单次输入字节"], ["maxOutputBytes", "单次输出字节"], ["inputBytes", "任务输入字节"], ["outputBytes", "任务输出字节"], ["timeoutMs", "单次超时毫秒"]];
+const imageFields: [keyof ImageBudget, string][] = [...fields, ["maxImagesPerRequest", "单次返回图片上限"], ["images", "任务图片预占上限"], ["maxStorageBytes", "单次图片存储字节"], ["storageBytes", "任务存储预占字节"]];
 const explain = (cause: unknown) => {
   const code = cause instanceof Error ? cause.message : "MODEL_LEDGER_UNAVAILABLE";
   const messages: Record<string, string> = { CLASSIFIER_REVISION_CONFLICT: "配置已被其他页面更新。请重新打开后核对；本次没有覆盖。", IMAGE_REVISION_CONFLICT: "配置已被其他页面更新。请重新打开后核对；本次没有覆盖。", CLASSIFIER_UNAVAILABLE: "所选分类模型或凭据不可用，请核对账号并刷新目录。", IMAGE_UNAVAILABLE: "所选生图模型或凭据不可用，请核对账号并刷新目录。", CLASSIFIER_CONFIG_INVALID: "配置无效，请检查所有有限额度。", IMAGE_CONFIG_INVALID: "生图配置无效，请检查所有有限额度。", AUTH_REQUIRED: "连接授权已失效，请从终端重新配对。" };
   return messages[code] ?? `未完成（${code}）。请核对状态；请求不会自动重发。`;
 };
 export function ClassifierPanel({ projectId, projectName, onClose, kind = "classifier" }: { projectId: string; projectName?: string; onClose: () => void; kind?: "classifier" | "image" }) {
-  const label = kind === "image" ? "生图" : "分类", initialBudget = kind === "image" ? imageDefaults : defaults;
+  const label = kind === "image" ? "生图" : "分类", initialBudget = kind === "image" ? IMAGE_BUDGET : MODEL_BUDGET;
+  const limits = kind === "image" ? IMAGE_BUDGET_LIMITS : MODEL_BUDGET_LIMITS;
   const [config, setConfig] = useState<ClassifierConfig | null>(null), [accounts, setAccounts] = useState<AccountDirectory | null>(null);
   const [accountId, setAccountId] = useState(""), [model, setModel] = useState(""), [models, setModels] = useState<ClassifierChoice[]>([]);
   const [budget, setBudget] = useState<ModelBudget | ImageBudget>(initialBudget), [error, setError] = useState(""), [notice, setNotice] = useState("");
@@ -61,7 +61,7 @@ export function ClassifierPanel({ projectId, projectName, onClose, kind = "class
       <button type="button" className="linkbtn" disabled={!accountId || loadingModels} onClick={() => { setError(""); setRefresh(n => n + 1); }}>刷新{label}目录</button>
       {loadingModels ? <p role="status">正在读取{label}目录…</p> : accountId && !models.length && <p>此账号没有可用{label}模型。请在账号管理配置对应协议与凭据后刷新。</p>}
       <p className="classifier-warning">费用上限未知。当前原生协议不能保证单次费用上限，每个任务需明确同意按其他额度运行。{selected?.price ? "目录价格只用于估算，不是账单。" : "目录价格未知，费用不会显示为零。"}</p>
-      <fieldset className="classifier-budgets"><legend>任务共享预算</legend>{budgetFields.map(([key, label, max]) => <label className="field" key={key}>{label}<input required type="number" min={1} max={max} step={1} value={(budget as ImageBudget)[key]} onChange={event => setBudget({ ...budget, [key]: Number(event.target.value) })} /></label>)}</fieldset>
+      <fieldset className="classifier-budgets"><legend>任务共享预算</legend>{budgetFields.map(([key, label]) => <label className="field" key={key}>{label}<input required type="number" min={1} max={(limits as ImageBudget)[key]} step={1} value={(budget as ImageBudget)[key]} onChange={event => setBudget({ ...budget, [key]: Number(event.target.value) })} /></label>)}</fieldset>
       {kind === "image" && <p>支持原生 openrouter-images 文本／所选模型支持的 PNG 输入及非交错 8-bit RGB/RGBA PNG 输出，最多 4 MP。原生协议未提供尺寸和质量参数，不接受脚本扩参。图片只保留在会话，不自动写项目；全局存储预占上限 256 MiB。</p>}
       <p>所有脚本共享这些额度，发送前预占单次输入和输出上限。字节限制控制请求及接收内容，不能保证 Provider 实际生成量或扣费。未知结果继续占额，不自动重试。</p>
       <div className="classifier-actions"><button className="softbtn primary" disabled={!selected?.supported || loadingModels}>保存项目{label}配置</button><button type="button" className="softbtn" disabled={!config[kind]} onClick={() => void save(true)}>停用{label}</button></div>

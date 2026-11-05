@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { createPi110SourceCli } from "./pi110-source-cli.mjs";
 import { createAccountOAuthService, installAccountOAuthTransport } from "./account-oauth-service.mjs";
 import { startHost } from "../../packages/host/server.mjs";
-import { AccountCatalog } from "../../packages/host/accounts.mjs";
+import { AccountCatalog } from "../../packages/accounts/catalog.mjs";
 import { writePiEvidence } from "./pi-runtime-evidence.mjs";
 
 const root = path.resolve(process.argv[2] ?? "");

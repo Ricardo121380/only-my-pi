@@ -5,8 +5,8 @@ import os from "node:os";
 import path from "node:path";
 import { EventEmitter } from "node:events";
 import { HostTasks } from "../packages/host/tasks.mjs";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
-import { acquireOwnership } from "../packages/host/ownership.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
+import { acquireOwnership } from "../packages/process-runtime/ownership.mjs";
 
 test("internal controlled tasks hold project ownership and approvals; public default stays readonly", async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-control-task-")));

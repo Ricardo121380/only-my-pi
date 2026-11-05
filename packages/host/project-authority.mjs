@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { readJsonObject } from "../config-runtime/index.mjs";
-import { processIdentity, verifyOwnership, ownershipError } from "./ownership.mjs";
+import { processIdentity, verifyOwnership, ownershipError } from "../process-runtime/ownership.mjs";
 import { terminal } from "./contracts.mjs";
 
 // Task IDs only locate the durable binding. A private bootstrap closure must

@@ -11,7 +11,7 @@ import { createHash } from "node:crypto";
 import * as sdk from "@earendil-works/pi-coding-agent";
 import { createPi110SourceCli } from "./fixtures/pi110-source-cli.mjs";
 import { startHost } from "../packages/host/server.mjs";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
 import { SessionAdmissions } from "../packages/direct-agent/session-admission.mjs";
 import { createAdmittedSessionRuntime } from "../packages/direct-agent/session-runtime.mjs";
 import { readSessionSnapshot, openValidatedSession } from "../packages/direct-agent/session-history.mjs";

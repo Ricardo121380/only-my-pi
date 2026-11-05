@@ -8,7 +8,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { RpcWorker } from "../packages/host/rpc-worker.mjs";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
 import { loadDistribution } from "../packages/distribution/runtime.mjs";
 
 for (const scenario of ["approve", "revoke", "late", "ordinary", "scout", "writer"]) test(`production SDK entry and direct extension: ${scenario}`, { timeout: 30000, skip: ["scout", "writer"].includes(scenario) && !process.env.OMP_TEST_STACK_PACKAGE }, async (t) => {

@@ -24,11 +24,12 @@ export function createControlledExtension({ transport = process } = {}) {
       },
     });
     if (!controller) throw new Error("HOST_CONTROLLER_UNAVAILABLE");
-    let previous;
+    let previous, orchestrator;
     const publish = () => {
       if (closed || transport.connected === false) return;
-      managedRuntimeSeen ||= !!controller.orchestrator;
-      const state = projectControlState({ access: controller.hasCodingAccess() ? "coding" : "inspect", orchestration: controller.orchestrator?.snapshot?.() });
+      orchestrator = controller.orchestrator ?? orchestrator;
+      managedRuntimeSeen ||= !!orchestrator;
+      const state = projectControlState({ access: controller.hasCodingAccess() ? "coding" : "inspect", orchestration: orchestrator?.snapshot?.() });
       const encoded = JSON.stringify(state);
       if (encoded !== previous) { previous = encoded; transport.send({ type: "control_state", state }, () => {}); }
     };
@@ -43,7 +44,9 @@ export function createControlledExtension({ transport = process } = {}) {
     };
     const receive = (message) => {
       if (!closed && message?.type === "prepare_shutdown" && typeof message.id === "string") {
-        shutdownId = message.id; revoke(); return;
+        shutdownId = message.id; revoke();
+        transport.send({ type: "shutdown_prepared", id: shutdownId }, () => {});
+        return;
       }
       if (closed || message?.type !== "revoke" || typeof message.id !== "string") return;
       revoke(); publish(); transport.send({ type: "revoked", id: message.id });

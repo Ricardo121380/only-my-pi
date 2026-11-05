@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ImageExport, ImageReference, SessionImagesView } from "../../packages/model-calls/contracts";
-import { api, query } from "./api";
-import { HostDialog } from "./HostDialog";
+import { api, query } from "./shared/api";
+import { HostDialog } from "./shared/HostDialog";
 import { SessionImageView } from "./ImageResults";
 
 class ExportRejection extends Error {}

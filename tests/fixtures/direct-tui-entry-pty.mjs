@@ -7,7 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import http from "node:http";
-import { acquireOwnership } from "../../packages/host/ownership.mjs";
+import { acquireOwnership } from "../../packages/process-runtime/ownership.mjs";
 import { prepareDirectTestRuntime } from "./direct-test-runtime.mjs";
 
 assert.ok(process.stdin.isTTY && process.stdout.isTTY);
@@ -83,7 +83,7 @@ try {
   const child = spawn(runtime.node, [path.join(runtime.packageRoot, "packages/direct-agent/tui-entry.mjs"),
     runtime.sdk, "--no-extensions",
     ...[...extensions, extension].flatMap(entry => ["--extension", entry]),
-    "--tools", fullStack ? "read,grep,find,ls,edit,write,bash,request_coding_access,delegate_readonly_agent,delegate_managed_writer" : "read,ls", "--perm", "build", "--session-dir", sessions,
+    "--tools", fullStack ? "read,grep,find,ls,edit,write,bash,request_coding_access,delegate_readonly_agent,delegate_managed_writer,context_snapshot" : "read,ls", "--perm", "build", "--session-dir", sessions,
     ...(missingCwdBytes ? ["--session", missingCwdFile] : ["--session-id", "entry-smoke"]),
     "--model", "fixture/one", "--thinking", "high", ...(mode === "offline" ? ["--offline"] : []),
     ...(mode === "no-session" ? ["--no-session"] : []),

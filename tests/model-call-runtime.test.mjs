@@ -5,13 +5,14 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import * as sdk from "@earendil-works/pi-coding-agent";
 import { createClassificationControl } from "../packages/model-calls/runtime.mjs";
-import { classificationContext, createClassificationHost } from "./fixtures/classification-host.mjs";
+import { classificationBudget, classificationContext, createClassificationHost } from "./fixtures/classification-host.mjs";
+import { taskSettingsSnapshot } from "../packages/product-settings/catalog.mjs";
 import { createImageHost, imageBase64, imageContext, imageDigest } from "./fixtures/image-host.mjs";
 
 // Exercise the repository module through Pi's real extension loader, lifecycle
 // dispatcher and context. The account store, native adapters and independent
 // loopback receivers are real; only the user's UI selection is controlled.
-async function controlFixture(t, f) {
+async function controlFixture(t, f, beforeStart) {
   let session, control, decision = "拒绝";
   const prompts = [], errors = [];
   t.after(async () => {
@@ -26,9 +27,10 @@ async function controlFixture(t, f) {
   sdk.initTheme("dark", false);
   const modelRuntime = await sdk.ModelRuntime.create({ authPath: path.join(f.config, "auth.json"),
     modelsPath: path.join(f.config, "models.json"), allowModelNetwork: false, refreshOnCreate: false });
+  const eventBus = sdk.createEventBus();
   const services = await sdk.createAgentSessionServices({ cwd: f.project, agentDir: f.config, modelRuntime,
     settingsManager: sdk.SettingsManager.inMemory({}),
-    resourceLoaderOptions: { noExtensions: true, noSkills: true, noPromptTemplates: true, noThemes: true,
+    resourceLoaderOptions: { eventBus, noExtensions: true, noSkills: true, noPromptTemplates: true, noThemes: true,
       extensionFactories: [pi => { control = createClassificationControl(pi, {
         sdkFile: fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent")), configRoot: f.config }); }] } });
   const sessionManager = sdk.SessionManager.inMemory(f.project);
@@ -37,6 +39,7 @@ async function controlFixture(t, f) {
   await session.bindExtensions({ mode: "tui", onError: error => errors.push(error),
     uiContext: { select: async (title, options) => { prompts.push({ title, options }); return decision; } } });
   const runner = session.extensionRunner;
+  await beforeStart?.(eventBus);
   await runner.emit({ type: "agent_start" });
   const registry = await control.registry(runner.createContext(), "parent-fixture-tool", new AbortController().signal, () => {});
   assert.deepEqual(errors, []);
@@ -44,6 +47,20 @@ async function controlFixture(t, f) {
     approve: () => { decision = "本任务，按其他额度运行"; },
     assertNoErrors: () => assert.deepEqual(errors, []) };
 }
+
+test("CLI model calls use the admitted composite snapshot when settings change before agent start", { timeout: 45000 }, async t => {
+  const f = await createClassificationHost(); let admitted;
+  const c = await controlFixture(t, f, async events => {
+    admitted = await taskSettingsSnapshot(f.config, f.project);
+    events.emit("only-my-pi:model-task:v1", { snapshot: admitted.classifierSnapshot });
+    await f.select({ ...classificationBudget, requests: 3 }, 1);
+  });
+  assert.equal((await f.calls()).tasks.at(-1).snapshot.revision, admitted.classifierSnapshot.revision);
+  assert.equal((await f.calls()).tasks.at(-1).snapshot.classifier.budget.requests, 4);
+  c.approve();
+  await c.registry.classify(c.registry.getModelOfType("classifier", "fixtureclass", "sentiment"), classificationContext);
+  assert.equal(f.received.length, 1); c.assertNoErrors();
+});
 
 test("native classifier requires task consent, records the real request and revokes retained handles at agent end", { timeout: 45000 }, async t => {
   const f = await createClassificationHost(), c = await controlFixture(t, f);

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { loadNativeMcp } from "./native.mjs";
 import { httpTarget, mcpError, MCP_LIMITS } from "./catalog.mjs";
 import { isMcpOAuthActive as active } from "./contracts.mjs";
-import { processIdentity } from "../host/ownership.mjs";
+import { processIdentity } from "../process-runtime/ownership.mjs";
 
 const endpoint = (input, authorization = false) => {
   const url = new URL(String(input));

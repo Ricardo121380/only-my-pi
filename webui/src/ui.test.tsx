@@ -1,11 +1,12 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Composer } from "./Composer";
-import { SafeMarkdown } from "./Messages";
-import { applyEvent } from "./api";
+import { SafeMarkdown } from "./shared/Messages";
+import { applyEvent } from "./shared/api";
 import { OutputDock } from "./OutputDock";
-import type { HostSnapshot, ThinkingLevel } from "../../packages/host/contracts";
+import type { HostSnapshot } from "../../packages/host/contracts";
+import type { ThinkingLevel } from "../../packages/accounts/contracts";
 afterEach(cleanup);
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function () { this.open = true; };
@@ -14,6 +15,23 @@ beforeAll(() => {
 const models = [{ id: "fixture/model", name: "Fixture", provider: "fixture" }];
 const defaults = { models, disabled: false, running: false, cancelling: false, onSend: async () => {}, onCancel: () => {}, onModels: () => {} };
 describe("composer states", () => {
+  it.each(["edited", "restored", "suggested"] as const)("a successful submission preserves a newer %s draft", async change => {
+    let finish!: () => void;
+    const onSend = vi.fn(() => new Promise<void>(resolve => { finish = resolve; }));
+    const { rerender } = render(<Composer {...defaults} onSend={onSend} />);
+    const input = screen.getByLabelText("新的只读分析") as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: "已发送" } });
+    fireEvent.click(screen.getByRole("button", { name: "开始分析" }));
+    expect(onSend).toHaveBeenCalledTimes(1);
+    if (change === "suggested") rerender(<Composer {...defaults} onSend={onSend} suggestion={{ text: "新建议", key: 1 }} />);
+    else {
+      fireEvent.change(input, { target: { value: "新草稿" } });
+      if (change === "restored") fireEvent.change(input, { target: { value: "已发送" } });
+    }
+    await act(async () => finish());
+    expect(input.value).toBe(change === "edited" ? "新草稿" : change === "restored" ? "已发送" : "新建议");
+    expect(onSend).toHaveBeenCalledTimes(1);
+  });
   it("requires a Host capability and explicit choice for controlled mode; failure keeps the draft", async () => {
     const onSend = vi.fn(async () => { throw new Error("OWNERSHIP_HELD"); });
     const { container, rerender } = render(<Composer {...defaults} onSend={onSend} />);

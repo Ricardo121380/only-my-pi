@@ -8,6 +8,7 @@ import { assertSafeContainedPath } from "../config-runtime/index.mjs";
 import { findInputReceipt, INPUT_CARRIER } from "./input-protocol.mjs";
 import { readSessionSnapshot } from "../direct-agent/session-history.mjs";
 import { IMAGE_ENTRY } from "../model-calls/references.mjs";
+import { toolFilePath } from "./inspector.mjs";
 
 const key = (value) => createHash("sha256").update(value).digest("hex");
 export const projectIdFor = (root) => key(root);
@@ -83,11 +84,21 @@ export class ProjectCatalog {
     const session = this.sessions.get(sessionKey); if (!session) throw hostError("SESSION_NOT_FOUND", 404);
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000) throw hostError("PAGE_INVALID");
     const { manager } = await this.readSnapshot(session.file);
+    const targets = new Map();
+    for (const entry of manager.getBranch()) if (entry.type === "message" && entry.message?.role === "assistant" && Array.isArray(entry.message.content)) {
+      for (const block of entry.message.content) if (block.type === "toolCall" && typeof block.id === "string") {
+        const filePath = toolFilePath(this.project(session.projectId), block.name, block.arguments);
+        targets.set(block.id, targets.has(block.id) ? null : { name: block.name, filePath });
+      }
+    }
     const entries = manager.getBranch().map((entry) => entry.type === "custom_message" && entry.customType === INPUT_CARRIER
       ? { ...entry, type: "message", message: { role: "user", content: entry.content } } : entry).filter((entry) => entry.type === "message" && ["user", "assistant", "toolResult"].includes(entry.message?.role));
     const messages = entries.slice(offset, offset + Math.min(50, limit)).map((entry) => {
       const m = entry.message, cap = m.role === "toolResult" ? 240 : 65536;
       return { id: entry.id, role: m.role, text: textContent(m.content, cap), toolName: typeof m.toolName === "string" ? m.toolName : undefined,
+        ...(m.role === "toolResult" ? { isError: m.isError === true,
+          ...(typeof m.toolCallId === "string" && m.toolCallId.length <= 256 ? { toolCallId: m.toolCallId } : {}),
+          ...(targets.get(m.toolCallId)?.name === m.toolName && targets.get(m.toolCallId)?.filePath ? { filePath: targets.get(m.toolCallId).filePath } : {}) } : {}),
         timestamp: entry.timestamp, outputAvailable: m.role === "toolResult", truncated: textContent(m.content, cap + 1).length > cap };
     });
     const projection = manager.buildSessionProjection();

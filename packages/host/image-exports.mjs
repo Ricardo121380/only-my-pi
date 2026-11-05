@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID, createHash } from "node:crypto";
 import { atomicWriteJson, ensureConfigDirectory, readJsonObject, canonicalJson } from "../config-runtime/index.mjs";
-import { acquireOwnership, verifyOwnership, groupAlive, processIdentity } from "./ownership.mjs";
+import { acquireOwnership, verifyOwnership, groupAlive, processIdentity } from "../process-runtime/ownership.mjs";
 import { publishImageExport } from "./image-export-process.mjs";
 import { projectPath } from "./inspector.mjs";
 import { hostError } from "./contracts.mjs";

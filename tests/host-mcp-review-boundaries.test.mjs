@@ -66,7 +66,7 @@ for (const mode of ["readonly", "controlled"]) test(`journal quota failure canno
   await until(() => f.task(started.taskId), (task) => task.approvals.some((item) => item.title.startsWith("MCP ·")), "MCP approval");
   if (mode === "controlled") assert.equal((await f.task(started.taskId)).access, "coding");
   const run = (await f.mcp({ type: "status" })).runs.at(-1), file = path.join(f.config, "only-my-pi/mcp/runs.json");
-  const { groupAlive, processIdentity } = await import("../packages/host/ownership.mjs");
+  const { groupAlive, processIdentity } = await import("../packages/process-runtime/ownership.mjs");
   const { MCP_LIMITS } = await import("../packages/mcp/catalog.mjs");
   const original = await fs.readFile(file, "utf8");
   cleanup = async () => {
@@ -111,7 +111,7 @@ test("disabled MCP cannot hide independent service groups during actual Host cra
   const child = fork(new URL("./fixtures/mcp-host-orphan.mjs", import.meta.url), { execArgv: [], stdio: ["ignore", "ignore", "pipe", "ipc"] });
   let stderr = "", host, fixture;
   child.stderr.on("data", (bytes) => { stderr += bytes; });
-  const { groupAlive, processIdentity } = await import("../packages/host/ownership.mjs");
+  const { groupAlive, processIdentity } = await import("../packages/process-runtime/ownership.mjs");
   t.after(async () => {
     if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
     if (!fixture) return;

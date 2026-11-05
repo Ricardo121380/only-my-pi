@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { acquireOwnership, ownershipError, verifyOwnership } from "../host/ownership.mjs";
+import { acquireOwnership, ownershipError, verifyOwnership } from "../process-runtime/ownership.mjs";
 import { projectExecutionState } from "../project-gates/index.mjs";
 
 // TUI keeps project ownership after revoke: revoked authority does not prove

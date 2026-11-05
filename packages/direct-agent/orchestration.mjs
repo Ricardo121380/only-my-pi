@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { DEFAULT_BUDGET } from "../daily-config/index.mjs";
-import { isValidRealWorkspaceReceipt } from "./contracts.mjs";
+import { DIRECT_READ_ONLY_AGENTS, isValidRealWorkspaceReceipt } from "./contracts.mjs";
 
 import {
   applyWriterPatch,
@@ -21,17 +21,6 @@ export const DIRECT_DELEGATION_EVENTS = Object.freeze({
 });
 
 export const DIRECT_RUNTIME_EVENT = "only-my-pi:direct-runtime:v1";
-
-export const DIRECT_READ_ONLY_AGENTS = Object.freeze([
-  "omp-explorer",
-  "omp-reviewer",
-  "omp-scout",
-  "omp-security-reviewer",
-  "omp-test-analyst",
-  "omp-verifier",
-  "omp-researcher",
-  "omp-source-verifier",
-]);
 
 const READ_ONLY_AGENT_SET = new Set(DIRECT_READ_ONLY_AGENTS);
 const WEB_AGENTS = new Set(["omp-researcher", "omp-source-verifier"]);

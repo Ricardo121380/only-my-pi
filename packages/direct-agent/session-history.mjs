@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import { constants } from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { ownershipError } from "../host/ownership.mjs";
+import { ownershipError } from "../process-runtime/ownership.mjs";
 import { IMAGE_ENTRY, validImageEntry } from "../model-calls/references.mjs";
 
 const entryTypes = new Set(["message", "thinking_level_change", "model_change", "usage", "compaction", "branch_summary", "custom", "custom_message", "context_edit", "label", "session_info"]);

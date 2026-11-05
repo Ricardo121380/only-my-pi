@@ -21,7 +21,7 @@ async function publishControl() {
   await fs.writeFile(controlFile, JSON.stringify({ pairingUrl: pair.url, origin: fixture.host.origin, projectId: fixture.projectId, accountId: fixture.account.accountId, classifierOrigin: fixture.classifierOrigin, project: fixture.project }), { mode: 0o600 });
 }
 await publishControl();
-console.log(JSON.stringify({ ready: true, origin: fixture.host.origin, project: fixture.project, node: process.version, pi: "1.1.0", scope: "LOCAL_CONTROLLED_SOURCE_HARNESS" }));
+console.log(JSON.stringify({ ready: true, origin: fixture.host.origin, project: fixture.project, node: process.version, pi: fixture.piVersion, scope: "LOCAL_CONTROLLED_SOURCE_HARNESS" }));
 let closing = false;
 process.on("SIGUSR2", async () => {
   if (closing) return;

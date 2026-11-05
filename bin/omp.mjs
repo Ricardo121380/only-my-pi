@@ -4,57 +4,14 @@ import os from "node:os";
 import path from "node:path";
 import { realpathSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 
-import { BootstrapService } from "../packages/bootstrap/bootstrap-service.mjs";
-import { ArtifactInstaller, createArtifactProcessRunner } from "../packages/bootstrap/artifact-installer.mjs";
-import { createUserCliInstaller } from "../packages/bootstrap/user-cli-installer.mjs";
-import { createNpmCommandRunner } from "../packages/bootstrap/command-runner.mjs";
-import { DoctorService } from "../packages/bootstrap/doctor-service.mjs";
-import { createNoModelSmokeRunner } from "../packages/bootstrap/smoke-runner.mjs";
-import { TransactionEngine } from "../packages/bootstrap/transaction-engine.mjs";
-import { createWorkflowControlService } from "../packages/control-service/workflow-service.mjs";
-import { createSwarmControlService } from "../packages/control-service/swarm-service.mjs";
-import { createThemeControlService } from "../packages/control-service/theme-service.mjs";
-import { createStatusService } from "../packages/control-service/status-service.mjs";
-import { createVersionService } from "../packages/control-service/version-service.mjs";
-import { createUltraRunControlService } from "../packages/control-service/ultra-run-service.mjs";
+import { createRequire } from "node:module";
 import { parseOmpArgs } from "../packages/control-service/cli-parser.mjs";
-import { ControlService, OMP_USAGE } from "../packages/control-service/service.mjs";
-import { DailyConfigService } from "../packages/daily-config/index.mjs";
-import { ProjectGateService, createNodeExecAdapter } from "../packages/project-gates/index.mjs";
-import { RunManagementService, createRunRecordStore } from "../packages/run-management/index.mjs";
-import { loadSettings } from "../packages/config-runtime/index.mjs";
-import {
-  classifyOmpInvocation,
-  launchDirectAgent,
-  OMP_AGENT_USAGE,
-} from "../packages/direct-agent/launcher.mjs";
-import { createDirectAgentDoctor } from "../packages/direct-agent/doctor.mjs";
+import { classifyOmpInvocation, launchDirectAgent, OMP_AGENT_USAGE } from "../packages/direct-agent/launcher.mjs";
 import { assertSupportedNode, loadDistribution, readRegularJson } from "../packages/distribution/runtime.mjs";
-import { handleDistributionCommand } from "../packages/distribution/commands.mjs";
-import { isPrivateStack } from "../packages/release-stack/contracts.mjs";
-import {
-  createGitHubReleasePayloadSource,
-  createLocalReleasePayloadSource,
-  createShellProfileService,
-  createStackHarnessAdapter,
-  createStackLayout,
-  createStackService,
-  createStackTransactionEngine,
-  createThinPayloadResolver,
-} from "../packages/release-stack/index.mjs";
-import {
-  createCandidateTargetResolver,
-  createCrossRootTransactionEngine,
-  createExternalMigrationPlanner,
-  createFilesystemMigrationPlatform,
-  createPiProcessAdmission,
-  createUpstreamMigrationService,
-} from "../packages/upstream-migration/index.mjs";
 
+const require = createRequire(import.meta.url);
 const THIS_FILE = fileURLToPath(import.meta.url);
 const DEFAULT_ROOT = path.resolve(path.dirname(THIS_FILE), "..");
 const ERROR_CODE = /^[A-Z][A-Z0-9_]{2,63}$/u;
@@ -74,38 +31,6 @@ export const OMP_EXIT_CODES = Object.freeze({
   UNAVAILABLE: 4,
 });
 
-const DEFAULT_DEPENDENCIES = Object.freeze({
-  ArtifactInstaller,
-  BootstrapService,
-  ControlService,
-  DoctorService,
-  DailyConfigService,
-  ProjectGateService,
-  RunManagementService,
-  TransactionEngine,
-  createNpmCommandRunner,
-  createNoModelSmokeRunner,
-  createArtifactProcessRunner,
-  createUserCliInstaller,
-  createExternalMigrationPlanner,
-  createFilesystemMigrationPlatform,
-  createCrossRootTransactionEngine,
-  createCandidateTargetResolver,
-  createPiProcessAdmission,
-  createUpstreamMigrationService,
-  createVersionService,
-  createDirectAgentDoctor,
-  createWorkflowControlService,
-  createGitHubReleasePayloadSource,
-  createLocalReleasePayloadSource,
-  createShellProfileService,
-  createStackHarnessAdapter,
-  createStackLayout,
-  createStackService,
-  createStackTransactionEngine,
-  createThinPayloadResolver,
-});
-
 function fail(code, message) {
   const error = new Error(message);
   error.code = code;
@@ -117,194 +42,10 @@ function assertFunction(value, label) {
   return value;
 }
 
-function assertAbsolutePath(value, label) {
-  if (typeof value !== "string" || !path.isAbsolute(value)) {
-    fail("INVALID_CLI_PATH", `${label} must be an explicit absolute path`);
-  }
-  return path.resolve(value);
-}
-
-function dependenciesWithDefaults(overrides = {}) {
-  if (overrides === null || typeof overrides !== "object" || Array.isArray(overrides)) {
-    fail("INVALID_CLI_DEPENDENCY", "dependencies must be an object");
-  }
-  const allowed = new Set(Object.keys(DEFAULT_DEPENDENCIES));
-  for (const key of Object.keys(overrides)) {
-    if (!allowed.has(key)) fail("INVALID_CLI_DEPENDENCY", `unknown CLI dependency: ${key}`);
-  }
-  const dependencies = { ...DEFAULT_DEPENDENCIES, ...overrides };
-  for (const key of allowed) assertFunction(dependencies[key], key);
-  return dependencies;
-}
-
-function inspectPublicPlatform() {
-  const darwinMajor = process.platform === "darwin" ? Number.parseInt(os.release().split(".")[0], 10) : 0;
-  return Object.freeze({
-    os: process.platform,
-    arch: process.arch,
-    minimumMacOSSatisfied: process.platform === "darwin" && Number.isInteger(darwinMajor) && darwinMajor >= 23,
-    rosetta: process.platform === "darwin" && process.arch !== "arm64",
-  });
-}
-
-/**
- * Construct the complete production control plane for one already-parsed
- * config root. Constructors are injectable so tests never need to spawn npm,
- * Pi, access a Provider, or use the real Pi home.
- */
-export function createProductionControlService({
-  rootDir = DEFAULT_ROOT,
-  configRoot,
-  spawnImpl,
-  confirm,
-  dependencies,
-} = {}) {
-  const resolvedRoot = assertAbsolutePath(rootDir, "rootDir");
-  const resolvedConfigRoot = assertAbsolutePath(configRoot, "configRoot");
-  const wired = dependenciesWithDefaults(dependencies);
-  const artifactProcessOptions = spawnImpl === undefined ? {} : { spawnImpl };
-  const userCli = wired.createUserCliInstaller({
-    cliRoot: path.join(os.homedir(), ".local", "share", "only-my-pi"),
-    binPath: path.join(os.homedir(), ".local", "bin", "omp"),
-  });
-  const artifactInstaller = new wired.ArtifactInstaller({
-    runCommand: wired.createArtifactProcessRunner(artifactProcessOptions),
-    userCli,
-  });
-  const doctor = new wired.DoctorService({ rootDir: resolvedRoot });
-  const runner = wired.createNpmCommandRunner({ configRoot: resolvedConfigRoot });
-  const smokeOptions = spawnImpl === undefined ? {} : { spawnImpl };
-  const smokeRunner = wired.createNoModelSmokeRunner(smokeOptions);
-  const transactionEngine = new wired.TransactionEngine({
-    rootDir: resolvedRoot,
-    runner,
-    smokeRunner,
-    doctorService: doctor,
-  });
-  const candidateTarget = wired.createCandidateTargetResolver({ rootDir: resolvedRoot });
-  const bootstrap = new wired.BootstrapService({
-    rootDir: resolvedRoot,
-    doctorService: doctor,
-    transactionEngine,
-    alternativeTargetResolver: (options) => candidateTarget.alignInstalled(options),
-  });
-  const workflows = wired.createWorkflowControlService({ rootDir: resolvedRoot });
-  const swarms = createSwarmControlService({ rootDir: resolvedRoot });
-  const ultras = createUltraRunControlService({ rootDir: resolvedRoot });
-  const themes = createThemeControlService({ rootDir: resolvedRoot });
-  const statusService = createStatusService();
-  const stackLayout = wired.createStackLayout({ homeDir: os.homedir(), configRoot: resolvedConfigRoot });
-  const versionService = wired.createVersionService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot, userCli, stackLayout });
-  const directDoctor = wired.createDirectAgentDoctor({
-    rootDir: resolvedRoot,
-    configRoot: resolvedConfigRoot,
-    stackRoot: stackLayout.currentStack,
-  });
-  const migrationPlanner = wired.createExternalMigrationPlanner({
-    configRoot: resolvedConfigRoot,
-    piPackageRoot: "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent",
-    piBinPath: "/opt/homebrew/bin/pi",
-    bootstrap,
-  });
-  const processAdmission = wired.createPiProcessAdmission({
-    piPackageRoot: "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent",
-    piBinPath: "/opt/homebrew/bin/pi",
-  });
-  const migrationPlatform = wired.createFilesystemMigrationPlatform({
-    rootDir: resolvedRoot,
-    configRoot: resolvedConfigRoot,
-    piPackageRoot: "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent",
-    piBinPath: "/opt/homebrew/bin/pi",
-    planner: migrationPlanner,
-    candidateTarget,
-    userCli,
-    doctor,
-    smokeRunner,
-    bootstrapTransaction: transactionEngine,
-    runCommand: wired.createArtifactProcessRunner({ ...artifactProcessOptions, maxOutputBytes: 8 * 1024 * 1024 }),
-  });
-  const upstreamEngine = wired.createCrossRootTransactionEngine({
-    configRoot: resolvedConfigRoot,
-    platform: migrationPlatform,
-    processAdmission,
-  });
-  const upstreamMigration = wired.createUpstreamMigrationService({
-    rootDir: resolvedRoot,
-    configRoot: resolvedConfigRoot,
-    planner: migrationPlanner,
-    candidateTarget,
-    processAdmission,
-    engine: upstreamEngine,
-  });
-  const stackHarness = wired.createStackHarnessAdapter({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot, spawnImpl });
-  const stackProcessAdmission = wired.createPiProcessAdmission({
-    piPackageRoot: path.join(stackLayout.currentStack, "pi"),
-    piBinPath: stackLayout.piShim,
-  });
-  const stackSmoke = wired.createNoModelSmokeRunner({ ...smokeOptions, piCommand: stackLayout.piShim });
-  const shellProfile = wired.createShellProfileService({ homeDir: os.homedir() });
-  const stackEngine = wired.createStackTransactionEngine({
-    layout: stackLayout,
-    processAdmission: stackProcessAdmission,
-    harness: stackHarness,
-    shellProfile,
-    doctor: async ({ context }) => {
-      if (isPrivateStack(context.stack)) {
-        const runtime = await loadDistribution({ packageRoot: path.join(context.activeStackPath, "only-my-pi/package"), nodePath: path.join(context.activeStackPath, "node/bin/node") });
-        return { ok: runtime?.stackId === context.stack.stackId, status: "PRIVATE_STACK_VERIFIED" };
-      }
-      const result = await bootstrap.doctor({ configRoot: resolvedConfigRoot });
-      return { ok: result?.ok === true, status: result?.status ?? "FAIL" };
-    },
-    smoke: async ({ context }) => {
-      if (isPrivateStack(context.stack)) {
-        const { stdout } = await promisify(execFile)(path.join(context.activeStackPath, "node/bin/node"), [path.join(context.activeStackPath, "pi/dist/bundle/cli.js"), "--version"],
-          { env: { PATH: "/usr/bin:/bin", HOME: context.paths.root }, timeout: 20_000, maxBuffer: 64 * 1024 });
-        return { ok: stdout.trim() === context.stack.runtime.pi.version, status: "PRIVATE_PI_SMOKE" };
-      }
-      const settings = await loadSettings(resolvedConfigRoot);
-      const result = await stackSmoke({ configRoot: resolvedConfigRoot, settings: settings.settings });
-      return { ok: result?.status === "PASS" || result?.ok === true, status: result?.status ?? "FAIL" };
-    },
-  });
-  const thinResolver = wired.createThinPayloadResolver(spawnImpl === undefined ? {} : { spawnImpl });
-  const stackService = wired.createStackService({
-    layout: stackLayout,
-    localSource: wired.createLocalReleasePayloadSource({ cacheRoot: stackLayout.releaseCache, thinResolver }),
-    releaseSource: wired.createGitHubReleasePayloadSource({ cacheRoot: stackLayout.releaseCache, thinResolver }),
-    engine: stackEngine,
-    shellProfile,
-    platformInspector: async () => inspectPublicPlatform(),
-  });
-  const dailyConfig = new wired.DailyConfigService({ rootDir: resolvedRoot, configRoot: resolvedConfigRoot });
-  const projectGates = new wired.ProjectGateService({
-    configRoot: resolvedConfigRoot,
-    getContext: () => ({ cwd: process.cwd(), isProjectTrusted: () => true, sessionManager: { getSessionId: () => "explicit-cli-validation" } }),
-    exec: createNodeExecAdapter({ ...(spawnImpl === undefined ? {} : { spawnImpl }) }),
-  });
-  const runRecordStore = createRunRecordStore({ managedRoot: path.join(resolvedConfigRoot, "only-my-pi") });
-  const runManagement = new wired.RunManagementService({ recordStore: runRecordStore });
-  return new wired.ControlService({
-    artifactInstaller,
-    userCli,
-    bootstrap,
-    doctor,
-    confirm,
-    rootDir: resolvedRoot,
-    configRoot: resolvedConfigRoot,
-    workflows,
-    swarms,
-    ultras,
-    themes,
-    dailyConfig,
-    projectGates,
-    runManagement,
-    statusService,
-    versionService,
-    directDoctor,
-    upstreamMigration,
-    stackService,
-  });
+/** Preserve the synchronous public factory while loading management only on demand.
+ * Node 24 supports requiring an ESM graph without top-level await. */
+export function createProductionControlService(options = {}) {
+  return require("../packages/control-service/production.mjs").createProductionControlService(options);
 }
 
 /**
@@ -513,6 +254,7 @@ export async function runOmpCli({
   try {
     request = parseOmpArgs(argv, { env, homedir });
     if (request.command === "help") {
+      const { OMP_USAGE } = await import("../packages/control-service/service.mjs");
       writeText(stdout, formatOmpHuman({ ok: true, status: "HELP", mutation: false, text: OMP_USAGE }));
       return OMP_EXIT_CODES.SUCCESS;
     }
@@ -576,10 +318,10 @@ export async function runOmpEntrypoint(options = {}) {
     }
     if (route.kind === "admin") {
       if (route.argv[0] === "account") {
-        const { runAccountCli } = await import("../packages/host/account-cli.mjs");
+        const { runAccountCli } = await import("../packages/accounts/commands.mjs");
         const { resolveDirectConfigRoot, resolveControlledStack } = await import("../packages/direct-agent/launcher.mjs");
         const env = options.env ?? process.env, homeDir = options.homedir ? options.homedir() : os.homedir();
-        const result = await runAccountCli({ argv: route.argv.slice(1), env, stderr,
+        const result = await runAccountCli({ argv: route.argv.slice(1), env, stdin: options.stdin ?? process.stdin, stderr,
           configRoot: resolveDirectConfigRoot({ env, homeDir }),
           resolveStack: () => resolveControlledStack({ packageRoot: options.rootDir ?? DEFAULT_ROOT, homeDir, stackRoot: options.stackRoot }) });
         writeText(stdout, stringifyOmpJson(result));
@@ -596,6 +338,13 @@ export async function runOmpEntrypoint(options = {}) {
         else writeText(stdout, stringifyOmpJson(result));
         return OMP_EXIT_CODES.SUCCESS;
       }
+      if (route.argv[0] === "settings") {
+        const { runSettingsCli } = await import("../packages/product-settings/commands.mjs");
+        const { resolveDirectConfigRoot } = await import("../packages/direct-agent/launcher.mjs");
+        const homeDir = options.homedir ? options.homedir() : os.homedir();
+        const result = await runSettingsCli({ argv: route.argv.slice(1), configRoot: resolveDirectConfigRoot({ env: options.env ?? process.env, homeDir }) });
+        writeText(stdout, stringifyOmpJson(result)); return OMP_EXIT_CODES.SUCCESS;
+      }
       if (route.argv[0] === "mcp") {
         const { runMcpCli } = await import("../packages/mcp/commands.mjs");
         const { resolveDirectConfigRoot, resolveControlledStack } = await import("../packages/direct-agent/launcher.mjs");
@@ -608,6 +357,7 @@ export async function runOmpEntrypoint(options = {}) {
       }
       const runtime = await loadDistribution({ packageRoot: options.rootDir ?? DEFAULT_ROOT });
       if (runtime) {
+        const { handleDistributionCommand } = await import("../packages/distribution/commands.mjs");
         const native = await handleDistributionCommand({ runtime, argv: route.argv,
           env: options.env ?? process.env, homeDir: options.homedir ? options.homedir() : os.homedir(),
           execve: options.execve ?? process.execve });

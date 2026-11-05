@@ -6,7 +6,7 @@ import { promisify } from "node:util";
 import { readJsonObject } from "../config-runtime/index.mjs";
 import { resolveControlledStack, resolveDirectConfigRoot } from "../direct-agent/launcher.mjs";
 import { PRIVATE_RUNTIME_CONTRACTS } from "../release-stack/contracts.mjs";
-import { processIdentity } from "./ownership.mjs";
+import { processIdentity } from "../process-runtime/ownership.mjs";
 import { HOST_PROTOCOL, HOST_VERSION, hostError } from "./contracts.mjs";
 
 export async function hostEndpoint(configRoot) {
@@ -28,8 +28,10 @@ export async function hostControl(endpoint, operation, method = "GET") {
 export async function runWebCommand({ argv = [], packageRoot, env = process.env, openBrowser = async (url) => {
   await promisify(execFile)(process.platform === "darwin" ? "/usr/bin/open" : "xdg-open", [url], { timeout: 10000 });
 } }) {
-  const action = argv.find((v) => v !== "--json") ?? "start";
-  if (!["start", "status", "stop"].includes(action) || argv.filter((v) => v !== "--json").length > 1 || argv.filter((v) => v === "--json").length > 1) throw hostError("INVALID_ARGUMENT");
+  const minimal = argv.includes("--minimal");
+  const args = argv.filter(value => value !== "--minimal");
+  const action = args.find((v) => v !== "--json") ?? "start";
+  if (!["start", "status", "stop"].includes(action) || args.filter((v) => v !== "--json").length > 1 || args.filter((v) => v === "--json").length > 1 || argv.filter(v => v === "--minimal").length > 1) throw hostError("INVALID_ARGUMENT");
   const configRoot = resolveDirectConfigRoot({ env });
   let endpoint = await hostEndpoint(configRoot);
   if (action === "status") return endpoint ? { ok: true, status: "HOST_RUNNING", ...(await hostControl(endpoint, "status")) } : { ok: true, status: "HOST_NOT_RUNNING" };
@@ -43,7 +45,7 @@ export async function runWebCommand({ argv = [], packageRoot, env = process.env,
     const stack = await resolveControlledStack({ packageRoot });
     if (!Object.values(PRIVATE_RUNTIME_CONTRACTS).includes(stack.distribution?.runtimeContract)) throw hostError("HOST_REQUIRES_VERIFIED_CANDIDATE");
     const entry = fileURLToPath(new URL("./entry.mjs", import.meta.url));
-    const child = fork(entry, [configRoot], { execPath: stack.nodePath, execArgv: [], detached: true, stdio: ["ignore", "ignore", "ignore", "ipc"], env });
+    const child = fork(entry, [configRoot, ...(minimal ? ["--minimal"] : [])], { execPath: stack.nodePath, execArgv: [], detached: true, stdio: ["ignore", "ignore", "ignore", "ipc"], env });
     await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => { child.kill("SIGTERM"); reject(hostError("HOST_START_TIMEOUT")); }, 30000);
       child.once("error", (e) => { clearTimeout(timeout); reject(e); });
@@ -54,6 +56,7 @@ export async function runWebCommand({ argv = [], packageRoot, env = process.env,
     endpoint = await hostEndpoint(configRoot);
     if (!endpoint) throw hostError("HOST_START_FAILED");
   }
+  if (Boolean((await hostControl(endpoint, "status")).capabilities?.minimal) !== minimal) throw hostError("HOST_LOADOUT_MISMATCH", 409);
   const pairing = await hostControl(endpoint, "pair", "POST");
   try { await openBrowser(pairing.url); }
   catch { return { ok: false, status: "HOST_BROWSER_OPEN_FAILED", next: "Retry omp web to issue a fresh browser pairing link.", origin: endpoint.origin }; }

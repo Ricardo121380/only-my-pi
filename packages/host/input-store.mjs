@@ -4,7 +4,7 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { atomicWriteJson, canonicalJson, readJsonObject } from "../config-runtime/atomic-file.mjs";
 import { assertSafeContainedPath, ensureConfigDirectory, normalizeConfigRoot } from "../config-runtime/paths.mjs";
-import { acquireOwnership } from "./ownership.mjs";
+import { acquireOwnership } from "../process-runtime/ownership.mjs";
 import { INPUT_LIMITS, inputDigest, inputError, validateInputContent, validateInputScope, validateInputShard } from "./input-contracts.mjs";
 
 /** @typedef {import('./contracts.d.ts').InputScopeV1} Scope */

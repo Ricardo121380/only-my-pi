@@ -7,6 +7,23 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
+test("Actions discovers only current CI, coverage and WebUI release workflows", () => {
+  assert.deepEqual(fs.readdirSync(path.join(root, ".github/workflows")).sort(), ["ci.yml", "coverage.yml", "webui-preview.yml"]);
+  assert.equal(fs.readdirSync(path.join(root, "legacy/cli/workflows")).filter(name => name.endsWith(".yml")).length, 8);
+});
+
+test("the next WebUI candidate builds from main and publishes only approved source-bound bytes", () => {
+  const workflow = fs.readFileSync(path.join(root, ".github/workflows/webui-preview.yml"), "utf8");
+  assert.match(workflow, /inputs\.operation == 'build' && github\.ref == 'refs\/heads\/main'/u);
+  assert.match(workflow, /\.head_branch == "main"/u);
+  assert.match(workflow, /--source-ref refs\/heads\/main/u);
+  assert.match(workflow, /webui-v0\.1\.0-preview\.2/u);
+  assert.doesNotMatch(workflow, /0\.1\.0-preview\.1/u, "the published preview must not be rebuilt or overwritten");
+  assert.match(workflow, /environment: public-preview/u);
+  assert.match(workflow, /\.sourceCommit == \$source and \.archiveSha256 == \$sha/u);
+  assert.match(workflow, /\.name == "CI required" and \.conclusion == "success"/u);
+});
+
 test("all current CI and distribution lanes use the pinned Node 24", () => {
   assert.equal(fs.readFileSync(path.join(root, ".node-version"), "utf8").trim(), "24.19.0");
   const metadata = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
@@ -18,7 +35,7 @@ test("all current CI and distribution lanes use the pinned Node 24", () => {
     assert.doesNotMatch(workflow, /22\.19\.0|node22|Node 22/u, name);
   }
   for (const name of ["distribution-public-verify.yml", "distribution-publish.yml", "linux-candidate.yml"]) {
-    const workflow = fs.readFileSync(path.join(root, ".github/workflows", name), "utf8");
+    const workflow = fs.readFileSync(path.join(root, "legacy/cli/workflows", name), "utf8");
     for (const platform of ["darwin-arm64", "linux-arm64", "linux-x64"])
       assert.match(workflow, new RegExp(`platform: ${platform}(?:, node: |\n\\s+node: )["']24\\.19\\.0`, "u"), `${name}: ${platform}`);
   }
@@ -42,7 +59,7 @@ test("development CI routes docs, WebUI, CLI and installation without repeating 
   assert.match(workflow, /NPM_CONFIG_IGNORE_SCRIPTS: "true"/u);
   for (const lane of ["web", "cli", "packaging"]) {
     const job = workflow.split(`  ${lane}:\n`)[1].split(/\n  [a-z]+:\n/u)[0];
-    assert.match(job, /runs-on: macos-14/u);
+    assert.match(job, /runs-on: macos-15/u);
     assert.match(job, /npm run test:prepare/u);
   }
   const docs = workflow.split("  docs:\n")[1].split("\n  static:")[0];
@@ -58,8 +75,8 @@ test("development CI routes docs, WebUI, CLI and installation without repeating 
   assert.match(coverage, /node scripts\/ci-run\.mjs coverage/u);
 });
 
-test("current Preview RC workflow is exact-source, attest-only and cannot publish", () => {
-  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-rc.yml"), "utf8");
+test("archived CLI Preview RC workflow is exact-source, attest-only and cannot publish", () => {
+  const workflow = fs.readFileSync(path.join(root, "legacy", "cli", "workflows", "m11-rc.yml"), "utf8");
   assert.match(workflow, /workflow_dispatch:/u);
   assert.match(workflow, /only-my-pi-0\.3\.0-preview\.1-darwin-arm64-full\.tar\.gz/u);
   assert.match(workflow, /Require the current Preview version/u);
@@ -76,8 +93,8 @@ test("current Preview RC workflow is exact-source, attest-only and cannot publis
   assert.doesNotMatch(workflow, /contents: write|gh release|git push|secrets\./u);
 });
 
-test("current Preview publication verifies E and RC before Draft, then requires environment approval", () => {
-  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-publish.yml"), "utf8");
+test("archived CLI Preview publication verifies E and RC before Draft, then requires environment approval", () => {
+  const workflow = fs.readFileSync(path.join(root, "legacy", "cli", "workflows", "m11-publish.yml"), "utf8");
   assert.match(workflow, /runs-on: macos-14/u);
   assert.doesNotMatch(workflow, /runs-on: macos-14-xlarge/u);
   assert.match(workflow, /needs: validate-inputs/u);
@@ -111,7 +128,7 @@ test("current Preview publication verifies E and RC before Draft, then requires 
 });
 
 test("publication requires owner confirmation and preserves source identity when rebuilding", () => {
-  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-publish.yml"), "utf8");
+  const workflow = fs.readFileSync(path.join(root, "legacy", "cli", "workflows", "m11-publish.yml"), "utf8");
   const validation = workflow.split("  build-draft:")[0].split("        run: |\n")[1]
     .split("\n").map((line) => line.replace(/^          /u, "")).join("\n");
   const source = "a".repeat(40);
@@ -134,7 +151,7 @@ test("publication requires owner confirmation and preserves source identity when
 });
 
 test("Draft recovery verifies existing source attestations before the same approval gate", () => {
-  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-publish.yml"), "utf8");
+  const workflow = fs.readFileSync(path.join(root, "legacy", "cli", "workflows", "m11-publish.yml"), "utf8");
   const recovery = workflow.split("  verify-draft:\n")[1].split("  publish:\n")[0];
   assert.match(recovery, /if: \$\{\{ inputs\.resume_draft \}\}/u);
   assert.match(recovery, /npm ci --ignore-scripts/u);

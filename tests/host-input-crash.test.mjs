@@ -8,8 +8,8 @@ import { fork } from "node:child_process";
 import { once } from "node:events";
 import { createHash } from "node:crypto";
 import { createPi110SourceCli } from "./fixtures/pi110-source-cli.mjs";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
-import { groupAlive, processIdentity } from "../packages/host/ownership.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
+import { groupAlive, processIdentity } from "../packages/process-runtime/ownership.mjs";
 
 async function until(check) { for (let i = 0; i < 600; i++) { const value = await check(); if (value) return value; await new Promise((resolve) => setTimeout(resolve, 20)); } throw new Error("CRASH_FIXTURE_TIMED_OUT"); }
 for (const mode of ["readonly", "controlled"]) test(`real Pi ${mode} input survives abrupt Host SIGKILL without replay or restored grants`, { skip: !process.env.OMP_TEST_STACK_PACKAGE && process.env.OMP_INPUT_PI110_SOURCE !== "1", timeout: 45000 }, async (t) => {

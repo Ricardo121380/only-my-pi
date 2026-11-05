@@ -8,8 +8,8 @@ import { syncBuiltinESMExports } from "node:module";
 import { promisify } from "node:util";
 import test from "node:test";
 import { RpcWorker } from "../packages/host/rpc-worker.mjs";
-import { groupAlive } from "../packages/host/ownership.mjs";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { groupAlive } from "../packages/process-runtime/ownership.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
 import { fileURLToPath } from "node:url";
 
 async function fixture(t, malformed = false, uncontrolledExit = false, holdOpen = false) {

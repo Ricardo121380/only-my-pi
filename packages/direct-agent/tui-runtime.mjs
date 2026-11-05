@@ -1,14 +1,14 @@
 import path from "node:path";
+import { createMinimalSessionServices } from "./minimal-services.mjs";
 import fs from "node:fs/promises";
-import { ownershipError } from "../host/ownership.mjs";
+import { ownershipError } from "../process-runtime/ownership.mjs";
 import { inspectSessionSelection, prepareHeadlessSession } from "./session-selection.mjs";
 import { createAdmittedSessionRuntime } from "./session-runtime.mjs";
 import { createResumeUiExtension } from "./session-resume-ui.mjs";
 import { prepareTuiInput } from "./initial-input.mjs";
 import { disableOmpCacheWarming } from "./cache-warming-policy.mjs";
-import { McpCatalog, mcpToolNames } from "../mcp/catalog.mjs";
 import { applyOmpRequestPolicy } from "./request-policy.mjs";
-import { openProductAccount } from "../host/account-runtime.mjs";
+import { openProductAccount } from "../accounts/runtime.mjs";
 
 // Controlled CLI bootstrap using only Pi's public SDK. All modes share the
 // same tool, account, request and session-admission policy.
@@ -19,6 +19,7 @@ export function createDirectPrintRuntime(options) { return createDirectRuntime(o
 async function createDirectRuntime({ sdk, args, configRoot, admissions,
   cwd = process.cwd(), env = process.env, selectResume, confirmProjectTrust, confirmSessionCwd, modelRuntime, onFatal }, mode) {
   const parsed = sdk.parseArgs(args);
+  const minimal = env.ONLY_MY_PI_MINIMAL === "1";
   if (parsed.diagnostics.some((item) => item.type === "error") || (parsed.provider && !parsed.model))
     throw ownershipError("OMP_AGENT_OPTION_INVALID");
   if ((mode === "tui" && parsed.print) || (mode === "rpc" ? parsed.mode !== "rpc" : !(mode === "print" ? [undefined, "text", "json"] : [undefined, "text"]).includes(parsed.mode)) || parsed.export || parsed.version
@@ -48,7 +49,7 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     const decision = new sdk.ProjectTrustStore(configRoot).get(effectiveCwd);
     const globalSettings = sdk.SettingsManager.create(effectiveCwd, configRoot, { projectTrusted: false });
     const defaultTrust = globalSettings.getDefaultProjectTrust();
-    let projectTrusted = !requiresTrust || (decision ?? defaultTrust === "always");
+    let projectTrusted = decision ?? (!requiresTrust || defaultTrust === "always");
     if (requiresTrust && decision === null && defaultTrust === "ask") {
       if (!sessionTrust.has(effectiveCwd)) {
         // Never start a second terminal renderer during session replacement.
@@ -66,24 +67,39 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     const priorAccount = sessionManager.getBranch().findLast(entry => entry.type === "custom" && entry.customType === "omp-account-binding")?.data?.accountId;
     if (!productAccount && typeof priorAccount === "string" && priorAccount !== "cli-readonly") throw ownershipError("ACCOUNT_SELECTION_REQUIRED");
     const projectTrusted = await resolveProjectTrust(effectiveCwd, projectTrustContext, !sessionStartEvent);
-    const settingsManager = applyOmpRequestPolicy(sdk.SettingsManager.create(effectiveCwd, agentDir, { projectTrusted }));
+    const settings = sdk.SettingsManager.create(effectiveCwd, agentDir, { projectTrusted });
+    const settingsManager = applyOmpRequestPolicy(settings);
     if (parsed.useTheme !== undefined) settingsManager.applyOverrides({ theme: parsed.useTheme });
     sdk.initTheme(settingsManager.getTheme(), false);
-    const mcpSnapshot = await new McpCatalog(configRoot).snapshot(await fs.realpath(effectiveCwd));
-    const mcpNames = mcpToolNames(mcpSnapshot);
-    const services = await sdk.createAgentSessionServices({ cwd: effectiveCwd, agentDir, settingsManager,
+    // Generic SDK/bootstrap callers may supply only their own test or child
+    // extension. Product settings belong to the audited OMP direct loadout.
+    const product = minimal ? null : {
+      ...await import("../product-settings/catalog.mjs"),
+      ...await import("../product-settings/runtime.mjs"),
+      ...await import("../mcp/catalog.mjs"),
+    };
+    const productSettingsEnabled = !minimal && parsed.extensions.some(entry => entry.endsWith("/extensions/omp-direct/index.ts"));
+    const initialSettings = productSettingsEnabled ? await product.taskSettingsSnapshot(configRoot, await fs.realpath(effectiveCwd)) : null;
+    let settingsSnapshot = initialSettings?.settingsSnapshot;
+    let mcpSnapshot = minimal ? null : initialSettings?.mcpSnapshot ?? await new product.McpCatalog(configRoot).snapshot(await fs.realpath(effectiveCwd));
+    let classifierSnapshot = initialSettings?.classifierSnapshot;
+    const productEvents = sdk.createEventBus();
+    const mcpNames = minimal ? [] : product.mcpToolNames(mcpSnapshot);
+    const serviceOptions = {
+      cwd: effectiveCwd, agentDir, settingsManager,
       modelRuntime, modelRuntimeSignal: AbortSignal.timeout(15_000), extensionFlagValues: parsed.unknownFlags,
-      resourceLoaderOptions: { noExtensions: true, additionalExtensionPaths: parsed.extensions,
+      resourceLoaderOptions: { eventBus: productEvents, noExtensions: true, additionalExtensionPaths: parsed.extensions,
         extensionFactories: [(pi) => pi.events.emit("only-my-pi:direct-session-owner:v1", {
           ownsSession: (ctx) => !admissions.closing && ctx.mode === (mode === "print" ? parsed.mode === "json" ? "json" : "print" : mode) && ctx.sessionManager === sessionManager,
-        }), (pi) => pi.events.emit("only-my-pi:mcp-task:v1", { snapshot: mcpSnapshot }),
+        }), (pi) => { if (settingsSnapshot) pi.events.emit("only-my-pi:product-task:v1", settingsSnapshot); }, (pi) => { if (mcpSnapshot) pi.events.emit("only-my-pi:mcp-task:v1", { snapshot: mcpSnapshot, taskPinned: true }); },
+        (pi) => { if (classifierSnapshot) pi.events.emit("only-my-pi:model-task:v1", { snapshot: classifierSnapshot }); },
         ...(mode === "print" ? [(pi) => {
           pi.on("session_before_switch", () => ({ cancel: true }));
           pi.on("session_before_fork", () => ({ cancel: true }));
         }] : []),
-        ...(mode === "tui" ? [createResumeUiExtension({ sdk, getRuntime: () => runtime })] : []), disableOmpCacheWarming] } });
-    if (services.diagnostics.some((entry) => entry.type === "error") || services.resourceLoader.getExtensions().errors.length)
-      throw ownershipError("TUI_EXTENSION_LOAD_FAILED");
+        ...(mode === "tui" ? [createResumeUiExtension({ sdk, getRuntime: () => runtime })] : []), disableOmpCacheWarming] } };
+    const services = minimal ? await createMinimalSessionServices(sdk, serviceOptions)
+      : await product.createProductSessionServices({ ...serviceOptions, sdk, configRoot, snapshot: settingsSnapshot, getSnapshot: () => settingsSnapshot });
     const diagnostics = [...parsed.diagnostics, ...services.diagnostics];
     const patterns = parsed.models ?? settingsManager.getEnabledModels();
     const scope = patterns?.length ? await sdk.resolveModelScopeWithDiagnostics(patterns, services.modelRuntime,
@@ -114,7 +130,9 @@ async function createDirectRuntime({ sdk, args, configRoot, admissions,
     }
     const created = await sdk.createAgentSessionFromServices({ services, sessionManager, sessionStartEvent, model,
       thinkingLevel: parsed.thinking ?? thinkingLevel, scopedModels: scope.scopedModels.length ? scope.scopedModels : undefined,
-      tools: [...parsed.tools, ...(mode === "tui" ? ["mcp__*"] : mcpNames)], excludeTools: parsed.excludeTools });
+      tools: [...parsed.tools, ...(!minimal && mode === "tui" ? ["mcp__*"] : mcpNames)], excludeTools: parsed.excludeTools });
+    if (settingsSnapshot) await product.confirmProductLoad({ services, session: created.session, configRoot, snapshot: settingsSnapshot });
+    if (mode === "tui" && settingsSnapshot) product.refreshDirectSettings({ session: created.session, services, configRoot, getSnapshot: () => settingsSnapshot, setSnapshot: value => { settingsSnapshot = value.settingsSnapshot; mcpSnapshot = value.mcpSnapshot; classifierSnapshot = value.classifierSnapshot; }, publish: value => { productEvents.emit("only-my-pi:mcp-task:v1", { snapshot: value.mcpSnapshot, taskPinned: true }); productEvents.emit("only-my-pi:model-task:v1", { snapshot: value.classifierSnapshot }); } });
     if (productAccount) {
       if (!model || created.modelFallbackMessage || created.session.model?.provider !== model.provider || created.session.model?.id !== model.id)
         throw ownershipError("ACCOUNT_MODEL_FALLBACK_DENIED");

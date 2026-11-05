@@ -55,7 +55,7 @@ test("a crashed Pi owner leaves its actual service visible and prevents release 
   const f = await createMcpHost();
   await f.mcp({ type: "save", revision: 0, server: { ...f.server, env: { F_MODE: "orphan" }, enabled: true } });
   const started = await f.start(), waiting = await awaiting(f, started.taskId), run = await readRun(f, started.taskId);
-  const { groupAlive, processIdentity } = await import("../packages/host/ownership.mjs");
+  const { groupAlive, processIdentity } = await import("../packages/process-runtime/ownership.mjs");
   t.after(async () => {
     for (const entry of run.processes) if (groupAlive(entry.pid) && await processIdentity(entry.pid) === entry.identity) process.kill(-entry.pid, "SIGKILL");
     await until(() => run.processes.every((entry) => !groupAlive(entry.pid)), Boolean, "owned fixture orphan cleanup");

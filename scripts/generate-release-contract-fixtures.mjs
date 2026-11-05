@@ -10,8 +10,7 @@ import {
   CONTROLLED_PI_INTEGRITY,
   EMBEDDED_NODE_ARCHIVE_SHA256,
   EMBEDDED_NODE_VERSION,
-  PREVIEW_TAG,
-  PREVIEW_VERSION,
+  LEGACY_PREVIEW_VERSION,
   PUBLIC_REPOSITORY,
   PUBLIC_STACK_PACKAGES,
   finalizeArtifactLedger,
@@ -22,7 +21,15 @@ import {
   validateReleaseIndex,
 } from "../packages/release-stack/index.mjs";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const args = process.argv.slice(2);
+const check = !args.length || args.length === 1 && args[0] === "--check";
+const output = args.length === 2 && args[0] === "--output" && path.isAbsolute(args[1]);
+if (!check && !output && !(args.length === 1 && args[0] === "--write")) throw new Error("usage: generate-release-contract-fixtures.mjs [--check | --write | --output /absolute/directory]");
+const ROOT = output ? args[1] : path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+// These examples intentionally retain the M11 read-only product identity.
+const FIXTURE_VERSION = LEGACY_PREVIEW_VERSION;
+const mismatches = [];
+let checked = 0;
 const SOURCE = "a".repeat(40);
 const SRI = `sha512-${Buffer.alloc(64).toString("base64")}`;
 
@@ -68,7 +75,7 @@ function manifest(artifactLedger) {
     formatVersion: 1,
     kind: "only-my-pi-stack-manifest",
     sourceCommit: SOURCE,
-    onlyMyPi: { version: PREVIEW_VERSION, artifactSha256: digest("only-my-pi.tgz") },
+    onlyMyPi: { version: FIXTURE_VERSION, artifactSha256: digest("only-my-pi.tgz") },
     platform: { os: "darwin", arch: "arm64", minimumMacOS: "14.0" },
     runtime: {
       node: {
@@ -120,9 +127,9 @@ function state(stack) {
     payloadMode: "thin",
     node: { version: EMBEDDED_NODE_VERSION, digest: stack.runtime.node.treeDigest },
     pi: { version: CONTROLLED_PI_VERSION, digest: stack.runtime.pi.treeDigest },
-    onlyMyPi: { version: PREVIEW_VERSION, digest: stack.onlyMyPi.artifactSha256 },
+    onlyMyPi: { version: FIXTURE_VERSION, digest: stack.onlyMyPi.artifactSha256 },
     generation: { version: "generation-v1", digest: digest("installed-generation") },
-    cliArtifact: { version: PREVIEW_VERSION, digest: stack.onlyMyPi.artifactSha256 },
+    cliArtifact: { version: FIXTURE_VERSION, digest: stack.onlyMyPi.artifactSha256 },
     shims: {
       omp: { targetClass: "USER_LOCAL_CONTROLLED_STACK", digest: digest("omp-shim") },
       pi: { targetClass: "USER_LOCAL_CONTROLLED_STACK", digest: digest("pi-shim") },
@@ -136,20 +143,20 @@ function state(stack) {
 
 function releaseIndex(stack) {
   const names = {
-    full: `only-my-pi-${PREVIEW_VERSION}-darwin-arm64-full.tar.gz`,
-    thin: `only-my-pi-${PREVIEW_VERSION}-darwin-arm64-thin.tar.gz`,
-    sbom: `only-my-pi-${PREVIEW_VERSION}.spdx.json`,
+    full: `only-my-pi-${FIXTURE_VERSION}-darwin-arm64-full.tar.gz`,
+    thin: `only-my-pi-${FIXTURE_VERSION}-darwin-arm64-thin.tar.gz`,
+    sbom: `only-my-pi-${FIXTURE_VERSION}.spdx.json`,
     notices: "THIRD_PARTY_NOTICES.txt",
     checksums: "SHA256SUMS",
-    receipt: `only-my-pi-${PREVIEW_VERSION}-protected-receipt.json`,
+    receipt: `only-my-pi-${FIXTURE_VERSION}-protected-receipt.json`,
   };
   const document = {
     $schema: "../../schemas/release-index-v1.schema.json",
     formatVersion: 1,
     kind: "only-my-pi-release-index",
-    version: PREVIEW_VERSION,
+    version: FIXTURE_VERSION,
     channel: "preview",
-    tag: PREVIEW_TAG,
+    tag: `v${FIXTURE_VERSION}`,
     sourceCommit: SOURCE,
     repository: PUBLIC_REPOSITORY,
     platform: { os: "darwin", arch: "arm64", minimumMacOS: "14.0" },
@@ -169,8 +176,16 @@ function clone(value) {
 
 function write(relativePath, value) {
   const target = path.join(ROOT, relativePath);
+  const content = `${JSON.stringify(value, null, 2)}\n`;
+  checked++;
+  if (check) {
+    let existing;
+    try { existing = fs.readFileSync(target, "utf8"); } catch (error) { if (error.code !== "ENOENT") throw error; }
+    if (existing !== content) mismatches.push(relativePath);
+    return;
+  }
   fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(target, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o644 });
+  fs.writeFileSync(target, content, { mode: 0o644 });
 }
 
 const artifactLedger = ledger();
@@ -210,4 +225,5 @@ const stateOwner = clone(stackState); stateOwner.externalPackages[0].owner = "on
 write("verification/fixtures/contracts/stack-state/negative-unknown-field.json", stateUnknown);
 write("verification/fixtures/contracts/stack-state/negative-owner.json", stateOwner);
 
-process.stdout.write(`${JSON.stringify({ ok: true, stackId: stack.stackId, ledgerDigest: artifactLedger.ledgerDigest }, null, 2)}\n`);
+process.stdout.write(`${JSON.stringify({ ok: mismatches.length === 0, mode: check ? "check" : "write", fixtureVersion: FIXTURE_VERSION, checked, mismatches, stackId: stack.stackId, ledgerDigest: artifactLedger.ledgerDigest }, null, 2)}\n`);
+if (mismatches.length) process.exitCode = 1;

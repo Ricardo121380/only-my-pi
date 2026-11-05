@@ -5,7 +5,7 @@ import path from "node:path";
 import http from "node:http";
 import { fileURLToPath } from "node:url";
 import { startHost } from "../../packages/host/server.mjs";
-import { AccountCatalog } from "../../packages/host/accounts.mjs";
+import { AccountCatalog } from "../../packages/accounts/catalog.mjs";
 import { loadDistribution } from "../../packages/distribution/runtime.mjs";
 
 const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-browser-control-")));

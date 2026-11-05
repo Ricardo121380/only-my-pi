@@ -7,7 +7,7 @@ import test from "node:test";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
-import { acquireOwnership } from "../packages/host/ownership.mjs";
+import { acquireOwnership } from "../packages/process-runtime/ownership.mjs";
 import { buildDirectPiInvocation } from "../packages/direct-agent/launcher.mjs";
 
 for (const mode of ["absolute", "relative", "prefix", "id", "continue"]) test(`actual print CLI ${mode} refuses an owned session before model input and leaves its file unchanged`, async (t) => {

@@ -4,7 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import test from "node:test";
 import { startHost } from "../packages/host/server.mjs";
-import { acquireOwnership } from "../packages/host/ownership.mjs";
+import { acquireOwnership } from "../packages/process-runtime/ownership.mjs";
 
 test("manual HTTP requires pairing, protocol, origin and a lease; restart never restores it", async (t) => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-manual-http-")));

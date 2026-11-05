@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { startHost } from "../packages/host/server.mjs";
 import { RpcWorker } from "../packages/host/rpc-worker.mjs";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
 import { writePiEvidence } from "./fixtures/pi-runtime-evidence.mjs";
 
 function finish(res, content = "fixture done") {
@@ -29,12 +29,20 @@ function tool(res, name, args) {
 }
 
 async function until(read, accept, label, attempts = 200) {
+  let lastValue;
   for (let i = 0; i < attempts; i++) {
-    const value = await read();
+    const value = lastValue = await read();
     if (accept(value)) return value;
     await delay(25);
   }
-  assert.fail(`Timed out: ${label}`);
+  try { assert.fail(`Timed out: ${label}`); }
+  catch (error) {
+    // Keep remote diagnostics bounded and credential-free, but retain the
+    // lifecycle phase instead of collapsing every wait into ERR_ASSERTION.
+    if (["starting", "running", "succeeded", "failed", "cancelled"].includes(lastValue?.status))
+      error.code = `HOST_WAIT_${lastValue.status.toUpperCase()}_TIMEOUT`;
+    throw error;
+  }
 }
 
 // Only the Provider and audited external-package boundary are fixtures. The
@@ -58,7 +66,7 @@ async function fixture(t, respond, settingsOverrides = {}, { initializationDelay
   provider.on("connection", (socket) => { connections.add(socket); socket.on("close", () => connections.delete(socket)); });
   await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
   const piRoot = path.dirname(path.dirname(fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent"))));
-  assert.equal(JSON.parse(await fs.readFile(path.join(piRoot, "package.json"), "utf8")).version, "1.3.0");
+  assert.equal(JSON.parse(await fs.readFile(path.join(piRoot, "package.json"), "utf8")).version, "1.5.0");
   await fs.symlink(piRoot, path.join(root, "pi"));
   const baseUrl = `http://127.0.0.1:${provider.address().port}/v1`;
   const extension = path.join(root, "provider.mjs");
@@ -80,7 +88,7 @@ async function fixture(t, respond, settingsOverrides = {}, { initializationDelay
     workerFactory: (options) => {
       const worker = new RpcWorker({ ...options, extensionResolver: async () => {
         if (initializationDelayMs) await delay(initializationDelayMs);
-        return { extensions: [extension, fileURLToPath(new URL("../extensions/omp-direct/index.ts", import.meta.url))] };
+        return { extensions: [extension, fileURLToPath(new URL("../extensions/omp-direct/index.ts", import.meta.url)), fileURLToPath(new URL("../extensions/context-doctor/index.ts", import.meta.url))] };
       } });
       onWorker(worker); return worker;
     } });
@@ -116,7 +124,7 @@ test("public Host and real Pi suppress warming even when a loaded extension requ
   await delay(1800); // Real TTL=11s schedules its first warm at 1s.
   assert.equal(f.received.length, 1, "Provider must receive only the user request, including while streaming");
   assert.equal(f.received[0].key, "Bearer fixture-a");
-  assert.deepEqual(f.received[0].body.tools.map((tool) => tool.function.name).sort(), ["codemode", "find", "grep", "ls", "read"]);
+  assert.deepEqual(f.received[0].body.tools.map((tool) => tool.function.name).sort(), ["codemode", "context_snapshot", "find", "grep", "ls", "read"]);
   const ack = await f.command({ type: "cancelTask", taskId: started.taskId }, 202);
   assert.equal(ack.status, "cancelling");
   const stopped = await until(() => f.task(started.taskId), (task) => task.status === "cancelled", "cancelled task");
@@ -141,6 +149,9 @@ test("public Host fixes same-provider and CLI account identity, reads with real 
   for (const [accountId, key] of [[f.account.accountId, "fixture-a"], [second.accountId, "fixture-b"], ["cli-readonly", "fixture-cli"]]) {
     const before = f.received.length;
     const started = await f.start("read README.md", { accountId });
+    // The 202 ACK precedes worker initialization. Keep the completion poll's
+    // original 200 x 25ms budget, as in the coding lifecycle cases below.
+    await until(() => f.task(started.taskId), (task) => task.status !== "starting", "account worker initialized", 1200);
     const completed = await until(() => f.task(started.taskId), (task) => ["succeeded", "failed"].includes(task.status), "read completion");
     assert.equal(completed.status, "succeeded", JSON.stringify(completed));
     assert.equal(completed.accountId, accountId); assert.equal(completed.model, "fixture/one");
@@ -148,7 +159,7 @@ test("public Host fixes same-provider and CLI account identity, reads with real 
     assert.equal(requests.length, 2, "one prompt and one tool-result continuation");
     assert.ok(requests.every((request) => request.key === `Bearer ${key}` && request.body.model === "one"));
     assert.match(JSON.stringify(requests[1].body.messages), /only temporary project data/);
-    assert.deepEqual(requests[0].body.tools.map((entry) => entry.function.name).sort(), ["codemode", "find", "grep", "ls", "read"]);
+    assert.deepEqual(requests[0].body.tools.map((entry) => entry.function.name).sort(), ["codemode", "context_snapshot", "find", "grep", "ls", "read"]);
   }
   const before = f.received.length;
   const bad = (extra) => f.command({ type: "startTask", requestId: randomUUID(), projectId: f.projectId, accountId: f.account.accountId, model: "fixture/one", prompt: "must not run", ...extra }, 409);
@@ -160,6 +171,7 @@ test("public Host fixes same-provider and CLI account identity, reads with real 
   // CLI discovery has a short catalog cache. An ACK may still be returned;
   // the actual worker must recheck credentials and fail before execution.
   const revoked = await f.start("must not borrow GUI credentials", { accountId: "cli-readonly" });
+  await until(() => f.task(revoked.taskId), (task) => task.status !== "starting", "revoked CLI worker initialized", 1200);
   await until(() => f.task(revoked.taskId), (task) => task.status === "failed", "revoked CLI worker failure");
   assert.equal(f.received.length, before, "wrong identity and revoked credentials must receive zero requests");
   const unpaired = await fetch(f.host.origin + "/api/command", { method: "POST", headers: { Origin: f.host.origin, "content-type": "application/json", "x-omp-host-protocol": "2" }, body: JSON.stringify({ type: "addProject", path: f.project }) });

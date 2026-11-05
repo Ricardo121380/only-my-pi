@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { McpAction, McpPreview, McpServer, McpSnapshot, McpStatus } from "../../packages/mcp/contracts";
-import { HostDialog } from "./HostDialog";
+import { HostDialog } from "./shared/HostDialog";
 import { McpOAuthControls } from "./McpOAuthControls";
 import { McpDiscoveryPanel } from "./McpDiscoveryPanel";
 import "./mcp.css";

@@ -13,9 +13,9 @@ export const DOC_TESTS = new Set([
 ]);
 
 // Keep Node's test-name conventions, including tests outside tests/.
-// Vitest owns the TypeScript browser tests under webui/.
+// Vitest owns the TypeScript browser tests under webui/ and prototypes/.
 export function isNodeTest(file) {
-  return !/^webui\/src\/.*\.test\.tsx?$/u.test(file) && (
+  return !/^(?:webui|prototypes)\/src\/.*\.test\.tsx?$/u.test(file) && (
     /(?:^|\/)(?:test|test-.+|.+[._-]test)\.(?:[cm]?js|[cm]?ts)$/u.test(file)
     || /(?:^|\/)test\/.*\.(?:[cm]?js|[cm]?ts)$/u.test(file)
   );
@@ -23,8 +23,8 @@ export function isNodeTest(file) {
 
 export function testLane(file) {
   if (DOC_TESTS.has(file)) return "docs";
-  if (file.startsWith("webui/")) return "web";
-  if (/^tests\/(?:direct-minimal-runtime|dev-web|browser-probe-identity|host-(?:account(?:s|-.+)|auth-process|catalog|session-scan|lifecycle|server|sdk-probe|pi110-runtime|ownership|rpc-worker|task-binding|task-resume|task-metrics|usage|approval-bridge|control-state|controlled-.+|minimal-web|tool-stream))\.test\.mjs$/u.test(file)) return "web";
+  if (file.startsWith("webui/") || file.startsWith("prototypes/")) return "web";
+  if (/^tests\/(?:direct-minimal-runtime|dev-web|b2-native-web|browser-probe-identity|host-(?:account(?:s|-.+)|auth-process|catalog|session-scan|lifecycle|server|sdk-probe|pi110-runtime|ownership|rpc-worker|task-binding|task-resume|task-metrics|usage|approval-bridge|control-state|controlled-.+|input-.+|minimal-(?:web|input|subagents|model-policy)|workspace|tool-stream))\.test\.mjs$/u.test(file)) return "web";
   return "cli";
 }
 
@@ -37,9 +37,10 @@ const ROOT_DOC = /^(?:README(?:\.[\w-]+)?\.md|AGENTS\.md|CONTEXT\.md|CONTRIBUTIN
 export function classifyChanges(files) {
   const plan = { docs: true, web: false, cli: false, packaging: false };
   for (const file of files) {
-    if (ROOT_DOC.test(file) || /^docs\/.*\.(?:md|png|svg|jpe?g|webp)$/u.test(file)) continue;
+    if (ROOT_DOC.test(file) || /^docs\/.*\.(?:md|png|svg|jpe?g|webp)$/u.test(file) || /^prototypes\/(?:README|DESIGN)\.md$/u.test(file)) continue;
     if (/^webui\/(?:src\/.+\.(?:[cm]?[jt]sx?|css|svg|png|jpe?g|webp)|(?:index|minimal)\.html)$/u.test(file)
-      || ["scripts/dev-web.mjs", "packages/direct-agent/minimal-services.mjs"].includes(file)) { plan.web = true; continue; }
+      || /^prototypes\/(?:src\/.+\.(?:[cm]?[jt]sx?|css|svg|png|jpe?g|webp)|(?:index|minimal)\.html)$/u.test(file)
+      || ["scripts/dev-web.mjs", "scripts/web-runtime.mjs", "scripts/webui-preview.mjs", "packages/direct-agent/minimal-services.mjs"].includes(file)) { plan.web = true; continue; }
     if (isNodeTest(file) && !file.startsWith("tests/ci-")) {
       plan[testLane(file)] = true;
       continue;

@@ -1,3 +1,5 @@
+import type { ThinkingLevel } from "../accounts/contracts.js";
+
 export type HostCommand =
   | { type: "openTerminal"; projectId: string; cols: number; rows: number }
   | { type: "writeTerminal"; terminalId: string; seq: number; data: string }
@@ -15,43 +17,41 @@ export type TaskStatus = "starting" | "running" | "cancelling" | "succeeded" | "
 export interface Project { projectId: string; path: string; name: string; available: boolean }
 export interface TerminalState { terminalId: string; projectId: string; status: "starting" | "running" | "closing" | "closed" | "reconciliation"; cols: number; rows: number; inputSeq: number; exitCode: number | null; error: string | null }
 export interface TerminalOutput extends TerminalState { base: number; end: number; truncated: boolean; output: string }
-export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
-export interface ModelChoice { id: string; name: string; provider: string; thinkingLevels?: ThinkingLevel[]; contextWindow?: number }
 export interface TaskUsage {
   scope: "task"; responses: number; tools: number; reported: number; priced: number;
   tokens: { input: number; output: number; cacheRead: number; cacheWrite: number; totalTokens: number } | null;
   estimatedCost: number | null;
 }
-/** Metadata only; creating an account does not authenticate it. */
-export interface AccountInput { providerId: string; name: string; authType: "api_key" | "oauth" }
-export interface GuiAccount extends AccountInput { accountId: string }
-export interface StaticProvider { baseUrl: string; api: "openai-completions" | "openai-responses" | "anthropic-messages" | "typesafe-system-one" | "openai-decisions" | "cloudflare-workers-ai-system-one" | "openrouter-images"; models: { type?: "classifier" | "image"; id: string; name: string; contextWindow: number; maxTokens?: number; reasoning?: boolean; input?: ("text" | "image")[]; output?: ("text" | "image")[] }[] }
-export type AccountAction = { type: "status" | "logout" | "remove" | "oauthStart" } | { type: "apiKey"; key: string } | { type: "rename"; name: string } | { type: "configure"; config: StaticProvider } | { type: "oauthAnswer"; flowId: string; promptId: string; value: string } | { type: "oauthCancel"; flowId: string };
-export interface OAuthFlow { flowId: string; accountId: string; status: "starting" | "waiting" | "awaiting_input" | "cancelling" | "stored" | "stored_sync_failed" | "failed" | "cancelled" | "timed_out"; prompt: { promptId: string; type: "text" | "secret" | "manual_code" | "select"; options?: { id: string; label: string }[] } | null; event: { type: "auth_url" | "device_code"; url: string; userCode?: string } | null }
-export interface AccountDirectory { protocol: 1; authentication: "api_key"; cliReference: { accountId: "cli-readonly"; name: string; readOnly: true }; accounts: GuiAccount[] }
-export interface Message { id: string; role: "user" | "assistant" | "toolResult"; text: string; toolName?: string; isError?: boolean; outputAvailable?: boolean; truncated?: boolean; durationMs?: number; stopReason?: string | null }
+export interface Message { id: string; role: "user" | "assistant" | "toolResult"; text: string; toolName?: string; toolCallId?: string; filePath?: string; isError?: boolean; outputAvailable?: boolean; truncated?: boolean; durationMs?: number; stopReason?: string | null }
+export interface FileEntry { name: string; path: string; directory: boolean }
+export interface FileListing { entries: FileEntry[]; truncated: boolean }
+export interface FilePreview { path: string; text: string; bytes: number; version: string }
+export interface GitDiff { available: boolean; text: string; truncated?: boolean; code?: string }
 export interface HostTask {
+  resourceRevision?: number;
+  settingsSnapshot?: { revision: number; resourceRevision: number; resources: { id: string; enabled: boolean; parameters: Record<string, unknown> }[] } | null;
+  settingsLoaded?: { revision: number; resourceRevision: number; tools: string[]; skills: string[] } | null;
   codemode?: { enabled: true; classifier: boolean; image: boolean };
-  toolCalls?: { toolCallId: string; parentToolCallId: string | null; name: string; status: "running" | "completed" | "failed" | "cancelled" | "unknown"; startedAt: string; completedAt?: string; durationMs?: number; result?: string; error?: string }[];
+  toolCalls?: { toolCallId: string; parentToolCallId: string | null; name: string; filePath?: string; status: "running" | "completed" | "failed" | "cancelled" | "unknown"; startedAt: string; completedAt?: string; durationMs?: number; result?: string; output?: string; error?: string }[];
   mcp?: { protocol: 1; revision: number; enabled: boolean };
   settlement?: { aborted: boolean } | null;
   inputFeedback?: { inputId: string | null; source: "pi-prompt" | "omp-custom-message"; disposition: "handled" | "queued" | "started" }[] | null;
   inputId?: string; originDraftInputId?: string; originDraftSessionId?: string | null;
   orchestration?: { maximumConcurrency: number | null; maximumChildren: number | null; totalChildren: number | null; writerUsed: boolean;
     budget: { scope: "process-child-delegations"; mainAgentIncluded: false; status: string; limits: Record<string, number | null>; used: Record<string, number | null> };
-    children: { label: string; agent: string | null; status: string; toolCount: number | null; tokens: number | null }[] } | null;
+    children: { label: string; agent: string | null; status: string; toolCount: number | null; tokens: number | null; model?: string; accountId?: string }[] } | null;
   mode?: "readonly" | "controlled"; access?: "inspect" | "coding";
   approvals?: { approvalId: string; kind: "select" | "confirm"; title: string; message: string; options?: string[]; expiresAt: string }[];
   accountId?: string | null;
   thinkingLevel?: ThinkingLevel | null; requestedThinkingLevel?: ThinkingLevel | null; usage?: TaskUsage | null;
   taskId: string; requestId: string; projectId: string; model: string; prompt: string;
   status: TaskStatus; sessionId: string | null; messages: Message[]; partial?: string; error?: string | null;
-  tool?: { name: string; status: "running" } | null; createdAt: string; updatedAt: string;
+  tool?: { name: string; status: "running"; output?: string } | null; createdAt: string; updatedAt: string;
 }
 export type TaskSummary = Omit<HostTask, "messages" | "partial">;
 export interface Session { sessionKey: string; sessionId: string; projectId: string; timestamp: string; name: string; readOnly: true }
 export interface HostSnapshot { protocol: number; version: string; epoch: string; seq: number; indexing: boolean;
-  capabilities?: { controlled: boolean; inputs?: { protocol: 1; materials: false; resourceRevision: number } };
+  capabilities?: { minimal?: boolean; controlled: boolean; inspector?: { protocol: 1 }; accounts?: { protocol: 1; apiKey: true; probe: true }; inputs?: { protocol: 1; materials: false; resourceRevision: number | null } };
   runtime: { stackId: string; sourceCommit: string | null }; projects: Project[]; tasks: TaskSummary[]; diagnostics: { code: string; sessionKey?: string }[] }
 export type HostEvent = ({ type: "snapshot" } & HostSnapshot)
   | { type: "task"; epoch: string; seq: number; data: HostTask }
@@ -98,3 +98,7 @@ export type InputCommandV1 =
 export interface InputReceiptV1 { inputId: string; taskId: string; contentDigest: string; entryId: string }
 export interface InputDeliveryV1 { status: "accepted" | "consumed" | "unknown"; receipt?: InputReceiptV1; feedback?: { source: "omp-custom-message"; disposition: "queued" | "started" } }
 export interface InputDirtyEventV1 { type: "inputs"; inputProtocol: 1; epoch: string; inputSeq: number; data: { scope: InputScopeV1 } }
+export interface InputsResultV1 { protocol: 1; admission: "ready" | "reconciliation_required"; draft: DraftShardV1; queue: QueueShardV1 }
+export type InputCommandResultV1<C extends InputCommandV1> = C extends { type: "getInputs" } ? InputsResultV1
+  : C extends { type: "saveDraft" | "clearDraft" } ? DraftShardV1
+  : C extends { type: "submitPrompt" } ? HostTask : QueueShardV1;

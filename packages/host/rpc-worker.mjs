@@ -5,9 +5,9 @@ import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { accountWorkerEnvironment } from "./models.mjs";
+import { accountWorkerEnvironment } from "../process-runtime/account-environment.mjs";
 import { buildDirectPiInvocation, resolveDirectExtensionSet } from "../direct-agent/launcher.mjs";
-import { processIdentity, groupAlive } from "./ownership.mjs";
+import { processIdentity, groupAlive } from "../process-runtime/ownership.mjs";
 import { hostError } from "./contracts.mjs";
 import { ApprovalBridge } from "./approval-bridge.mjs";
 import { projectControlState } from "./control-state.mjs";
@@ -31,22 +31,24 @@ function waitForWorkerExit(worker, ms, required = false) {
 }
 
 export class RpcWorker extends EventEmitter {
-  constructor({ stack, configRoot, cwd, model, sessionRoot, resumeFile, accountId, taskId, controlled = false, mcpSnapshot, classifierSnapshot, env = process.env, onIdentity = async () => {}, spawnImpl = spawn, extensionResolver = resolveDirectExtensionSet }) {
-    super(); Object.assign(this, { stack, configRoot, cwd, model, sessionRoot, accountId, taskId, controlled, env, onIdentity, spawnImpl, extensionResolver }); this.pending = new Map(); this.inputPending = new Map(); this.inputRecords = new Map(); this.child = null; this.stopping = null;
+  constructor({ stack, configRoot, cwd, model, sessionRoot, resumeFile, accountId, taskId, controlled = false, minimal = false, deepseekOnly = false, readonlySubagents = false, mcpSnapshot, classifierSnapshot, settingsSnapshot, env = process.env, onIdentity = async () => {}, spawnImpl = spawn, extensionResolver = resolveDirectExtensionSet }) {
+    super(); Object.assign(this, { stack, configRoot, cwd, model, sessionRoot, accountId, taskId, controlled, minimal, deepseekOnly, readonlySubagents, env, onIdentity, spawnImpl, extensionResolver }); this.pending = new Map(); this.inputPending = new Map(); this.inputRecords = new Map(); this.child = null; this.stopping = null;
     this.approvals = new ApprovalBridge({ send: (frame) => { if (this.child && !this.closed && !this.child.stdin.destroyed) this.child.stdin.write(JSON.stringify(frame) + "\n"); }, publish: (approvals) => this.emit("approvals", approvals) });
     this.resumeFile = resumeFile;
-    this.classifierSnapshot = classifierSnapshot; this.mcpSnapshot = mcpSnapshot; this.mcpEnabled = mcpSnapshot?.servers.some((server) => server.enabled) === true;
-    this.codemodeEnabled = accountId !== undefined;
+    this.settingsSnapshot = settingsSnapshot; this.classifierSnapshot = classifierSnapshot; this.mcpSnapshot = mcpSnapshot; this.mcpEnabled = mcpSnapshot?.servers.some((server) => server.enabled) === true;
+    this.codemodeEnabled = !minimal && accountId !== undefined;
   }
   async start() {
-    if (this.controlled && !this.accountId) throw hostError("ACCOUNT_BINDING_REQUIRED");
+    if ((this.controlled || this.minimal) && !this.accountId) throw hostError("ACCOUNT_BINDING_REQUIRED");
     this.codemodeEnabled &&= typeof this.stack.root === "string" && await fs.readFile(path.join(this.stack.root, "pi/package.json"), "utf8").then((raw) => usesNativePiTools(JSON.parse(raw).version), () => false);
-    const set = await this.extensionResolver({ stack: this.stack, configRoot: this.configRoot, headless: !this.controlled });
+    const set = await this.extensionResolver({ stack: this.stack, configRoot: this.configRoot, headless: !this.controlled, minimal: this.minimal, readonlySubagents: this.readonlySubagents });
     const invocation = buildDirectPiInvocation({ stack: this.stack, extensionPaths: set.extensions, runtimeOwner: "host",
       argv: ["--mode", "rpc", "--model", this.model, "--session-dir", this.sessionRoot], env: { ...(this.accountId === undefined ? this.env : accountWorkerEnvironment(this.env)), PI_CODING_AGENT_DIR: this.configRoot } });
     if (this.stopRequested) throw hostError("RPC_CANCELLED_BEFORE_START");
     const argv = this.accountId === undefined ? invocation.argv.slice(1) : [fileURLToPath(new URL("./account-rpc-entry.mjs", import.meta.url)), this.stack.root, this.configRoot, this.accountId, this.model, this.sessionRoot, this.controlled ? "controlled" : "readonly", this.resumeFile ?? "", ...set.extensions];
-    const childEnv = { ...invocation.env }; delete childEnv.OMP_HOST_INPUT_TASK_ID;
+    const childEnv = { ...invocation.env, ONLY_MY_PI_MINIMAL: this.minimal ? "1" : "0", ONLY_MY_PI_DEEPSEEK_ONLY: this.deepseekOnly ? "1" : "0", ONLY_MY_PI_READONLY_SUBAGENTS: this.readonlySubagents ? "1" : "0" }; delete childEnv.OMP_HOST_INPUT_TASK_ID;
+    delete childEnv.OMP_PRODUCT_SETTINGS_SNAPSHOT;
+    if (this.accountId && this.settingsSnapshot && set.extensions.some(entry => entry.endsWith("/extensions/omp-direct/index.ts"))) childEnv.OMP_PRODUCT_SETTINGS_SNAPSHOT = JSON.stringify(this.settingsSnapshot);
     delete childEnv.OMP_HOST_MCP_SNAPSHOT; delete childEnv.OMP_HOST_CLASSIFIER_SNAPSHOT;
     if (this.accountId && this.classifierSnapshot) childEnv.OMP_HOST_CLASSIFIER_SNAPSHOT = JSON.stringify(this.classifierSnapshot);
     if (this.accountId && this.mcpSnapshot) childEnv.OMP_HOST_MCP_SNAPSHOT = JSON.stringify(this.mcpSnapshot);
@@ -54,9 +56,10 @@ export class RpcWorker extends EventEmitter {
     const child = this.spawnImpl(invocation.executable, argv, { cwd: this.cwd, env: childEnv, detached: true, stdio: this.controlled || this.accountId !== undefined ? ["pipe", "pipe", "pipe", "ipc"] : ["pipe", "pipe", "pipe"] });
     this.child = child;
     child.on("message", (message) => {
+      if (message?.type === "product_settings_loaded") this.settingsLoaded = message.data;
       if (message?.type === "mcp_initialized") this.mcpInitialized = message;
-      if (this.controlled && message?.type === "control_state" && !this.closed && !this.stopRequested) this.emit("control", projectControlState(message.state));
-      if (this.controlled && message?.type === "shutdown_confirmed" && message.id === this.shutdownId && message.clean === true) this.shutdownConfirmed = true;
+      if ((this.controlled || this.readonlySubagents) && message?.type === "control_state" && !this.closed && (!this.stopRequested || this.readonlySubagents)) this.emit("control", projectControlState(this.stopRequested ? { ...message.state, access: "inspect" } : message.state));
+      if ((this.controlled || this.readonlySubagents) && message?.type === "shutdown_confirmed" && message.id === this.shutdownId && message.clean === true) this.shutdownConfirmed = true;
       if (message?.type === "omp_input_ready" && message.protocol === INPUT_PROTOCOL && message.taskId === this.taskId) this.inputReady = true;
       if (message?.type === "omp_input_candidate" && message.protocol === INPUT_PROTOCOL && !this.closed) {
         const record = this.inputRecords.get(message.receipt?.inputId);
@@ -91,7 +94,7 @@ export class RpcWorker extends EventEmitter {
           const waiter = this.pending.get(value.id); this.pending.delete(value.id); clearTimeout(waiter.timeout);
           if (value.success === true && value.command === waiter.type) waiter.resolve(value.data); else waiter.reject(hostError("RPC_COMMAND_REJECTED"));
         } else if (value?.type === "extension_ui_request") {
-          if ((this.controlled || (value.method === "select" && (this.mcpEnabled && value.title?.startsWith("MCP · ") || this.codemodeEnabled && value.title?.startsWith("Codemode · ")))) && !this.stopRequested) {
+          if ((this.controlled || (value.method === "select" && (this.mcpEnabled && value.title?.startsWith("MCP · ") || this.codemodeEnabled && value.title?.startsWith("Codemode · ") || this.settingsSnapshot?.resources.some(r => r.kind === "skill" && r.enabled && value.title?.startsWith(`Skill "${r.name}" — first use`))))) && !this.stopRequested) {
             try { this.approvals.request(value); } catch { this.emit("fault", { code: "APPROVAL_REQUEST_INVALID" }); void this.stop().catch(() => {}); }
           } else if (value.id) child.stdin.write(JSON.stringify({ type: "extension_ui_response", id: value.id, cancelled: true }) + "\n");
         } else this.emit("event", value);
@@ -148,9 +151,19 @@ export class RpcWorker extends EventEmitter {
     this.approvals.close();
     this.stopping ??= (async () => {
       if (!this.child) return;
-      if (this.controlled && this.child.connected && !this.closed) {
+      if ((this.controlled || this.readonlySubagents) && this.child.connected && !this.closed) {
         this.shutdownId = randomUUID();
-        await waitBounded(new Promise((resolve) => this.child.send({ type: "prepare_shutdown", id: this.shutdownId }, () => resolve())), 500);
+        const child = this.child;
+        let prepared;
+        try {
+          // A send callback confirms queueing, not delivery. Order stdin EOF
+          // after the child's revocation acknowledgement on the other channel.
+          await waitBounded(new Promise((resolve) => {
+            prepared = (message) => { if (message?.type === "shutdown_prepared" && message.id === this.shutdownId) resolve(); };
+            child.on("message", prepared);
+            child.send({ type: "prepare_shutdown", id: this.shutdownId }, (error) => { if (error) resolve(); });
+          }), 500).catch(() => {});
+        } finally { child.off("message", prepared); }
       }
       // Failed MCP receipts retain ownership, but cannot suppress coding
       // revocation, stdin closure or identity-checked OS termination.
@@ -178,7 +191,7 @@ export class RpcWorker extends EventEmitter {
       await waitForWorkerExit(this, 2000, true);
       if (pid && groupAlive(pid)) throw hostError("RPC_TERMINATION_UNCONFIRMED");
       if (this.mcpEnabled && !this.mcpStopConfirmed) throw hostError("RPC_TERMINATION_UNCONFIRMED");
-      if (this.controlled && this.promptSent && !this.shutdownConfirmed) throw hostError("RPC_TERMINATION_UNCONFIRMED");
+      if ((this.controlled || this.readonlySubagents) && this.promptSent && !this.shutdownConfirmed) throw hostError("RPC_TERMINATION_UNCONFIRMED");
     })(); return this.stopping;
   }
   answerApproval(id, value) {

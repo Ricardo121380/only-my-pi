@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { acquireOwnership, ownershipError } from "../host/ownership.mjs";
+import { acquireOwnership, ownershipError } from "../process-runtime/ownership.mjs";
 import { readSessionSnapshot, openValidatedSession } from "./session-history.mjs";
 import { projectExecutionState } from "../project-gates/index.mjs";
 

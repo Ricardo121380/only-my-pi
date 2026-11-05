@@ -26,7 +26,7 @@
 
 ## 设计证据
 
-[设计合同](../design/glacier/2026-09-26-u0-design-contract.md)、[可交互HTML](../design/glacier/u0-workbench.html)。采用用户指定三项前端skills；OpenDesign/K3入口未发现，按既有可选辅助约定由当前Codex完成，未换用其他外部模型。
+[设计合同](../design/glacier/2026-09-26-u0-design-contract.md)、[可交互HTML](../../legacy/design/glacier/u0-workbench.html)。采用用户指定三项前端skills；OpenDesign/K3入口未发现，按既有可选辅助约定由当前Codex完成，未换用其他外部模型。
 
 Ego专用空间11；`design-browser.json`记录三种宽度无横向溢出、右侧默认关闭、八种场景渲染、补充/排队区分、权限/用量独立面板、焦点返回和循环、reduced-motion下transition为0。已实际查看`design-1440.png`、`design-761.png`、`design-390.png`、`design-390-dark-running.png`。首次焦点循环检查失败，已补显式Tab/Shift+Tab循环并复验；不是静默忽略失败。样稿无模型/Host/真实终端连接。
 

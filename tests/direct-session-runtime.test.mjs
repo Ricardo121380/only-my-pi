@@ -7,7 +7,7 @@ import { pathToFileURL } from "node:url";
 import * as sdk from "@earendil-works/pi-coding-agent";
 import { SessionAdmissions } from "../packages/direct-agent/session-admission.mjs";
 import { createAdmittedSessionRuntime } from "../packages/direct-agent/session-runtime.mjs";
-import { acquireOwnership } from "../packages/host/ownership.mjs";
+import { acquireOwnership } from "../packages/process-runtime/ownership.mjs";
 import { prepareHeadlessSession } from "../packages/direct-agent/session-selection.mjs";
 
 function deferred() {

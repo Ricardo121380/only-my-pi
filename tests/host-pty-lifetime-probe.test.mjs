@@ -5,7 +5,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import test from "node:test";
 import pty from "node-pty";
-import { processIdentity } from "../packages/host/ownership.mjs";
+import { processIdentity } from "../packages/process-runtime/ownership.mjs";
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function until(probe) {

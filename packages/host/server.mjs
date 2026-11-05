@@ -5,30 +5,24 @@ import { randomBytes, randomUUID, timingSafeEqual, createHash } from "node:crypt
 import { WebSocketServer } from "ws";
 import { StringDecoder } from "node:string_decoder";
 import { atomicWriteJson, ensureConfigDirectory, readJsonObject } from "../config-runtime/index.mjs";
-import { acquireOwnership, processIdentity, groupAlive } from "./ownership.mjs";
+import { acquireOwnership, processIdentity, groupAlive } from "../process-runtime/ownership.mjs";
 import { ProjectCatalog } from "./catalog.mjs";
 import { HostTasks } from "./tasks.mjs";
 import { HostInputStore } from "./input-store.mjs";
 import { HostInputController } from "./input-controller.mjs";
 import { INPUT_PROTOCOL } from "./input-protocol.mjs";
-import { AccountCatalog } from "./accounts.mjs";
-import { accountAuth } from "./account-auth.mjs";
-import { AccountOAuth } from "./account-oauth.mjs";
-import { recoverAuthProcesses } from "./auth-process.mjs";
-import { listModels } from "./models.mjs";
+import { AccountCatalog } from "../accounts/catalog.mjs";
+import { accountAuth } from "../accounts/authentication.mjs";
+import { probeAccount } from "../accounts/probe.mjs";
+import { AccountOAuth } from "../accounts/oauth.mjs";
+import { recoverAuthProcesses } from "../accounts/auth-process.mjs";
+import { listModels } from "../accounts/models.mjs";
 import { listFiles, readFile, gitDiff } from "./inspector.mjs";
-import { ManualWorkspaces } from "./manual-workspaces.mjs";
-import { HostTerminals } from "./terminals.mjs";
-import { HOST_PROTOCOL, HOST_VERSION, CLI_ACCOUNT_ID, hostError, validateCommand, terminal } from "./contracts.mjs";
+import { HOST_PROTOCOL, HOST_VERSION, hostError, validateCommand, terminal } from "./contracts.mjs";
+import { CLI_ACCOUNT_ID } from "../accounts/contracts.mjs";
 import { projectRunRecord } from "../direct-agent/contracts.mjs";
 import { createRunRecordStore } from "../run-management/index.mjs";
-import { ModelCallStore } from "../model-calls/store.mjs";
-import { ImageArtifacts } from "../model-calls/artifacts.mjs";
-import { SessionImages } from "../model-calls/history.mjs";
-import { ImageExports } from "./image-exports.mjs";
-import { McpCatalog } from "../mcp/catalog.mjs";
-import { McpRuns } from "../mcp/runs.mjs";
-import { McpOAuth } from "../mcp/oauth.mjs";
+import { isDeepSeekModel, requireDeepSeekModel } from "../direct-agent/model-policy.mjs";
 
 const secret = () => randomBytes(32).toString("hex");
 const equal = (a, b) => typeof a === "string" && typeof b === "string" && timingSafeEqual(createHash("sha256").update(a).digest(), createHash("sha256").update(b).digest());
@@ -42,8 +36,17 @@ async function body(request, limit = 65536) {
 }
 async function recoverWorkers(configRoot, previous) {
   const state = await readJsonObject(configRoot, path.join(configRoot, "only-my-pi/host/tasks.json")).catch((e) => { if (e.code === "ENOENT") return null; throw e; });
-  const mcpRuns = new McpRuns(configRoot);
-  const allMcpRuns = await mcpRuns.status();
+  // A minimal-only config has no MCP ledger. Existing execution evidence still
+  // requires the MCP reconciler; absence of its implementation cannot waive it.
+  const mcpState = await readJsonObject(configRoot, path.join(configRoot, "only-my-pi/mcp/runs.json")).catch(e => { if (e.code === "ENOENT") return null; throw e; });
+  let mcpRuns;
+  if (mcpState || state?.tasks?.some(task => task.mcpSnapshot?.projectPath)) {
+    let McpRuns;
+    try { ({ McpRuns } = await import("../mcp/runs.mjs")); }
+    catch { throw hostError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409); }
+    mcpRuns = new McpRuns(configRoot);
+  }
+  const allMcpRuns = mcpRuns ? await mcpRuns.status() : { runs: [] };
   if (allMcpRuns.runs.some((run) => run.status === "reconciliation" || run.processes.some((entry) => entry.alive))) {
     throw hostError("MCP_PROCESS_RECONCILIATION_REQUIRED", 409);
   }
@@ -84,9 +87,23 @@ async function recoverWorkers(configRoot, previous) {
   }
 }
 
-export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = path.join(configRoot, "sessions"), workerFactory, modelsProvider, allowControlled = false, env = process.env, now = Date.now }) {
+export async function startHost({ configRoot, stack, assetsRoot, port = 0, onStopRequested, sessionRoot = path.join(configRoot, "sessions"), workerFactory, modelsProvider, allowControlled = false, minimal = false, deepseekOnly = false, readonlySubagents = false, env = process.env, now = Date.now }) {
   if (![configRoot, sessionRoot, assetsRoot].every((p) => typeof p === "string" && path.isAbsolute(p))) throw hostError("HOST_PATH_INVALID");
-  await fs.access(path.join(assetsRoot, "index.html"));
+  if (!Number.isInteger(port) || port < 0 || port > 65535) throw hostError("HOST_PORT_INVALID");
+  await fs.access(path.join(assetsRoot, minimal ? "minimal.html" : "index.html"));
+  const optional = minimal ? {} : Object.assign({}, ...await Promise.all([
+    import("../product-settings/catalog.mjs"),
+    import("./manual-workspaces.mjs"),
+    import("./terminals.mjs"),
+    import("../model-calls/store.mjs"),
+    import("../model-calls/artifacts.mjs"),
+    import("../model-calls/history.mjs"),
+    import("./image-exports.mjs"),
+    import("../mcp/catalog.mjs"),
+    import("../mcp/runs.mjs"),
+    import("../mcp/oauth.mjs"),
+  ]));
+  const { runSettingsAction, taskSettingsSnapshot, ManualWorkspaces, HostTerminals, ModelCallStore, ImageArtifacts, SessionImages, ImageExports, McpCatalog, McpRuns, McpOAuth } = optional;
   await ensureConfigDirectory(configRoot, "only-my-pi/host");
   const lock = await acquireOwnership(configRoot, "host", "singleton", { recover: (old) => recoverWorkers(configRoot, old) });
   try { await recoverAuthProcesses(configRoot); } catch (error) { await lock.release(); throw error; }
@@ -104,22 +121,23 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
   };
   const previous = await readJsonObject(configRoot, projectsFile).catch(async (e) => { if (e.code === "ENOENT") return null; await lock.release(); throw e; });
   const catalog = new ProjectCatalog({ sessionRoot, projects: previous?.projects ?? [], sdkFile: stack.root ? path.join(stack.root, "pi/dist/index.js") : undefined });
-  const images = new SessionImages(configRoot, catalog), imageExports = new ImageExports({ configRoot, catalog, images });
+  const images = minimal ? null : new SessionImages(configRoot, catalog), imageExports = minimal ? null : new ImageExports({ configRoot, catalog, images });
   const inputs = new HostInputStore({ configRoot, now: () => new Date(now()).toISOString() });
   try { await inputs.load(); } catch (error) { await lock.release(); throw error; }
-  const manual = new ManualWorkspaces({ configRoot, catalog });
-  const terminals = new HostTerminals({ configRoot, catalog, env });
-  try { await terminals.load(); } catch (error) { await inputs.close(); await lock.release(); throw error; }
+  const manual = minimal ? null : new ManualWorkspaces({ configRoot, catalog });
+  const terminals = minimal ? null : new HostTerminals({ configRoot, catalog, env });
+  try { await terminals?.load(); } catch (error) { await inputs.close(); await lock.release(); throw error; }
   const accounts = new AccountCatalog(configRoot);
-  const mcp = new McpCatalog(configRoot);
-  const mcpOAuth = new McpOAuth({ catalog: mcp, sdkFile: stack.root ? path.join(stack.root, "pi/dist/index.js") : undefined });
-  try { await mcpOAuth.initialize(); } catch (error) { await inputs.close(); await lock.release(); throw error; }
+  const mcp = minimal ? null : new McpCatalog(configRoot);
+  const mcpOAuth = minimal ? null : new McpOAuth({ catalog: mcp, sdkFile: stack.root ? path.join(stack.root, "pi/dist/index.js") : undefined });
+  try { await mcpOAuth?.initialize(); } catch (error) { await inputs.close(); await lock.release(); throw error; }
   const oauth = new AccountOAuth({ stack, configRoot, accounts, env });
   let modelCache, modelTime = 0;
   const modelAbort = new AbortController();
+  const allowedModels = models => deepseekOnly ? models.filter(model => isDeepSeekModel(model.id)) : models;
   const authAbort = new AbortController(), authOperations = new Set();
   const modelList = () => {
-    if (!modelCache || Date.now() - modelTime > 10000) { modelTime = Date.now(); modelCache = Promise.resolve().then(() => modelsProvider ? modelsProvider() : listModels({ stack, configRoot, accountId: CLI_ACCOUNT_ID, env, signal: modelAbort.signal })).catch((error) => { modelCache = null; throw error; }); }
+    if (!modelCache || Date.now() - modelTime > 10000) { modelTime = Date.now(); modelCache = Promise.resolve().then(() => modelsProvider ? modelsProvider() : listModels({ stack, configRoot, accountId: CLI_ACCOUNT_ID, env, signal: modelAbort.signal })).then(allowedModels).catch((error) => { modelCache = null; throw error; }); }
     return modelCache;
   };
   const accountModels = async (accountId) => {
@@ -127,13 +145,14 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
     const release = await accounts.beginUse(accountId);
     try {
       await accounts.get(accountId);
-      return await (modelsProvider ? modelsProvider(accountId) : listModels({ stack, configRoot, accountId, env, signal: modelAbort.signal }));
+      return allowedModels(await (modelsProvider ? modelsProvider(accountId) : listModels({ stack, configRoot, accountId, env, signal: modelAbort.signal })));
     } finally { await release(); }
   };
-  const tasks = new HostTasks({ configRoot, stack, catalog, accounts, workerFactory, models: accountModels, allowControlled, env });
+  const tasks = new HostTasks({ configRoot, stack, catalog, accounts, workerFactory, models: accountModels, allowControlled, minimal, deepseekOnly, readonlySubagents, env });
   try { await tasks.load(); } catch (error) { await inputs.close(); await lock.release(); throw error; }
-  const inputController = new HostInputController({ store: inputs, tasks, catalog });
-  const snapshot = () => ({ protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, seq, indexing: scanRunning, capabilities: { controlled: allowControlled, inputs: { protocol: INPUT_PROTOCOL, materials: false, resourceRevision: 0 } },
+  const resourceRevision = async projectId => minimal ? 0 : (await taskSettingsSnapshot(configRoot, catalog.project(projectId).path, stack.ompPackageRoot)).resourceRevision;
+  const inputController = new HostInputController({ store: inputs, tasks, catalog, resourceRevision });
+  const snapshot = () => ({ protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, seq, indexing: scanRunning, capabilities: { minimal, controlled: allowControlled, inspector: { protocol: 1 }, accounts: { protocol: 1, apiKey: true, probe: true }, inputs: { protocol: INPUT_PROTOCOL, materials: false, resourceRevision: minimal ? 0 : null } },
     runtime: { stackId: stack.stackId, sourceCommit: stack.distribution?.sourceCommit ?? null }, projects: catalog.listProjects(), tasks: tasks.snapshot(), diagnostics: catalog.diagnostics });
   const send = (client, value) => {
     if (client.readyState !== 1) return;
@@ -193,14 +212,14 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
         if (req.method === "GET" && url.pathname === "/internal/status") return response(res, 200, snapshot());
         if (req.method === "POST" && url.pathname === "/internal/pair") return response(res, 200, { url: issuePair() });
         if (req.method === "POST" && url.pathname === "/internal/image-export") {
-          if (stopping || !allowControlled) throw hostError("CONTROLLED_MODE_UNAVAILABLE", 409);
+          if (minimal || stopping || !allowControlled) throw hostError("CONTROLLED_MODE_UNAVAILABLE", 409);
           if (req.headers["x-omp-image-export-protocol"] !== "1") throw hostError("IMAGE_EXPORT_PROTOCOL_MISMATCH", 409);
           const input = await body(req);
           if (!input || Object.keys(input).sort().join() !== "command,projectId" || typeof input.projectId !== "string") throw hostError("IMAGE_EXPORT_COMMAND_INVALID");
           catalog.project(input.projectId);
           return response(res, 200, imageExports.public(await imageExports.action(input.command, () => !stopping && controlled(req), input.projectId)));
         }
-        if (req.method === "POST" && url.pathname === "/internal/stop") { response(res, 202, { status: "stopping" }); void stop(); return; }
+        if (req.method === "POST" && url.pathname === "/internal/stop") { response(res, 202, { status: "stopping" }); void (onStopRequested ?? stop)(); return; }
         throw hostError("NOT_FOUND", 404);
       }
       if (req.method === "POST" && url.pathname === "/pair") {
@@ -219,6 +238,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
       if (url.pathname.startsWith("/api/")) {
         if (stopping) throw hostError("HOST_STOPPING", 503);
         if (!authenticated(req)) throw hostError("AUTH_REQUIRED", 401);
+        if (minimal && !["/api/state", "/api/accounts", "/api/account-action", "/api/input-command", "/api/models", "/api/sessions", "/api/history", "/api/tool-output", "/api/task", "/api/files", "/api/file", "/api/diff", "/api/command", "/api/logout"].includes(url.pathname)) throw hostError("NOT_FOUND", 404);
         if (url.pathname === "/api/mcp-oauth/open") {
           if (req.method !== "GET" || req.headers["sec-fetch-site"] === "cross-site" || [...url.searchParams.keys()].join() !== "flowId") throw hostError("HOST_ORIGIN_DENIED", 403);
           const location = await mcpOAuth.open(url.searchParams.get("flowId"));
@@ -235,6 +255,15 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           const project = catalog.project(input.projectId);
           const config = await store.save(project.path, input.revision, input[kind], accountId => listModels({ stack, configRoot, accountId, modelType: kind, env, signal: modelAbort.signal }), kind);
           return response(res, 200, config);
+        }
+        if (url.pathname === "/api/settings") {
+          if (req.method !== "POST" || !safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
+          if (req.headers["x-omp-settings-protocol"] !== "1") throw hostError("SETTINGS_PROTOCOL_MISMATCH", 409);
+          const input = await authorizedBody(req, 256 * 1024);
+          if (Object.hasOwn(input ?? {}, "projectId") && (typeof input.projectId !== "string" || !input.projectId)) throw hostError("SETTINGS_PROJECT_REQUIRED");
+          const project = input?.projectId ? catalog.project(input.projectId) : null;
+          const result = await runSettingsAction({ configRoot, input, projectPath: project?.path, packageRoot: stack.ompPackageRoot });
+          return response(res, 200, result);
         }
         if (url.pathname === "/api/mcp") {
           if (req.method !== "POST") throw hostError("METHOD_DENIED", 405);
@@ -265,6 +294,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
           if (req.headers["x-omp-account-protocol"] !== "1") throw hostError("ACCOUNT_PROTOCOL_MISMATCH", 409);
           const input = await authorizedBody(req);
+          if (minimal && input?.authType === "oauth") throw hostError("ACCOUNT_AUTH_UNAVAILABLE", 409);
           if (input?.authType === "oauth" && !(await oauth.providers()).some((p) => p.providerId === input.providerId)) throw hostError("ACCOUNT_PROVIDER_UNSUPPORTED", 400);
           if (!authenticated(req)) throw hostError("AUTH_REQUIRED", 401);
           return response(res, 201, { protocol: 1, authentication: "not_connected", account: await accounts.create(input) });
@@ -276,6 +306,19 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           const input = await authorizedBody(req);
           if (!input || typeof input.accountId !== "string" || Object.keys(input).some((key) => !["accountId", "action"].includes(key)) || !input.action || typeof input.action !== "object") throw hostError("ACCOUNT_INPUT_INVALID");
           const { accountId, action } = input;
+          if (minimal && !["configuration", "probe", "configure", "rename", "remove", "status", "apiKey", "logout"].includes(action.type)) throw hostError("ACCOUNT_AUTH_UNAVAILABLE", 409);
+          if (action.type === "configuration" && Object.keys(action).join() === "type") return response(res, 200, await accounts.configuration(accountId));
+          if (action.type === "probe") {
+            if (Object.keys(action).sort().join() !== (action.thinkingLevel === undefined ? "model,type" : "model,thinkingLevel,type")) throw hostError("ACCOUNT_INPUT_INVALID");
+            if (deepseekOnly) requireDeepSeekModel(action.model);
+            const controller = new AbortController(), cancel = () => controller.abort();
+            authAbort.signal.addEventListener("abort", cancel, { once: true }); res.once("close", cancel);
+            if (authAbort.signal.aborted || res.destroyed) cancel();
+            const operation = probeAccount({ stack, configRoot, accounts, accountId, model: action.model, thinkingLevel: action.thinkingLevel, env, signal: controller.signal });
+            authOperations.add(operation);
+            try { return response(res, 200, await operation); }
+            finally { authOperations.delete(operation); authAbort.signal.removeEventListener("abort", cancel); res.off("close", cancel); }
+          }
           if (action.type === "oauthStart" && Object.keys(action).join() === "type") return response(res, 202, await oauth.start(accountId));
           if (["oauthAnswer", "oauthCancel"].includes(action.type)) {
             const keys = Object.keys(action).sort().join();
@@ -283,7 +326,10 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
             if (oauth.snapshot(action.flowId).accountId !== accountId) throw hostError("ACCOUNT_AUTH_FLOW_EXPIRED", 409);
             return response(res, 200, action.type === "oauthCancel" ? await oauth.cancel(action.flowId) : oauth.answer(action.flowId, action.promptId, action.value));
           }
-          if (action.type === "configure" && Object.keys(action).sort().join() === "config,type") return response(res, 200, await accounts.configure(accountId, action.config));
+          if (action.type === "configure" && Object.keys(action).sort().join() === "config,type") {
+            if (minimal && (!["openai-completions", "openai-responses", "anthropic-messages"].includes(action.config?.api) || Array.isArray(action.config?.models) && action.config.models.some(model => model?.type && model.type !== "llm"))) throw hostError("ACCOUNT_PROVIDER_UNSUPPORTED", 409);
+            return response(res, 200, await accounts.configure(accountId, action.config));
+          }
           if (action.type === "rename" && Object.keys(action).sort().join() === "name,type") return response(res, 200, await accounts.rename(accountId, action.name));
           if (action.type === "remove" && Object.keys(action).join() === "type") return response(res, 200, await accounts.remove(accountId));
           const operation = accountAuth({ stack, configRoot, accounts, accountId, input: action, env, signal: authAbort.signal });
@@ -309,6 +355,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
           if (!safeOrigin(req)) throw hostError("HOST_ORIGIN_DENIED", 403);
           if (req.headers["x-omp-host-protocol"] !== String(HOST_PROTOCOL)) throw hostError("PROTOCOL_MISMATCH", 409);
           const command = validateCommand(await authorizedBody(req, 4 * 1024 * 1024));
+          if (minimal && !["addProject", "startTask", "cancelTask", "answerApproval", "revokeTask"].includes(command.type)) throw hostError("COMMAND_UNAVAILABLE", 409);
           if (["openTerminal", "writeTerminal", "resizeTerminal", "closeTerminal"].includes(command.type)) {
             if (!allowControlled) throw hostError("CONTROLLED_MODE_UNAVAILABLE", 409);
             const result = command.type === "openTerminal" ? await terminals.open(command.projectId, command.cols, command.rows)
@@ -364,7 +411,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
         if (url.pathname === "/api/sessions") return response(res, 200, { sessions: catalog.listSessions(url.searchParams.get("projectId")) });
         if (url.pathname === "/api/history") return response(res, 200, await catalog.history(url.searchParams.get("sessionKey"), Number(url.searchParams.get("offset") ?? 0)));
         if (url.pathname === "/api/tool-output") return response(res, 200, await catalog.toolOutput(url.searchParams.get("sessionKey"), url.searchParams.get("entryId"), Number(url.searchParams.get("offset") ?? 0)));
-        if (url.pathname === "/api/task") { const task = tasks.tasks.get(url.searchParams.get("taskId")); if (!task) throw hostError("TASK_NOT_FOUND", 404); return response(res, 200, tasks.public(task)); }
+        if (url.pathname === "/api/task") { const task = tasks.tasks.get(url.searchParams.has("requestId") ? tasks.requests.get(url.searchParams.get("requestId")) : url.searchParams.get("taskId")); if (!task) throw hostError("TASK_NOT_FOUND", 404); return response(res, 200, tasks.public(task)); }
         const project = catalog.project(url.searchParams.get("projectId"));
         if (url.pathname === "/api/files") return response(res, 200, await listFiles(project, url.searchParams.get("path") ?? ""));
         if (url.pathname === "/api/file") return response(res, 200, await readFile(project, url.searchParams.get("path")));
@@ -377,7 +424,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
         throw hostError("NOT_FOUND", 404);
       }
       if (req.method !== "GET") throw hostError("METHOD_DENIED", 405);
-      const relative = url.pathname === "/" ? "index.html" : decodeURIComponent(url.pathname.slice(1));
+      const relative = url.pathname === "/" ? (minimal ? "minimal.html" : "index.html") : decodeURIComponent(url.pathname.slice(1));
       if (!relative || relative.split("/").includes("..") || /[\\\0]/u.test(relative)) throw hostError("ASSET_DENIED", 403);
       const realRoot = await fs.realpath(assetsRoot), file = await fs.realpath(path.join(realRoot, relative));
       if (!file.startsWith(realRoot + path.sep)) throw hostError("ASSET_DENIED", 403);
@@ -413,9 +460,9 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
     closed = (async () => {
       clearInterval(scanTimer); clearInterval(sessionTimer); clearTimeout(flushTimer); modelAbort.abort();
       authAbort.abort();
-      await Promise.allSettled([...authOperations, oauth.stop(), mcpOAuth.stop()]);
+      await Promise.allSettled([...authOperations, oauth.stop(), mcpOAuth?.stop()]);
       try {
-        const results = await Promise.allSettled([tasks.stop(), manual.stop(), terminals.stop(), imageExports.stop()]);
+        const results = await Promise.allSettled([tasks.stop(), manual?.stop(), terminals?.stop(), imageExports?.stop()]);
         await inputController.close();
         await inputs.close();
         const failure = results.find((result) => result.status === "rejected");
@@ -433,7 +480,7 @@ export async function startHost({ configRoot, stack, assetsRoot, sessionRoot = p
     })(); return closed;
   }
   try {
-    await new Promise((resolve, reject) => { server.once("error", reject); server.listen(0, "127.0.0.1", resolve); });
+    await new Promise((resolve, reject) => { server.once("error", reject); server.listen(port, "127.0.0.1", resolve); });
     origin = `http://127.0.0.1:${server.address().port}`;
     await atomicWriteJson(configRoot, endpointFile, { protocol: HOST_PROTOCOL, version: HOST_VERSION, epoch, origin, pid: process.pid, identity: lock.owner.identity, controlToken });
     void scan(); scanTimer = setInterval(() => void scan(), 10000); scanTimer.unref();

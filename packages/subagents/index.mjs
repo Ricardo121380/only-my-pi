@@ -1,32 +1,6 @@
-import {
-  BACKEND_CAPABILITY_KEYS,
-  createBackendCapabilityV2,
-  immutable,
-} from "./domain/index.mjs";
 import { createRunCoordinator } from "./workflow/run-coordinator/index.mjs";
-
-export const ONLY_MY_PI_SUBAGENTS_API_VERSION = 2;
-
-function assertMethod(value, name) {
-  if (typeof value?.[name] !== "function") {
-    throw new TypeError(`subagents backend must implement ${name}()`);
-  }
-}
-
-function createUnavailableCapabilities() {
-  return createBackendCapabilityV2({
-    backendId: "unconfigured",
-    backendVersion: "0.0.0",
-    protocol: { name: "none", version: 1 },
-    observedAt: 0,
-    capabilities: Object.fromEntries(BACKEND_CAPABILITY_KEYS.map((key) => [key, {
-      state: "UNAVAILABLE",
-      reasonCode: "no-backend-injected",
-      evidence: ["facade-created-without-backend"],
-      constraints: {},
-    }])),
-  });
-}
+import { createAgentFacade, ONLY_MY_PI_SUBAGENTS_API_VERSION } from "./agent-facade.mjs";
+export { createAgentFacade, ONLY_MY_PI_SUBAGENTS_API_VERSION } from "./agent-facade.mjs";
 
 /**
  * The single first-party orchestration facade.
@@ -47,53 +21,7 @@ export function createSubagentsFacade({
   approvalEvidenceProvider = null,
   coordinatorOptions = {},
 } = {}) {
-  if (backend !== null) {
-    for (const method of ["ensureReady", "launch", "status", "steer", "interrupt", "stop", "resume", "dispose"]) {
-      assertMethod(backend, method);
-    }
-  }
-
-  const requireBackend = () => {
-    if (backend === null) {
-      const error = new Error("a live subagents backend was not injected");
-      error.name = "SubagentsUnavailableError";
-      error.code = "SUBAGENTS_BACKEND_UNAVAILABLE";
-      throw error;
-    }
-    return backend;
-  };
-
-  const agent = Object.freeze({
-    capabilities() {
-      return backend?.capabilityMatrix ?? createUnavailableCapabilities();
-    },
-    negotiate(options) {
-      return requireBackend().ensureReady(options);
-    },
-    launch(input) {
-      return requireBackend().launch(input);
-    },
-    status(handle, options) {
-      return requireBackend().status(handle, options);
-    },
-    steer(handle, message, options) {
-      return requireBackend().steer(handle, message, options);
-    },
-    interrupt(handle, options) {
-      return requireBackend().interrupt(handle, options);
-    },
-    stop(handle, options) {
-      return requireBackend().stop(handle, options);
-    },
-    resume(handle, options) {
-      return requireBackend().resume(handle, options);
-    },
-    dispose() {
-      return backend === null
-        ? Promise.resolve(Object.freeze({ status: "DISPOSED", stoppedBackendRuns: false }))
-        : backend.dispose();
-    },
-  });
+  const { agent } = createAgentFacade({ backend });
 
   function workflow(overrides = {}) {
     const journal = overrides.eventJournal ?? eventJournal;

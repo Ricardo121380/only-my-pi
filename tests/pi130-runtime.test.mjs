@@ -19,7 +19,7 @@ test("Pi 1.3 CLI admits controlled codemode and disables ambient MCP discovery",
     piCliPath: path.join(root, "pi/dist/bundle/cli.js"), ompPackageRoot: path.join(root, "omp") };
   const invocation = buildDirectPiInvocation({ argv: ["--mode", "rpc"], stack, extensionPaths: ["/verified/omp-direct.ts"] });
   assert.ok(invocation.argv.includes("--no-mcp"));
-  assert.equal(invocation.argv[invocation.argv.indexOf("--tools") + 1], "read,grep,find,ls,codemode");
+  assert.equal(invocation.argv[invocation.argv.indexOf("--tools") + 1], "read,grep,find,ls,codemode,context_snapshot");
 });
 
 async function sourceCli(t, respond) {
@@ -95,7 +95,7 @@ for (const mode of ["persisted print", "ephemeral print", "RPC", "RPC re-enable"
   else { args.push("-p", "uncertain request"); if (mode !== "persisted print") args.push("--no-session"); }
   if (mode === "account child") {
     entry = path.join(f.stack, "child-entry.mjs");
-    await fs.writeFile(entry, `import { runAccountChild } from ${JSON.stringify(path.join(f.omp, "packages/host/account-child.mjs"))}; process.exitCode = await runAccountChild({stack:{root:${JSON.stringify(f.stack)}}, configRoot:${JSON.stringify(f.config)}, accountId:"cli-readonly", argv:process.argv.slice(2)});`);
+    await fs.writeFile(entry, `import { runAccountChild } from ${JSON.stringify(path.join(f.omp, "packages/direct-agent/account-child.mjs"))}; process.exitCode = await runAccountChild({stack:{root:${JSON.stringify(f.stack)}}, configRoot:${JSON.stringify(f.config)}, accountId:"cli-readonly", argv:process.argv.slice(2)});`);
     args.push("--mode", "json", "--no-extensions", "--tools", "read");
   }
   const result = await f.launch(args, input, entry);

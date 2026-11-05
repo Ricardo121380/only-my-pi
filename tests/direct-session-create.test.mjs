@@ -5,7 +5,7 @@ import path from "node:path";
 import os from "node:os";
 import { SessionManager } from "@earendil-works/pi-coding-agent";
 import { SessionAdmissions } from "../packages/direct-agent/session-admission.mjs";
-import { acquireOwnership } from "../packages/host/ownership.mjs";
+import { acquireOwnership } from "../packages/process-runtime/ownership.mjs";
 
 async function fixture(t) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-create-")));

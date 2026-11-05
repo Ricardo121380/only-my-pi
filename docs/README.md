@@ -6,20 +6,20 @@
 | --- | --- |
 | Run a local Pi session in the WebUI | [Development checkout and demo commands](minimal-webui.md) |
 | Understand the current goals or choose work | [Native Pi → WebUI → selected modules → Electron](plans/2026-10-25-pi-native-client-reset.md) · [ADR-0022](decisions/ADR-0022-pi-native-web-first.md) |
-| Install the published terminal Preview | [Installation guide](quickstart.md) · [GitHub releases](https://github.com/Ricardo121380/only-my-pi/releases) |
+| Download the WebUI preview | [Release notes](releases/webui-0.1.0-preview.1.md) · [Published archive verification](evidence/2026-11-05-webui-preview-release.md) |
 | Find source, contracts or tests | [Repository layout and synchronization](maintenance/README.md) · [Domain glossary](../CONTEXT.md) |
 | Choose checks or inspect CI failures | [Development CI and historical acceptance](ci.md) |
 | Check an issue or a proposed integration | [GitHub Issues](https://github.com/Ricardo121380/only-my-pi/issues) · [Pull requests](https://github.com/Ricardo121380/only-my-pi/pulls) |
 
-### Public main and development source
+### Mainline and legacy source
 
-The October 22 main code baseline includes CLI product accounts and authenticated MCP. The native Pi WebUI, its persistent development launcher and their tests are on a [separate development branch](https://github.com/Ricardo121380/only-my-pi/tree/codex/dev/pi-native-web). The [source guide](minimal-webui.md) identifies the exact revision, runtime and checks.
+`main` follows the released native Pi WebUI source. The previous CLI mainline is preserved at [legacy/cli-before-webui-20261105](https://github.com/Ricardo121380/only-my-pi/tree/legacy/cli-before-webui-20261105). CLI work is deferred; shared runtime and compatibility regressions remain in CI. The [source guide](minimal-webui.md) identifies the runtime and checks.
 
 | Work | Source or evidence |
 | --- | --- |
 | CLI accounts and explicit account selection | [Account guide](cli-accounts.md) · [Scoped acceptance](compatibility/2026-10-20-cli-product-accounts.md) · [Merged PR #86](https://github.com/Ricardo121380/only-my-pi/pull/86) |
 | Authenticated MCP from the CLI | [MCP guide](cli-mcp.md) · [Scoped acceptance](compatibility/2026-10-21-cli-authenticated-mcp.md) · [Merged PR #89](https://github.com/Ricardo121380/only-my-pi/pull/89) |
-| Shared product settings | [PR #90 and its checks](https://github.com/Ricardo121380/only-my-pi/pull/90) · [Issue #80](https://github.com/Ricardo121380/only-my-pi/issues/80) |
+| Shared product settings | [Development guide](shared-product-settings.md) · [Source-scoped results and retained failures](compatibility/2026-10-22-shared-product-settings.md) · [PR #90 and its checks](https://github.com/Ricardo121380/only-my-pi/pull/90) · [Issue #80](https://github.com/Ricardo121380/only-my-pi/issues/80) |
 | Versions, candidates and previous installation gates | [Node/Pi matrix](compatibility/node-pi-matrix.md) · [Pi 1.3.0 private candidate](compatibility/2026-10-18-pi-1.3.0-private-candidate-acceptance.md) |
 
 ## Historical specifications and evidence

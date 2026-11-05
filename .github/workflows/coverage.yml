@@ -28,7 +28,11 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             contracts/release/external/package-lock.json
+            prototypes/package-lock.json
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install the pinned B2 frontend dependencies
+        if: hashFiles('prototypes/package-lock.json') != ''
+        run: npm ci --prefix prototypes --ignore-scripts --no-audit --no-fund
       - run: npm run test:prepare
       - run: node scripts/ci-run.mjs coverage "$RUNNER_TEMP/ci-reports/coverage.json"
       - name: Preserve bounded coverage result

@@ -24,7 +24,7 @@ async function publishControl() {
   const pair = await fetch(fixture.host.origin + "/internal/pair", { method: "POST", headers: { authorization: `Bearer ${fixture.host.controlToken}` } }).then(response => response.json());
   await fs.writeFile(controlFile, JSON.stringify({ pairingUrl: pair.url, origin: fixture.host.origin, projectId: fixture.projectId, accountId: fixture.account.accountId, accountBId: accountB.accountId, imageOrigin: fixture.imageOrigin, project: fixture.project, config: fixture.config, root: fixture.root }), { mode: 0o600 });
 }
-await publishControl(); console.log(JSON.stringify({ ready: true, origin: fixture.host.origin, project: fixture.project, node: process.version, pi: "1.1.0", scope: "LOCAL_CONTROLLED_SOURCE_HARNESS" }));
+await publishControl(); console.log(JSON.stringify({ ready: true, origin: fixture.host.origin, project: fixture.project, node: process.version, pi: fixture.piVersion, scope: "LOCAL_CONTROLLED_SOURCE_HARNESS" }));
 let closing = false;
 process.on("SIGUSR2", async () => {
   if (closing) return; await fixture.restart(); await publishControl();

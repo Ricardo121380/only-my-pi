@@ -14,15 +14,13 @@ date: 2026-11-04
 使用独立配置与数据；应用主任务和只读子代理仅使用 DeepSeek。npm、Homebrew、旧 CLI
 Full/Thin、日常安装晋升和其他平台仍保留各自出口，不把新包映射成旧发行验证通过。
 
-WebUI 开发分支 CI 和预览构建固定使用 `macos-15` arm64。GitHub 已于 2026-11-02
+当前 CI 和预览构建固定使用 `macos-15` arm64。GitHub 已于 2026-11-02
 [退役 macOS 14 runner](https://github.com/actions/runner-images/issues/13518)，原任务的排队取消记录保留；
 不沿用退役 runner，也不跳过必需检查。新归档按 macOS 15+ 明确支持范围，历史平台证据保持原身份。
 
-默认分支的下载说明单独按纯文档变更检查与合入。旧主线 runner 迁移在
+2026-11-05 的默认分支下载说明单独按纯文档变更检查与合入。旧主线 runner 迁移曾在
 [PR #107](https://github.com/Ricardo121380/only-my-pi/pull/107) 单独跟踪：文档、WebUI 和
-CLI 检查已经通过，静态与安装任务多次未获得 hosted runner，原取消及失败记录保留。
-不把这些未执行项计为通过，也不把旧主线 runner 迁移作为已通过独立源码、归档与
-公开下载验收的 WebUI 预览文档的前置。
+CLI 检查通过，静态与安装任务多次未获得 hosted runner，原取消及失败记录保留，未执行项不计通过。
 
 源码经过所选 CI 后，候选由 GitHub macOS runner 构建一次。候选携带源码/tree、运行文件
 摘要、实际依赖 SPDX 清单、原许可及 GitHub provenance/SBOM attestations。实际解压包

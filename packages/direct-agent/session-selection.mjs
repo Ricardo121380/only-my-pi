@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
-import { ownershipError } from "../host/ownership.mjs";
+import { ownershipError } from "../process-runtime/ownership.mjs";
 import { readSessionSnapshot } from "./session-history.mjs";
 
 const selectionValues = new Set(["--session", "--session-id", "--session-dir", "--fork"]);

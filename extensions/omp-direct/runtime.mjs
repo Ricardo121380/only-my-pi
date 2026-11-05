@@ -8,7 +8,7 @@ import {
   captureWorkspaceBaseline,
   createWorkspacePolicy,
 } from "../../packages/direct-agent/workspace.mjs";
-import { DIRECT_READ_ONLY_AGENTS } from "../../packages/direct-agent/orchestration.mjs";
+import { DIRECT_READ_ONLY_AGENTS } from "../../packages/direct-agent/contracts.mjs";
 import { projectExecutionState } from "../../packages/project-gates/index.mjs";
 
 export { DIRECT_READ_ONLY_AGENTS };
@@ -257,12 +257,12 @@ export class DirectSessionController {
   }
 
   activeToolCeiling() {
-    return [...(this.hasCodingAccess() ? CODING_TOOL_NAMES : INSPECTION_TOOL_NAMES), ...(this.mcpTools?.() ?? []), ...(this.codemodeTools?.() ?? [])];
+    return [...(this.hasCodingAccess() ? CODING_TOOL_NAMES : INSPECTION_TOOL_NAMES), ...(this.mcpTools?.() ?? []), ...(this.codemodeTools?.() ?? []), ...(this.productTools?.() ?? [])];
   }
 
   applyToolCeiling() {
     const configured = new Set(this.pi.getAllTools().map((tool) => tool.name));
-    const active = this.activeToolCeiling().filter((name) => configured.has(name) && this.mcpDeclared?.(name) !== false);
+    const active = this.activeToolCeiling().filter((name) => configured.has(name) && this.mcpDeclared?.(name) !== false && this.productAdmitted?.(name) !== false);
     if (this.headless && this.hostInteraction?.allows(this.context) !== true) {
       const index = active.indexOf("request_coding_access");
       if (index !== -1) active.splice(index, 1);
@@ -557,7 +557,7 @@ export class DirectSessionController {
     const state = this.state;
     const coding = this.hasCodingAccess();
     return {
-      systemPrompt: `${event.systemPrompt}\n\n## only-my-pi Direct Coding Agent\nCurrent OMP state: ${state}. Physical permission mode: ${permission.mode}.\n- Inspect the project before proposing changes.\n- Before edit, write, bash, project gates, or a writer child, call request_coding_access as the only tool in that tool batch.\n- Classify a task as complex when it changes public APIs, dependencies, schemas, security, concurrency, migrations, deletion, releases, or multiple coordinated modules.\n- Complex and explicit /plan tasks require a complete plan before requesting access.\n- A coding grant is process-local and project-local; it never authorizes project-external paths, secrets, MCP, unrestricted network, destructive Git, publishing, deployment, or silent commits.\n- Preserve pre-existing working-tree changes and re-read files immediately before editing.\n- Use delegate_readonly_agent only for bounded independent exploration or fresh review; at most two children may run concurrently and no child may delegate again.\n- Use delegate_managed_writer only when the approved complex plan explicitly enables it. OMP permits one writer in an ordinary managed Git clone, captures its patch, requires a fresh read-only review, and applies only a conflict-free in-scope patch.\n- Keep simple tasks with the main Agent. After a managed patch is applied, run the approved verification again in the real current worktree.\n${permission.ok ? "" : "- YOLO was detected and OMP revoked coding access. Ask the user to switch to /perm build; do not attempt mutation.\n"}${coding ? "- Coding access is active for this process; ordinary project-local edits do not need another request. The approved task scope remains a hard boundary only for a managed-clone writer." : "- Coding access is not active. Remain read-only until request_coding_access returns CODING_ACCESS_GRANTED."}`,
+      systemPrompt: `${event.systemPrompt}\n\n## only-my-pi Direct Coding Agent\nCurrent OMP state: ${state}. Physical permission mode: ${permission.mode}.\n- Inspect the project before proposing changes.\n- Before edit, write, bash, project gates, or a writer child, call request_coding_access as the only tool in that tool batch.\n- Classify a task as complex when it changes public APIs, dependencies, schemas, security, concurrency, migrations, deletion, releases, or multiple coordinated modules.\n- Complex and explicit /plan tasks require a complete plan before requesting access.\n- A coding grant is process-local and project-local; it never authorizes project-external paths, secrets, MCP, unrestricted network, destructive Git, publishing, deployment, or silent commits.\n- Preserve pre-existing working-tree changes and re-read files immediately before editing.\n${this.environment.ONLY_MY_PI_MINIMAL === "1" ? this.environment.ONLY_MY_PI_READONLY_SUBAGENTS === "1" ? "- Use delegate_readonly_agent with omp-explorer for bounded independent read-only exploration. Children use this exact account and model, cannot write, and cannot delegate again. At most two may run concurrently and four may run per task. Complete simple work with the main Agent.\n" : "- This session has no optional modules or child agents. Complete the task with the available native tools.\n" : "- Use delegate_readonly_agent only for bounded independent exploration or fresh review; at most two children may run concurrently and no child may delegate again.\n- Use delegate_managed_writer only when the approved complex plan explicitly enables it. OMP permits one writer in an ordinary managed Git clone, captures its patch, requires a fresh read-only review, and applies only a conflict-free in-scope patch.\n- Keep simple tasks with the main Agent. After a managed patch is applied, run the approved verification again in the real current worktree.\n"}${permission.ok ? "" : "- YOLO was detected and OMP revoked coding access. Ask the user to switch to /perm build; do not attempt mutation.\n"}${coding ? "- Coding access is active for this process; ordinary project-local edits do not need another request. The approved task scope remains a hard boundary only for a managed-clone writer." : "- Coding access is not active. Remain read-only until request_coding_access returns CODING_ACCESS_GRANTED."}`,
     };
   }
 
@@ -652,6 +652,7 @@ export class DirectSessionController {
 
   blockToolCall(event) {
     this.enforcePermissionBoundary(this.context);
+    if (this.productAdmitted?.(event.toolName) === false) return { block: true, reason: "RESOURCE_DISABLED_OR_REVOKED" };
     if ((MUTATION_TOOL_NAMES.has(event.toolName) || CODING_AUTHORITY_TOOL_NAMES.has(event.toolName)) && this.mcpWriteActive) return { block: true, reason: "MCP_WRITE_IN_PROGRESS" };
     if (CODING_AUTHORITY_TOOL_NAMES.has(event.toolName) && !this.hasCodingAccess()) {
       return { block: true, reason: "OMP_CODING_ACCESS_REQUIRED: managed writing is disabled until request_coding_access is approved." };

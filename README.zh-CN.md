@@ -26,12 +26,12 @@ cd only-my-pi-webui
 
 - Pi 管理真正的会话、工具和 JSONL 历史，保留现有纸墨设计和工作区交互。
 - 默认只读，修改项目需要明确审批。子代理有独立上下文，只能读取与搜索，继承本次选择的 DeepSeek 账号和模型。
-- [公开归档与下载验收](docs/evidence/2026-11-05-webui-preview-release.md)和[源码的真实服务验收](https://github.com/Ricardo121380/only-my-pi/blob/codex/dev/pi-native-web/docs/evidence/2026-11-04-pi150-b2-deepseek.md)分别留证；本地受控模型检查不代表外部 Provider 验收。
+- [公开归档与下载验收](docs/evidence/2026-11-05-webui-preview-release.md)和[源码的真实服务验收](docs/evidence/2026-11-04-pi150-b2-deepseek.md)分别留证；本地受控模型检查不代表外部 Provider 验收。
 - 持久草稿、完整输入与队列异常恢复、连续多日使用及其他平台仍待完善。CLI 延后，跨端接续、Full/Thin 晋升和 Electron 后续独立推进。
 
 审批与工具限制作用于当前系统用户的权限范围。请使用可信项目；如需文件、凭据或网络隔离，应另外提供系统隔离环境。详见[发行边界与第三方许可](docs/releases/webui-0.1.0-preview.1.md)。
 
-从源码开发请参阅 `codex/dev/pi-native-web` 的 [WebUI 指南](https://github.com/Ricardo121380/only-my-pi/blob/codex/dev/pi-native-web/docs/minimal-webui.md)。
+从源码开发请参阅 `main` 的 [WebUI 指南](docs/minimal-webui.md)。
 
 ## 历史终端文档
 
@@ -44,11 +44,11 @@ cd only-my-pi-webui
 
 [English](README.md) | **简体中文**
 
-Only my pi（OMP）是基于 [Pi](https://github.com/earendil-works/pi) 的个人编程 Agent。终端预览版已发布。后续前端开发以 B2 为基线，连接原生 Pi/Host，让你能选项目、看工具执行、查看文件和改动，并在重启后继续同一个会话。
+Only my pi（OMP）是基于 [Pi](https://github.com/earendil-works/pi) 的个人编程 Agent。终端预览版已发布。当前开发重点是本机 WebUI，让你能选项目、看工具执行，并在重启后继续同一个原生 Pi 会话。
 
 | 从哪里开始 | 能获得什么 |
 | --- | --- |
-| [运行 WebUI 开发版](docs/minimal-webui.md) | 从 `codex/dev/pi-native-web` 分支运行 B2，使用本地演示、账号设置、文件检查、原生会话输入和只读子代理。使用 Node 24.19.0 与锁定的 Pi 1.5.0；真实请求及子代理强制使用 DeepSeek。[本轮验收范围](docs/evidence/2026-11-04-pi150-b2-deepseek.md)。 |
+| [运行 WebUI 开发版](docs/minimal-webui.md) | 从 `codex/dev/pi-native-web` 分支启动选定的 B2 前端，使用原生历史和只读子代理。使用 Node 24.19.0 与锁定的 Pi 1.5.0；真实应用请求及子代理强制使用 DeepSeek。[本轮验收范围](docs/evidence/2026-11-04-pi150-b2-deepseek.md)。 |
 | [安装终端预览版](#快速开始) | Homebrew、npm 和可校验的 CLI 安装包。最新 [GitHub Release](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2) 是 `v0.4.0-preview.2`。 |
 | [查看当前开发路线](docs/plans/2026-10-25-pi-native-client-reset.md) | 先打通原生 Pi 会话和可用的 WebUI，再按实际需要加入模块。核心体验稳定后进入 Electron。CLI 可独立迭代，最终验证两端会话接续。 |
 
@@ -531,7 +531,7 @@ gh attestation verify only-my-pi-0.3.0-preview.1-darwin-arm64-full.tar.gz \
 
 Thin 包可使用相同的来源检查。添加 `--predicate-type https://spdx.dev/Document/v2.3` 可选择 SPDX 证明。发布材料还包括软件物料清单（SBOM）、依赖载荷清单及第三方许可证声明。
 
-本版本已发布资产不可变；`main` 上后续文档或工作流提交不会改变已发布字节。详见[发布说明](docs/releases/0.3.0-preview.1.md)和[发布工作流](.github/workflows/m11-publish.yml)。
+本版本已发布资产不可变；`main` 上后续文档或工作流提交不会改变已发布字节。详见[发布说明](docs/releases/0.3.0-preview.1.md)和[发布工作流](legacy/cli/workflows/m11-publish.yml)。
 
 </details>
 
@@ -620,5 +620,7 @@ npm run verify:m12
 凭据应留在 Pi 的认证机制或你的密钥管理器中。疑似漏洞请通过[私密安全报告](https://github.com/Ricardo121380/only-my-pi/security/advisories/new)提交，不要公开披露敏感内容。另见[安全策略](SECURITY.md)和[威胁模型](docs/threat-model.md)。
 
 第一方代码采用 [MIT 许可证](LICENSE)。第三方组件遵循各自许可证，参见[第三方声明](THIRD_PARTY_NOTICES.md)和发布包中的 SBOM。
+
+尚未发布的共享设置入口为 `omp settings`；GUI 在左侧“产品工具与技能”操作同一版本。默认/项目覆盖/重置、显式技能导入和真实 Pi 加载见[共享设置指南](docs/shared-product-settings.md)及 [CLIENT-02A 验收记录](docs/compatibility/2026-10-22-shared-product-settings.md)。
 
 </details>

@@ -6,9 +6,9 @@ import path from "node:path";
 import http from "node:http";
 import { fileURLToPath } from "node:url";
 import { RpcWorker } from "../packages/host/rpc-worker.mjs";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
 import { loadDistribution } from "../packages/distribution/runtime.mjs";
-import { listModels } from "../packages/host/models.mjs";
+import { listModels } from "../packages/accounts/models.mjs";
 import { usesNativePiTools } from "../packages/upstream-compatibility/native-pi.mjs";
 
 test("real account RPC requests keep two stored identities and readonly tool registry", { timeout: 30000 }, async (t) => {

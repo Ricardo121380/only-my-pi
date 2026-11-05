@@ -247,6 +247,30 @@ test("M12 launcher rejects malformed argv, stack and extension contracts", async
   await assert.rejects(resolveDirectExtensionSet({ stack: { ompPackageRoot: "/tmp" }, configRoot: "relative" }), { code: "OMP_DIRECT_CONFIG_ROOT_INVALID" });
 });
 
+test("M12 product tools remain read-only and revocation blocks an already declared call", async (t) => {
+  const configRoot = await privateRoot(t, "omp-m12-product-admission-");
+  const pi = piFixture(), configuredTools = pi.getAllTools();
+  pi.getAllTools = () => [...configuredTools, { name: "context_snapshot" }];
+  const controller = new DirectSessionController({ pi, configRoot, environment: {} });
+  let admitted = true;
+  controller.productTools = () => ["context_snapshot"];
+  controller.productAdmitted = name => name === "context_snapshot" ? admitted : true;
+
+  assert.ok(controller.applyToolCeiling().includes("context_snapshot"));
+  assert.equal(controller.blockToolCall({ toolName: "context_snapshot" }), undefined);
+  assert.equal(controller.hasCodingAccess(), false);
+  assert.equal(controller.blockToolCall({ toolName: "write" }).block, true);
+
+  admitted = false;
+  assert.deepEqual(controller.blockToolCall({ toolName: "context_snapshot" }), {
+    block: true, reason: "RESOURCE_DISABLED_OR_REVOKED",
+  });
+  assert.equal(controller.applyToolCeiling().includes("context_snapshot"), false);
+  assert.ok(pi.calls.active.at(-1).includes("read"));
+  assert.equal(controller.blockToolCall({ toolName: "read" }), undefined);
+  assert.equal(controller.hasCodingAccess(), false);
+});
+
 test("M12 managed-clone contract rejects invalid identities and records no-op writers", async (t) => {
   const { root, head } = await repository(t);
   const runsRoot = path.join(await privateRoot(t, "omp-m12-runs-"), "runs");

@@ -6,7 +6,7 @@ import test from "node:test";
 import * as sdk from "@earendil-works/pi-coding-agent";
 import { createDirectTuiRuntime } from "../packages/direct-agent/tui-runtime.mjs";
 import { SessionAdmissions } from "../packages/direct-agent/session-admission.mjs";
-import { acquireOwnership } from "../packages/host/ownership.mjs";
+import { acquireOwnership } from "../packages/process-runtime/ownership.mjs";
 
 async function fixture(t) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-tui-start-")));
@@ -44,6 +44,7 @@ test("candidate TUI bootstrap preserves model, thinking, name, messages and rese
   assert.equal(result.options.initialMessage, "task one");
   assert.deepEqual(result.options.initialMessages, []);
   assert.deepEqual(result.runtime.session.getActiveToolNames(), ["read", "ls"]);
+  await assert.rejects(fs.stat(path.join(f.configRoot, "only-my-pi/product-settings")), { code: "ENOENT" });
   const id = result.runtime.session.sessionId;
   await assert.rejects(acquireOwnership(f.configRoot, "session", id), { code: "OWNERSHIP_HELD" });
   await result.runtime.dispose();
@@ -121,6 +122,15 @@ test("unknown project trust never executes project resources or silently grants 
   await fs.writeFile(path.join(f.root, ".pi/settings.json"), JSON.stringify({ theme: "light" }));
   await assert.rejects(f.start(), { code: "TUI_PROJECT_TRUST_CONFIRMATION_REQUIRED" });
   assert.equal(new sdk.ProjectTrustStore(f.configRoot).get(f.root), null);
+});
+
+test("saved project distrust wins even when only AGENTS.md is present", async (t) => {
+  const f = await fixture(t);
+  await fs.writeFile(path.join(f.root, "AGENTS.md"), "Read this project only.\n");
+  new sdk.ProjectTrustStore(f.configRoot).set(f.root, false);
+  const { runtime } = await f.start(["--model", "fixture/one"]);
+  try { assert.equal(runtime.services.settingsManager.isProjectTrusted(), false); }
+  finally { await runtime.dispose(); }
 });
 
 test("candidate factory rebuilds services on resume and new without dropping tools or thinking", async (t) => {

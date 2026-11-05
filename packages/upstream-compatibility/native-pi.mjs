@@ -1,6 +1,6 @@
 // Development runtime admission is separate from private distribution contracts.
 // Each native package must also match the admitted Pi version exactly.
-export const NATIVE_PI_VERSIONS = Object.freeze(["1.1.0", "1.3.0"]);
+export const NATIVE_PI_VERSIONS = Object.freeze(["1.1.0", "1.3.0", "1.5.0"]);
 
 export function usesNativePiTools(version) {
   if (NATIVE_PI_VERSIONS.includes(version)) return true;

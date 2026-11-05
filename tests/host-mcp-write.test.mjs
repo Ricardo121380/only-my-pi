@@ -4,14 +4,19 @@ import path from "node:path";
 import test from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 import pty from "node-pty";
-import { processIdentity, groupAlive } from "../packages/host/ownership.mjs";
+import { processIdentity, groupAlive } from "../packages/process-runtime/ownership.mjs";
 import { DirectSessionOwnership } from "../packages/direct-agent/ownership.mjs";
 import { createHash } from "node:crypto";
 import { createMcpHost, providerReply } from "./fixtures/mcp-host.mjs";
 import { codingRequest } from "./fixtures/mcp-write-host.mjs";
-import { createWriteHost, codingApproved, approveWrite, releaseWrite, terminal } from "./fixtures/mcp-write-host.mjs";
+import { createWriteHost as createIsolatedWriteHost, codingApproved, approveWrite, releaseWrite, terminal } from "./fixtures/mcp-write-host.mjs";
+import { createSourceFixtureRoot } from "./fixtures/source-fixture-root.mjs";
 import { until, untilPiInitialized, slowPiInitialization, mcpReception } from "./fixtures/mcp-host.mjs";
 import { byteEvidence, errorEvidence, fileEvidence, observation, mcpDenialEvidence, processEvidence, saveRegressionEvidence } from "./fixtures/regression-evidence.mjs";
+// Normal Host teardown confirms worker/MCP exit before removing this pathname.
+// Recreate all data and sources; retain Pi's source-checked compilation cache.
+// Independent TUI and intentional orphan journeys keep unique installations.
+const createWriteHost = async (options) => createIsolatedWriteHost({ ...options, root: await createSourceFixtureRoot("omp-mcp-write-host-") });
 const dispatched = async (f) => {
   const run = (await f.mcp({ type: "status" })).runs.at(-1);
   if (run.processes.some((entry) => !entry.runtimeDir)) return [];
@@ -236,7 +241,7 @@ for (const cancelDuringRelease of [false, true]) test(`real terminal and Agent/M
 });
 
 async function tuiDescriptorWrite(t, { slowSelector = false } = {}) {
-  const f = await createWriteHost();
+  const f = await createIsolatedWriteHost();
   const original = byteEvidence(await fs.readFile(path.join(f.project, "README.md")));
   const selectorTrace = path.join(f.root, "selector-events.jsonl");
   if (slowSelector) {
@@ -253,8 +258,9 @@ export class InteractiveMode extends RealMode {
     record({ stage: "before-selector", title });
     await new Promise(resolve => setTimeout(resolve, 2000));
     const result = super.showExtensionSelector(title, options, opts, blocked);
-    record({ stage: "selector-focused", focused: this.ui.focusedComponent === this.extensionSelector });
-    const component = this.extensionSelector, handleInput = component.handleInput.bind(component);
+    const component = this.extensionDialogs.at(-1).component;
+    record({ stage: "selector-focused", focused: this.ui.focusedComponent === component });
+    const handleInput = component.handleInput.bind(component);
     component.handleInput = data => { record({ stage: "selector-input", data }); return handleInput(data); };
     const answer = await result; record({ stage: "selector-answer", answer }); return answer;
   }
@@ -328,6 +334,7 @@ export class InteractiveMode extends RealMode {
       assert.ok(stages.find(stage => stage.stage === "journal-awaiting-approval").at < focused.at, "approval journal is readable before selector focus");
       assert.equal(events.find(event => event.stage === "selector-answer").answer, "仅本次");
     }
+    await until(() => output, value => value.includes("MCP fixture completed"), "TUI final reply");
     write("\x04"); await until(() => exited, Boolean, "TUI normal exit"); assert.equal(exited.exitCode, 0);
   } catch (error) {
     stages.push({ stage: "failure", at: Date.now(), error: errorEvidence(error) });
@@ -359,8 +366,8 @@ test("MCP approval cannot repair a lost real Host project owner token", { timeou
 });
 
 test("crashed coding owner keeps real MCP residual effects UNKNOWN and project ownership blocked", { timeout: 30000 }, async (t) => {
-  const f = await createWriteHost({ mode: "orphan" });
-  const { groupAlive, processIdentity } = await import("../packages/host/ownership.mjs");
+  const f = await createIsolatedWriteHost({ mode: "orphan" });
+  const { groupAlive, processIdentity } = await import("../packages/process-runtime/ownership.mjs");
   let run;
   t.after(async () => {
     if (run) { for (const entry of run.processes) if (groupAlive(entry.pid) && await processIdentity(entry.pid) === entry.identity) process.kill(-entry.pid, "SIGKILL"); await until(() => run.processes.every((entry) => !groupAlive(entry.pid)), Boolean, "owned orphan cleanup"); }

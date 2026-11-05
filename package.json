@@ -3,7 +3,7 @@
   "version": "0.3.0-preview.1",
   "type": "module",
   "private": true,
-  "description": "Guarded user-local terminal coding agent built on Pi",
+  "description": "Personal coding agent built on native Pi, with a local WebUI and DeepSeek-only execution",
   "repository": {
     "type": "git",
     "url": "https://github.com/Ricardo121380/only-my-pi.git"
@@ -81,11 +81,14 @@
     "scripts/subagents-guarded-writer-evidence.mjs",
     "scripts/subagents-guarded-writer-reconcile.mjs",
     "packages/config-runtime/",
+    "packages/process-runtime/",
+    "packages/accounts/",
     "packages/bootstrap/",
     "packages/control-service/",
     "packages/direct-agent/",
     "packages/host/",
     "packages/mcp/",
+    "packages/product-settings/",
     "packages/model-calls/",
     "webui/dist/",
     "packages/daily-config/",
@@ -130,6 +133,14 @@
     "safe": "node scripts/safe-mode.mjs",
     "schema:check": "node scripts/schema-check.mjs",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.safety.json && tsc -p tsconfig.host.json && tsc -p webui/tsconfig.json",
+    "test:native-session": "node --test tests/direct-minimal-runtime.test.mjs",
+    "build:web:minimal": "vite build --config webui/vite.config.ts --mode minimal",
+    "demo:web:minimal": "npm run build:web:minimal && node tests/fixtures/minimal-web.mjs",
+    "dev:web": "node scripts/dev-web.mjs",
+    "dev:web:demo": "node scripts/dev-web.mjs --demo",
+    "dev:web:b2": "node scripts/dev-web.mjs --b2",
+    "dev:web:b2:demo": "node scripts/dev-web.mjs --b2 --demo",
+    "build:web:b2": "npm --prefix prototypes run build:host",
     "test:host": "node --test tests/host-*.test.mjs",
     "build:web": "vite build --config webui/vite.config.ts",
     "test:web": "vitest run --config webui/vite.config.ts",
@@ -189,7 +200,10 @@
     "checkpoint": "node packages/workspace-checkpoint/cli.mjs",
     "test:prepare": "node scripts/prepare-test-pty.mjs && node scripts/prepare-test-extensions.mjs",
     "test": "node --test --test-concurrency=2",
-    "test:distribution": "node --test tests/distribution-*.test.mjs"
+    "test:distribution": "node --test tests/distribution-*.test.mjs",
+    "test:web:b2": "vitest run --config prototypes/vitest.config.ts",
+    "dev:web:minimal": "node scripts/dev-web.mjs --minimal",
+    "dev:web:minimal:demo": "node scripts/dev-web.mjs --minimal --demo"
   },
   "engines": {
     "node": ">=24.19.0 <25"
@@ -200,7 +214,8 @@
     "node-pty": "1.1.0",
     "semver": "7.8.5",
     "ssri": "13.0.1",
-    "ws": "8.21.3"
+    "ws": "8.21.3",
+    "yaml": "2.9.0"
   },
   "bundleDependencies": [
     "ajv",
@@ -208,15 +223,8 @@
     "node-pty",
     "semver",
     "ssri",
-    "ws"
-  ],
-  "bundledDependencies": [
-    "ajv",
-    "ajv-formats",
-    "node-pty",
-    "semver",
-    "ssri",
-    "ws"
+    "ws",
+    "yaml"
   ],
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"
@@ -227,7 +235,7 @@
     }
   },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "1.3.0",
+    "@earendil-works/pi-coding-agent": "1.5.0",
     "@testing-library/react": "16.3.3",
     "@testing-library/user-event": "14.6.7",
     "@types/react": "19.3.0",

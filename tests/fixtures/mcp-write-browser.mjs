@@ -12,7 +12,7 @@ await f.mcp({ type: "save", revision: 1, server: f.server });
 const raw = JSON.stringify({ mcpServers: { local: { command: f.server.command, args: f.server.args, env: {} } } });
 await fs.writeFile(path.join(f.config, "mcp.json"), raw);
 const hashes = {};
-for (const file of ["packages/mcp/extension.mjs", "packages/mcp/write-target.mjs", "packages/mcp/process.mjs", "packages/mcp/catalog.mjs", "packages/host/tasks.mjs", "packages/host/ownership.mjs", "packages/host/project-authority.mjs", "packages/host/account-rpc-entry.mjs", "extensions/omp-direct/index.ts", "extensions/omp-direct/runtime.mjs"]) hashes[file] = createHash("sha256").update(await fs.readFile(path.join(f.omp, file))).digest("hex");
+for (const file of ["packages/mcp/extension.mjs", "packages/mcp/write-target.mjs", "packages/mcp/process.mjs", "packages/mcp/catalog.mjs", "packages/host/tasks.mjs", "packages/process-runtime/ownership.mjs", "packages/host/project-authority.mjs", "packages/host/account-rpc-entry.mjs", "extensions/omp-direct/index.ts", "extensions/omp-direct/runtime.mjs"]) hashes[file] = createHash("sha256").update(await fs.readFile(path.join(f.omp, file))).digest("hex");
 await fs.writeFile(path.join(evidence, "67-browser-input.json"), JSON.stringify({ origin: f.host.origin, projectId: f.projectId, project: f.project, configRoot: f.config, root: f.root, raw, server: f.server, runtimeSourceHashes: hashes, node: process.version, realPi: f.piVersion, realMcpClient: f.piVersion, installedExtensionCopies: true }, null, 2));
 const pair = () => fetch(f.host.origin + "/internal/pair", { method: "POST", headers: { Origin: f.host.origin, Authorization: `Bearer ${f.host.controlToken}` } }).then((response) => response.json());
 let stopping;

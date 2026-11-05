@@ -18,11 +18,11 @@
 | 文件 | 实际行为与约束 |
 | --- | --- |
 | [TaskProgress.tsx](../evidence/2026-10-18-local-development-history.md#local-7368e6af373d8881)（新增） | 优先显示待核对、启动、取消中、终态、待审批、当前工具或已收到的生成事件；不推测内部思考或虚构百分比。公开工具返回最多20项，来源含任务ID/更新时间；返回与验证通过严格区分 |
-| [useHost.ts](../../webui/src/useHost.ts) | 断连立即失去 task freshness；新 snapshot 后权威 GET 才恢复审批；迟到 GET、重复事件、旧 socket 消息/错误不能覆盖或关闭新连接；手动任务核对只做 GET，不重发任务 |
+| [useHost.ts](../../webui/src/shared/useHost.ts) | 断连立即失去 task freshness；新 snapshot 后权威 GET 才恢复审批；迟到 GET、重复事件、旧 socket 消息/错误不能覆盖或关闭新连接；手动任务核对只做 GET，不重发任务 |
 | [TaskControl.tsx](../../webui/src/TaskControl.tsx) | 无新事件时也按真实 expiresAt 更新过期审批；停机、失联、未核对及已提交时禁用决定。迟到 ACK 不让已停止任务重新出现审批成功提示 |
 | [InputQueue.tsx](../evidence/2026-10-18-local-development-history.md#local-b529319bbdb71859) | 显示暂停原因、逐输入 Pi 核对和关联任务；unknown/accepted/dispatching 及未投递旧 steer 阻断恢复。原生恢复对话框列出真实正文、绑定、费用与重新授权说明；版本或任务变化禁确认，Escape返焦点 |
 | [useInputDraft.ts](../evidence/2026-10-18-local-development-history.md#local-f423e05274e70cdc) | 单飞恢复、冻结目标和 revision、单调采用权威队列；异常后只读对账，不自动重复恢复请求。查不到消费条目仍保留未知，不据此补发 |
-| [App.tsx](../../webui/src/App.tsx)、[api.ts](../../webui/src/api.ts) | 接实际正在执行任务与最新度；不同组件使用独立 React key，消除导航残留进度卡；已停止任务不再把最后工具显示为仍运行；补失败/重启等可行动错误说明 |
+| [App.tsx](../../webui/src/App.tsx)、[api.ts](../../webui/src/shared/api.ts) | 接实际正在执行任务与最新度；不同组件使用独立 React key，消除导航残留进度卡；已停止任务不再把最后工具显示为仍运行；补失败/重启等可行动错误说明 |
 | [host-ui.css](../../webui/src/host-ui.css) | 延续 Glacier tokens、对话优先与默认收起右侧；进度/恢复控件桌面40px、窄屏44px；Portal 中的恢复弹窗也显式覆盖关闭/确认按钮尺寸，防止继承范围丢失 |
 | `useHost.test.tsx`、`task-progress.test.tsx`、`task-control.test.tsx`、`input-delivery-ui.test.tsx`、`conversation-flow.test.tsx` | 增加22个用例，覆盖新旧状态竞态、断连/重连、失效审批、未知核对、恢复CAS/单飞/丢ACK和导航单卡 |
 | `tests/fixtures/host-input-browser.mjs`、`scripts/probes/webui-u1-storage.mjs` | 本地工具等待/模型失败/真实权限审批、受控 Host 重启、实际 Pi carrier及回收证据；U1-05限域 closeout。夹具增加一条本地 read 闸门，不修改生产扩展集合或 Pi SDK |

@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { McpCatalog } from "../packages/mcp/catalog.mjs";
-import { processIdentity } from "../packages/host/ownership.mjs";
+import { processIdentity } from "../packages/process-runtime/ownership.mjs";
 
 test("bounded OAuth status history preserves a live admission and never evicts an unknown owner to admit another login", async t => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-mcp-oauth-owners-")));

@@ -6,7 +6,7 @@ import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import test from "node:test";
-import { acquireOwnership } from "../packages/host/ownership.mjs";
+import { acquireOwnership } from "../packages/process-runtime/ownership.mjs";
 
 test("concurrent release callers share one ownership release", async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-release-"));
@@ -22,7 +22,7 @@ test("separate CLI/GUI processes compete for canonical project and session; cras
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const project = path.join(root, "project"); await fs.mkdir(project);
   const alias = path.join(root, "alias"); await fs.symlink(project, alias);
-  const module = new URL("../packages/host/ownership.mjs", import.meta.url).href;
+  const module = new URL("../packages/process-runtime/ownership.mjs", import.meta.url).href;
   const child = spawn(process.execPath, ["--input-type=module", "-e", `import { acquireOwnership } from ${JSON.stringify(module)}; await acquireOwnership(process.argv[1], 'project', process.argv[2]); await acquireOwnership(process.argv[1], 'session', 'shared-session'); process.stdout.write('ready'); setInterval(()=>{},1000);`, root, project], { stdio: ["ignore", "pipe", "pipe"] });
   t.after(() => { if (child.exitCode === null) child.kill("SIGKILL"); });
   await once(child.stdout, "data");
@@ -57,7 +57,7 @@ for (const field of ["pid", "identity"]) {
 test("ordinary explicit dead-owner recovery still rotates its token", async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-recovery-token-"));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  const module = new URL("../packages/host/ownership.mjs", import.meta.url).href;
+  const module = new URL("../packages/process-runtime/ownership.mjs", import.meta.url).href;
   const child = spawn(process.execPath, ["--input-type=module", "-e", `import { acquireOwnership } from ${JSON.stringify(module)}; const lease = await acquireOwnership(process.argv[1], 'session', 'token-rotation'); process.stdout.write(JSON.stringify(lease.owner)); setInterval(()=>{},1000);`, root], { stdio: ["ignore", "pipe", "pipe"] });
   t.after(() => { if (child.exitCode === null) child.kill("SIGKILL"); });
   const [data] = await once(child.stdout, "data"), previous = JSON.parse(data.toString());

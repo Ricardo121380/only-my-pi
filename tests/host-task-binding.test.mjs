@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { EventEmitter } from "node:events";
-import { AccountCatalog } from "../packages/host/accounts.mjs";
+import { AccountCatalog } from "../packages/accounts/catalog.mjs";
 import { HostTasks } from "../packages/host/tasks.mjs";
 
 test("task binding reaches worker, survives restart and participates in idempotency", async (t) => {

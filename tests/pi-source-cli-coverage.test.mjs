@@ -7,7 +7,7 @@ import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { pathToFileURL } from "node:url";
 import { createPi110SourceCli } from "./fixtures/pi110-source-cli.mjs";
-import { processIdentity, groupAlive } from "../packages/host/ownership.mjs";
+import { processIdentity, groupAlive } from "../packages/process-runtime/ownership.mjs";
 
 test("copied CLI fixtures omit unmeasured coverage while checkout workers retain real function coverage", { timeout: 30000 }, async t => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "omp-fixture-coverage-")));

@@ -26,12 +26,12 @@ The preview starts with its own empty configuration and keeps data in `~/Library
 
 - Native Pi owns the session, tools and JSONL history. The existing paper-and-ink design and workspace interaction are retained.
 - Start read-only; project changes require explicit approval. Child agents have independent context and read/search tools only, and inherit the selected DeepSeek account and model.
-- The [published archive and download verification](docs/evidence/2026-11-05-webui-preview-release.md) are recorded separately from [real-service source acceptance](https://github.com/Ricardo121380/only-my-pi/blob/codex/dev/pi-native-web/docs/evidence/2026-11-04-pi150-b2-deepseek.md). Controlled local model checks do not qualify an external provider.
+- The [published archive and download verification](docs/evidence/2026-11-05-webui-preview-release.md) are recorded separately from [real-service source acceptance](docs/evidence/2026-11-04-pi150-b2-deepseek.md). Controlled local model checks do not qualify an external provider.
 - Persistent drafts, complete input/queue recovery, long-running use and additional platforms remain in progress. CLI work is deferred; CLI handoff, Full/Thin promotion and Electron are later milestones.
 
 Agent approvals and tool restrictions operate within the current operating-system user's permissions. Use trusted projects and provide separate system isolation if you need filesystem, credential or network separation. Read the [release boundaries and third-party notices](docs/releases/webui-0.1.0-preview.1.md).
 
-For source development, see the [WebUI guide](https://github.com/Ricardo121380/only-my-pi/blob/codex/dev/pi-native-web/docs/minimal-webui.md) on `codex/dev/pi-native-web`.
+For source development, see the [WebUI guide](docs/minimal-webui.md) on `main`.
 
 ## Historical terminal documentation
 
@@ -44,11 +44,11 @@ The old GitHub Releases and their download attachments have been retired. Their 
 
 **English** | [简体中文](README.zh-CN.md)
 
-Only my pi (OMP) is a personal coding agent built on [Pi](https://github.com/earendil-works/pi). The terminal Preview is available today. Development uses the selected B2 WebUI with the native Pi/Host: work in a project, follow tools, inspect files and changes, and continue a session after a restart.
+Only my pi (OMP) is a personal coding agent built on [Pi](https://github.com/earendil-works/pi). The terminal Preview is available today. Development is focused on a local WebUI where you can work in a project, follow tool calls and continue a native Pi session after a restart.
 
 | Where to start | What you will find |
 | --- | --- |
-| [Run the WebUI from source](docs/minimal-webui.md) | The B2 frontend on `codex/dev/pi-native-web`, a local demo, account setup, file inspection, native session inputs and read-only child agents. Use Node 24.19.0 and pinned Pi 1.5.0; real requests and children require DeepSeek. [Acceptance scope](docs/evidence/2026-11-04-pi150-b2-deepseek.md). |
+| [Run the WebUI from source](docs/minimal-webui.md) | The `codex/dev/pi-native-web` development branch with the selected B2 frontend, persistent native session history and read-only child agents. Use Node 24.19.0 and pinned Pi 1.5.0; real application requests and children require DeepSeek. [Acceptance scope](docs/evidence/2026-11-04-pi150-b2-deepseek.md). |
 | [Install the terminal Preview](#quick-start) | Homebrew, npm and verified archives for the published CLI. The [latest GitHub release](https://github.com/Ricardo121380/only-my-pi/releases/tag/v0.4.0-preview.2) is `v0.4.0-preview.2`. |
 | [Follow the development roadmap](docs/plans/2026-10-25-pi-native-client-reset.md) | Native Pi sessions first, then a usable WebUI. Modules follow user priorities. Electron packaging follows a stable core experience. CLI development can proceed independently, with cross-client handoff as a later goal. |
 
@@ -531,7 +531,7 @@ gh attestation verify only-my-pi-0.3.0-preview.1-darwin-arm64-full.tar.gz \
 
 The same source check applies to Thin. Add `--predicate-type https://spdx.dev/Document/v2.3` to select the SPDX attestation. Release materials also include a software bill of materials (SBOM), dependency artifact ledger, and third-party notices.
 
-Published assets for this version are immutable. Later documentation or workflow commits on `main` do not change the released bytes. See the [release notes](docs/releases/0.3.0-preview.1.md) and [publication workflow](.github/workflows/m11-publish.yml).
+Published assets for this version are immutable. Later documentation or workflow commits on `main` do not change the released bytes. See the [release notes](docs/releases/0.3.0-preview.1.md) and [publication workflow](legacy/cli/workflows/m11-publish.yml).
 
 </details>
 
@@ -620,5 +620,7 @@ Coding approval does not authorize project-external writes, secret access, destr
 Keep credentials in Pi's authentication mechanism or your secret manager. Report suspected vulnerabilities through [private security reporting](https://github.com/Ricardo121380/only-my-pi/security/advisories/new), never by publicly disclosing sensitive material. See the [security policy](SECURITY.md) and [threat model](docs/threat-model.md).
 
 First-party code is [MIT licensed](LICENSE). Third-party components retain their own licenses; consult the [third-party notices](THIRD_PARTY_NOTICES.md) and the released SBOM.
+
+The unreleased shared settings entry is `omp settings`; the GUI uses **Product tools and skills**. See the [shared settings guide](docs/shared-product-settings.md) and [CLIENT-02A evidence](docs/compatibility/2026-10-22-shared-product-settings.md) for defaults, project overrides, explicit skill import and actual Pi loading.
 
 </details>

@@ -16,7 +16,9 @@ const historicalNpmChecks = ["release-gates-v1", "release-gates-v2", "daily-harn
 const npm = (script) => {
   const budgets = historicalNpmChecks.filter(check => JSON.stringify(check.args) === JSON.stringify(["run", script]))
     .map(check => check.timeoutMs);
-  return { id: script, command: "npm", args: ["run", script], ...(budgets.length ? { timeoutMs: Math.min(...budgets) } : {}) };
+  // Use the same named TAP diagnostics as Node checks; raw UI assertions stay private.
+  const reporter = ["test:web", "test:web:b2"].includes(script) ? ["--", "--reporter=tap"] : [];
+  return { id: script, command: "npm", args: ["run", script, ...reporter], ...(budgets.length ? { timeoutMs: Math.min(...budgets) } : {}) };
 };
 const node = (id, args) => ({ id, command: process.execPath, args });
 
@@ -27,7 +29,7 @@ export function checksForLane(lane, files = nodeTestFiles()) {
   if (lane === "static") return ["typecheck", "schema:check", "pack:check", "secret:scan"].map(npm);
   if (lane === "web") {
     const scripts = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).scripts;
-    return [npm("test:web"), ...(scripts["build:web:minimal"] ? [npm("build:web:minimal")] : []), npm("build:web"), ...tests];
+    return [npm("test:web"), ...(scripts["test:web:b2"] ? [npm("test:web:b2")] : []), ...(scripts["build:web:minimal"] ? [npm("build:web:minimal")] : []), npm("build:web"), ...(scripts["build:web:b2"] ? [npm("build:web:b2")] : []), ...tests];
   }
   if (lane === "cli") return [
     ...["doctor", "doctor:profiles", "doctor:modes", "doctor:subagents-topology", "agents:check"].map(npm),

@@ -4,8 +4,8 @@ import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import "./terminal.css";
 import type { TerminalOutput, TerminalState } from "../../packages/host/contracts";
-import { api, errorText, query } from "./api";
-import { HostDialog } from "./HostDialog";
+import { api, errorText, query } from "./shared/api";
+import { HostDialog } from "./shared/HostDialog";
 
 export default function TerminalPane({ projectId }: { projectId: string }) {
   const surface = useRef<HTMLDivElement>(null);

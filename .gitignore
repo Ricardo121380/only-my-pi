@@ -18,6 +18,10 @@ sessions/
 cache/
 logs/
 tmp/
+.omp-dev/
+.omp-dev-demo/
+.omp-dev-b2/
+.omp-dev-b2-demo/
 
 # OS/editor files
 .DS_Store

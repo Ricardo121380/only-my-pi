@@ -1,15 +1,17 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { AccountCatalog } from "../host/accounts.mjs";
-import { listModels } from "../host/models.mjs";
-import { CLI_ACCOUNT_ID, hostError } from "../host/contracts.mjs";
-import { ModelCallStore, MODEL_BUDGET, IMAGE_BUDGET } from "./store.mjs";
+import { AccountCatalog } from "../accounts/catalog.mjs";
+import { listModels } from "../accounts/models.mjs";
+import { modelCallError } from "./contracts.mjs";
+import { CLI_ACCOUNT_ID } from "../accounts/contracts.mjs";
+import { ModelCallStore } from "./store.mjs";
+import { MODEL_BUDGET, IMAGE_BUDGET } from "./budgets.mjs";
 import { imageArtifactCommand } from "./artifact-commands.mjs";
 
 export async function classifierCommand({ configRoot, stack, projectPath, args, kind = "classifier" }) {
   const prefix = kind === "image" ? "IMAGE" : "CLASSIFIER";
   const project = await fs.realpath(projectPath);
-  if (!(await fs.stat(project)).isDirectory()) throw hostError(`${prefix}_PROJECT_INVALID`);
+  if (!(await fs.stat(project)).isDirectory()) throw modelCallError(`${prefix}_PROJECT_INVALID`);
   const store = new ModelCallStore(configRoot);
   const models = accountId => listModels({ stack, configRoot, accountId, modelType: kind });
   if (args.length === 1 && args[0] === "status") return store.status(project);
@@ -17,16 +19,16 @@ export async function classifierCommand({ configRoot, stack, projectPath, args, 
   if (args[0] === "list" && args.length === 2) return { models: await models(args[1]) };
   if (args[0] === "apply" && args.length === 2 && path.isAbsolute(args[1])) {
     const stat = await fs.lstat(args[1]);
-    if (!stat.isFile() || stat.size > 65536) throw hostError(`${prefix}_CONFIG_INVALID`);
+    if (!stat.isFile() || stat.size > 65536) throw modelCallError(`${prefix}_CONFIG_INVALID`);
     const input = JSON.parse(await fs.readFile(args[1], "utf8"));
-    if (Object.keys(input).sort().join() !== [kind, "revision"].sort().join()) throw hostError("MODEL_CONFIG_INVALID");
+    if (Object.keys(input).sort().join() !== [kind, "revision"].sort().join()) throw modelCallError("MODEL_CONFIG_INVALID");
     return store.save(project, input.revision, input[kind], models, kind);
   }
-  throw hostError(`${prefix}_COMMAND_USAGE: ${kind} list ACCOUNT | status | apply /absolute/config.json --project /absolute/project`);
+  throw modelCallError(`${prefix}_COMMAND_USAGE: ${kind} list ACCOUNT | status | apply /absolute/config.json --project /absolute/project`);
 }
 export async function runClassifierCli({ configRoot, stack, argv, kind = "classifier" }) {
   const index = argv.indexOf("--project"), projectPath = argv[index + 1];
-  if (index < 0 || !path.isAbsolute(projectPath ?? "") || argv.indexOf("--project", index + 1) >= 0) throw hostError(kind === "image" ? "IMAGE_PROJECT_REQUIRED" : "CLASSIFIER_PROJECT_REQUIRED");
+  if (index < 0 || !path.isAbsolute(projectPath ?? "") || argv.indexOf("--project", index + 1) >= 0) throw modelCallError(kind === "image" ? "IMAGE_PROJECT_REQUIRED" : "CLASSIFIER_PROJECT_REQUIRED");
   return classifierCommand({ configRoot, stack, projectPath, kind, args: [...argv.slice(0, index), ...argv.slice(index + 2)] });
 }
 export function registerClassifierCommand(pi, { configRoot, sdkFile, kind = "classifier" }) {
@@ -34,15 +36,15 @@ export function registerClassifierCommand(pi, { configRoot, sdkFile, kind = "cla
   const label = kind === "image" ? "生图" : "分类";
   const prefix = kind === "image" ? "IMAGE" : "CLASSIFIER";
   pi.registerCommand(`omp-${kind}`, { description: `项目${label}账号、模型、预算与持久请求账本`, handler: async (args, ctx) => {
-    if (!ctx.hasUI) throw hostError(`${prefix}_UI_REQUIRED`);
+    if (!ctx.hasUI) throw modelCallError(`${prefix}_UI_REQUIRED`);
     try {
       if (args.trim()) {
         if (kind === "image" && args.trim() === "history") {
-          const file = ctx.sessionManager.getSessionFile(); if (!file) throw hostError("IMAGE_SESSION_REQUIRED");
+          const file = ctx.sessionManager.getSessionFile(); if (!file) throw modelCallError("IMAGE_SESSION_REQUIRED");
           await ctx.ui.editor("会话图片来源（只读，不重新生成）", JSON.stringify(await imageArtifactCommand({ configRoot, projectPath: await fs.realpath(ctx.cwd), stack, args: ["history", file] }), null, 2)); return;
         }
         const match = /^(status|list [^\s]+|apply \/[^\0\r\n]+)$/u.exec(args.trim());
-        if (!match) throw hostError(`${prefix}_COMMAND_USAGE`);
+        if (!match) throw modelCallError(`${prefix}_COMMAND_USAGE`);
         const [command, ...rest] = args.trim().split(" ");
         const result = await classifierCommand({ configRoot, stack, kind, projectPath: ctx.cwd, args: command === "apply" ? [command, rest.join(" ")] : [command, ...rest] });
         await ctx.ui.editor(`${label}配置与请求账本（只读，关闭不会重发）`, JSON.stringify(result, null, 2)); return;

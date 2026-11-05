@@ -15,7 +15,7 @@ import path from "node:path";
 import os from "node:os";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { acquireOwnership } from "../../packages/host/ownership.mjs";
+import { acquireOwnership } from "../../packages/process-runtime/ownership.mjs";
 import { SessionAdmissions } from "../../packages/direct-agent/session-admission.mjs";
 import { createAdmittedSessionRuntime } from "../../packages/direct-agent/session-runtime.mjs";
 import { createResumeUiExtension } from "../../packages/direct-agent/session-resume-ui.mjs";
