@@ -7,6 +7,11 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
+test("Actions discovers only current CI, coverage and WebUI release workflows", () => {
+  assert.deepEqual(fs.readdirSync(path.join(root, ".github/workflows")).sort(), ["ci.yml", "coverage.yml", "webui-preview.yml"]);
+  assert.equal(fs.readdirSync(path.join(root, "legacy/cli/workflows")).filter(name => name.endsWith(".yml")).length, 8);
+});
+
 test("all current CI and distribution lanes use the pinned Node 24", () => {
   assert.equal(fs.readFileSync(path.join(root, ".node-version"), "utf8").trim(), "24.19.0");
   const metadata = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
@@ -18,7 +23,7 @@ test("all current CI and distribution lanes use the pinned Node 24", () => {
     assert.doesNotMatch(workflow, /22\.19\.0|node22|Node 22/u, name);
   }
   for (const name of ["distribution-public-verify.yml", "distribution-publish.yml", "linux-candidate.yml"]) {
-    const workflow = fs.readFileSync(path.join(root, ".github/workflows", name), "utf8");
+    const workflow = fs.readFileSync(path.join(root, "legacy/cli/workflows", name), "utf8");
     for (const platform of ["darwin-arm64", "linux-arm64", "linux-x64"])
       assert.match(workflow, new RegExp(`platform: ${platform}(?:, node: |\n\\s+node: )["']24\\.19\\.0`, "u"), `${name}: ${platform}`);
   }
@@ -58,8 +63,8 @@ test("development CI routes docs, WebUI, CLI and installation without repeating 
   assert.match(coverage, /node scripts\/ci-run\.mjs coverage/u);
 });
 
-test("current Preview RC workflow is exact-source, attest-only and cannot publish", () => {
-  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-rc.yml"), "utf8");
+test("archived CLI Preview RC workflow is exact-source, attest-only and cannot publish", () => {
+  const workflow = fs.readFileSync(path.join(root, "legacy", "cli", "workflows", "m11-rc.yml"), "utf8");
   assert.match(workflow, /workflow_dispatch:/u);
   assert.match(workflow, /only-my-pi-0\.3\.0-preview\.1-darwin-arm64-full\.tar\.gz/u);
   assert.match(workflow, /Require the current Preview version/u);
@@ -76,8 +81,8 @@ test("current Preview RC workflow is exact-source, attest-only and cannot publis
   assert.doesNotMatch(workflow, /contents: write|gh release|git push|secrets\./u);
 });
 
-test("current Preview publication verifies E and RC before Draft, then requires environment approval", () => {
-  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-publish.yml"), "utf8");
+test("archived CLI Preview publication verifies E and RC before Draft, then requires environment approval", () => {
+  const workflow = fs.readFileSync(path.join(root, "legacy", "cli", "workflows", "m11-publish.yml"), "utf8");
   assert.match(workflow, /runs-on: macos-14/u);
   assert.doesNotMatch(workflow, /runs-on: macos-14-xlarge/u);
   assert.match(workflow, /needs: validate-inputs/u);
@@ -111,7 +116,7 @@ test("current Preview publication verifies E and RC before Draft, then requires 
 });
 
 test("publication requires owner confirmation and preserves source identity when rebuilding", () => {
-  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-publish.yml"), "utf8");
+  const workflow = fs.readFileSync(path.join(root, "legacy", "cli", "workflows", "m11-publish.yml"), "utf8");
   const validation = workflow.split("  build-draft:")[0].split("        run: |\n")[1]
     .split("\n").map((line) => line.replace(/^          /u, "")).join("\n");
   const source = "a".repeat(40);
@@ -134,7 +139,7 @@ test("publication requires owner confirmation and preserves source identity when
 });
 
 test("Draft recovery verifies existing source attestations before the same approval gate", () => {
-  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "m11-publish.yml"), "utf8");
+  const workflow = fs.readFileSync(path.join(root, "legacy", "cli", "workflows", "m11-publish.yml"), "utf8");
   const recovery = workflow.split("  verify-draft:\n")[1].split("  publish:\n")[0];
   assert.match(recovery, /if: \$\{\{ inputs\.resume_draft \}\}/u);
   assert.match(recovery, /npm ci --ignore-scripts/u);

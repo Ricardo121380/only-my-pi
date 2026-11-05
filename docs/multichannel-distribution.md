@@ -1,5 +1,7 @@
 # Multi-channel distribution implementation
 
+> Historical CLI distribution record. WebUI releases follow [ADR-0023](decisions/ADR-0023-webui-preview-distribution.md). The workflows described below are preserved under [legacy/cli/workflows](../legacy/cli/workflows/) and are no longer discovered by Actions. Signer workflow identities and dated evidence below retain their original meaning.
+
 Current runtime policy (2026-10-20): Node 24 only, `>=24.19.0 <25`, pinned
 to `24.19.0` for acceptance. Earlier completed Node 22 results below remain
 historical; see [Node policy](compatibility/node-pi-matrix.md).

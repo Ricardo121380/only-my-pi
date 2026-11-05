@@ -31,7 +31,7 @@ cd only-my-pi-webui
 
 审批与工具限制作用于当前系统用户的权限范围。请使用可信项目；如需文件、凭据或网络隔离，应另外提供系统隔离环境。详见[发行边界与第三方许可](docs/releases/webui-0.1.0-preview.1.md)。
 
-从源码开发请参阅 `codex/dev/pi-native-web` 的 [WebUI 指南](docs/minimal-webui.md)。
+从源码开发请参阅 `main` 的 [WebUI 指南](docs/minimal-webui.md)。
 
 ## 历史终端文档
 
@@ -531,7 +531,7 @@ gh attestation verify only-my-pi-0.3.0-preview.1-darwin-arm64-full.tar.gz \
 
 Thin 包可使用相同的来源检查。添加 `--predicate-type https://spdx.dev/Document/v2.3` 可选择 SPDX 证明。发布材料还包括软件物料清单（SBOM）、依赖载荷清单及第三方许可证声明。
 
-本版本已发布资产不可变；`main` 上后续文档或工作流提交不会改变已发布字节。详见[发布说明](docs/releases/0.3.0-preview.1.md)和[发布工作流](.github/workflows/m11-publish.yml)。
+本版本已发布资产不可变；`main` 上后续文档或工作流提交不会改变已发布字节。详见[发布说明](docs/releases/0.3.0-preview.1.md)和[发布工作流](legacy/cli/workflows/m11-publish.yml)。
 
 </details>
 

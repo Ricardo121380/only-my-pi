@@ -1,19 +1,19 @@
 # Run the native Pi WebUI from source · 原生 Pi WebUI 开发版
 
-The current packaged preview is [WebUI 0.1.0-preview.1](https://github.com/Ricardo121380/only-my-pi/releases/tag/webui-v0.1.0-preview.1). Its bundled runtime starts without npm or a source build; see the [release notes](releases/webui-0.1.0-preview.1.md). The development source lives on `codex/dev/pi-native-web`. Use a new clone for the source steps below. [Development branch](https://github.com/Ricardo121380/only-my-pi/tree/codex/dev/pi-native-web). The old terminal Release attachments are retired; CLI work and cross-client handoff are deferred.
+The current packaged preview is [WebUI 0.1.0-preview.1](https://github.com/Ricardo121380/only-my-pi/releases/tag/webui-v0.1.0-preview.1). Its bundled runtime starts without npm or a source build; see the [release notes](releases/webui-0.1.0-preview.1.md). The development source follows `main`. Use a new clone for the source steps below. [Mainline](https://github.com/Ricardo121380/only-my-pi/tree/main). The old terminal Release attachments are retired; CLI work and cross-client handoff are deferred.
 
 ## Start a local demo on macOS Apple Silicon
 
 Use **Node 24.19.0**. The root lock supplies Pi **1.5.0**, the stable release verified on 2026-11-04. The external lock supplies the permission and `pi-subagents` extensions used by the WebUI development Host. From a directory where you want a new checkout, run the following commands.
 
 ```sh
-git clone --branch codex/dev/pi-native-web --single-branch https://github.com/Ricardo121380/only-my-pi.git only-my-pi-web
+git clone --branch main --single-branch https://github.com/Ricardo121380/only-my-pi.git only-my-pi-web
 cd only-my-pi-web
 node --version   # v24.19.0
 npm ci --ignore-scripts --no-audit --no-fund
 npm ci --prefix contracts/release/external --ignore-scripts --omit=peer --legacy-peer-deps --no-audit --no-fund
 npm ci --prefix prototypes --ignore-scripts --no-audit --no-fund
-npm run dev:web:b2:demo
+npm run dev:web:demo
 ```
 
 1. Open the one-time pairing link printed in the terminal and add the printed demo project. The Host listens on loopback. In the UI select **CLI 配置（只读引用）** and **本地受控演示**.
@@ -21,22 +21,22 @@ npm run dev:web:b2:demo
 3. Send `stop stream`, then stop the task in the UI. Refresh and open the conversation to see its saved Pi history. Continuing requires an explicit selection and a new message.
 4. Type `stop` in the terminal to shut down. Start the same command again and pair to see the project and history. Type `pair` if you need a fresh link. Keep pairing links private.
 
-WebUI 演示默认监听 `127.0.0.1:4317`，数据保存在此检出的 `.omp-dev-b2-demo/`。前端变更会重新构建，看到 `Frontend ready` 后刷新。修改宿主代码需要重启。可用 `npm run dev:web:b2:demo -- --port 4318` 指定其他端口。真实模型配置入口是 `npm run dev:web:b2`，它使用 `.omp-dev-b2/` 中自己的配置。保留的最小布局入口是 `dev:web:demo` / `dev:web`，分别使用 `.omp-dev-demo/` / `.omp-dev/`。这些入口不自动导入日常凭据。只读模式下可查看项目，受控编程仍须明确审批。启动器将开发目录绑定到当前检出和依赖锁，更换检出时保留旧目录并选择新的数据目录。
+WebUI 演示默认监听 `127.0.0.1:4317`，数据保存在此检出的 `.omp-dev-b2-demo/`。前端变更会重新构建，看到 `Frontend ready` 后刷新。修改宿主代码需要重启。可用 `npm run dev:web:demo -- --port 4318` 指定其他端口。真实模型配置入口是 `npm run dev:web`，它使用 `.omp-dev-b2/` 中自己的配置。保留的最小布局入口是 `dev:web:minimal:demo` / `dev:web:minimal`，分别使用 `.omp-dev-demo/` / `.omp-dev/`。这些入口不自动导入日常凭据。只读模式下可查看项目，受控编程仍须明确审批。启动器将开发目录绑定到当前检出和依赖锁，更换检出时保留旧目录并选择新的数据目录。
 
 已有 Pi 1.3 开发目录也保留原身份，不会自动改绑到新锁。升级验证时指定新的目录，
-例如 `npm run dev:web:b2 -- --data-dir "$PWD/.omp-dev-b2-pi150"`；演示可用
-`npm run dev:web:b2:demo -- --data-dir "$PWD/.omp-dev-b2-demo-pi150"`。旧配置与历史仍留在原处，
+例如 `npm run dev:web -- --data-dir "$PWD/.omp-dev-b2-pi150"`；演示可用
+`npm run dev:web:demo -- --data-dir "$PWD/.omp-dev-b2-demo-pi150"`。旧配置与历史仍留在原处，
 这些命令不迁移旧安装或日常数据。
 
 ## WebUI frontend with the native Pi Host
 
-The WebUI integration combines the native development branch with the selected
+The WebUI integration follows the
 [selected design](../prototypes/DESIGN.md). Its live entry is the selected development baseline. If the prototype
 dependencies were not installed in the steps above, install them before starting:
 
 ```sh
 npm ci --prefix prototypes --ignore-scripts --no-audit --no-fund
-npm run dev:web:b2:demo
+npm run dev:web:demo
 ```
 
 The WebUI entry keeps the paper/ink design, reading column, collapsible sidebar,
@@ -50,7 +50,7 @@ native session controller; the comparison prototypes remain available through
 用于验证只读拒绝及失败回执，`stop stream` 用于验证停止。查看历史只发起读取请求，
 需要点击“继续会话”并发送新消息才执行；新执行进程不继承旧授权。
 
-WebUI 默认使用 `.omp-dev-b2-demo/`；`npm run dev:web:b2` 使用独立的
+WebUI 默认使用 `.omp-dev-b2-demo/`；`npm run dev:web` 使用独立的
 `.omp-dev-b2/`，供配置自己的模型服务。它们沿用原生 Host 的目录锁、请求去重、
 一次性配对和 Pi JSONL 历史。指定相同、兼容的 `--data-dir` 可以在两种前端之间
 切换；先停止占用该目录的启动器。Host 重启后必须重新配对，项目和历史仍保留。

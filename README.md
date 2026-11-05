@@ -31,7 +31,7 @@ The preview starts with its own empty configuration and keeps data in `~/Library
 
 Agent approvals and tool restrictions operate within the current operating-system user's permissions. Use trusted projects and provide separate system isolation if you need filesystem, credential or network separation. Read the [release boundaries and third-party notices](docs/releases/webui-0.1.0-preview.1.md).
 
-For source development, see the [WebUI guide](docs/minimal-webui.md) on `codex/dev/pi-native-web`.
+For source development, see the [WebUI guide](docs/minimal-webui.md) on `main`.
 
 ## Historical terminal documentation
 
@@ -531,7 +531,7 @@ gh attestation verify only-my-pi-0.3.0-preview.1-darwin-arm64-full.tar.gz \
 
 The same source check applies to Thin. Add `--predicate-type https://spdx.dev/Document/v2.3` to select the SPDX attestation. Release materials also include a software bill of materials (SBOM), dependency artifact ledger, and third-party notices.
 
-Published assets for this version are immutable. Later documentation or workflow commits on `main` do not change the released bytes. See the [release notes](docs/releases/0.3.0-preview.1.md) and [publication workflow](.github/workflows/m11-publish.yml).
+Published assets for this version are immutable. Later documentation or workflow commits on `main` do not change the released bytes. See the [release notes](docs/releases/0.3.0-preview.1.md) and [publication workflow](legacy/cli/workflows/m11-publish.yml).
 
 </details>
 

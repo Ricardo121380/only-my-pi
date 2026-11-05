@@ -3,7 +3,7 @@
   "version": "0.3.0-preview.1",
   "type": "module",
   "private": true,
-  "description": "Guarded user-local terminal coding agent built on Pi",
+  "description": "Personal coding agent built on native Pi, with a local WebUI and DeepSeek-only execution",
   "repository": {
     "type": "git",
     "url": "https://github.com/Ricardo121380/only-my-pi.git"
@@ -201,7 +201,9 @@
     "test:prepare": "node scripts/prepare-test-pty.mjs && node scripts/prepare-test-extensions.mjs",
     "test": "node --test --test-concurrency=2",
     "test:distribution": "node --test tests/distribution-*.test.mjs",
-    "test:web:b2": "vitest run --config prototypes/vitest.config.ts"
+    "test:web:b2": "vitest run --config prototypes/vitest.config.ts",
+    "dev:web:minimal": "node scripts/dev-web.mjs --minimal",
+    "dev:web:minimal:demo": "node scripts/dev-web.mjs --minimal --demo"
   },
   "engines": {
     "node": ">=24.19.0 <25"

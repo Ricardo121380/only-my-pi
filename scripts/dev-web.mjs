@@ -132,13 +132,14 @@ export async function startDevWeb({ frontend = "minimal", dataDir = path.join(so
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const args = process.argv.slice(2), options = {};
+    const args = process.argv.slice(2), options = { frontend: "b2" };
     if (args.includes("--help")) {
-      console.log("npm run dev:web [-- --b2 --data-dir /absolute/path --port 4317 --no-watch]\nUse dev:web:b2 for the B2 interface; add :demo for an isolated loopback model.\nFrontend changes rebuild automatically; refresh the page. Restart this command after Host changes.\nCommands: pair (fresh link), stop (graceful shutdown; data retained). Ctrl+C also stops.");
+      console.log("npm run dev:web [-- --data-dir /absolute/path --port 4317 --no-watch]\nThe current WebUI is the default; dev:web:demo uses an isolated loopback model. Use dev:web:minimal for the retained minimal layout.\nFrontend changes rebuild automatically; refresh the page. Restart this command after Host changes.\nCommands: pair (fresh link), stop (graceful shutdown; data retained). Ctrl+C also stops.");
     } else {
       for (let i = 0; i < args.length; i++) {
         if (args[i] === "--demo") options.demo = true;
         else if (args[i] === "--b2") options.frontend = "b2";
+        else if (args[i] === "--minimal") options.frontend = "minimal";
         else if (args[i] === "--no-watch") options.watch = false;
         else if (args[i] === "--data-dir" && args[i + 1]) options.dataDir = args[++i];
         else if (args[i] === "--port" && /^\d+$/.test(args[i + 1] ?? "")) options.port = Number(args[++i]);

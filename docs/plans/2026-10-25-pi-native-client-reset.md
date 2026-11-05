@@ -22,9 +22,13 @@
 
 ## 当前 WebUI 开发顺序
 
+2026-11-05 起，以已发布 WebUI 预览对应源码作为 `main` 的开发基线。默认入口为
+`npm run dev:web` / `npm run dev:web:demo`；旧 CLI 基线另存于
+`legacy/cli-before-webui-20261105`，CLI 延后。历史验收仍绑定原提交和候选。
+
 WebUI 沿用已选定的「静室·编码」界面与交互，见[设计规范](../../prototypes/DESIGN.md)。B2 仅保留为原型与代码内部代号。
-比较原型保留；实时入口使用原生 Pi/Host，入口为 `npm run dev:web:b2:demo`，
-使用真实模型时为 `npm run dev:web:b2`。两者使用独立开发数据目录。
+比较原型保留；实时入口使用原生 Pi/Host，入口为 `npm run dev:web:demo`，
+使用真实模型时为 `npm run dev:web`。两者使用独立开发数据目录。
 
 1. WebUI 基线已通过 PR #97 纳入 `codex/dev/pi-native-web`。账号与工作区增量继续按
    独立提交、所选 CI 通过后集成，保留旧 CLI 与失败记录。
