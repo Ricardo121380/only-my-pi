@@ -42,10 +42,10 @@ export async function verifyWebPreviewArchive(candidate, output) {
     const child = spawn(node, ["--import", noViteHook, entry, "--data-dir", dataDir, "--port", String(port)], { cwd: app, env, stdio: ["pipe", "pipe", "pipe"] });
     let stdout = "", stderr = "", exitCode;
     child.stdout.on("data", bytes => { stdout += bytes; }); child.stderr.on("data", bytes => { stderr += bytes; });
-    const exited = new Promise(resolve => child.once("exit", code => { exitCode = code; resolve(code); }));
-    const stop = async () => {
-      if (exitCode === undefined) child.kill("SIGTERM");
-      assert.equal(await Promise.race([exited, delay(15000, undefined, { ref: false }).then(() => { throw new Error("Preview failed to stop gracefully"); })]), 0);
+    const exited = new Promise(resolve => child.once("exit", (code, signal) => { exitCode = code; resolve({ code, signal }); }));
+    const stop = async (signal = "SIGTERM") => {
+      if (exitCode === undefined) child.kill(signal);
+      assert.deepEqual(await Promise.race([exited, delay(15000, undefined, { ref: false }).then(() => { throw new Error("Preview failed to stop gracefully"); })]), { code: 0, signal: null });
       assert.match(stdout, /"stopped":true,"workers":0,"dataRetained":true/);
     };
     const launchState = { child, stop, get exitCode() { return exitCode; } }; launches.push(launchState);
@@ -104,11 +104,11 @@ export async function verifyWebPreviewArchive(candidate, output) {
     assert.deepEqual(await b.get(`/api/history?sessionKey=${session.sessionKey}`), before);
     const resumed = await b.settled((await start(b, "continue", { resumeSessionKey: session.sessionKey })).taskId);
     assert.equal(resumed.status, "succeeded"); assert.equal(resumed.sessionId, read.sessionId); assert.equal(resumed.access, "inspect");
-    assert.equal((await b.get("/api/state")).tasks.length, 7); await second.stop();
+    assert.equal((await b.get("/api/state")).tasks.length, 7); await second.stop("SIGINT");
     await assert.rejects(fs.access(fallback), { code: "ENOENT" });
     assert.ok(model.received.every(r => r.body.model === "deepseek-v4.1-flash" && r.authorization === `Bearer ${credential}`));
     const result = { kind: "only-my-pi-webui-archive-acceptance-v1", status: "PASS", sourceCommit: receipt.sourceCommit, archiveSha256: receipt.sha256, version: receipt.version, platform: receipt.platform, node: check.node, pi: check.pi,
-      provider: "LOCAL_CONTROLLED", externalProvider: "NOT_RUN_IN_THIS_ARCHIVE_CHECK", driverSha256: (await hashFile(new URL(import.meta.url))).slice(7), tasks: { succeeded: 5, cancelled: 2 }, assertions: { noGitCheckout: true, sourceOnlyCopiesOmitted: true, noticesRetained: true, noFrontendBuilderAtStartup: true, bundledNodeAndPi: true, noInheritedAccounts: true, deepseekOnly: true, actualRead: true, actualGrepAndFind: true, actualReadonlyChild: true, approvalBeforeWrite: true, childProcessGroupStopped: true, streamStopped: true, restartHistoryRetained: true, explicitResumeNoPermissionInheritance: true, noReplay: true, noPathFallbackNode: true, stoppedWithoutWorkers: true } };
+      provider: "LOCAL_CONTROLLED", externalProvider: "NOT_RUN_IN_THIS_ARCHIVE_CHECK", driverSha256: (await hashFile(new URL(import.meta.url))).slice(7), tasks: { succeeded: 5, cancelled: 2 }, assertions: { noGitCheckout: true, sourceOnlyCopiesOmitted: true, noticesRetained: true, noFrontendBuilderAtStartup: true, bundledNodeAndPi: true, noInheritedAccounts: true, deepseekOnly: true, actualRead: true, actualGrepAndFind: true, actualReadonlyChild: true, approvalBeforeWrite: true, childProcessGroupStopped: true, streamStopped: true, restartHistoryRetained: true, explicitResumeNoPermissionInheritance: true, noReplay: true, noPathFallbackNode: true, stoppedWithoutWorkers: true, gracefulSigterm: true, gracefulSigint: true } };
     await fs.writeFile(path.join(output, "acceptance.json"), JSON.stringify(result, null, 2) + "\n"); return result;
   } finally {
     for (const launch of launches) if (launch.exitCode === undefined) await launch.stop();

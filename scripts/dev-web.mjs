@@ -46,7 +46,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
         catch (error) { console.error(error.message); process.exitCode = 1; }
         finally { closeInput(); }
       })();
-      process.once("SIGINT", close); process.once("SIGTERM", close);
+      // Retain signal ownership until asynchronous Host cleanup has finished.
+      process.on("SIGINT", close); process.on("SIGTERM", close);
       const app = await ready;
       if (!closing) {
         console.log(JSON.stringify({ development: true, demo: !!options.demo, pid: process.pid, origin: app.host.origin, pairingUrl: app.host.pairingUrl, dataDir: app.dataDir, configRoot: app.configRoot, project: options.demo ? app.project : null }));

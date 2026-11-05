@@ -46,7 +46,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       const closeInput = () => { input?.close(); process.stdin.pause(); };
       const ready = startWebHost({ ...options, frontend: "b2", watch: false, prebuiltAssets: path.join(appRoot, "webui-preview-assets"), onStopped: result => { console.log(JSON.stringify(result)); closeInput(); } });
       const stop = () => closing ??= (async () => { try { await (await ready).stop(); } catch (error) { console.error(error.message); process.exitCode = 1; } finally { closeInput(); } })();
-      process.once("SIGINT", stop); process.once("SIGTERM", stop);
+      // Pi lazily installs signal-exit. Keep our listener present throughout
+      // async cleanup so it cannot mistake a consumed once-listener for exit.
+      process.on("SIGINT", stop); process.on("SIGTERM", stop);
       const app = await ready;
       if (!closing) {
         console.log(JSON.stringify({ preview: manifest.version, pid: process.pid, origin: app.host.origin, pairingUrl: app.host.pairingUrl, dataDir: app.dataDir, configRoot: app.configRoot }));
