@@ -15,7 +15,7 @@ async function until(read, accept, label) {
   assert.fail(`Not reached: ${label}`);
 }
 async function launch(t, dataDir, { port = 0, demo = true, watch = false } = {}) {
-  const child = spawn(process.execPath, ["scripts/dev-web.mjs", "--data-dir", dataDir, "--port", String(port), ...(watch ? [] : ["--no-watch"]), ...(demo ? ["--demo"] : [])], { cwd: root, stdio: ["pipe", "pipe", "pipe"] });
+  const child = spawn(process.execPath, ["scripts/dev-web.mjs", "--minimal", "--data-dir", dataDir, "--port", String(port), ...(watch ? [] : ["--no-watch"]), ...(demo ? ["--demo"] : [])], { cwd: root, stdio: ["pipe", "pipe", "pipe"] });
   let stdout = "", stderr = "", exitCode;
   child.stdout.on("data", bytes => { stdout += bytes; }); child.stderr.on("data", bytes => { stderr += bytes; });
   const exited = new Promise(resolve => child.once("exit", code => { exitCode = code; resolve(code); }));
@@ -56,7 +56,7 @@ test("portable WebUI uses prebuilt assets without creating a development build o
   await app.stop(); assert.equal(app.host.tasks.workers.size, 0);
 });
 
-test("source development survives fresh-process restart; native history resumes and approved shell cancellation reaps descendants", { timeout: 60000 }, async t => {
+test("retained minimal development survives restart; native history resumes and approved shell cancellation reaps descendants", { timeout: 60000 }, async t => {
   const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), "omp-dev-restart-"));
   const first = await launch(t, dataDir), a = await client(first);
   const project = await a.command({ type: "addProject", path: first.project });
@@ -68,7 +68,7 @@ test("source development survives fresh-process restart; native history resumes 
   assert.match(JSON.stringify(before), /minimal-web-evidence/);
   const settings = await fs.readFile(path.join(first.configRoot, "settings.json"), "utf8");
   // A duplicate launcher cannot rebuild shared assets or alter provider config.
-  const duplicate = spawn(process.execPath, ["scripts/dev-web.mjs", "--demo", "--no-watch", "--data-dir", dataDir, "--port", "0"], { cwd: root });
+  const duplicate = spawn(process.execPath, ["scripts/dev-web.mjs", "--minimal", "--demo", "--no-watch", "--data-dir", dataDir, "--port", "0"], { cwd: root });
   let rejected = ""; duplicate.stderr.on("data", bytes => { rejected += bytes; });
   assert.equal(await new Promise(resolve => duplicate.once("exit", resolve)), 1);
   assert.match(rejected, /OWNERSHIP_HELD/);
@@ -153,7 +153,7 @@ test("source development defaults to empty isolated configuration and rejects oc
   assert.deepEqual((await c.get("/api/models?accountId=cli-readonly")).models, []);
   // Pi initializes an empty auth store while reading the model catalog.
   assert.deepEqual(JSON.parse(await fs.readFile(path.join(app.configRoot, "auth.json"), "utf8")), {});
-  const child = spawn(process.execPath, ["scripts/dev-web.mjs", "--no-watch", "--data-dir", path.join(parent, "second"), "--port", new URL(app.origin).port], { cwd: root });
+  const child = spawn(process.execPath, ["scripts/dev-web.mjs", "--minimal", "--no-watch", "--data-dir", path.join(parent, "second"), "--port", new URL(app.origin).port], { cwd: root });
   let error = ""; child.stderr.on("data", bytes => { error += bytes; }); child.stdout.resume();
   assert.equal(await new Promise(resolve => child.once("exit", resolve)), 1);
   assert.match(error, /EADDRINUSE/);

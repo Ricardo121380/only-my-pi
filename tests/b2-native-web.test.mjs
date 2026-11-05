@@ -46,7 +46,16 @@ test("WebUI assets use the native Host; real Pi reads, approves writes and stops
   const task = id => get(`/api/task?taskId=${id}`);
   const settled = id => until(() => task(id), t => ["succeeded", "failed", "cancelled"].includes(t.status), "task terminal");
   const read = await start("read project");
-  await until(() => task(read.taskId), t => !!t.partial, "native streaming reply");
+  let readState;
+  try { await until(async () => readState = await task(read.taskId), t => !!t.partial, "native streaming reply"); }
+  catch (error) {
+    // Preserve the original streaming assertion and observation budget. Record
+    // its phase without retaining prompts, credentials or tool/model output.
+    const status = ["starting", "running", "cancelling", "succeeded", "failed", "cancelled"].includes(readState?.status) ? readState.status : "unknown";
+    const code = /^[A-Z][A-Z0-9_]{0,80}$/u.test(readState?.error ?? "") ? readState.error : "NO_CODE";
+    error.code = `WEB_READ_${status}_${code}_REQUESTS_${app.provider.received.length}_TOOLS_${readState?.toolCalls?.length ?? 0}`.toUpperCase();
+    throw error;
+  }
   assert.equal((await settled(read.taskId)).status, "succeeded");
   const session = (await get(`/api/sessions?projectId=${project.projectId}`)).sessions[0];
   assert.match(JSON.stringify(await get(`/api/history?sessionKey=${session.sessionKey}`)), /minimal-web-evidence/);
