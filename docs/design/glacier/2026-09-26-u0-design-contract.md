@@ -1,6 +1,6 @@
 # U0 Glacier 对话优先设计合同
 
-日期：2026-09-26。性质：**交互设计，不是已接入产品**。依据：[Q1–Q23](../../plans/2026-09-26-webui-optimization-discussion.md)、[既有视觉规范](pi-agent-glacier-design-spec.md)。[可交互样稿](u0-workbench.html)只使用合成内容，无 Host、模型、终端或文件写入连接。
+日期：2026-09-26。性质：**交互设计，不是已接入产品**。依据：[Q1–Q23](../../plans/2026-09-26-webui-optimization-discussion.md)、[既有视觉规范](pi-agent-glacier-design-spec.md)。[可交互样稿](../../../legacy/design/glacier/u0-workbench.html)只使用合成内容，无 Host、模型、终端或文件写入连接。
 
 ## 视觉与空间
 

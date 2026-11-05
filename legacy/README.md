@@ -14,3 +14,10 @@ inputs and release authority; moving it back does not renew its qualification.
 Runtime modules, CLI regression tests, versioned schemas and historical failure
 records remain in the source repository. Shared capabilities still serve the
 WebUI and must be separated before any later deletion.
+
+`design/` preserves four unused design drafts with their original bytes:
+the old `style.css` and `glacier.css`, U0 workbench HTML and integration types.
+The current design extraction source remains at
+[`pi-agent-glacier.html`](../docs/design/glacier/pi-agent-glacier.html), and
+`scripts/sync-glacier-assets.mjs` continues to verify its CSS and icons.
+Historical path/hash snapshots retain their original identity.
