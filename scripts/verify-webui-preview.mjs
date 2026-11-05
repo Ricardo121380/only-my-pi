@@ -7,6 +7,7 @@ import { randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { hashFile } from "../packages/release-stack/deterministic-archive.mjs";
 import { startMinimalModel } from "../tests/fixtures/minimal-model.mjs";
+import { WEBUI_SOURCE_ONLY } from "./lib/webui-preview-payload.mjs";
 
 async function until(read, accept, label, attempts = 1200) {
   for (let i = 0; i < attempts; i++) { const value = await read(); if (accept(value)) return value; await delay(25); }
@@ -21,6 +22,11 @@ export async function verifyWebPreviewArchive(candidate, output) {
   execFileSync("/usr/bin/tar", ["-xzf", archive, "-C", extracted]);
   const payload = path.join(extracted, "only-my-pi-webui"), app = path.join(payload, "app"), node = path.join(payload, "node/bin/node"), entry = path.join(app, "scripts/webui-preview.mjs");
   await assert.rejects(fs.access(path.join(app, ".git")), { code: "ENOENT" });
+  for (const name of WEBUI_SOURCE_ONLY) await assert.rejects(fs.access(path.join(app, name)), { code: "ENOENT" });
+  for (const name of ["LICENSE", "THIRD_PARTY_NOTICES.md", "webui-preview-assets/dependencies.json", "webui-preview-assets/THIRD_PARTY_NOTICES.txt"])
+    assert.ok((await fs.stat(path.join(app, name))).isFile());
+  const noViteHook = path.join(output, "no-frontend-builder.mjs");
+  await fs.writeFile(noViteHook, 'import { registerHooks } from "node:module"; registerHooks({ resolve(specifier, context, next) { if (specifier === "vite" || specifier.startsWith("vite/")) throw new Error("PORTABLE_STARTUP_IMPORTED_VITE"); return next(specifier, context); } });\n');
   const home = path.join(output, "home"), dataDir = path.join(output, "data"), project = path.join(output, "project"), fakeBin = path.join(output, "fake-bin"), fallback = path.join(output, "fallback-node-used");
   for (const d of [home, project, fakeBin]) await fs.mkdir(d);
   await fs.writeFile(path.join(fakeBin, "node"), '#!/bin/sh\nprintf used > "'+fallback+'"\nexit 91\n', { mode: 0o755 });
@@ -33,7 +39,7 @@ export async function verifyWebPreviewArchive(candidate, output) {
   const marker = `webui-archive-${randomUUID()}`; await fs.writeFile(path.join(project, "README.md"), `# Preview fixture\n${marker}\n`);
   const launches = [];
   async function launch(port = 0) {
-    const child = spawn(node, [entry, "--data-dir", dataDir, "--port", String(port)], { cwd: app, env, stdio: ["pipe", "pipe", "pipe"] });
+    const child = spawn(node, ["--import", noViteHook, entry, "--data-dir", dataDir, "--port", String(port)], { cwd: app, env, stdio: ["pipe", "pipe", "pipe"] });
     let stdout = "", stderr = "", exitCode;
     child.stdout.on("data", bytes => { stdout += bytes; }); child.stderr.on("data", bytes => { stderr += bytes; });
     const exited = new Promise(resolve => child.once("exit", code => { exitCode = code; resolve(code); }));
@@ -102,7 +108,7 @@ export async function verifyWebPreviewArchive(candidate, output) {
     await assert.rejects(fs.access(fallback), { code: "ENOENT" });
     assert.ok(model.received.every(r => r.body.model === "deepseek-v4.1-flash" && r.authorization === `Bearer ${credential}`));
     const result = { kind: "only-my-pi-webui-archive-acceptance-v1", status: "PASS", sourceCommit: receipt.sourceCommit, archiveSha256: receipt.sha256, version: receipt.version, platform: receipt.platform, node: check.node, pi: check.pi,
-      provider: "LOCAL_CONTROLLED", externalProvider: "NOT_RUN_IN_THIS_ARCHIVE_CHECK", driverSha256: (await hashFile(new URL(import.meta.url))).slice(7), tasks: { succeeded: 5, cancelled: 2 }, assertions: { noGitCheckout: true, bundledNodeAndPi: true, noInheritedAccounts: true, deepseekOnly: true, actualRead: true, actualGrepAndFind: true, actualReadonlyChild: true, approvalBeforeWrite: true, childProcessGroupStopped: true, streamStopped: true, restartHistoryRetained: true, explicitResumeNoPermissionInheritance: true, noReplay: true, noPathFallbackNode: true, stoppedWithoutWorkers: true } };
+      provider: "LOCAL_CONTROLLED", externalProvider: "NOT_RUN_IN_THIS_ARCHIVE_CHECK", driverSha256: (await hashFile(new URL(import.meta.url))).slice(7), tasks: { succeeded: 5, cancelled: 2 }, assertions: { noGitCheckout: true, sourceOnlyCopiesOmitted: true, noticesRetained: true, noFrontendBuilderAtStartup: true, bundledNodeAndPi: true, noInheritedAccounts: true, deepseekOnly: true, actualRead: true, actualGrepAndFind: true, actualReadonlyChild: true, approvalBeforeWrite: true, childProcessGroupStopped: true, streamStopped: true, restartHistoryRetained: true, explicitResumeNoPermissionInheritance: true, noReplay: true, noPathFallbackNode: true, stoppedWithoutWorkers: true } };
     await fs.writeFile(path.join(output, "acceptance.json"), JSON.stringify(result, null, 2) + "\n"); return result;
   } finally {
     for (const launch of launches) if (launch.exitCode === undefined) await launch.stop();

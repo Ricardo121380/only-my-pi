@@ -6,6 +6,7 @@ import { createDeterministicTarGzip, hashFile as taggedHashFile } from "../packa
 import { downloadVerified } from "../packages/release-stack/downloader.mjs";
 import { EMBEDDED_NODE_ARCHIVE_SHA256 } from "../packages/release-stack/contracts.mjs";
 import { prepareBundledPty, verifyBundledRuntime } from "../packages/release-stack/release-payload-stager.mjs";
+import { omitWebPreviewSource } from "./lib/webui-preview-payload.mjs";
 
 const source = fileURLToPath(new URL("../", import.meta.url));
 const json = async file => JSON.parse(await fs.readFile(file, "utf8"));
@@ -62,9 +63,9 @@ async function sbom(app, version, sourceCommit, createdAt) {
   };
 }
 
-export async function buildWebPreview({ output, version = "0.1.0-preview.1" } = {}) {
+export async function buildWebPreview({ output, version = "0.1.0-preview.2" } = {}) {
   if (process.platform !== "darwin" || process.arch !== "arm64" || process.version !== "v24.19.0") throw new Error("Build on native macOS arm64 with Node 24.19.0");
-  if (version !== "0.1.0-preview.1" || !path.isAbsolute(output ?? "")) throw new Error("Use WebUI 0.1.0-preview.1 and a fresh absolute output directory");
+  if (version !== "0.1.0-preview.2" || !path.isAbsolute(output ?? "")) throw new Error("Use WebUI 0.1.0-preview.2 and a fresh absolute output directory");
   const sourceCommit = git("rev-parse", "HEAD"), sourceTree = git("rev-parse", "HEAD^{tree}");
   if (git("status", "--porcelain")) throw new Error("Preview source must be clean and committed");
   await fs.mkdir(output, { recursive: false });
@@ -90,7 +91,8 @@ export async function buildWebPreview({ output, version = "0.1.0-preview.1" } = 
   await save(path.join(payload, "sbom.spdx.json"), components);
   await fs.copyFile(path.join(app, "LICENSE"), path.join(payload, "LICENSE"));
   await fs.writeFile(path.join(payload, "start.command"), '#!/bin/sh\nset -eu\nROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\nexec "$ROOT/node/bin/node" "$ROOT/app/scripts/webui-preview.mjs" "$@"\n', { flag: "wx", mode: 0o755 });
-  await fs.copyFile(path.join(app, "docs/releases/webui-0.1.0-preview.1.md"), path.join(payload, "README.md"));
+  await fs.copyFile(path.join(app, "docs/releases/webui-0.1.0-preview.2.md"), path.join(payload, "README.md"));
+  const sourceCopiesOmitted = await omitWebPreviewSource(app);
   const files = await filesIn(payload);
   const startupFiles = Object.keys(files).filter(name => name === "node/bin/node" || name === "start.command" || name.startsWith("tools/") || name.startsWith("app/webui-preview-assets/") || /^app\/(?:packages|extensions|scripts)\//u.test(name) || ["app/.node-version", "app/package.json", "app/package-lock.json", "app/contracts/release/external/package-lock.json", "app/node_modules/@earendil-works/pi-coding-agent/package.json"].includes(name));
   const manifest = { kind: "only-my-pi-webui-preview-v1", version, tag: `webui-v${version}`, platform: "darwin-arm64", sourceCommit, sourceTree, createdAt, node: "24.19.0", pi: "1.5.0", modelPolicy: "deepseek-only", subagents: "readonly-omp-explorer", lifecycleScriptsExecuted: false, startupFiles, files };
@@ -101,7 +103,7 @@ export async function buildWebPreview({ output, version = "0.1.0-preview.1" } = 
   await fs.copyFile(path.join(payload, "preview-manifest.json"), path.join(output, "preview-manifest.json"));
   await fs.copyFile(path.join(payload, "sbom.spdx.json"), path.join(output, "sbom.spdx.json"));
   await fs.copyFile(path.join(payload, "README.md"), path.join(output, "README.md"));
-  const receipt = { kind: "only-my-pi-webui-build-v1", sourceCommit, sourceTree, version, tag: manifest.tag, platform: manifest.platform, archive: name, sha256: await hashFile(archive), fileCount: Object.keys(files).length, packageCount: components.packages.length, node: manifest.node, pi: manifest.pi, runtimeVerified: true, scriptsDisabled: true };
+  const receipt = { kind: "only-my-pi-webui-build-v1", sourceCommit, sourceTree, version, tag: manifest.tag, platform: manifest.platform, archive: name, sha256: await hashFile(archive), fileCount: Object.keys(files).length, packageCount: components.packages.length, node: manifest.node, pi: manifest.pi, runtimeVerified: true, scriptsDisabled: true, sourceCopiesOmitted };
   await save(path.join(output, "build-receipt.json"), receipt);
   const names = [name, "preview-manifest.json", "sbom.spdx.json", "README.md", "build-receipt.json"];
   const sums = await Promise.all(names.map(async name => `${await hashFile(path.join(output, name))}  ${name}`));
@@ -110,6 +112,6 @@ export async function buildWebPreview({ output, version = "0.1.0-preview.1" } = 
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  try { console.log(JSON.stringify(await buildWebPreview({ output: process.argv[2], version: process.argv[3] ?? "0.1.0-preview.1" }))); }
+  try { console.log(JSON.stringify(await buildWebPreview({ output: process.argv[2], version: process.argv[3] ?? "0.1.0-preview.2" }))); }
   catch (error) { console.error(error.message); process.exitCode = 1; }
 }
