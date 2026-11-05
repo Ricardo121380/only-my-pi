@@ -12,6 +12,18 @@ test("Actions discovers only current CI, coverage and WebUI release workflows", 
   assert.equal(fs.readdirSync(path.join(root, "legacy/cli/workflows")).filter(name => name.endsWith(".yml")).length, 8);
 });
 
+test("the next WebUI candidate builds from main and publishes only approved source-bound bytes", () => {
+  const workflow = fs.readFileSync(path.join(root, ".github/workflows/webui-preview.yml"), "utf8");
+  assert.match(workflow, /inputs\.operation == 'build' && github\.ref == 'refs\/heads\/main'/u);
+  assert.match(workflow, /\.head_branch == "main"/u);
+  assert.match(workflow, /--source-ref refs\/heads\/main/u);
+  assert.match(workflow, /webui-v0\.1\.0-preview\.2/u);
+  assert.doesNotMatch(workflow, /0\.1\.0-preview\.1/u, "the published preview must not be rebuilt or overwritten");
+  assert.match(workflow, /environment: public-preview/u);
+  assert.match(workflow, /\.sourceCommit == \$source and \.archiveSha256 == \$sha/u);
+  assert.match(workflow, /\.name == "CI required" and \.conclusion == "success"/u);
+});
+
 test("all current CI and distribution lanes use the pinned Node 24", () => {
   assert.equal(fs.readFileSync(path.join(root, ".node-version"), "utf8").trim(), "24.19.0");
   const metadata = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));

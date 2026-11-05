@@ -5,7 +5,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { createDeterministicTarGzip, hashFile as taggedHashFile } from "../packages/release-stack/deterministic-archive.mjs";
 import { downloadVerified } from "../packages/release-stack/downloader.mjs";
 import { EMBEDDED_NODE_ARCHIVE_SHA256 } from "../packages/release-stack/contracts.mjs";
-import { prepareBundledPty, verifyBundledRuntime } from "../packages/release-stack/release-payload-stager.mjs";
+import { prepareBundledPty, verifyBundledRuntime } from "../packages/release-stack/bundled-runtime.mjs";
 import { omitWebPreviewSource } from "./lib/webui-preview-payload.mjs";
 
 const source = fileURLToPath(new URL("../", import.meta.url));

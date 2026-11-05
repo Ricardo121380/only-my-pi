@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { startHost } from "../packages/host/server.mjs";
 import { acquireOwnership } from "../packages/process-runtime/ownership.mjs";
-import { hashResourcePath } from "../packages/bootstrap/graph-plan.mjs";
+import { hashResourcePath } from "../packages/bootstrap/resource-hash.mjs";
 import { resolveDirectExtensionSet } from "../packages/direct-agent/launcher.mjs";
 import { patchPermissionShellIndex, patchPermissionShellSandbox } from "../packages/distribution/permission-shell-patch.mjs";
 

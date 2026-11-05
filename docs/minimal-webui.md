@@ -52,8 +52,9 @@ native session controller; the comparison prototypes remain available through
 
 WebUI 默认使用 `.omp-dev-b2-demo/`；`npm run dev:web` 使用独立的
 `.omp-dev-b2/`，供配置自己的模型服务。它们沿用原生 Host 的目录锁、请求去重、
-一次性配对和 Pi JSONL 历史。指定相同、兼容的 `--data-dir` 可以在两种前端之间
-切换；先停止占用该目录的启动器。Host 重启后必须重新配对，项目和历史仍保留。
+一次性配对和 Pi JSONL 历史。同一前端的兼容入口可以指定相同的 `--data-dir`；
+不同布局或运行模式须使用各自的数据目录，先停止占用该目录的启动器。
+Host 重启后必须重新配对，项目和历史仍保留。
 
 工作区保留计划、改动、文件和终端标签。文件标签浏览实际目录和 UTF-8 普通文件，
 工具目标可跳转到当前磁盘内容。改动标签显示暂存和未暂存 Git diff，不包含未跟踪
