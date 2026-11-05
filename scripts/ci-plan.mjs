@@ -40,7 +40,7 @@ export function classifyChanges(files) {
     if (ROOT_DOC.test(file) || /^docs\/.*\.(?:md|png|svg|jpe?g|webp)$/u.test(file) || /^prototypes\/(?:README|DESIGN)\.md$/u.test(file)) continue;
     if (/^webui\/(?:src\/.+\.(?:[cm]?[jt]sx?|css|svg|png|jpe?g|webp)|(?:index|minimal)\.html)$/u.test(file)
       || /^prototypes\/(?:src\/.+\.(?:[cm]?[jt]sx?|css|svg|png|jpe?g|webp)|(?:index|minimal)\.html)$/u.test(file)
-      || ["scripts/dev-web.mjs", "packages/direct-agent/minimal-services.mjs"].includes(file)) { plan.web = true; continue; }
+      || ["scripts/dev-web.mjs", "scripts/web-runtime.mjs", "scripts/webui-preview.mjs", "packages/direct-agent/minimal-services.mjs"].includes(file)) { plan.web = true; continue; }
     if (isNodeTest(file) && !file.startsWith("tests/ci-")) {
       plan[testLane(file)] = true;
       continue;

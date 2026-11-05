@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Icon } from "./Icon";
-import { HostDialog } from "./HostDialog";
+import { Icon } from "./shared/Icon";
+import { HostDialog } from "./shared/HostDialog";
 import { Accounts } from "./Accounts";
 export function Appearance({ onAccountsChanged }: { onAccountsChanged?: () => void }) {
   const [open,setOpen] = useState(false), [theme,setTheme] = useState("light"), [glass,setGlass] = useState("expressive");

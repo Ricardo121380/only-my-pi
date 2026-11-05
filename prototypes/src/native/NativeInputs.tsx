@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { InputContentV1, InputRecordV1, TaskSummary } from "../../../packages/host/contracts";
-import { sameInput } from "../../../webui/src/inputApi";
-import { useInputQueue } from "../../../webui/src/useInputQueue";
-import { isTaskActive } from "../../../webui/src/useNativeSession";
+import { sameInput } from "../../../webui/src/shared/inputApi";
+import { useInputQueue } from "../../../webui/src/shared/useInputQueue";
+import { isTaskActive } from "../../../webui/src/shared/useNativeSession";
 import { fieldClass, Notice } from "./ui";
 
 const messages: Record<string, string> = {

@@ -9,7 +9,10 @@
 | 位置 | 内容 |
 | --- | --- |
 | `bin/`、`packages/`、`extensions/` | 命令入口、实现模块和 Pi 扩展 |
-| `webui/` | 本机 WebUI 源码与交互测试 |
+| `prototypes/src/native/` | 当前 WebUI 与原生 Pi/Host 的界面和交互测试 |
+| `webui/src/shared/` | 当前 WebUI 与保留布局共用的会话、账号、输入与展示组件 |
+| `webui/`、`prototypes/src/` 的其余入口 | 保留的旧界面和比较原型，各有独立构建入口 |
+| `legacy/` | 已退出默认路径的 CLI 发行工作流和设计草稿，见[归档说明](../../legacy/README.md) |
 | `tests/`、`scripts/`、`verification/` | 回归测试、构建/验证工具、门禁清单与适用回执 |
 | `contracts/`、`schemas/`、`inventory/` | 版本合同、数据格式和资源登记 |
 | `agents/`、`modes/`、`workflows/`、`workflows-v2/`、`swarm/`、`ultra/` | 声明式产品资源与执行合同 |
@@ -23,7 +26,9 @@
 | `docs/agents/` | 本仓库的任务与领域文档约定 |
 | `codex/` | 开发工具使用的执行合同 |
 
-当前根目录布局由现有包、合同和验证工具共同使用。整理导航不改变导入路径、npm package files、资源身份或候选回执。历史记录按日期、source 和候选读取；新结论写入新记录并链接前序证据。
+`main` 以已发布 WebUI 的源码为开发基线，默认 `npm run dev:web`。旧 CLI 主线保留在
+`legacy/cli-before-webui-20261105`。运行时仍复用必要的共享模块，CLI 兼容回归继续检查；
+历史记录按日期、source 和候选读取，新结论写入新记录并链接前序证据。
 
 ## 工作区外层
 

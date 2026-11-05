@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Project, TaskSummary } from "../../packages/host/contracts";
+import type { Project, TaskSummary } from "../../../packages/host/contracts";
 import { HostDialog } from "./HostDialog";
 import { Icon } from "./Icon";
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { AccountDirectory, ModelChoice, ThinkingLevel } from "../../packages/accounts/contracts";
-import { Icon } from "./Icon";
+import { Icon } from "./shared/Icon";
 
 export function MinimalComposer({ accounts, accountId, models, model, onAccount, onModel, onSend, onCancel, acknowledged, disabled, running, cancelling, controlled, projectName, suggestion, thinkingLevel, onThinking }: {
   projectName?: string; suggestion?: { id: string; text: string }; thinkingLevel?: ThinkingLevel | null; onThinking?: (value: ThinkingLevel | null) => void;

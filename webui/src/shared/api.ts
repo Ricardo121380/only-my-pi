@@ -1,5 +1,5 @@
-import type { HostCommand, HostEvent, HostSnapshot } from "../../packages/host/contracts";
-import type { AccountAction, AccountInput } from "../../packages/accounts/contracts";
+import type { HostCommand, HostEvent, HostSnapshot } from "../../../packages/host/contracts";
+import type { AccountAction, AccountInput } from "../../../packages/accounts/contracts";
 export async function accountApi<T>(input: AccountInput | { accountId: string; action: AccountAction }, signal?: AbortSignal): Promise<T> {
   const response = await fetch("accountId" in input ? "/api/account-action" : "/api/accounts", { signal, credentials: "same-origin", cache: "no-store", method: "POST", headers: { "content-type": "application/json", "x-omp-account-protocol": "1" }, body: JSON.stringify(input) });
   const data = await response.json();

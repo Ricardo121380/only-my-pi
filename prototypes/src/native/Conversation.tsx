@@ -2,9 +2,9 @@ import { memo, useCallback, useContext, useEffect, useRef, useState } from "reac
 import { ArrowUp, AtSign, ChevronDown, FileCode2, Loader2, Lock, Slash, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { MessageView, SafeMarkdown } from "../../../webui/src/Messages";
-import { api, errorText } from "../../../webui/src/api";
-import { isTaskActive, type NativeSession } from "../../../webui/src/useNativeSession";
+import { MessageView, SafeMarkdown } from "../../../webui/src/shared/Messages";
+import { api, errorText } from "../../../webui/src/shared/api";
+import { isTaskActive, type NativeSession } from "../../../webui/src/shared/useNativeSession";
 import type { HostTask, Message } from "../../../packages/host/contracts";
 import type { ThinkingLevel } from "../../../packages/accounts/contracts";
 import { fieldClass, NativeTheme, Notice, Tip } from "./ui";

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { HostCommand, HostTask, Project, Session, TaskStatus } from "../../packages/host/contracts";
+import type { HostCommand, HostTask, Project, Session, TaskStatus } from "../../../packages/host/contracts";
 import { api, errorText, query } from "./api";
 import { useHost } from "./useHost";
 import { useAccountModels } from "./useAccountModels";

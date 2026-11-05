@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Message, Project, Session, TaskStatus } from "../../packages/host/contracts";
+import type { Message, Project, Session, TaskStatus } from "../../../packages/host/contracts";
 import { api, errorText, query } from "./api";
 
 interface HistoryPage { messages: Message[]; nextOffset: number | null }

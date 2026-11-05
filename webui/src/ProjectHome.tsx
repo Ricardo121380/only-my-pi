@@ -1,5 +1,5 @@
 import type { Session } from "../../packages/host/contracts";
-import { Icon, type IconName } from "./Icon";
+import { Icon, type IconName } from "./shared/Icon";
 const cards: { icon: IconName; title: string; desc: string; prompt: string }[] = [
   { icon:"zap", title:"实现一个新的功能", desc:"从想法出发，逐步实现", prompt:"请分析这个项目实现新功能的方案。当前仅做只读分析，不修改文件。" },
   { icon:"book", title:"分析和理解代码库", desc:"读懂结构，找到切入点", prompt:"请分析这个项目的结构，解释核心模块与数据流。" },

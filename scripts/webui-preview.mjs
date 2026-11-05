@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { createInterface } from "node:readline";
-import { startDevWeb } from "./dev-web.mjs";
+import { startWebHost } from "./web-runtime.mjs";
 
 const appRoot = fileURLToPath(new URL("../", import.meta.url));
 const payloadRoot = path.dirname(appRoot);
@@ -44,7 +44,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       process.env.PATH = `${path.join(payloadRoot, "node/bin")}:${path.join(payloadRoot, "tools/pi/vendor-tools/bin")}:${process.env.PATH ?? "/usr/bin:/bin"}`;
       let input, closing;
       const closeInput = () => { input?.close(); process.stdin.pause(); };
-      const ready = startDevWeb({ ...options, frontend: "b2", watch: false, prebuiltAssets: path.join(appRoot, "webui-preview-assets"), onStopped: result => { console.log(JSON.stringify(result)); closeInput(); } });
+      const ready = startWebHost({ ...options, frontend: "b2", watch: false, prebuiltAssets: path.join(appRoot, "webui-preview-assets"), onStopped: result => { console.log(JSON.stringify(result)); closeInput(); } });
       const stop = () => closing ??= (async () => { try { await (await ready).stop(); } catch (error) { console.error(error.message); process.exitCode = 1; } finally { closeInput(); } })();
       process.once("SIGINT", stop); process.once("SIGTERM", stop);
       const app = await ready;

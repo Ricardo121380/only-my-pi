@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { BookOpen, ChevronDown, ChevronRight, FileCode2, FileDiff, FolderOpen, RefreshCw, SquareTerminal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api, errorText, query } from "../../../webui/src/api";
+import { api, errorText, query } from "../../../webui/src/shared/api";
 import type { FileListing, FilePreview, GitDiff, Message } from "../../../packages/host/contracts";
-import type { NativeSession } from "../../../webui/src/useNativeSession";
+import type { NativeSession } from "../../../webui/src/shared/useNativeSession";
 import { NativeMessage } from "./Conversation";
 import { Empty, Notice, Tip } from "./ui";
 

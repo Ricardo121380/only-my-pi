@@ -11,14 +11,14 @@ export function installReadonlySubagents(pi, { controller, packageRoot, accountI
   const children = [], active = new Map();
   let ready, closing = false, unconfirmed = false;
   const initialize = ctx => ready ??= (async () => {
-    const [{ createAgentRegistry }, domain, { createSubagentsFacade }, { createPiSubagentsDelegationV1Backend }, { createPiEventTransport }] = await Promise.all([
-      import("../agent-registry/index.mjs"), import("../subagents/domain/index.mjs"), import("../subagents/index.mjs"),
+    const [{ createAgentRegistry }, domain, { createAgentFacade }, { createPiSubagentsDelegationV1Backend }, { createPiEventTransport }] = await Promise.all([
+      import("../agent-registry/index.mjs"), import("../subagents/domain/index.mjs"), import("../subagents/agent-facade.mjs"),
       import("../subagents/adapters/pi-subagents-delegation-v1/index.mjs"), import("../subagents/adapters/pi-event-transport.mjs"),
     ]);
     const entry = await createAgentRegistry({ rootDir: packageRoot }).resolve("explorer");
     const agentSpec = domain.createResolvedAgentSpec({ template: domain.agentTemplateFromRegistryEntry(entry), timeoutMs: 120000 });
     const transport = createPiEventTransport(pi);
-    const facade = createSubagentsFacade({ backend: createPiSubagentsDelegationV1Backend({ transport, cwd: ctx.cwd, model: modelId, thinking: pi.getThinkingLevel(),
+    const facade = createAgentFacade({ backend: createPiSubagentsDelegationV1Backend({ transport, cwd: ctx.cwd, model: modelId, thinking: pi.getThinkingLevel(),
       backendVersion: "0.57.0", timeoutMs: 120000, maximumTurns: 8, maximumToolCalls: 12 }) });
     return { domain, agentSpec, facade, transport };
   })();

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:host": "tsc -b && vite build --mode host",
+    "build:host": "tsc -p tsconfig.host.json && vite build --mode host",
     "lint": "oxlint",
     "preview": "vite preview"
   },

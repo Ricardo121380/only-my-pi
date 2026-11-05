@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import type { HostTask } from "../../packages/host/contracts";
-import { api, errorText } from "./api";
+import { api, errorText } from "./shared/api";
 import { CodemodeCalls } from "./CodemodeCalls";
 
 export function TaskControl({ task, connected }: { task: HostTask; connected: boolean }) {

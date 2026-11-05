@@ -1,4 +1,4 @@
-import type { InputCommandV1, InputCommandResultV1, InputContentV1, InputShardV1, QueueShardV1 } from "../../packages/host/contracts";
+import type { InputCommandV1, InputCommandResultV1, InputContentV1, InputShardV1, QueueShardV1 } from "../../../packages/host/contracts";
 
 export type QueueCommand = Exclude<InputCommandV1, { type: "getInputs" | "saveDraft" | "clearDraft" | "submitPrompt" }>;
 export type QueueAction = { [T in QueueCommand["type"]]: Omit<Extract<QueueCommand, { type: T }>, "target"> }[QueueCommand["type"]];

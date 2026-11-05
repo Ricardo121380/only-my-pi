@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { HostTask, InputContentV1, InputRecordV1 } from "../../packages/host/contracts";
 import { settingsApi } from "./settingsApi";
-import { sameInput } from "./inputApi";
-import { useInputQueue } from "./useInputQueue";
+import { sameInput } from "./shared/inputApi";
+import { useInputQueue } from "./shared/useInputQueue";
 import "./mcp.css";
 
 export function SettingsQueue({ task, inputRevision = 0, connected = true }: { task: HostTask; inputRevision?: number; connected?: boolean }) {

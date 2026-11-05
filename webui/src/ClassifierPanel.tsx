@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import type { AccountDirectory } from "../../packages/accounts/contracts";
 import type { ClassifierChoice, ClassifierConfig, ModelBudget, ImageBudget, ModelLedger } from "../../packages/model-calls/contracts";
 import { MODEL_BUDGET, IMAGE_BUDGET, MODEL_BUDGET_LIMITS, IMAGE_BUDGET_LIMITS } from "../../packages/model-calls/budgets";
-import { api, query } from "./api";
-import { HostDialog } from "./HostDialog";
+import { api, query } from "./shared/api";
+import { HostDialog } from "./shared/HostDialog";
 import "./classification.css";
 
 const fields: [keyof ModelBudget, string][] = [["requests", "任务请求次数"], ["concurrency", "任务并发数"], ["maxInputBytes", "单次输入字节"], ["maxOutputBytes", "单次输出字节"], ["inputBytes", "任务输入字节"], ["outputBytes", "任务输出字节"], ["timeoutMs", "单次超时毫秒"]];

@@ -1,7 +1,7 @@
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { HostEvent, HostSnapshot, HostTask, InputDirtyEventV1 } from "../../packages/host/contracts";
-import { useHost } from "./useHost";
+import { useHost } from "./shared/useHost";
 
 const running: HostTask = { taskId: "task", requestId: "request", projectId: "project", model: "fixture/model", prompt: "test", status: "running", sessionId: null, createdAt: "", updatedAt: "", messages: [] };
 const completed: HostTask = { ...running, status: "succeeded", messages: [{ id: "result", role: "assistant", text: "finished" }] };

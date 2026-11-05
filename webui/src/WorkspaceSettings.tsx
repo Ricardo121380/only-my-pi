@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Icon } from "./Icon";
+import { Icon } from "./shared/Icon";
 import { ProductSettings } from "./ProductSettings";
 import { McpPanel } from "./McpPanel";
 import { ClassifierPanel } from "./ClassifierPanel";

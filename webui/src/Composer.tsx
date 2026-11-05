@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { TaskUsage } from "../../packages/host/contracts";
 import type { ModelChoice, ThinkingLevel } from "../../packages/accounts/contracts";
-import { Icon } from "./Icon";
-import { HostDialog } from "./HostDialog";
+import { Icon } from "./shared/Icon";
+import { HostDialog } from "./shared/HostDialog";
 export function Composer({ projectName, suggestion, selectedModel, onSelectModel, models, disabled, running, cancelling, controlledAvailable = false, onSend, onCancel, onModels, usage, thinkingLevel, effectiveThinkingLevel, onThinkingLevel }: { projectName?: string; selectedModel?: string; onSelectModel?: (model: string) => void; suggestion?: { text: string; key: number }; models: ModelChoice[]; disabled: boolean; running: boolean; cancelling: boolean; controlledAvailable?: boolean; onSend: (model: string, prompt: string, mode?: "readonly" | "controlled", thinkingLevel?: ThinkingLevel) => Promise<void>; onCancel: () => void; onModels: () => void; usage?: TaskUsage | null; thinkingLevel?: ThinkingLevel | null; effectiveThinkingLevel?: ThinkingLevel | null; onThinkingLevel?: (level: ThinkingLevel | null) => void }) {
   const [prompt, setPrompt] = useState(""), [chosen, setChosen] = useState(""), [sending, setSending] = useState(false);
   const [modelOpen, setModelOpen] = useState(false), [usageOpen, setUsageOpen] = useState(false), [modeOpen, setModeOpen] = useState(false), [effortOpen, setEffortOpen] = useState(false);

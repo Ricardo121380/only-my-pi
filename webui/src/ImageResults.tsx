@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ModelLedger, ModelRequest, SessionImage } from "../../packages/model-calls/contracts";
-import { api, query } from "./api";
+import { api, query } from "./shared/api";
 import "./classification.css";
 
 const states: Record<ModelRequest["status"], string> = { reserved: "已预占 · 未发出", dispatched: "生图请求已发出 · 等待回执", unknown: "生图结果未知 · 继续占额", not_sent: "生图未发出", completed: "Provider 生图请求已完成", failed: "Provider 生图请求失败" };

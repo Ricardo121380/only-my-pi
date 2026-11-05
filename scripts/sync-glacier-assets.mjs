@@ -10,7 +10,7 @@ for (const match of source.matchAll(/icons(?:\['([^']+)'\]|\.([\w]+))='([^']*)'/
 if (!icons.folder || !icons["panel-bottom"]) throw new Error("Missing prototype icons");
 const outputs = {
   "prototype.css": "/* Generated from the original HTML; run node scripts/sync-glacier-assets.mjs. */\n" + styles.join("\n"),
-  "prototype-icons.json": JSON.stringify(icons, null, 2) + "\n",
+  "shared/prototype-icons.json": JSON.stringify(icons, null, 2) + "\n",
 };
 const check = process.argv.includes("--check");
 for (const [name, content] of Object.entries(outputs)) {

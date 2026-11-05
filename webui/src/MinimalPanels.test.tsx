@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import type { TaskSummary } from "../../packages/host/contracts";
-import { SessionDetails, ToolActivity } from "./MinimalPanels";
-import { MessageView } from "./Messages";
+import { SessionDetails, ToolActivity } from "./shared/MinimalPanels";
+import { MessageView } from "./shared/Messages";
 
 const task: TaskSummary = { taskId: "task", requestId: "request", projectId: "project", accountId: "account", model: "fixture/one", prompt: "read", mode: "readonly", status: "succeeded", sessionId: "session", createdAt: "", updatedAt: "" };
 beforeEach(() => {

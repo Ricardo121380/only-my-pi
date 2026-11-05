@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { HostDialog } from "./HostDialog";
+import { HostDialog } from "./shared/HostDialog";
 import { settingsApi } from "./settingsApi";
 import "./mcp.css";
 

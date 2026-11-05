@@ -4,7 +4,7 @@ import NativeApp from "./App";
 import { ApprovalDock } from "./Conversation";
 import { TooltipProvider } from "../components/ui/tooltip";
 import type { HostSnapshot, HostTask } from "../../../packages/host/contracts";
-import { useNativeSession } from "../../../webui/src/useNativeSession";
+import { useNativeSession } from "../../../webui/src/shared/useNativeSession";
 
 const project = { projectId: "project", name: "真实项目", path: "/fixture", available: true };
 const session = { sessionKey: "history-key", sessionId: "session", projectId: "project", name: "原生会话", timestamp: "", readOnly: true };

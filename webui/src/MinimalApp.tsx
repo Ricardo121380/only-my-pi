@@ -1,11 +1,11 @@
-import { errorText } from "./api";
-import { useNativeSession, isTaskActive as active } from "./useNativeSession";
-import { MessageView, SafeMarkdown } from "./Messages";
-import { HostDialog } from "./HostDialog";
+import { errorText } from "./shared/api";
+import { useNativeSession, isTaskActive as active } from "./shared/useNativeSession";
+import { MessageView, SafeMarkdown } from "./shared/Messages";
+import { HostDialog } from "./shared/HostDialog";
 import { TaskControl } from "./TaskControl";
 import { MinimalComposer } from "./MinimalComposer";
-import { Icon } from "./Icon";
-import { AppearanceSettings, SessionDetails, ToolActivity, runLabels as labels } from "./MinimalPanels";
+import { Icon } from "./shared/Icon";
+import { AppearanceSettings, SessionDetails, ToolActivity, runLabels as labels } from "./shared/MinimalPanels";
 
 export function MinimalApp() {
   const { projectId, taskId, selectedKey, host, snapshot, setError, connection, connected, account, history, appearance, setAppearance, settingsOpen, setSettingsOpen, detailsOpen, setDetailsOpen, navigationOpen, setNavigationOpen, collapsed, suggestion, armed, setArmed, composerVersion, pending, acknowledged, reconciling, submissionNotice, addOpen, setAddOpen, projectPath, setProjectPath, addError, adding, scroller, follow, setFollow, project, projectTasks, visibleTask, taskLoading, selectedSession, currentSummary, sessionRunning, messages, sessionTitle, lookup, dispatch, send, navigate, openSession, stop, addProject, historyReady, title, toggleNavigation, suggest, sending } = useNativeSession();

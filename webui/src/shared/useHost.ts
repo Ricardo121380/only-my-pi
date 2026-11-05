@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { HostEvent, HostSnapshot, HostTask, InputDirtyEventV1 } from "../../packages/host/contracts";
+import type { HostEvent, HostSnapshot, HostTask, InputDirtyEventV1 } from "../../../packages/host/contracts";
 import { api, applyEvent, errorText, query } from "./api";
 
 export function useHost(taskId: string | null) {

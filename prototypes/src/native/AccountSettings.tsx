@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Plus, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { accountApi, api, errorText, query } from "../../../webui/src/api";
+import { accountApi, api, errorText, query } from "../../../webui/src/shared/api";
 import type { AccountAction, AccountDirectory, AccountProbeResult, GuiAccount, ModelChoice, StaticProvider, ThinkingLevel } from "../../../packages/accounts/contracts";
 import type { TaskSummary } from "../../../packages/host/contracts";
-import { isTaskActive } from "../../../webui/src/useNativeSession";
+import { isTaskActive } from "../../../webui/src/shared/useNativeSession";
 import { fieldClass, Notice } from "./ui";
 
 const clientRejected = (error: unknown) => error instanceof Error && "status" in error && Number(error.status) >= 400 && Number(error.status) < 500;

@@ -1,6 +1,6 @@
 import { memo, useState } from "react";
 import Markdown from "react-markdown";
-import type { Message } from "../../packages/host/contracts";
+import type { Message } from "../../../packages/host/contracts";
 import { api, errorText, query } from "./api";
 import { Icon } from "./Icon";
 

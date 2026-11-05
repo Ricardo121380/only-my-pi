@@ -45,8 +45,8 @@ test("portable WebUI uses prebuilt assets without creating a development build o
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "omp-webui-prebuilt-")), assets = path.join(root, "assets"), dataDir = path.join(root, "data");
   await fs.mkdir(assets);
   for (const [name, text] of [["minimal.html", "<html>WEBUI_PREBUILT_PROOF</html>"], ["dependencies.json", "[]"], ["THIRD_PARTY_NOTICES.txt", "fixture notices"]]) await fs.writeFile(path.join(assets, name), text);
-  const { startDevWeb } = await import("../scripts/dev-web.mjs");
-  const app = await startDevWeb({ frontend: "b2", dataDir, port: 0, watch: false, prebuiltAssets: assets });
+  const { startWebHost } = await import("../scripts/web-runtime.mjs");
+  const app = await startWebHost({ frontend: "b2", dataDir, port: 0, prebuiltAssets: assets });
   t.after(async () => { await app.stop(); await fs.rm(root, { recursive: true }); });
   assert.match(await (await fetch(app.host.origin)).text(), /WEBUI_PREBUILT_PROOF/);
   await assert.rejects(fs.access(path.join(dataDir, "assets")), { code: "ENOENT" });

@@ -2,7 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Accounts } from "./Accounts";
 import { OAuthLogin } from "./OAuthLogin";
-import { HostDialog } from "./HostDialog";
+import { HostDialog } from "./shared/HostDialog";
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const account = { accountId: "fixture-account", providerId: "fixture", name: "Fixture", authType: "api_key" };

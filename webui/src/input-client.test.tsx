@@ -1,8 +1,8 @@
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { HostTask, InputContentV1, InputRecordV1, QueueShardV1 } from "../../packages/host/contracts";
-import { inputApi } from "./inputApi";
-import { INPUT_RECONCILE_MS, useInputQueue } from "./useInputQueue";
+import { inputApi } from "./shared/inputApi";
+import { INPUT_RECONCILE_MS, useInputQueue } from "./shared/useInputQueue";
 
 const task: HostTask = { taskId: "task", requestId: "request", projectId: "p", sessionId: "s", model: "fixture/model", status: "running", prompt: "fixture", messages: [], createdAt: "", updatedAt: "" };
 const input: InputContentV1 = { inputId: "stable", delivery: "queue", text: "saved", materialSnapshotIds: [], binding: { accountId: "account", modelId: "fixture/model", thinking: "off", mode: "readonly", resourceRevision: 1 } };

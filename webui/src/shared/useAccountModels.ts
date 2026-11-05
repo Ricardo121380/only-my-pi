@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { AccountDirectory, ModelChoice, ThinkingLevel } from "../../packages/accounts/contracts";
+import type { AccountDirectory, ModelChoice, ThinkingLevel } from "../../../packages/accounts/contracts";
 import { api, errorText, query } from "./api";
 
 export function useAccountModels(connected: boolean, onError: (message: string) => void) {

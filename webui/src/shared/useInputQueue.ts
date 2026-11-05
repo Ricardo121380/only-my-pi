@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { HostTask, QueueShardV1 } from "../../packages/host/contracts";
+import type { HostTask, QueueShardV1 } from "../../../packages/host/contracts";
 import { confirmsQueueCommand, inputApi, InputRequestError, type QueueAction, type QueueCommand } from "./inputApi";
 
 export const INPUT_RECONCILE_MS = 15000;
