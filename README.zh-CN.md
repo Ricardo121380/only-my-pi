@@ -26,7 +26,7 @@ cd only-my-pi-webui
 
 - Pi 管理真正的会话、工具和 JSONL 历史，保留现有纸墨设计和工作区交互。
 - 默认只读，修改项目需要明确审批。子代理有独立上下文，只能读取与搜索，继承本次选择的 DeepSeek 账号和模型。
-- 实际解压包与[源码的真实服务验收](docs/evidence/2026-11-04-pi150-b2-deepseek.md)分别留证；本地受控模型检查不代表外部 Provider 验收。
+- [公开归档与下载验收](docs/evidence/2026-11-05-webui-preview-release.md)和[源码的真实服务验收](docs/evidence/2026-11-04-pi150-b2-deepseek.md)分别留证；本地受控模型检查不代表外部 Provider 验收。
 - 持久草稿、完整输入与队列异常恢复、连续多日使用及其他平台仍待完善。CLI 延后，跨端接续、Full/Thin 晋升和 Electron 后续独立推进。
 
 审批与工具限制作用于当前系统用户的权限范围。请使用可信项目；如需文件、凭据或网络隔离，应另外提供系统隔离环境。详见[发行边界与第三方许可](docs/releases/webui-0.1.0-preview.1.md)。

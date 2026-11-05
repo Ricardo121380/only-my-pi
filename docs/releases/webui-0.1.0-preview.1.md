@@ -39,6 +39,9 @@ cd only-my-pi-webui
 
 ## 验收范围与已知边界
 
+[公开发行验收记录](../evidence/2026-11-05-webui-preview-release.md)绑定源码、CI 候选、
+Ego Lite 实机与匿名下载后的同一归档；Release 附件不重新构建或覆盖。
+
 Pi/DeepSeek 的源码核心旅程已完成真实服务验收；本预览另对实际归档解压后的独立运行、
 真实 Pi、本地受控模型、子代理、审批、停止与恢复留证。受控模型不是外部 Provider 验收。
 版本、源码、运行文件和第三方依赖分别记录在 `preview-manifest.json`、`build-receipt.json` 与 `sbom.spdx.json`。

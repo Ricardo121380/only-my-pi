@@ -26,7 +26,7 @@ The preview starts with its own empty configuration and keeps data in `~/Library
 
 - Native Pi owns the session, tools and JSONL history. The existing paper-and-ink design and workspace interaction are retained.
 - Start read-only; project changes require explicit approval. Child agents have independent context and read/search tools only, and inherit the selected DeepSeek account and model.
-- The extracted archive is tested separately from [real-service source acceptance](docs/evidence/2026-11-04-pi150-b2-deepseek.md). Controlled local model checks do not qualify an external provider.
+- The [published archive and download verification](docs/evidence/2026-11-05-webui-preview-release.md) are recorded separately from [real-service source acceptance](docs/evidence/2026-11-04-pi150-b2-deepseek.md). Controlled local model checks do not qualify an external provider.
 - Persistent drafts, complete input/queue recovery, long-running use and additional platforms remain in progress. CLI work is deferred; CLI handoff, Full/Thin promotion and Electron are later milestones.
 
 Agent approvals and tool restrictions operate within the current operating-system user's permissions. Use trusted projects and provide separate system isolation if you need filesystem, credential or network separation. Read the [release boundaries and third-party notices](docs/releases/webui-0.1.0-preview.1.md).

@@ -18,6 +18,10 @@ Full/Thin、日常安装晋升和其他平台仍保留各自出口，不把新�
 [退役 macOS 14 runner](https://github.com/actions/runner-images/issues/13518)，原任务的排队取消记录保留；
 不沿用退役 runner，也不跳过必需检查。新归档按 macOS 15+ 明确支持范围，历史平台证据保持原身份。
 
+2026-11-05 的默认分支下载说明单独按纯文档变更检查与合入。旧主线 runner 迁移曾在
+[PR #107](https://github.com/Ricardo121380/only-my-pi/pull/107) 单独跟踪：文档、WebUI 和
+CLI 检查通过，静态与安装任务多次未获得 hosted runner，原取消及失败记录保留，未执行项不计通过。
+
 源码经过所选 CI 后，候选由 GitHub macOS runner 构建一次。候选携带源码/tree、运行文件
 摘要、实际依赖 SPDX 清单、原许可及 GitHub provenance/SBOM attestations。实际解压包
 验证内置运行时、真实 Pi、本地受控服务、只读子代理、审批、停止、重启与显式续接；
